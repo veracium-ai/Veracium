@@ -36,8 +36,24 @@ FIXTURE = {
     "store": "isolated-per-case",
     "distractors": 19,                 # target + 19 = 20 edges; recall@10 non-trivial
     "distractor_source": "the other cases' target edges (deterministic, per §6a)",
-    "observed_at": "2026-01-01T00:00:00Z",
-    "valid_from": "2026-01-01T00:00:00Z",
+    # R7-1: ONE timestamp for all 20 edges left lexical ranks TIE-BROKEN BY
+    # NOTHING before fusion — `_lexical_scored` sorts (score, -observed_at),
+    # `edges()` has no contractual order, and the post-fusion edge_id
+    # tie-break cannot repair ranks assigned before it (the reviewer measured
+    # top-10 identity changes in 40/100 cases under reversed insertion).
+    # Every edge in a fixture store now gets a DISTINCT fixed instant by
+    # POSITION: insertion position k (target k=0, then the 19 distractor_ids
+    # in listed order k=1..19) has observed_at = valid_from = base + k
+    # seconds. Same calendar day (the _cover coverage term sees one day, as
+    # before); total order within every store; reversal-invariant by
+    # construction, asserted by the gate.
+    "observed_at": "2026-01-01T00:00:00Z + position seconds (see timestamp_rule)",
+    "valid_from": "2026-01-01T00:00:00Z + position seconds (see timestamp_rule)",
+    "timestamp_rule": "edge at insertion position k gets "
+                      "2026-01-01T00:00:0{k}Z semantics: base "
+                      "2026-01-01T00:00:00Z plus k seconds, k=0 the target, "
+                      "k=1..19 the distractor_ids in listed order — distinct "
+                      "within every store, one calendar day",
     "insertion_order": "target first, then the 19 distractor_ids in listed order",
     "token_budget": 4000,
     "wiki": "empty",
@@ -212,12 +228,15 @@ for _pool in _pools.values():
         c["distractor_ids"] = [_ids[(_idx + j) % _n] for j in range(1, 20)]
 
 manifest = {
-    "manifest_version": "2.1",
+    "manifest_version": "2.2",
     "spec": "0027-semantic-hybrid-recall",
     "authored": "2026-08-30",
     "authored_by": "research",
     "amended": "2026-08-31 (R6-2 deterministic topology: frozen edge_ids, "
-               "explicit split/label-pure distractor_ids, backend named)",
+               "explicit split/label-pure distractor_ids, backend named; "
+               "R7-1: distinct per-position timestamps — lexical ranks are "
+               "tie-free BEFORE fusion, applied before any re-tune or "
+               "accept rerun)",
     "amended_by": "dev",
     "blinding": "preregistered non-blind (Quentin-approved 2026-08-30); tuning "
                 "procedure frozen in spec §6a",

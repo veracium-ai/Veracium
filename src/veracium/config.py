@@ -33,6 +33,34 @@ class MemoryConfig:
     semantic_min_cosine: float = 0.25
     semantic_timeout_ms: int = 250
     semantic_fetch_k: Optional[int] = None
+
+    def validate_semantic(self) -> None:
+        """THE one validator for the three §4d carriers — construction AND
+        recall call exactly this (0027 R7-4: the live re-check reimplemented
+        the range tests and dropped the strict types, so `True` passed as a
+        timeout and `200.5` as a fetch size after a post-construction
+        mutation; one validator, two call sites, zero drift)."""
+        c = self.semantic_min_cosine
+        if isinstance(c, bool) or not isinstance(c, (int, float)) \
+                or not (0.0 <= c <= 1.0):
+            raise ValueError(
+                f"semantic_min_cosine {c!r} is not a real number in [0, 1]")
+        t = self.semantic_timeout_ms
+        if isinstance(t, bool) or not isinstance(t, int) \
+                or not (1 <= t <= 60000):
+            raise ValueError(
+                f"semantic_timeout_ms {t!r} is not an int in [1, 60000] "
+                f"(bool never passes as int)")
+        k = self.semantic_fetch_k
+        if k is not None:
+            lo = self.max_subgraph_edges
+            hi = max(1000, self.max_subgraph_edges)
+            if isinstance(k, bool) or not isinstance(k, int) \
+                    or not (lo <= k <= hi):
+                raise ValueError(
+                    f"semantic_fetch_k {k!r} is not an int in [{lo}, {hi}] "
+                    f"(relative to the LIVE max_subgraph_edges; bool and "
+                    f"float never pass)")
     # Fraction of the subgraph budget reserved for time coverage when the store
     # is larger than the budget. Pure top-k has no coverage term, so facts that
     # share vocabulary can collapse the selection onto one period.
@@ -86,25 +114,10 @@ class MemoryConfig:
 
     def __post_init__(self):
         from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
-        # specs/0027 §4d: validate the semantic carriers; the fetch-k None
-        # sentinel SURVIVES construction (R6-3) — validation only, no resolve
-        if not (0.0 <= self.semantic_min_cosine <= 1.0):
-            raise ValueError(
-                f"semantic_min_cosine {self.semantic_min_cosine} outside [0, 1]")
-        if not (isinstance(self.semantic_timeout_ms, int)
-                and not isinstance(self.semantic_timeout_ms, bool)
-                and 1 <= self.semantic_timeout_ms <= 60000):
-            raise ValueError(
-                f"semantic_timeout_ms {self.semantic_timeout_ms!r} outside [1, 60000]")
-        if self.semantic_fetch_k is not None:
-            lo = self.max_subgraph_edges
-            hi = max(1000, self.max_subgraph_edges)
-            if not (isinstance(self.semantic_fetch_k, int)
-                    and not isinstance(self.semantic_fetch_k, bool)
-                    and lo <= self.semantic_fetch_k <= hi):
-                raise ValueError(
-                    f"semantic_fetch_k {self.semantic_fetch_k!r} outside "
-                    f"[{lo}, {hi}] (relative to max_subgraph_edges)")
+        # specs/0027 §4d: the fetch-k None sentinel SURVIVES construction
+        # (R6-3) — validation only, no resolve; recall calls the SAME
+        # validator against the live values (R7-4)
+        self.validate_semantic()
         validate_budget("recall", self.query_context_budget_tokens,
                         self.group_heading_allowance_tokens)
         validate_budget("wiki", self.wiki_input_budget_tokens,

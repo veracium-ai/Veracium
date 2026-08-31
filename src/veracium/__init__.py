@@ -427,26 +427,15 @@ class Memory:
         eid, dim, st = _semantic_mod.embedder_identity(embedder)
         if st != "ok":
             return st, []
-        # R6-3: auto tracks the LIVE max_subgraph_edges; an EXPLICIT value is
-        # RE-validated against the live range and refuses if a post-construction
-        # mutation put it out of range (a config error, not a degrade)
+        # R6-3 + R7-4: THE SAME validator as construction runs against the
+        # LIVE values — strict types included, so a post-construction
+        # mutation to a bool timeout or float fetch size refuses exactly as
+        # it would have at __post_init__ (a config error, not a degrade);
+        # then auto-resolve tracks the live max_subgraph_edges
+        self.config.validate_semantic()
         k = self.config.semantic_fetch_k
-        lo = self.config.max_subgraph_edges
-        hi = max(1000, self.config.max_subgraph_edges)
         if k is None:
             k = max(200, self.config.max_subgraph_edges)
-        elif not (lo <= k <= hi):
-            raise ValueError(
-                f"semantic_fetch_k {k} outside the live range [{lo}, {hi}] — "
-                f"max_subgraph_edges was mutated after construction (0027 §4d)")
-        if not (0.0 <= self.config.semantic_min_cosine <= 1.0):
-            raise ValueError(
-                f"semantic_min_cosine {self.config.semantic_min_cosine} "
-                f"outside [0, 1] (0027 §4d live validation)")
-        if not (1 <= self.config.semantic_timeout_ms <= 60000):
-            raise ValueError(
-                f"semantic_timeout_ms {self.config.semantic_timeout_ms} "
-                f"outside [1, 60000] (0027 §4d live validation)")
         result: dict = {}
 
         def _embed_query():

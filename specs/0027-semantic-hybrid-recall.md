@@ -4,8 +4,9 @@ Spec-Status: accepted
 
 *ADOPTED BY DEV 2026-08-31 on Quentin's ruling (six external rounds; architecture affirmed every round; implementation in lieu of further paper rounds — the round-6 findings are code-level and are folded here as v7 plus the implementation's test surface). Research authored the candidate; v6 folds the round-5 external review (5
 findings) on top of v5's round-4 fold. The load-bearing changes in v6:
-**lexical-first collapse** (semantic never resurfaces or changes a lexical
-survivor — v5's monotonic-suppression claim was reviewer-executed FALSE); the
+**lexical-first collapse** (semantic never resurfaces a lexically-suppressed
+record and never changes a lexical survivor's object/note; the OUTPUT ORDER
+is fused — R7-2 retired the over-broad "never reorders" phrasing — v5's monotonic-suppression claim was reviewer-executed FALSE); the
 **eval gate made finite** — entity-subject paraphrase cases (verified zero
 shipped-token overlap), a pinned fixture protocol, and a frozen tuning procedure
 under a **preregistered-non-blind** ruling (Quentin-approved); the scoped
@@ -17,10 +18,10 @@ spec at next review. See `PROCESS.md`.*
 | | |
 |---|---|
 | **Author / session** | research (veracium-research); adopted + implemented by dev |
-| **Version** | **v7** — adopted into the product repo; round-6 punch-list folding (see *Changes in v7*) |
+| **Version** | **v8** — round-7 external review folded (see *Changes in v8*) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
-| **External review** | SIX rounds complete (1-5 returned-amendment; round 6 findings code-level). Quentin's ruling 2026-08-31: implementation, not a further paper round |
+| **External review** | SEVEN rounds (1-6 returned research-side; round 7 — the implementation-verification round — RETURNED with five precision findings, folded as v8). The acceptance ask stands for round 8 |
 | **Decision + date** | ACCEPTED for implementation — Quentin, 2026-08-31 (confirmed in the dev session). The §6a acceptance measurement is a REQUIRED pre-release gate (the 0026 obligations pattern) — **DISCHARGED 2026-08-31: measured once, all three criteria pass, numbers recorded in `## Review closure`** |
 | **Path** | full |
 
@@ -44,8 +45,10 @@ spec at next review. See `PROCESS.md`.*
   shared authority the lens consults; recall does not re-implement it.
 - **0012** — I8 collapse (`collapse_for_render`, `graph.py:674,879`). Runs on
   **Lx alone**, then semantic-only members are appended (lexical-first collapse,
-  §4a Stage 3) — so enabling semantic never changes, reorders, or resurfaces a
-  lexical collapse survivor (**V-COLLAPSE**). *(v3-v5 fed the fused union and
+  §4a Stage 3) — so enabling semantic never resurfaces a lexically-suppressed
+  record and never changes a lexical survivor's object/note; the OUTPUT
+  order is FUSED — survivor identity/content preservation, not order
+  preservation (**V-COLLAPSE**; R7-2). *(v3-v5 fed the fused union and
   variously mis-claimed monotonic suppression / a same-value bound; R5-1
   corrects the construction.)*
 - **0013 / 0007 / 0018** — store schema + migrations: the additive
@@ -72,6 +75,15 @@ spec at next review. See `PROCESS.md`.*
 - **0005** — import boundary: embeddings are NOT exported (derived index);
   imported edges re-embed locally under the local `embedder_id` (§4c).
 
+### Changes in v8 (round-7 external review → resolution)
+| # | round-7 finding | resolved by |
+|---|---|---|
+| **R7-1** | evaluation ordering unfrozen BELOW fusion: one shared timestamp left lexical ranks tie-broken by nothing (`edges()` has no contractual order; the post-fusion id tie-break cannot repair ranks assigned before it) — reviewer measured top-10 identity changes in 40/100 cases under reversed insertion; "byte-for-byte" was false | manifest **v2.2**: DISTINCT per-position timestamps (position k → base + k seconds, one calendar day), the rule normative in the fixture block; **digest re-rolled `ca851e54…` supersedes `766c9a62…`**; acceptance RERUN after the topology change (all three criteria PASS; figures internal per the rider); the gate gains a TOTALITY check (no tied lexical sort key in any of the 100 stores) and the reviewer's reversed-insertion mutant as a standing test |
+| **R7-2** | the spec's Stage-3 predicate stated only `m.active` while the implementation (correctly) required BOTH records active; the test mutated only the semantic member; over-broad "never reorders" claims survived in four carriers | conjunct 1 now `m.active and survivor.active`; an inactive-SURVIVOR fixture joins the conjunct mutants; the preamble, Spec-Requires 0012 row, v6-history row and §9 brief all restated to the correct guarantee — survivor identity/content preservation with FUSED output order |
+| **R7-3** | the classification-entry gate skipped targets the semantic lane never surfaced (`if sem is None: continue`) — criterion 3 could pass with ZERO semantic retrievals | the gate now ASSERTS every trust target present in `recalled_edges` with route `semantic`/`both` before comparing classification — the criterion's "via the semantic lane" half is enforced, not assumed |
+| **R7-4** | live re-validation reimplemented the range checks WITHOUT the strict types: a post-construction mutation to `semantic_timeout_ms=True` or `semantic_fetch_k=200.5` passed | ONE shared validator (`MemoryConfig.validate_semantic`) at construction AND recall — strict types included, bool never passes as int, float never as fetch size; post-construction mutation tests cover all three fields |
+| **R7-5** | overstated/stale text: V8's fixture claimed an exact survivor pin but accepted either edge; §6a still described runtime ids and "other cases' targets"; Stage 4 claimed a coverage-order tail the implementation (correctly, per R9-1) does not emit; the design doc still said "never reorders" | the V8 test pins the exact survivor (`mgB`, per `_collapse_survivor_order`: freshest among equals); §6a's protocol text restated to the frozen v2.2 topology; Stage 4 restated — `_cover` decides tail MEMBERSHIP, the emission is the selected subset in fused order; the design-doc item relayed to research (their carrier) |
+
 ### Changes in v7 (round-6 external review + adoption → resolution)
 | # | round-6 finding | resolved by |
 |---|---|---|
@@ -85,7 +97,7 @@ spec at next review. See `PROCESS.md`.*
 ### Changes in v6 (round-5 external review → resolution)
 | # | round-5 finding | resolved by |
 |---|---|---|
-| **R5-1** | collapse suppression is NOT monotonic — a semantic-only member can RESURFACE a suppressed record (executed: 1-anchor→2-anchor transition) | verified (`value_groups`: a value subsumed by ≥2 anchors forms its OWN group). The monotonic-suppression claim is REMOVED. §4a Stage 3 adopts **lexical-first collapse**: collapse the lexical set exactly as today, THEN add semantic-only members (suppressing a semantic-only member only against an already-surfaced survivor) — so semantic NEVER resurfaces or reorders a lexical survivor. **V-COLLAPSE** adds the 1→2-anchor fixture |
+| **R5-1** | collapse suppression is NOT monotonic — a semantic-only member can RESURFACE a suppressed record (executed: 1-anchor→2-anchor transition) | verified (`value_groups`: a value subsumed by ≥2 anchors forms its OWN group). The monotonic-suppression claim is REMOVED. §4a Stage 3 adopts **lexical-first collapse**: collapse the lexical set exactly as today, THEN add semantic-only members (suppressing a semantic-only member only against an already-surfaced survivor) — so semantic NEVER resurfaces or reorders a lexical survivor *(the "reorders" half of this v6 claim was itself superseded at R6-1/R7-2: the guarantee is identity/content preservation with FUSED output order)*. **V-COLLAPSE** adds the 1→2-anchor fixture |
 | **R5-2** | eval gate not finite: all paraphrase targets `subject="user"` (lexical already 1.0); no fixture protocol; preregistered≠blind | manifest reworked — **60 paraphrase cases now ENTITY-subject, verified zero shipped-token overlap** (new digest below); §6a pins the full **fixture-construction protocol** (isolated store, distractors, times, order, budget, empty wiki, no higher classes); **preregistered NON-BLIND (Quentin-approved 2026-08-30)** with the tuning PROCEDURE frozen (only `semantic_min_cosine`, on the tune split, before any accept run); builder made portable + `--check` |
 | **R5-3** | shape-before-collapse can MERGE collapse groups (executed) — no scoped fixture | dispositioned as INTENDED (a cross-scope duplicate that shapes to the same principal-facing envelope IS redundant to the principal; shaping only narrows, so the surviving framing is safe); §4a states which provenance is suppressed; **V8** gains the exact scoped shape-merge regression fixture |
 | **R5-4** | Python defaults not executable (mutable default; class-time `max()`) | §4b/§4d corrected: `recalled_edges: dict = field(default_factory=dict)`; `semantic_fetch_k: int|None = None` resolved in `__post_init__` from the instance's `max_subgraph_edges`; behaviour on later mutation defined (resolve at recall time) |
@@ -337,7 +349,10 @@ just computed (R6-1, a bug in the previous round's own fix).
 - **`semantic_duplicate_of(m, survivor)` — the COMPLETE suppression predicate.**
   (`_strictly_redundant` alone is a within-group test and returns true for
   unrelated default-metadata edges.) ALL five conjuncts must hold:
-  1. `m.active` — never suppress against, or as, inactive history;
+  1. `m.active and survivor.active` — never suppress against, or as,
+     inactive history (R7-2: the prose named only `m.active` while the
+     implementation — correctly — required BOTH; the text now states what
+     the code enforces);
   2. identical collapse envelope `(subject, relation, disclosure,
      author_of_evidence, derived_from)`;
   3. exact value-equivalence `_value_key(m.object) == _value_key(survivor.object)`
@@ -364,11 +379,13 @@ edges (`e.assertable and e.id in relevant_ids`, using the EXTENDED
 lexical match competes here by fused rank like everything else — no separate
 protection; see V1); `_cover(rest, max_edges − |reserved|, coverage_share,
 seed_days={reserved.valid_from})` fills the remainder by a fused-order relevance
-HEAD + a `valid_from` time-coverage TAIL (`graph.py:711`). **The tail is NOT in
-fused order** (correction to v3, R3-4): `_cover` deliberately reorders later
-candidates to cover days not yet represented, then backfills — so `rest` is
-`head (fused order) + tail (coverage order)`, exactly today's `_cover`
-behaviour, now over fused input. **Reserved records DO seed time coverage**
+HEAD + a `valid_from` time-coverage TAIL (`graph.py:711`). **`_cover` is a SELECTOR here, not
+the emitter** (corrected at R7-5; v3-v7 misdescribed the emission): `_cover`
+picks the relevance head plus a `valid_from` time-coverage tail, deliberately
+reaching past fused rank for uncovered days — but the EMITTED remainder is
+the SELECTED SUBSET filtered back into fused order, exactly the shipped R9-1
+construction ("both segments keep their scored order internally"); coverage
+decides tail MEMBERSHIP, never the output order. **Reserved records DO seed time coverage**
 (their `valid_from` seed the covered-day set, `graph.py:698`). Output =
 `reserved + rest`. If the reserve alone would exceed the
 budget it is itself truncated at `⌈max_edges/4⌉` (it cannot exceed a quarter of
@@ -682,13 +699,19 @@ preregistration, not blinding. v6 closes all three:
    verified to have zero shipped-`_tokens` overlap with their query** (checked
    with the shipped tokenizer). The 20 exact cases keep `subject="user"`
    deliberately (they test displacement of a high-overlap match, not recovery).
-3. **Fixture-construction protocol, pinned (R5-2 point 2 — in the manifest
-   `fixture` block, normative here):** each case runs in an **isolated store** =
-   the target edge + **19 fixed distractor edges** (the other cases' targets, by
-   id — deterministic); `observed_at`=`valid_from`=`2026-01-01T00:00:00Z`;
-   insertion order = manifest order (target first); `token_budget=4000`; **empty
-   wiki**; **no higher-priority classes** (no commitments/contested/episodes);
-   `max_subgraph_edges=40`; `principal=None`. So the harness cannot move the
+3. **Fixture-construction protocol, pinned (R5-2 point 2, tightened at
+   R6-2 and R7-1 — in the manifest `fixture` block, normative here):** each
+   case runs in an **isolated store** = the target edge (FROZEN
+   `edge_id = e-{case_id}`) + the case's **explicit 19 `distractor_ids`**
+   (split- and label-pure pools; tune never draws accept content);
+   **distinct per-position timestamps** — insertion position k gets
+   `observed_at`=`valid_from`= `2026-01-01T00:00:00Z` **+ k seconds** (k=0
+   the target, k=1..19 the listed distractors), so lexical sort keys are
+   TIE-FREE before fusion and insertion order is provably irrelevant (the
+   gate asserts both, including the reversed-insertion mutant); insertion
+   order = target first, then the listed distractors; `token_budget=4000`;
+   **empty wiki**; **no higher-priority classes**; `max_subgraph_edges=40`;
+   `principal=None`; backend `SqliteStore`. So the harness cannot move the
    result after freezing — every input is fixed.
 4. **Blinding disposition — PREREGISTERED NON-BLIND (Quentin-approved
    2026-08-30; R5-2 point 3).** The `accept` cases are in plaintext + digest,
@@ -773,7 +796,8 @@ acceptance.
 ## 9. Brief for the external reviewer (round 5)
 
 v6 answers round 5's five findings (mapping at top): lexical-first collapse so
-semantic never resurfaces/changes a lexical survivor (R5-1); the eval gate made
+semantic never resurfaces/changes a lexical survivor (R5-1; the order half
+superseded — the output order is fused, R6-1/R7-2); the eval gate made
 finite — entity-subject paraphrase cases (zero shipped-token overlap, verified),
 a pinned fixture protocol, and a frozen tuning procedure under a preregistered-
 non-blind ruling (R5-2); the shape-merge dispositioned + fixtured (R5-3);
@@ -819,10 +843,23 @@ executable Python defaults (R5-4); and a superseded-statement consolidation
   trust). Paraphrase targets are entity-subject, verified zero shipped-token
   overlap. Preregistered non-blind (Quentin-approved); tuning procedure frozen
   (§6a). The gate recomputes this digest and fails on any drift.
-- **Digest history:** `766c9a62…` (v2.1, 2026-08-31) supersedes `7b7205d1…`
-  (v2.0) — the R6-2 deterministic-topology amendment (frozen edge_ids,
-  explicit split/label-pure distractor_ids, backend named), applied BEFORE any
-  tuning or accept run, as the punch-list ordered.
+- **Digest history:** `ca851e542a7a4c185b30f73a1fd764f04eeef279cbca61fd43bcd0b004da847d`
+  (v2.2, 2026-08-31 — R7-1: distinct per-position timestamps, lexical ranks
+  tie-free before fusion; acceptance RERUN after the change, all three
+  criteria PASS) supersedes `766c9a62…` (v2.1 — R6-2: frozen edge_ids,
+  explicit split/label-pure distractor_ids, backend named) supersedes
+  `7b7205d1…` (v2.0). Every topology amendment preceded the accept run made
+  under it.
+
+**Round-7 external verdict (2026-08-31): RETURN — five focused amendments**
+(R7-1 evaluation ordering below fusion; R7-2 spec weaker than the
+implemented duplicate rule; R7-3 classification gate could pass without
+semantic retrieval; R7-4 live validation missing strict types; R7-5
+overstated/stale carriers). "The core construction is now credible; the
+remaining blocker is precision between the normative text, fixture topology,
+and what the tests actually guarantee." All five folded as v8 (table above);
+the reviewer's own mutants (reversed insertion; inactive survivor) are
+standing tests. The acceptance ask goes to round 8.
 
 **§6a acceptance measurement — RUN ONCE 2026-08-31: ALL THREE CRITERIA
 PASS against the pre-committed thresholds.** Per the §6a/§8 rider and the

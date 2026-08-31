@@ -453,6 +453,11 @@ def test_lexical_first_collapse_unchanged_by_semantic(tmp_path):
     dead = _edge("dd", "pet:m", "called", "miso cat", days=0, active=False)
     assert not semantic_duplicate_of(dead, surv), \
         "inactive history is never suppressed (conjunct 1)"
+    dead_surv = _edge("ds", "pet:m", "called", "miso cat", days=2,
+                      active=False)
+    assert not semantic_duplicate_of(dup, dead_surv), \
+        "suppressed AGAINST inactive history — conjunct 1 requires BOTH " \
+        "records active (R7-2: the reviewer's other-carrier mutant)"
     other = _edge("ot", "pet:m", "called", "miso cat", days=0,
                   disc=Disclosure.USE_ONLY)
     assert not semantic_duplicate_of(other, surv), \
@@ -600,10 +605,16 @@ def test_scoped_shape_merge_intended(tmp_path):
     assert len([i for i in ids if i in ("mgA", "mgB")]) == 1, \
         "the shaped duplicates did not merge (or both vanished)"
     survivor = next(e for e in r.edges if e.id in ("mgA", "mgB"))
+    # R7-5: the survivor is PINNED, not either-accepted — by
+    # _collapse_survivor_order (note-bearing → most-specific → freshest →
+    # id), equal notes and values leave freshest observed_at deciding:
+    # mgB (days=2) beats mgA (days=1)
+    assert survivor.id == "mgB", (
+        f"the survivor is {survivor.id}, not the ordering's pick — either "
+        f"_collapse_survivor_order changed or the fixture drifted (R7-5)")
     assert survivor.provenance.disclosure == Disclosure.USE_ONLY
-    suppressed = "mgA" if survivor.id == "mgB" else "mgB"
-    assert suppressed not in ids
-    assert suppressed not in r.recalled_edges, \
+    assert "mgA" not in ids
+    assert "mgA" not in r.recalled_edges, \
         "the suppressed member's provenance survived — §4a says DISCARDED"
 
 
@@ -660,6 +671,23 @@ def test_semantic_fetch_k_sentinel_tracks_live_config(tmp_path):
         m.config.max_subgraph_edges = 400              # 220 now out of range
         with pytest.raises(ValueError):
             m.recall(U, "boat")
+        # R7-4: the live check is THE SAME validator as construction —
+        # strict types included; a post-construction mutation to a bool
+        # timeout or a float fetch size refuses at recall, not silently
+        # passes the range test (bool <= int and float-in-range both did)
+        m.config.semantic_fetch_k = 200.5
+        m.config.max_subgraph_edges = 40
+        with pytest.raises(ValueError):
+            m.recall(U, "boat")
+        m.config.semantic_fetch_k = None
+        m.config.semantic_timeout_ms = True
+        with pytest.raises(ValueError):
+            m.recall(U, "boat")
+        m.config.semantic_timeout_ms = 250
+        m.config.semantic_min_cosine = 1.5
+        with pytest.raises(ValueError):
+            m.recall(U, "boat")
+        m.config.semantic_min_cosine = 0.25
     finally:
         type(m.store).semantic_candidates = real
 

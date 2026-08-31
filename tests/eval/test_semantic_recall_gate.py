@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 import pathlib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -56,7 +56,7 @@ def test_vector_artifact_matches_the_projection_and_population():
     the manifest's (spot-weld — the vectors were computed WITHOUT veracium
     importable)."""
     c = MANIFEST["cases"][0]
-    e = _case_edge(c)
+    e = _case_edge(c, 0)
     assert sm_mod.embedded_text(e) == _embedded_text(c)
     assert set(VECTORS["targets"]) == {x["edge_id"] for x in MANIFEST["cases"]}
     assert set(VECTORS["queries"]) == {x["id"] for x in MANIFEST["cases"]}
@@ -83,30 +83,72 @@ class PrecomputedEmbed:
         return [self._by_text[t] for t in texts]
 
 
-def _case_edge(c) -> Edge:
+def _case_edge(c, position: int) -> Edge:
+    # R7-1 timestamp rule: insertion position k gets base + k seconds —
+    # DISTINCT within every store, so lexical ranks are tie-free BEFORE
+    # fusion and insertion order cannot influence any result
+    t = T + timedelta(seconds=position)
     return Edge(id=c["edge_id"], user_id=U, subject=c["subject"],
                 relation=c["relation"], object=c["object"], note=c["note"],
                 provenance=Provenance(
                     author_of_evidence=EvidenceAuthor.USER,
-                    evidence_ref=f"ev-{c['id']}", observed_at=T,
+                    evidence_ref=f"ev-{c['id']}", observed_at=t,
                     disclosure=_DISC[c.get("disclosure", "MENTIONABLE")]),
-                valid_from=T)
+                valid_from=t)
+
+
+def _build_store(tmp_path, c, *, name=None, reverse_insertion=False):
+    """One isolated fixture store per the frozen protocol. POSITIONS (and
+    so timestamps) always follow the manifest rule; `reverse_insertion`
+    reverses only the ORDER rows hit the store — the reviewer's R7-1 mutant,
+    which must change nothing."""
+    m = Memory(llm=lambda p, **k: "", embed=PrecomputedEmbed(),
+               config=MemoryConfig(db_path=str(tmp_path / (name or c['id'])) + ".db",
+                                   wiki_recompile_after_writes=0,
+                                   max_subgraph_edges=40))
+    rows = [_case_edge(c, 0)] + [_case_edge(BY_EDGE[did], k + 1)
+                                 for k, did in enumerate(c["distractor_ids"])]
+    for e in (reversed(rows) if reverse_insertion else rows):
+        m.store.add_edge(e)
+    m.embed_backfill(U)
+    return m
 
 
 def _run_case(tmp_path, c, *, semantic="auto"):
-    """One isolated fixture store per the frozen protocol; returns the
-    Recall."""
-    m = Memory(llm=lambda p, **k: "", embed=PrecomputedEmbed(),
-               config=MemoryConfig(db_path=str(tmp_path / f"{c['id']}.db"),
-                                   wiki_recompile_after_writes=0,
-                                   max_subgraph_edges=40))
-    m.store.add_edge(_case_edge(c))                 # target first
-    for did in c["distractor_ids"]:                 # then the listed 19
-        m.store.add_edge(_case_edge(BY_EDGE[did]))
-    m.embed_backfill(U)
+    m = _build_store(tmp_path, c)
     r = m.recall(U, c["query"], token_budget=4000, semantic=semantic)
     m.close()
     return r
+
+
+def test_fixture_topology_is_tie_free_and_insertion_invariant(tmp_path):
+    """R7-1's closure, both halves standing. (a) TOTALITY: in every one of
+    the 100 fixture stores, no two lexical candidates share a sort key
+    (score, observed_at) — the pre-fusion ranks are fully determined, which
+    the single post-fusion edge_id tie-break could never guarantee alone.
+    (b) The reviewer's mutant: reversing the insertion order changes NOTHING
+    — same edges, same order, same provenance — driven on an exemplar of
+    each label."""
+    from veracium.graph import _lexical_scored
+    for c in MANIFEST["cases"]:
+        m = _build_store(tmp_path, c, name=f"tf-{c['id']}")
+        scored, _rel, _by = _lexical_scored(m.store, U, c["query"])
+        keys = [(sc, e.provenance.observed_at) for sc, _ov, e in scored]
+        assert len(keys) == len(set(keys)), (
+            f"{c['id']}: tied lexical sort keys — the topology is not frozen")
+        m.close()
+    for c in (CASES["acc-para-01"], CASES["acc-exact-01"],
+              CASES["acc-trust-01"], CASES["tune-01"]):
+        m1 = _build_store(tmp_path, c, name=f"fw-{c['id']}")
+        m2 = _build_store(tmp_path, c, name=f"rv-{c['id']}",
+                          reverse_insertion=True)
+        r1 = m1.recall(U, c["query"], token_budget=4000)
+        r2 = m2.recall(U, c["query"], token_budget=4000)
+        m1.close(); m2.close()
+        assert [e.id for e in r1.edges] == [e.id for e in r2.edges], (
+            f"{c['id']}: insertion order changed the result (R7-1)")
+        assert {k: (v.fused_rank, v.route) for k, v in r1.recalled_edges.items()} \
+            == {k: (v.fused_rank, v.route) for k, v in r2.recalled_edges.items()}
 
 
 def _hit_at_10(r, c) -> bool:
@@ -167,8 +209,18 @@ def test_classification_entry_for_trust_cases(tmp_path):
         sem = {e.id: e for e in r_sem.edges}.get(c["edge_id"])
         lex = {e.id: e for e in r_lex.edges}.get(c["edge_id"])
         assert lex is not None, f"{c['id']}: lexical self-query lost the edge"
-        if sem is None:
-            continue        # not surfaced semantically — nothing to compare
+        # R7-3: the criterion is "retrieved VIA THE SEMANTIC LANE enters
+        # classification identically" — so the semantic retrieval itself is
+        # ASSERTED, not skipped-if-absent (the old `continue` would have
+        # passed with zero semantic retrievals)
+        assert sem is not None, (
+            f"{c['id']}: the trust target never surfaced with semantic on — "
+            f"criterion 3 has nothing to certify")
+        prov = r_sem.recalled_edges.get(c["edge_id"])
+        assert prov is not None and prov.route in ("semantic", "both"), (
+            f"{c['id']}: the target was not ranked BY the semantic lane "
+            f"(route={getattr(prov, 'route', None)!r}) — a lexical-only "
+            f"surfacing cannot certify classification-ENTRY (R7-3)")
         if (sem.assertable, sem.quarantined) != (lex.assertable,
                                                  lex.quarantined):
             mismatches.append(c["id"])

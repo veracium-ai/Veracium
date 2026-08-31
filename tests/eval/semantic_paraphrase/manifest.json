@@ -1,5 +1,5 @@
 {
-  "amended": "2026-08-31 (R6-2 deterministic topology: frozen edge_ids, explicit split/label-pure distractor_ids, backend named)",
+  "amended": "2026-08-31 (R6-2 deterministic topology: frozen edge_ids, explicit split/label-pure distractor_ids, backend named; R7-1: distinct per-position timestamps — lexical ranks are tie-free BEFORE fusion, applied before any re-tune or accept rerun)",
   "amended_by": "dev",
   "authored": "2026-08-30",
   "authored_by": "research",
@@ -3344,14 +3344,15 @@
     "higher_priority_classes": "none (no commitments/contested/episodes)",
     "insertion_order": "target first, then the 19 distractor_ids in listed order",
     "max_subgraph_edges": 40,
-    "observed_at": "2026-01-01T00:00:00Z",
+    "observed_at": "2026-01-01T00:00:00Z + position seconds (see timestamp_rule)",
     "principal": null,
     "store": "isolated-per-case",
+    "timestamp_rule": "edge at insertion position k gets 2026-01-01T00:00:0{k}Z semantics: base 2026-01-01T00:00:00Z plus k seconds, k=0 the target, k=1..19 the distractor_ids in listed order — distinct within every store, one calendar day",
     "token_budget": 4000,
-    "valid_from": "2026-01-01T00:00:00Z",
+    "valid_from": "2026-01-01T00:00:00Z + position seconds (see timestamp_rule)",
     "wiki": "empty"
   },
-  "manifest_version": "2.1",
+  "manifest_version": "2.2",
   "note": "FROZEN evaluation population, committed before implementation. PARAPHRASE cases use ENTITY subjects so lexical does not trivially admit them (R5-2). Expected answers are content keys resolved to edge_id at run time. Synthetic fixtures — review before use.",
   "spec": "0027-semantic-hybrid-recall"
 }
