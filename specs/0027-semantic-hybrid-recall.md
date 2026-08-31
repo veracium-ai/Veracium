@@ -18,11 +18,11 @@ spec at next review. See `PROCESS.md`.*
 | | |
 |---|---|
 | **Author / session** | research (veracium-research); adopted + implemented by dev |
-| **Version** | **v9** — round-8 external review folded (see *Changes in v9*) |
+| **Version** | **v10 (ACCEPTED)** — round-9 external verdict: ACCEPT, 0027 is closed (this revision records the verdict; no normative change) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
-| **External review** | EIGHT rounds. Round 8: RETURN on ONE carrier-only finding (R8-1, the superseded digest still declared current in two places) with R7-1..4 CLOSED and the reviewer's stated position: "Once the normative digest is corrected, I would accept 0027." v9 is that correction; round 9 is the acceptance ask |
-| **Decision + date** | ACCEPTED for implementation — Quentin, 2026-08-31 (confirmed in the dev session). The §6a acceptance measurement is a REQUIRED pre-release gate (the 0026 obligations pattern) — **DISCHARGED 2026-08-31: measured once, all three criteria pass, numbers recorded in `## Review closure`** |
+| **External review** | NINE rounds, CLOSED AT ACCEPTANCE (round 9, 2026-08-31): "ACCEPT — 0027 is closed" — R8-1 fully resolved, packaged artifacts byte-verified against the repository at `a25426e`, no further amendment or acceptance rerun required. Rounds 1-6 research-side (paper), 7-9 dev-side (implementation-verification) |
+| **Decision + date** | ACCEPTED — externally, round 9, 2026-08-31 ("ACCEPT — 0027 is closed"), ratifying the owner's implementation ruling of the same date. The §6a pre-release gate was DISCHARGED 2026-08-31 (measured once, all three criteria PASS, rerun-confirmed on the v2.2 topology; verdict recorded in `## Review closure`, figures internal per the rider) |
 | **Path** | full |
 
 ### Spec-Requires (accepted specs this consumes)
@@ -861,6 +861,16 @@ executable Python defaults (R5-4); and a superseded-statement consolidation
   explicit split/label-pure distractor_ids, backend named) supersedes
   `7b7205d1…` (v2.0). Every topology amendment preceded the accept run made
   under it.
+
+**Round-9 external verdict (2026-08-31): ACCEPT — 0027 is closed.** R8-1
+fully resolved: both normative declarations carry the v2.2 digest
+`ca851e54…` with the superseded digest historical-only; the gate count
+correctly five; expected-key behaviour matches the direct content-key
+comparison; `a25426e` the verified head, packaged artifacts byte-identical,
+the fold commit spec-only; archive checksums, manifest regeneration and
+vector verification all pass. "No further amendment or acceptance rerun is
+required." NINE rounds close the arc — the external acceptance that
+ratifies the adoption-time status.
 
 **Round-8 external verdict (2026-08-31): RETURN — one focused carrier
 amendment** (R8-1: the superseded digest declared current in two normative
