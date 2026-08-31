@@ -37,6 +37,13 @@ interval does not contain T; the multi-hop composition ruling). See
   are orthogonal (§3).
 - **0011** — `correct()`: the `corrected` invalidation whose retroactive-truth
   resolution this spec defines.
+- **0027** — semantic hybrid recall (ACCEPTED): §4c's as-of pre-filter hands
+  the resolved candidate set to 0027's fused construction — this spec
+  composes with it, changing nothing inside it. One STATED interaction: a
+  historical edge whose text changed after its embedding was built is
+  excluded from the semantic lane by 0027's V-FRESH while remaining
+  lexically recallable, so an as-of slice can be asymmetrically covered
+  across the two lanes (§4c note; acceptability is an open ruling, §10).
 - **schema.py invalidation-reason registry** — the closed six-reason set this
   spec's resolution table is total over.
 
@@ -146,7 +153,13 @@ subject's history.
   `as_of=None` → today's current-facts recall (V-COMPAT). `as_of=T` → the
   candidate edge set is the §4a resolution at T, THEN normal recall
   (lexical/§0027 semantic + gate + budget) over it. As-of is a pre-filter;
-  ranking is unchanged over the filtered set.
+  ranking is unchanged over the filtered set. **Stated lane asymmetry
+  (composing with accepted 0027):** historical edges may carry stale
+  embeddings (text mutated after the vector was built) that 0027's V-FRESH
+  rightly excludes — such edges reach the as-of result through the LEXICAL
+  lane only. The asymmetry is a property of composing two accepted
+  behaviours, disclosed here rather than discovered; whether it is
+  acceptable as-is or wants a lazy re-embed on as-of access is §10's call.
 - **Direct lookup:** `facts_valid_at(user, subject, relation, T,
   known_as_of=None)` — the point-in-time value(s), no query.
 - **Provenance:** each result carries `{valid_from, invalidated_at,
@@ -256,6 +269,11 @@ hardest:
   member — but confirm.)
 - **Index:** `(subject, relation, valid_from)` — ships with backend gap #3 or
   now?
+- **The §4c lane asymmetry** (stale-embedding history is lexically- but not
+  semantically-recallable under as-of): acceptable as a disclosed property,
+  or should as-of access trigger a lazy re-embed of its slice? (Dev leans
+  acceptable-as-disclosed for v1 — re-embedding on a read path couples the
+  read to the embedder and V6's latency posture; the reviewer may rule.)
 
 ## Review closure
 
