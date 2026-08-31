@@ -15,25 +15,31 @@ R1-1), and unknown reasons FAIL CLOSED.*
 
 | | |
 |---|---|
-| **Author / session** | research (veracium-research); adopted by dev (v2 2026-08-31; refreshed to v4 on the external-entry word) |
+| **Author / session** | research (veracium-research); adopted by dev (v2/v4 2026-08-31; v5 symbol correction at pre-dispatch) |
 | **Version** | **v4** — dev v3-re-read minors folded (m-1 inverted-vs-empty interval in rule 0; m-2 `now` made load-bearing for stale-at-recall). v3 — pre-review folded (7 findings): (1) scope via time-relative verdict not `shape()`; (2) state-coherence rule 0 / MALFORMED; (3) total `AS_OF_DISPOSITION` dict not allow-set; (4) absorbed groundable, not "unreachable"; (5) `Result{status,flags}` + `now`; (6) §6a state-families not naive product; (7) baseline pinned post-0027 + UTC-aware datetimes. (v2 folded dev's D-1/D-2/d-3/d-4.) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research (author) · dev (reviewer, roles inverted from 0027) |
-| **External review** | REQUIRED — new trust surface; touches classification. Quentin's word given 2026-08-31 (pair dispatch with 0029); round 1 in preparation |
+| **External review** | REQUIRED — new trust surface; touches classification. Entry on Quentin's word |
 | **Decision + date** | — |
 | **Path** | full |
 
 ### Spec-Requires (accepted specs this consumes)
 - **0019 / 0023 / 0026 / 0027** — the current trust classes and the render-time
-  classifier. **BASELINE PIN (finding 7):** 0030 is built on top of ACCEPTED
-  0027, so its baseline is the **post-0027 implementation commit** (where
-  `_render_class` and 0027's frozen-classification oracle exist), NOT `d7bf16b`
-  — that snapshot predates 0027's code (`graph.py:283` there is `history_label`;
-  `_render_class` does not exist). Dev pins the exact post-0027 commit at
-  adoption; all §Spec-Requires/§6 citations (`Edge.assertable schema.py:501`,
-  `_render_class`, `gate.scoped_assertable`, `ScopeView`) are verified against
-  THAT commit. **UNCHANGED** by 0030: it adds a PARALLEL time-relative
-  classifier, does not modify `Edge.assertable` (additive discipline, 0027).
+  classifier. **The render-time classifier is `history_label` (`graph.py:270`)**
+  — NOT `_render_class`, which was a spec-only fiction (finding 7): it exists in
+  no code at any commit; the shipped function returning
+  RETIRED_HISTORY/QUARANTINED_CLAIM/CONTESTED_CURRENT/UNVERIFIED_CURRENT/
+  GROUNDED_CURRENT is `history_label`. **BASELINE PIN:** 0030 is built on top of
+  ACCEPTED 0027, so its baseline is the **post-0027 implementation commit** — not
+  because of any render-classifier symbol (`history_label` exists at every
+  commit) but because 0030's V-CURRENT-UNCHANGED test reuses **0027's v10
+  oracle** (`specs/evidence/0027/v10_oracle/`, post-0027) and 0030 composes with
+  0027's accepted recall. Dev pins that commit at adoption; all §Spec-Requires/§6
+  citations (`Edge.assertable schema.py:501`, `history_label graph.py:270`,
+  `gate.scoped_assertable`, `ScopeView.decision`) are grep-verified against THAT
+  commit (pre-dispatch caught `_render_class` failing exactly that grep).
+  **UNCHANGED** by 0030: it adds a PARALLEL time-relative classifier, does not
+  modify `Edge.assertable` (additive discipline, 0027).
 - **0003** — reason-carrying, history-retaining supersession: the
   `invalidation_reason` this spec keys on (`schema.py:432`), and the retained
   history (`invalidated_at` set — "so history is queryable", `schema.py:421`).
@@ -339,7 +345,7 @@ does with either cell (that is a 0019 question left untouched).
 | **V-NEVER** never grounds a trust-excluded record at ANY T: for every edge whose reason ∈ {corrected, disputed, revoked_source} OR class ∈ {quarantined, use_only}, `classify_as_of` never returns `GROUNDED_AS_OF` for any sampled T (incl. inside the interval + boundaries) | `test_never_grounds_excluded_at_any_t` | CI |
 | **V-MALFORMED** (finding 2) state-coherence rule 0 fires first: an ACTIVE edge carrying a non-`None` reason, an INACTIVE edge with `None` reason, a non-string/unknown reason, or an INVERTED interval (invalidated_at < valid_from) → `MALFORMED` (an EMPTY interval == is coherent, → NOT_VALID_AT_T) — never grounded either way — asserted with edges built directly via `add_edge` (which does not couple `invalidated_at`/`invalidation_reason`) | `test_incoherent_states_are_malformed_never_grounded` | CI |
 | **V-FAILCLOSED** (finding 3) `AS_OF_DISPOSITION` is a TOTAL dict; `set(AS_OF_DISPOSITION) == set(DISPOSITIONED_REASONS)` exactly (build fails on any undispositioned reason in EITHER); runtime defaults an unknown/missing key to `FENCED` | `test_as_of_disposition_is_total_and_failclosed` | CI |
-| **V-CURRENT-UNCHANGED** (finding 7) `Edge.assertable` is not modified; the current recall path does not call the as-of classifier — proven via a caller-grep AND the current path run against the **post-0027** frozen classification oracle (the baseline is pinned to the post-0027 implementation commit, §Spec-Requires — NOT `d7bf16b`, which predates `_render_class`). `classify_as_of(...,now).status==GROUNDED_AS_OF` agrees with `edge.assertable` for the ordinary edge and diverges on EXACTLY the two §4e state cells | `test_current_path_oracle_identical_post0027` + `test_as_of_now_diverges_only_on_two_cells` | CI |
+| **V-CURRENT-UNCHANGED** (finding 7) `Edge.assertable` is not modified; the current recall path does not call the as-of classifier — proven via a caller-grep AND the current path run against the **post-0027** frozen classification oracle (the baseline is pinned to the post-0027 implementation commit, §Spec-Requires — NOT `d7bf16b`, which predates 0027's v10 oracle). `classify_as_of(...,now).status==GROUNDED_AS_OF` agrees with `edge.assertable` for the ordinary edge and diverges on EXACTLY the two §4e state cells | `test_current_path_oracle_identical_post0027` + `test_as_of_now_diverges_only_on_two_cells` | CI |
 | **V-INTERVAL** groundable only within the half-open `[valid_from, invalidated_at)`; `T == invalidated_at` excluded (successor's); UTC-aware comparison only (§10) | `test_half_open_interval_boundaries` | CI |
 | **V-SCOPE** (finding 1) composes with 0020 via the TIME-RELATIVE verdict through `gate.scoped_assertable(base_groundable, view.decision(edge))` — NOT `view.shape()` (which returns a historical edge unchanged). Fixture: a cross-scope-visible `superseded` edge groundable unscoped is `FENCED_AS_OF` for the restricted principal; a same-scope one still grounds | `test_scope_composes_via_time_relative_verdict_not_shape` | CI |
 | **V-STALE** (finding 5, m-2) `classify_as_of` returns `Result{status, flags}`; `stale-at-recall` is set iff reason ∈ {lapsed,decayed} AND `invalidated_at <= now` (already stale) — a future-lapsing edge (invalidated_at > now) grounds WITHOUT the flag; `now` is thereby load-bearing (an external reviewer greps for the unread param) | `test_result_carries_stale_flag` | CI |
