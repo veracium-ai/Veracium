@@ -4,11 +4,11 @@
 
 # Spec status
 
-**26 specs · 25 accepted · 333 external review
+**27 specs · 26 accepted · 333 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **25 of 26 are accepted**, which
+review is required to reach it. **26 of 27 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -39,6 +39,7 @@ is the number that decides what can be built.
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-08-25 | 2 | 24 | 3 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-08-25 | 2 | 24 | 2 | 0 | 0 | — |
 | **0026** | label/value agreement check | `accepted` | 2026-08-30 | 14 | 12 | 2 | 0 | 0 | — |
+| **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
