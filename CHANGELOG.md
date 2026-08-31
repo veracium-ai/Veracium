@@ -1,9 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.18.0 — 2026-08-31
 
-- **0027 — semantic hybrid recall (adopted 2026-08-31 on Quentin's ruling
-  after six external review rounds; implementation in progress).** An
+**Upgrade recommendation:** hosts that want paraphrase/synonym recall
+("my vacation" finding "trip to Tokyo") should take this release and
+supply an embedder — any `Embed` implementing `__call__`, `id()`, and
+`dim()` activates the semantic lane; without one, recall behaves exactly
+as 0.17.0 (`semantic="auto"` reports `no_embedder` and stays lexical), so
+no consumer must act to stay correct. ⚠ **BREAKING for existing stores:**
+the on-disk store schema moves **11→12** (one additive table); a store
+created by ≤0.17 must be migrated offline (`veracium.store.migration.
+migrate_store`) before this build opens it — the migration is additive,
+reversible (`DROP TABLE edge_embedding`), and requires no backfill.
+
+- **0027 — semantic hybrid recall (EXTERNALLY ACCEPTED 2026-08-31, nine
+  review rounds closing at "ACCEPT — 0027 is closed"; implemented, and the
+  acceptance measurement passed all three pre-committed criteria — the
+  recorded verdict lives in the spec's Review closure, figures held
+  internal by the §6a rider).** An
   ADDITIVE, RRF-fused (K=60), lexically-anchored semantic lane: recall
   gains `semantic="auto"` (attempted iff a host `Embed` with `id()`/`dim()`
   is configured; every failure degrades to lexical with a closed
