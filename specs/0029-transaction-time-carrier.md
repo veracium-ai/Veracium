@@ -15,7 +15,7 @@ edge-state change, which nothing durable does today. See `PROCESS.md`.*
 | | |
 |---|---|
 | **Author / session** | dev; internal review research |
-| **Version** | **v4** — the pre-dispatch co-check fold (research's seal-check both-check, all three verified against code before folding): **F-A** the PER-WRITE KIND RULE — kind is a property of the write (prior row presence × serialization delta), not the site; no site→kind mapping can be total, and the import commit's presence-admitting raw replace is the reachable instance, so the machine-regeneration obligation is defined over WRITES; **F-B** the V-TOTAL sweep's interpolated-table blind spot pinned as a checkable property (event-owed edges writes name the table literally; the sweep scans interpolated forms — erasure's f-string DELETE the benign extant instance); **F-C** the fourth site cited at its UPDATE statement (sqlite.py:334). *Prior:* **v3** — the joint round-1 fold, on the owner's F1 ruling: RECONSTRUCTABLE STATE. F1: event payloads carry the edge's FULL canonical serialization (EdgeStateAt(K) derivable; the change-detection narrowing refused). F3: transaction-batch cursor — per-user `txn` allocated per event-emitting write transaction, `seq` the ordering authority, whole-batch reads (a cutoff can never split an atomic mutation; `recorded_at` demoted to telemetry). F4: V-TOTAL re-based on the FULL-STATE projection (any serialization change ⇒ event), and the FOURTH raw `UPDATE edges` site named (`_recompute_edge_row`, wrongly filed under `_upsert_edge_row` in v2 — it replaces valid_from/observed_at/confidence, which the 0027 digest never sees). F5: the schema pinned exactly (full snapshots dissolve the old/new-digest question). F8: version-header discipline. §6a re-seeded with the reviewer's eight joint scenarios. (v2 folded internal I-1/I-2.) |
+| **Version** | **v5** — the joint round-2 fold, dev's half (F1, F5 carrier half, F6, F8a): **F1** EPOCH BASELINE SNAPSHOTS — the v13 migration journals every pre-existing edge's state as found, one `baseline` batch per user (the user's EPOCH TXN); §4e re-scoped from "no backfill" to "no fabricated history" — the baseline records the state actually present when journaling began, and nothing before it is ever synthesized. **F6** the epoch becomes a TXN value (pre-epoch = `until_txn < epoch_txn(user)`, same integer domain, mechanically comparable; the §2c cutoff row re-typed); txn/seq allocation moved to DATABASE-level serialization (max+1 inside the writing transaction under the DB's single-writer lock — the instance-local Python lock is named insufficient across two `SqliteStore` instances; the `(user_id, seq)` PK is the refusing backstop); `recorded_at` minted ONCE per batch. **F5 (carrier half)** `edge_state_at` returns a RAW snapshot carrier — journal payload verbatim, no deserialization at the 0029 surface; validation belongs wholly to the consumer (0030 rules 3–4, seam S4) because an append-only journal can outlive the model that wrote it. **F8a** carrier sweep — the journal is CONTENT-BEARING (the §3 "digest, never content" row and §5 "one digest" cost were v2 residue); data-handling and retention stated honestly. §6a gains the migrated-edge-at-epoch and concurrent-allocation scenarios (the other five round-2 joint cases live in 0030 §6a on the shared corpus). New invariants V-BASELINE, V-TXN-ALLOC, V-VERBATIM. *Prior:* **v4** — the pre-dispatch co-check fold (research's seal-check both-check, all three verified against code before folding): **F-A** the PER-WRITE KIND RULE — kind is a property of the write (prior row presence × serialization delta), not the site; no site→kind mapping can be total, and the import commit's presence-admitting raw replace is the reachable instance, so the machine-regeneration obligation is defined over WRITES; **F-B** the V-TOTAL sweep's interpolated-table blind spot pinned as a checkable property (event-owed edges writes name the table literally; the sweep scans interpolated forms — erasure's f-string DELETE the benign extant instance); **F-C** the fourth site cited at its UPDATE statement (sqlite.py:334). *Prior:* **v3** — the joint round-1 fold, on the owner's F1 ruling: RECONSTRUCTABLE STATE. F1: event payloads carry the edge's FULL canonical serialization (EdgeStateAt(K) derivable; the change-detection narrowing refused). F3: transaction-batch cursor — per-user `txn` allocated per event-emitting write transaction, `seq` the ordering authority, whole-batch reads (a cutoff can never split an atomic mutation; `recorded_at` demoted to telemetry). F4: V-TOTAL re-based on the FULL-STATE projection (any serialization change ⇒ event), and the FOURTH raw `UPDATE edges` site named (`_recompute_edge_row`, wrongly filed under `_upsert_edge_row` in v2 — it replaces valid_from/observed_at/confidence, which the 0027 digest never sees). F5: the schema pinned exactly (full snapshots dissolve the old/new-digest question). F8: version-header discipline. §6a re-seeded with the reviewer's eight joint scenarios. (v2 folded internal I-1/I-2.) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research · dev |
 | **External review** | REQUIRED — store schema + a new durable audit surface. Not yet sent |
@@ -84,16 +84,16 @@ same transaction as the mutation it records.**
 |---|---|---|---|---|
 | `edges` table (all columns) | UNCHANGED | — | everything | YES — no reader or writer of `edges` changes |
 | `provenance.observed_at` | READ (contrast only) | caller-suppliable observation time | provenance, recency | YES — explicitly NOT the transaction axis (§4c) |
-| NEW `edge_event(user_id, seq, txn, edge_id, kind, reason, state, recorded_at)` | WRITTEN | append-only store-minted STATE JOURNAL — `state` is the edge's full canonical serialization AFTER the mutation (F1: reconstructable, not merely dated); never exported; erases with the user | 0028 v2, 0030, future audit surfaces | additive; store-schema v13 |
-| NEW `store_epoch` row (in `store_identity`'s pattern) | WRITTEN ONCE | the instant transaction-time recording began for this store | the fail-closed epoch rule (§4e) | additive |
-| `Store` interface | EXTENDED | `+ edge_events(user_id, edge_id=None, until_txn=None)` + `edge_state_at(user_id, edge_id, until_txn)` (the EdgeStateAt(K) reconstruction) | 0028 v2 / 0030 / introspection | additive |
+| NEW `edge_event(user_id, seq, txn, edge_id, kind, reason, state, recorded_at)` | WRITTEN | append-only store-minted STATE JOURNAL — `state` is the edge's full canonical serialization AFTER the mutation (F1: reconstructable, not merely dated); never exported; erases with the user | 0028 v2, 0030, 0031 Phase B reversal (its §4c-iii reads the journal — the seam's SECOND consumer, so the read contract freezes here, not per-consumer), future audit surfaces | additive; store-schema v13 |
+| NEW `store_epoch` row (in `store_identity`'s pattern) | WRITTEN ONCE | the INSTANT journaling began — display/telemetry; the MECHANICAL epoch is per-user, a TXN value (§4e): the user's baseline batch txn, `0` for users whose whole life is journaled | the fail-closed epoch rule (§4e) | additive |
+| `Store` interface | EXTENDED | `+ edge_events(user_id, edge_id=None, until_txn=None)` + `edge_state_at(user_id, edge_id, until_txn)` — returns the RAW snapshot carrier (§4b-ii), never a validated `Edge` | 0028 v2 / 0030 / introspection | additive |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant** |
 |---|---|---|---|---|---|
 | `recorded_at` | n/a — STORE-MINTED, never a parameter | n/a | n/a | a caller attempting to supply it | **V-MINT** — no public surface accepts a transaction time; the store's clock writes it, monotone-guarded per user (§4c) |
-| an event-log read with `until` before the store's epoch | — | non-datetime → typed refuse | — | probing pre-epoch knowledge | **V-EPOCH** — refuses (fail-closed), never fabricates "nothing was known" |
+| the `until_txn` cutoff | `None` → unbounded (whole log) | non-integer or negative → typed refuse (the cutoff domain is txn integers — F6; no datetime is ever a cutoff) | — | probing pre-epoch knowledge: `until_txn < epoch_txn(user)` | **V-EPOCH** — a pre-epoch cutoff refuses (fail-closed), never fabricates "nothing was known"; the comparison is integer-to-integer in ONE domain, mechanically total |
 | the event `kind` on read | — | a kind outside the closed §4b set | — | — | **V-KIND** — closed vocabulary derived from the mutator surface; unknown kinds refuse at read (the store never writes one) |
 | a crash between mutation and event | — | — | — | — | **V-ATOMIC** — same transaction: both commit or neither |
 
@@ -111,7 +111,7 @@ same transaction as the mutation it records.**
 
 | entity | trust class | how this spec touches it |
 |---|---|---|
-| an `edge_event` row | **none** — audit metadata | records that a state change happened and when the store learned it; carries a content DIGEST, never content; never evidence, never assertable, never rendered |
+| an `edge_event` row | **none** — audit record | records that a state change happened, when the store learned it, and the edge's FULL post-mutation serialization — the journal is CONTENT-BEARING (F8a; the v2 "digest, never content" claim died with the v3 full-state ruling and this row now says so): every payload is user content at rest, held to the same data-handling class as the `edges` table itself; never evidence, never assertable, never rendered |
 | the `edges` table | unchanged | not one reader or writer changes |
 | `recorded_at` | store fact | minted by the store clock; no caller influence |
 
@@ -160,9 +160,18 @@ CREATE INDEX ix_edge_event_txn    ON edge_event(user_id, txn);
   post-mutation serialization. Old values are never lost to an overwrite —
   the previous event's `state` holds them. No digest columns: any digest is
   derivable from `state` (the v2 old/new-digest question DISSOLVES).
-- **`txn` is the atomicity carrier (F3):** one event-emitting store write
-  transaction allocates ONE per-user `txn` (max+1, under the store lock,
-  in-transaction); every event that transaction emits shares it. A
+- **`txn` is the atomicity carrier (F3), allocated at the DATABASE level
+  (F6):** one event-emitting store write transaction allocates ONE per-user
+  `txn` — `max(txn)+1` computed by SQL INSIDE that same write transaction,
+  serialized by the database's single-writer lock. An instance-local Python
+  lock is INSUFFICIENT and named so: two `SqliteStore` instances on one
+  file each hold their own lock, so nothing above the database can
+  serialize them (the round-2 finding). The `(user_id, seq)` primary key —
+  `seq` allocated the same transactional way — is the refusing backstop: a
+  residual race becomes a constraint refusal, never a silent duplicate or
+  a shared batch id. `recorded_at` is minted ONCE per batch (one clock
+  read per transaction; every event in the batch carries the same
+  instant). Every event that transaction emits shares its `txn`. A
   supersession that invalidates A and creates B is ONE `txn` — a cutoff can
   include or exclude it only WHOLE, so no read can reconstruct a state that
   never existed. The composite cursor is `(recorded_at, txn)` for display;
@@ -171,7 +180,10 @@ CREATE INDEX ix_edge_event_txn    ON edge_event(user_id, txn);
   nothing orders by it).
 
 ### 4b. The closed kind set — the GATE is authoritative; this table is illustrative
-Kinds cover exactly the operations that write the `edges` table. The
+Kinds cover exactly the operations that write the `edges` table, plus the
+one non-mutator kind: `baseline`, written only by the v13 migration and
+recording found state rather than a mutation (F1 — it is in the closed set
+so V-KIND stays total, and the gate proves no runtime site can emit it). The
 AUTHORITATIVE derivation is V-TOTAL's gate — the `@store_mutator` registry ×
 the generated 0002/0021 per-site write-target manifests, swept over RAW SQL
 writes as well as `_upsert_edge_row` callers — and the printed table below
@@ -199,6 +211,7 @@ changes must never be digest-invisible.)
 | `mutated` | ANY same-id row write whose full-state serialization changed: `_upsert_edge_row` (note-append, absorption restate, counter-bearing re-upserts), `confirm_edge`'s raw json rewrite (sqlite.py:191), **`_recompute_edge_row`'s raw rewrite (statement at sqlite.py:334 — the fourth site)**; the import commit's replace when a row WAS present and the serialization changed (F-A) | the post-mutation edge, serialized |
 | `invalidated` | `invalidate_edge` / `_invalidate_edge_row` (:252; plan invalidations, lifecycle expiry, dispute, revocation sweep) | the post-invalidation edge, serialized; `reason` — validated against `DISPOSITIONED_REASONS`, the AUTHORITATIVE seven; an unregistered reason refuses the WRITE |
 | `reinstated` | `_reinstate_edge_row` (:300; 0022 revocation lift) — the pre-reinstatement `invalidated_at`/`reason` live in the PRIOR event's `state`, which is exactly the F1 point: reinstatement ERASES them from the row, and only the journal can answer a cutoff between revocation and reinstatement | the post-reinstatement edge, serialized |
+| `baseline` | ONLY the v13 migration (§4e) — never a runtime mutator; one event per pre-existing edge, all of a user's baselines in ONE batch (the user's epoch txn) | the edge's state AS FOUND when journaling began, serialized; `reason` column NULL (the found state's own `invalidation_reason`, if any, lives inside `state` — the column records the EVENT's reason, and a baseline has none) |
 | `erased` | NOT a kind: erasure deletes the user's events (§4f); a tombstone would defeat erasure | — |
 
 **KIND IS A PROPERTY OF THE WRITE, NOT THE SITE (internal F-A —
@@ -224,14 +237,30 @@ that care only about classification-relevant fields filter on read.
 (`append_outcome_if_head` remains an EPISODES-writer and emits nothing —
 that half of I-1 stands.)
 
-### 4b-ii. Reconstruction — EdgeStateAt (F1)
-`edge_state_at(user_id, edge_id, until_txn)` = deserialize the `state` of
-the LAST event for the edge with `txn ≤ until_txn`; no such event and the
-edge absent from the journal → `None` for a post-epoch cutoff, REFUSAL for
-a pre-epoch one (§4e — the store cannot speak for time before it recorded).
+### 4b-ii. Reconstruction — EdgeStateAt (F1) — returns a RAW carrier (F5)
+`edge_state_at(user_id, edge_id, until_txn)` = the `state` payload of the
+LAST event for the edge with `txn ≤ until_txn`, returned as a **RAW
+SNAPSHOT CARRIER** — `RawEdgeState(state: str, txn, seq, kind,
+recorded_at)`, the journal text VERBATIM, never deserialized into a
+validated `Edge` at this surface. The reason is structural, not
+convenience: the shipped deserializer REJECTS payloads its current model
+does not admit, and an append-only journal can outlive the model that
+wrote it (version drift, at-rest corruption) — so a typed return would
+make historical reads fail-explosive at exactly the seam whose consumer
+(0030 rules 3–4) owns malformed-state classification. 0029 promises byte
+fidelity (V-VERBATIM) and NOTHING about payload validity at read time;
+ALL validation belongs to the consumer (seam S4). No event with
+`txn ≤ until_txn` → `None` for a post-epoch cutoff — and because the
+migration baselines every pre-existing edge (F1, §4e), `None` now honestly
+means "this store held no such edge at any `txn ≤ K`"; a pre-epoch cutoff
+REFUSES (§4e — the store cannot speak for time before it recorded).
 Because every event carries the full serialization, reconstruction is a
 single lookup — no delta replay, no fabrication, and the recompute/
 reinstate erasures the joint review named are recoverable by construction.
+A migrated edge resolves to its `baseline` payload for every cutoff from
+the epoch txn up to its first post-upgrade mutation — the round-2 gap
+(`None` before first mutation, pre-mutation state lost after) is closed
+by the baseline batch, not by relaxing the epoch rule.
 What 0029 reconstructs is "the belief the store HELD at K"; whether it may
 be ASSERTED now is 0030's classification under the joint F2 rule — current
 revocation and current scope are OUTER CAPS applied by consumers, never
@@ -242,7 +271,10 @@ handling fails **V-TOTAL**'s gate — the same generated-manifest mechanism
 that already refuses an undispositioned mutation site (0002).
 
 ### 4c. Minting discipline
-`recorded_at` is minted INSIDE the store, at write, from the store's clock.
+`recorded_at` is minted INSIDE the store, ONCE PER BATCH (F6 — one clock
+read per event-emitting transaction; every event in the batch carries the
+same instant, so a batch can never straddle two wall-clock values), from
+the store's clock.
 No public API accepts it; `observed_at` (caller-suppliable) is contrast, not
 input. This is the load-bearing difference from every existing timestamp in
 the system, and it is what makes the axis TRUSTWORTHY as transaction time.
@@ -252,23 +284,54 @@ the system, and it is what makes the axis TRUSTWORTHY as transaction time.
   [EdgeEvent]` — typed rows in `seq` order; `until_txn` bounds by WHOLE
   transaction batches (F3: a batch is included or excluded entire, never
   split). A cutoff earlier than the store epoch REFUSES (§4e).
-- `Store.edge_state_at(user_id, edge_id, until_txn) -> Edge | None` — the
-  §4b-ii reconstruction.
-- Cutoff tokens are `txn` values; a caller holding a `(recorded_at, txn)`
+- `Store.edge_state_at(user_id, edge_id, until_txn) -> RawEdgeState | None`
+  — the §4b-ii reconstruction; the RAW carrier, never a validated `Edge`
+  (F5). `edge_events` rows likewise carry `state` as verbatim text.
+- Cutoff tokens are `txn` values — non-negative integers, the ONE cutoff
+  domain (F6; no read surface accepts a datetime cutoff). Non-integer or
+  negative → typed refusal. A caller holding a `(recorded_at, txn)`
   composite cursor uses the `txn` component for every read decision.
 - No recall/context/MCP surface; `introspect` MAY gain a counts-only
   summary (open, §10).
 
-### 4e. Schema, migration, epoch
+### 4e. Schema, migration, epoch — baseline snapshots (F1), epoch as txn (F6)
 Additive v13: the `edge_event` table (§4a's pinned DDL, BOTH indexes) +
 the epoch row, registered per 0013/0018 with the FULL
 accepted-shape matrix (constructor + every migrated form — the 0027 v12
-inheritance pattern, all shapes carrying the additive diff). **No backfill
-and no fabricated history:** at migration the store mints its
-transaction-time EPOCH; every pre-existing edge gets NO retroactive events.
-`edge_events(until_txn=K)` (or `edge_state_at`) with a pre-epoch cutoff refuses — the store cannot say what
-it knew before it started recording, and fail-closed beats fabrication
-(V-EPOCH). Down-migration: `DROP TABLE` (reversible; the audit axis is lost
+inheritance pattern, all shapes carrying the additive diff).
+
+**The epoch BASELINE (F1):** inside the migration's transaction, for each
+user the store journals EVERY existing edge as one `baseline` event —
+state as found, serialized — all in ONE batch whose `txn` IS that user's
+**epoch txn**. This is the round-2 re-scope, "no backfill" → **no
+FABRICATED history**: the baseline is not backfill — it records the state
+actually present when journaling began (the reviewer's framing, adopted) —
+and nothing BEFORE the epoch is ever synthesized. Without it a migrated
+edge reconstructed to `None` until its first post-upgrade mutation, and
+its pre-mutation state was permanently unrecoverable after — the exact
+round-2 gap. Crash-retry mints exactly one baseline: the baseline batch, the epoch
+row, AND the v13 schema stamp commit in ONE transaction — the spec
+REQUIRES this, so the partial states (baselines without an epoch, an
+epoch without baselines, a stamped store without either) are
+UNREPRESENTABLE by construction, not merely unlikely; a failed migration
+leaves NO baselines and NO epoch, and the retry starts clean (V-ATOMIC's
+discipline at the migration seam; V-BASELINE checks per-edge
+exactly-once).
+
+**The epoch is a TXN value (F6):** `epoch_txn(user)` = the user's baseline
+batch `txn` for users predating v13; `0` for users whose entire life is
+journaled (fresh stores, post-migration users). The pre-epoch test is
+`until_txn < epoch_txn(user)` — integer against integer, ONE domain,
+mechanically expressible and total (the round-2 objection was that an
+instant-typed epoch could not be compared to an integer cursor; it no
+longer exists on the read path). The `store_epoch` INSTANT remains as
+display/telemetry only. A pre-epoch cutoff refuses — the store cannot say
+what it knew before it started recording, and fail-closed beats
+fabrication (V-EPOCH); note a fully-journaled user's `epoch_txn = 0`
+means NO cutoff refuses for them, which is correct — there is no
+unrecorded era to protect. `until_txn = epoch_txn(user)` on a migrated
+user answers with the baseline states — the earliest honest answer.
+Down-migration: `DROP TABLE` (reversible; the audit axis is lost
 and says so — §7).
 
 ### 4f. Erasure, receipts, atomicity
@@ -281,14 +344,29 @@ mutation's transaction; a fault injected between mutation and event commit
 leaves NEITHER (V-ATOMIC; the seam joins the 0013 fault-injection gate
 family).
 
+**Data-handling, stated plainly (F8a):** the journal is a CONTENT-BEARING,
+unbounded historical store. Superseded, corrected, and revoked content
+REMAINS READABLE from prior events by design — that is what an audit
+journal is — until user erasure, which is the ONLY removal and is total.
+This retention is acceptable precisely because the surface is
+operator/substrate-only (V-INERT): no recall, context, export, or MCP path
+reaches it, so historical content never re-enters any trust-bearing or
+model-facing flow. A future consumer that widens reach owns the 0020/0021
+composition for it (§3b).
+
 ## 5. Regime analysis
 
 - **No consumer (v1 shipped state):** write-only log; every read surface
-  byte-identical (V-COMPAT). Cost: one row + one digest per edge mutation.
+  byte-identical (V-COMPAT). Cost: one row carrying the edge's FULL
+  serialization per mutation (F8a — the "one digest" figure was v2
+  residue): the log scales with mutation count × serialized edge size,
+  a content-bearing historical store, not a fingerprint index.
 - **High-churn user:** log grows with mutation count, not edge count;
   unbounded by design (an audit log); erasure is the one shrink; a retention
   policy is future work (§10), never silent truncation.
-- **Migrated store:** epoch-bounded knowledge; pre-epoch queries refuse.
+- **Migrated store:** epoch-bounded knowledge WITH a baseline floor: every
+  pre-existing edge reconstructs from its `baseline` event at the epoch
+  txn onward; strictly pre-epoch cutoffs refuse (F1 + F6).
 - **Import:** imported edges get `created` events at import time — the
   importing store's knowledge began there (honest, and stated).
 - **Clock anomalies:** monotone guard per user (§4a); ordering authority is
@@ -301,11 +379,14 @@ family).
 | **V-TOTAL** every site that writes `edges` writes its §4b event in the same transaction, and the trigger basis is the FULL-STATE serialization (any change ⇒ event; nothing classification-relevant is digest-invisible — F4) — DERIVED from the mutator registry + write-target manifest swept over RAW SQL (four raw sites today, `_recompute_edge_row` included); a new site without an event ruling fails the gate | `test_every_edge_writing_site_carries_an_event_ruling` | CI |
 | **V-ATOMIC** mutation and event commit atomically; injected fault between them → neither persisted | `test_event_and_mutation_are_one_transaction` | CI |
 | **V-APPEND** no code path updates or deletes an event except erasure; `seq` strictly monotone per user | `test_event_log_is_append_only_and_monotone` | CI |
-| **V-RECON** `edge_state_at(user, edge, K)` returns byte-exactly the serialization the edge held after the last `txn ≤ K` — driven across the recompute-erasure and reinstate-erasure cases the joint review named (the row forgets; the journal must not) | `test_edge_state_at_reconstructs_byte_exact` | CI |
+| **V-RECON** `edge_state_at(user, edge, K)` returns byte-exactly the serialization the edge held after the last `txn ≤ K` — driven across the recompute-erasure and reinstate-erasure cases the joint review named (the row forgets; the journal must not), and across a migrated edge's baseline-to-first-mutation span | `test_edge_state_at_reconstructs_byte_exact` | CI |
+| **V-VERBATIM** the read surface returns journal payloads VERBATIM as the raw carrier — no deserialization, no validation, no normalization at the 0029 surface (F5); a payload the current model rejects still traverses the interface intact | `test_snapshot_carrier_is_raw_and_verbatim` | CI |
+| **V-BASELINE** after v13 migration every pre-existing edge has EXACTLY ONE `baseline` event, in its user's epoch batch, payload equal to the state found at migration; no runtime path can emit the kind; crash-retry never doubles a baseline | `test_migration_baselines_every_existing_edge_exactly_once` | CI |
+| **V-TXN-ALLOC** txn/seq allocation is serialized at the DATABASE level: two `SqliteStore` instances on one file writing concurrently produce distinct whole batches, never a shared or split txn; the (user_id, seq) PK refuses any residual race rather than admitting it | `test_concurrent_allocation_across_two_store_instances` | CI |
 | **V-BATCH** one event-emitting write transaction = one `txn`; a multi-edge mutation (supersession's invalidate-A + create-B) shares it, and every `until_txn` read includes or excludes the batch WHOLE — no reachable cutoff reconstructs a state that never existed; two batches sharing a `recorded_at` stay distinct by `txn` | `test_transaction_batches_never_split` | CI |
 | **V-MINT** no public surface accepts a transaction time; `recorded_at` is store-minted; the monotone guard holds under a backwards clock step | `test_recorded_at_is_store_minted_and_monotone` | CI |
 | **V-KIND** the kind vocabulary is closed and derived; `invalidated` events validate `reason` against `DISPOSITIONED_REASONS` (all SEVEN); an unregistered reason refuses the write | `test_event_kinds_closed_and_reasons_authoritative` | CI |
-| **V-EPOCH** `until` before the store epoch refuses; a migrated store fabricates no pre-epoch knowledge | `test_pre_epoch_queries_fail_closed` | CI |
+| **V-EPOCH** `until_txn < epoch_txn(user)` refuses — integer domain, mechanically total (F6); a migrated store fabricates no pre-epoch knowledge, and a fully-journaled user (`epoch_txn = 0`) never spuriously refuses | `test_pre_epoch_queries_fail_closed` | CI |
 | **V-ERASE** after `forget_user`, zero events for the user remain (same transaction) | `test_forget_user_erases_events` | CI |
 | **V-INERT** events reach no recall/context/export/MCP surface; the schema policy is REQUIRED (absence = damage, not drift) | `test_events_are_store_local_and_required` | CI |
 | **V-COMPAT** with no consumer, every existing surface reproduces the frozen pre-feature oracle byte-identically | `test_no_consumer_behavior_identical` | CI |
@@ -331,7 +412,28 @@ A CORRECTNESS gate (exact expected event logs), deterministic, no model:
      (0029 reconstructs the held belief; the 0030/F2 caps govern
      assertion — the JOINT half of the scenario);
   8. a malformed edge hidden from the querying principal (0029 journals it
-     like any state; 0030's outer-visibility rule owns the classification).
+     like any state; the RAW carrier lets it traverse the interface —
+     0030's outer-visibility rule owns the classification);
+  9. **(round 2)** a migrated pre-existing edge AT the epoch and around
+     its first post-upgrade mutation: pre-epoch cutoff refuses; cutoff at
+     the epoch txn returns the baseline payload (state as found, exact);
+     cutoffs between epoch and first mutation still return the baseline;
+     after the mutation, the mutated payload — the pre-mutation state is
+     never `None` and never lost; CONTRAST cell in the same scenario: a
+     user created after migration has `epoch_txn = 0` IN THE EXPECTED
+     OUTCOMES (the literal zero, not prose) and no cutoff refuses for
+     them;
+  10. **(round 2)** concurrent transaction allocation from TWO store
+     connections (two `SqliteStore` instances, one file, interleaved
+     event-emitting writes): all batches whole and distinct, txns unique
+     per user, seq gapless-monotone per the append order the database
+     serialized, zero PK refusals under the serialized schedule.
+  The remaining five round-2 joint cases (superseded-then-restricted
+  source; open-at-K-superseded-later with T past the current interval;
+  same-ID semantic replacement after K; mismatched identities; malformed
+  state through the real load path, hidden AND visible) are CLASSIFICATION
+  cells and are specified in 0030 §6a over this same corpus — one shared
+  acceptance surface, each half owned where its behaviour lives.
   Plus the v2 scenarios retained: create/supersede/confirm/note-append/
   absorb/dispute/expiry/import/erase.
 - **Pass criteria (pre-committed):** (1) exactness — every scenario's event
@@ -358,8 +460,11 @@ A CORRECTNESS gate (exact expected event logs), deterministic, no model:
 ## 8. Claims and limits
 
 - **Claim:** after v13, every edge-state change carries a durable,
-  store-minted transaction time, atomically recorded, epoch-bounded, erasure-
-  complete. *Limit:* knowledge before the epoch is unrecorded and REFUSES;
+  store-minted transaction time, atomically recorded, epoch-bounded (with
+  a baseline floor: pre-existing state is journaled AS FOUND at the
+  epoch), erasure-complete. The journal is content-bearing and retains
+  superseded/corrected/revoked content until erasure — stated in §3/§4f,
+  not discoverable by surprise. *Limit:* knowledge before the epoch is unrecorded and REFUSES;
   episode/wiki state is out of scope (§10); this spec provides the CARRIER
   only — historical assertability (0030) and query semantics (0028 v2) build
   on it, and their claims are theirs.
@@ -397,15 +502,27 @@ surface. Attack hardest:
 2. **V-ATOMIC under real fault schedules.** The event rides the mutation's
    transaction — inject at every seam (the 0013 gate family's method) and
    find a schedule where one lands without the other.
-3. **The epoch rule's honesty.** Is fail-closed-before-epoch consistently
-   enforced across every read path, and does the migration mint exactly one
-   epoch under crash-retry?
+3. **The epoch rule's honesty, now with the baseline (round 2).** Is
+   `until_txn < epoch_txn(user)` enforced across every read path; does the
+   migration journal EVERY pre-existing edge exactly once (find an edge
+   shape the baseline sweep misses, or a crash-retry schedule that doubles
+   or drops a baseline); and is the baseline honestly "state as found" —
+   never a synthesized pre-epoch narrative?
 4. **§4b's `mutated` trigger under the FULL-STATE basis.** Can any same-id
    write change the row while leaving the complete canonical serialization
    byte-identical (it should be impossible by definition — but attack the
    serialization's canonicality: field ordering, None-omission, float
    formatting), and does the whole-serialization trigger over-fire anywhere
    a consumer would treat as noise?
+5. **The allocator under real concurrency (round 2).** Two store instances
+   on one file: find a schedule where database-level serialization plus
+   the (user_id, seq) PK backstop still admits a shared txn, a split
+   batch, or a silent retry-duplicate. The instance-local lock is named
+   insufficient — attack what replaced it.
+6. **The raw carrier's honesty (round 2).** V-VERBATIM promises payloads
+   traverse unvalidated; find a read path (edge_events, edge_state_at, a
+   future introspect summary) that normalizes, re-serializes, or rejects
+   what the journal holds.
 
 ## 10. Open questions
 
