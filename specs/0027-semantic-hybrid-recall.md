@@ -824,25 +824,32 @@ executable Python defaults (R5-4); and a superseded-statement consolidation
   explicit split/label-pure distractor_ids, backend named), applied BEFORE any
   tuning or accept run, as the punch-list ordered.
 
-**§6a acceptance measurement — RECORDED (run 2026-08-31, the once):**
+**§6a acceptance measurement — RUN ONCE 2026-08-31: ALL THREE CRITERIA
+PASS against the pre-committed thresholds.** Per the §6a/§8 rider and the
+owner's disclosure ruling (2026-08-31), the measured figures are held
+INTERNAL and are not stated in this public carrier; the gate is
+deterministic and modelless, so any reader reproduces the exact figures
+with one command: `pytest tests/eval/test_semantic_recall_gate.py -s`.
 - **Vectors:** `tests/eval/semantic_paraphrase/vectors.json`, sha256
   `25271db726701b06fab45270ed5ec393d8112a2d64fccc7be93ebff9ef204e00` —
   pinned `all-MiniLM-L6-v2@1110a243fdf4` (model + HF snapshot), dim 384,
   computed once in an isolated environment; the gate runs modelless.
 - **Tuning (frozen procedure honored):** `semantic_min_cosine = 0.25` was
-  frozen in the spec BEFORE any accept run; the tune split measured at it:
-  **36/40 (0.90)** recovery@10, lexical baseline 0/40. No re-tune.
-- **Criterion 1 — recovery:** accept paraphrase recall@10 **18/20 = 0.90 ≥
-  0.80** ✓; lexical-only baseline **0/20** (the entity-subject cases are
-  genuinely zero-overlap — §9 point 3's case-quality risk resolved by
-  measurement: a real MiniLM recovers them).
-- **Criterion 2 — exact non-regression:** OFF **20/20 = 1.0** ✓; ON
-  **20/20 = 1.0 ≥ 0.95** ✓ — zero displacements recorded.
-- **Criterion 3 — classification-entry:** **0 mismatches** across the 20
-  trust-labelled cases ✓.
+  frozen in the spec BEFORE any accept run; the tune split was measured at
+  it and the value stood — no re-tune.
+- **Criterion 1 — recovery:** PASS (accept paraphrase recall@10 ≥ 0.80);
+  the lexical-only baseline recovers no accept paraphrase case, consistent
+  with the build-time-verified zero-token-overlap construction — §9 point
+  3's case-quality risk is resolved by measurement: a real MiniLM recovers
+  the cases.
+- **Criterion 2 — exact non-regression:** PASS both paths (OFF = 1.0 by
+  construction and measured; ON ≥ 0.95) — zero displacements recorded.
+- **Criterion 3 — classification-entry:** PASS — no mismatch across the 20
+  trust-labelled cases.
 - Gate: `pytest tests/eval/test_semantic_recall_gate.py` (4 tests, in the
-  ordinary suite — deterministic, reruns reproduce these numbers exactly).
-- No public number without separate approval (the §6a rider stands).
+  ordinary suite — deterministic; reruns reproduce the run's exact figures).
+- The measured figures live in the internal record only; no public number
+  without separate approval (the rider stands).
 
 **Adoption record (2026-08-31):** six external rounds complete research-side
 (bundle: `0027-round6-review-package/`, rounds 1-5 verbatim); Quentin's ruling
