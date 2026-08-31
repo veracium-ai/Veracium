@@ -15,8 +15,8 @@ R1-1), and unknown reasons FAIL CLOSED.*
 
 | | |
 |---|---|
-| **Author / session** | research (veracium-research); adopted by dev (v2/v4 2026-08-31; v5 symbol correction at pre-dispatch) |
-| **Version** | **v4** — dev v3-re-read minors folded (m-1 inverted-vs-empty interval in rule 0; m-2 `now` made load-bearing for stale-at-recall). v3 — pre-review folded (7 findings): (1) scope via time-relative verdict not `shape()`; (2) state-coherence rule 0 / MALFORMED; (3) total `AS_OF_DISPOSITION` dict not allow-set; (4) absorbed groundable, not "unreachable"; (5) `Result{status,flags}` + `now`; (6) §6a state-families not naive product; (7) baseline pinned post-0027 + UTC-aware datetimes. (v2 folded dev's D-1/D-2/d-3/d-4.) |
+| **Author / session** | research (veracium-research); adopted by dev (v2/v4/v5 2026-08-31; v7 = the joint round-1 fold, this adoption the pair's shared baseline) |
+| **Version** | **v7** — dev v6 both-check folded: **B-1** normalization extended to the `current` leg (unhashable reason reaching `dict.get`; `current.invalidated_at` normalized outside the guard) and **B-2** structural coherence applied to `current` (the cap must never read an incoherent state). Both are the mechanical completion of the F6/F2 folds onto the second parameter F2 introduced. v6 — joint round-1 findings folded: **F2** two-state (`snapshot` vs `current`, held_at_K vs assertable-now, current caps never time-travel) + the reason×cutoff matrix (§4a-ii); **F6** type/UTC normalization before any membership or comparison, unknown reason ruled FENCED (not MALFORMED); **F7** visibility is the OUTERMOST gate (hidden never leaks MALFORMED); **F8** carrier sweep. v4 — dev v3-re-read minors folded (m-1 inverted-vs-empty interval in rule 0; m-2 `now` made load-bearing for stale-at-recall). v3 — pre-review folded (7 findings): (1) scope via time-relative verdict not `shape()`; (2) state-coherence rule 0 / MALFORMED; (3) total `AS_OF_DISPOSITION` dict not allow-set; (4) absorbed groundable, not "unreachable"; (5) `Result{status,flags}` + `now`; (6) §6a state-families not naive product; (7) baseline pinned post-0027 + UTC-aware datetimes. (v2 folded dev's D-1/D-2/d-3/d-4.) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research (author) · dev (reviewer, roles inverted from 0027) |
 | **External review** | REQUIRED — new trust surface; touches classification. Entry on Quentin's word |
@@ -90,8 +90,10 @@ The current classifier **conflates two independent questions**:
 
 For a point-in-time question — "was Priya's city Boston in May?" — the honest
 answer is grounded (Boston WAS her city then, validly held until it changed).
-0030 **decouples** the two: it adds `classify_as_of(edge, T, now, view)` — "was this edge validly,
-trustworthily true at T," a `Result{status, flags}` (§4a) keeping every trust exclusion intact.
+0030 **decouples** the two: it adds
+`classify_as_of(snapshot, current, T, now, view)` — "was this edge validly,
+trustworthily true at T, and may it be asserted now" — returning
+`Result{status, held_at_K, flags}` (§4a) and keeping every trust exclusion intact.
 This is the substrate 0028 v2 needs to return an ASSERTABLE historical answer
 rather than a fenced one.
 
@@ -111,7 +113,7 @@ plus the time-invariant content-trust exclusions plus the scope composition.
 | `Edge.assertable` (`schema.py:501`) | READ, **UNCHANGED** | the current classifier | YES — 0030 adds a parallel predicate; current path byte-identical (V-CURRENT-UNCHANGED) |
 | `Edge.invalidation_reason` / `valid_from` / `invalidated_at` (`schema.py:430-432`) | READ | the reason + valid-time interval 0030 keys on | YES — read-only |
 | `DISPOSITIONED_REASONS` (`schema.py:407`) | READ + a PARALLEL disposition added | the authoritative reason registry | YES — 0030 adds `AS_OF_DISPOSITION` (total dict), key-equal to the same set, fail-closed |
-| NEW `classify_as_of(edge, T, now, view=None) -> Result` (+ boolean `assertable_as_of`) | WRITTEN | the time-relative classifier primitive | additive |
+| NEW `classify_as_of(snapshot, current, T, now, view=None) -> Result{status, held_at_K, flags}` (+ boolean `assertable_as_of`) | WRITTEN | the time-relative classifier primitive | additive |
 | `ScopeView` (`scope_read.py:280`) | READ | composes for "assertable-to-whom at T" | YES — reuses the shipped lens |
 
 ### 2a. The `AS_OF_DISPOSITION` total mapping (derived, fail-closed)
@@ -178,8 +180,9 @@ with scope:
 |---|---|---|
 | **time validity** | `valid_from ≤ T AND (invalidated_at is None OR T < invalidated_at)` (half-open interval) | yes — the only time-varying gate |
 | **content trust** | `not quarantined AND not use_only` | NO — a quarantined/use_only edge is unassertable at every T |
-| **historical truth** | coherent-active → yes; else `AS_OF_DISPOSITION[reason] == GROUNDABLE` (default FENCED) | NO — a `corrected`/`disputed`/`revoked_source` edge is never-groundable at every T |
-| **scope** (with principal) | `ScopeView` assertable-to-principal + `shape()` | per-principal |
+| **historical truth (`held_at_K`)** | from the SNAPSHOT only: coherent-active → yes; else `AS_OF_DISPOSITION[reason] == GROUNDABLE` (default FENCED) | NO — fixed by the snapshot's reason |
+| **current caps (F2)** | from the CURRENT row: revocation → `EXCLUDED`; current corrected/disputed/quarantined/use_only → `FENCED_AS_OF`. Subtract-only; never grants | per-`now`, never time-travelled |
+| **scope** (with principal) | CURRENT `ScopeView`: `visible()` as the OUTERMOST gate (F7), then `gate.scoped_assertable` on the TIME-RELATIVE verdict — **never the shipped `shape()`** (F8.1; it short-circuits on today's `assertable` and so never demotes history). Current scope always governs; 0029 does not version scope policy or membership (§4a) | per-principal, never time-travelled |
 
 **Load-bearing statement:** 0030 lets an edge be assertable-as-of-T ONLY when it
 was BOTH validly-held at T (time + a groundable reason) AND is trustworthy
@@ -189,66 +192,155 @@ only for reasons that mean "was validly true then."
 
 ## 4. Behaviour
 
-### 4a. The classifier — exact
-`classify_as_of(edge, T, now, view=None) -> Result` is the single source of
-truth; `Result = {status, flags}` (finding 5) with `status` a closed enum and
-`flags` a set (e.g. `stale-at-recall`). `now` is the evaluation instant, DISTINCT
-from the query time `T` — the future-`invalidated_at` cell makes the distinction
-observable (§4e), and `stale-at-recall` is defined against `now`. The rules apply
-in this precedence (first match wins):
-```
-def classify_as_of(edge, T, now, view=None) -> Result:
-    # 0. STATE COHERENCE — fail-closed BEFORE any grounding branch (finding 2)
-    coherent_active   = edge.invalidated_at is None and edge.invalidation_reason is None
-    coherent_inactive = (edge.invalidated_at is not None
-                         and edge.invalidation_reason in AS_OF_DISPOSITION
-                         and edge.valid_from <= edge.invalidated_at)   # m-1: reject INVERTED (<);
-                                                                        # EMPTY (==, canonical absorption) is coherent
-    if not (coherent_active or coherent_inactive):
-        return MALFORMED           # active+reason, inactive+no-reason, non-str/unknown reason,
-                                   # INVERTED interval (invalidated_at < valid_from). An EMPTY interval
-                                   # (invalidated_at == valid_from) is NOT malformed — it is coherent and
-                                   # falls to NOT_VALID_AT_T at rule 2 (no T in a half-open empty interval)
-    # 1. SCOPE — via the TIME-RELATIVE verdict, NOT view.shape() (finding 1)
-    if view is not None and not view.visible(edge):
-        return SCOPE_HIDDEN
-    # 2. TIME VALIDITY (half-open [valid_from, invalidated_at))
-    if not (edge.valid_from <= T and (edge.invalidated_at is None or T < edge.invalidated_at)):
-        return NOT_VALID_AT_T
-    # 3. EXCLUDED — strongest disposition (0022 non-revival)
-    if edge.invalidation_reason == "revoked_source":         # (coherence guarantees inactive here)
-        return EXCLUDED
-    # 4. CONTENT TRUST + reason disposition — the base "would this ground" verdict
-    base_groundable = (not edge.quarantined and not edge.use_only
-                       and (coherent_active
-                            or AS_OF_DISPOSITION.get(edge.invalidation_reason, FENCED) == GROUNDABLE))
-    # 5. SCOPE SHAPING on the TIME-RELATIVE verdict (finding 1) — NOT view.shape(),
-    #    which short-circuits on today's `assertable` and so never demotes a
-    #    historical edge. Feed the as-of verdict through the gate's scoped relation:
-    scoped = base_groundable and (view is None
-                                  or gate.scoped_assertable(base_groundable, view.decision(edge)))
-    if not scoped:
-        return FENCED_AS_OF        # not-groundable, or cross-scope-restricted for THIS principal
-    # m-2: `now` is load-bearing here — stale-at-recall means "already stale AS OF now".
-    # A lapsed/decayed edge whose invalidated_at is in the FUTURE (invalidated_at > now,
-    # the §4e future-invalidated cell) is still valid at now and NOT yet stale; keying on
-    # reason alone would flag it prematurely.
-    already_stale = (edge.invalidation_reason in ("lapsed", "decayed")
-                     and edge.invalidated_at is not None and edge.invalidated_at <= now)
-    flags = {"stale-at-recall"} if already_stale else set()
-    return Result(GROUNDED_AS_OF, flags)
+### 4a. The classifier — exact (TWO-STATE, round-1 F2)
 
-def assertable_as_of(edge, T, now, view=None) -> bool:   # convenience boolean
-    return classify_as_of(edge, T, now, view).status == GROUNDED_AS_OF
+**A single `Edge` cannot carry the question** (F2). Answering "was this
+assertable at T, given knowledge cutoff K" needs three distinct inputs, and
+conflating them is what round 1 broke:
+
+| input | what it is | who supplies it |
+|---|---|---|
+| **`snapshot`** | the edge's state AT the knowledge cutoff K | 0029's full-state journal (F1) — or the live edge when no K is given |
+| **`current`** | the edge's state NOW (reason, quarantine, use_only) | the live store — used ONLY to SUBTRACT (an outer cap), never to grant |
+| **`view`** | CURRENT principal visibility/shaping | 0020 `ScopeView` — **current scope always governs** (see below) |
+
+**Why current scope always governs:** 0029 versions edge state, **not** scope
+policy or membership evidence — so historical scope is not reconstructable, and
+inventing one would be a guess about who could see what. The only sound rule is
+that *today's* boundary gates every answer, including historical ones. This is
+also the safe direction: scope can only narrow what a principal sees.
+
+**Two verdicts, not one** (the F2 ruling):
+- **`held_at_K`** — *"the store held this belief at K."* A historical fact about
+  our own knowledge. Computed from `snapshot` ALONE.
+- **`status`** — *"may this be asserted as fact NOW."* `held_at_K` AND the
+  current caps allow it.
+
+A record corrected/disputed/revoked **after** K is therefore
+`held_at_K=True, status=FENCED_AS_OF` (or `EXCLUDED`) — we honestly report that
+we believed it then, and equally honestly refuse to assert it now. Current
+restrictions **never time-travel away**; 0022 non-revival in particular is
+absolute.
+
 ```
+def classify_as_of(snapshot, current, T, now, view=None) -> Result:
+    # 1. VISIBILITY — the OUTERMOST principal-facing gate (F7).
+    #    Nothing about a hidden record leaks — not its existence, not that it is
+    #    malformed. `held_at_K` is withheld too. (v4 ran coherence first, so a
+    #    hidden+malformed edge returned MALFORMED and leaked its condition.)
+    if view is not None and not view.visible(current):
+        return Result(SCOPE_HIDDEN, held_at_K=None)
+
+    # 2. NORMALIZE — BOTH legs' types and datetimes, BEFORE any membership or
+    #    comparison (F6, extended to `current` by B-1). F2 doubled the input
+    #    surface; the normalization discipline has to follow BOTH parameters or
+    #    the second one reintroduces the exact failure the first one fixed.
+    for st in (snapshot, current):
+        r = st.invalidation_reason
+        if r is not None and not isinstance(r, str):
+            return Result(MALFORMED, held_at_K=None)   # type FIRST: an unhashable value
+                                                       # must never reach `in` / dict.get
+    try:
+        T, now = as_utc(T), as_utc(now)
+        s_vf, s_ia = as_utc(snapshot.valid_from), as_utc(snapshot.invalidated_at)
+        c_vf, c_ia = as_utc(current.valid_from), as_utc(current.invalidated_at)
+    except (TypeError, ValueError):
+        return Result(MALFORMED, held_at_K=None)   # naive/aware or non-datetime, EITHER leg
+    # as_utc: tz-aware -> UTC; naive -> assumed UTC then made aware; None -> None.
+    # Nothing below compares or hashes an unnormalized value from EITHER state.
+    reason = snapshot.invalidation_reason
+
+    # 3. STATE COHERENCE — STRUCTURE ONLY (F6), applied to BOTH legs (B-2).
+    #    Recognition of the reason is NOT a coherence test; an unknown-but-
+    #    well-formed reason is handled at rule 5/6.
+    def _coherent(ia, r, vf) -> bool:
+        if ia is None:
+            return r is None            # active must carry NO reason
+        return r is not None and vf <= ia   # inactive: reason + non-inverted interval
+    if not (_coherent(s_ia, reason, s_vf)
+            and _coherent(c_ia, current.invalidation_reason, c_vf)):
+        return Result(MALFORMED, held_at_K=None)
+    # B-2: the CAP must never read an incoherent state. Without the second test an
+    # ACTIVE current carrying reason="revoked_source" EXCLUDED at rule 6, while the
+    # same shape carrying "corrected" sailed past (invalidated_at is None short-
+    # circuits current_ok) — two incoherent shapes, two outcomes, neither deliberate.
+    # EMPTY interval (ia == vf) stays coherent -> NOT_VALID_AT_T at rule 4.
+
+    # 4. TIME VALIDITY at T, over the SNAPSHOT's interval (half-open [vf, ia))
+    if not (s_vf <= T and (s_ia is None or T < s_ia)):
+        return Result(NOT_VALID_AT_T, held_at_K=False)
+
+    # 5. HELD AT K — snapshot only. Unknown reason DEFAULTS to FENCED here
+    #    (reachable, per F6's ruling), never MALFORMED.
+    held = (True if s_ia is None
+            else AS_OF_DISPOSITION.get(reason, FENCED) == GROUNDABLE)
+    held = held and not snapshot.quarantined and not snapshot.use_only
+
+    # 6. CURRENT CAPS — subtract only, never grant (F2).
+    if current.invalidation_reason == "revoked_source":
+        return Result(EXCLUDED, held_at_K=held)    # 0022 non-revival: absolute, any K
+    current_ok = (not current.quarantined and not current.use_only
+                  and (c_ia is None                      # normalized (B-1)
+                       or AS_OF_DISPOSITION.get(current.invalidation_reason,
+                                                FENCED) == GROUNDABLE))
+    if not (held and current_ok):
+        return Result(FENCED_AS_OF, held_at_K=held)
+
+    # 7. CURRENT SCOPE SHAPING — on the TIME-RELATIVE verdict, NOT view.shape()
+    #    (which short-circuits on today's `assertable` and never demotes history).
+    if view is not None and not gate.scoped_assertable(True, view.decision(current)):
+        return Result(FENCED_AS_OF, held_at_K=held)
+
+    # stale-at-recall reads `now` (already stale, not future-lapsing) and reads
+    # CURRENT — staleness is a property of today, not of K.
+    already_stale = (current.invalidation_reason in ("lapsed", "decayed")
+                     and c_ia is not None and c_ia <= now)   # B-1: c_ia normalized at
+                                                             # rule 2, not at this line
+    return Result(GROUNDED_AS_OF, held_at_K=True,
+                  flags={"stale-at-recall"} if already_stale else set())
+
+def assertable_as_of(snapshot, current, T, now, view=None) -> bool:
+    return classify_as_of(snapshot, current, T, now, view).status == GROUNDED_AS_OF
+```
+**No-K degenerate case:** with no knowledge cutoff (a pure valid-time query),
+`snapshot is current` and the two-state collapses to a single-state
+classification — the v4 behaviour, preserved.
+
+### 4a-ii. The reason × cutoff matrix (F2's required ruling)
+
+The axis that matters is **when the invalidation was RECORDED relative to K** —
+because that decides whether it is in the `snapshot` (and so shapes what we
+*believed at K*) or only in `current` (and so acts purely as a cap on what we
+may assert *now*). `T` must lie in the snapshot's interval throughout, else
+`NOT_VALID_AT_T`.
+
+| reason | recorded BEFORE K → in `snapshot` | recorded AFTER K → only in `current` |
+|---|---|---|
+| **superseded** | `held=True` → **GROUNDED** (it was the held value at T) | `held=True`; cap allows → **GROUNDED** |
+| **lapsed / decayed** | `held=True` → **GROUNDED** | `held=True`; cap allows → **GROUNDED** + `stale-at-recall` if already lapsed at `now` |
+| **absorbed_duplicate** | `held=True` → **GROUNDED** (0028 resolves to the absorber) | `held=True`; cap allows → **GROUNDED** |
+| **corrected** | `held=False` (at K we already knew it was an error) → **FENCED_AS_OF** | **`held=True`, status=FENCED_AS_OF** — *the F2 headline case*: we honestly believed it at K, and equally honestly refuse to assert it now |
+| **disputed** | `held=False` → **FENCED_AS_OF** | `held=True`, status **FENCED_AS_OF** |
+| **revoked_source** | `held=False` → **EXCLUDED** | `held=True`, status **EXCLUDED** — 0022 non-revival is absolute and never time-travels away |
+| **unknown / 8th** | `held=False` (default FENCED, F6) → **FENCED_AS_OF** | `held=True`; cap defaults FENCED → **FENCED_AS_OF** |
+
+**The asymmetry is the point.** `corrected`/`disputed`/`revoked_source` recorded
+*before* K mean we already knew better at K (`held=False`); recorded *after* K
+they leave `held=True` but cap the present. Reporting both truthfully is exactly
+what "separate the store held this belief at K from this may be asserted as fact
+now" requires — and it is why one boolean could never carry it.
+
+*(This matrix supplies joint acceptance scenarios 2 — revocation→reinstatement
+with K between — and 7 — a later correction/dispute/revocation applied to an
+earlier snapshot.)*
 Three structural corrections from round 1:
 - **State coherence is rule 0** (finding 2). `active` is derived solely from
   `invalidated_at is None`; the schema does NOT couple it to `invalidation_reason`
   (`schema.py:479` vs `:432`, no validator), so `add_edge` can persist an ACTIVE
   edge carrying `reason="corrected"`. The old active-branch shortcut (`if
   invalidated_at is None: return True`) would have grounded it. Rule 0 refuses
-  every incoherent shape (active+reason, inactive+no-reason, non-string/unknown
-  reason, inverted interval) as `MALFORMED` — never grounded.
+  every incoherent shape (active+reason, inactive+no-reason, non-STRING
+  reason — an unknown STRING reason is not malformed, it fences (F6), inverted interval) as `MALFORMED` — never grounded.
 - **Scope uses the TIME-RELATIVE verdict** (finding 1), fed through
   `gate.scoped_assertable(base_groundable, view.decision(edge))`. v2 called
   `view.shape()`, which first checks today's `record.assertable` — False for
@@ -278,7 +370,7 @@ the reported status.
 | **(any unknown 8th)** | drops | **NEVER** (fail-closed) | defaults to FENCED in the total `AS_OF_DISPOSITION` (missing key) |
 
 ### 4c. Scope composition — assertable-to-WHOM at T (0028 R1-5, finding 1)
-`assertable_as_of` is principal-agnostic; the principal-facing form composes with
+`classify_as_of` takes `view` directly (F8.6 — v4 called it "principal-agnostic" while its own signature accepted a view). Scope composes with
 0020's `ScopeView` (`scope_read.py`) — but **NOT via the shipped `view.shape()`**.
 `shape()` short-circuits on today's assertability (`_asserted_today(record) =
 bool(record.assertable)`, `scope_read.py:58,381`), which is False for EVERY
@@ -343,11 +435,13 @@ does with either cell (that is a 0019 question left untouched).
 | invariant | executable check | where |
 |---|---|---|
 | **V-NEVER** never grounds a trust-excluded record at ANY T: for every edge whose reason ∈ {corrected, disputed, revoked_source} OR class ∈ {quarantined, use_only}, `classify_as_of` never returns `GROUNDED_AS_OF` for any sampled T (incl. inside the interval + boundaries) | `test_never_grounds_excluded_at_any_t` | CI |
-| **V-MALFORMED** (finding 2) state-coherence rule 0 fires first: an ACTIVE edge carrying a non-`None` reason, an INACTIVE edge with `None` reason, a non-string/unknown reason, or an INVERTED interval (invalidated_at < valid_from) → `MALFORMED` (an EMPTY interval == is coherent, → NOT_VALID_AT_T) — never grounded either way — asserted with edges built directly via `add_edge` (which does not couple `invalidated_at`/`invalidation_reason`) | `test_incoherent_states_are_malformed_never_grounded` | CI |
+| **V-MALFORMED** (finding 2, F6, **B-2**) STRUCTURE only, applied to **BOTH** `snapshot` AND `current` — the cap must never read an incoherent state (v6 checked only the snapshot, so an ACTIVE current carrying `revoked_source` EXCLUDED at rule 6 while the same shape carrying `corrected` sailed past the cap: two incoherent shapes, two outcomes, neither deliberate): an ACTIVE edge with a non-`None` reason, an INACTIVE edge with `None` reason, a **non-STRING** reason (type-checked BEFORE any membership test — an unhashable value must never reach `in`), or an INVERTED interval (`invalidated_at < valid_from`) → `MALFORMED`. An **unknown-but-string** reason is NOT malformed → `FENCED` (F6's ruling; the default lookup is reachable). An EMPTY interval (`==`) is coherent → `NOT_VALID_AT_T`. Asserted with edges built via `add_edge` (which does not couple the fields) | `test_incoherent_states_are_malformed_never_grounded` | CI |
+| **V-TWO-STATE** (F2) `held_at_K` is computed from `snapshot` ALONE; `status` additionally applies CURRENT caps, which only ever SUBTRACT. The headline cell: a record corrected/disputed/revoked AFTER K returns `held_at_K=True` with `status` `FENCED_AS_OF`/`EXCLUDED` — we report that we believed it then AND refuse to assert it now. `revoked_source` current → `EXCLUDED` at every K (0022 non-revival never time-travels away). No current cap can RAISE a verdict | `test_two_state_current_caps_subtract_only` | CI |
+| **V-NORMALIZE** (F6 + **B-1**) type and datetime normalization precede every membership test and comparison **on BOTH legs**: a non-string (incl. unhashable) reason on EITHER `snapshot` or `current` returns `MALFORMED` without reaching `in`/`dict.get`; every timestamp from EITHER state is UTC-coerced inside rule 2's guard — including `current.invalidated_at`, which v6 normalized on the final line, outside the guard, so garbage there raised uncaught at the end of an otherwise-green classification | `test_normalization_covers_both_states` | CI |
 | **V-FAILCLOSED** (finding 3) `AS_OF_DISPOSITION` is a TOTAL dict; `set(AS_OF_DISPOSITION) == set(DISPOSITIONED_REASONS)` exactly (build fails on any undispositioned reason in EITHER); runtime defaults an unknown/missing key to `FENCED` | `test_as_of_disposition_is_total_and_failclosed` | CI |
 | **V-CURRENT-UNCHANGED** (finding 7) `Edge.assertable` is not modified; the current recall path does not call the as-of classifier — proven via a caller-grep AND the current path run against the **post-0027** frozen classification oracle (the baseline is pinned to the post-0027 implementation commit, §Spec-Requires — NOT `d7bf16b`, which predates 0027's v10 oracle). `classify_as_of(...,now).status==GROUNDED_AS_OF` agrees with `edge.assertable` for the ordinary edge and diverges on EXACTLY the two §4e state cells | `test_current_path_oracle_identical_post0027` + `test_as_of_now_diverges_only_on_two_cells` | CI |
 | **V-INTERVAL** groundable only within the half-open `[valid_from, invalidated_at)`; `T == invalidated_at` excluded (successor's); UTC-aware comparison only (§10) | `test_half_open_interval_boundaries` | CI |
-| **V-SCOPE** (finding 1) composes with 0020 via the TIME-RELATIVE verdict through `gate.scoped_assertable(base_groundable, view.decision(edge))` — NOT `view.shape()` (which returns a historical edge unchanged). Fixture: a cross-scope-visible `superseded` edge groundable unscoped is `FENCED_AS_OF` for the restricted principal; a same-scope one still grounds | `test_scope_composes_via_time_relative_verdict_not_shape` | CI |
+| **V-SCOPE** (finding 1 + F2 + F7) visibility is the **OUTERMOST** gate — evaluated before normalization, coherence and time — so a hidden record returns ONLY `SCOPE_HIDDEN` (never `MALFORMED`, never `held_at_K`), leaking neither existence nor condition. Shaping then composes via `gate.scoped_assertable` on the TIME-RELATIVE verdict, NEVER `view.shape()`. **CURRENT scope governs every answer including historical ones** (0029 versions edge state, not scope policy/membership). Fixtures: (a) cross-scope-visible `superseded` grounds unscoped, `FENCED_AS_OF` for the restricted principal; (b) **hidden + malformed → `SCOPE_HIDDEN` only** (joint scenario 8) | `test_scope_outermost_hidden_never_leaks` + `test_scope_composes_via_time_relative_verdict_not_shape` | CI |
 | **V-STALE** (finding 5, m-2) `classify_as_of` returns `Result{status, flags}`; `stale-at-recall` is set iff reason ∈ {lapsed,decayed} AND `invalidated_at <= now` (already stale) — a future-lapsing edge (invalidated_at > now) grounds WITHOUT the flag; `now` is thereby load-bearing (an external reviewer greps for the unread param) | `test_result_carries_stale_flag` | CI |
 | **V-ADDITIVE** 0030 adds no field to `Edge`; the classifier is a pure function of existing edge fields + the registry + `(T, now, view)` | `test_no_edge_field_added` | CI |
 
@@ -373,6 +467,26 @@ cross-hidden}, with the expected `Result{status, flags}`:
    `superseded` case: grounds unscoped, `FENCED_AS_OF` for the restricted
    principal);
 6. **`lapsed`/`decayed`** asserting the `stale-at-recall` flag against `now`.
+7. **JOINT acceptance scenarios (shared with 0029).** The reviewer's eight
+   scenarios become the SHARED §6a corpus across both specs — dev seeds them
+   0029-side, and the §4a-ii reason×cutoff matrix supplies the 0030 expectations
+   for the two-state cells. 0030 owns exact outcomes for:
+   - **(2)** source revocation followed by reinstatement, `K` between them —
+     current `revoked_source` → `EXCLUDED` at every K; after reinstatement the
+     CURRENT row no longer carries it, so the cap lifts (the snapshot at K is
+     unchanged: `held_at_K` is stable while `status` moves — precisely the
+     two-state split);
+   - **(7)** a later correction/dispute/revocation applied to an earlier
+     snapshot → `held_at_K=True`, `status` `FENCED_AS_OF`/`EXCLUDED`;
+   - **(8)** a malformed edge hidden from the querying principal →
+     `SCOPE_HIDDEN` ONLY (F7). **The malformed axis now has TWO states to be
+     malformed in (B-1/B-2):** the family crosses {snapshot malformed, current
+     malformed, both} × {unhashable reason, non-datetime, active+reason,
+     inactive+no-reason, inverted interval} × {hidden, visible} — asserting
+     `MALFORMED` for visible incoherence on EITHER leg, `SCOPE_HIDDEN` when
+     hidden, and NO raise anywhere;
+   and consumes 0029's outcomes for (1), (3), (4), (5), (6) as snapshot inputs.
+
 Pass = **100% match**. Corpus frozen + portable builder (`--check`) + digest
 recorded in `## Review closure` before implementation (0028 R1-6/R1-7 pattern).
 
@@ -381,8 +495,13 @@ recorded in `## Review closure` before implementation (0028 R1-6/R1-7 pattern).
   today exactly (`Edge.assertable` never changed). No migration, no schema
   change, no data rewrite.
 - **New-reason safety:** a producer's new reason fails the totality test until
-  dispositioned; until then it fails closed (fences). The registry can only
-  narrow what grounds, never widen (internal-R1 discipline).
+  dispositioned; until then the runtime default fences it. **Correction (F8.4):
+  the registry is NOT narrow-only** — re-dispositioning a reason to `GROUNDABLE`
+  plainly widens what grounds, and v4 claimed otherwise. What IS guaranteed:
+  (a) TOTALITY — the build fails on any undispositioned reason, so a widening is
+  always an explicit, reviewed edit, never a silent default; and (b) the runtime
+  lookup defaults UNKNOWN to `FENCED`, so drift can only fence. Widening is
+  possible but never accidental.
 
 ## 8. Claims and limits
 - **Claim:** 0030 lets history be asserted *when and only when* it was validly,
@@ -405,10 +524,13 @@ Attack hardest:
    open ANY laundering path for corrected/disputed/revoked/quarantined/use_only
    at some T (especially at interval boundaries, or for an edge that is both
    historical AND quarantined)?
-3. **Scope composition (R1-5).** Can a cross-scope historical edge ground for the
-   wrong principal — does applying `shape()` before content-trust actually fence
-   restricted material at every T, and does an edge shaped-demoted for principal
-   A but native for B classify correctly for each?
+3. **Scope composition, two-state (F2 + F7).** Visibility is now the OUTERMOST
+   gate and CURRENT scope governs every answer, including historical ones
+   (0029 versions edge state, not scope policy). Attack that: can a cross-scope
+   historical edge ground for the wrong principal via `gate.scoped_assertable`
+   on the time-relative verdict? Does anything about a hidden record leak —
+   existence, malformedness, or `held_at_K`? And is "current scope governs the
+   past" the right ruling, or does it mis-answer "who could see this at K?"
 4. **The 0030/0028/0029 boundary.** Is "0030 classifies, 0028 resolves, 0029
    carries transaction time" a clean cut, or does classification secretly need
    resolution (e.g. does classifying an `absorbed_duplicate` groundable require
@@ -420,10 +542,15 @@ Attack hardest:
   is stronger (`EXCLUDED`, not even fenced — 0022 non-revival). Confirm the
   fenced/excluded boundary with the gate-owner (the disputed→non-assertable
   ruling that 0028 also carries).
-- ~~**`absorbed_duplicate` classification vs resolution.**~~ RETIRED (D-2): moot
-  by the shipped empty-interval construction — the absorbed edge's interval is
-  empty, so time-validity fails first and the groundable row is unreachable. Kept
-  in the allow-set for totality, asserted unreachable by test (§4b).
+- **`absorbed_duplicate` — UN-RETIRED (F8.3).** v2 retired this as "unreachable
+  by the empty-interval construction"; round-1 finding 4 overturned that (the
+  GENERIC invalidation paths can persist a NON-empty absorbed interval, and a
+  classifier seeing only an edge cannot prove canonicity). §4b now classes it
+  **GROUNDABLE and exercises the non-empty case**; this entry contradicted §4b
+  and is corrected rather than left as a stale retirement. The live question is
+  the narrow one: 0030 grounds the absorbed edge and 0028 resolves to the
+  absorber — or should only the absorber ever ground? (Leaning: as specified;
+  reviewer to rule.)
 - **Boundary instant `T == invalidated_at`.** Half-open interval excludes it
   (successor's). Confirm this matches 0003's supersession boundary exactly (no
   gap, no overlap).
