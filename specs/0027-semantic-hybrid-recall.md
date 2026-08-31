@@ -21,7 +21,7 @@ spec at next review. See `PROCESS.md`.*
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
 | **External review** | SIX rounds complete (1-5 returned-amendment; round 6 findings code-level). Quentin's ruling 2026-08-31: implementation, not a further paper round |
-| **Decision + date** | ACCEPTED for implementation — Quentin, 2026-08-31 (confirmed in the dev session). The §6a acceptance measurement is a REQUIRED pre-release gate (the 0026 obligations pattern): its recorded numbers land in `## Review closure` before this feature ships |
+| **Decision + date** | ACCEPTED for implementation — Quentin, 2026-08-31 (confirmed in the dev session). The §6a acceptance measurement is a REQUIRED pre-release gate (the 0026 obligations pattern) — **DISCHARGED 2026-08-31: measured once, all three criteria pass, numbers recorded in `## Review closure`** |
 | **Path** | full |
 
 ### Spec-Requires (accepted specs this consumes)
@@ -823,6 +823,26 @@ executable Python defaults (R5-4); and a superseded-statement consolidation
   (v2.0) — the R6-2 deterministic-topology amendment (frozen edge_ids,
   explicit split/label-pure distractor_ids, backend named), applied BEFORE any
   tuning or accept run, as the punch-list ordered.
+
+**§6a acceptance measurement — RECORDED (run 2026-08-31, the once):**
+- **Vectors:** `tests/eval/semantic_paraphrase/vectors.json`, sha256
+  `25271db726701b06fab45270ed5ec393d8112a2d64fccc7be93ebff9ef204e00` —
+  pinned `all-MiniLM-L6-v2@1110a243fdf4` (model + HF snapshot), dim 384,
+  computed once in an isolated environment; the gate runs modelless.
+- **Tuning (frozen procedure honored):** `semantic_min_cosine = 0.25` was
+  frozen in the spec BEFORE any accept run; the tune split measured at it:
+  **36/40 (0.90)** recovery@10, lexical baseline 0/40. No re-tune.
+- **Criterion 1 — recovery:** accept paraphrase recall@10 **18/20 = 0.90 ≥
+  0.80** ✓; lexical-only baseline **0/20** (the entity-subject cases are
+  genuinely zero-overlap — §9 point 3's case-quality risk resolved by
+  measurement: a real MiniLM recovers them).
+- **Criterion 2 — exact non-regression:** OFF **20/20 = 1.0** ✓; ON
+  **20/20 = 1.0 ≥ 0.95** ✓ — zero displacements recorded.
+- **Criterion 3 — classification-entry:** **0 mismatches** across the 20
+  trust-labelled cases ✓.
+- Gate: `pytest tests/eval/test_semantic_recall_gate.py` (4 tests, in the
+  ordinary suite — deterministic, reruns reproduce these numbers exactly).
+- No public number without separate approval (the §6a rider stands).
 
 **Adoption record (2026-08-31):** six external rounds complete research-side
 (bundle: `0027-round6-review-package/`, rounds 1-5 verbatim); Quentin's ruling
