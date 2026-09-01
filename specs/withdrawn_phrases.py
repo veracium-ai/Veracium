@@ -14,6 +14,22 @@ rule_id and asserts THAT entry matches it (R8-5 — proving a fixture matches
 """
 
 WITHDRAWN = [
+    # ---- 0031 (round-2 self-correction, 2026-09-01): the P3-5 overreach was
+    # withdrawn in the working candidate and the correction reached the README
+    # but NOT the adopted spec — two carriers of one fact updated
+    # independently; the seal-check's byte-identity assertions (transport
+    # fidelity) were structurally blind to it (package == repo@pin, both
+    # stale together). Registered per the discipline this file's docstring
+    # describes: search for every place the claim is stated, not for one's
+    # own edits.
+    ("0031-relay-floor-unguarded",
+     r"the only thing standing between the marker-bearing note|because nothing\s+reports it|relay floor could be deleted unnoticed",
+     "round-2 self-correction: P2-1/P2-2 are the relay floor's standing "
+     "host-path guard; P3-5's vacuity does NOT leave the floor untested. "
+     "The capability=direct variant is owed because Phase A opens a NEW "
+     "path to a mentionable baseline (the MCP surface), not because the "
+     "floor is unmeasured",
+     "specs/0031 §6a — the corrected P3-5 disposition"),
     # ---- 0022 (external round 2, F1/F2): TWO claims narrowed in round 1 and
     # then left standing in six and three other carriers respectively. The
     # docstring above describes this failure exactly, the list was already
