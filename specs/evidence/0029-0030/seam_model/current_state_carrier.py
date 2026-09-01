@@ -12,7 +12,7 @@ RULE ZERO: every assertion ships with a negative control in this file.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import FrozenSet, Optional
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,13 @@ class CurrentState:
     user_id: str
     edge_id: str
     current_raw: Optional[str]
-    source_restricted: FrozenSet[str]
+    source_restricted: bool            # round-4 F4: a BOOLEAN, not a digest set.
+                                       # The earlier `frozenset(standing)` return
+                                       # claimed a PER-DIGEST computation that was
+                                       # never performed -- one collective sweep
+                                       # proves a boolean, and nothing consumes
+                                       # the digests. False attribution is worse
+                                       # than a narrower true claim.
     read_token: int
 
 
@@ -93,7 +99,7 @@ def control_binding_is_load_bearing() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "B", "{}", frozenset(), 1)      # foreign leg
+    cur = CurrentState("u", "B", "{}", False, 1)      # foreign leg
     return (bind(env, snap, cur, None) == IDENTITY_UNBOUND
             and unbound_variant(env, snap, cur, None) == BOUND)
 
@@ -106,7 +112,7 @@ def control_view_leg_is_bound() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "A", "{}", frozenset(), 1)
+    cur = CurrentState("u", "A", "{}", False, 1)
     foreign = View("someone-else")
     return (bind(env, snap, cur, foreign) == IDENTITY_UNBOUND
             and unbound_variant(env, snap, cur, foreign) == BOUND)
@@ -121,7 +127,7 @@ def control_binding_survives_a_corrupt_payload() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "}{ not json")
-    cur = CurrentState("u", "A", "}{ not json", frozenset(), 1)
+    cur = CurrentState("u", "A", "}{ not json", False, 1)
     return bind(env, snap, cur, None) == BOUND
 
 
@@ -135,5 +141,5 @@ def control_absence_does_not_grant() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "A", None, frozenset(), 1)
+    cur = CurrentState("u", "A", None, False, 1)
     return bind(env, snap, cur, None) == BOUND and cur.current_raw is None

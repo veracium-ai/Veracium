@@ -311,3 +311,94 @@ def test_reverse_drift_is_also_caught():
                        ("REFUSES DUPLICATE KEYS",), "simulated reverse drift")
     found = PC.check(_spec_text(), rules=(weakened,))
     assert found and "NOT ENFORCED by the model" in found[0]
+
+
+# --------------------------------------------- round-4 F2: TYPE totality ---
+# The reviewer fed `provenance.source_id=[]`: the PRESENCE-only schema check
+# accepted it and the real ScopeView raised. Presence is not validity. This is
+# a MUTANT CAMPAIGN over the field domain rather than the four cases I would
+# think of -- the point of the finding was that my chosen cases were the gap.
+
+WRONG_TYPES = ([], {}, 0, 1, True, 3.5, ["x"], {"a": 1})
+
+_TOP_FIELDS = ("id", "user_id", "subject", "relation", "object", "note")
+_PROV_FIELDS = ("author_of_evidence", "evidence_ref", "origin", "source_id",
+                "disclosure")
+
+
+def _payload(**prov_over):
+    e = _edge_with_source("mailbox-a")
+    m = json.loads(e.model_dump_json())
+    m["provenance"].update(prov_over)
+    return m
+
+
+@pytest.mark.parametrize("field", _TOP_FIELDS)
+@pytest.mark.parametrize("bad", WRONG_TYPES)
+def test_top_level_field_wrong_type_is_refused(field, bad):
+    m = _payload()
+    m[field] = bad
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None, \
+        f"{field}={bad!r} was accepted"
+
+
+@pytest.mark.parametrize("field", _PROV_FIELDS)
+@pytest.mark.parametrize("bad", WRONG_TYPES)
+def test_provenance_field_wrong_type_is_refused(field, bad):
+    m = _payload(**{field: bad})
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None, \
+        f"provenance.{field}={bad!r} was accepted"
+
+
+@pytest.mark.parametrize("field", ("origin", "source_id"))
+@pytest.mark.parametrize("bad", ("", "x" * 513))
+def test_identity_field_bounds_are_enforced(field, bad):
+    """The SHIPPED bound: 1..IDENTITY_MAX (scope.py:96, schema.py:134-135)."""
+    m = _payload(**{field: bad})
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None, \
+        f"provenance.{field} of length {len(bad)} was accepted"
+
+
+def test_the_reviewers_exact_probe(scope_view):
+    """`source_id=[]` — the round-4 F2 reproduction, kept permanently."""
+    m = _payload(source_id=[])
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None
+
+
+def test_ADAPTER_NEVER_PASSES_WHAT_SCOPEVIEW_RAISES_ON(scope_view):
+    """THE invariant the finding is really about, asserted directly.
+
+    For every mutation in the campaign: if the adapter accepts, the real
+    ScopeView must not raise. Any pair where adapt() succeeds and ScopeView
+    raises is exactly the round-4 defect, and this test finds it for the whole
+    domain rather than for the cases I happened to choose.
+    """
+    escaped = []
+    for field in _PROV_FIELDS:
+        for bad in WRONG_TYPES + ("", "x" * 513):
+            m = _payload(**{field: bad})
+            a = adapt(json.dumps(m), expect_id="e1", expect_user="u")
+            if a is None:
+                continue
+            try:
+                scope_view.visible(a)
+            except Exception as exc:
+                escaped.append((field, bad, type(exc).__name__))
+    assert not escaped, f"adapter passed what ScopeView raises on: {escaped}"
+
+
+def test_the_nine_surviving_carriers_are_all_clear():
+    """Round-4 F3: nine carriers survived a fold that should have removed them.
+
+    Walked as a NAMED LIST, not a sweep — "the full sweep was executed" has been
+    false twice in this arc, and a list of nine can be reported honestly.
+    """
+    assert PC.check_carriers(_spec_text()) == []
+
+
+def test_the_carrier_walk_can_fail__its_control():
+    """Reintroduce one stale carrier; the walk must name it."""
+    bad = _spec_text().replace("### 4a-i. `CurrentState`", "### 4a-i. `current_trust`")
+    found = PC.check_carriers(bad)
+    assert any(f.startswith("C5-") for f in found), \
+        f"the carrier walk did not catch a reintroduced carrier: {found}"

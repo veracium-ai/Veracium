@@ -17,6 +17,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from veracium.scope import IDENTITY_MAX
 from veracium.schema import Disclosure, EvidenceAuthor, QUARANTINE_RELATION
 
 #: exactly the keys the adapter requires. Verified by EXECUTION against
@@ -113,6 +114,28 @@ def derive_use_only(disclosure: str) -> bool:
     return disclosure == Disclosure.USE_ONLY.value
 
 
+def _nonempty_str(v) -> bool:
+    return isinstance(v, str) and v != ""
+
+
+def _identity_field(v) -> bool:
+    """`origin`/`source_id`: None, or a 1..IDENTITY_MAX-char string.
+
+    The bound is SHIPPED, not invented: `IDENTITY_MAX = 512` (scope.py:96) and
+    `Provenance.source_id/origin: Optional[str], min_length=1, max_length=512`
+    (schema.py:134-135). Round-4 F2: the reviewer fed `source_id=[]`, the
+    PRESENCE-only schema check accepted it, and the real `ScopeView` raised
+    `ScopeError: identity field must be a 1..512-char string or None`.
+    THE ADAPTER MUST NOT PASS ANYTHING ITS CONSUMER WILL RAISE ON -- a
+    presence check asks whether a key exists and never what it holds.
+    """
+    return v is None or (isinstance(v, str) and 1 <= len(v) <= IDENTITY_MAX)
+
+
+def _optional_str(v) -> bool:
+    return v is None or isinstance(v, str)
+
+
 def adapt(state_text: str, *, expect_id: str, expect_user: str) -> Optional[Adapted]:
     """TEXT -> Adapted, or None. `None` is the single failure value; the caller
     maps it to MALFORMED, or to SCOPE_HIDDEN on the current leg before
@@ -130,6 +153,14 @@ def adapt(state_text: str, *, expect_id: str, expect_user: str) -> Optional[Adap
     # 3. SCHEMA -- missing is never defaulted
     if not REQUIRED_KEYS.issubset(m):
         return None
+    # 3b. TYPES AND BOUNDS, per field (round-4 F2). Presence is not validity.
+    if not all(_nonempty_str(m[k]) for k in ("id", "user_id", "subject",
+                                             "relation", "object")):
+        return None
+    if not isinstance(m["note"], str):
+        return None
+    if not all(_optional_str(m[k]) for k in ("valid_from", "invalidated_at")):
+        return None
     # 4. ENUMS: reason TYPE is required (an unknown STRING is coherent and
     #    fences later, F8b); disclosure must be a real member.
     r = m["invalidation_reason"]
@@ -145,14 +176,25 @@ def adapt(state_text: str, *, expect_id: str, expect_user: str) -> Optional[Adap
     if not SCOPE_PROVENANCE_KEYS.issubset(prov):
         return None
     disc = prov["disclosure"]
-    if disc not in {d.value for d in Disclosure}:
+    # TYPE BEFORE MEMBERSHIP. Round-4 F2's campaign found this: an unhashable
+    # `disclosure` (list/dict) RAISED `TypeError: unhashable type` at the `in`
+    # test instead of refusing. That is 0030's OWN V-NORMALIZE rule -- "a
+    # non-string (incl. unhashable) value must never reach `in`/`dict.get`" --
+    # which this author wrote for the classifier's `invalidation_reason` and
+    # then violated here. A spec rule is not confined to the field that
+    # motivated it.
+    if not isinstance(disc, str) or disc not in {d.value for d in Disclosure}:
         return None
+    if not isinstance(prov["author_of_evidence"], str):
+        return None                       # type before construction, as above
     try:
         author = EvidenceAuthor(prov["author_of_evidence"])
     except ValueError:
         return None                       # unknown author is not defaulted
-    if not isinstance(prov["evidence_ref"], str) or not prov["evidence_ref"]:
+    if not _nonempty_str(prov["evidence_ref"]):
         return None
+    if not all(_identity_field(prov[k]) for k in ("origin", "source_id")):
+        return None                       # round-4 F2: the ScopeError probe
     # 5. DERIVE the flags
     return Adapted(
         provenance=AdaptedProvenance(

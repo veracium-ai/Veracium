@@ -28,12 +28,20 @@ from dataclasses import dataclass
 from typing import Callable, Sequence
 
 import raw_adapter as RA
+from raw_adapter import _strict_pairs   # the checker USES the discipline it ENFORCES
 from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance,
                              QUARANTINE_RELATION)
 
 
 @dataclass(frozen=True)
 class Rule:
+    # ANCHOR DISCIPLINE, learned twice on this file's own runs: anchors name a
+    # MECHANISM and nothing more. "PER OBJECT" failed on a line wrap; "1..512"
+    # failed because the spec wrote `1..IDENTITY_MAX`. Both were over-specified
+    # -- they encoded FORMATTING, and formatting churns. Each false positive
+    # tempts the next person to disable the check, which is how it dies. If an
+    # anchor needs more than a symbol name to be unambiguous, the rule is
+    # probably not crisp enough to check mechanically.
     id: str
     section: str                       # the normative carrier's section
     model_probe: Callable[[], bool]    # EXECUTED against the model
@@ -61,11 +69,81 @@ def _probe_two_disjunct_quarantine() -> bool:
             and RA.derive_quarantined("has_diet", Disclosure.QUARANTINED.value))
 
 
+def scope_shape_keys_from_production() -> frozenset:
+    """INTROSPECT the production function -- do not restate it.
+
+    Round-4 F3's diagnosis of why this check was blind to its own author's
+    error: the probe compared a HARDCODED SET to a HARDCODED SET, so it could
+    only confirm that two of our own restatements agreed. It could not see
+    that BOTH were wrong. A check that never reads the production code is a
+    mirror, not a check.
+
+    This calls the real `MembershipResolver._record_shape` on a real `Edge`
+    and returns the keys it ACTUALLY reads, so the authority is the function.
+    """
+    from veracium.scope_read import MembershipResolver
+    e = Edge(id="p", user_id="u", subject="s", relation="has_diet", object="o",
+             provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                   evidence_ref="ev"))
+    shape = MembershipResolver._record_shape(MembershipResolver.__new__(
+        MembershipResolver), e)
+    return frozenset(shape)
+
+
 def _probe_scope_field_set() -> bool:
-    """EXECUTED: the scope-feeding set is the one `_record_shape` reads,
-    INCLUDING `disclosure`, which a summary of that list omits."""
-    return RA.SCOPE_PROVENANCE_KEYS == frozenset({
-        "author_of_evidence", "origin", "source_id", "evidence_ref", "disclosure"})
+    """EXECUTED against production: the adapter must carry every field the
+    shape path reads, and must not CLAIM a field it does not read.
+
+    `lineage` is read via `getattr(record, "lineage", None)` and `Edge` has no
+    such field, so the adapter does not carry it; `disclosure` is needed by the
+    adapter's FLAG DERIVATION but is NOT a shape-path field -- conflating those
+    two questions is exactly the round-4 error.
+    """
+    # VOCABULARY CAVEAT, found by this very probe on its first hardened run:
+    # `_record_shape` returns {"author": p.author_of_evidence.value, ...} --
+    # the dict KEY is "author" while the PROVENANCE FIELD read is
+    # "author_of_evidence". Introspecting the OUTPUT therefore yields the
+    # shape's vocabulary, not the field names a carrier must supply. The map
+    # below is the translation, and it is the only restatement left; everything
+    # else comes from production. Stated because a silent rename here would
+    # reintroduce exactly the mirror this hardening removed.
+    SHAPE_KEY_TO_PROV_FIELD = {"author": "author_of_evidence",
+                               "evidence_ref": "evidence_ref",
+                               "origin": "origin", "source_id": "source_id"}
+    production_keys = scope_shape_keys_from_production() - {"lineage"}
+    if set(SHAPE_KEY_TO_PROV_FIELD) != production_keys:
+        return False        # production grew or renamed a key: refuse, loudly
+    needed = frozenset(SHAPE_KEY_TO_PROV_FIELD[k] for k in production_keys)
+    carried = RA.SCOPE_PROVENANCE_KEYS - {"disclosure"}
+    return carried == needed
+
+
+def _probe_type_before_membership() -> bool:
+    """EXECUTED: an unhashable value REFUSES rather than raising.
+
+    0030's V-NORMALIZE states this for the classifier; round-4 found the
+    adapter violating it. A spec rule is not confined to the field that
+    motivated it, so the check now covers the rule wherever it applies.
+    """
+    e = Edge(id="e1", user_id="u", subject="user", relation="has_diet",
+             object="o", provenance=Provenance(
+                 author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev"))
+    m = json.loads(e.model_dump_json(), object_pairs_hook=_strict_pairs)
+    m["provenance"]["disclosure"] = []            # unhashable
+    try:
+        return RA.adapt(json.dumps(m), expect_id="e1", expect_user="u") is None
+    except TypeError:
+        return False                              # raised instead of refusing
+
+
+def _probe_identity_bounds() -> bool:
+    """EXECUTED: an out-of-bound identity field refuses (round-4 F2)."""
+    e = Edge(id="e1", user_id="u", subject="user", relation="has_diet",
+             object="o", provenance=Provenance(
+                 author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev"))
+    m = json.loads(e.model_dump_json(), object_pairs_hook=_strict_pairs)
+    m["provenance"]["source_id"] = []
+    return RA.adapt(json.dumps(m), expect_id="e1", expect_user="u") is None
 
 
 def _probe_author_is_real_enum() -> bool:
@@ -76,7 +154,11 @@ def _probe_author_is_real_enum() -> bool:
              provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                    evidence_ref="ev"))
     a = RA.adapt(e.model_dump_json(), expect_id="e1", expect_user="u")
-    return isinstance(a.provenance.author_of_evidence, EvidenceAuthor)
+    # DEFENSIVE: a probe that RAISES cannot report "not enforced" -- it
+    # explodes and takes the whole check with it. Found by mutating the model
+    # to refuse everything: this probe assumed success. Probes return False.
+    return a is not None and isinstance(a.provenance.author_of_evidence,
+                                        EvidenceAuthor)
 
 
 RULES = (
@@ -88,7 +170,13 @@ RULES = (
          "one disjunct lets a third-party CLAIM through"),
     Rule("scope-field-authority", "0030 §4a-iii step 6", _probe_scope_field_set,
          ("_record_shape", "scope_read.py:170-176"),
-         "the authority adds `disclosure`, which any summary of the list omits"),
+         "the shape-path field set must be INTROSPECTED from production, never restated"),
+    Rule("type-before-membership", "0030 V-NORMALIZE", _probe_type_before_membership,
+         ("unhashable", "membership"),
+         "an unhashable value reaching `in`/`dict.get` RAISES instead of refusing"),
+    Rule("identity-bounds", "0030 §4a-iii step 6", _probe_identity_bounds,
+         ("IDENTITY_MAX",),   # mechanism name only -- see ANCHOR DISCIPLINE
+         "presence is not validity; the consumer raises on out-of-bound identity fields"),
     Rule("author-real-enum", "0030 §4a-iii step 6", _probe_author_is_real_enum,
          ("EvidenceAuthor", ".value"),
          "a string stand-in passes hand-written tests and raises live"),
@@ -105,6 +193,51 @@ def _normalise(text: str) -> str:
     anchor still names a MECHANISM; normalising only removes the typography.
     """
     return re.sub(r"\s+", " ", text)
+
+
+#: The NINE surviving carriers named in the round-4 verdict, as a REGRESSION
+#: LIST rather than a sweep. Each is a (id, forbidden-pattern, why) triple: the
+#: pattern is text that must NOT reappear, because each one is a stale carrier
+#: that survived the fold which should have removed it.
+#:
+#: A LIST, deliberately, not a "full sweep". The claim "the full sweep was
+#: executed" has been FALSE TWICE in this arc; a named list of nine can be
+#: checked and reported honestly, where a sweep invites the claim that killed
+#: us. Widened is not exhausted.
+CARRIER_REGRESSIONS = (
+    ("C1-signature", "classify_as_of(snapshot, current, T, now",
+     "§1/§2 published the pre-carrier signature"),
+    ("C3-caps-from-row", "from the CURRENT row",
+     "§3 said current caps come from the row; they come from standing state"),
+    ("C4-three-inputs", "needs three distinct inputs",
+     "§4a introduced the pre-carrier input count"),
+    ("C5-current-trust-heading", "### 4a-i. `current_trust`",
+     "§4a-i kept the pre-carrier name"),
+    ("C6-cache-and-multisweep", "cacheable per",
+     "a v9 cost/cache sentence contradicted the one-sweep/no-cache rules ABOVE it"),
+    ("C8-empty-interval-incoherent", 'unknown "eighth" reason, empty interval',
+     "§6a called coherent states incoherent, contradicting V-MALFORMED"),
+)
+
+#: Carriers whose fix is a PRESENCE requirement rather than an absence.
+CARRIER_PRESENCE = (
+    ("C2-2c-carrier-inputs", "the **carrier inputs**", "§2c must inventory them"),
+    ("C7-vbind-carrier", "carrier model updated round-4 C7", "V-BIND/V-ADDITIVE"),
+    ("C9-requires-0029", "consumed DIRECTLY", "Spec-Requires must name 0029"),
+)
+
+
+def check_carriers(spec_text: str) -> list[str]:
+    """The nine, walked as a list. Reported individually, never as a sweep."""
+    flat = _normalise(spec_text)
+    out = []
+    for cid, pat, why in CARRIER_REGRESSIONS:
+        if _normalise(pat) in flat:
+            out.append(f"{cid}: STALE CARRIER RETURNED — {why}")
+    for cid, pat, why in CARRIER_PRESENCE:
+        if _normalise(pat) not in flat:
+            out.append(f"{cid}: FIX MISSING — {why}")
+    return out
 
 
 def check(spec_text: str, rules: Sequence[Rule] = RULES) -> list[str]:
