@@ -4,8 +4,8 @@ Spec-Status: draft
 
 | | |
 |---|---|
-| **Version** | **v7** — ONE correction, no mechanism change, and the reason it needs a version at all is the point: v6's bytes were ADOPTED and sealed, then §6a's P3-5 disposition changed, so two different documents would otherwise both answer to "v6". **The correction:** v6 said the `capability=direct` variant is owed because after Phase A the relay floor would be "the only thing standing" and "nothing reports it". Both are WITHDRAWN — **P2-1** (host-side, `context=direct`, the same relay marker, expecting `use_only`) with **P2-2** as its marker-free control is the floor's standing guard; delete the floor and P2-1 fails. P3-5 loses its OWN discriminating power; the floor does not go untested. The variant is still owed, on the spec's own re-run reasoning: Phase A opens a NEW path to a mentionable baseline — the MCP surface — which P2-1 does not exercise. **Why it took a round trip:** the correction reached the README and never reached this file's adopted copy; two carriers of one fact, updated independently. Registered in `specs/withdrawn_phrases.py` so the phrasing cannot return unnoticed. | **v6** — round-1 external fold (RETURN, six blocking findings). **F1**: V-NO-RAISE was stated on the whole trust model and CHECKED on one coordinate; §2c now enumerates the product's four consumers and §2c-i replaces the six-row matrix with a LATTICE statement — under `none` the baseline is the bottom element of the sublattice these legs reach, so restrict-only is INERT there and meaningful exactly and only under `direct`. v5's "lateral" claim for `THIRD_PARTY`→`ASSISTANT` is RETRACTED (§4a): lateral on disclosure, a raise on authority. **F2**: `author` was a model-supplied argument DEFAULTING TO THE TOP OF THE LADDER, masked today by the derived_from floor and UNMASKED by Phase A — the author default IS the elevation. Ruled against all three of the reviewer's options and against dev's lean: `author` loses its default and takes the CAPABILITY's baseline, restrict-only from there; and `direct` is amended to attest the authorship axis it was already unlocking, on the new rule that **an attestation may be untrusted but must not be unknowable** (§3a). **F3** capability pinned to concrete carriers, absence-vs-invalid taken verbatim. **F4/F5/F6** folded per the joint split. | **v5** — one addition on the owner's S2 ruling (2026-08-31), no mechanism change: §5 gains the ORDERING PRECONDITION that Phase A must not ship before the `valid_from` predicate lands. Phase A is what makes that predicate necessary rather than desirable — today a not-yet-valid edge is assertable but only via a HOST-SIDE write with attested capture (an MCP write floors to USE_ONLY: harness S2 + T4-3), and `capability=direct` removes exactly that mitigation, converting a host-only anomaly into an agent-reachable over-assertion. Phase A remains independent of 0029 and Phase B; this is its ONE external precondition. | **v4** — one addition to §6a on dev's re-read: the Phase B REVERSAL CASES are recorded as a stated DEBT (clean undo / scoped-reversal reaching a second edge / intervening-state refusal), owed and pinned model-free before Phase B's first run, with the reason for deferring given — *pin before THE RUN* (0027 R3-6), never *pin before the design settles*. Converts an unpinned surface from a gap a reviewer finds into an obligation the spec states. No other change from v3. | **v3** — reversal fold, on dev's option-(b) ruling. New **§4c-iii**: an applied resolution must be reversible, and the inverse data is **0029's, not this spec's** — Phase B DEPENDS on the transaction-time carrier rather than duplicating pre-state capture (agreement-by-coincidence between two carriers of one fact is the standing hazard). Three constraints: undo is a FORWARD journaled transition following 0022's reinstate pattern (history never un-happens); SCOPED to the applying `txn`, never expressible as a bare "revive edge X"; and FAIL-CLOSED on intervening state, refusing with a diff rather than cascading. Adds V-UNDO-FORWARD / V-UNDO-SCOPED / V-UNDO-FAILCLOSED. **The dependency lands on Phase B ONLY — Phase A ships alone, unchanged.** 0031 becomes V-RECON's SECOND CONSUMER (belongs in the seam manifest's S1). Prompted by AreevAI/areev shipping "every apply stores its inverse" (competitive triage 2026-08-31). | **v2** — dev internal-review fold. **D-1** the capability composes with AUTHOR and never overrides it (author/relation/revocation rows added to §3), plus new **§3a** reconciling the capability→`EvidenceContext` bridge with 0011's explicit refusal to mint `direct()` by omission (`__init__.py:361`) — minting by DECLARATION is not minting by OMISSION, and the per-event→deployment widening is stated as the honest cost. **D-2** the proposal carrier PINNED at DDL level (new §4b-ii) with the schema-version ordering dependency on 0029 left deliberately unresolved, and the erasure gap closed (V-ERASE-PROPOSALS). **D-3** both carriers named: `mcp_max_open_proposals` (default 32, range 1–256, refuses rather than evicts) and `provenance_raises_discarded` (stripped operator counter). §1 additionally carries the LIVE Bedrock evidence for T4-3. | **v1** — first candidate. Folds two owner rulings taken 2026-08-31 on measured evidence: decision 1 (MCP provenance self-attestation → option **c**, host-attested capability) and decision 2 (trust verbs → `forget`/`correct`/`confirm` not agent-exposed; `dispute` proposal-form only). Both resolve to ONE principle — **the host attests, the model proposes** — which is why they are one spec with two separable phases. |
-| **Author / session** | research (veracium-research); adopted by dev (v4/v5 2026-08-31; v6 the round-1 fold; v7 = the P3-5 currency correction — adopted 2026-09-01, the round-2 pin; the v6 adoption was STALE against the corrected candidate, caught by research's hand-diff and now bound by ASSERT-14) |
+| **Version** | **v8** — the round-2 external fold (RETURN, six findings). NOTE the reviewed artifact was the HELD first seal (`d0fce0a9…`, v6), dispatched before the hold cleared; no finding touches the P3-5 block, so all apply to v7 unchanged. **F1 — the four-coordinate "lattice" was OVERSTATED, and it was this author's over-generalisation:** v6 enumerated four CONSUMERS correctly and then asserted ONE monotone rule over all of them without asking whether each is ORDERED. `scope_fingerprint` is a sha256 equality digest (verified) — no top, no bottom, no direction — so "descend" there is not a false requirement but a MEANINGLESS one, which is worse because it cannot be tested. Replaced by FOUR SEPARATE OBLIGATIONS: descend-only on disclosure and on supersession authority; restrict-only on scope shaping; **preserve-or-invalidate** on the fingerprint. **F2 — the `direct` bridge was UNIMPLEMENTABLE against the shipped grammar.** `_resolve_context(direct(), <any value>)` raises `ValueError: pass EITHER context= OR the legacy derived_from=, not both — two declarations of one fact is a host bug` (reproduced independently). The refusal is right and the spec was wrong: v6 proposed on this surface exactly the two-carriers-for-one-fact it forbids everywhere else. Mapping PINNED — `direct`+absent → `direct()`; `direct`+supplied → `derived(X)`; `none` → the floor; never both. The restriction is honoured THROUGH the declaration, never beside it. **F3 — the identity boundary was asserted and unenforced:** `user_id` comes OFF the Phase A/B tool schemas (absence-by-schema, as for `proposer`), the exact `propose` signature is pinned, and Q2's display requirement is reconciled with §4e's dropped turn — the resolver sees stored content, kind, claim, proposer and an unresolved `evidence_ref`, never a turn that cannot be known. **F4/F5 co-designed with dev and code-verified:** `Memory.correct` commits its plan then writes its episode separately (two commits, uncomposable from outside), so `Store.apply_proposal` is pinned as the transaction-owning primitive, with an ADDITIVE in-transaction variant of `apply_supersession_plan` as its prerequisite; the DDL gains `resolver`, a foreign key with the `PRAGMA foreign_keys=ON` obligation (an unpragma'd FK is a comment wearing a constraint's clothes — the round-1 defect in a new costume), a hex digest CHECK, and an OWNERSHIP TABLE naming DDL vs schedule vs §6a gate for every invariant. **F6** the acceptance corpus ships in the package. | **v7** — ONE correction, no mechanism change, and the reason it needs a version at all is the point: v6's bytes were ADOPTED and sealed, then §6a's P3-5 disposition changed, so two different documents would otherwise both answer to "v6". **The correction:** v6 said the `capability=direct` variant is owed because after Phase A the relay floor would be "the only thing standing" and "nothing reports it". Both are WITHDRAWN — **P2-1** (host-side, `context=direct`, the same relay marker, expecting `use_only`) with **P2-2** as its marker-free control is the floor's standing guard; delete the floor and P2-1 fails. P3-5 loses its OWN discriminating power; the floor does not go untested. The variant is still owed, on the spec's own re-run reasoning: Phase A opens a NEW path to a mentionable baseline — the MCP surface — which P2-1 does not exercise. **Why it took a round trip:** the correction reached the README and never reached this file's adopted copy; two carriers of one fact, updated independently. Registered in `specs/withdrawn_phrases.py` so the phrasing cannot return unnoticed. | **v6** — round-1 external fold (RETURN, six blocking findings). **F1**: V-NO-RAISE was stated on the whole trust model and CHECKED on one coordinate; §2c now enumerates the product's four consumers and §2c-i replaces the six-row matrix with a LATTICE statement — under `none` the baseline is the bottom element of the sublattice these legs reach, so restrict-only is INERT there and meaningful exactly and only under `direct`. v5's "lateral" claim for `THIRD_PARTY`→`ASSISTANT` is RETRACTED (§4a): lateral on disclosure, a raise on authority. **F2**: `author` was a model-supplied argument DEFAULTING TO THE TOP OF THE LADDER, masked today by the derived_from floor and UNMASKED by Phase A — the author default IS the elevation. Ruled against all three of the reviewer's options and against dev's lean: `author` loses its default and takes the CAPABILITY's baseline, restrict-only from there; and `direct` is amended to attest the authorship axis it was already unlocking, on the new rule that **an attestation may be untrusted but must not be unknowable** (§3a). **F3** capability pinned to concrete carriers, absence-vs-invalid taken verbatim. **F4/F5/F6** folded per the joint split. | **v5** — one addition on the owner's S2 ruling (2026-08-31), no mechanism change: §5 gains the ORDERING PRECONDITION that Phase A must not ship before the `valid_from` predicate lands. Phase A is what makes that predicate necessary rather than desirable — today a not-yet-valid edge is assertable but only via a HOST-SIDE write with attested capture (an MCP write floors to USE_ONLY: harness S2 + T4-3), and `capability=direct` removes exactly that mitigation, converting a host-only anomaly into an agent-reachable over-assertion. Phase A remains independent of 0029 and Phase B; this is its ONE external precondition. | **v4** — one addition to §6a on dev's re-read: the Phase B REVERSAL CASES are recorded as a stated DEBT (clean undo / scoped-reversal reaching a second edge / intervening-state refusal), owed and pinned model-free before Phase B's first run, with the reason for deferring given — *pin before THE RUN* (0027 R3-6), never *pin before the design settles*. Converts an unpinned surface from a gap a reviewer finds into an obligation the spec states. No other change from v3. | **v3** — reversal fold, on dev's option-(b) ruling. New **§4c-iii**: an applied resolution must be reversible, and the inverse data is **0029's, not this spec's** — Phase B DEPENDS on the transaction-time carrier rather than duplicating pre-state capture (agreement-by-coincidence between two carriers of one fact is the standing hazard). Three constraints: undo is a FORWARD journaled transition following 0022's reinstate pattern (history never un-happens); SCOPED to the applying `txn`, never expressible as a bare "revive edge X"; and FAIL-CLOSED on intervening state, refusing with a diff rather than cascading. Adds V-UNDO-FORWARD / V-UNDO-SCOPED / V-UNDO-FAILCLOSED. **The dependency lands on Phase B ONLY — Phase A ships alone, unchanged.** 0031 becomes V-RECON's SECOND CONSUMER (belongs in the seam manifest's S1). Prompted by AreevAI/areev shipping "every apply stores its inverse" (competitive triage 2026-08-31). | **v2** — dev internal-review fold. **D-1** the capability composes with AUTHOR and never overrides it (author/relation/revocation rows added to §3), plus new **§3a** reconciling the capability→`EvidenceContext` bridge with 0011's explicit refusal to mint `direct()` by omission (`__init__.py:361`) — minting by DECLARATION is not minting by OMISSION, and the per-event→deployment widening is stated as the honest cost. **D-2** the proposal carrier PINNED at DDL level (new §4b-ii) with the schema-version ordering dependency on 0029 left deliberately unresolved, and the erasure gap closed (V-ERASE-PROPOSALS). **D-3** both carriers named: `mcp_max_open_proposals` (default 32, range 1–256, refuses rather than evicts) and `provenance_raises_discarded` (stripped operator counter). §1 additionally carries the LIVE Bedrock evidence for T4-3. | **v1** — first candidate. Folds two owner rulings taken 2026-08-31 on measured evidence: decision 1 (MCP provenance self-attestation → option **c**, host-attested capability) and decision 2 (trust verbs → `forget`/`correct`/`confirm` not agent-exposed; `dispute` proposal-form only). Both resolve to ONE principle — **the host attests, the model proposes** — which is why they are one spec with two separable phases. |
+| **Author / session** | research (veracium-research); adopted by dev (v4-v7 per the cells; v8 = the round-2 fold — adopted 2026-09-02, the round-3 pin; frozen from adoption to seal) |
 | **Evidence** | harness Tier 5 (`cases/tier45_manifest.json` v1.1) and Tier 6 (`cases/verbs_manifest.json` v1.0), both frozen with expectations pre-committed before their first run, both model-free. Every behavioural claim below is MEASURED, and §9 names the two places measurement corrected the reasoning. |
 
 ### Spec-Requires (accepted specs this consumes)
@@ -125,8 +125,15 @@ verb to replace a functional fact.
 Everything arriving over MCP is untrusted, including the arguments that describe
 trust. The design rule this spec adds:
 
-> **A model-supplied trust argument may only move the event DOWN in the trust
-> product. It may never raise it on ANY coordinate.**
+> **A model-supplied trust argument may never make the event MORE TRUSTED, on
+> any consumer of the field it sets.**
+
+Deliberately no longer phrased as "descend in the product" — see the four
+separate obligations below. **Round-2 F1 RETRACTS the single-order framing**,
+and it was this author's over-generalisation: v6 enumerated four CONSUMERS
+correctly and then asserted ONE monotone rule across all of them, without asking
+whether each is ORDERED. Two are; one is a shaping rule; one is a digest with no
+order at all, where "descend" is not a wrong requirement but a meaningless one.
 
 This is not new machinery — it is 0026 §3b's restrict-only floor generalised
 from the relay lexicon to the whole agent-facing surface. But v5 stated the rule
@@ -136,12 +143,22 @@ round-1 F1 and is corrected here.
 **The product, enumerated.** `derived_from` and `author` are read by more than
 `_disclosure_for`, so a value that is neutral on disclosure can still be a raise:
 
-| coordinate | consumer | read at |
-|---|---|---|
-| disclosure | `_disclosure_for` | `ingest.py:141-158` |
-| supersession authority | `effective` / `permitted` / `edge_effective` | `authority.py:53-82` |
-| plan staleness (CAS token) | `scope_fingerprint` | `authority.py:86-102` |
-| scope redaction | `ScopeView`'s unset-`derived_from` fill | `scope_read.py:387-388` |
+| # | consumer | read at | kind | the obligation |
+|---|---|---|---|---|
+| 1 | `_disclosure_for` | `ingest.py:141-158` | **ORDERED** (two-valued: `USE_ONLY` < `MENTIONABLE`) | DESCEND-ONLY — a model-supplied value may move toward `USE_ONLY`, never toward `MENTIONABLE` |
+| 2 | `effective`/`permitted`/`edge_effective` | `authority.py:53-82` | **ORDERED** (four rungs, `USER 3 … THIRD_PARTY 0`) | DESCEND-ONLY — never a higher rung than the capability baseline yields |
+| 3 | `ScopeView`'s unset-`derived_from` fill | `scope_read.py:387-388` | **SHAPING**, not a trust level | RESTRICT-ONLY — the shaped record may withhold more, never reveal more |
+| 4 | `scope_fingerprint` | `authority.py:86-102` | **NOT ORDERED** — a sha256 equality digest (verified: it returns `hashlib.sha256(...).hexdigest()`); no top, no bottom, no direction | **PRESERVE-OR-INVALIDATE** — a provenance change either leaves the fingerprint identical, or any plan computed against the old one is rejected as `PlanStale`. It must never be described as descending, because a digest cannot |
+
+**Four obligations, not one rule with four instances.** Coordinates 1 and 2 are
+genuinely ordered and the round-1 F1 counterexample lives on 2. Coordinate 3 is
+a shaping rule whose direction is about disclosure of the RECORD, not its trust
+class. Coordinate 4 has no order whatever: `scope_fingerprint` is the CAS token
+for `apply_supersession_plan`, so the only coherent obligation is that a change
+is either invisible to it or invalidates the plan — and "over-sensitivity only
+costs a retry; it never misses a stale read" is the shipped comment's own
+framing. Requiring it to "descend" was not a strong claim that turned out false;
+it was a category error, which is worse, because it cannot be tested at all.
 
 The reviewer's counterexample is the **authority** coordinate. Under `none` the
 third-party floor scores `min(3, 0) = 0`; a model-declared `assistant` scores
@@ -188,11 +205,13 @@ covered without editing this section.
 
 ### 2c-ii. Assertions about reach — REQUIRED
 
-- A model-supplied value cannot move the event UP on ANY coordinate of the
-  trust product relative to the host capability's baseline (V-NO-RAISE) — the
-  four coordinates are enumerated in §2c. *v5 said "cannot produce a class less
-  restrictive", which names only disclosure; that phrasing IS F1, and it is
-  corrected here rather than left as the one place the old reading survives.*
+- A model-supplied value satisfies ALL FOUR obligations in §2c relative to the
+  host capability's baseline (V-NO-RAISE): descend-only on disclosure and on
+  supersession authority, restrict-only on scope shaping, preserve-or-invalidate
+  on `scope_fingerprint`. *v5 said "cannot produce a class less restrictive",
+  which names only disclosure — that phrasing was round-1 F1. v6 then over-
+  corrected into a single order over four consumers, which was round-2 F1. The
+  obligations are stated separately here because they are separately shaped.*
 - Under `none`, no model-supplied value changes the stored record at all
   (V-INERT-UNDER-NONE, §2c-i).
 - A proposal cannot change any edge's classification (V-INERT-PROPOSAL).
@@ -293,6 +312,40 @@ Liability, not clairvoyance — which is knowable to the declaring party, and th
 is the test. A deployment unwilling to stand behind its agent's labelling must
 leave the default, which is the same instruction §3a already gave, now with a
 stated reason rather than an intuition.
+
+#### The capability → `EvidenceContext` mapping, PINNED (round-2 F2)
+
+v6 described `direct` as minted per call **while** a lower supplied
+`derived_from` is honoured. **That is unimplementable against the shipped
+grammar, and the reviewer reproduced it — as did this author, independently:**
+
+```
+_resolve_context(EvidenceContext.direct(), EvidenceAuthor.user)        -> ValueError
+_resolve_context(EvidenceContext.direct(), EvidenceAuthor.assistant)   -> ValueError
+_resolve_context(EvidenceContext.direct(), EvidenceAuthor.third_party) -> ValueError
+```
+
+> `pass EITHER context= OR the legacy derived_from=, not both — two
+> declarations of one fact is a host bug` (`ingest.py:112-130`)
+
+**The refusal is right and the spec was wrong.** "Two declarations of one fact
+is a host bug" is the same principle this spec argues everywhere else — one
+carrier per fact — so v6 was proposing, on this one surface, exactly what it
+forbids elsewhere. The fix is not to relax the grammar; it is to pass ONE
+carrier and let it carry the restriction.
+
+| capability | model supplies | the SINGLE carrier passed |
+|---|---|---|
+| `direct` | nothing | `EvidenceContext.direct()` |
+| `direct` | `derived_from = X` (any closed-set value) | `EvidenceContext.derived(X)` |
+| `none` | anything or nothing | the absent-context floor — no context, no `derived_from` (§2c-i: both are inert here) |
+| any | — | **never both carriers** |
+
+The restriction is therefore honoured **THROUGH the declaration, never beside
+it**: under `direct`, a model saying "this came from a third party" produces
+`derived(THIRD_PARTY)` — one carrier, the descent recorded in it. Verified:
+`_resolve_context(direct(), None)` yields `derived_from = None`, which is the
+first-party cell, and `effective(USER, None) = 3` as §3's matrix requires.
 
 The capability is a property of the **deployment**, declared once at server
 construction. It is not per-call and not model-reachable.
@@ -437,7 +490,8 @@ CREATE TABLE mcp_proposal (
     kind         TEXT NOT NULL CHECK (kind IN ('dispute','correction')),
     proposer     TEXT NOT NULL CHECK (proposer = 'model'),
     target_edge_id      TEXT NOT NULL,
-    target_state_digest TEXT NOT NULL CHECK (length(target_state_digest) = 64),
+    target_state_digest TEXT NOT NULL CHECK (length(target_state_digest) = 64
+                        AND target_state_digest NOT GLOB '*[^0-9a-f]*'),
     correction_payload  TEXT CHECK (
         (kind = 'dispute'    AND correction_payload IS NULL) OR
         (kind = 'correction' AND correction_payload IS NOT NULL
@@ -468,15 +522,37 @@ CREATE TABLE mcp_proposal_resolution (      -- APPEND-ONLY; no UPDATE path exist
     seq          INTEGER NOT NULL,
     action       TEXT NOT NULL CHECK (action IN ('accept','refuse','expire','reverse')),
     at           TEXT NOT NULL,
+    resolver     TEXT NOT NULL CHECK (length(resolver) BETWEEN 1 AND 128),
     applied_txn  INTEGER,
     reversal_txn INTEGER,
     CHECK ((action = 'accept'  AND applied_txn IS NOT NULL AND reversal_txn IS NULL) OR
            (action = 'reverse' AND applied_txn IS NULL     AND reversal_txn IS NOT NULL) OR
            (action IN ('refuse','expire')
                                 AND applied_txn IS NULL    AND reversal_txn IS NULL)),
-    PRIMARY KEY (user_id, proposal_id, seq)
+    PRIMARY KEY (user_id, proposal_id, seq),
+    FOREIGN KEY (user_id, proposal_id) REFERENCES mcp_proposal(user_id, id)
 );
 ```
+
+**`PRAGMA foreign_keys=ON` at connection open is a PINNED STORE OBLIGATION.**
+SQLite enforces no foreign key without it, so an unpragma'd FK is *a comment
+wearing a constraint's clothes* — the round-1 defect in a new costume, and this
+spec would have shipped it in the fix for that very finding.
+
+#### Which mechanism owns which invariant (round-2 F5)
+
+The reviewer's four remaining acceptances are not all row-shaped, and a row
+`CHECK` cannot see another row. An obligation that does not name its mechanism
+is the comments-are-not-constraints defect facing sideways, so every invariant
+names its owner:
+
+| invariant | owner |
+|---|---|
+| closed `kind`/`proposer`/`state`/`action`; claim & payload coherence; per-state coherence; field sizes; digest is 64 **hex** | **DDL** row `CHECK` |
+| a resolution row references an existing proposal | **DDL** foreign key (+ the PRAGMA above) |
+| `accepted` ⇒ an `accept` resolution row exists | **schedule 3** — both written in ONE commit, so the pair cannot be half-present |
+| `reverse` ⇒ a prior `accept` for the same proposal | **schedule 4** — it reads `applied_txn` from the accept row before writing anything |
+| whole-table audits (every `accepted` has ≥1 accept row; every `reverse` has its prior accept) | **§6a cross-table gate** — outside any single row's reach by construction |
 
 - **`target_state_digest`** — sha256 of the target's canonical serialization at
   proposal time. Stale-proposal detection, and it is **V-RECON's serialization
@@ -532,6 +608,48 @@ CREATE TABLE mcp_proposal_resolution (      -- APPEND-ONLY; no UPDATE path exist
   lands in exactly one place: `forget_user`'s literal table tuple
   (sqlite.py:1769-1774), the same single point 0029's `edge_event` lands in.
 
+### 4b-iii. The tool schemas, pinned (round-2 F3)
+
+**`user_id` comes OFF the Phase A and Phase B tool schemas.** §4e claims the
+host process is the identity boundary; v6 left `user_id` a model-supplied
+argument, so construction-time `default_user` bound nothing — the claim was
+asserted and unenforced. This is absence-by-schema, the same move that defeats
+Q2 for `proposer`: the parameter does not exist, so there is no value to
+validate and nothing to refuse. Deployment-scoped `user_id` is captured at
+construction, exactly as §4e's identity boundary requires.
+
+```python
+# Phase A: `remember` loses user_id; author becomes non-defaulting (§4a)
+def remember(text: str, author: Optional[str] = None,
+             event_type: str = "chat", date: Optional[str] = None,
+             derived_from: Optional[str] = None) -> dict: ...
+
+# Phase B: the ONE new tool. No user_id, no proposer, no turn identifier --
+# each absent BY SCHEMA rather than rejected by validation.
+def propose(kind: str,            # CLOSED: 'dispute' | 'correction'
+            target_edge_id: str,
+            correction_payload: Optional[str] = None,   # correction only
+            claim: Optional[str] = None,                # 'error' | 'change'
+            evidence_ref: Optional[str] = None,         # a REFERENCE to look up
+            note: Optional[str] = None) -> dict: ...
+```
+
+`user_id`, `proposer`, `resolver` and any turn identifier are supplied by the
+server from construction config. A deployment that needs multi-user-per-process
+is out of Phase B v1 scope (§4e) — over stdio the transport cannot distinguish
+callers, so the honest options are one process per principal or an
+authenticated transport, not a model-supplied argument.
+
+**Q2's contradiction, resolved in Q2's favour minus the impossible half
+(round-2 F3).** §4c-ii Q2 required the resolution surface to display "the turn
+it arose from"; §4e correctly DROPS the originating turn as unavailable over
+stdio. v6 shipped both sentences. Q2's requirement is now: the resolver must see
+**the proposal's stored content, its `kind` and `claim`, its `proposer`, and its
+`evidence_ref` as an unresolved reference** — attribution sufficient to know
+they are deciding about an AGENT's claim, which was Q2's actual purpose. The
+turn is not shown because it cannot be known; §8 records that as a limit rather
+than leaving a requirement no deployment can meet.
+
 ### 4c. Resolution — differentiated by blast radius (F5)
 
 v5 specified `resolve_proposal(user_id, proposal_id, *, accept: bool, actor)`.
@@ -581,13 +699,34 @@ decision**.
    'open'` → `changes() = 0` ⇒ typed ALREADY-RESOLVED refusal → append the
    resolution row → `COMMIT`. Expiry racing a refusal resolves atomically one
    way or the other; there is no third outcome and no silent double-resolve.
-3. **ACCEPT-AND-APPLY** — ONE transaction end to end: `BEGIN IMMEDIATE` →
-   recompute the target's live digest, mismatch ⇒ typed STALE refusal with zero
-   writes → allocate `txn` → apply the host verb's writes and their journal
-   events → CAS `open` → `accepted` with `applied_txn` → append the resolution
-   row → `COMMIT`. The reviewer's "a committed correction remains recorded as
-   open" is **unrepresentable**: the mutation and the state flip share one
-   commit.
+3. **ACCEPT-AND-APPLY — `Store.apply_proposal(...)`, a store primitive that
+   OWNS the transaction (round-2 F4).** v6 described this schedule without a
+   primitive that could execute it, and the reviewer is right that it could not
+   be assembled from the existing verbs: **`Memory.correct` commits its
+   supersession plan internally and then writes its episode separately** — two
+   commits, verified at the code — so no caller can wrap it with the proposal
+   CAS in one transaction. Pinned:
+   `BEGIN IMMEDIATE` → (a) read the proposal UNDER THE WRITER LOCK, requiring
+   `state='open'` and not expired against a once-minted `now` → (b) live digest
+   vs `target_state_digest`, mismatch ⇒ typed STALE refusal, zero writes →
+   (c) echo checks for a correction, so §4c's friction is enforced at the
+   PRIMITIVE and not only at the API → (d) the mutation IN-TRANSACTION →
+   (e) 0029 journal allocation in the same transaction → (f) CAS
+   `open`→`accepted` with `applied_txn`; `changes()==0` ⇒ **ROLLBACK EVERYTHING**
+   and a typed ALREADY-RESOLVED refusal → (g) the episode append, absorbing
+   `correct()`'s second commit → (h) the resolution row with `resolver=actor` →
+   `COMMIT`.
+   **PREREQUISITE, pinned as its own obligation:** `apply_supersession_plan`
+   gains an **in-transaction variant** — the same writes with the caller owning
+   `BEGIN`/`COMMIT` — while the self-committing form remains for every existing
+   caller. That is the composability gap the finding names, closed ADDITIVELY
+   rather than by changing a shipped verb's contract.
+   The CAS at (f) is unreachable-to-miss under this schedule, since (a) read the
+   state under the same writer lock; it is kept as defense in depth, and §6a
+   carries a control PROVING the rollback (mutation gone, journal empty,
+   proposal untouched) rather than asserting it. Both "a committed correction
+   remains recorded as open" and its inverse stay **unrepresentable** — now with
+   the primitive that makes the claim implementable rather than aspirational.
 4. **REVERSE** — `BEGIN IMMEDIATE` → for every edge of `applied_txn`, compare
    the live serialization against the journal's post-apply state → any mismatch
    ⇒ typed INTERVENING-STATE refusal carrying the diff, zero writes → forward
@@ -776,6 +915,11 @@ which is why the answer is to design around it rather than to file a bug.
 | **V-INERT-UNDER-NONE** under `none`, EVERY supplied `author`/`derived_from` value leaves the stored record identical to the baseline — the case F1 was made of (`assistant` must not reach authority 1) | `test_none_baseline_is_the_bottom_element` |
 | **V-AUTHOR-BASELINE** absent `author` resolves to the capability baseline and NEVER to `"user"`; the shipped default is gone | `test_author_has_no_default_of_its_own` |
 | **V-CAP-DEFAULT** only ABSENCE resolves to `none`; EVERY supplied invalid value — including the empty string — raises at construction | `test_capability_absence_is_the_untrusted_cell` |
+| **V-OBLIGATIONS-SEPARATE** each of §2c's four consumers is checked under ITS OWN obligation; the fingerprint case asserts preserve-or-invalidate and NEVER an ordering | `test_four_obligations_are_checked_separately` |
+| **V-ONE-CARRIER** the capability→context mapping passes exactly one carrier; passing both raises, and the test asserts the shipped `ValueError` rather than restating it | `test_capability_maps_to_one_carrier` |
+| **V-NO-USER-ID-ARG** no Phase A or Phase B tool schema exposes `user_id`, `proposer`, or a turn identifier — asserted against the built server's reflected schema, not the source | `test_tool_schemas_omit_identity_arguments` |
+| **V-APPLY-ATOMIC** `Store.apply_proposal` commits mutation, journal, state flip, episode and resolution row together; a forced CAS miss leaves ZERO trace (mutation gone, journal empty, proposal untouched) | `test_apply_proposal_is_one_transaction` |
+| **V-FK-ENFORCED** the foreign key actually bites — asserted on a connection opened the way the store opens it, so a missing `PRAGMA foreign_keys=ON` FAILS rather than passing silently | `test_resolution_fk_is_enforced_not_declared` |
 | **V-DDL-ENFORCED** the reviewer's six rows are refused BY THE SCHEMA and their six passing complements accepted, plus **C13: a `correction` with `claim IS NULL` is REFUSED** — thirteen executed cells, no comment doing a constraint's job and no CHECK blind to NULL | `test_proposal_ddl_refuses_and_accepts` |
 | **V-CHECK-NULL-EXPLICIT** every `CHECK` over a nullable column is exercised with a NULL-fed row; a constraint that a NULL slips through is a defect, not a gap | `test_every_nullable_check_states_its_null_case` |
 | **V-RESOLVE-DIFFERENTIATED** no API accepts a correction without `acknowledged_value` AND `acknowledged_claim`; no single call resolves both kinds | `test_no_undifferentiated_acceptance` |
@@ -796,6 +940,26 @@ which is why the answer is to design around it rather than to file a bug.
 **The instrument already exists**, which is unusual and worth stating: the
 acceptance corpus is the frozen harness manifests, and the decisive case is
 already pinned.
+
+**CITED BY DIGEST, and SHIPPED (round-2 F6).** v6 named the manifests and bound
+nothing — so "the acceptance corpus already exists" was unverifiable from the
+archive, which is exactly the reviewer's objection. The corpus now travels with
+the package (`acceptance-corpus/`: both manifests, both raw result sets, and the
+three test drivers), and the citation and the artifact are one object:
+
+| manifest | version | sha256 |
+|---|---|---|
+| `cases/tier45_manifest.json` | v1.1 | `b504904bd79165a3…` |
+| `cases/verbs_manifest.json` | v1.0 | `91a9e78eaebad756…` |
+
+**And what the corpus does NOT establish, stated here rather than left to be
+found:** these are the **pre-Phase-A** results. Phase A does not exist, so
+nothing shipped executes 0031's own invariants — the runs establish the MEASURED
+BASELINE this spec reasons from (P3-3's elevation, the relay floor's
+independence, the verbs' marginal power), not the correctness of the design.
+The pass criteria below become runnable when Phase A lands. Answering a
+verifiability finding with an over-claim would be worse than the gap it
+closes.
 
 - **P3-3 must FLIP.** `cases/tier45_manifest.json` v1.1 pins
   `derived_from="user"` over MCP producing `disclosure=mentionable,
