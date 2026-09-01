@@ -1,0 +1,250 @@
+"""Seam model driver — research's halves (adapter + bound carrier).
+
+RULE ZERO: every assertion has a negative control proving it CAN fail. The
+controls are asserted too, so a control that stops discriminating is itself a
+test failure. A check that cannot fail is worse than no check.
+
+Payloads come from a REAL `Edge.model_dump_json()`, never hand-written, so the
+schema cannot drift from the shipped model without this failing.
+"""
+from __future__ import annotations
+
+import json
+import pytest
+
+from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance,
+                             QUARANTINE_RELATION)
+
+import sys
+from pathlib import Path
+
+SEAM = Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0029-0030" / "seam_model"
+sys.path.insert(0, str(SEAM))
+
+from raw_adapter import (Adapted, adapt, control_defaulting_a_missing_field_would_grant,
+                         control_flags_are_not_serialized,
+                         control_one_disjunct_lets_a_claim_through,
+                         derive_quarantined, derive_use_only)
+from current_state_carrier import (BOUND, IDENTITY_UNBOUND, CurrentState, Envelope,
+                                   RawEdgeState, View, bind,
+                                   control_absence_does_not_grant,
+                                   control_binding_is_load_bearing,
+                                   control_binding_survives_a_corrupt_payload,
+                                   control_view_leg_is_bound)
+
+
+def _edge(relation="has_diet", disclosure=Disclosure.MENTIONABLE, eid="e1", uid="u"):
+    return Edge(id=eid, user_id=uid, subject="user", relation=relation,
+                object="avoids dairy",
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                      evidence_ref="seam", disclosure=disclosure))
+
+
+# ---------------------------------------------------------------- adapter --
+
+def test_adapter_accepts_a_real_payload():
+    e = _edge()
+    a = adapt(e.model_dump_json(), expect_id="e1", expect_user="u")
+    assert isinstance(a, Adapted)
+    assert a.quarantined is False and a.use_only is False
+
+
+def test_flags_are_derived_not_read__with_its_control():
+    """F3: the flags are @property and appear in NO payload."""
+    payload = json.loads(_edge().model_dump_json())
+    # CONTROL: a field-reading adapter would refuse every payload.
+    assert control_flags_are_not_serialized(payload), \
+        "flags appear in the payload -- the derivation is no longer necessary"
+    # and the derivation still produces them
+    a = adapt(json.dumps(payload), expect_id="e1", expect_user="u")
+    assert a.quarantined is False
+
+
+def test_quarantined_has_TWO_disjuncts__with_its_control():
+    """The catch this model exists for."""
+    # relation disjunct alone
+    assert derive_quarantined(QUARANTINE_RELATION, Disclosure.MENTIONABLE.value)
+    # disclosure disjunct alone
+    assert derive_quarantined("has_diet", Disclosure.QUARANTINED.value)
+    assert derive_use_only(Disclosure.USE_ONLY.value)
+    # CONTROL: the one-disjunct shortcut lets a third-party CLAIM through.
+    assert control_one_disjunct_lets_a_claim_through(), \
+        "the one-disjunct derivation no longer differs -- control is vacuous"
+
+
+def test_third_party_claim_is_quarantined_end_to_end():
+    e = _edge(relation=QUARANTINE_RELATION, disclosure=Disclosure.MENTIONABLE)
+    a = adapt(e.model_dump_json(), expect_id="e1", expect_user="u")
+    assert a.quarantined is True, "a third-party claim escaped quarantine"
+
+
+def test_incomplete_provenance_refuses__with_its_control():
+    m = json.loads(_edge().model_dump_json())
+    del m["provenance"]["disclosure"]
+    text = json.dumps(m)
+    assert adapt(text, expect_id="e1", expect_user="u") is None
+    # CONTROL: defaulting instead of refusing would GRANT (use_only False).
+    assert control_defaulting_a_missing_field_would_grant(text), \
+        "defaulting no longer grants -- control is vacuous"
+
+
+def test_foreign_payload_identity_refuses():
+    """C-4: the payload's id must match the row-sourced id."""
+    e = _edge(eid="OTHER")
+    assert adapt(e.model_dump_json(), expect_id="e1", expect_user="u") is None
+
+
+def test_unparseable_text_refuses():
+    assert adapt("}{ not json", expect_id="e1", expect_user="u") is None
+
+
+@pytest.mark.parametrize("missing", sorted(
+    {"id", "user_id", "subject", "relation", "object", "note",
+     "valid_from", "invalidated_at", "invalidation_reason"}))
+def test_every_required_key_is_actually_required(missing):
+    """Totality: each required key, removed individually, must refuse."""
+    m = json.loads(_edge().model_dump_json())
+    m.pop(missing)
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None, \
+        f"a payload missing {missing!r} was accepted"
+
+
+# ----------------------------------------------------------------- carrier --
+
+def test_five_leg_binding__with_its_control():
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    cur = CurrentState("u", "A", "{}", frozenset(), 1)
+    assert bind(env, snap, cur, View("u")) == BOUND
+    # CONTROL: an unbound variant accepts a foreign current leg.
+    assert control_binding_is_load_bearing(), \
+        "binding no longer discriminates -- control is vacuous"
+
+
+def test_view_leg_is_bound__with_its_control():
+    assert control_view_leg_is_bound(), "the view leg is not actually bound"
+
+
+def test_binding_is_parse_independent__with_its_control():
+    assert control_binding_survives_a_corrupt_payload(), \
+        "binding now depends on the payload -- C-2 regressed"
+
+
+def test_absence_never_grants__with_its_control():
+    assert control_absence_does_not_grant()
+
+
+# ------------------------------------------------- the REAL ScopeView ------
+# Round-3 F3 asks the adapter be exercised against the ACTUAL ScopeView,
+# including incomplete provenance. These drive a real store, a real policy and
+# a real principal -- no stand-ins -- because the whole finding was that a
+# DESCRIPTION of the seam was wrong.
+
+import tempfile
+from pathlib import Path
+
+from veracium import SqliteStore
+from veracium.scope import Identity, validate_policy
+from veracium.scope_read import ScopeView
+
+from raw_adapter import control_defaulting_author_fabricates_a_scope_decision
+
+
+@pytest.fixture
+def scope_view():
+    with tempfile.TemporaryDirectory() as td:
+        store = SqliteStore(str(Path(td) / "seam.db"))
+        try:
+            policy = validate_policy({}, cross_scope_visible=False,
+                                     local_origin=store.local_origin())
+            yield ScopeView(store, "u", Identity(origin=None,
+                                                 source_id="mailbox-a"), policy)
+        finally:
+            store.close()
+
+
+def _edge_with_source(source_id, eid="e1"):
+    e = _edge(eid=eid)
+    e.provenance.source_id = source_id
+    return e
+
+
+def test_adapted_edge_drives_the_real_scope_view(scope_view):
+    """The end-to-end the verdict asked for: payload -> adapt -> real ScopeView."""
+    own = adapt(_edge_with_source("mailbox-a").model_dump_json(),
+                expect_id="e1", expect_user="u")
+    assert own is not None
+    assert scope_view.visible(own) is True
+    assert scope_view.decision(own) == (True, "own")
+
+
+def test_cross_scope_edge_is_not_visible__the_discriminating_pair(scope_view):
+    """CONTROL by construction: the same adapter output, different source,
+    yields the OPPOSITE decision -- so `visible` is reading our fields and
+    not returning a constant."""
+    foreign = adapt(_edge_with_source("other-mailbox", eid="e2").model_dump_json(),
+                    expect_id="e2", expect_user="u")
+    assert foreign is not None
+    assert scope_view.visible(foreign) is False
+    assert scope_view.decision(foreign) == (False, None)
+
+
+def test_incomplete_provenance_refuses_because_it_feeds_scope(scope_view):
+    """Incomplete provenance is a REFUSAL, not a tolerance -- with the control
+    showing a defaulting variant silently manufactures a scope decision."""
+    m = json.loads(_edge_with_source("mailbox-a").model_dump_json())
+    del m["provenance"]["author_of_evidence"]
+    text = json.dumps(m)
+    assert adapt(text, expect_id="e1", expect_user="u") is None
+    assert control_defaulting_author_fabricates_a_scope_decision(text, scope_view), \
+        "defaulting the author no longer produces a classifiable record -- vacuous"
+
+
+@pytest.mark.parametrize("missing", sorted(
+    {"author_of_evidence", "origin", "source_id", "evidence_ref", "disclosure"}))
+def test_every_scope_provenance_key_is_required(missing):
+    """Totality over the fields ScopeView actually reads (scope_read.py:170-176).
+
+    Presence is required even where the VALUE may be None: dev's 0029 v9
+    execution established that model_dump_json SERIALIZES Nones, so a real
+    payload always carries these keys and absence means damage.
+    """
+    m = json.loads(_edge_with_source("mailbox-a").model_dump_json())
+    m["provenance"].pop(missing)
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None, \
+        f"a payload whose provenance lacks {missing!r} was accepted"
+
+
+def test_unknown_author_is_refused_not_defaulted():
+    m = json.loads(_edge_with_source("mailbox-a").model_dump_json())
+    m["provenance"]["author_of_evidence"] = "impostor"
+    assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None
+
+
+def test_duplicate_key_would_flip_trust_under_plain_loads():
+    """0026's shipped gate refused this adapter's plain `json.loads`, and the
+    reason is a real trust bypass, executed here rather than asserted.
+
+    A payload with TWO `disclosure` keys — quarantined then mentionable —
+    parses to MENTIONABLE under last-wins, so a QUARANTINED third-party claim
+    would be DECLASSIFIED by the adapter. The strict hook refuses it.
+
+    The plain parse lives HERE and not in the model because the evidence tree
+    is exactly where the gate forbids it: the control proving a gate necessary
+    would otherwise have to violate the gate.
+    """
+    from raw_adapter import craft_duplicate_key_payload, strict_refuses_duplicate_keys
+
+    e = _edge(disclosure=Disclosure.QUARANTINED)
+    honest = e.model_dump_json()
+    assert adapt(honest, expect_id="e1", expect_user="u").quarantined is True
+
+    attack = craft_duplicate_key_payload(honest)
+    assert attack != honest, "fixture drift — the payload shape changed, control is vacuous"
+    assert attack.count('"disclosure"') == 2
+
+    # THE VULNERABILITY, demonstrated (deliberately plain — see docstring)
+    assert json.loads(attack)["provenance"]["disclosure"] == Disclosure.MENTIONABLE.value, \
+        "last-wins no longer declassifies — the gate's justification is no longer demonstrable"
+    # THE DEFENCE
+    assert strict_refuses_duplicate_keys(attack), "the strict hook accepted a duplicate key"
