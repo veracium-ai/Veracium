@@ -248,3 +248,66 @@ def test_duplicate_key_would_flip_trust_under_plain_loads():
         "last-wins no longer declassifies — the gate's justification is no longer demonstrable"
     # THE DEFENCE
     assert strict_refuses_duplicate_keys(attack), "the strict hook accepted a duplicate key"
+
+
+# ------------------------------------------- spec ↔ model propagation ------
+# Round 3's last finding: 0030 v14's §4a-iii instructed a PLAIN decoder, i.e.
+# the vulnerability the model forbids -- because v14 was written BEFORE two
+# episodes the model absorbed and nothing propagated them back. Any time a
+# runnable artifact outruns its normative one, the divergence is SILENT.
+
+import re as _re
+
+import propagation_check as PC
+
+SPEC_0030 = (Path(__file__).resolve().parents[1]
+             / "specs" / "0030-time-relative-classification.md")
+
+
+def _spec_text():
+    if not SPEC_0030.exists():
+        pytest.skip("0030 spec not reachable from this tree")
+    return SPEC_0030.read_text()
+
+
+def test_every_model_rule_is_propagated_to_the_spec():
+    """The check itself: no divergence in either direction."""
+    assert PC.check(_spec_text()) == []
+
+
+def test_the_propagation_check_can_fail__its_own_control():
+    """Rule zero applied to the checker.
+
+    A propagation check that cannot fail is the exact class this round was
+    spent learning, and writing one today would be a poor joke.
+    """
+    assert PC.control_check_can_fail(_spec_text()), \
+        "the propagation check no longer detects an un-propagated rule"
+
+
+def test_it_retro_detects_the_REAL_v14_defect():
+    """Stronger than a synthetic control: reconstruct the historical text.
+
+    v14 said "PARSE json → mapping" with no strict rule. The check must name
+    that divergence -- if it cannot detect the defect it was built for, it is
+    decorative.
+    """
+    v14ish = _spec_text().replace(
+        "with a decoder that REFUSES DUPLICATE KEYS,", "json → mapping,")
+    v14ish = _re.sub(r"NOT a plain decoder.*?mechanism\.", "", v14ish, flags=_re.S)
+    found = PC.check(v14ish)
+    assert any(f.startswith("strict-decoder:") for f in found), \
+        f"the v14 defect went undetected: {found}"
+
+
+def test_reverse_drift_is_also_caught():
+    """Two-way: a rule the SPEC requires but the MODEL stops enforcing.
+
+    Simulated by a rule whose model probe fails while its anchors are present
+    -- the direction where the model quietly stops testing what the spec
+    promises, which is as silent as the v14 direction.
+    """
+    weakened = PC.Rule("simulated", "0030 §x", lambda: False,
+                       ("REFUSES DUPLICATE KEYS",), "simulated reverse drift")
+    found = PC.check(_spec_text(), rules=(weakened,))
+    assert found and "NOT ENFORCED by the model" in found[0]

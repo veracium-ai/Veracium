@@ -29,6 +29,13 @@ shipped inventory fails in the reviewer's own run.
 """
 
 INVENTORY = [
+    ("tests/test_seam_model_0029_0030.py", "skip",
+     "0030 spec not reachable from this tree",
+     "host-conditional", "the seam model's propagation check reads the 0030 "
+                         "spec as its normative counterpart; it skips only if "
+                         "the seam-model tests are transplanted without "
+                         "specs/ — a full checkout AND the extracted review "
+                         "package both carry the spec, so neither skips"),
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the two 0015 lock-adapter tests run the POSIX kernel "
                          "contract via independent processes; they skip on "
