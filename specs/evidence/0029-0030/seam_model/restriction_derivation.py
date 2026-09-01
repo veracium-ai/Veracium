@@ -18,15 +18,21 @@ makes it fail, in this file.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import FrozenSet, Optional, Tuple
+from typing import Optional, Tuple
+
+from pydantic import ValidationError
 
 from veracium.store import revocation as rv
 from veracium.store.revocation import project_store, standing_revocations
 from veracium.store.revocation_sweep import sweep
 
+# THE ONE CARRIER DEFINITION lives in current_state_carrier (round-5 F1 —
+# the two-definitions divergence flagged in round 3 and left unfixed cost a
+# finding; this import is the fix and the lesson).
+from current_state_carrier import CurrentState, RestrictionVerdict, ScopeCell
 
-def source_restricted(store, user_id: str, edge_id: str) -> bool:
+
+def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
     """The 0030 §4b-iii derivation, corrected THREE times and EXECUTED.
 
     ONE sweep call (X-1: retire is computed against the WHOLE standing set,
@@ -36,37 +42,28 @@ def source_restricted(store, user_id: str, edge_id: str) -> bool:
     The NO-STANDING case is a defined outcome, not a fall-through: no
     restriction, ZERO sweep calls.
 
-    RETURNS A BOOLEAN, deliberately (round-4 F4): the one collective sweep
-    proves membership in the desired state under the WHOLE standing set —
-    it does NOT attribute the retirement to individual digests, and the
-    earlier `frozenset(standing)` return claimed a per-digest computation
-    that was never performed. Genuine attribution would cost |standing|
-    per-digest sweeps and nothing consumes the digests; the honest carrier
-    is the verdict actually computed.
+    RETURNS A THREE-VALUED VERDICT (round-4 F4 -> round-5 F2): the one
+    collective sweep proves membership under the WHOLE standing set — a
+    boolean already replaced the false per-digest attribution, and round 5
+    forced the third value: `project_store` validates EVERY row
+    (revocation.py:217), so over a store containing a malformed row the
+    projection CANNOT BE BUILT and both `clear` and `restricted` would be
+    fabrications. `UNDETERMINABLE` is RETURNED, never raised — caught at
+    exactly the projection boundary and nowhere wider — and the classifier
+    maps it to FENCED_AS_OF, NEVER EXCLUDED (EXCLUDED uncomputed would
+    assert a revocation never established).
     """
     standing = standing_revocations(store._conn, user_id)
     if not standing:
-        return False
+        return RestrictionVerdict.CLEAR          # defined outcome, zero sweeps
     d = sorted(standing)[0]                      # any standing digest works
-    statement = sweep(project_store(store, user_id), d)
-    return ("edge", edge_id) in set(statement["retire"])
-
-
-@dataclass(frozen=True)
-class CurrentState:
-    """Round-3 F2: the bound, one-consistent-read current carrier.
-
-    REPLACES the separate current_raw parameter — there is no second current
-    read to be stale against. `current_raw is None` is defensive totality
-    (rows die only with the whole user, journal included — forget_user's
-    table loop is the single edges DELETE, sqlite.py:1753/:1776).
-    """
-    user_id: str
-    edge_id: str
-    current_raw: Optional[str]
-    source_restricted: bool            # a VERDICT, not digests (round-4 F4)
-    read_token: int
-    scope_cell: Optional[tuple] = None  # (visible, decision) computed IN-txn (round-4 F1 option a)
+    try:
+        statement = sweep(project_store(store, user_id), d)
+    except ValidationError:
+        return RestrictionVerdict.UNDETERMINABLE
+    if ("edge", edge_id) in set(statement["retire"]):
+        return RestrictionVerdict.RESTRICTED
+    return RestrictionVerdict.CLEAR
 
 
 def current_state(store, user_id: str, edge_id: str, principal=None,
@@ -82,11 +79,18 @@ def current_state(store, user_id: str, edge_id: str, principal=None,
     transaction, so every read below — token, row, projection, sweep, and
     the ScopeView's LAZY contribution-ledger reads (which fire during
     visible()/decision(), the round-4 half of the finding) — lands inside
-    ONE SQLite read window; in rollback-journal mode the SHARED lock holds
-    until COMMIT, so a concurrent writer is excluded for the window rather
-    than interleaved. The store's instance lock is held too, so a
-    same-instance thread cannot inject DML into this transaction (same
-    connection = same transaction in sqlite3).
+    ONE SQLite read window. THE PROPERTY IS MODE-NEUTRAL AND THE
+    MECHANISM IS NOT (round-5 F3 — "writers refused, not a snapshot" was
+    the THIRD wrong mechanism statement in this family): the guaranteed
+    property is ONE WORLD PER WINDOW — every value carried out describes
+    the same database state. In rollback-journal mode the window holds a
+    SHARED lock and a concurrent writer is REFUSED for its duration; in
+    WAL mode the writer PROCEEDS and the reader keeps its SNAPSHOT —
+    different mechanisms, same property, and the interleaving test
+    asserts the property in BOTH modes plus each mode's specific
+    mechanism. The store's instance lock is held too, so a same-instance
+    thread cannot inject DML into this transaction (same connection =
+    same transaction in sqlite3).
 
     `principal`/`policy`: option (a) of the round-4 fix — when given, the
     scope decision is computed HERE, inside the transaction, and carried;
@@ -109,11 +113,26 @@ def current_state(store, user_id: str, edge_id: str, principal=None,
             if principal is not None and row is not None:
                 if _interleave is not None:
                     _interleave()          # the round-4 interleaving point
-                from veracium.schema import Edge
+                # Round-5 F2: the scope record comes from the ADAPTER, never
+                # Edge.model_validate_json — a malformed row must yield the
+                # FAIL-CLOSED HIDDEN cell, not a ValidationError. The raise
+                # the reviewer executed (source_id=[] + principal) dies here.
+                from raw_adapter import adapt
                 from veracium.scope_read import ScopeView
-                record = Edge.model_validate_json(row[0])
-                view = ScopeView(store, user_id, principal, policy)
-                scope_cell = (view.visible(record), view.decision(record))
+                adapted = adapt(row[0], expect_id=edge_id, expect_user=user_id)
+                # The cell states WHO it was computed for (round-5, research's
+                # principal bind — C-4's pattern made predictive: a fix that
+                # reassigns authority creates a new pair that nothing binds;
+                # rule 0 checks this against the envelope's principal).
+                who = (principal.origin, principal.source_id)
+                if adapted is None:
+                    scope_cell = ScopeCell(visible=False, shape=None,
+                                           fail_closed=True, principal=who)
+                else:
+                    view = ScopeView(store, user_id, principal, policy)
+                    scope_cell = ScopeCell(visible=view.visible(adapted),
+                                           shape=view.decision(adapted),
+                                           principal=who)
         finally:
             conn.execute("COMMIT")
     return CurrentState(
@@ -201,12 +220,13 @@ def control_lift_flips_with_no_row_rewrite(store, user_id: str,
     row_before = store._conn.execute(
         "SELECT json FROM edges WHERE user_id=? AND id=?",
         (user_id, edge_id)).fetchone()[0]
-    restricted_before = bool(source_restricted(store, user_id, edge_id))
+    restricted_before = source_restricted(store, user_id, edge_id)
     for d in sorted(standing_revocations(store._conn, user_id)):
         rv.revoke_source(store, user_id, d, "lift", "seam-model", at)
-    restricted_after = bool(source_restricted(store, user_id, edge_id))
+    restricted_after = source_restricted(store, user_id, edge_id)
     row_after = store._conn.execute(
         "SELECT json FROM edges WHERE user_id=? AND id=?",
         (user_id, edge_id)).fetchone()[0]
-    return (restricted_before and not restricted_after
+    return (restricted_before is RestrictionVerdict.RESTRICTED
+            and restricted_after is RestrictionVerdict.CLEAR
             and row_before == row_after)

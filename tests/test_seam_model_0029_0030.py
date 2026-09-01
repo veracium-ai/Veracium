@@ -319,7 +319,32 @@ def test_reverse_drift_is_also_caught():
 # a MUTANT CAMPAIGN over the field domain rather than the four cases I would
 # think of -- the point of the finding was that my chosen cases were the gap.
 
+# THE COVERAGE MATRIX, NAMED (round-5 F4).
+#
+# My previous claim -- "a mutant campaign over the field domain" -- described
+# the SHAPE OF THE MACHINERY (a parametrized campaign) rather than the CROSS it
+# actually walked: wrong-types over every field, but empty/over-bound over TWO.
+# That is the third overstated-exhaustiveness instance in this arc, and the cure
+# is the same one that worked for the nine carriers: name the cells so the
+# coverage claim is READABLE instead of implied.
+#
+#   FIELDS  x  CASE CLASSES
+#   ------     ------------
+#   top-level: id, user_id, subject, relation, object, note
+#   provenance: author_of_evidence, evidence_ref, origin, source_id, disclosure
+#
+#   WRONG_TYPE   -- 8 non-string values, EVERY field           (refuse)
+#   EMPTY        -- "",              EVERY field               (per the model)
+#   OVER_BOUND   -- 513 chars,       EVERY field               (per the model)
+#   MISSING      -- key absent,      EVERY field               (refuse)
+#
+# EMPTY and OVER_BOUND are expectation-BY-DERIVATION, not by intuition: the
+# expected verdict comes from the shipped field's own constraints, so the
+# matrix asserts the two-sided invariant rather than my opinion of it.
+
 WRONG_TYPES = ([], {}, 0, 1, True, 3.5, ["x"], {"a": 1})
+EMPTY_CASE = ""
+OVER_BOUND_CASE = "x" * 513
 
 _TOP_FIELDS = ("id", "user_id", "subject", "relation", "object", "note")
 _PROV_FIELDS = ("author_of_evidence", "evidence_ref", "origin", "source_id",
@@ -350,13 +375,75 @@ def test_provenance_field_wrong_type_is_refused(field, bad):
         f"provenance.{field}={bad!r} was accepted"
 
 
-@pytest.mark.parametrize("field", ("origin", "source_id"))
-@pytest.mark.parametrize("bad", ("", "x" * 513))
-def test_identity_field_bounds_are_enforced(field, bad):
-    """The SHIPPED bound: 1..IDENTITY_MAX (scope.py:96, schema.py:134-135)."""
-    m = _payload(**{field: bad})
+@pytest.mark.parametrize("case", (EMPTY_CASE, OVER_BOUND_CASE))
+@pytest.mark.parametrize("field", _PROV_FIELDS)
+def test_provenance_empty_and_overbound__expectation_DERIVED(field, case):
+    """EVERY provenance field x {empty, over-bound}, expected FROM THE MODEL.
+
+    Round-5 F4: the adapter must ACCEPT what production emits and REFUSE what
+    the consumer raises on. The expected verdict here is derived from the
+    shipped field's own constraints, so this cell cannot encode my intuition
+    about what "ought" to be rejected -- the intuition is what made the adapter
+    stricter than production for six fields.
+    """
+    from raw_adapter import _check_derived
+    from veracium.schema import Provenance as P
+    m = _payload(**{field: case})
+    got = adapt(json.dumps(m), expect_id="e1", expect_user="u")
+    if field in ("author_of_evidence", "disclosure"):
+        assert got is None, f"{field}={case!r} is not a valid enum member"
+        return
+    expected_ok = _check_derived(P, field, case)
+    assert (got is not None) == expected_ok, (
+        f"provenance.{field}={case!r}: adapter {'accepted' if got else 'refused'}, "
+        f"model says {'valid' if expected_ok else 'invalid'}")
+
+
+@pytest.mark.parametrize("case", (EMPTY_CASE, OVER_BOUND_CASE))
+@pytest.mark.parametrize("field", _TOP_FIELDS)
+def test_top_level_empty_and_overbound__expectation_DERIVED(field, case):
+    """EVERY top-level field x {empty, over-bound}, expected FROM THE MODEL."""
+    from raw_adapter import _check_derived
+    from veracium.schema import Edge as E
+    m = _payload()
+    m[field] = case
+    got = adapt(json.dumps(m), expect_id=m["id"], expect_user=m["user_id"])
+    assert (got is not None) == _check_derived(E, field, case), (
+        f"{field}={case!r}: adapter and model disagree")
+
+
+@pytest.mark.parametrize("field", _TOP_FIELDS + _PROV_FIELDS)
+def test_missing_key_is_refused_for_every_field(field):
+    """The MISSING row of the matrix, over the whole cross."""
+    m = _payload()
+    (m["provenance"] if field in _PROV_FIELDS else m).pop(field, None)
     assert adapt(json.dumps(m), expect_id="e1", expect_user="u") is None, \
-        f"provenance.{field} of length {len(bad)} was accepted"
+        f"a payload missing {field!r} was accepted"
+
+
+def test_ADAPTER_ACCEPTS_EVERYTHING_PRODUCTION_EMITS():
+    """The other half of the two-sided invariant (round-5 F4).
+
+    The reviewer probed `evidence_ref=""`; executing the class showed SIX
+    fields where the adapter was stricter than the shipped model. A too-
+    permissive adapter fails on hostile input; a too-strict one fails on
+    ORDINARY data, in production, on a payload nobody crafted.
+    """
+    from veracium.schema import Edge as E, Provenance as P
+    refused = []
+    for field in _TOP_FIELDS:
+        kw = dict(id="e1", user_id="u", subject="s", relation="has_diet",
+                  object="o", provenance=P(author_of_evidence=EvidenceAuthor.USER,
+                                           evidence_ref="ev"))
+        kw[field] = ""
+        e = E(**kw)
+        if adapt(e.model_dump_json(), expect_id=e.id, expect_user=e.user_id) is None:
+            refused.append(f"Edge.{field}=''")
+    e = E(id="e1", user_id="u", subject="s", relation="has_diet", object="o",
+          provenance=P(author_of_evidence=EvidenceAuthor.USER, evidence_ref=""))
+    if adapt(e.model_dump_json(), expect_id="e1", expect_user="u") is None:
+        refused.append("Provenance.evidence_ref=''")
+    assert not refused, f"adapter is STRICTER than production on: {refused}"
 
 
 def test_the_reviewers_exact_probe(scope_view):
@@ -402,3 +489,37 @@ def test_the_carrier_walk_can_fail__its_control():
     found = PC.check_carriers(bad)
     assert any(f.startswith("C5-") for f in found), \
         f"the carrier walk did not catch a reintroduced carrier: {found}"
+
+
+# ------------------------------- round-5: code-level spec checks -----------
+# The reviewer named why TEXT ANCHORS missed the live-view-call and
+# carrier-type drifts: prose can say the right thing while the pseudocode does
+# the wrong thing, and an anchor over the whole document finds the prose.
+
+def test_pseudocode_and_carrier_types_agree_with_the_spec():
+    assert PC.check_pseudocode(_spec_text()) == []
+
+
+def test_live_view_call_is_caught__its_control():
+    """A reintroduced live call must be named."""
+    bad = _spec_text().replace("if cell is not None and not cell.visible:",
+                               "if view is not None and not view.visible(cur):")
+    found = [x for x in PC.check_pseudocode(bad) if "LIVE VIEW" in x]
+    assert found, "a reintroduced live view call went undetected"
+
+
+def test_comment_mentioning_view_calls_is_NOT_a_false_positive():
+    """The comment DOCUMENTING the absence contains the forbidden strings.
+
+    A whole-document anchor would fire on it; the check strips comments and
+    reads what an implementer would COPY. Without this the rule would be
+    disabled within a round for crying wolf.
+    """
+    assert not [x for x in PC.check_pseudocode(_spec_text()) if "LIVE VIEW" in x]
+
+
+def test_carrier_type_drift_is_caught__its_control():
+    """Introspects the real dataclasses; a spec that stops declaring a field fails."""
+    bad = _spec_text().replace("undeterminable", "XXXX")
+    found = [x for x in PC.check_pseudocode(bad) if "carrier drift" in x]
+    assert found, "a dropped verdict value went undetected"

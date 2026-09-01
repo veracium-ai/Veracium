@@ -146,6 +146,59 @@ def _probe_identity_bounds() -> bool:
     return RA.adapt(json.dumps(m), expect_id="e1", expect_user="u") is None
 
 
+def _classifier_code(spec_text: str) -> str:
+    """The classifier pseudocode with COMMENTS STRIPPED.
+
+    Round-5: the reviewer named why TEXT ANCHORS missed the live-view-call and
+    carrier-type drifts — a spec's prose can say the right thing while its
+    pseudocode does the wrong thing, and an anchor searching the whole document
+    finds the prose. This extracts the CODE and drops comment lines, so the
+    check reads what an implementer would COPY rather than what the document
+    claims. It also avoids the obvious false positive: the comment that
+    documents the ABSENCE of live view calls contains the very strings the rule
+    forbids.
+    """
+    i = spec_text.find("def classify_as_of")
+    if i < 0:
+        return ""
+    j = spec_text.find("\n```", i)
+    body = spec_text[i:j if j > 0 else len(spec_text)]
+    out = []
+    for line in body.split("\n"):
+        code = line.split("#", 1)[0]
+        if code.strip():
+            out.append(code)
+    return "\n".join(out)
+
+
+def check_pseudocode(spec_text: str) -> list[str]:
+    """CODE-level checks the text anchors structurally cannot make."""
+    out = []
+    code = _classifier_code(spec_text)
+    if not code:
+        return ["pseudocode: classifier block not found"]
+    for banned in ("view.visible(", "view.decision(", "view.shape("):
+        if banned in code:
+            out.append(f"pseudocode: LIVE VIEW CALL `{banned}` — the cell is "
+                       f"precomputed in the read window; a live call fires lazy "
+                       f"ledger reads AFTER it closed (round-5 F1)")
+    # CARRIER-TYPE DRIFT: introspect the real dataclasses, do not restate them.
+    from current_state_carrier import CurrentState, ScopeCell, RestrictionVerdict
+    for f in CurrentState.__dataclass_fields__:
+        if f not in spec_text:
+            out.append(f"carrier drift: `CurrentState.{f}` is not declared in the spec")
+    for f in ScopeCell.__dataclass_fields__:
+        if f not in spec_text:
+            out.append(f"carrier drift: `ScopeCell.{f}` is not declared in the spec")
+    for v in RestrictionVerdict:
+        if v.value not in spec_text:
+            out.append(f"carrier drift: verdict `{v.value}` is not declared in the spec")
+    if "frozenset" in code:
+        out.append("carrier drift: `frozenset` residue in the pseudocode — the "
+                   "restriction verdict is three-valued (round-5 F2/F4)")
+    return out
+
+
 def _probe_author_is_real_enum() -> bool:
     """EXECUTED: a payload whose author is a valid string yields the real ENUM
     (a string stand-in would pass hand-written tests and raise live)."""
@@ -160,6 +213,24 @@ def _probe_author_is_real_enum() -> bool:
     return a is not None and isinstance(a.provenance.author_of_evidence,
                                         EvidenceAuthor)
 
+
+#: SPEC-SIDE RULES — named here so a maintainer grepping "is X checked?" finds
+#: them, and POINTED at their enforcement rather than given a probe.
+#:
+#: The distinction is load-bearing (0029 seat's ruling, round 5): a POINTER
+#: cannot be vacuous because it CLAIMS NOTHING; a PROBE returning constant True
+#: claims everything. A named rule backed by an inert probe answers "is this
+#: checked?" with a false YES — the same class as evidence that greps instead of
+#: running, wearing a probe's name. "A check that cannot fail is worse than no
+#: check" admits no carve-out for one that exists so a table reads well.
+SPEC_SIDE_RULES = (
+    ("no-live-view-calls", "0030 §4a classifier",
+     "enforced by `check_pseudocode` — reads the DOCUMENT (comment-stripped "
+     "pseudocode), not the model, so it cannot be a model probe"),
+    ("carrier-type-drift", "0030 §4a-i declarations",
+     "enforced by `check_pseudocode` — introspects CurrentState/ScopeCell/"
+     "RestrictionVerdict against the spec's declarations"),
+)
 
 RULES = (
     Rule("strict-decoder", "0030 §4a-iii step 1", _probe_strict_decoder,

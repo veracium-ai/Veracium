@@ -24,12 +24,14 @@ sys.path.insert(0, str(SEAM))
 
 from allocation_schedule import (deferred_batch, immediate_batch,  # noqa: E402
                                  run_two_connection_schedule)
-from restriction_derivation import (CurrentState, autocommit_variant,  # noqa: E402
+from restriction_derivation import (autocommit_variant,  # noqa: E402
                                     control_affected_misses_the_direct_case,
                                     control_bare_id_fails_open,
                                     control_lift_flips_with_no_row_rewrite,
                                     control_token_moves_on_mutation,
                                     current_state, source_restricted)
+from current_state_carrier import (CurrentState, RestrictionVerdict,  # noqa: E402
+                                   ScopeCell)
 from veracium.scope import Identity, validate_policy  # noqa: E402
 
 from veracium import EvidenceAuthor, SqliteStore  # noqa: E402
@@ -96,10 +98,10 @@ def _revoked_superseded_fixture(store):
 def test_typed_membership_restricts__bare_id_is_the_control(store):
     e, d = _revoked_superseded_fixture(store)
     got = source_restricted(store, U, e.id)
-    assert got is True, "the F2 cell is not restricted"
-    # round-4 F4: a BOOLEAN, deliberately — the collective sweep proves the
-    # verdict, not per-digest attribution; a digests return would overclaim
-    assert isinstance(got, bool)
+    assert got is RestrictionVerdict.RESTRICTED, "the F2 cell is not restricted"
+    # round-4 F4 -> round-5 F2: a VERDICT — never digests (false attribution),
+    # never a bare bool (two values cannot carry "could not compute")
+    assert isinstance(got, RestrictionVerdict)
     # row untouched: reason is still superseded (history never rewrites)
     import json
     row = store._conn.execute("SELECT json FROM edges WHERE id=?", (e.id,)).fetchone()[0]
@@ -128,7 +130,7 @@ def test_no_standing_case_is_defined_and_calls_no_sweep(store, monkeypatch):
     monkeypatch.setattr(rd, "sweep",
                         lambda *a, **k: (_ for _ in ()).throw(
                             AssertionError("sweep called with no standing set")))
-    assert rd.source_restricted(store, U, e.id) is False
+    assert rd.source_restricted(store, U, e.id) is RestrictionVerdict.CLEAR
 
 
 def test_lift_flips_the_input_without_touching_the_row(store):
@@ -144,7 +146,8 @@ def test_current_state_is_bound_and_token_moves(store):
     cs = current_state(store, U, e.id)
     assert isinstance(cs, CurrentState)
     assert (cs.user_id, cs.edge_id) == (U, e.id), "carrier identity unbound"
-    assert cs.current_raw is not None and cs.source_restricted is True
+    assert cs.current_raw is not None
+    assert cs.source_restricted is RestrictionVerdict.RESTRICTED
     # NEGATIVE CONTROL — the token must move on ANY user mutation; this
     # assertion fails the day a mutator skips the write-counter bump:
     assert control_token_moves_on_mutation(
@@ -158,7 +161,7 @@ def test_missing_row_is_a_defined_carrier_state(store):
     classification of this shape)."""
     cs = current_state(store, U, "e-never-existed")
     assert cs.current_raw is None
-    assert cs.source_restricted is False
+    assert cs.source_restricted is RestrictionVerdict.CLEAR
     assert (cs.user_id, cs.edge_id) == (U, "e-never-existed")
 
 
@@ -187,14 +190,19 @@ def test_autocommit_straddle_is_real__the_round4_control(store, tmp_path):
         "and this control is vacuous"
 
 
-def test_transactional_read_is_one_world__forced_interleaving(store):
-    """Round-4 F1, option (a), PROVEN not asserted: a foreign writer forced
-    in immediately BEFORE the scope decision (the reviewer's required
-    point) is EXCLUDED for the window — it refuses busy rather than
-    interleaving — and every carried value (row, restriction, token, scope
-    cell) describes ONE world. After the window closes the same write
-    succeeds and a fresh read sees the new world with a moved token."""
+@pytest.mark.parametrize("mode", ["delete", "wal"])
+def test_transactional_read_is_one_world__both_journal_modes(store, mode):
+    """Round-5 F3: the guaranteed property is ONE WORLD PER WINDOW, and it
+    is MODE-NEUTRAL; the MECHANISM is not. A foreign writer forced in
+    immediately before the scope decision (the reviewer's point) is
+    REFUSED in rollback mode (exclusion) and PROCEEDS in WAL mode while
+    the reader keeps its SNAPSHOT — the reviewer executed the WAL half
+    against round 5's "writers refused" claim and was right. Both modes
+    must carry one world out; each mode's specific mechanism is asserted
+    so neither can silently become the other."""
     import json
+    mode_now = store._conn.execute(f"PRAGMA journal_mode={mode}").fetchone()[0]
+    assert mode in mode_now, f"journal mode not applied: {mode_now}"
     e = _edge("Boston")
     store.add_edge(e)
     from veracium import SqliteStore as _S
@@ -213,16 +221,111 @@ def test_transactional_read_is_one_world__forced_interleaving(store):
         cs = current_state(store, U, e.id,
                            principal=Identity(origin=None, source_id="mb-a"),
                            policy=policy, _interleave=interleave)
-        assert "refused" in attempted.get("outcome", ""), \
-            f"foreign writer was not excluded: {attempted}"
+        # THE MODE-NEUTRAL PROPERTY: every carried value is the OLD world.
         row_state = json.loads(cs.current_raw)
         assert row_state["invalidated_at"] is None, "row from another world"
-        assert cs.source_restricted is False
+        assert cs.source_restricted is RestrictionVerdict.CLEAR
         assert cs.scope_cell is not None, "scope cell computed in-txn"
-        # the window is CLOSED now: the same write succeeds...
-        other.invalidate_edge(e.id, AT, "superseded")
+        # THE MODE-SPECIFIC MECHANISM:
+        if mode == "delete":
+            assert "refused" in attempted.get("outcome", ""), \
+                f"rollback mode no longer excludes: {attempted}"
+            other.invalidate_edge(e.id, AT, "superseded")  # window closed
+        else:
+            assert attempted.get("outcome") == "succeeded", \
+                f"WAL mode no longer admits the writer: {attempted}"
+        # AFTER the window: a fresh read sees the new world, token moved.
         cs2 = current_state(store, U, e.id)
         assert json.loads(cs2.current_raw)["invalidated_at"] is not None
         assert cs2.read_token > cs.read_token, "token moved with the world"
     finally:
         other.close()
+
+
+# ------------------- round-5 F2: the end-to-end matrix, no raise anywhere
+
+def _tamper(store, edge_id):
+    """The reviewer's malformed persistence: source_id=[] written at the
+    DB level (the store cannot emit it; tamper is the stated honest origin)."""
+    import json as _j
+    row = store._conn.execute("SELECT json FROM edges WHERE id=?",
+                              (edge_id,)).fetchone()[0]
+    m = _j.loads(row)
+    m["provenance"]["source_id"] = []
+    store._conn.execute("UPDATE edges SET json=? WHERE id=?",
+                        (_j.dumps(m), edge_id))
+    store._conn.commit()
+
+
+@pytest.mark.parametrize("with_principal", [False, True])
+@pytest.mark.parametrize("with_standing", [False, True])
+@pytest.mark.parametrize("malformed", ["well_formed", "probe_row", "other_row"])
+def test_end_to_end_matrix_never_raises(store, with_principal, with_standing,
+                                        malformed):
+    """Round-5 F2's required cross: principal x standing x malformation,
+    driven through current_state. NO cell may raise; every cell's verdict
+    and scope-cell family is pinned. The sharpest cells: a malformed row —
+    even an UNRELATED one — with a standing restriction yields
+    UNDETERMINABLE (returned, never raised), and a malformed probed row
+    with a principal yields the FAIL-CLOSED HIDDEN cell."""
+    probe = _edge("Boston")
+    store.add_edge(probe)
+    other = _edge("Paris", source="feed-2")
+    store.add_edge(other)
+    if with_standing:
+        d = identity_digest_of(None, "feed-1", store.local_origin())
+        rv.revoke_source(store, U, d, "revoke", "seam-model", AT)
+    if malformed == "probe_row":
+        _tamper(store, probe.id)
+    elif malformed == "other_row":
+        _tamper(store, other.id)
+
+    kwargs = {}
+    if with_principal:
+        kwargs = dict(principal=Identity(origin=None, source_id="mb-a"),
+                      policy=validate_policy({}, cross_scope_visible=False,
+                                             local_origin=store.local_origin()))
+    cs = current_state(store, U, probe.id, **kwargs)   # must never raise
+
+    # the verdict, per cell:
+    if not with_standing:
+        assert cs.source_restricted is RestrictionVerdict.CLEAR
+    elif malformed == "well_formed":
+        assert cs.source_restricted is RestrictionVerdict.RESTRICTED, \
+            "probe is sourced from the revoked feed-1"
+    else:
+        assert cs.source_restricted is RestrictionVerdict.UNDETERMINABLE, \
+            "a malformed row anywhere makes the projection unbuildable"
+
+    # the scope cell, per cell:
+    if not with_principal:
+        assert cs.scope_cell is None, "None means NO PRINCIPAL, distinct"
+    elif malformed == "probe_row":
+        assert cs.scope_cell.fail_closed and not cs.scope_cell.visible, \
+            "malformed probed row with a principal -> fail-closed HIDDEN"
+        assert cs.scope_cell.principal == (None, "mb-a"), \
+            "even the fail-closed cell states who it was computed for"
+    else:
+        assert cs.scope_cell is not None and not cs.scope_cell.fail_closed
+        assert cs.scope_cell.principal == (None, "mb-a"), \
+            "the cell is bound to its principal (the C-4 pattern, predictive)"
+
+    # the raw text is verbatim regardless (V-VERBATIM's consumer side):
+    assert cs.current_raw is not None
+
+
+def test_undeterminable_is_returned_not_raised__control(store):
+    """Rule zero for the third value: the pre-round-5 design RAISED here.
+    The control proves the raise is real (the projection genuinely cannot
+    be built) so the catch is load-bearing, not decorative."""
+    e = _edge("Boston")
+    store.add_edge(e)
+    d = identity_digest_of(None, "feed-1", store.local_origin())
+    rv.revoke_source(store, U, d, "revoke", "seam-model", AT)
+    _tamper(store, e.id)
+    import pydantic
+    with pytest.raises(pydantic.ValidationError):
+        from restriction_derivation import project_store as _ps
+        _ps(store, U)          # the raw projection DOES raise — the fabric
+    got = source_restricted(store, U, e.id)
+    assert got is RestrictionVerdict.UNDETERMINABLE

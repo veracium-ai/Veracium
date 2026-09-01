@@ -18,7 +18,8 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from veracium.scope import IDENTITY_MAX
-from veracium.schema import Disclosure, EvidenceAuthor, QUARANTINE_RELATION
+from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance,
+                             QUARANTINE_RELATION)
 
 #: exactly the keys the adapter requires. Verified by EXECUTION against
 #: `Edge.model_dump_json` -- not recalled, and notably WITHOUT `quarantined`
@@ -114,6 +115,58 @@ def derive_use_only(disclosure: str) -> bool:
     return disclosure == Disclosure.USE_ONLY.value
 
 
+# --------------------------------------------------------------------------
+# THE CONTRACT IS DERIVED FROM THE SHIPPED MODEL, NEVER RESTATED (round-5 F4)
+# --------------------------------------------------------------------------
+# Round-5 found the adapter STRICTER than production: it demanded non-empty
+# strings for `id`, `user_id`, `subject`, `relation`, `object` and
+# `evidence_ref`, all of which the shipped model declares as plain `str` with
+# NO minimum length. So it would have refused SIX classes of legitimate record.
+# The reviewer probed ONE field and the class was six.
+#
+# Adding six allowances would leave the seventh field wrong the same way.
+# RESTATED CONTRACTS DRIFT IN BOTH DIRECTIONS -- too permissive was rounds 1-4,
+# too strict was round 5 -- so the cure for both is to stop restating. These
+# rules are introspected from `Edge`/`Provenance` themselves: annotation for the
+# type, `metadata` for MinLen/MaxLen, `is_required()` for presence. Only
+# `source_id`/`origin` carry 1..512, which is where the intuition belonged.
+#
+# NOTE the deliberate asymmetry with the CONSUMER side: this half derives what
+# production EMITS; the campaign asserts we refuse what ScopeView RAISES on.
+# Both halves are needed and neither implies the other.
+
+def _field_rule(model, name):
+    """(is_optional, is_str_like, min_len, max_len) from the shipped field."""
+    f = model.model_fields[name]
+    ann = f.annotation
+    optional = "Optional" in str(ann) or "NoneType" in str(ann)
+    mn = mx = None
+    for m in f.metadata:
+        mn = getattr(m, "min_length", mn)
+        mx = getattr(m, "max_length", mx)
+    return optional, mn, mx
+
+
+def _check_derived(model, name, value) -> bool:
+    """Validate ONE raw (JSON-decoded) value against the model's own rule.
+
+    Datetimes arrive as TEXT here -- the payload is JSON and the classifier
+    normalises later -- so a datetime-annotated field is checked as a string,
+    not as a `datetime`. That is a property of the carrier being raw, and it is
+    why this cannot simply call the model's validator.
+    """
+    optional, mn, mx = _field_rule(model, name)
+    if value is None:
+        return optional
+    if not isinstance(value, str):
+        return False
+    if mn is not None and len(value) < mn:
+        return False
+    if mx is not None and len(value) > mx:
+        return False
+    return True
+
+
 def _nonempty_str(v) -> bool:
     return isinstance(v, str) and v != ""
 
@@ -154,12 +207,9 @@ def adapt(state_text: str, *, expect_id: str, expect_user: str) -> Optional[Adap
     if not REQUIRED_KEYS.issubset(m):
         return None
     # 3b. TYPES AND BOUNDS, per field (round-4 F2). Presence is not validity.
-    if not all(_nonempty_str(m[k]) for k in ("id", "user_id", "subject",
-                                             "relation", "object")):
-        return None
-    if not isinstance(m["note"], str):
-        return None
-    if not all(_optional_str(m[k]) for k in ("valid_from", "invalidated_at")):
+    if not all(_check_derived(Edge, k, m[k]) for k in
+               ("id", "user_id", "subject", "relation", "object", "note",
+                "valid_from", "invalidated_at", "invalidation_reason")):
         return None
     # 4. ENUMS: reason TYPE is required (an unknown STRING is coherent and
     #    fences later, F8b); disclosure must be a real member.
@@ -191,10 +241,10 @@ def adapt(state_text: str, *, expect_id: str, expect_user: str) -> Optional[Adap
         author = EvidenceAuthor(prov["author_of_evidence"])
     except ValueError:
         return None                       # unknown author is not defaulted
-    if not _nonempty_str(prov["evidence_ref"]):
-        return None
-    if not all(_identity_field(prov[k]) for k in ("origin", "source_id")):
-        return None                       # round-4 F2: the ScopeError probe
+    if not all(_check_derived(Provenance, k, prov[k]) for k in
+               ("evidence_ref", "origin", "source_id")):
+        return None                       # derived: 1..512 on the identity
+                                          # fields, plain str on evidence_ref
     # 5. DERIVE the flags
     return Adapted(
         provenance=AdaptedProvenance(

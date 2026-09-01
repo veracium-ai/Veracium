@@ -12,6 +12,7 @@ RULE ZERO: every assertion ships with a negative control in this file.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 
@@ -27,6 +28,51 @@ class RawEdgeState:
     recorded_at: str = ""
 
 
+class RestrictionVerdict(str, Enum):
+    """THREE-VALUED (round-5 F2), because a boolean would have to lie.
+
+    `project_store` validates EVERY row via `Edge.model_validate_json`
+    (revocation.py:217), so ONE malformed row anywhere in the user's store
+    makes the sweep raise — the restriction is not merely awkward to compute,
+    it is IMPOSSIBLE to compute. Over such a store both `True` and `False`
+    would be fabrications, and a raise is the one indefensible outcome in this
+    path. So the carrier states WHAT WAS ACTUALLY COMPUTED -- round-4 F4's
+    principle applied again.
+    """
+    CLEAR = "clear"                    # sweep ran; this edge is not covered
+    RESTRICTED = "restricted"          # sweep ran; a standing revocation covers it
+    UNDETERMINABLE = "undeterminable"  # the projection could not be built
+
+
+@dataclass(frozen=True)
+class ScopeCell:
+    """The scope decision, computed IN-TRANSACTION and carried (round-5 F1).
+
+    The classifier CONSUMES this and never calls `view.visible`/`view.decision`
+    itself: a live call would trigger lazy contribution-ledger reads AFTER the
+    read window closed, which is the seam the one-consistent-read design exists
+    to kill. `fail_closed=True` marks the cell that was NOT computed from a
+    readable payload -- a malformed current row with a principal present yields
+    hidden, no raise.
+    """
+    visible: bool
+    shape: Optional[str]
+    fail_closed: bool = False
+    principal: Optional[tuple] = None   # the (origin, source_id) the cell was
+                                        # COMPUTED FOR. Round-5, research:
+                                        # moving the scope decision into the
+                                        # carrier removes the live call but
+                                        # recreates C-4's unbound-leg risk one
+                                        # level down -- a cell computed for
+                                        # principal A, passed with an envelope
+                                        # classified for B, would silently
+                                        # answer the wrong question. X-3 bound
+                                        # the VIEW for exactly this reason; the
+                                        # precomputed cell needs the same bind,
+                                        # so it carries what it was computed for
+                                        # and rule 0 checks it.
+
+
 @dataclass(frozen=True)
 class CurrentState:
     """Row, standing set and sweep from ONE read transaction -- one snapshot.
@@ -38,14 +84,22 @@ class CurrentState:
     user_id: str
     edge_id: str
     current_raw: Optional[str]
-    source_restricted: bool            # round-4 F4: a BOOLEAN, not a digest set.
-                                       # The earlier `frozenset(standing)` return
-                                       # claimed a PER-DIGEST computation that was
-                                       # never performed -- one collective sweep
-                                       # proves a boolean, and nothing consumes
-                                       # the digests. False attribution is worse
-                                       # than a narrower true claim.
+    source_restricted: RestrictionVerdict   # round-4 F4 -> round-5 F2: a VERDICT.
+                                            # `frozenset(standing)` claimed a
+                                            # per-digest computation never
+                                            # performed; a bare bool then had to
+                                            # lie over an unprojectable store.
     read_token: int
+    scope_cell: Optional[ScopeCell] = None  # None = NO PRINCIPAL was supplied.
+                                            # THE COLLAPSE HAPPENS AT THE
+                                            # CLASSIFIER, NEVER HERE: the carrier
+                                            # keeps all three verdicts and the
+                                            # cell so a render or audit consumer
+                                            # can distinguish "restricted" from
+                                            # "could not determine" even though
+                                            # both refuse to ground. A carrier
+                                            # that pre-collapsed would re-lose the
+                                            # information one hop later.
 
 
 @dataclass(frozen=True)
@@ -99,7 +153,7 @@ def control_binding_is_load_bearing() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "B", "{}", False, 1)      # foreign leg
+    cur = CurrentState("u", "B", "{}", RestrictionVerdict.CLEAR, 1)      # foreign leg
     return (bind(env, snap, cur, None) == IDENTITY_UNBOUND
             and unbound_variant(env, snap, cur, None) == BOUND)
 
@@ -112,7 +166,7 @@ def control_view_leg_is_bound() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "A", "{}", False, 1)
+    cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1)
     foreign = View("someone-else")
     return (bind(env, snap, cur, foreign) == IDENTITY_UNBOUND
             and unbound_variant(env, snap, cur, foreign) == BOUND)
@@ -127,7 +181,7 @@ def control_binding_survives_a_corrupt_payload() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "}{ not json")
-    cur = CurrentState("u", "A", "}{ not json", False, 1)
+    cur = CurrentState("u", "A", "}{ not json", RestrictionVerdict.CLEAR, 1)
     return bind(env, snap, cur, None) == BOUND
 
 
@@ -141,5 +195,5 @@ def control_absence_does_not_grant() -> bool:
     """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "A", None, False, 1)
+    cur = CurrentState("u", "A", None, RestrictionVerdict.CLEAR, 1)
     return bind(env, snap, cur, None) == BOUND and cur.current_raw is None
