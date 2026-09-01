@@ -329,3 +329,90 @@ def test_undeterminable_is_returned_not_raised__control(store):
         _ps(store, U)          # the raw projection DOES raise — the fabric
     got = source_restricted(store, U, e.id)
     assert got is RestrictionVerdict.UNDETERMINABLE
+
+
+# --------------------- round-6 F1/F3: carried == direct; the decode boundary
+
+def test_carried_decision_equals_direct__every_reachable_row(store):
+    """Round-6 F1: the carried cell must EQUAL the direct decision, compared
+    per decision-table row reachable in this fixture (own-source visible,
+    foreign-source cross). The reviewer's probe — carried says groundable
+    where direct refuses — becomes the permanent discriminating test, and
+    the type assertion pins the double-wrap shut (shape is a str/None,
+    never a tuple)."""
+    import sys as _s
+    SEAM2 = str(SEAM)
+    if SEAM2 not in _s.path:
+        _s.path.insert(0, SEAM2)
+    from raw_adapter import adapt
+    from veracium.scope_read import ScopeView
+    e_own = _edge("Boston", source="mb-a")
+    e_cross = _edge("Paris", source="other-mailbox")
+    store.add_edge(e_own); store.add_edge(e_cross)
+    policy = validate_policy({}, cross_scope_visible=True,
+                             local_origin=store.local_origin())
+    principal = Identity(origin=None, source_id="mb-a")
+    for e in (e_own, e_cross):
+        cs = current_state(store, U, e.id, principal=principal, policy=policy)
+        row = store._conn.execute("SELECT json FROM edges WHERE id=?",
+                                  (e.id,)).fetchone()[0]
+        adapted = adapt(row, expect_id=e.id, expect_user=U)
+        direct = ScopeView(store, U, principal, policy).decision(adapted)
+        assert (cs.scope_cell.visible, cs.scope_cell.shape) == direct, \
+            f"carried != direct for {e.id}: {cs.scope_cell} vs {direct}"
+        assert not isinstance(cs.scope_cell.shape, tuple), \
+            "the round-6 double-wrap is back"
+
+
+def test_control_double_wrap_misclassifies(store):
+    """Rule zero for F1: reproduce the OLD fill (whole pair into .shape) and
+    assert the carried/direct comparison CATCHES it — the discriminating
+    test can fail."""
+    import sys as _s
+    if str(SEAM) not in _s.path:
+        _s.path.insert(0, str(SEAM))
+    from raw_adapter import adapt
+    from veracium.scope_read import ScopeView
+    e = _edge("Boston", source="mb-a")
+    store.add_edge(e)
+    policy = validate_policy({}, cross_scope_visible=True,
+                             local_origin=store.local_origin())
+    principal = Identity(origin=None, source_id="mb-a")
+    row = store._conn.execute("SELECT json FROM edges WHERE id=?",
+                              (e.id,)).fetchone()[0]
+    adapted = adapt(row, expect_id=e.id, expect_user=U)
+    view = ScopeView(store, U, principal, policy)
+    direct = view.decision(adapted)
+    old_style = ScopeCell(visible=view.visible(adapted),
+                          shape=view.decision(adapted),   # THE BUG: whole pair
+                          principal=(None, "mb-a"))
+    assert (old_style.visible, old_style.shape) != direct, \
+        "the double-wrap no longer differs — control is vacuous"
+
+
+def test_malformed_ledger_payload_yields_undeterminable(store):
+    """Round-6 F3: project_store also parses LEDGER payloads (json.loads at
+    revocation.py:232) — a malformed one raised JSONDecodeError through the
+    ValidationError-only catch. Now: UNDETERMINABLE, returned."""
+    e, d = _revoked_superseded_fixture(store)
+    store._conn.execute(
+        "INSERT INTO contribution_ledger (id, user_id, survivor_type, "
+        "survivor_id, site, identity_digest, evidence_ref_digest, payload, "
+        "op_key, created_at) VALUES ('cl-bad', ?, 'edge', ?, 'absorb', "
+        "NULL, NULL, '}{ not json', NULL, ?)", (U, e.id, AT))
+    store._conn.commit()
+    got = source_restricted(store, U, e.id)
+    assert got is RestrictionVerdict.UNDETERMINABLE
+
+
+def test_only_decode_failures_are_caught__control(store, monkeypatch):
+    """Rule zero for F3's narrowness: a NON-decode failure inside the
+    projection must PROPAGATE — catching it would hide a real bug behind
+    an honest-looking verdict."""
+    e, d = _revoked_superseded_fixture(store)
+    import restriction_derivation as rd
+    def boom(*a, **k):
+        raise RuntimeError("a real bug, not a decode failure")
+    monkeypatch.setattr(rd, "project_store", boom)
+    with pytest.raises(RuntimeError):
+        rd.source_restricted(store, U, e.id)

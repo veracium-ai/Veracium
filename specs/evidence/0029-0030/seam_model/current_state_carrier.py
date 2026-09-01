@@ -109,9 +109,20 @@ class Envelope:
 
 
 class View:
-    """Stands in for `ScopeView`, which exposes `user_id` (scope_read.py:310)."""
-    def __init__(self, user_id: str) -> None:
+    """Stands in for `ScopeView`, which exposes `user_id` (scope_read.py:310)
+    AND `principal` (:311).
+
+    ROUND-6 F2: this stand-in carried ONLY `user_id`, which is why `bind` could
+    not check the cell's principal -- the field it needed to compare against did
+    not exist on the model's own view. A stand-in narrower than production
+    silently makes a check unwritable, and the missing check then reads as a
+    design choice. `principal` here is the `(origin, source_id)` pair that
+    production's principal object yields; the model compares the pair because
+    that is what `ScopeCell.principal` records.
+    """
+    def __init__(self, user_id: str, principal: Optional[tuple] = None) -> None:
         self.user_id = user_id
+        self.principal = principal
 
 
 IDENTITY_UNBOUND = "IDENTITY_UNBOUND"
@@ -120,17 +131,48 @@ BOUND = "BOUND"
 
 def bind(envelope: Envelope, snapshot: RawEdgeState,
          current: CurrentState, view: Optional[View]) -> str:
-    """Rule 0 -- FIVE legs, all row-sourced, before anything else.
+    """Rule 0 -- SIX legs, all row-sourced, before anything else.
 
     Parse-independent by construction (C-2): nothing here touches `state`, so
     a corrupt payload still BINDS correctly and is refused later as MALFORMED,
     rather than failing binding for the wrong reason.
+
+    ROUND-6 F2 -- THE SIXTH LEG. v17 claimed "rule 0 binds it" of the scope
+    cell's principal and `ScopeCell.principal`'s own comment said "rule 0 checks
+    it". Neither was true: the cell was STORED and never consulted, so a cell
+    computed for principal A could answer for an envelope classified under B --
+    the exact escalation the field was added to prevent. The tests shared the
+    blame precisely: they asserted the principal was STORED, not that binding
+    ENFORCES it. An executed test of the wrong property.
     """
     if not (snapshot.edge_id == current.edge_id == envelope.edge_id
             and snapshot.user_id == current.user_id == envelope.user_id):
         return IDENTITY_UNBOUND
     if view is not None and view.user_id != envelope.user_id:
         return IDENTITY_UNBOUND
+    # Leg 6, in two halves that v18's first draft ran together (round-6 X-B/X-C).
+    #
+    # VIEW PRESENT: the cell is REQUIRED, then its principal must match.
+    # Requiring it is not tidiness -- with the live `view.visible`/`view.decision`
+    # calls gone, the classifier reads visibility FROM the cell, so a bound
+    # view-without-cell either dereferences None (a raise: the one outcome this
+    # design never permits) or skips visibility entirely (fail OPEN). Absence of
+    # the cell, and absence of its principal, are refused exactly as firmly as a
+    # mismatch: an uncheckable provenance claim is not weaker than a wrong one,
+    # it is the same failure with less evidence.
+    #
+    # VIEW ABSENT: binding is CORRECT and the cell is not consulted. There is no
+    # principal to protect (X-4's narrowing) and rule 1 sends a no-view record to
+    # MALFORMED rather than down the visibility branch, so the cell is surplus.
+    # Stated because v18's first report claimed this case REFUSES while the code
+    # bound it -- the code was right and the description was wrong, which is the
+    # describe-vs-read class landing in the report layer instead of the artifact.
+    if view is not None:
+        cell = current.scope_cell
+        if cell is None:
+            return IDENTITY_UNBOUND
+        if cell.principal != view.principal:
+            return IDENTITY_UNBOUND
     return BOUND
 
 
@@ -143,6 +185,66 @@ def unbound_variant(envelope: Envelope, snapshot: RawEdgeState,
 # --------------------------------------------------------------------------
 # NEGATIVE CONTROLS
 # --------------------------------------------------------------------------
+
+def control_cell_absence_refused_under_a_view() -> bool:
+    """ROUND-6 X-B: a view with NO cell at all, on an otherwise bound record.
+
+    True means binding REFUSES while the pre-F2 variant ACCEPTS. This is the
+    dangerous direction the first draft left open: the classifier consumes
+    `cell.visible`, so binding a view-without-cell hands it None.
+    """
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1)   # no cell
+    v = View("u", principal=("orig", "A"))
+    return (bind(env, snap, cur, v) == IDENTITY_UNBOUND
+            and unbound_variant(env, snap, cur, v) == BOUND)
+
+
+def control_no_view_does_not_require_a_cell() -> bool:
+    """ROUND-6 X-C, the RULING made executable: with no view there is no
+    principal to protect and the cell is never consumed, so binding must SUCCEED.
+
+    Kept as a control in its own right because the opposite rule is tempting and
+    would be wrong: refusing here would reject every legitimate no-view record.
+    """
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    return (bind(env, snap, CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1), None) == BOUND
+            and bind(env, snap, CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                                             scope_cell=ScopeCell(True, "full", principal=("o", "Z"))),
+                     None) == BOUND)
+
+
+def control_cell_principal_is_enforced() -> bool:
+    """ROUND-6 F2's discriminating control: a cell COMPUTED FOR principal A,
+    passed with a view for principal B, on an otherwise perfectly bound record.
+
+    True means binding REFUSES it while the pre-F2 variant ACCEPTS -- i.e. the
+    sixth leg does work. This is the test that did not exist: the old ones
+    asserted `cell.principal == A` after construction, which is satisfied by a
+    field nothing reads.
+    """
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    cell_for_a = ScopeCell(visible=True, shape="full", principal=("orig", "A"))
+    cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                       scope_cell=cell_for_a)
+    view_for_b = View("u", principal=("orig", "B"))
+    return (bind(env, snap, cur, view_for_b) == IDENTITY_UNBOUND
+            and unbound_variant(env, snap, cur, view_for_b) == BOUND)
+
+
+def control_cell_principal_absence_refused() -> bool:
+    """The absence half, kept separate because it is a DIFFERENT claim: a cell
+    carrying no principal at all, under a real view, must also refuse. Without
+    this, `principal=None` would be the universal skeleton key past leg 6."""
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                       scope_cell=ScopeCell(visible=True, shape="full"))
+    return bind(env, snap, cur, View("u", principal=("orig", "A"))) == IDENTITY_UNBOUND
+
 
 def control_binding_is_load_bearing() -> bool:
     """A snapshot for edge A with a CurrentState for edge B.

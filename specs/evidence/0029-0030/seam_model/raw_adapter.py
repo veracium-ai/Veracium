@@ -14,6 +14,7 @@ function below demonstrates the corresponding assertion is capable of failing.
 from __future__ import annotations
 
 import json
+import typing as _typing
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -128,18 +129,54 @@ def derive_use_only(disclosure: str) -> bool:
 # RESTATED CONTRACTS DRIFT IN BOTH DIRECTIONS -- too permissive was rounds 1-4,
 # too strict was round 5 -- so the cure for both is to stop restating. These
 # rules are introspected from `Edge`/`Provenance` themselves: annotation for the
-# type, `metadata` for MinLen/MaxLen, `is_required()` for presence. Only
-# `source_id`/`origin` carry 1..512, which is where the intuition belonged.
+# type, `metadata` for MinLen/MaxLen, and the annotation again for None-accept.
+# Only `source_id`/`origin` carry 1..512, which is where the intuition belonged.
 #
+# ROUND-6 F4, RETRACTION: this comment used to claim `is_required()` supplied
+# presence. It never did -- the code has never called it -- and it is also the
+# WRONG TOOL: `is_required()` reports whether a field has a DEFAULT, while the
+# question here is whether the model accepts None. Two different properties, and
+# a field can differ on them. The claim is withdrawn rather than implemented.
+#
+# WHICH DERIVATION, settled by execution over the fields ACTUALLY CHECKED.
+# `_check_derived` runs on twelve fields only (nine on `Edge`, three on
+# `Provenance` -- see the call sites). Over those twelve, `type(None) in
+# get_args(ann)` and sniffing `str(ann)` AGREE, in both a cold model and a warm
+# one. So the presence rule below uses BOTH: `get_args` is the principled form
+# and handles PEP-604 `X | None`; the string test survives an UNRESOLVED
+# `ForwardRef`, where `get_args` returns `()`. Neither alone is correct in every
+# state and together they are, so the disjunction is the derivation, not a hedge.
+#
+# A CORRECTION THIS AUTHOR OWES, because the reasoning nearly shipped: the first
+# version of this note argued the string test must STAY because `get_args`
+# breaks `Edge.last_outcome`, an unresolved `ForwardRef('Optional[Outcome]')`.
+# Both halves were wrong. `last_outcome` is NOT among the twelve fields
+# `_check_derived` ever sees, so it could not have broken anything; and the
+# ForwardRef RESOLVES the moment any `Edge` is instantiated, so the cold state
+# it was measured in does not occur in a real run. A narrow executed fact
+# (`get_args` returns `()` on an unresolved ForwardRef -- true) was generalised
+# into a claim about the adapter -- the scope-widening shape again, caught here
+# only because the control built to defend it answered differently depending on
+# whether anything had constructed an `Edge` first. A control whose value moves
+# with import order is not a control; that is what exposed it.
+
 # NOTE the deliberate asymmetry with the CONSUMER side: this half derives what
 # production EMITS; the campaign asserts we refuse what ScopeView RAISES on.
 # Both halves are needed and neither implies the other.
 
+
 def _field_rule(model, name):
-    """(is_optional, is_str_like, min_len, max_len) from the shipped field."""
+    """`(is_optional, min_len, max_len)` from the shipped field.
+
+    ROUND-6: this docstring said `(is_optional, is_str_like, min_len, max_len)`
+    -- four elements for a three-element return, an is_str_like that does not
+    exist. A wrong signature in a docstring is the same defect class as the
+    `is_required()` claim above, one scale smaller.
+    """
     f = model.model_fields[name]
     ann = f.annotation
-    optional = "Optional" in str(ann) or "NoneType" in str(ann)
+    optional = (type(None) in _typing.get_args(ann)
+                or "Optional" in str(ann) or "NoneType" in str(ann))
     mn = mx = None
     for m in f.metadata:
         mn = getattr(m, "min_length", mn)
@@ -347,3 +384,41 @@ def strict_refuses_duplicate_keys(attack_text: str) -> bool:
     `test_duplicate_key_would_flip_trust_under_plain_loads`.
     """
     return adapt(attack_text, expect_id="e1", expect_user="u") is None
+
+
+def control_presence_derivation_agrees() -> bool:
+    """ROUND-6 F4: the two presence derivations must agree on the fields
+    `_check_derived` ACTUALLY sees -- in BOTH a cold and a warm model.
+
+    The first version of this control compared ALL model fields and asserted
+    the sole disagreement was `Edge.last_outcome`. It was measuring a field the
+    adapter never checks, in a cold state that no real run is in, and its answer
+    FLIPPED depending on whether anything had constructed an `Edge` first. This
+    version is state-independent by construction: it warms the model itself and
+    asserts agreement before and after.
+
+    True means the disjunction in `_field_rule` is belt-and-braces rather than
+    load-bearing on either half. If a future field is added whose annotation
+    form breaks one derivation, this FAILS and names it -- which is the whole
+    point, and is what the previous version could not do.
+    """
+    checked = ((Edge, ("id", "user_id", "subject", "relation", "object", "note",
+                       "valid_from", "invalidated_at", "invalidation_reason")),
+               (Provenance, ("evidence_ref", "origin", "source_id")))
+
+    def disagreements():
+        out = []
+        for model, names in checked:
+            for n in names:
+                ann = model.model_fields[n].annotation
+                sniff = ("Optional" in str(ann)) or ("NoneType" in str(ann))
+                args = type(None) in _typing.get_args(ann)
+                if sniff != args:
+                    out.append((model.__name__, n))
+        return out
+
+    cold = disagreements()
+    Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="e",
+               disclosure=Disclosure.MENTIONABLE)          # warms both models
+    warm = disagreements()
+    return cold == [] and warm == []

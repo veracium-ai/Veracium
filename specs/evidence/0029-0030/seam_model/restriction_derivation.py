@@ -31,6 +31,24 @@ from veracium.store.revocation_sweep import sweep
 # finding; this import is the fix and the lesson).
 from current_state_carrier import CurrentState, RestrictionVerdict, ScopeCell
 
+import json as _json
+
+
+class ProjectionUnreadable(Exception):
+    """The store's rows or ledger cannot be DECODED into a projection
+    (round-6 F3): `project_store` parses edge and episode rows through the
+    Pydantic models AND contribution-ledger payloads through json.loads
+    (revocation.py:232) — three decode families, two exception types. The
+    derivation boundary catches ONLY this wrapper, so a non-decode failure
+    (a real bug) still propagates; catching broadly would hide it."""
+
+
+def _build_projection(store, user_id: str):
+    try:
+        return project_store(store, user_id)
+    except (ValidationError, _json.JSONDecodeError) as e:
+        raise ProjectionUnreadable(str(e)[:200]) from e
+
 
 def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
     """The 0030 §4b-iii derivation, corrected THREE times and EXECUTED.
@@ -58,8 +76,8 @@ def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
         return RestrictionVerdict.CLEAR          # defined outcome, zero sweeps
     d = sorted(standing)[0]                      # any standing digest works
     try:
-        statement = sweep(project_store(store, user_id), d)
-    except ValidationError:
+        statement = sweep(_build_projection(store, user_id), d)
+    except ProjectionUnreadable:
         return RestrictionVerdict.UNDETERMINABLE
     if ("edge", edge_id) in set(statement["retire"]):
         return RestrictionVerdict.RESTRICTED
@@ -130,8 +148,16 @@ def current_state(store, user_id: str, edge_id: str, principal=None,
                                            fail_closed=True, principal=who)
                 else:
                     view = ScopeView(store, user_id, principal, policy)
-                    scope_cell = ScopeCell(visible=view.visible(adapted),
-                                           shape=view.decision(adapted),
+                    # ROUND-6 F1: decision() ALREADY returns (visible, shape)
+                    # — its docstring says so (scope_read.py:328-330). The
+                    # previous fill stored the WHOLE PAIR into .shape, so the
+                    # classifier's (cell.visible, cell.shape) double-wrapped
+                    # and the reviewer's cross-visible probe GROUNDED off the
+                    # carried cell where the direct decision refused. One
+                    # decomposition, at the fill site, and the separate
+                    # visible() call drops (it is the pair's first element).
+                    vis, shape = view.decision(adapted)
+                    scope_cell = ScopeCell(visible=vis, shape=shape,
                                            principal=who)
         finally:
             conn.execute("COMMIT")

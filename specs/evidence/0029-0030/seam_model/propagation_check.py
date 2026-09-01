@@ -171,6 +171,79 @@ def _classifier_code(spec_text: str) -> str:
     return "\n".join(out)
 
 
+def _all_code_blocks(spec_text: str) -> list[tuple[int, str]]:
+    """EVERY fenced block, COMMENTS RETAINED, as (line_number, line).
+
+    ROUND-6 F4: `_classifier_code` reads ONLY `def classify_as_of`, so residue
+    living in any OTHER pseudocode block -- the `CurrentState` construction and
+    the restriction derivation, in this case -- was structurally invisible. The
+    round-5 "residue gone" claim passed a checker that could not have seen it.
+    Scanning every block is the fix; line numbers are reported so a legitimate
+    counterexample block can be recognised and excluded DELIBERATELY rather than
+    by the checker quietly not looking.
+
+    Comments are RETAINED here, unlike `_classifier_code`: the §4a signature
+    residue lived in a COMMENT, so stripping them would reproduce the blindness
+    one level down. The live-view-call ban still reads the stripped form (its
+    own documentation contains the strings it forbids); the residue rules below
+    discriminate by POSITION instead -- `: frozenset` / `= frozenset` is a
+    declaration or an assignment, while "one level down from the frozenset" is
+    prose ABOUT the withdrawn thing and must not fire.
+    """
+    out, in_block = [], False
+    for n, line in enumerate(spec_text.split("\n"), 1):
+        if line.lstrip().startswith("```"):
+            in_block = not in_block
+            continue
+        if in_block and line.strip():
+            out.append((n, line))
+    return out
+
+
+def _core_type(ann) -> str:
+    """The type token a spec declaration must contain, from the real annotation.
+
+    `Optional[ScopeCell]` -> `ScopeCell`; `RestrictionVerdict` -> itself. Module
+    prefixes and Optional wrappers are stripped because a spec writes the short
+    name; anything more specific would encode FORMATTING, which the Rule anchor
+    discipline above warns against.
+    """
+    t = ann if isinstance(ann, str) else getattr(ann, "__name__", str(ann))
+    t = t.replace("typing.", "").replace("NoneType", "")
+    if t.startswith("Optional[") and t.endswith("]"):
+        t = t[len("Optional["):-1]
+    return t.split(".")[-1].split("[")[0].strip() or "str"
+
+
+def _declared_type_ok(spec_text: str, field: str, ann) -> tuple[bool, str]:
+    """Assert the TYPE AT THE DECLARATION, not the presence of the NAME.
+
+    ROUND-6 F4: the old check was `if field not in spec_text` -- satisfied by
+    the name appearing anywhere in the document, which is why
+    `source_restricted: frozenset[str]` sailed through: the NAME was present and
+    nothing looked at what followed the colon.
+    """
+    core = _core_type(ann)
+    decls = [(n, c) for n, c in _all_code_blocks(spec_text)
+             if re.search(rf"(^|[\s(#])\b{re.escape(field)}\s*:", c)]
+    if not decls:
+        # Not every field is declared in `name: type` form -- some appear only
+        # inside a constructor-signature line. Presence is then the only
+        # available claim, and demanding more produced SIX false positives on a
+        # correct spec when this was first written. A checker that cries wolf on
+        # good input is the one people switch off (see `Rule`'s anchor
+        # discipline); too-strict is a drift direction, not a safe default.
+        return (field in spec_text), (
+            f"`{field}` appears nowhere in the spec" if field not in spec_text else "")
+    for n, c in decls:
+        declared = c.split(":", 1)[1]
+        if core in declared or (core in ("str", "int") and core in declared):
+            return True, ""
+    n, c = decls[0]
+    return False, (f"`{field}` declared as `{c.split(':',1)[1].strip().rstrip(',')}` "
+                   f"at line {n} — expected the type to name `{core}`")
+
+
 def check_pseudocode(spec_text: str) -> list[str]:
     """CODE-level checks the text anchors structurally cannot make."""
     out = []
@@ -182,20 +255,25 @@ def check_pseudocode(spec_text: str) -> list[str]:
             out.append(f"pseudocode: LIVE VIEW CALL `{banned}` — the cell is "
                        f"precomputed in the read window; a live call fires lazy "
                        f"ledger reads AFTER it closed (round-5 F1)")
-    # CARRIER-TYPE DRIFT: introspect the real dataclasses, do not restate them.
+    # CARRIER-TYPE DRIFT: introspect the real dataclasses, do not restate them,
+    # and assert the TYPE AT THE DECLARATION rather than the presence of a NAME.
     from current_state_carrier import CurrentState, ScopeCell, RestrictionVerdict
-    for f in CurrentState.__dataclass_fields__:
-        if f not in spec_text:
-            out.append(f"carrier drift: `CurrentState.{f}` is not declared in the spec")
-    for f in ScopeCell.__dataclass_fields__:
-        if f not in spec_text:
-            out.append(f"carrier drift: `ScopeCell.{f}` is not declared in the spec")
+    for cls in (CurrentState, ScopeCell):
+        for f, fld in cls.__dataclass_fields__.items():
+            good, why = _declared_type_ok(spec_text, f, fld.type)
+            if not good:
+                out.append(f"carrier drift: {cls.__name__}.{why}")
     for v in RestrictionVerdict:
         if v.value not in spec_text:
             out.append(f"carrier drift: verdict `{v.value}` is not declared in the spec")
-    if "frozenset" in code:
-        out.append("carrier drift: `frozenset` residue in the pseudocode — the "
-                   "restriction verdict is three-valued (round-5 F2/F4)")
+    # RESIDUE, scanned across EVERY code block rather than the classifier alone.
+    for n, c in _all_code_blocks(spec_text):
+        if re.search(r"[:=]\s*frozenset", c):
+            out.append(f"carrier drift: `frozenset` in DECLARATION position at line {n} "
+                       f"— the restriction verdict is three-valued (round-5 F2/F4): {c.strip()[:70]}")
+        if "_legacy_" in c:
+            out.append(f"carrier drift: `_legacy_` placeholder at line {n} — a "
+                       f"pseudo-field in normative pseudocode: {c.strip()[:70]}")
     return out
 
 

@@ -26,11 +26,16 @@ from raw_adapter import (Adapted, adapt, control_defaulting_a_missing_field_woul
                          control_one_disjunct_lets_a_claim_through,
                          derive_quarantined, derive_use_only)
 from current_state_carrier import (BOUND, IDENTITY_UNBOUND, CurrentState, Envelope,
-                                   RawEdgeState, View, bind,
+                                   RawEdgeState, RestrictionVerdict, ScopeCell,
+                                   View, bind,
                                    control_absence_does_not_grant,
                                    control_binding_is_load_bearing,
                                    control_binding_survives_a_corrupt_payload,
-                                   control_view_leg_is_bound)
+                                   control_view_leg_is_bound,
+                                   control_cell_principal_is_enforced,
+                                   control_cell_principal_absence_refused,
+                                   control_cell_absence_refused_under_a_view,
+                                   control_no_view_does_not_require_a_cell)
 
 
 def _edge(relation="has_diet", disclosure=Disclosure.MENTIONABLE, eid="e1", uid="u"):
@@ -111,11 +116,22 @@ def test_every_required_key_is_actually_required(missing):
 
 # ----------------------------------------------------------------- carrier --
 
-def test_five_leg_binding__with_its_control():
+def test_six_leg_binding__with_its_control():
+    """ROUND-6: was `test_five_leg_binding`, and it carried TWO defects that
+    only the F2 fix exposed.
+
+    (1) It passed `frozenset()` as `source_restricted` -- round-5 F4's residue
+    surviving in a THIRD carrier. The spec was swept and the adopted spec was
+    swept; the DRIVER was not, by either seat. A residue sweep that covers the
+    normative document and not the executable one is half a sweep.
+    (2) It bound a view WITH NO CELL, which X-B establishes must be refused
+    because the classifier consumes `cell.visible`.
+    """
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    cur = CurrentState("u", "A", "{}", frozenset(), 1)
-    assert bind(env, snap, cur, View("u")) == BOUND
+    cell = ScopeCell(visible=True, shape="full", principal=("orig", "P"))
+    cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1, scope_cell=cell)
+    assert bind(env, snap, cur, View("u", principal=("orig", "P"))) == BOUND
     # CONTROL: an unbound variant accepts a foreign current leg.
     assert control_binding_is_load_bearing(), \
         "binding no longer discriminates -- control is vacuous"
@@ -132,6 +148,44 @@ def test_binding_is_parse_independent__with_its_control():
 
 def test_absence_never_grants__with_its_control():
     assert control_absence_does_not_grant()
+
+
+# --------------------------------------------- ROUND-6 F2: THE SIXTH LEG ----
+# X-A, and it is the reason these exist: v18 added
+# `control_cell_principal_is_enforced` and `..._absence_refused` to the carrier
+# and NOTHING CALLED THEM. Executed proof of the hole: leg 6 was replaced with
+# `pass` and the FULL suite still passed (164 here, 191 in the repo). So the fix
+# for a binding that was DESCRIBED but never EXECUTED shipped controls that were
+# DESCRIBED but never ASSERTED -- this model's own rule ("every assertion ships
+# with a negative control", and the controls are themselves asserted) broken
+# inside the fix for F2 itself. These four tests are what make leg 6 mutable-
+# detectable; disabling any half of it now fails here.
+
+def test_cell_principal_mismatch_is_refused__with_its_control():
+    assert control_cell_principal_is_enforced(), \
+        "leg 6 is not enforcing the cell's principal -- a cell computed for A " \
+        "can answer for an envelope classified under B"
+
+
+def test_cell_principal_absence_is_refused__with_its_control():
+    assert control_cell_principal_absence_refused(), \
+        "a cell carrying NO principal passes leg 6 -- `principal=None` is a " \
+        "skeleton key past the bind"
+
+
+def test_cell_absence_under_a_view_is_refused__with_its_control():
+    """X-B: the dangerous direction. The classifier reads visibility FROM the
+    cell, so binding a view-without-cell either raises on None or fails open."""
+    assert control_cell_absence_refused_under_a_view(), \
+        "a view with no scope cell BINDS -- the classifier will consume a None cell"
+
+
+def test_no_view_does_not_require_a_cell__with_its_control():
+    """X-C's ruling, executable: with no view there is no principal to protect
+    and the cell is never consumed, so binding must SUCCEED. Refusing here would
+    reject every legitimate no-view record."""
+    assert control_no_view_does_not_require_a_cell(), \
+        "binding now refuses a no-view record -- X-4's narrowing regressed"
 
 
 # ------------------------------------------------- the REAL ScopeView ------
