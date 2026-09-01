@@ -26,8 +26,8 @@ from veracium.store.revocation import project_store, standing_revocations
 from veracium.store.revocation_sweep import sweep
 
 
-def source_restricted(store, user_id: str, edge_id: str) -> FrozenSet[str]:
-    """The 0030 §4b-iii derivation, corrected twice and now EXECUTED.
+def source_restricted(store, user_id: str, edge_id: str) -> bool:
+    """The 0030 §4b-iii derivation, corrected THREE times and EXECUTED.
 
     ONE sweep call (X-1: retire is computed against the WHOLE standing set,
     so any standing digest yields the same desired state); membership is
@@ -35,15 +35,21 @@ def source_restricted(store, user_id: str, edge_id: str) -> FrozenSet[str]:
     id is always absent, and a cast could match an episode's id (round-3 F1).
     The NO-STANDING case is a defined outcome, not a fall-through: no
     restriction, ZERO sweep calls.
+
+    RETURNS A BOOLEAN, deliberately (round-4 F4): the one collective sweep
+    proves membership in the desired state under the WHOLE standing set —
+    it does NOT attribute the retirement to individual digests, and the
+    earlier `frozenset(standing)` return claimed a per-digest computation
+    that was never performed. Genuine attribution would cost |standing|
+    per-digest sweeps and nothing consumes the digests; the honest carrier
+    is the verdict actually computed.
     """
     standing = standing_revocations(store._conn, user_id)
     if not standing:
-        return frozenset()
+        return False
     d = sorted(standing)[0]                      # any standing digest works
     statement = sweep(project_store(store, user_id), d)
-    if ("edge", edge_id) in set(statement["retire"]):
-        return frozenset(standing)
-    return frozenset()
+    return ("edge", edge_id) in set(statement["retire"])
 
 
 @dataclass(frozen=True)
@@ -58,22 +64,78 @@ class CurrentState:
     user_id: str
     edge_id: str
     current_raw: Optional[str]
-    source_restricted: FrozenSet[str]
+    source_restricted: bool            # a VERDICT, not digests (round-4 F4)
     read_token: int
+    scope_cell: Optional[tuple] = None  # (visible, decision) computed IN-txn (round-4 F1 option a)
 
 
-def current_state(store, user_id: str, edge_id: str) -> CurrentState:
-    """Row + standing set + sweep + token from ONE connection, one snapshot.
+def current_state(store, user_id: str, edge_id: str, principal=None,
+                  policy=None, _interleave=None) -> CurrentState:
+    """Row + standing set + sweep + token + SCOPE CELL from ONE explicit
+    read transaction under the store lock (round-4 F1).
 
-    The store is single-connection, so consecutive reads with no interleaved
-    writer on the same connection see one world; the model states the
-    requirement the implementation must keep (one read transaction) and
-    executes the derivation through the SAME projection builder the shipped
-    revoke_source uses — the share-the-projection rule.
+    Round 3 claimed "single connection => one world BY CONSTRUCTION" — the
+    reviewer executed the refutation: under AUTOCOMMIT each SELECT is its
+    own snapshot, and a second store instance can commit between them (see
+    `autocommit_variant`, kept as the negative control). The construction
+    is now made TRUE instead of abandoned: `BEGIN` opens a read
+    transaction, so every read below — token, row, projection, sweep, and
+    the ScopeView's LAZY contribution-ledger reads (which fire during
+    visible()/decision(), the round-4 half of the finding) — lands inside
+    ONE SQLite read window; in rollback-journal mode the SHARED lock holds
+    until COMMIT, so a concurrent writer is excluded for the window rather
+    than interleaved. The store's instance lock is held too, so a
+    same-instance thread cannot inject DML into this transaction (same
+    connection = same transaction in sqlite3).
+
+    `principal`/`policy`: option (a) of the round-4 fix — when given, the
+    scope decision is computed HERE, inside the transaction, and carried;
+    the classifier consumes the cell and never triggers a post-hoc lazy
+    read. `_interleave`: test hook, called immediately BEFORE the scope
+    decision — the reviewer's required interleaving point.
     """
+    conn = store._conn
+    with store._lock:
+        conn.execute("BEGIN")
+        try:
+            tok = conn.execute(
+                "SELECT COALESCE(n, 0) FROM write_counter WHERE user_id=?",
+                (user_id,)).fetchone()
+            row = conn.execute(
+                "SELECT json FROM edges WHERE user_id=? AND id=?",
+                (user_id, edge_id)).fetchone()
+            restricted = source_restricted(store, user_id, edge_id)
+            scope_cell = None
+            if principal is not None and row is not None:
+                if _interleave is not None:
+                    _interleave()          # the round-4 interleaving point
+                from veracium.schema import Edge
+                from veracium.scope_read import ScopeView
+                record = Edge.model_validate_json(row[0])
+                view = ScopeView(store, user_id, principal, policy)
+                scope_cell = (view.visible(record), view.decision(record))
+        finally:
+            conn.execute("COMMIT")
+    return CurrentState(
+        user_id=user_id, edge_id=edge_id,
+        current_raw=None if row is None else row[0],
+        source_restricted=restricted,
+        read_token=0 if tok is None else int(tok[0]),
+        scope_cell=scope_cell,
+    )
+
+
+def autocommit_variant(store, user_id: str, edge_id: str,
+                       between=None) -> CurrentState:
+    """THE ROUND-3 DESIGN, kept as the negative control: consecutive
+    autocommit reads, no BEGIN, no lock. `between` lets the driver commit a
+    foreign write between the token read and the row read — the reviewer's
+    exact reproduction, made repeatable."""
     tok = store._conn.execute(
         "SELECT COALESCE(n, 0) FROM write_counter WHERE user_id=?",
         (user_id,)).fetchone()
+    if between is not None:
+        between()
     row = store._conn.execute(
         "SELECT json FROM edges WHERE user_id=? AND id=?",
         (user_id, edge_id)).fetchone()
@@ -82,6 +144,7 @@ def current_state(store, user_id: str, edge_id: str) -> CurrentState:
         current_raw=None if row is None else row[0],
         source_restricted=source_restricted(store, user_id, edge_id),
         read_token=0 if tok is None else int(tok[0]),
+        scope_cell=None,
     )
 
 

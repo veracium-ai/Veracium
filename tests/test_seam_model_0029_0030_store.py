@@ -24,11 +24,13 @@ sys.path.insert(0, str(SEAM))
 
 from allocation_schedule import (deferred_batch, immediate_batch,  # noqa: E402
                                  run_two_connection_schedule)
-from restriction_derivation import (CurrentState, control_affected_misses_the_direct_case,  # noqa: E402
+from restriction_derivation import (CurrentState, autocommit_variant,  # noqa: E402
+                                    control_affected_misses_the_direct_case,
                                     control_bare_id_fails_open,
                                     control_lift_flips_with_no_row_rewrite,
                                     control_token_moves_on_mutation,
                                     current_state, source_restricted)
+from veracium.scope import Identity, validate_policy  # noqa: E402
 
 from veracium import EvidenceAuthor, SqliteStore  # noqa: E402
 from veracium.schema import Edge, Provenance  # noqa: E402
@@ -94,7 +96,10 @@ def _revoked_superseded_fixture(store):
 def test_typed_membership_restricts__bare_id_is_the_control(store):
     e, d = _revoked_superseded_fixture(store)
     got = source_restricted(store, U, e.id)
-    assert got == frozenset({d}), "the F2 cell is not restricted"
+    assert got is True, "the F2 cell is not restricted"
+    # round-4 F4: a BOOLEAN, deliberately — the collective sweep proves the
+    # verdict, not per-digest attribution; a digests return would overclaim
+    assert isinstance(got, bool)
     # row untouched: reason is still superseded (history never rewrites)
     import json
     row = store._conn.execute("SELECT json FROM edges WHERE id=?", (e.id,)).fetchone()[0]
@@ -123,7 +128,7 @@ def test_no_standing_case_is_defined_and_calls_no_sweep(store, monkeypatch):
     monkeypatch.setattr(rd, "sweep",
                         lambda *a, **k: (_ for _ in ()).throw(
                             AssertionError("sweep called with no standing set")))
-    assert rd.source_restricted(store, U, e.id) == frozenset()
+    assert rd.source_restricted(store, U, e.id) is False
 
 
 def test_lift_flips_the_input_without_touching_the_row(store):
@@ -139,7 +144,7 @@ def test_current_state_is_bound_and_token_moves(store):
     cs = current_state(store, U, e.id)
     assert isinstance(cs, CurrentState)
     assert (cs.user_id, cs.edge_id) == (U, e.id), "carrier identity unbound"
-    assert cs.current_raw is not None and cs.source_restricted == frozenset({d})
+    assert cs.current_raw is not None and cs.source_restricted is True
     # NEGATIVE CONTROL — the token must move on ANY user mutation; this
     # assertion fails the day a mutator skips the write-counter bump:
     assert control_token_moves_on_mutation(
@@ -153,5 +158,71 @@ def test_missing_row_is_a_defined_carrier_state(store):
     classification of this shape)."""
     cs = current_state(store, U, "e-never-existed")
     assert cs.current_raw is None
-    assert cs.source_restricted == frozenset()
+    assert cs.source_restricted is False
     assert (cs.user_id, cs.edge_id) == (U, "e-never-existed")
+
+
+# --------------------------------------- round-4 F1: the one consistent read
+
+def test_autocommit_straddle_is_real__the_round4_control(store, tmp_path):
+    """The reviewer's reproduction, made a permanent negative control: the
+    ROUND-3 design (consecutive autocommit reads) returns a MIXED WORLD when
+    a second store instance commits between the reads."""
+    e = _edge("Boston")
+    store.add_edge(e)
+    t0 = current_state(store, U, e.id).read_token
+    import json
+    from veracium import SqliteStore as _S
+    other = _S(str(store._path))
+    try:
+        def between():
+            other.invalidate_edge(e.id, AT, "superseded")
+        cs = autocommit_variant(store, U, e.id, between=between)
+    finally:
+        other.close()
+    row_state = json.loads(cs.current_raw)
+    assert cs.read_token == t0, "token was read before the foreign write"
+    assert row_state["invalidated_at"] is not None, \
+        "row was read after it — the straddle is no longer reproducible " \
+        "and this control is vacuous"
+
+
+def test_transactional_read_is_one_world__forced_interleaving(store):
+    """Round-4 F1, option (a), PROVEN not asserted: a foreign writer forced
+    in immediately BEFORE the scope decision (the reviewer's required
+    point) is EXCLUDED for the window — it refuses busy rather than
+    interleaving — and every carried value (row, restriction, token, scope
+    cell) describes ONE world. After the window closes the same write
+    succeeds and a fresh read sees the new world with a moved token."""
+    import json
+    e = _edge("Boston")
+    store.add_edge(e)
+    from veracium import SqliteStore as _S
+    import sqlite3 as _sq
+    other = _S(str(store._path), busy_timeout_ms=50)
+    attempted = {}
+    def interleave():
+        try:
+            other.invalidate_edge(e.id, AT, "superseded")
+            attempted["outcome"] = "succeeded"
+        except _sq.OperationalError as ex:
+            attempted["outcome"] = f"refused: {ex}"
+    try:
+        policy = validate_policy({}, cross_scope_visible=False,
+                                 local_origin=store.local_origin())
+        cs = current_state(store, U, e.id,
+                           principal=Identity(origin=None, source_id="mb-a"),
+                           policy=policy, _interleave=interleave)
+        assert "refused" in attempted.get("outcome", ""), \
+            f"foreign writer was not excluded: {attempted}"
+        row_state = json.loads(cs.current_raw)
+        assert row_state["invalidated_at"] is None, "row from another world"
+        assert cs.source_restricted is False
+        assert cs.scope_cell is not None, "scope cell computed in-txn"
+        # the window is CLOSED now: the same write succeeds...
+        other.invalidate_edge(e.id, AT, "superseded")
+        cs2 = current_state(store, U, e.id)
+        assert json.loads(cs2.current_raw)["invalidated_at"] is not None
+        assert cs2.read_token > cs.read_token, "token moved with the world"
+    finally:
+        other.close()
