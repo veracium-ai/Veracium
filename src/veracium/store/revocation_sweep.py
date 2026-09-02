@@ -504,10 +504,17 @@ def _side(payload, which):
         # identical defect one field over — the class is closed, not the
         # named cell. Confidence: finite and within Provenance's [0, 1]
         # (schema.py — ge=0.0, le=1.0; NaN and infinities are floats and
-        # pass isinstance). Datetimes: parseable in the writer's canonical
-        # json_datetime form (Z-suffixed ISO — contribution.json_datetime),
-        # which is also what makes the fold's lexicographic min()/max()
-        # order-correct.
+        # pass isinstance). Datetimes: THE EXACT CANONICAL WRITER FORM
+        # (round-11 F1 — the round-10 check validated parseability only, so
+        # offset/naive/date-only forms passed, and the round-10 comment here
+        # claimed canonicality makes lexicographic min()/max() order-correct,
+        # WHICH IS FALSE TWICE: a "-01:00" offset misorders against Z-forms
+        # — the reviewer's pair folded to the chronologically wrong maximum,
+        # both implementations agreeing on the wrong value — and even two
+        # CANONICAL strings misorder when only one carries microseconds
+        # ('.' sorts before 'Z'). Canonical form is the DOMAIN check; the
+        # fold's comparison is by PARSED INSTANT, matching production, which
+        # compares datetime objects at graph.py:463-464.)
         if field == "confidence":
             if not (_math.isfinite(v) and 0.0 <= v <= 1.0):
                 raise RevocationError(
@@ -516,12 +523,23 @@ def _side(payload, which):
                     f"stored shape")
         else:
             try:
-                _datetime.fromisoformat(v.replace("Z", "+00:00"))
+                p = _datetime.fromisoformat(v.replace("Z", "+00:00"))
+                ok = (p.utcoffset() is not None
+                      and not p.utcoffset()
+                      and p.isoformat().replace("+00:00", "Z") == v)
             except ValueError:
+                ok = False
+            if not ok:
                 raise RevocationError(
-                    f"payload[{which!r}].{field}: {v!r} is not a parseable "
-                    f"json_datetime — refusing the stored shape") from None
+                    f"payload[{which!r}].{field}: {v!r} is not the writer's "
+                    f"canonical Z-suffixed UTC json_datetime — refusing the "
+                    f"stored shape")
     return side
+
+
+def _instant(s):
+    """Chronological key over canonical (already-validated) datetimes."""
+    return _datetime.fromisoformat(s.replace("Z", "+00:00"))
 
 
 def _fold(base, sides) -> dict:
@@ -533,8 +551,11 @@ def _fold(base, sides) -> dict:
            "observed_at": base["observed_at"],
            "confidence": base["confidence"]}
     for s in sides:
-        out["valid_from"] = min(out["valid_from"], s["valid_from"])
-        out["observed_at"] = max(out["observed_at"], s["observed_at"])
+        # BY PARSED INSTANT, never by string (round-11 F1): production's
+        # absorption compares datetime objects; string comparison misorders
+        # across offsets and across canonical precision variants.
+        out["valid_from"] = min(out["valid_from"], s["valid_from"], key=_instant)
+        out["observed_at"] = max(out["observed_at"], s["observed_at"], key=_instant)
         out["confidence"] = max(out["confidence"], s["confidence"])
     return out
 
@@ -586,8 +607,8 @@ def recompute(rows, standing, retired=frozenset()) -> dict:
     out = _fold(base, live_sides)
     # the clamp, against the FULL-evidence fold (= the committed value): never
     # an earlier start, never later currency, never higher confidence
-    out["valid_from"] = max(out["valid_from"], full["valid_from"])
-    out["observed_at"] = min(out["observed_at"], full["observed_at"])
+    out["valid_from"] = max(out["valid_from"], full["valid_from"], key=_instant)
+    out["observed_at"] = min(out["observed_at"], full["observed_at"], key=_instant)
     out["confidence"] = min(out["confidence"], full["confidence"])
     return out
 

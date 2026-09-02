@@ -539,7 +539,7 @@ def _seam_modules():
             if not p.stem.startswith("_")]
 
 
-def _census_source(source):
+def _census_source(source, protected_modules=None):
     """IDENTITY census over one source text (round-10 F3, the gate's FOURTH
     rung: mention -> module-discovery -> call-by-name -> call-by-IDENTITY).
     The round-9 census recorded terminal NAMES, so a call to any unrelated
@@ -561,6 +561,18 @@ def _census_source(source):
     dispatch tables and aliases cannot silently hide an invocation from
     the census.
 
+    FIFTH RUNG (round-11 F2): the round-10 census remembered import bindings
+    and never applied LATER name binding — a `def` shadowing an imported
+    control, or a reassigned module alias, left the census crediting the
+    ORIGINAL while runtime invoked a replacement (the reviewer's two probes,
+    verbatim in the negatives below). Scope-aware resolution is a compiler's
+    job, so the CONSTRAINED-GRAMMAR arm is completed instead: the census
+    derives a PROTECTED set — every local name bound to an imported
+    control_* and every module alias of a protected (seam) module — and
+    REFUSES every binding construct that shadows one: def/class, plain,
+    annotated, augmented and unpacked assignment, walrus, for/comprehension
+    targets, with-as, except-as, function parameters, and re-imports.
+
     Returns (credited, violations): credited = {(module, func)} identities
     actually called; violations = [description]."""
     import ast
@@ -568,13 +580,41 @@ def _census_source(source):
     from_bindings = {}   # local name -> (module, original_name)
     mod_bindings = {}    # local name -> module
     for node in ast.walk(tree):
+        # FIRST binding wins (round-11: a conflicting later import must not
+        # silently DEPROTECT the name by overwriting its map entry — the
+        # last-wins draft of this loop did exactly that, caught by the
+        # conflicting-reimport probe before it shipped).
         if isinstance(node, ast.ImportFrom) and node.module:
             for a in node.names:
-                from_bindings[a.asname or a.name] = (node.module, a.name)
+                from_bindings.setdefault(a.asname or a.name,
+                                         (node.module, a.name))
         elif isinstance(node, ast.Import):
             for a in node.names:
-                mod_bindings[a.asname or a.name] = a.name
+                mod_bindings.setdefault(a.asname or a.name, a.name)
+    protected = {n for n, (_, orig) in from_bindings.items()
+                 if orig.startswith("control_")}
+    protected |= {n for n, mod in mod_bindings.items()
+                  if mod in (protected_modules or ())}
+
+    def _target_names(t):
+        if isinstance(t, ast.Name):
+            yield t.id
+        elif isinstance(t, (ast.Tuple, ast.List)):
+            for e in t.elts:
+                yield from _target_names(e)
+        elif isinstance(t, ast.Starred):
+            yield from _target_names(t.value)
+
     credited, violations = set(), []
+
+    def _shadow(name, what):
+        if name in protected:
+            violations.append(
+                f"protected binding {name!r} shadowed by {what} — the census "
+                f"resolves calls through import bindings, so any later "
+                f"rebinding makes it credit a callable that is not the one "
+                f"invoked (round-11 F2)")
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             fn = node.func
@@ -584,7 +624,19 @@ def _census_source(source):
                   and isinstance(fn.value, ast.Name)
                   and fn.value.id in mod_bindings):
                 credited.add((mod_bindings[fn.value.id], fn.attr))
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            _shadow(node.name, "a def")
+            a = node.args
+            for arg in (a.posonlyargs + a.args + a.kwonlyargs
+                        + ([a.vararg] if a.vararg else [])
+                        + ([a.kwarg] if a.kwarg else [])):
+                _shadow(arg.arg, "a function parameter")
+        elif isinstance(node, ast.ClassDef):
+            _shadow(node.name, "a class def")
         elif isinstance(node, ast.Assign):
+            for t in node.targets:
+                for n in _target_names(t):
+                    _shadow(n, "an assignment")
             src = node.value
             rebind = None
             if isinstance(src, ast.Name) and src.id in from_bindings:
@@ -598,16 +650,55 @@ def _census_source(source):
                     f"control {rebind[0]}.{rebind[1]} rebound to another "
                     f"name — controls are invoked through their imported "
                     f"bindings so the identity census can see them")
+        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
+            for n in _target_names(node.target):
+                _shadow(n, "an annotated/augmented assignment")
+        elif isinstance(node, ast.NamedExpr):
+            for n in _target_names(node.target):
+                _shadow(n, "a walrus assignment")
+        elif isinstance(node, (ast.For, ast.AsyncFor)):
+            for n in _target_names(node.target):
+                _shadow(n, "a for target")
+        elif isinstance(node, ast.comprehension):
+            for n in _target_names(node.target):
+                _shadow(n, "a comprehension target")
+        elif isinstance(node, (ast.With, ast.AsyncWith)):
+            for item in node.items:
+                if item.optional_vars is not None:
+                    for n in _target_names(item.optional_vars):
+                        _shadow(n, "a with-as target")
+        elif isinstance(node, ast.ExceptHandler):
+            if node.name:
+                _shadow(node.name, "an except-as name")
+    # a later import rebinding a protected name to a DIFFERENT target is a
+    # shadow; re-importing the SAME module under the same alias (a common
+    # function-local pattern in these drivers) binds the same identity and
+    # is legitimate.
+    first = {}
+    for node in ast.walk(tree):
+        pairs = []
+        if isinstance(node, ast.ImportFrom) and node.module:
+            pairs = [(a.asname or a.name, ("from", node.module, a.name))
+                     for a in node.names]
+        elif isinstance(node, ast.Import):
+            pairs = [(a.asname or a.name, ("mod", a.name)) for a in node.names]
+        for n, ident in pairs:
+            if n in protected and n in first and first[n] != ident:
+                _shadow(n, "a conflicting re-import")
+            first.setdefault(n, ident)
     return credited, violations
 
 
 def _invoked_identities():
-    """The identity census over BOTH drivers; alias violations fail here."""
+    """The identity census over BOTH drivers; shadow violations fail here.
+    The protected-module set is DERIVED from the seam_model directory (no
+    hardcoded registry to rot — the round-7 lesson, held)."""
     here = Path(__file__).resolve().parent
+    protected_mods = {m.__name__ for m in _seam_modules()}
     credited = set()
     for f in ("test_seam_model_0029_0030.py",
               "test_seam_model_0029_0030_store.py"):
-        c, viol = _census_source((here / f).read_text())
+        c, viol = _census_source((here / f).read_text(), protected_mods)
         assert not viol, f"{f}: {viol}"
         credited.update(c)
     return credited
@@ -826,14 +917,25 @@ _GOOD_SIDE = {"valid_from": "2026-01-01T00:00:00Z",
 # and the stored edge failed its own model. Domain variants apply per field:
 # confidence gains range/NaN/inf; the datetimes gain the unparseable string
 # (the SAME laundering one field over — Edge.valid_from is datetime-typed).
+# Round-11 F1 widened the datetime variants past parseability into the
+# CANONICAL WRITER FORM: parseable non-canonical forms (the reviewer's
+# offset pair, naive, date-only, padded precision) folded lexicographically
+# to chronologically WRONG values — both implementations agreeing on the
+# wrong answer. All refuse now; the fold compares parsed instants.
+_DT_VARIANTS = ("not-a-datetime", "offset", "naive", "date-only",
+                "padded-precision")
 _DOMAIN_VARIANTS = {
     "confidence": ("above-domain", "below-domain", "nan", "infinity"),
-    "valid_from": ("not-a-datetime",),
-    "observed_at": ("not-a-datetime",),
+    "valid_from": _DT_VARIANTS,
+    "observed_at": _DT_VARIANTS,
 }
 _DOMAIN_VALUES = {"above-domain": 2.0, "below-domain": -0.5,
                   "nan": float("nan"), "infinity": float("inf"),
-                  "not-a-datetime": "not-a-date"}
+                  "not-a-datetime": "not-a-date",
+                  "offset": "2025-12-31T23:30:00-01:00",
+                  "naive": "2026-01-01T00:00:00",
+                  "date-only": "2026-01-01",
+                  "padded-precision": "2026-01-01T00:00:00.000000Z"}
 SIDE_MUTANTS = [
     (side, field, variant)
     for side in ("base", "contributor")
@@ -953,3 +1055,78 @@ def test_out_of_domain_confidence_refuses_revoke_and_lift(store):
     row = store._conn.execute("SELECT json FROM edges WHERE id=?",
                               (surv2.id,)).fetchone()[0]
     Edge.model_validate_json(row)
+
+
+SHADOW_PROBES = [
+    # (case, source, needs_protected_module)
+    ("reviewer-def-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "def control_bare_id_fails_open():\n"
+        "    return True\n"
+        "control_bare_id_fails_open()\n"), False),
+    ("reviewer-module-reassignment", (
+        "import restriction_derivation as rd\n"
+        "rd = replacement_object\n"
+        "rd.control_token_moves_on_mutation()\n"), True),
+    ("class-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "class control_bare_id_fails_open: pass\n"), False),
+    ("parameter-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "def f(control_bare_id_fails_open):\n"
+        "    return control_bare_id_fails_open()\n"), False),
+    ("for-target-shadow", (
+        "import restriction_derivation as rd\n"
+        "for rd in items:\n"
+        "    pass\n"), True),
+    ("with-as-shadow", (
+        "import restriction_derivation as rd\n"
+        "with open('x') as rd:\n"
+        "    pass\n"), True),
+    ("except-as-shadow", (
+        "import restriction_derivation as rd\n"
+        "try:\n    pass\n"
+        "except Exception as rd:\n    pass\n"), True),
+    ("walrus-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "if (control_bare_id_fails_open := other()):\n"
+        "    pass\n"), False),
+    ("plain-assignment-over-imported-name", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "control_bare_id_fails_open = lambda: True\n"), False),
+    ("unpack-shadow", (
+        "import restriction_derivation as rd\n"
+        "rd, other = things\n"), True),
+    ("conflicting-reimport", (
+        "import restriction_derivation as rd\n"
+        "import somewhere_else as rd\n"), True),
+]
+
+
+@pytest.mark.parametrize("case,src,needs_mod", SHADOW_PROBES,
+                         ids=[p[0] for p in SHADOW_PROBES])
+def test_shadowing_is_a_census_violation__controls(case, src, needs_mod):
+    """Round-11 F2's permanent negatives — the reviewer's two probes
+    VERBATIM first, then their full binding-construct list: the round-10
+    census remembered import bindings and never applied later name binding,
+    so a def-shadow or module reassignment left it crediting the ORIGINAL
+    control while runtime invoked a replacement. Scope-aware resolution is
+    a compiler's job; the constrained grammar refuses EVERY shadow of a
+    protected binding instead, and each construct here must VIOLATE."""
+    mods = {"restriction_derivation"} if needs_mod else None
+    _, violations = _census_source(src, mods)
+    assert violations, f"{case}: shadow accepted silently — the census " \
+                       f"has regressed to import-time-only binding"
+
+
+def test_same_module_local_reimport_is_not_a_violation__control():
+    """The constraint's scope, asserted: a function-local re-import of the
+    SAME module under the SAME alias binds the same identity (the drivers'
+    own standing pattern) and must NOT violate — the grammar refuses
+    shadows, not style."""
+    src = ("import restriction_derivation as rd\n"
+           "def f():\n"
+           "    import restriction_derivation as rd\n"
+           "    return rd.control_bare_id_fails_open\n")
+    _, violations = _census_source(src, {"restriction_derivation"})
+    assert violations == [], violations

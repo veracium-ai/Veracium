@@ -476,13 +476,27 @@ def _side(payload, which):
                     f"shipped Provenance domain [0.0, 1.0] — refusing the "
                     f"stored shape")
         else:
+            # THE EXACT CANONICAL WRITER FORM (round-11 F1): parseability
+            # admitted offsets/naive/date-only, and string-keyed folding
+            # misordered them — see the product _side's full account.
             try:
-                _datetime.fromisoformat(v.replace("Z", "+00:00"))
+                p = _datetime.fromisoformat(v.replace("Z", "+00:00"))
+                ok = (p.utcoffset() is not None
+                      and not p.utcoffset()
+                      and p.isoformat().replace("+00:00", "Z") == v)
             except ValueError:
+                ok = False
+            if not ok:
                 raise RevocationError(
-                    f"payload[{which!r}].{field}: {v!r} is not a parseable "
-                    f"json_datetime — refusing the stored shape") from None
+                    f"payload[{which!r}].{field}: {v!r} is not the writer's "
+                    f"canonical Z-suffixed UTC json_datetime — refusing the "
+                    f"stored shape")
     return side
+
+
+def _instant(s):
+    """Chronological key over canonical (already-validated) datetimes."""
+    return _datetime.fromisoformat(s.replace("Z", "+00:00"))
 
 
 def _fold(base, sides) -> dict:
@@ -494,8 +508,10 @@ def _fold(base, sides) -> dict:
            "observed_at": base["observed_at"],
            "confidence": base["confidence"]}
     for s in sides:
-        out["valid_from"] = min(out["valid_from"], s["valid_from"])
-        out["observed_at"] = max(out["observed_at"], s["observed_at"])
+        # BY PARSED INSTANT, never by string (round-11 F1; production
+        # compares datetime objects at graph.py:463-464).
+        out["valid_from"] = min(out["valid_from"], s["valid_from"], key=_instant)
+        out["observed_at"] = max(out["observed_at"], s["observed_at"], key=_instant)
         out["confidence"] = max(out["confidence"], s["confidence"])
     return out
 
@@ -547,8 +563,8 @@ def recompute(rows, standing, retired=frozenset()) -> dict:
     out = _fold(base, live_sides)
     # the clamp, against the FULL-evidence fold (= the committed value): never
     # an earlier start, never later currency, never higher confidence
-    out["valid_from"] = max(out["valid_from"], full["valid_from"])
-    out["observed_at"] = min(out["observed_at"], full["observed_at"])
+    out["valid_from"] = max(out["valid_from"], full["valid_from"], key=_instant)
+    out["observed_at"] = min(out["observed_at"], full["observed_at"], key=_instant)
     out["confidence"] = min(out["confidence"], full["confidence"])
     return out
 

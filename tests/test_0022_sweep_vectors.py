@@ -202,3 +202,28 @@ def test_reference_and_product_refuse_the_same_invalid_shapes(v):
         ref_recompute(rows, standing)
     with pytest.raises(psw.RevocationError):
         psw.recompute(rows, standing)
+
+
+# ---- round-11 0029/0030 F1: VALUE agreement, not only refusal agreement.
+# The round-10 runner proved both implementations REFUSE alike — and the
+# reviewer's offset pair showed them ACCEPTING alike and AGREEING ON THE
+# WRONG VALUE (the exact shape round-11's own attack point #2 offered).
+# Every accepted recompute vector now runs through BOTH implementations,
+# compared to the expectation AND to each other.
+
+_ACCEPTED_RECOMPUTE = [v for v in _VECTORS
+                       if v["kind"] == "recompute"
+                       and not VH._is_error(v["expect"])]
+
+
+@pytest.mark.parametrize("v", _ACCEPTED_RECOMPUTE,
+                         ids=[v["name"][:60] for v in _ACCEPTED_RECOMPUTE])
+def test_reference_and_product_agree_on_accepted_values(v):
+    from reference_revocation import recompute as ref_recompute
+    rows = VH._sub(copy.deepcopy(v["rows"]))
+    standing = frozenset(VH.D(i) for i in v["standing"])
+    ref_got = ref_recompute(copy.deepcopy(rows), standing)
+    prod_got = psw.recompute(copy.deepcopy(rows), standing)
+    assert ref_got == v["expect"], f"reference: {ref_got} != {v['expect']}"
+    assert prod_got == v["expect"], f"product: {prod_got} != {v['expect']}"
+    assert ref_got == prod_got

@@ -7602,5 +7602,262 @@
     "contributor_ref": "e-a"
    }
   ]
+ },
+ {
+  "name": "recompute_side_offset_datetime_refuses (reviewer's round-11 pair)",
+  "kind": "recompute",
+  "expect": "RevocationError",
+  "standing": [
+   {
+    "origin": "connector-a",
+    "source_id": "mailbox-1"
+   }
+  ],
+  "rows": [
+   {
+    "user_id": "u1",
+    "survivor_type": "edge",
+    "survivor_id": "e-1",
+    "site": "absorption",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "evidence_ref_digest": null,
+    "payload": {
+     "base": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     },
+     "contributor": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2025-12-31T23:30:00-01:00",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     }
+    },
+    "op_key": null,
+    "contributor_type": "edge",
+    "contributor_ref": "e-a"
+   }
+  ]
+ },
+ {
+  "name": "recompute_side_naive_datetime_refuses",
+  "kind": "recompute",
+  "expect": "RevocationError",
+  "standing": [
+   {
+    "origin": "connector-a",
+    "source_id": "mailbox-1"
+   }
+  ],
+  "rows": [
+   {
+    "user_id": "u1",
+    "survivor_type": "edge",
+    "survivor_id": "e-1",
+    "site": "absorption",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "evidence_ref_digest": null,
+    "payload": {
+     "base": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     },
+     "contributor": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-01-01T00:00:00",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     }
+    },
+    "op_key": null,
+    "contributor_type": "edge",
+    "contributor_ref": "e-a"
+   }
+  ]
+ },
+ {
+  "name": "recompute_side_date_only_refuses",
+  "kind": "recompute",
+  "expect": "RevocationError",
+  "standing": [
+   {
+    "origin": "connector-a",
+    "source_id": "mailbox-1"
+   }
+  ],
+  "rows": [
+   {
+    "user_id": "u1",
+    "survivor_type": "edge",
+    "survivor_id": "e-1",
+    "site": "absorption",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "evidence_ref_digest": null,
+    "payload": {
+     "base": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     },
+     "contributor": {
+      "valid_from": "2026-01-01",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     }
+    },
+    "op_key": null,
+    "contributor_type": "edge",
+    "contributor_ref": "e-a"
+   }
+  ]
+ },
+ {
+  "name": "recompute_side_spelled_utc_offset_refuses (canonical is Z)",
+  "kind": "recompute",
+  "expect": "RevocationError",
+  "standing": [
+   {
+    "origin": "connector-a",
+    "source_id": "mailbox-1"
+   }
+  ],
+  "rows": [
+   {
+    "user_id": "u1",
+    "survivor_type": "edge",
+    "survivor_id": "e-1",
+    "site": "absorption",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "evidence_ref_digest": null,
+    "payload": {
+     "base": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     },
+     "contributor": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-01-01T00:00:00+00:00",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     }
+    },
+    "op_key": null,
+    "contributor_type": "edge",
+    "contributor_ref": "e-a"
+   }
+  ]
+ },
+ {
+  "name": "recompute_side_padded_precision_refuses (.000000 is noncanonical)",
+  "kind": "recompute",
+  "expect": "RevocationError",
+  "standing": [
+   {
+    "origin": "connector-a",
+    "source_id": "mailbox-1"
+   }
+  ],
+  "rows": [
+   {
+    "user_id": "u1",
+    "survivor_type": "edge",
+    "survivor_id": "e-1",
+    "site": "absorption",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "evidence_ref_digest": null,
+    "payload": {
+     "base": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     },
+     "contributor": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-01-01T00:00:00.000000Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     }
+    },
+    "op_key": null,
+    "contributor_type": "edge",
+    "contributor_ref": "e-a"
+   }
+  ]
+ },
+ {
+  "name": "recompute_chronological_not_lexical_max (round-11 F1: '.' sorts before 'Z', so the lexical max is the chronologically EARLIER value)",
+  "kind": "recompute",
+  "expect": {
+   "valid_from": "2026-02-01T00:00:00Z",
+   "observed_at": "2026-02-01T00:00:00.500000Z",
+   "confidence": 0.5
+  },
+  "standing": [],
+  "rows": [
+   {
+    "user_id": "u1",
+    "survivor_type": "edge",
+    "survivor_id": "e-1",
+    "site": "absorption",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "evidence_ref_digest": null,
+    "payload": {
+     "base": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     },
+     "contributor": {
+      "valid_from": "2026-02-01T00:00:00Z",
+      "observed_at": "2026-02-01T00:00:00.500000Z",
+      "confidence": 0.5,
+      "disclosure": "mentionable"
+     }
+    },
+    "op_key": null,
+    "contributor_type": "edge",
+    "contributor_ref": "e-a"
+   }
+  ]
  }
 ]
