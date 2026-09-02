@@ -72,6 +72,11 @@ PROPOSAL_CELLS = [
     ("C4-oversize-payload", dict(correction_payload="x" * 5000), True),
     ("N1-non-hex-digest", dict(target_state_digest="Z" * 64), True),
     ("N2-short-digest", dict(target_state_digest="ab"), True),
+    ("N5-BLOB-digest", dict(target_state_digest=b"a" * 64), True),
+    ("N6-textual-applied-txn",
+     dict(state="accepted", resolved_at="T3", applied_txn="seven"), True),
+    ("N7-negative-applied-txn",
+     dict(state="accepted", resolved_at="T3", applied_txn=-1), True),
     ("P1-valid-correction", dict(), False),
     ("P2-valid-dispute",
      dict(kind="dispute", correction_payload=None, claim=None), False),
@@ -94,6 +99,12 @@ def test_proposal_cell(db, cell, over, refused):
 RESOLUTION_CELLS = [
     ("N3-fk-nonexistent-proposal", dict(proposal_id="p-missing"), True),
     ("N4-resolver-empty", dict(resolver=""), True),
+    ("N8-BLOB-resolver", dict(resolver=b"host-admin"), True),
+    ("N9-negative-seq", dict(seq=-3), True),
+    ("N10-textual-reversal-txn",
+     dict(action="reverse", applied_txn=None, reversal_txn="nine"), True),
+    ("N11-negative-reversal-txn",
+     dict(action="reverse", applied_txn=None, reversal_txn=-9), True),
     ("accept-valid", dict(), False),
     ("accept-without-txn", dict(applied_txn=None), True),
     ("reverse-valid", dict(action="reverse", applied_txn=None, reversal_txn=9),
@@ -122,6 +133,40 @@ def test_fk_is_inert_without_the_pragma__control():
     conn.executescript(_ddl())
     _insert(conn, "mcp_proposal_resolution", RBASE, proposal_id="p-missing")
     conn.close()  # accepted: the control proves the pragma discriminates
+
+
+def test_fk_holds_under_the_pinned_store_opening_sequence(tmp_path):
+    """Round-3 F6's path fix: the prior FK evidence enabled the pragma on a
+    raw connection and so proved the WRONG claim — TODAY's `SqliteStore`
+    opens with `PRAGMA foreign_keys = 0`, which is exactly WHY 0031 pins
+    the cross-spec obligation (0007's connection open gains the pragma at
+    Phase B implementation, as a rider). This test mirrors the PINNED
+    OPENING SEQUENCE the spec obligates — file-backed, busy_timeout, then
+    the pragma, in order — so it is evidence for the path the store must
+    take, not for a path no store takes."""
+    conn = sqlite3.connect(str(tmp_path / "store.db"),
+                           check_same_thread=False)
+    conn.execute("PRAGMA busy_timeout = 5000")   # 0007's opening, mirrored
+    conn.execute("PRAGMA foreign_keys = ON")     # the 0031 rider's addition
+    assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+    conn.executescript(_ddl())
+    with pytest.raises(sqlite3.IntegrityError):
+        _insert(conn, "mcp_proposal_resolution", RBASE,
+                proposal_id="p-missing")
+    conn.close()
+
+
+def test_todays_store_lacks_the_pragma__the_obligation_is_real():
+    """The honest fact the obligation rests on, asserted so it cannot rot
+    silently: the SHIPPED store opens with foreign_keys = 0. The day the
+    Phase B rider lands in 0007's open sequence, this test FAILS — which
+    is the desired signal to flip it into the positive assertion and
+    retire the obligation as discharged."""
+    import tempfile
+    from veracium import SqliteStore
+    with tempfile.TemporaryDirectory() as td:
+        s = SqliteStore(td + "/t.db")
+        assert s._conn.execute("PRAGMA foreign_keys").fetchone()[0] == 0
 
 
 def test_null_claim_would_pass_a_naive_check__control():

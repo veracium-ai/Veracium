@@ -4,8 +4,8 @@ Spec-Status: draft
 
 | | |
 |---|---|
-| **Version** | **v8** — the round-2 external fold (RETURN, six findings). NOTE the reviewed artifact was the HELD first seal (`d0fce0a9…`, v6), dispatched before the hold cleared; no finding touches the P3-5 block, so all apply to v7 unchanged. **F1 — the four-coordinate "lattice" was OVERSTATED, and it was this author's over-generalisation:** v6 enumerated four CONSUMERS correctly and then asserted ONE monotone rule over all of them without asking whether each is ORDERED. `scope_fingerprint` is a sha256 equality digest (verified) — no top, no bottom, no direction — so "descend" there is not a false requirement but a MEANINGLESS one, which is worse because it cannot be tested. Replaced by FOUR SEPARATE OBLIGATIONS: descend-only on disclosure and on supersession authority; restrict-only on scope shaping; **preserve-or-invalidate** on the fingerprint. **F2 — the `direct` bridge was UNIMPLEMENTABLE against the shipped grammar.** `_resolve_context(direct(), <any value>)` raises `ValueError: pass EITHER context= OR the legacy derived_from=, not both — two declarations of one fact is a host bug` (reproduced independently). The refusal is right and the spec was wrong: v6 proposed on this surface exactly the two-carriers-for-one-fact it forbids everywhere else. Mapping PINNED — `direct`+absent → `direct()`; `direct`+supplied → `derived(X)`; `none` → the floor; never both. The restriction is honoured THROUGH the declaration, never beside it. **F3 — the identity boundary was asserted and unenforced:** `user_id` comes OFF the Phase A/B tool schemas (absence-by-schema, as for `proposer`), the exact `propose` signature is pinned, and Q2's display requirement is reconciled with §4e's dropped turn — the resolver sees stored content, kind, claim, proposer and an unresolved `evidence_ref`, never a turn that cannot be known. **F4/F5 co-designed with dev and code-verified:** `Memory.correct` commits its plan then writes its episode separately (two commits, uncomposable from outside), so `Store.apply_proposal` is pinned as the transaction-owning primitive, with an ADDITIVE in-transaction variant of `apply_supersession_plan` as its prerequisite; the DDL gains `resolver`, a foreign key with the `PRAGMA foreign_keys=ON` obligation (an unpragma'd FK is a comment wearing a constraint's clothes — the round-1 defect in a new costume), a hex digest CHECK, and an OWNERSHIP TABLE naming DDL vs schedule vs §6a gate for every invariant. **F6** the acceptance corpus ships in the package. | **v7** — ONE correction, no mechanism change, and the reason it needs a version at all is the point: v6's bytes were ADOPTED and sealed, then §6a's P3-5 disposition changed, so two different documents would otherwise both answer to "v6". **The correction:** v6 said the `capability=direct` variant is owed because after Phase A the relay floor would be "the only thing standing" and "nothing reports it". Both are WITHDRAWN — **P2-1** (host-side, `context=direct`, the same relay marker, expecting `use_only`) with **P2-2** as its marker-free control is the floor's standing guard; delete the floor and P2-1 fails. P3-5 loses its OWN discriminating power; the floor does not go untested. The variant is still owed, on the spec's own re-run reasoning: Phase A opens a NEW path to a mentionable baseline — the MCP surface — which P2-1 does not exercise. **Why it took a round trip:** the correction reached the README and never reached this file's adopted copy; two carriers of one fact, updated independently. Registered in `specs/withdrawn_phrases.py` so the phrasing cannot return unnoticed. | **v6** — round-1 external fold (RETURN, six blocking findings). **F1**: V-NO-RAISE was stated on the whole trust model and CHECKED on one coordinate; §2c now enumerates the product's four consumers and §2c-i replaces the six-row matrix with a LATTICE statement — under `none` the baseline is the bottom element of the sublattice these legs reach, so restrict-only is INERT there and meaningful exactly and only under `direct`. v5's "lateral" claim for `THIRD_PARTY`→`ASSISTANT` is RETRACTED (§4a): lateral on disclosure, a raise on authority. **F2**: `author` was a model-supplied argument DEFAULTING TO THE TOP OF THE LADDER, masked today by the derived_from floor and UNMASKED by Phase A — the author default IS the elevation. Ruled against all three of the reviewer's options and against dev's lean: `author` loses its default and takes the CAPABILITY's baseline, restrict-only from there; and `direct` is amended to attest the authorship axis it was already unlocking, on the new rule that **an attestation may be untrusted but must not be unknowable** (§3a). **F3** capability pinned to concrete carriers, absence-vs-invalid taken verbatim. **F4/F5/F6** folded per the joint split. | **v5** — one addition on the owner's S2 ruling (2026-08-31), no mechanism change: §5 gains the ORDERING PRECONDITION that Phase A must not ship before the `valid_from` predicate lands. Phase A is what makes that predicate necessary rather than desirable — today a not-yet-valid edge is assertable but only via a HOST-SIDE write with attested capture (an MCP write floors to USE_ONLY: harness S2 + T4-3), and `capability=direct` removes exactly that mitigation, converting a host-only anomaly into an agent-reachable over-assertion. Phase A remains independent of 0029 and Phase B; this is its ONE external precondition. | **v4** — one addition to §6a on dev's re-read: the Phase B REVERSAL CASES are recorded as a stated DEBT (clean undo / scoped-reversal reaching a second edge / intervening-state refusal), owed and pinned model-free before Phase B's first run, with the reason for deferring given — *pin before THE RUN* (0027 R3-6), never *pin before the design settles*. Converts an unpinned surface from a gap a reviewer finds into an obligation the spec states. No other change from v3. | **v3** — reversal fold, on dev's option-(b) ruling. New **§4c-iii**: an applied resolution must be reversible, and the inverse data is **0029's, not this spec's** — Phase B DEPENDS on the transaction-time carrier rather than duplicating pre-state capture (agreement-by-coincidence between two carriers of one fact is the standing hazard). Three constraints: undo is a FORWARD journaled transition following 0022's reinstate pattern (history never un-happens); SCOPED to the applying `txn`, never expressible as a bare "revive edge X"; and FAIL-CLOSED on intervening state, refusing with a diff rather than cascading. Adds V-UNDO-FORWARD / V-UNDO-SCOPED / V-UNDO-FAILCLOSED. **The dependency lands on Phase B ONLY — Phase A ships alone, unchanged.** 0031 becomes V-RECON's SECOND CONSUMER (belongs in the seam manifest's S1). Prompted by AreevAI/areev shipping "every apply stores its inverse" (competitive triage 2026-08-31). | **v2** — dev internal-review fold. **D-1** the capability composes with AUTHOR and never overrides it (author/relation/revocation rows added to §3), plus new **§3a** reconciling the capability→`EvidenceContext` bridge with 0011's explicit refusal to mint `direct()` by omission (`__init__.py:361`) — minting by DECLARATION is not minting by OMISSION, and the per-event→deployment widening is stated as the honest cost. **D-2** the proposal carrier PINNED at DDL level (new §4b-ii) with the schema-version ordering dependency on 0029 left deliberately unresolved, and the erasure gap closed (V-ERASE-PROPOSALS). **D-3** both carriers named: `mcp_max_open_proposals` (default 32, range 1–256, refuses rather than evicts) and `provenance_raises_discarded` (stripped operator counter). §1 additionally carries the LIVE Bedrock evidence for T4-3. | **v1** — first candidate. Folds two owner rulings taken 2026-08-31 on measured evidence: decision 1 (MCP provenance self-attestation → option **c**, host-attested capability) and decision 2 (trust verbs → `forget`/`correct`/`confirm` not agent-exposed; `dispute` proposal-form only). Both resolve to ONE principle — **the host attests, the model proposes** — which is why they are one spec with two separable phases. |
-| **Author / session** | research (veracium-research); adopted by dev (v4-v7 per the cells; v8 = the round-2 fold — adopted 2026-09-02, the round-3 pin; frozen from adoption to seal) |
+| **Version** | **v9** — the round-3 external fold (RETURN, seven findings; credited: checksums, ASSERT-14's currency property confirmed independently AGAIN, the 24 cells, the one-carrier bridge). **THE ROUND'S SHAPE IS THE ONE-CARRIER CLASS, CAUGHT SHALLOW:** F1 = round-2's fix reached §2c and missed §2c-i + the matrix + the V-NO-RAISE invariant row (which contradicted V-OBLIGATIONS-SEPARATE two rows below it — one table, two rules); F2 = the turn-drop reached §4b-iii and §4e and missed the Q2 table row that MOTIVATED it; F4's residue = the verb-mapping table still said "the ordinary write path" after the constructions were pinned. All swept by grep-count this time, not by the next reviewer. **F1:** all residual descent-on-every-coordinate language removed; V-NO-RAISE REPLACED by four per-obligation invariants (V-DESCEND-DISCLOSURE, V-DESCEND-AUTHORITY, V-RESTRICT-SHAPING, V-FINGERPRINT-STABLE-OR-STALE — the last asserting NO ordering, because a digest has none). **F2:** Q2's row now names exactly what the resolver sees — stored content, kind, claim, proposer, unresolved `evidence_ref` — and nothing else. **F3 (dev design):** PROPOSE gains in-lock target existence/ownership validation and THE STORE-MINTED DIGEST — sha256 over the live canonical serialization read under the same writer lock; `target_state_digest` is never a tool argument, and stale-detection becomes sound by construction. **F4 (dev design):** `Store.apply_proposal` signature + input contract pinned (`acknowledged_*` required iff correction, refused for dispute); the THREE in-transaction constructions each name the plan machinery they ride; `'change'` requires the payload's effective date — a change without a date is refused, the error-vs-change distinction made operational. **F5 (dev design):** `applied_txn` EQUALITY written from one local variable in one commit (divergence unrepresentable, not audited-for); `seq` domain in DDL, allocation `MAX(seq)+1` under the writer lock, append-only by ABSENCE-BY-API with the owner named; the cross-table gate strengthened to exactly-one-accept + equality + gapless-monotone. **F6 (dev design):** THE TYPE-AFFINITY RULE, derived not enumerated — SQLite CHECKs on `length()`/`GLOB`/`BETWEEN` are BLOB-blind (`GLOB` on a BLOB is NULL; a 64-byte BLOB satisfies `length()=64`), `IN`-lists are safe by construction; every such predicate gains `typeof()`, every integer column gains typeof+domain. *The affinity trap is the NULL trap one type over* — we learned NULL-blindness for values in round 2 and not for types. FK evidence to be rewritten against the store's PINNED OPENING SEQUENCE (today's fact: `SqliteStore` reports `foreign_keys = 0`, which is WHY the cross-spec obligation on 0007's connection open exists). **F7:** normative digest citations are FULL SHA-256 values (an ellipsized digest is the location-index defect in digest form); the path is `corpus/` (the archive's name wins the two-carrier split); the corpus ships the `harness` package its drivers import, the exact source revisions the raw results identify, the pinned P3-6/P3-7 companion, and `corpus/rerun.sh` — one archive-local command reproducing the deterministic corpus. | **v8** — the round-2 external fold (RETURN, six findings). NOTE the reviewed artifact was the HELD first seal (`d0fce0a9…`, v6), dispatched before the hold cleared; no finding touches the P3-5 block, so all apply to v7 unchanged. **F1 — the four-coordinate "lattice" was OVERSTATED, and it was this author's over-generalisation:** v6 enumerated four CONSUMERS correctly and then asserted ONE monotone rule over all of them without asking whether each is ORDERED. `scope_fingerprint` is a sha256 equality digest (verified) — no top, no bottom, no direction — so "descend" there is not a false requirement but a MEANINGLESS one, which is worse because it cannot be tested. Replaced by FOUR SEPARATE OBLIGATIONS: descend-only on disclosure and on supersession authority; restrict-only on scope shaping; **preserve-or-invalidate** on the fingerprint. **F2 — the `direct` bridge was UNIMPLEMENTABLE against the shipped grammar.** `_resolve_context(direct(), <any value>)` raises `ValueError: pass EITHER context= OR the legacy derived_from=, not both — two declarations of one fact is a host bug` (reproduced independently). The refusal is right and the spec was wrong: v6 proposed on this surface exactly the two-carriers-for-one-fact it forbids everywhere else. Mapping PINNED — `direct`+absent → `direct()`; `direct`+supplied → `derived(X)`; `none` → the floor; never both. The restriction is honoured THROUGH the declaration, never beside it. **F3 — the identity boundary was asserted and unenforced:** `user_id` comes OFF the Phase A/B tool schemas (absence-by-schema, as for `proposer`), the exact `propose` signature is pinned, and Q2's display requirement is reconciled with §4e's dropped turn — the resolver sees stored content, kind, claim, proposer and an unresolved `evidence_ref`, never a turn that cannot be known. **F4/F5 co-designed with dev and code-verified:** `Memory.correct` commits its plan then writes its episode separately (two commits, uncomposable from outside), so `Store.apply_proposal` is pinned as the transaction-owning primitive, with an ADDITIVE in-transaction variant of `apply_supersession_plan` as its prerequisite; the DDL gains `resolver`, a foreign key with the `PRAGMA foreign_keys=ON` obligation (an unpragma'd FK is a comment wearing a constraint's clothes — the round-1 defect in a new costume), a hex digest CHECK, and an OWNERSHIP TABLE naming DDL vs schedule vs §6a gate for every invariant. **F6** the acceptance corpus ships in the package. | **v7** — ONE correction, no mechanism change, and the reason it needs a version at all is the point: v6's bytes were ADOPTED and sealed, then §6a's P3-5 disposition changed, so two different documents would otherwise both answer to "v6". **The correction:** v6 said the `capability=direct` variant is owed because after Phase A the relay floor would be "the only thing standing" and "nothing reports it". Both are WITHDRAWN — **P2-1** (host-side, `context=direct`, the same relay marker, expecting `use_only`) with **P2-2** as its marker-free control is the floor's standing guard; delete the floor and P2-1 fails. P3-5 loses its OWN discriminating power; the floor does not go untested. The variant is still owed, on the spec's own re-run reasoning: Phase A opens a NEW path to a mentionable baseline — the MCP surface — which P2-1 does not exercise. **Why it took a round trip:** the correction reached the README and never reached this file's adopted copy; two carriers of one fact, updated independently. Registered in `specs/withdrawn_phrases.py` so the phrasing cannot return unnoticed. | **v6** — round-1 external fold (RETURN, six blocking findings). **F1**: V-NO-RAISE was stated on the whole trust model and CHECKED on one coordinate; §2c now enumerates the product's four consumers and §2c-i replaces the six-row matrix with a LATTICE statement — under `none` the baseline is the bottom element of the sublattice these legs reach, so restrict-only is INERT there and meaningful exactly and only under `direct`. v5's "lateral" claim for `THIRD_PARTY`→`ASSISTANT` is RETRACTED (§4a): lateral on disclosure, a raise on authority. **F2**: `author` was a model-supplied argument DEFAULTING TO THE TOP OF THE LADDER, masked today by the derived_from floor and UNMASKED by Phase A — the author default IS the elevation. Ruled against all three of the reviewer's options and against dev's lean: `author` loses its default and takes the CAPABILITY's baseline, restrict-only from there; and `direct` is amended to attest the authorship axis it was already unlocking, on the new rule that **an attestation may be untrusted but must not be unknowable** (§3a). **F3** capability pinned to concrete carriers, absence-vs-invalid taken verbatim. **F4/F5/F6** folded per the joint split. | **v5** — one addition on the owner's S2 ruling (2026-08-31), no mechanism change: §5 gains the ORDERING PRECONDITION that Phase A must not ship before the `valid_from` predicate lands. Phase A is what makes that predicate necessary rather than desirable — today a not-yet-valid edge is assertable but only via a HOST-SIDE write with attested capture (an MCP write floors to USE_ONLY: harness S2 + T4-3), and `capability=direct` removes exactly that mitigation, converting a host-only anomaly into an agent-reachable over-assertion. Phase A remains independent of 0029 and Phase B; this is its ONE external precondition. | **v4** — one addition to §6a on dev's re-read: the Phase B REVERSAL CASES are recorded as a stated DEBT (clean undo / scoped-reversal reaching a second edge / intervening-state refusal), owed and pinned model-free before Phase B's first run, with the reason for deferring given — *pin before THE RUN* (0027 R3-6), never *pin before the design settles*. Converts an unpinned surface from a gap a reviewer finds into an obligation the spec states. No other change from v3. | **v3** — reversal fold, on dev's option-(b) ruling. New **§4c-iii**: an applied resolution must be reversible, and the inverse data is **0029's, not this spec's** — Phase B DEPENDS on the transaction-time carrier rather than duplicating pre-state capture (agreement-by-coincidence between two carriers of one fact is the standing hazard). Three constraints: undo is a FORWARD journaled transition following 0022's reinstate pattern (history never un-happens); SCOPED to the applying `txn`, never expressible as a bare "revive edge X"; and FAIL-CLOSED on intervening state, refusing with a diff rather than cascading. Adds V-UNDO-FORWARD / V-UNDO-SCOPED / V-UNDO-FAILCLOSED. **The dependency lands on Phase B ONLY — Phase A ships alone, unchanged.** 0031 becomes V-RECON's SECOND CONSUMER (belongs in the seam manifest's S1). Prompted by AreevAI/areev shipping "every apply stores its inverse" (competitive triage 2026-08-31). | **v2** — dev internal-review fold. **D-1** the capability composes with AUTHOR and never overrides it (author/relation/revocation rows added to §3), plus new **§3a** reconciling the capability→`EvidenceContext` bridge with 0011's explicit refusal to mint `direct()` by omission (`__init__.py:361`) — minting by DECLARATION is not minting by OMISSION, and the per-event→deployment widening is stated as the honest cost. **D-2** the proposal carrier PINNED at DDL level (new §4b-ii) with the schema-version ordering dependency on 0029 left deliberately unresolved, and the erasure gap closed (V-ERASE-PROPOSALS). **D-3** both carriers named: `mcp_max_open_proposals` (default 32, range 1–256, refuses rather than evicts) and `provenance_raises_discarded` (stripped operator counter). §1 additionally carries the LIVE Bedrock evidence for T4-3. | **v1** — first candidate. Folds two owner rulings taken 2026-08-31 on measured evidence: decision 1 (MCP provenance self-attestation → option **c**, host-attested capability) and decision 2 (trust verbs → `forget`/`correct`/`confirm` not agent-exposed; `dispute` proposal-form only). Both resolve to ONE principle — **the host attests, the model proposes** — which is why they are one spec with two separable phases. |
+| **Author / session** | research (veracium-research); adopted by dev (v4-v8 per the cells; v9 = the round-3 fold — adopted 2026-09-02, the round-4 pin; frozen from adoption to seal) |
 | **Evidence** | harness Tier 5 (`cases/tier45_manifest.json` v1.1) and Tier 6 (`cases/verbs_manifest.json` v1.0), both frozen with expectations pre-committed before their first run, both model-free. Every behavioural claim below is MEASURED, and §9 names the two places measurement corrected the reasoning. |
 
 ### Spec-Requires (accepted specs this consumes)
@@ -189,8 +189,11 @@ got it wrong. It follows from where the two baselines sit:
   syntactically (the closed-set check still refuses an unrecognised value, and
   still RAISES rather than defaulting), then discarded and counted (§4d).
 - **Under `direct` the baseline is the TOP** — author `user`, first-party
-  capture — so every other closed-set value is a genuine descent on every
-  coordinate, and restrict-only has real content.
+  capture — so every other closed-set value is a genuine restriction under
+  BOTH ordered obligations (disclosure and authority descend), leaves shaping
+  strictly narrower, and changes the fingerprint only in the
+  preserve-or-invalidate sense — restrict-only has real content here, stated
+  per obligation because the obligations are separately shaped (§2c).
 
 So restrict-only is not a rule that happens to have no cases under `none`; it is
 meaningful **exactly and only under `direct`**. That is a lattice statement
@@ -237,7 +240,7 @@ Both trust legs, both capabilities:
 | `none` | `author` | `"assistant"` | baseline | raise on authority (0 → 1) — discarded, counted |
 | `none` | `author` | `"third_party"` | baseline | identity |
 | `direct` | — | nothing | author `user`, first-party capture | the host's attestation (§3a) |
-| `direct` | `derived_from` | `"third_party"` / `"assistant"` | as declared | genuine descent on every coordinate — honoured |
+| `direct` | `derived_from` | `"third_party"` / `"assistant"` | as declared | a genuine restriction under each obligation that orders (disclosure, authority descend; shaping narrows; fingerprint: preserve-or-invalidate) — honoured |
 | `direct` | `derived_from` | `"user"` | as declared | identity — a no-op restatement of the host's own attestation |
 | `direct` | `author` | `"third_party"` / `"assistant"` | as declared | genuine descent — honoured; the model knows better than a blanket attestation |
 | `direct` | `author` | `"user"` | identity | the attested baseline, restated |
@@ -490,25 +493,32 @@ CREATE TABLE mcp_proposal (
     kind         TEXT NOT NULL CHECK (kind IN ('dispute','correction')),
     proposer     TEXT NOT NULL CHECK (proposer = 'model'),
     target_edge_id      TEXT NOT NULL,
-    target_state_digest TEXT NOT NULL CHECK (length(target_state_digest) = 64
+    target_state_digest TEXT NOT NULL CHECK (
+                        typeof(target_state_digest) = 'text'
+                        AND length(target_state_digest) = 64
                         AND target_state_digest NOT GLOB '*[^0-9a-f]*'),
     correction_payload  TEXT CHECK (
         (kind = 'dispute'    AND correction_payload IS NULL) OR
         (kind = 'correction' AND correction_payload IS NOT NULL
+                             AND typeof(correction_payload) = 'text'
                              AND length(correction_payload) <= 4096)),
     claim        TEXT CHECK (
         (kind = 'dispute'    AND claim IS NULL) OR
         (kind = 'correction' AND claim IS NOT NULL
                              AND claim IN ('error','change'))),
     evidence_ref TEXT CHECK (evidence_ref IS NULL
-                             OR length(evidence_ref) BETWEEN 1 AND 512),
-    note         TEXT CHECK (note IS NULL OR length(note) <= 4096),
-    created_at   TEXT NOT NULL,
-    expires_at   TEXT NOT NULL,
+                             OR (typeof(evidence_ref) = 'text'
+                                 AND length(evidence_ref) BETWEEN 1 AND 512)),
+    note         TEXT CHECK (note IS NULL OR (typeof(note) = 'text'
+                                              AND length(note) <= 4096)),
+    created_at   TEXT NOT NULL CHECK (typeof(created_at) = 'text'),
+    expires_at   TEXT NOT NULL CHECK (typeof(expires_at) = 'text'),
     state        TEXT NOT NULL DEFAULT 'open'
                  CHECK (state IN ('open','accepted','refused','expired')),
-    resolved_at  TEXT,
-    applied_txn  INTEGER,
+    resolved_at  TEXT CHECK (resolved_at IS NULL OR typeof(resolved_at) = 'text'),
+    applied_txn  INTEGER CHECK (applied_txn IS NULL
+                                OR (typeof(applied_txn) = 'integer'
+                                    AND applied_txn >= 1)),
     CHECK ((state = 'open'     AND resolved_at IS NULL     AND applied_txn IS NULL) OR
            (state = 'accepted' AND resolved_at IS NOT NULL AND applied_txn IS NOT NULL) OR
            (state IN ('refused','expired')
@@ -519,12 +529,17 @@ CREATE TABLE mcp_proposal (
 CREATE TABLE mcp_proposal_resolution (      -- APPEND-ONLY; no UPDATE path exists
     user_id      TEXT NOT NULL,
     proposal_id  TEXT NOT NULL,
-    seq          INTEGER NOT NULL,
+    seq          INTEGER NOT NULL CHECK (typeof(seq) = 'integer' AND seq >= 1),
     action       TEXT NOT NULL CHECK (action IN ('accept','refuse','expire','reverse')),
-    at           TEXT NOT NULL,
-    resolver     TEXT NOT NULL CHECK (length(resolver) BETWEEN 1 AND 128),
-    applied_txn  INTEGER,
-    reversal_txn INTEGER,
+    at           TEXT NOT NULL CHECK (typeof(at) = 'text'),
+    resolver     TEXT NOT NULL CHECK (typeof(resolver) = 'text'
+                                      AND length(resolver) BETWEEN 1 AND 128),
+    applied_txn  INTEGER CHECK (applied_txn IS NULL
+                                OR (typeof(applied_txn) = 'integer'
+                                    AND applied_txn >= 1)),
+    reversal_txn INTEGER CHECK (reversal_txn IS NULL
+                                OR (typeof(reversal_txn) = 'integer'
+                                    AND reversal_txn >= 1)),
     CHECK ((action = 'accept'  AND applied_txn IS NOT NULL AND reversal_txn IS NULL) OR
            (action = 'reverse' AND applied_txn IS NULL     AND reversal_txn IS NOT NULL) OR
            (action IN ('refuse','expire')
@@ -550,13 +565,27 @@ names its owner:
 |---|---|
 | closed `kind`/`proposer`/`state`/`action`; claim & payload coherence; per-state coherence; field sizes; digest is 64 **hex** | **DDL** row `CHECK` |
 | a resolution row references an existing proposal | **DDL** foreign key (+ the PRAGMA above) |
-| `accepted` ⇒ an `accept` resolution row exists | **schedule 3** — both written in ONE commit, so the pair cannot be half-present |
+| `accepted` ⇒ an `accept` resolution row exists **with EQUAL `applied_txn`** | **schedule 3** — proposal row and accept row are written from ONE local variable in ONE commit (round-3 F5: both rows stored the value and nothing required equality; divergence is now unrepresentable, not audited-for) |
 | `reverse` ⇒ a prior `accept` for the same proposal | **schedule 4** — it reads `applied_txn` from the accept row before writing anything |
-| whole-table audits (every `accepted` has ≥1 accept row; every `reverse` has its prior accept) | **§6a cross-table gate** — outside any single row's reach by construction |
+| `seq` domain (`>= 1`, integer) | **DDL** (`typeof` + domain CHECK) |
+| `seq` allocation | **schedules 2/3/4** — `MAX(seq)+1` per `(user_id, proposal_id)` under the writer lock, in the resolution's own transaction |
+| `seq` monotone and gapless; history APPEND-ONLY | **absence-by-API** (the store exposes no update/delete on the resolution table — the enforcement owner NAMED, not implied) + the **§6a cross-table gate** audits immutability across runs via the journal |
+| whole-table audits (every `accepted` has **EXACTLY ONE** accept row with equal `applied_txn`; every `reverse` has its prior accept; per-proposal `seq` gapless-monotone) | **§6a cross-table gate** — outside any single row's reach by construction |
 
 - **`target_state_digest`** — sha256 of the target's canonical serialization at
   proposal time. Stale-proposal detection, and it is **V-RECON's serialization
   doing double duty** rather than a second definition of "the same edge".
+- **EVERY `CHECK` over a nullable column must state its NULL case, and every
+  `CHECK` whose predicate is BLOB-blind must state its TYPE — the affinity trap
+  is the NULL trap one type over (round-3 F6).** SQLite column types are
+  affinities, not constraints: a 64-byte BLOB satisfies `length(x) = 64`, and
+  `GLOB` on a BLOB evaluates NULL, which a CHECK passes — so the round-2 hex
+  guard refused every wrong TEXT and admitted the wrong TYPE. Derived, not
+  enumerated: predicates built on `length()`/`GLOB`/`BETWEEN` are BLOB-blind
+  and gain a `typeof()` conjunct; `IN`-list predicates are safe (a BLOB equals
+  no text literal, so they refuse by construction); every integer column gains
+  `typeof` + domain. We learned NULL-blindness for VALUES in round 2 and not
+  for TYPES; the rule above now covers both because it is one rule.
 - **EVERY `CHECK` over a nullable column must state its NULL case explicitly,
   because NULL never fails a naive CHECK.** SQL is three-valued: `NULL IN
   ('error','change')` evaluates to NULL, and a `CHECK` refuses only on FALSE —
@@ -576,7 +605,7 @@ names its owner:
   | `claim` | means | verb executed on accept | resulting reason |
   |---|---|---|---|
   | `'error'` | the prior was never true | `Memory.correct` (`__init__.py:1573`) | `corrected` (`schema.py:409`, disposition `drop`) |
-  | `'change'` | the prior was true and changed | the ordinary write path | `superseded` |
+  | `'change'` | the prior was true and changed | the SUPERSESSION construction (§4c-i schedule 3: replacement from the payload, `valid_from` REQUIRED, via the in-transaction plan variant) | `superseded` |
 
 - **`proposer` is a one-valued CHECK today** (`'model'`), which is deliberate and
   not an oversight: it refuses the reviewer's `proposer='user'` row at the
@@ -691,16 +720,59 @@ inventory itself.
 The 0029 F4 discipline: take the writer lock **before any read that feeds a
 decision**.
 
-1. **PROPOSE** — `BEGIN IMMEDIATE` → count open proposals for the user → at the
-   limit, typed refusal (refuse, never evict) → `INSERT` (schema-checked) →
-   `COMMIT`. Count and insert share the lock, so two instances cannot both see
-   room for the last slot.
+1. **PROPOSE** — `BEGIN IMMEDIATE` → count open proposals for the user (at the
+   limit: typed refusal — refuse, never evict) → **TARGET VALIDATION** (round-3
+   F3): the target edge exists and belongs to `user_id`, else a typed refusal
+   with zero writes → **THE DIGEST IS MINTED BY THE STORE**: sha256 over the
+   target's live canonical serialization, read under THIS writer lock.
+   `target_state_digest` is **never a tool argument** — absence-by-schema, the
+   same move as `proposer` and `user_id`: the model must not be able to claim
+   what the target's state was, and v8's schedule counted and inserted without
+   ever reading the target, leaving the one field stale-detection depends on
+   with no defined minting site. Minting under the same lock also makes
+   stale-detection sound BY CONSTRUCTION: the digest is the state at proposal
+   time as the STORE saw it, not as anyone reported it → `INSERT`
+   (schema-checked) → `COMMIT`. Count, validation, digest and insert share one
+   lock, so two instances cannot both see room for the last slot and the digest
+   cannot describe a world the insert did not happen in.
 2. **RESOLVE** (refuse / expire) — `BEGIN IMMEDIATE` → CAS `... WHERE state =
    'open'` → `changes() = 0` ⇒ typed ALREADY-RESOLVED refusal → append the
    resolution row → `COMMIT`. Expiry racing a refusal resolves atomically one
    way or the other; there is no third outcome and no silent double-resolve.
-3. **ACCEPT-AND-APPLY — `Store.apply_proposal(...)`, a store primitive that
-   OWNS the transaction (round-2 F4).** v6 described this schedule without a
+3. **ACCEPT-AND-APPLY — `Store.apply_proposal`, SIGNATURE AND INPUT CONTRACT
+   PINNED (round-3 F4):**
+
+   ```python
+   Store.apply_proposal(user_id: str, proposal_id: str, *, actor: str,
+                        acknowledged_value: str | None,
+                        acknowledged_claim: str | None) -> dict
+   ```
+
+   `actor` is 1..128 characters and becomes `resolver` on the resolution row.
+   The two `acknowledged_*` are **REQUIRED iff `kind='correction'`** (echo-
+   checked against the STORED payload and claim, typed refusal on mismatch)
+   and **REFUSED if supplied for a dispute** — an argument that is sometimes
+   meaningful and silently ignored otherwise is how APIs grow folklore.
+
+   **THE THREE IN-TRANSACTION CONSTRUCTIONS, each naming the machinery it
+   rides — "the ordinary write path" appears nowhere, because round-2 named a
+   path and round-3 correctly asked which one:**
+   - **DISPUTE** → the target's invalidation with reason `disputed`, through
+     the in-transaction plan variant; journal events in the same `txn`.
+   - **ERROR (`claim='error'`)** → the CORRECTION construction: a replacement
+     edge minted FROM the stored `correction_payload` against the validated
+     target (the payload's shape — the replacement's `object`/`note` — is
+     §4b-ii's payload contract), displaced prior takes reason `corrected`,
+     through the in-transaction plan variant.
+   - **CHANGE (`claim='change'`)** → the SUPERSESSION construction, target-
+     specific: replacement built the same way, prior takes reason
+     `superseded`, and `valid_from` comes from the payload's effective date —
+     **REQUIRED for a change and refused when absent**, because a change
+     without a date is exactly the false-history ambiguity the error-vs-change
+     distinction exists to prevent; this is that distinction made operational
+     at the API rather than descriptive in the docs.
+
+   A store primitive that OWNS the transaction (round-2 F4):** v6 described this schedule without a
    primitive that could execute it, and the reviewer is right that it could not
    be assembled from the existing verbs: **`Memory.correct` commits its
    supersession plan internally and then writes its episode separately** — two
@@ -750,7 +822,7 @@ to each:
 | # | vector | response |
 |---|---|---|
 | Q1 | The proposal's text is attacker-chosen and displayed to the resolver ("the user said their address is now …") | the queue MUST render proposal content as **quoted, attributed, untrusted material** — never in system voice. This is the recall-rendering distinction (content vs assertion) applied to a second surface |
-| Q2 | **Authorship confusion** — the resolver reads "the user requests" when the truth is "the assistant proposes" | resolution MUST display the proposal's provenance: proposer, `evidence_ref`, and the turn it arose from. The resolver is deciding about an AGENT's claim, and must see that |
+| Q2 | **Authorship confusion** — the resolver reads "the user requests" when the truth is "the assistant proposes" | resolution MUST display the proposal's STORED content, its `kind` and `claim`, its `proposer`, and its `evidence_ref` as an UNRESOLVED reference — and nothing else. No turn: §4e drops it as unknowable over stdio, and v8 fixed §4b-iii and §4e while leaving THIS row still demanding it — the one-carrier-of-a-fix class, in the table that motivated the fix. The resolver is deciding about an AGENT's claim, and must see that |
 | Q3 | **Queue flooding / alert fatigue** — bury one hostile proposal among many plausible ones so the resolver rubber-stamps | a **bounded** number of open proposals per user. The absence of a cap IS the vulnerability; an unbounded queue is a fatigue weapon |
 | Q4 | **Expiry-to-accept** — a proposal that times out is silently applied | expiry MUST refuse, never accept. **Fail closed** — this is the house rule and it settles §10's old lifetime question rather than leaving it open |
 | Q5 | **Inert-but-visible** — even a never-accepted proposal delivers attacker text to a human. An inert record is still a DISPLAY surface | proposal content is subject to the same rendering discipline as quarantined content: it may be shown, never asserted, and never rendered as instruction |
@@ -911,11 +983,14 @@ which is why the answer is to design around it rather than to file a bug.
 
 | invariant | check |
 |---|---|
-| **V-NO-RAISE** no model-supplied value raises the event on ANY of the product's four coordinates — disclosure, supersession authority, `scope_fingerprint`, scope redaction; the raise is discarded and counted | `test_model_supplied_provenance_is_restrict_only_on_every_coordinate` |
+| **V-DESCEND-DISCLOSURE** no model-supplied value yields a less restrictive disclosure than the capability baseline; the raise is discarded and counted | `test_disclosure_descends_only` |
+| **V-DESCEND-AUTHORITY** no model-supplied value yields a higher effective supersession authority than the baseline (the round-1 counterexample's axis) | `test_authority_descends_only` |
+| **V-RESTRICT-SHAPING** the shaped record under a model-supplied value withholds at least what the baseline withholds — never reveals more | `test_shaping_restricts_only` |
+| **V-FINGERPRINT-STABLE-OR-STALE** a model-supplied value either leaves `scope_fingerprint` unchanged or every plan computed against the old one refuses as `PlanStale`; the invariant asserts NO ordering, because a digest has none (round-3 F1: the old V-NO-RAISE said the fingerprint could be "raised", contradicting V-OBLIGATIONS-SEPARATE two rows below it — the one-carrier class inside one table) | `test_fingerprint_preserve_or_invalidate` |
 | **V-INERT-UNDER-NONE** under `none`, EVERY supplied `author`/`derived_from` value leaves the stored record identical to the baseline — the case F1 was made of (`assistant` must not reach authority 1) | `test_none_baseline_is_the_bottom_element` |
 | **V-AUTHOR-BASELINE** absent `author` resolves to the capability baseline and NEVER to `"user"`; the shipped default is gone | `test_author_has_no_default_of_its_own` |
 | **V-CAP-DEFAULT** only ABSENCE resolves to `none`; EVERY supplied invalid value — including the empty string — raises at construction | `test_capability_absence_is_the_untrusted_cell` |
-| **V-OBLIGATIONS-SEPARATE** each of §2c's four consumers is checked under ITS OWN obligation; the fingerprint case asserts preserve-or-invalidate and NEVER an ordering | `test_four_obligations_are_checked_separately` |
+| **V-OBLIGATIONS-SEPARATE** the four obligations above are checked by FOUR invariants, never one umbrella: any future test or prose claiming a single order across them is the round-2/round-3 F1 defect recurring | `test_no_umbrella_ordering_claim` |
 | **V-ONE-CARRIER** the capability→context mapping passes exactly one carrier; passing both raises, and the test asserts the shipped `ValueError` rather than restating it | `test_capability_maps_to_one_carrier` |
 | **V-NO-USER-ID-ARG** no Phase A or Phase B tool schema exposes `user_id`, `proposer`, or a turn identifier — asserted against the built server's reflected schema, not the source | `test_tool_schemas_omit_identity_arguments` |
 | **V-APPLY-ATOMIC** `Store.apply_proposal` commits mutation, journal, state flip, episode and resolution row together; a forced CAS miss leaves ZERO trace (mutation gone, journal empty, proposal untouched) | `test_apply_proposal_is_one_transaction` |
@@ -944,13 +1019,20 @@ already pinned.
 **CITED BY DIGEST, and SHIPPED (round-2 F6).** v6 named the manifests and bound
 nothing — so "the acceptance corpus already exists" was unverifiable from the
 archive, which is exactly the reviewer's objection. The corpus now travels with
-the package (`acceptance-corpus/`: both manifests, both raw result sets, and the
-three test drivers), and the citation and the artifact are one object:
+the package (**`corpus/`** — the spec said `acceptance-corpus/` while the
+archive said `corpus/`, a name split across two carriers; the archive's name
+wins and the spec now uses it): both manifests, both raw result sets, the three
+test drivers, **the `harness` package they import** (round-3 F7: all three
+drivers failed collection without it — a corpus whose drivers cannot run is
+evidence that cannot be checked), the exact source revisions the raw results
+identify, the pinned `0031-P3-6-direct-variant-DRAFT.md` companion, and **one
+archive-local command that reruns the deterministic corpus** (`corpus/rerun.sh`).
+The citation and the artifact are one object:
 
-| manifest | version | sha256 |
+| manifest | version | sha256 (FULL — round-3 F7: an ellipsized digest in a NORMATIVE citation is the location-index defect in digest form; a prefix names a family of possible files, and only the full value binds ONE) |
 |---|---|---|
-| `cases/tier45_manifest.json` | v1.1 | `b504904bd79165a3…` |
-| `cases/verbs_manifest.json` | v1.0 | `91a9e78eaebad756…` |
+| `corpus/cases/tier45_manifest.json` | v1.1 | `b504904bd79165a33adae29461486a537470a15f2c5be41c4fc927929fe9708c` |
+| `corpus/cases/verbs_manifest.json` | v1.0 | `91a9e78eaebad756b7c6c92f993006c216a469bf2604267ee7d49bb4055b4fa4` |
 
 **And what the corpus does NOT establish, stated here rather than left to be
 found:** these are the **pre-Phase-A** results. Phase A does not exist, so
