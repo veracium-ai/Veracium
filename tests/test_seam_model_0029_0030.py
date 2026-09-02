@@ -36,7 +36,8 @@ from current_state_carrier import (BOUND, IDENTITY_UNBOUND, CurrentState, Envelo
                                    control_cell_principal_absence_refused,
                                    control_cell_absence_refused_under_a_view,
                                    control_no_view_refuses_a_principal_bearing_cell,
-                                   control_viewless_cell_is_refused)
+                                   control_viewless_cell_is_refused,
+                                   control_principal_less_pair_is_refused)
 
 
 def _edge(relation="has_diet", disclosure=Disclosure.MENTIONABLE, eid="e1", uid="u"):
@@ -191,6 +192,15 @@ def test_no_view_refuses_a_principal_bearing_cell__with_its_control():
     assert control_no_view_refuses_a_principal_bearing_cell(), \
         "a principal-bearing cell BINDS with no view -- it still gates " \
         "visibility and shaping at steps 2 and 10"
+
+
+def test_principal_less_pair_is_refused__with_its_control():
+    """ROUND-9 F3: 'one principal when present' -- ONE, not merely EQUAL. A
+    present pair with both principals None satisfied `!=` and bound while
+    naming no principal at all. Presence precedes equality."""
+    assert control_principal_less_pair_is_refused(), \
+        "a present pair with NO principal binds -- equality is standing in " \
+        "for presence again"
 
 
 def test_viewless_cell_is_refused__with_its_control():

@@ -176,6 +176,19 @@ def bind(envelope: Envelope, snapshot: RawEdgeState,
     if view is not None:
         if cell is None:
             return IDENTITY_UNBOUND
+        # ROUND-9 F3: "one principal when present" said ONE and the code
+        # checked EQUAL -- a present pair with BOTH principals None satisfied
+        # `!=` and bound, though it names no principal at all. Production
+        # cannot even construct that view (ScopeView requires a groupable
+        # principal, scope_read.py:307), so the refusal costs nothing
+        # legitimate. Presence precedes equality, same as everywhere else in
+        # this ladder. ENFORCEMENT LIVES HERE AND NOT IN THE CONSTRUCTORS,
+        # deliberately: the stand-ins must ADMIT illegal shapes or the
+        # negative controls could not construct them to prove refusal -- a
+        # narrowed constructor is bypassed by any caller building directly,
+        # and would blind the controls while bind stayed permissive.
+        if cell.principal is None or view.principal is None:
+            return IDENTITY_UNBOUND
         if cell.principal != view.principal:
             return IDENTITY_UNBOUND
     elif cell is not None:
@@ -227,6 +240,21 @@ def control_no_view_refuses_a_principal_bearing_cell() -> bool:
                        scope_cell=ScopeCell(True, "full", principal=("o", "Z")))
     return (bind(env, snap, cur, None) == IDENTITY_UNBOUND
             and unbound_variant(env, snap, cur, None) == BOUND)
+
+
+def control_principal_less_pair_is_refused() -> bool:
+    """ROUND-9 F3: a PRESENT pair whose principals are BOTH None must refuse.
+    `!=` alone is satisfied by None == None -- equality is not presence, and a
+    pair naming no principal answers for no one. The half-None cases were
+    already refused by mismatch; this control pins the both-None hole the
+    reviewer found, plus the legitimate paired case as the passing half."""
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    def cur(pr): return CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                                     scope_cell=ScopeCell(True, "full", principal=pr))
+    return (bind(env, snap, cur(None), View("u", principal=None)) == IDENTITY_UNBOUND
+            and bind(env, snap, cur(("o", "A")), View("u", principal=("o", "A"))) == BOUND
+            and unbound_variant(env, snap, cur(None), View("u", principal=None)) == BOUND)
 
 
 def control_viewless_cell_is_refused() -> bool:

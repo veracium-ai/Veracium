@@ -1,6 +1,23 @@
 # Changelog
 
-## 0.18.0 — 2026-08-31
+## Unreleased
+
+- **Fixed: the revocation sweep's recompute path now refuses malformed
+  persisted absorption payloads with its declared `RevocationError`
+  instead of crashing.** A `contribution_ledger` absorption row whose
+  `base`/`contributor` sides lack (or mistype) the fields the recompute
+  fold consumes (`valid_from`, `observed_at`, `confidence`) previously
+  escaped as `KeyError` — and, when the corrupt row predated the
+  revocation, crashed `revoke_source` itself mid-transaction. The sweep's
+  reader now validates exactly what it consumes before folding (fields
+  present; datetime fields strings, confidence numeric and not bool),
+  raising `RevocationError` so the R19 transaction rolls back cleanly on
+  the write path and consumers can classify the store as unreadable on
+  the read path. The shipped writer already refuses these shapes at write
+  time; this closes the reader's half against at-rest corruption and
+  ledgers outliving their writer. Found by the 0029/0030 external review
+  (round 9); regression coverage: the reviewer's exact payload plus a
+  12-cell field×type×side matrix, both operation orders.
 
 **Upgrade recommendation:** hosts that want paraphrase/synonym recall
 ("my vacation" finding "trip to Tokyo") should take this release and

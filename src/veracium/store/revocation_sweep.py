@@ -466,6 +466,32 @@ def _side(payload, which):
     side = payload[which]
     if not isinstance(side, dict):
         raise RevocationError(f"payload[{which!r}] must be a dict")
+    # Validate WHAT _fold CONSUMES, before it consumes it (0029/0030 external
+    # round 9, F1: a persisted `{"base":{},"contributor":{}}` reached _fold
+    # and KeyError'd — escaping recompute as a crash instead of the sweep's
+    # declared RevocationError, and crashing revoke_source itself when the
+    # tamper preceded the revocation). The writer's validator
+    # (contribution.validate_absorption_payload) mandates these fields at
+    # write time, but this reader runs over an append-only ledger that can
+    # outlive the writer and be tampered at rest — so the reader validates
+    # its own consumption: the three RECOMPUTED_FIELDS, present and of the
+    # types the shipped writer emits (json_datetime strings; numeric
+    # confidence — bool excluded explicitly, isinstance(True, int) is True).
+    # A field present with the WRONG type would otherwise escape as
+    # TypeError from min()/max() — the same crash one mutant over.
+    for field in RECOMPUTED_FIELDS:
+        if field not in side:
+            raise RevocationError(
+                f"payload[{which!r}] missing {field!r} — required by the "
+                f"recompute fold; refusing the stored shape")
+        v = side[field]
+        ok = (isinstance(v, str) if field != "confidence"
+              else isinstance(v, (int, float)) and not isinstance(v, bool))
+        if not ok:
+            raise RevocationError(
+                f"payload[{which!r}].{field}: expected "
+                f"{'a json_datetime string' if field != 'confidence' else 'a number'},"
+                f" got {type(v).__name__} — refusing the stored shape")
     return side
 
 

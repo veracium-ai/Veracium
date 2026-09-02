@@ -539,40 +539,63 @@ def _seam_modules():
             if not p.stem.startswith("_")]
 
 
-def _driver_text():
+def _invoked_names():
+    """Every function name INVOKED anywhere in either driver, by AST — a
+    CALL census, not a text grep (round-9 F2: the text form counted a name
+    in an import, comment, or string as 'asserted'; the reviewer built the
+    synthetic control that proved it, taking exactly the attack point the
+    round-9 README offered). A name in this set was the callee of a real
+    Call node; nothing else qualifies."""
+    import ast
     here = Path(__file__).resolve().parent
-    return "".join((here / f).read_text() for f in
-                   ("test_seam_model_0029_0030.py",
-                    "test_seam_model_0029_0030_store.py"))
+    called = set()
+    for f in ("test_seam_model_0029_0030.py",
+              "test_seam_model_0029_0030_store.py"):
+        for node in ast.walk(ast.parse((here / f).read_text())):
+            if isinstance(node, ast.Call):
+                fn = node.func
+                if isinstance(fn, ast.Name):
+                    called.add(fn.id)
+                elif isinstance(fn, ast.Attribute):
+                    called.add(fn.attr)
+    return called
 
 
-def _unasserted_controls(modules, text):
+def _unasserted_controls(modules, called):
     import inspect
     return [f"{m.__name__}.{n}" for m in modules
             for n, o in sorted(vars(m).items())
             if n.startswith("control_") and inspect.isfunction(o)
-            and o.__module__ == m.__name__ and n not in text]
+            and o.__module__ == m.__name__ and n not in called]
 
 
 def test_every_control_in_the_seam_model_is_asserted():
-    """THE CLASS, closed again one level up (round-7 F4 -> round-8 F4).
-    Round 7's closure was itself non-exhaustive TWICE over: it scanned two
-    of four model modules, and it grepped only the MAIN driver's text —
-    so a control asserted only in this store driver would have misflagged
-    the day one existed. Modules are now DISCOVERED from the directory
-    and BOTH drivers form the assertion corpus."""
-    missing = _unasserted_controls(_seam_modules(), _driver_text())
-    assert not missing, f"control(s) defined but asserted by NOTHING: {missing}"
+    """THE CLASS, closed a third level up (round-7 F4 -> round-8 F4 ->
+    round-9 F2). Round 7 scanned two of four modules; round 8 discovered
+    every module but grepped TEXT, so mention passed for assertion; round 9
+    requires INVOCATION — each control must be the callee of a Call node in
+    a driver. The reviewer's independent AST census found all 19 current
+    controls genuinely called, so this rewrite fixes the GATE, not a
+    control — but the gate is the thing that must outlive us."""
+    missing = _unasserted_controls(_seam_modules(), _invoked_names())
+    assert not missing, f"control(s) defined but INVOKED by nothing: {missing}"
 
+
+# The round-9 F2 decoy, deliberately mentioned here and NEVER invoked:
+# control_mentioned_never_invoked. Under the round-8 text grep this comment
+# alone would have satisfied the census; the negative below proves the call
+# census is not fooled by it.
 
 def test_the_control_sweep_can_fail__control():
-    """Rule zero for the sweep itself, PERMANENT: a synthetic module
-    carrying an unreferenced control_* function must be NAMED. The
-    planted name is assembled at runtime so this file's own source cannot
-    satisfy the grep the control is designed to defeat — a literal name
-    would make the negative control self-erasing."""
+    """Rule zero for the sweep, PERMANENT, upgraded to the round-9 semantics:
+    a synthetic module's control whose name IS PRESENT in this very file's
+    text (the decoy comment above) but is never the callee of any Call node
+    must be FLAGGED. This is the exact hole the reviewer constructed —
+    mention satisfying a census that claims assertion — kept as the
+    discriminating negative: the round-8 text-based census returns [] for
+    this module; the call census names it."""
     import types
-    name = "control_" + "planted_" + "unreferenced"
+    name = "control_mentioned_never_invoked"
     mod = types.ModuleType("synthetic_seam_module")
     def planted():
         return True
@@ -580,8 +603,12 @@ def test_the_control_sweep_can_fail__control():
     planted.__qualname__ = name
     planted.__module__ = mod.__name__
     setattr(mod, name, planted)
-    missing = _unasserted_controls([mod], _driver_text())
-    assert missing == [f"{mod.__name__}.{name}"]
+    here_text = Path(__file__).read_text()
+    assert name in here_text, "the decoy mention vanished — restore the comment"
+    missing = _unasserted_controls([mod], _invoked_names())
+    assert missing == [f"{mod.__name__}.{name}"], \
+        "a mentioned-but-never-invoked control was not flagged — the census " \
+        "has regressed to counting mentions"
 
 
 # ------------- round-8 F1: the pair rule, end-to-end through the REAL producer
@@ -625,3 +652,142 @@ def test_producer_cell_replayed_without_its_view_is_refused(store):
         "permissiveness is back"
     assert bind(env, snap, bare, None) == BOUND, \
         "a bare viewless record no longer binds — the rule over-narrowed"
+
+
+# ------------- round-9 F1: persisted-value totality, one layer deeper — the
+# ledger payload's SIDES. The wrapper was validated (round 7); the fields
+# _fold consumes were not, and the reviewer's {"base":{},"contributor":{}}
+# reached base["valid_from"] as a KeyError.
+
+def _absorption_tamper_fixture(store, payload_obj, *, revoke_first):
+    """A survivor with TWO absorption ledger rows — one contributor's source
+    revoked, one standing (the reviewer's construction: recompute runs with
+    live sides). `revoke_first` sequences the corruption BEFORE or AFTER the
+    revocation, because the two orders fail at DIFFERENT shipped surfaces."""
+    import json as _j
+    surv = _edge("Boston")
+    store.add_edge(surv)
+    d_revoked = identity_digest_of(None, "feed-2", store.local_origin())
+    if revoke_first:
+        rv.revoke_source(store, U, d_revoked, "revoke", "seam-model", AT)
+    payload = _j.dumps(payload_obj)
+    for i, dg in enumerate((d_revoked,
+                            identity_digest_of(None, "feed-3",
+                                               store.local_origin()))):
+        store._conn.execute(
+            "INSERT INTO contribution_ledger (id, user_id, survivor_type, "
+            "survivor_id, site, identity_digest, evidence_ref_digest, "
+            "payload, op_key, created_at, contributor_type, contributor_ref) "
+            "VALUES (?, ?, 'edge', ?, 'absorption', ?, NULL, ?, NULL, ?, "
+            "'edge', ?)",
+            (f"cl-r9-{i}", U, surv.id, dg, payload, AT, f"c-{i}"))
+    store._conn.commit()
+    if not revoke_first:
+        return surv, d_revoked
+    return surv, d_revoked
+
+
+def test_reviewers_empty_sides_payload_yields_undeterminable(store):
+    """THE ROUND-9 PROBE, permanent (order B — revocation stands, then the
+    ledger rots): {"base":{},"contributor":{}} is VALID JSON and a valid
+    wrapper, and pre-fix it escaped source_restricted as
+    KeyError('valid_from') from _fold. The raw refusal is proven real first
+    (rule zero), then the boundary returns UNDETERMINABLE."""
+    surv, d = _absorption_tamper_fixture(
+        store, {"base": {}, "contributor": {}}, revoke_first=True)
+    from restriction_derivation import _build_projection
+    from veracium.store.revocation_sweep import RevocationError as _RE
+    from veracium.store.revocation_sweep import sweep as _sweep
+    with pytest.raises(_RE):
+        _sweep(_build_projection(store, U), d)   # the raw refusal is real
+    assert source_restricted(store, U, surv.id) \
+        is RestrictionVerdict.UNDETERMINABLE
+
+
+def test_corrupt_ledger_refuses_revocation_with_a_typed_error(store):
+    """Order A — the ledger rots BEFORE the revocation: pre-fix,
+    revoke_source ITSELF crashed with KeyError (the sweep runs inside the
+    revocation transaction), which is worse than the verdict's framing.
+    Post-fix the shipped verb refuses with its DECLARED RevocationError and
+    R19 rolls back: no revocation row lands."""
+    from veracium.store.revocation_sweep import RevocationError as _RE
+    surv, d = _absorption_tamper_fixture(
+        store, {"base": {}, "contributor": {}}, revoke_first=False)
+    with pytest.raises(_RE):
+        rv.revoke_source(store, U, d, "revoke", "seam-model", AT)
+    from restriction_derivation import standing_revocations as _sr
+    assert not _sr(store._conn, U), \
+        "the refused revocation left a standing row — R19 did not roll back"
+
+
+_GOOD_SIDE = {"valid_from": "2026-01-01T00:00:00Z",
+              "observed_at": "2026-01-02T00:00:00Z",
+              "confidence": 0.5, "disclosure": "mentionable"}
+
+SIDE_MUTANTS = [
+    (side, field, variant)
+    for side in ("base", "contributor")
+    for field in ("valid_from", "observed_at", "confidence")
+    for variant in ("absent", "wrong-type")
+]
+
+
+@pytest.mark.parametrize(
+    "side,field,variant", SIDE_MUTANTS,
+    ids=[f"{s}-{f}-{v}" for s, f, v in SIDE_MUTANTS])
+def test_every_consumed_side_field_is_validated(store, side, field, variant):
+    """The reviewer's NEXT mutant, written now (checklist item 9): the fix
+    must hold for every field _fold consumes, on BOTH sides, in BOTH failure
+    shapes — absent (KeyError pre-fix) and wrong-typed (TypeError from
+    min()/max() one mutant over, which the round-9 finding did not name and
+    the shipped writer's scalar-only validation would not catch). 12 cells;
+    each returns UNDETERMINABLE, nothing escapes."""
+    good = dict(_GOOD_SIDE)
+    bad = dict(_GOOD_SIDE)
+    if variant == "absent":
+        del bad[field]
+    else:
+        bad[field] = 3 if field != "confidence" else "high"
+    payload = {"base": good, "contributor": good}
+    payload[side] = bad
+    surv, d = _absorption_tamper_fixture(store, payload, revoke_first=True)
+    assert source_restricted(store, U, surv.id) \
+        is RestrictionVerdict.UNDETERMINABLE
+
+
+# ------------- round-9 F3: presence precedes equality, with REAL material
+
+def test_principal_less_pair_from_producer_material_is_refused(store):
+    """Round-9 F3, end-to-end shape: v20's rule checked EQUALITY and both-None
+    satisfied `!=` while naming no principal at all — the only hole left
+    (half-None was already refused as mismatch). The producer cannot emit a
+    principal-less cell (both ScopeCell sites carry a real (origin,
+    source_id) tuple) and production's ScopeView RAISES on a non-groupable
+    principal (scope_read.py:307), so this refusal costs no legitimate path
+    — but the model's constructors stay DELIBERATELY wide so this test can
+    build the illegal shape and prove rule 0 refuses it at the one site a
+    direct constructor cannot route around."""
+    from current_state_carrier import (BOUND, IDENTITY_UNBOUND, Envelope,
+                                       RawEdgeState, View, bind)
+    e = _edge("Boston")
+    store.add_edge(e)
+    kwargs = dict(principal=Identity(origin=None, source_id="mb-a"),
+                  policy=validate_policy({}, cross_scope_visible=False,
+                                         local_origin=store.local_origin()))
+    with_cell = current_state(store, U, e.id, **kwargs)
+    pc = with_cell.scope_cell
+    assert pc.principal is not None, \
+        "the producer emitted a principal-less cell — the cost claim broke"
+    stripped = CurrentState(U, e.id, with_cell.current_raw,
+                            with_cell.source_restricted, with_cell.read_token,
+                            ScopeCell(pc.visible, pc.shape, pc.fail_closed,
+                                      None))
+    env = Envelope(U, e.id)
+    snap = RawEdgeState(e.id, U, with_cell.current_raw)
+    assert bind(env, snap, stripped, View(U, principal=None)) \
+        == IDENTITY_UNBOUND, \
+        "a present pair naming NO principal bound — presence must precede " \
+        "equality"
+    assert bind(env, snap, with_cell,
+                View(U, principal=pc.principal)) == BOUND, \
+        "the legitimate paired case no longer binds — the rule over-narrowed"
