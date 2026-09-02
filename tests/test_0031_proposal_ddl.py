@@ -245,7 +245,8 @@ def _gate_selects():
     sql_only = "\n".join(l for l in m[0].splitlines()
                          if not l.strip().startswith("--"))
     selects = [s.strip() for s in sql_only.split(";") if s.strip()]
-    assert len(selects) == 6, f"expected the six audit SELECTs, found {len(selects)}"
+    assert len(selects) == 7, ("expected the seven audit SELECTs "
+        f"(round-5 F1 added the state/action grammar), found {len(selects)}")
     return selects
 
 
@@ -281,28 +282,55 @@ GATE_HISTORIES = [
            applied_txn=None, reversal_txn=9),
         _r(c, proposal_id="p2", seq=1, action="refuse", applied_txn=None)), []),
     ("accepted-without-accept-row", lambda c: (
-        _p(c, state="accepted", resolved_at="T3", applied_txn=7),), [1]),
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),), [1, 7]),
     ("two-accept-rows", lambda c: (
         _p(c, state="accepted", resolved_at="T3", applied_txn=7),
-        _r(c, seq=1), _r(c, seq=2)), [1]),
+        _r(c, seq=1), _r(c, seq=2)), [1, 7]),
     ("mismatched-applied-txn", lambda c: (
         _p(c, state="accepted", resolved_at="T3", applied_txn=7),
         _r(c, seq=1, applied_txn=8)), [2]),
     ("accept-row-on-refused", lambda c: (
         _p(c, state="refused", resolved_at="T3"),
-        _r(c, seq=1)), [3]),
+        _r(c, seq=1)), [3, 7]),
     ("reverse-without-prior-accept", lambda c: (
         _p(c, state="refused", resolved_at="T3"),
-        _r(c, seq=1, action="reverse", applied_txn=None, reversal_txn=9)), [4]),
+        _r(c, seq=1, action="reverse", applied_txn=None, reversal_txn=9)), [4, 7]),
     ("double-reversal", lambda c: (
         _p(c, state="accepted", resolved_at="T3", applied_txn=7),
         _r(c, seq=1),
         _r(c, seq=2, action="reverse", applied_txn=None, reversal_txn=9),
-        _r(c, seq=3, action="reverse", applied_txn=None, reversal_txn=10)), [5]),
+        _r(c, seq=3, action="reverse", applied_txn=None, reversal_txn=10)), [5, 7]),
     ("seq-gap", lambda c: (
         _p(c, state="accepted", resolved_at="T3", applied_txn=7),
         _r(c, seq=1),
         _r(c, seq=3, action="reverse", applied_txn=None, reversal_txn=9)), [6]),
+    # round-5 F1: the grammar cases — histories legal under all six original
+    # clauses (each a true negative; their conjunction was not totality) and
+    # illegal under the state/action grammar. The reviewer's four, plus the
+    # shapes the pre-validation added — including refused-with-zero-rows,
+    # the case the clause's own FIRST DRAFT passed silently (the NULL trap
+    # inside the audit that exists because of the NULL trap; COALESCE is
+    # the fix and this cell is its regression).
+    ("accept-then-refuse (reviewer)", lambda c: (
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),
+        _r(c, seq=1),
+        _r(c, seq=2, action="refuse", applied_txn=None)), [7]),
+    ("refuse-then-expire (reviewer)", lambda c: (
+        _p(c, state="refused", resolved_at="T3"),
+        _r(c, seq=1, action="refuse", applied_txn=None),
+        _r(c, seq=2, action="expire", applied_txn=None)), [7]),
+    ("duplicate-refuse (reviewer)", lambda c: (
+        _p(c, state="refused", resolved_at="T3"),
+        _r(c, seq=1, action="refuse", applied_txn=None),
+        _r(c, seq=2, action="refuse", applied_txn=None)), [7]),
+    ("rows-on-open (reviewer)", lambda c: (
+        _p(c),
+        _r(c, seq=1, action="refuse", applied_txn=None)), [7]),
+    ("expired-with-refuse-row", lambda c: (
+        _p(c, state="expired", resolved_at="T3"),
+        _r(c, seq=1, action="refuse", applied_txn=None)), [7]),
+    ("refused-no-rows (the NULL-trap cell)", lambda c: (
+        _p(c, state="refused", resolved_at="T3"),), [7]),
 ]
 
 
@@ -328,6 +356,55 @@ def test_resolution_ledger_gate(case, builder, expect):
 
 # ---------- round-4 F4: the connection-path inventory-completeness sweep
 
+def _connect_census(source, rel):
+    """The sweep's grammar over ONE source text, factored so the permanent
+    negatives run the REAL logic on synthetic sources. THE GRAMMAR IS
+    CONSTRAINED so a simple shape suffices — and round-5 F2 is why the
+    constraint now covers DYNAMIC ACQUISITION: the first mutant campaign's
+    `__import__("sqlite3").connect` taught the round-4 sweep to refuse
+    ALIASES, and the ORIGINAL spelling was never re-planted against the
+    strengthened check — the reviewer re-ran it and it passed silently.
+    The rule, stated fully: sqlite3 arrives by plain `import sqlite3` and
+    is used as `sqlite3.connect(...)`; a from-import, an aliased import,
+    a literal dynamic acquisition (`__import__("sqlite3")` /
+    `importlib.import_module("sqlite3")`), or ANY dynamic import whose
+    name is not a string literal (it cannot be ruled out as sqlite3) is
+    REFUSED. src/veracium's only dynamic imports today are literal and
+    unrelated (`__import__("re")`, importlib.metadata), so the constraint
+    costs nothing and forces classification the day one appears."""
+    import ast
+    out = {}
+    def bump(key):
+        out[key] = out.get(key, 0) + 1
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.ImportFrom) and node.module == "sqlite3":
+            bump(rel + " [REFUSED: from-import of sqlite3]")
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "sqlite3" and alias.asname:
+                    bump(rel + " [REFUSED: aliased sqlite3]")
+        if isinstance(node, ast.Call):
+            fn = node.func
+            # dynamic acquisition: __import__(...) / importlib.import_module(...)
+            is_dunder = isinstance(fn, ast.Name) and fn.id == "__import__"
+            is_implib = (isinstance(fn, ast.Attribute)
+                         and fn.attr == "import_module")
+            if is_dunder or is_implib:
+                arg = node.args[0] if node.args else None
+                if isinstance(arg, ast.Constant) and arg.value == "sqlite3":
+                    bump(rel + " [REFUSED: dynamic acquisition of sqlite3]")
+                elif not (isinstance(arg, ast.Constant)
+                          and isinstance(arg.value, str)):
+                    bump(rel + " [REFUSED: non-literal dynamic import — "
+                               "cannot be ruled out as sqlite3]")
+            if (isinstance(fn, ast.Attribute)
+                    and fn.attr == "connect"
+                    and isinstance(fn.value, ast.Name)
+                    and fn.value.id == "sqlite3"):
+                bump(rel)
+    return out
+
+
 def test_connection_path_inventory_is_complete():
     """The sweep §4b-ii names (labeled as a SWEEP, not behavior evidence):
     every `sqlite3.connect` call site under src/veracium must be accounted
@@ -338,30 +415,13 @@ def test_connection_path_inventory_is_complete():
     criterion in the spec (:memory: => scratch; anything else => file-backed,
     owed the factory, no third class) tells the person who lands here what
     to do with the new site."""
-    import ast
     import collections
     root = SPEC.parents[1] / "src" / "veracium"
     live = collections.Counter()
     for py in sorted(root.rglob("*.py")):
-        tree = ast.parse(py.read_text())
         rel = str(py.relative_to(root))
-        for node in ast.walk(tree):
-            # THE GRAMMAR IS CONSTRAINED so the sweep's simple shape suffices
-            # (first mutant campaign on this sweep: `__import__("sqlite3")
-            # .connect` evaded a literal grep — so instead of chasing every
-            # spelling, the sweep REFUSES any spelling but the plain one):
-            if isinstance(node, ast.ImportFrom) and node.module == "sqlite3":
-                live[rel + " [REFUSED: from-import of sqlite3]"] += 1
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    if alias.name == "sqlite3" and alias.asname:
-                        live[rel + " [REFUSED: aliased sqlite3]"] += 1
-            if (isinstance(node, ast.Call)
-                    and isinstance(node.func, ast.Attribute)
-                    and node.func.attr == "connect"
-                    and isinstance(node.func.value, ast.Name)
-                    and node.func.value.id == "sqlite3"):
-                live[rel] += 1
+        for key, n in _connect_census(py.read_text(), rel).items():
+            live[key] += n
     spec_text = SPEC.read_text()
     expected = {}
     for line in spec_text.splitlines():
@@ -375,3 +435,51 @@ def test_connection_path_inventory_is_complete():
         f"  live: {dict(live)}\n  spec: {expected}\n"
         f"Classify the new site by the criterion in §4b-ii and update the "
         f"inventory (and the factory obligation) in the same commit.")
+
+
+def test_dynamic_sqlite_acquisition_is_refused__controls():
+    """Round-5 F2's permanent negatives, run through the REAL census on
+    synthetic sources — so "the check was hardened" is carried by a test
+    containing the evading construction, never by a README sentence. The
+    FIRST cell is the exact original mutant, verbatim."""
+    hits = _connect_census(
+        'def f(p): return __import__("sqlite3").connect(p)\n', "x.py")
+    assert any("dynamic acquisition of sqlite3" in k for k in hits), hits
+    hits = _connect_census(
+        'import importlib\n'
+        'def f(): return importlib.import_module("sqlite3")\n', "x.py")
+    assert any("dynamic acquisition of sqlite3" in k for k in hits), hits
+    hits = _connect_census(
+        'import importlib\n'
+        'def f(name): return importlib.import_module(name)\n', "x.py")
+    assert any("non-literal dynamic import" in k for k in hits), hits
+    # scoped: a literal, unrelated dynamic import is NOT refused (the shipped
+    # __import__("re") at schema.py:85 must keep passing)
+    hits = _connect_census('_re = __import__("re")\n', "x.py")
+    assert hits == {}, hits
+
+
+def test_surrogate_text_raises_through_the_driver__mechanism(db):
+    """Round-5 F3's mechanism, kept executable per externally-supplied
+    string class: a lone surrogate passes isinstance(str) and RAISES
+    UnicodeEncodeError from the sqlite3 driver at binding — before any
+    CHECK can run, which is why the DDL structurally cannot own this and
+    the schedules' preamble must (the spec's ownership row): the accepted
+    text domain is str-that-encodes-as-valid-UTF-8, validated BEFORE
+    binding with a typed refusal. isinstance names the TYPE; UTF-8 names
+    the DOMAIN — the type-vs-domain recursion, in text this time."""
+    for cls, over in [
+        ("id", dict(id="\ud800")),
+        ("target_edge_id", dict(target_edge_id="\udfff")),
+        ("evidence_ref", dict(evidence_ref="\ud800")),
+        ("note", dict(note="ok\udc00")),
+        ("payload", dict(correction_payload='{"o":"\ud800"}')),
+        ("created_at", dict(created_at="\ud800")),
+    ]:
+        assert isinstance(list(over.values())[0], str)   # passes the TYPE
+        with pytest.raises(UnicodeEncodeError):
+            _insert(db, "mcp_proposal", BASE, **over)    # fails the DOMAIN
+    # resolver, on the resolution table
+    _insert(db, "mcp_proposal", BASE)
+    with pytest.raises(UnicodeEncodeError):
+        _insert(db, "mcp_proposal_resolution", RBASE, resolver="\ud800")
