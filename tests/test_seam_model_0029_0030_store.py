@@ -416,3 +416,39 @@ def test_only_decode_failures_are_caught__control(store, monkeypatch):
     monkeypatch.setattr(rd, "project_store", boom)
     with pytest.raises(RuntimeError):
         rd.source_restricted(store, U, e.id)
+
+
+# ------------- round-7 F2: the persisted-data family is wider than decode
+
+def test_invalid_utf8_ledger_payload_yields_undeterminable(store):
+    """Round-7: an invalid-UTF-8 ledger payload raises UnicodeDecodeError
+    BEFORE json ever runs — a decode family round 6's enumeration missed.
+    The raise is proven real first (rule zero), then the boundary returns."""
+    import sqlite3 as _sq
+    e, d = _revoked_superseded_fixture(store)
+    store._conn.execute(
+        "INSERT INTO contribution_ledger (id, user_id, survivor_type, "
+        "survivor_id, site, identity_digest, evidence_ref_digest, payload, "
+        "op_key, created_at) VALUES ('cl-utf8', ?, 'edge', ?, 'absorb', "
+        "NULL, NULL, ?, NULL, ?)",
+        (U, e.id, _sq.Binary(b"\xff\xfe{ bad"), AT))
+    store._conn.commit()
+    import pytest as _pt
+    from restriction_derivation import project_store as _ps
+    with _pt.raises(UnicodeDecodeError):
+        _ps(store, U)                       # the raw raise is real
+    got = source_restricted(store, U, e.id)
+    assert got is RestrictionVerdict.UNDETERMINABLE
+
+
+def test_corrupt_persisted_revocation_row_yields_undeterminable(store):
+    """Round-7: a corrupted PERSISTED revocation row raises RevocationError
+    from the SWEEP's own validation — outside project_store entirely, so
+    the boundary must cover the sweep call. At this call site every sweep
+    input is persisted, so the refusal is store-unreadability."""
+    e, d = _revoked_superseded_fixture(store)
+    store._conn.execute(
+        "UPDATE source_revocations SET at='not-a-time' WHERE user_id=?", (U,))
+    store._conn.commit()
+    got = source_restricted(store, U, e.id)
+    assert got is RestrictionVerdict.UNDETERMINABLE

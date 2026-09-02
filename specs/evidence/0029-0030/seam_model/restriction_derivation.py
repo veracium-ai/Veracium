@@ -24,7 +24,7 @@ from pydantic import ValidationError
 
 from veracium.store import revocation as rv
 from veracium.store.revocation import project_store, standing_revocations
-from veracium.store.revocation_sweep import sweep
+from veracium.store.revocation_sweep import RevocationError, sweep
 
 # THE ONE CARRIER DEFINITION lives in current_state_carrier (round-5 F1 —
 # the two-definitions divergence flagged in round 3 and left unfixed cost a
@@ -35,18 +35,23 @@ import json as _json
 
 
 class ProjectionUnreadable(Exception):
-    """The store's rows or ledger cannot be DECODED into a projection
-    (round-6 F3): `project_store` parses edge and episode rows through the
-    Pydantic models AND contribution-ledger payloads through json.loads
-    (revocation.py:232) — three decode families, two exception types. The
-    derivation boundary catches ONLY this wrapper, so a non-decode failure
-    (a real bug) still propagates; catching broadly would hide it."""
+    """PERSISTED DATA cannot be interpreted into a projection (round-6 F3,
+    WIDENED by round 7): the contract is not an exception-type list but a
+    statement — ANY failure to interpret persisted rows, payloads, or
+    revocation records becomes this wrapper; a failure of our own logic
+    still propagates. Round 6 enumerated three decode families and round 7
+    found the family wider (an invalid-UTF-8 ledger payload raises
+    UnicodeDecodeError before json ever runs; a corrupted persisted
+    revocation row raises RevocationError from the SWEEP's own
+    validation). Enumerations of failure modes under-count; the boundary
+    is defined by WHAT WAS BEING READ, and at this call site every input
+    is persisted."""
 
 
 def _build_projection(store, user_id: str):
     try:
         return project_store(store, user_id)
-    except (ValidationError, _json.JSONDecodeError) as e:
+    except (ValidationError, _json.JSONDecodeError, UnicodeDecodeError) as e:
         raise ProjectionUnreadable(str(e)[:200]) from e
 
 
@@ -77,7 +82,15 @@ def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
     d = sorted(standing)[0]                      # any standing digest works
     try:
         statement = sweep(_build_projection(store, user_id), d)
-    except ProjectionUnreadable:
+    except (ProjectionUnreadable, RevocationError):
+        # RevocationError HERE is a persisted-data failure, not an argument
+        # bug: every input to this sweep call — the projection's rows, the
+        # revocation records, the standing digest itself — derives from
+        # persisted store state, so the sweep refusing to validate them is
+        # the store being unreadable (round-7 F2's second family). At any
+        # OTHER call site RevocationError may mean caller error and must
+        # not be swallowed; the narrowness control still proves a
+        # non-persisted-data failure (RuntimeError) propagates.
         return RestrictionVerdict.UNDETERMINABLE
     if ("edge", edge_id) in set(statement["retire"]):
         return RestrictionVerdict.RESTRICTED

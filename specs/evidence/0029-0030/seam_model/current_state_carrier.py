@@ -167,12 +167,30 @@ def bind(envelope: Envelope, snapshot: RawEdgeState,
     # Stated because v18's first report claimed this case REFUSES while the code
     # bound it -- the code was right and the description was wrong, which is the
     # describe-vs-read class landing in the report layer instead of the artifact.
+    cell = current.scope_cell
     if view is not None:
-        cell = current.scope_cell
         if cell is None:
             return IDENTITY_UNBOUND
         if cell.principal != view.principal:
             return IDENTITY_UNBOUND
+    elif cell is not None and cell.principal is not None:
+        # ROUND-7 F1 -- THE MODEL WAS WRONG AND THE SPEC WAS RIGHT.
+        # Round 6's X-C ruled that a no-view record needs no cell check because
+        # "the cell is surplus and unconsumed". That was asserted twice and
+        # never checked against the CONSUMPTION SITES, and it is false: the
+        # classifier's step 2 (`if cell is not None and not cell.visible`) and
+        # step 10 (`scoped_assertable(True, (cell.visible, cell.shape))`) both
+        # guard on `cell is not None` -- NOT on `view is not None`. So with no
+        # view a present cell still decides visibility AND shaping, and a cell
+        # computed for principal Z could answer for an envelope it was never
+        # computed for, silently.
+        # The narrower `cell.principal is not None` is deliberate and matches
+        # the spec: a principal-LESS cell identifies no one to have been
+        # computed for, and its fail-closed effect (hiding) is safe.
+        # THE LESSON, which is the round's: a two-carrier disagreement was
+        # adjudicated without asking the THIRD carrier, and the third was the
+        # normative one. The spec had the answer the whole time.
+        return IDENTITY_UNBOUND
     return BOUND
 
 
@@ -201,19 +219,37 @@ def control_cell_absence_refused_under_a_view() -> bool:
             and unbound_variant(env, snap, cur, v) == BOUND)
 
 
-def control_no_view_does_not_require_a_cell() -> bool:
-    """ROUND-6 X-C, the RULING made executable: with no view there is no
-    principal to protect and the cell is never consumed, so binding must SUCCEED.
+def control_no_view_refuses_a_principal_bearing_cell() -> bool:
+    """ROUND-7 F1, replacing `control_no_view_does_not_require_a_cell`, which
+    asserted the OPPOSITE and was wrong.
 
-    Kept as a control in its own right because the opposite rule is tempting and
-    would be wrong: refusing here would reject every legitimate no-view record.
+    A cell computed FOR principal Z, passed with NO view. True means binding
+    REFUSES while the pre-F2 variant ACCEPTS. The old control asserted this
+    case must BIND, on the reasoning that a viewless record never consumes the
+    cell -- false at the classifier's steps 2 and 10, which guard on the CELL's
+    presence, not the view's.
+
+    A control can be executed, green, and still assert the wrong property. This
+    one did, for a whole round.
     """
+    env = Envelope("u", "A")
+    snap = RawEdgeState("A", "u", "{}")
+    cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                       scope_cell=ScopeCell(True, "full", principal=("o", "Z")))
+    return (bind(env, snap, cur, None) == IDENTITY_UNBOUND
+            and unbound_variant(env, snap, cur, None) == BOUND)
+
+
+def control_no_view_allows_a_principal_less_cell() -> bool:
+    """The other half, kept separate because it is a different claim: a cell
+    carrying NO principal binds under no view. Without this the rule would
+    reject every legitimate viewless record, and the narrowing would be
+    invisible."""
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
     return (bind(env, snap, CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1), None) == BOUND
             and bind(env, snap, CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
-                                             scope_cell=ScopeCell(True, "full", principal=("o", "Z"))),
-                     None) == BOUND)
+                                             scope_cell=ScopeCell(True, "full")), None) == BOUND)
 
 
 def control_cell_principal_is_enforced() -> bool:

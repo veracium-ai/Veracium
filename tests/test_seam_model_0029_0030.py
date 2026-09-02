@@ -21,6 +21,12 @@ from pathlib import Path
 SEAM = Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0029-0030" / "seam_model"
 sys.path.insert(0, str(SEAM))
 
+import sys
+from pathlib import Path
+
+SEAM = Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0029-0030" / "seam_model"
+sys.path.insert(0, str(SEAM))
+
 from raw_adapter import (Adapted, adapt, control_defaulting_a_missing_field_would_grant,
                          control_flags_are_not_serialized,
                          control_one_disjunct_lets_a_claim_through,
@@ -35,7 +41,8 @@ from current_state_carrier import (BOUND, IDENTITY_UNBOUND, CurrentState, Envelo
                                    control_cell_principal_is_enforced,
                                    control_cell_principal_absence_refused,
                                    control_cell_absence_refused_under_a_view,
-                                   control_no_view_does_not_require_a_cell)
+                                   control_no_view_refuses_a_principal_bearing_cell,
+                                   control_no_view_allows_a_principal_less_cell)
 
 
 def _edge(relation="has_diet", disclosure=Disclosure.MENTIONABLE, eid="e1", uid="u"):
@@ -180,12 +187,24 @@ def test_cell_absence_under_a_view_is_refused__with_its_control():
         "a view with no scope cell BINDS -- the classifier will consume a None cell"
 
 
-def test_no_view_does_not_require_a_cell__with_its_control():
-    """X-C's ruling, executable: with no view there is no principal to protect
-    and the cell is never consumed, so binding must SUCCEED. Refusing here would
-    reject every legitimate no-view record."""
-    assert control_no_view_does_not_require_a_cell(), \
-        "binding now refuses a no-view record -- X-4's narrowing regressed"
+def test_no_view_refuses_a_principal_bearing_cell__with_its_control():
+    """ROUND-7 F1. The test that stood here asserted the OPPOSITE — that a
+    viewless record binds regardless of its cell — and was green for a round.
+    The classifier consumes the cell at steps 2 and 10, guarded on the CELL's
+    presence and NOT the view's, so a cell computed for Z can decide visibility
+    and shaping for an envelope it was never computed for. The spec said so all
+    along; the model and this test never asked it."""
+    assert control_no_view_refuses_a_principal_bearing_cell(), \
+        "a principal-bearing cell BINDS with no view -- it still gates " \
+        "visibility and shaping at steps 2 and 10"
+
+
+def test_no_view_allows_a_principal_less_cell__with_its_control():
+    """The narrowing, asserted separately: a cell carrying no principal
+    identifies no one it was computed for, so it binds. Without this the rule
+    would reject every legitimate viewless record."""
+    assert control_no_view_allows_a_principal_less_cell(), \
+        "binding now refuses a principal-less viewless record -- too wide"
 
 
 # ------------------------------------------------- the REAL ScopeView ------
@@ -577,3 +596,32 @@ def test_carrier_type_drift_is_caught__its_control():
     bad = _spec_text().replace("undeterminable", "XXXX")
     found = [x for x in PC.check_pseudocode(bad) if "carrier drift" in x]
     assert found, "a dropped verdict value went undetected"
+
+
+# ------------------------------- ROUND-7 F4: the UNWIRED control ------------
+# `control_presence_derivation_agrees` lived in raw_adapter.py referenced by
+# NOTHING -- round-6's X-A repeating in the SAME round, in the other fix,
+# written the same afternoon X-A was reported. The instance was fixed and the
+# CLASS was not: nobody swept for other unasserted controls.
+
+def test_presence_derivation_agrees__with_its_control():
+    from raw_adapter import control_presence_derivation_agrees
+    assert control_presence_derivation_agrees(), \
+        "the two requiredness derivations disagree on a field _check_derived " \
+        "actually sees -- _field_rule's disjunction is no longer belt-and-braces"
+
+
+def test_every_control_in_the_seam_model_is_asserted():
+    """THE CLASS, not the instance (round-7 F4).
+
+    Enumerates every `control_*` in the model modules and requires each to be
+    named in this file. A control nothing calls is a description, and we shipped
+    one in two consecutive rounds. Mechanising the sweep stops a third."""
+    import inspect
+    import current_state_carrier, raw_adapter
+    here = open(__file__).read()
+    missing = [f"{m.__name__}.{n}" for m in (current_state_carrier, raw_adapter)
+               for n, o in vars(m).items()
+               if n.startswith("control_") and inspect.isfunction(o)
+               and o.__module__ == m.__name__ and n not in here]
+    assert not missing, f"control(s) defined but asserted by NOTHING: {missing}"
