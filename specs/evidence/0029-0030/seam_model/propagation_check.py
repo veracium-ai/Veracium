@@ -244,12 +244,56 @@ def _declared_type_ok(spec_text: str, field: str, ann) -> tuple[bool, str]:
                    f"at line {n} — expected the type to name `{core}`")
 
 
+def _deref_safety(spec_text: str) -> list[str]:
+    """ROUND-10 F4: the guard must precede the dereference.
+
+    WHY THIS RULE EXISTS -- the derivation, since the finding asked: this
+    checker verified mechanism PRESENCE (anchors, carrier-type declarations,
+    residue positions) and never compared the spec's BRANCH LOGIC against the
+    model's. Spec pseudocode is prose to every prior rule, so the model's
+    bind() could guard both principals while the spec guarded one and then
+    dereferenced `view.principal.origin` on a possibly-None value -- two
+    implementations of one contract, diverging invisibly beneath presence
+    checks (the same class as the 0022 reference-twin miss, found the same
+    round). A checker cannot execute markdown; it CAN pin the narrow textual
+    invariant the class reduces to: within the classifier block, no line
+    dereferences `view.principal.` before some earlier line guards
+    `view.principal is None`. Anchored on content the block must genuinely
+    carry (the C7 anchor discipline), with a negative control below.
+    """
+    out = []
+    lines = [c for _, c in _all_code_blocks(spec_text)]
+    body, seen_guard = False, False
+    for c in lines:
+        if "def classify_as_of" in c:
+            body = True
+        if not body:
+            continue
+        if "view.principal is None" in c:
+            seen_guard = True
+        if "view.principal." in c and not seen_guard:
+            out.append("deref-safety: `view.principal.` dereferenced before its "
+                       "None-guard in the classifier block (round-10 F4: a "
+                       "present view with principal=None must REFUSE, not raise)")
+            break
+    return out
+
+
+def control_deref_safety_can_fail() -> bool:
+    """Rule zero for the new rule: a synthetic classifier whose deref precedes
+    its guard MUST be flagged; the guarded form must pass."""
+    bad = "```\ndef classify_as_of(x):\n    a = view.principal.origin\n    if view.principal is None:\n        pass\n```"
+    good = "```\ndef classify_as_of(x):\n    if view.principal is None:\n        return REFUSE\n    a = view.principal.origin\n```"
+    return bool(_deref_safety(bad)) and not _deref_safety(good)
+
+
 def check_pseudocode(spec_text: str) -> list[str]:
     """CODE-level checks the text anchors structurally cannot make."""
     out = []
     code = _classifier_code(spec_text)
     if not code:
         return ["pseudocode: classifier block not found"]
+    out.extend(_deref_safety(spec_text))
     for banned in ("view.visible(", "view.decision(", "view.shape("):
         if banned in code:
             out.append(f"pseudocode: LIVE VIEW CALL `{banned}` — the cell is "

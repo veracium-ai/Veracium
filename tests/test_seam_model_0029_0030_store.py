@@ -539,61 +539,111 @@ def _seam_modules():
             if not p.stem.startswith("_")]
 
 
-def _invoked_names():
-    """Every function name INVOKED anywhere in either driver, by AST — a
-    CALL census, not a text grep (round-9 F2: the text form counted a name
-    in an import, comment, or string as 'asserted'; the reviewer built the
-    synthetic control that proved it, taking exactly the attack point the
-    round-9 README offered). A name in this set was the callee of a real
-    Call node; nothing else qualifies."""
+def _census_source(source):
+    """IDENTITY census over one source text (round-10 F3, the gate's FOURTH
+    rung: mention -> module-discovery -> call-by-name -> call-by-IDENTITY).
+    The round-9 census recorded terminal NAMES, so a call to any unrelated
+    function spelled `control_x` credited the seam control, while alias or
+    dispatch invocation of the genuine callable was invisible.
+
+    This census resolves each call through the file's IMPORTS:
+    - `from M import c [as y]` binds y (or c) to identity (M, c); a Name
+      call through that binding credits (M, c) — aliased from-imports
+      resolve, because the identity is declared at the import.
+    - `import M [as m]` + `m.c()` credits (M, c).
+    - A call through a name bound any other way (a local def, a foreign
+      import, a bare attribute) credits NOTHING for the seam modules.
+
+    And the GRAMMAR IS CONSTRAINED (the 0031 inventory sweep's move) where
+    identity cannot be traced: an assignment that rebinds an imported
+    control to another name is a VIOLATION, returned for the caller to
+    fail on — controls are invoked through their imported bindings, so
+    dispatch tables and aliases cannot silently hide an invocation from
+    the census.
+
+    Returns (credited, violations): credited = {(module, func)} identities
+    actually called; violations = [description]."""
     import ast
+    tree = ast.parse(source)
+    from_bindings = {}   # local name -> (module, original_name)
+    mod_bindings = {}    # local name -> module
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            for a in node.names:
+                from_bindings[a.asname or a.name] = (node.module, a.name)
+        elif isinstance(node, ast.Import):
+            for a in node.names:
+                mod_bindings[a.asname or a.name] = a.name
+    credited, violations = set(), []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            fn = node.func
+            if isinstance(fn, ast.Name) and fn.id in from_bindings:
+                credited.add(from_bindings[fn.id])
+            elif (isinstance(fn, ast.Attribute)
+                  and isinstance(fn.value, ast.Name)
+                  and fn.value.id in mod_bindings):
+                credited.add((mod_bindings[fn.value.id], fn.attr))
+        elif isinstance(node, ast.Assign):
+            src = node.value
+            rebind = None
+            if isinstance(src, ast.Name) and src.id in from_bindings:
+                rebind = from_bindings[src.id]
+            elif (isinstance(src, ast.Attribute)
+                  and isinstance(src.value, ast.Name)
+                  and src.value.id in mod_bindings):
+                rebind = (mod_bindings[src.value.id], src.attr)
+            if rebind and rebind[1].startswith("control_"):
+                violations.append(
+                    f"control {rebind[0]}.{rebind[1]} rebound to another "
+                    f"name — controls are invoked through their imported "
+                    f"bindings so the identity census can see them")
+    return credited, violations
+
+
+def _invoked_identities():
+    """The identity census over BOTH drivers; alias violations fail here."""
     here = Path(__file__).resolve().parent
-    called = set()
+    credited = set()
     for f in ("test_seam_model_0029_0030.py",
               "test_seam_model_0029_0030_store.py"):
-        for node in ast.walk(ast.parse((here / f).read_text())):
-            if isinstance(node, ast.Call):
-                fn = node.func
-                if isinstance(fn, ast.Name):
-                    called.add(fn.id)
-                elif isinstance(fn, ast.Attribute):
-                    called.add(fn.attr)
-    return called
+        c, viol = _census_source((here / f).read_text())
+        assert not viol, f"{f}: {viol}"
+        credited.update(c)
+    return credited
 
 
-def _unasserted_controls(modules, called):
+def _unasserted_controls(modules, credited):
     import inspect
     return [f"{m.__name__}.{n}" for m in modules
             for n, o in sorted(vars(m).items())
             if n.startswith("control_") and inspect.isfunction(o)
-            and o.__module__ == m.__name__ and n not in called]
+            and o.__module__ == m.__name__
+            and (m.__name__, n) not in credited]
 
 
 def test_every_control_in_the_seam_model_is_asserted():
-    """THE CLASS, closed a third level up (round-7 F4 -> round-8 F4 ->
-    round-9 F2). Round 7 scanned two of four modules; round 8 discovered
-    every module but grepped TEXT, so mention passed for assertion; round 9
-    requires INVOCATION — each control must be the callee of a Call node in
-    a driver. The reviewer's independent AST census found all 19 current
-    controls genuinely called, so this rewrite fixes the GATE, not a
-    control — but the gate is the thing that must outlive us."""
-    missing = _unasserted_controls(_seam_modules(), _invoked_names())
+    """THE CLASS, closed a FOURTH level up (round-7 F4 -> round-8 F4 ->
+    round-9 F2 -> round-10 F3). Round 7 scanned two of four modules; round
+    8 discovered every module but grepped TEXT; round 9 required a Call
+    node but matched terminal NAMES, so any callee spelled `control_x`
+    credited the seam control; round 10 requires IDENTITY — the call must
+    resolve through the driver's imports to THAT module's function, and
+    rebinding a control to another name is a census violation outright."""
+    missing = _unasserted_controls(_seam_modules(), _invoked_identities())
     assert not missing, f"control(s) defined but INVOKED by nothing: {missing}"
 
 
 # The round-9 F2 decoy, deliberately mentioned here and NEVER invoked:
 # control_mentioned_never_invoked. Under the round-8 text grep this comment
-# alone would have satisfied the census; the negative below proves the call
-# census is not fooled by it.
+# alone would have satisfied the census; the negatives below prove the
+# identity census is fooled by neither mention nor name-collision.
 
 def test_the_control_sweep_can_fail__control():
-    """Rule zero for the sweep, PERMANENT, upgraded to the round-9 semantics:
-    a synthetic module's control whose name IS PRESENT in this very file's
-    text (the decoy comment above) but is never the callee of any Call node
-    must be FLAGGED. This is the exact hole the reviewer constructed —
-    mention satisfying a census that claims assertion — kept as the
-    discriminating negative: the round-8 text-based census returns [] for
-    this module; the call census names it."""
+    """Rule zero for the sweep, PERMANENT, at the round-10 semantics: a
+    synthetic module's control whose name is PRESENT in this file's text
+    (the decoy comment above) but never invoked through an import of that
+    module must be FLAGGED."""
     import types
     name = "control_mentioned_never_invoked"
     mod = types.ModuleType("synthetic_seam_module")
@@ -605,10 +655,56 @@ def test_the_control_sweep_can_fail__control():
     setattr(mod, name, planted)
     here_text = Path(__file__).read_text()
     assert name in here_text, "the decoy mention vanished — restore the comment"
-    missing = _unasserted_controls([mod], _invoked_names())
+    missing = _unasserted_controls([mod], _invoked_identities())
     assert missing == [f"{mod.__name__}.{name}"], \
         "a mentioned-but-never-invoked control was not flagged — the census " \
-        "has regressed to counting mentions"
+        "has regressed"
+
+
+def test_same_name_foreign_call_does_not_credit__control():
+    """THE REVIEWER'S ROUND-10 CONSTRUCTION, permanent: a call to an
+    UNRELATED function that happens to be spelled like a control must not
+    credit the seam control. The round-9 census failed exactly this (a
+    terminal-name set has no notion of WHOSE control_x was called); the
+    identity census resolves through imports, and a local def or foreign
+    import is not an import of the seam module."""
+    src = (
+        "from other_module import control_x\n"
+        "def control_y():\n"
+        "    return True\n"
+        "control_x()\n"          # foreign module's control_x — not ours
+        "control_y()\n"          # local def — bound to no module
+    )
+    credited, violations = _census_source(src)
+    assert violations == []
+    assert ("other_module", "control_x") in credited
+    assert not any(m == "seam_module" for m, _ in credited), \
+        "a same-name foreign call credited the seam module — the census " \
+        "has regressed to terminal names"
+
+
+def test_alias_rebinding_is_a_census_violation__control():
+    """The other half of the reviewer's round-10 finding: alias or dispatch
+    invocation of the GENUINE control is invisible to any static census —
+    so the grammar is CONSTRAINED instead (the 0031 inventory sweep's
+    move): rebinding an imported control to another name is a VIOLATION
+    the census returns and the driver census asserts empty. Both rebind
+    shapes covered: the from-import binding and the module-attribute."""
+    src1 = ("from restriction_derivation import control_bare_id_fails_open\n"
+            "f = control_bare_id_fails_open\n"
+            "f()\n")
+    _, viol1 = _census_source(src1)
+    assert viol1 and "rebound" in viol1[0]
+    src2 = ("import restriction_derivation as rd\n"
+            "g = rd.control_token_moves_on_mutation\n")
+    _, viol2 = _census_source(src2)
+    assert viol2 and "rebound" in viol2[0]
+    # and a NON-control rebinding is not a violation (the constraint is
+    # scoped to what the census must see, not a style rule):
+    src3 = ("from restriction_derivation import current_state\n"
+            "cs = current_state\n")
+    _, viol3 = _census_source(src3)
+    assert viol3 == []
 
 
 # ------------- round-8 F1: the pair rule, end-to-end through the REAL producer
@@ -724,11 +820,25 @@ _GOOD_SIDE = {"valid_from": "2026-01-01T00:00:00Z",
               "observed_at": "2026-01-02T00:00:00Z",
               "confidence": 0.5, "disclosure": "mentionable"}
 
+# Round-10 F1 widened the matrix past types into DOMAINS: the round-9 fix
+# validated that confidence was a number and stopped one recursion short of
+# validating it was a PROBABILITY — the reviewer's 2.0 survived a revoke+lift
+# and the stored edge failed its own model. Domain variants apply per field:
+# confidence gains range/NaN/inf; the datetimes gain the unparseable string
+# (the SAME laundering one field over — Edge.valid_from is datetime-typed).
+_DOMAIN_VARIANTS = {
+    "confidence": ("above-domain", "below-domain", "nan", "infinity"),
+    "valid_from": ("not-a-datetime",),
+    "observed_at": ("not-a-datetime",),
+}
+_DOMAIN_VALUES = {"above-domain": 2.0, "below-domain": -0.5,
+                  "nan": float("nan"), "infinity": float("inf"),
+                  "not-a-datetime": "not-a-date"}
 SIDE_MUTANTS = [
     (side, field, variant)
     for side in ("base", "contributor")
     for field in ("valid_from", "observed_at", "confidence")
-    for variant in ("absent", "wrong-type")
+    for variant in (("absent", "wrong-type") + _DOMAIN_VARIANTS[field])
 ]
 
 
@@ -746,8 +856,10 @@ def test_every_consumed_side_field_is_validated(store, side, field, variant):
     bad = dict(_GOOD_SIDE)
     if variant == "absent":
         del bad[field]
-    else:
+    elif variant == "wrong-type":
         bad[field] = 3 if field != "confidence" else "high"
+    else:
+        bad[field] = _DOMAIN_VALUES[variant]
     payload = {"base": good, "contributor": good}
     payload[side] = bad
     surv, d = _absorption_tamper_fixture(store, payload, revoke_first=True)
@@ -791,3 +903,53 @@ def test_principal_less_pair_from_producer_material_is_refused(store):
     assert bind(env, snap, with_cell,
                 View(U, principal=pc.principal)) == BOUND, \
         "the legitimate paired case no longer binds — the rule over-narrowed"
+
+
+# ------------- round-10 F1: the reviewer's revoke/lift laundering, refused
+
+def test_out_of_domain_confidence_refuses_revoke_and_lift(store):
+    """THE ROUND-10 PROBE, permanent, at the REAL store: confidence 2.0 in a
+    contributor side survived the round-9 TYPE check, rode a revoke and a
+    LIFT into a committed recompute effect, and the stored edge then failed
+    its own Edge.model_validate — the sweep laundering an out-of-domain
+    persisted value into a live record. Both operations must now REFUSE
+    with the declared error and roll back completely.
+
+    Revoke half: the corrupt side is present before any revocation —
+    revoke_source refuses, R19 rolls back, no standing row lands.
+    Lift half: the revocation stands FIRST (good payload), the ledger then
+    rots to 2.0 — the lift refuses and the source STAYS revoked (a refused
+    lift must not half-lift)."""
+    import json as _j
+    from veracium.store.revocation_sweep import RevocationError as _RE
+    from restriction_derivation import standing_revocations as _sr
+    GOOD = dict(_GOOD_SIDE)
+    EVIL = dict(_GOOD_SIDE, confidence=2.0)
+
+    # -- revoke half
+    surv, d = _absorption_tamper_fixture(
+        store, {"base": GOOD, "contributor": EVIL}, revoke_first=False)
+    with pytest.raises(_RE):
+        rv.revoke_source(store, U, d, "revoke", "seam-model", AT)
+    assert not _sr(store._conn, U), "refused revoke left a standing row"
+
+    # -- lift half: make the store clean again, revoke on GOOD payload,
+    # then rot the ledger and attempt the lift
+    store._conn.execute("DELETE FROM contribution_ledger WHERE user_id=?",
+                        (U,))
+    store._conn.commit()
+    surv2, d2 = _absorption_tamper_fixture(
+        store, {"base": GOOD, "contributor": GOOD}, revoke_first=True)
+    assert _sr(store._conn, U), "fixture failed to establish the revocation"
+    store._conn.execute(
+        "UPDATE contribution_ledger SET payload=? WHERE user_id=?",
+        (_j.dumps({"base": GOOD, "contributor": EVIL}), U))
+    store._conn.commit()
+    with pytest.raises(_RE):
+        rv.revoke_source(store, U, d2, "lift", "seam-model", AT)
+    assert _sr(store._conn, U), \
+        "the refused lift removed the standing revocation — a half-lift"
+    # and the survivor's stored edge still validates (nothing was committed)
+    row = store._conn.execute("SELECT json FROM edges WHERE id=?",
+                              (surv2.id,)).fetchone()[0]
+    Edge.model_validate_json(row)

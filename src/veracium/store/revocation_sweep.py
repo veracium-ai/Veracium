@@ -88,7 +88,9 @@ re-porting.
 from __future__ import annotations
 
 import hashlib
+import math as _math
 import re
+from datetime import datetime as _datetime
 from typing import Optional
 
 # ---- the shipped digest construction, mirrored EXACTLY (0006 §4 rules 6-7) --
@@ -492,6 +494,33 @@ def _side(payload, which):
                 f"payload[{which!r}].{field}: expected "
                 f"{'a json_datetime string' if field != 'confidence' else 'a number'},"
                 f" got {type(v).__name__} — refusing the stored shape")
+        # DOMAIN, not just type (0029/0030 external round 10, F1 — the
+        # round-9 type check stopped one recursion short): every fold output
+        # lands in the shipped model's domain or the recompute LAUNDERS an
+        # out-of-domain persisted value into a live edge that then fails its
+        # own Edge.model_validate. The reviewer proved it with confidence
+        # 2.0 surviving a revoke+lift; the same fold commits valid_from into
+        # a datetime-typed model field, so a non-datetime string is the
+        # identical defect one field over — the class is closed, not the
+        # named cell. Confidence: finite and within Provenance's [0, 1]
+        # (schema.py — ge=0.0, le=1.0; NaN and infinities are floats and
+        # pass isinstance). Datetimes: parseable in the writer's canonical
+        # json_datetime form (Z-suffixed ISO — contribution.json_datetime),
+        # which is also what makes the fold's lexicographic min()/max()
+        # order-correct.
+        if field == "confidence":
+            if not (_math.isfinite(v) and 0.0 <= v <= 1.0):
+                raise RevocationError(
+                    f"payload[{which!r}].confidence: {v!r} outside the "
+                    f"shipped Provenance domain [0.0, 1.0] — refusing the "
+                    f"stored shape")
+        else:
+            try:
+                _datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except ValueError:
+                raise RevocationError(
+                    f"payload[{which!r}].{field}: {v!r} is not a parseable "
+                    f"json_datetime — refusing the stored shape") from None
     return side
 
 

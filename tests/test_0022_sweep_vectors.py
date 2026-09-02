@@ -174,3 +174,31 @@ def test_product_agrees_with_the_reference(v, tmp_path):
             assert p.get(f) == r.get(f), (
                 f"{v['name']}: {key} field {f!r}: product {p.get(f)!r} != "
                 f"reference {r.get(f)!r}")
+
+
+# ---- round-10 0029/0030 F2: BOTH implementations refuse the invalid-shape
+# matrix. The round-9 _side fix reached the product and not the reference —
+# divergence the shared vectors could not see until they carried the shapes.
+
+_INVALID_RECOMPUTE = [v for v in _VECTORS
+                      if v["kind"] == "recompute"
+                      and v["expect"] == "RevocationError"
+                      and "recompute_side" in v["name"]
+                      or v["name"].startswith("recompute_empty_sides")]
+
+
+@pytest.mark.parametrize("v", _INVALID_RECOMPUTE,
+                         ids=[v["name"] for v in _INVALID_RECOMPUTE])
+def test_reference_and_product_refuse_the_same_invalid_shapes(v):
+    """The agreement discipline, applied to REFUSALS: every invalid-shape
+    recompute vector must be refused by the reference AND by the shipped
+    sweep, each with its own RevocationError. A fix to a shared contract
+    lands in every implementation of the contract — this test is what makes
+    the next one-sided fix fail in CI instead of in a verdict."""
+    from reference_revocation import recompute as ref_recompute
+    rows = VH._sub(copy.deepcopy(v["rows"]))
+    standing = frozenset(VH.D(i) for i in v["standing"])
+    with pytest.raises(RefError):
+        ref_recompute(rows, standing)
+    with pytest.raises(psw.RevocationError):
+        psw.recompute(rows, standing)

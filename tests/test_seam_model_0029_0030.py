@@ -628,3 +628,14 @@ def test_presence_derivation_agrees__with_its_control():
 # folds of THIS file cannot collide with it. Deleted rather than kept-but-
 # superseded: two sweeps with one name and different scopes is how one of
 # them lies (the round-3 EXPECT_ONCE lesson, applied to a test).
+
+
+def test_deref_safety_rule__with_its_control():
+    """ROUND-10 F4: the propagation check's new deref-safety rule — the guard
+    precedes the dereference in the spec's classifier block — with rule zero
+    applied to the rule itself: a synthetic deref-before-guard classifier must
+    be flagged, the guarded form must pass."""
+    import propagation_check as pc
+    assert pc.control_deref_safety_can_fail(), \
+        "the deref-safety rule cannot fail -- it would pass a spec whose " \
+        "pseudocode raises on a None view-principal"

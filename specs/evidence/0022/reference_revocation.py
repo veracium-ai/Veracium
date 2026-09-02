@@ -76,7 +76,9 @@ carrier — the carrier-completeness rule):
 from __future__ import annotations
 
 import hashlib
+import math as _math
 import re
+from datetime import datetime as _datetime
 from typing import Optional
 
 # ---- the shipped digest construction, mirrored EXACTLY (0006 §4 rules 6-7) --
@@ -440,6 +442,12 @@ def dead_rows(rows, standing, retired=frozenset()) -> list:
 # ---- the recompute ---------------------------------------------------------
 
 def _side(payload, which):
+    """PORTED IN FULL from the shipped `revocation_sweep._side` (0029/0030
+    external rounds 9-10): the round-9 field/type validation reached the
+    product and NOT this reference — divergence the shared vectors could not
+    see, which round-10 F2 named. A fix to a shared contract lands in EVERY
+    implementation of the contract in the same commit; this docstring is the
+    reminder, and the invalid-shape vectors are the proof both refuse alike."""
     if not isinstance(payload, dict) or which not in payload:
         raise RevocationError(
             f"absorption payload must carry {which!r} — the shipped "
@@ -448,6 +456,32 @@ def _side(payload, which):
     side = payload[which]
     if not isinstance(side, dict):
         raise RevocationError(f"payload[{which!r}] must be a dict")
+    for field in RECOMPUTED_FIELDS:
+        if field not in side:
+            raise RevocationError(
+                f"payload[{which!r}] missing {field!r} — required by the "
+                f"recompute fold; refusing the stored shape")
+        v = side[field]
+        ok = (isinstance(v, str) if field != "confidence"
+              else isinstance(v, (int, float)) and not isinstance(v, bool))
+        if not ok:
+            raise RevocationError(
+                f"payload[{which!r}].{field}: expected "
+                f"{'a json_datetime string' if field != 'confidence' else 'a number'},"
+                f" got {type(v).__name__} — refusing the stored shape")
+        if field == "confidence":
+            if not (_math.isfinite(v) and 0.0 <= v <= 1.0):
+                raise RevocationError(
+                    f"payload[{which!r}].confidence: {v!r} outside the "
+                    f"shipped Provenance domain [0.0, 1.0] — refusing the "
+                    f"stored shape")
+        else:
+            try:
+                _datetime.fromisoformat(v.replace("Z", "+00:00"))
+            except ValueError:
+                raise RevocationError(
+                    f"payload[{which!r}].{field}: {v!r} is not a parseable "
+                    f"json_datetime — refusing the stored shape") from None
     return side
 
 
