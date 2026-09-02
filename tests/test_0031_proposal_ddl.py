@@ -69,11 +69,20 @@ PROPOSAL_CELLS = [
     ("C2-claim-outside-domain", dict(claim="oops"), True),
     ("C3-dispute-with-claim",
      dict(kind="dispute", correction_payload=None, claim="error"), True),
-    ("C4-oversize-payload", dict(correction_payload="x" * 5000), True),
+    # C4: the pad keeps the payload VALID JSON so the length bound is the ONLY
+    # refusing conjunct — round-4's json_valid addition would otherwise mask it
+    # (the sole-coverage-mutant lesson from round 3, applied preemptively).
+    ("C4-oversize-payload",
+     dict(correction_payload='{"pad":"' + "x" * 5000 + '"}'), True),
+    ("R7-nonjson-payload (round-4 F1)",
+     dict(correction_payload="not json at all"), True),
     ("N1-non-hex-digest", dict(target_state_digest="Z" * 64), True),
     ("N2-short-digest", dict(target_state_digest="ab"), True),
     ("N5-BLOB-digest", dict(target_state_digest=b"a" * 64), True),
-    ("N6-textual-applied-txn",
+    # N6 RELABELED (round-4 F3): "seven" is NON-COERCIBLE text, which is the
+    # only textual class the DDL can refuse — coercible "7" passes; see the
+    # honest-limit cells below.
+    ("N6-noncoercible-text-applied-txn",
      dict(state="accepted", resolved_at="T3", applied_txn="seven"), True),
     ("N7-negative-applied-txn",
      dict(state="accepted", resolved_at="T3", applied_txn=-1), True),
@@ -101,7 +110,7 @@ RESOLUTION_CELLS = [
     ("N4-resolver-empty", dict(resolver=""), True),
     ("N8-BLOB-resolver", dict(resolver=b"host-admin"), True),
     ("N9-negative-seq", dict(seq=-3), True),
-    ("N10-textual-reversal-txn",
+    ("N10-noncoercible-text-reversal-txn",
      dict(action="reverse", applied_txn=None, reversal_txn="nine"), True),
     ("N11-negative-reversal-txn",
      dict(action="reverse", applied_txn=None, reversal_txn=-9), True),
@@ -180,3 +189,189 @@ def test_null_claim_would_pass_a_naive_check__control():
                           (kind = 'correction' AND claim IN ('error','change'))))""")
     conn.execute("INSERT INTO naive VALUES ('correction', NULL)")  # accepted!
     conn.close()
+
+
+# ---------- round-4 F3: coercion — the DDL's HONEST LIMIT, kept executable
+
+def test_coercible_text_txn_is_ddl_invisible__honest_limit(db):
+    """The reviewer's probe, permanent: affinity conversion runs BEFORE every
+    CHECK, so textual "7" bound to the INTEGER applied_txn column arrives at
+    typeof() already an integer and is ACCEPTED. No DDL — STRICT included
+    (executed, both seats) — can see the caller's binding type; that is the
+    STORE schedules' pinned validation preamble (§4c-i). This cell asserts
+    the coercion HAPPENS, so the store obligation's necessity stays
+    executable — and it is designed to expire: if SQLite ever stops
+    coercing, this fails and the narrowed DDL claim can be re-widened."""
+    _insert(db, "mcp_proposal", BASE,
+            state="accepted", resolved_at="T3", applied_txn="7")
+    v, t = db.execute("SELECT applied_txn, typeof(applied_txn) "
+                      "FROM mcp_proposal").fetchone()
+    assert (v, t) == (7, "integer"), (v, t)
+
+
+def test_numeric_resolver_coerces_to_text__honest_limit(db):
+    """The other direction of the same limit: numeric 7 bound to the TEXT
+    resolver column stores as '7' and satisfies every CHECK. Same owner:
+    the schedules' binding-type preamble, not the DDL."""
+    _insert(db, "mcp_proposal", BASE)
+    _insert(db, "mcp_proposal_resolution", RBASE, resolver=7)
+    v, t = db.execute("SELECT resolver, typeof(resolver) "
+                      "FROM mcp_proposal_resolution").fetchone()
+    assert (v, t) == ("7", "text"), (v, t)
+
+
+def test_ddl_accepts_what_the_store_parse_must_refuse__honest_limit(db):
+    """Round-4 F1's ownership split, executable: json_valid refuses raw text
+    (R7) but ACCEPTS `{}` (fails field requiredness) and a duplicate-key
+    object (SQLite's parser is last-wins) — the payload FIELD contract's
+    owner is the store parse at both sites (§4b-ii), and this cell is the
+    DDL's honest limit asserted so the ownership row stays load-bearing."""
+    _insert(db, "mcp_proposal", BASE, id="p-empty", correction_payload="{}")
+    _insert(db, "mcp_proposal", BASE, id="p-dup",
+            correction_payload='{"object":"a","object":"b"}')
+
+
+# ---------- round-4 F2: V-RESOLUTION-LEDGER — the gate, extracted and fired
+
+def _gate_selects():
+    """The gate SQL comes FROM THE SPEC's fenced block (extract-at-test-time,
+    the same discipline as _ddl): the audit that runs is the audit the spec
+    promises, and neither can drift from the other."""
+    text = SPEC.read_text()
+    m = re.findall(r"```sql\n(-- V-RESOLUTION-LEDGER.*?)```", text, re.S)
+    assert len(m) == 1, f"expected exactly one fenced gate block, found {len(m)}"
+    # Comment lines label the clauses (and mention SELECT in prose), so strip
+    # them BEFORE splitting — the statements are what remains between ';'s.
+    sql_only = "\n".join(l for l in m[0].splitlines()
+                         if not l.strip().startswith("--"))
+    selects = [s.strip() for s in sql_only.split(";") if s.strip()]
+    assert len(selects) == 6, f"expected the six audit SELECTs, found {len(selects)}"
+    return selects
+
+
+def _audit(conn):
+    return [i for i, s in enumerate(_gate_selects(), 1)
+            if conn.execute(s.rstrip(";")).fetchall()]
+
+
+def _fresh_history(builder):
+    conn = sqlite3.connect(":memory:")
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.executescript(_ddl())
+    builder(conn)
+    return conn
+
+
+def _p(conn, **over):
+    _insert(conn, "mcp_proposal", BASE, **over)
+
+
+def _r(conn, **over):
+    _insert(conn, "mcp_proposal_resolution", RBASE, **over)
+
+
+GATE_HISTORIES = [
+    # (case, builder, clauses that MUST fire — [] means the clean pass)
+    ("clean-multi-proposal", lambda c: (
+        _p(c, id="p1", state="accepted", resolved_at="T3", applied_txn=7),
+        _p(c, id="p2", state="refused", resolved_at="T3"),
+        _p(c, id="p3"),
+        _r(c, proposal_id="p1", seq=1),
+        _r(c, proposal_id="p1", seq=2, action="reverse",
+           applied_txn=None, reversal_txn=9),
+        _r(c, proposal_id="p2", seq=1, action="refuse", applied_txn=None)), []),
+    ("accepted-without-accept-row", lambda c: (
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),), [1]),
+    ("two-accept-rows", lambda c: (
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),
+        _r(c, seq=1), _r(c, seq=2)), [1]),
+    ("mismatched-applied-txn", lambda c: (
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),
+        _r(c, seq=1, applied_txn=8)), [2]),
+    ("accept-row-on-refused", lambda c: (
+        _p(c, state="refused", resolved_at="T3"),
+        _r(c, seq=1)), [3]),
+    ("reverse-without-prior-accept", lambda c: (
+        _p(c, state="refused", resolved_at="T3"),
+        _r(c, seq=1, action="reverse", applied_txn=None, reversal_txn=9)), [4]),
+    ("double-reversal", lambda c: (
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),
+        _r(c, seq=1),
+        _r(c, seq=2, action="reverse", applied_txn=None, reversal_txn=9),
+        _r(c, seq=3, action="reverse", applied_txn=None, reversal_txn=10)), [5]),
+    ("seq-gap", lambda c: (
+        _p(c, state="accepted", resolved_at="T3", applied_txn=7),
+        _r(c, seq=1),
+        _r(c, seq=3, action="reverse", applied_txn=None, reversal_txn=9)), [6]),
+]
+
+
+@pytest.mark.parametrize("case,builder,expect",
+                         GATE_HISTORIES, ids=[h[0] for h in GATE_HISTORIES])
+def test_resolution_ledger_gate(case, builder, expect):
+    """Round-4 F2: the gate §4b cited for two rounds EXISTED NOWHERE — the
+    phantom-citation class in our own spec. Now it is fenced SQL in §6a,
+    extracted here at test time, and FIRED: a legal multi-proposal history
+    returns zero rows from every SELECT, and each violation history — legal
+    per-row, illegal per-table, which is exactly what a row CHECK cannot see
+    — trips exactly its clause. A gate that has never fired is a comment
+    (rule zero, applied to the gate itself)."""
+    conn = _fresh_history(builder)
+    fired = _audit(conn)
+    # EXACT equality, not membership: each history was built to violate one
+    # clause and satisfy the rest, so a second clause firing means either the
+    # history or a clause drifted — both worth failing on.
+    assert fired == expect, \
+        f"{case}: expected clauses {expect} to fire, got {fired}"
+    conn.close()
+
+
+# ---------- round-4 F4: the connection-path inventory-completeness sweep
+
+def test_connection_path_inventory_is_complete():
+    """The sweep §4b-ii names (labeled as a SWEEP, not behavior evidence):
+    every `sqlite3.connect` call site under src/veracium must be accounted
+    for by the spec's inventory table — per-file site COUNTS are compared,
+    so a new site (new file, or an extra call in a known file) fails until
+    the inventory and the factory obligation cover it, while line-number
+    drift from unrelated edits does not false-fail. The classifier
+    criterion in the spec (:memory: => scratch; anything else => file-backed,
+    owed the factory, no third class) tells the person who lands here what
+    to do with the new site."""
+    import ast
+    import collections
+    root = SPEC.parents[1] / "src" / "veracium"
+    live = collections.Counter()
+    for py in sorted(root.rglob("*.py")):
+        tree = ast.parse(py.read_text())
+        rel = str(py.relative_to(root))
+        for node in ast.walk(tree):
+            # THE GRAMMAR IS CONSTRAINED so the sweep's simple shape suffices
+            # (first mutant campaign on this sweep: `__import__("sqlite3")
+            # .connect` evaded a literal grep — so instead of chasing every
+            # spelling, the sweep REFUSES any spelling but the plain one):
+            if isinstance(node, ast.ImportFrom) and node.module == "sqlite3":
+                live[rel + " [REFUSED: from-import of sqlite3]"] += 1
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "sqlite3" and alias.asname:
+                        live[rel + " [REFUSED: aliased sqlite3]"] += 1
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "connect"
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "sqlite3"):
+                live[rel] += 1
+    spec_text = SPEC.read_text()
+    expected = {}
+    for line in spec_text.splitlines():
+        mrow = re.match(r"\| `store/([a-z_]+\.py):\d+", line)
+        if mrow:
+            # every `:NNN` on the row is one cited call site in that file
+            expected[f"store/{mrow.group(1)}"] = len(re.findall(r":\d+", line))
+    assert expected, "the spec's inventory table was not found"
+    assert dict(live) == expected, (
+        f"connection sites drifted from the spec inventory:\n"
+        f"  live: {dict(live)}\n  spec: {expected}\n"
+        f"Classify the new site by the criterion in §4b-ii and update the "
+        f"inventory (and the factory obligation) in the same commit.")
