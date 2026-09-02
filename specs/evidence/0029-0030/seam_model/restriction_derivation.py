@@ -36,23 +36,33 @@ import json as _json
 
 class ProjectionUnreadable(Exception):
     """PERSISTED DATA cannot be interpreted into a projection (round-6 F3,
-    WIDENED by round 7): the contract is not an exception-type list but a
-    statement — ANY failure to interpret persisted rows, payloads, or
-    revocation records becomes this wrapper; a failure of our own logic
-    still propagates. Round 6 enumerated three decode families and round 7
-    found the family wider (an invalid-UTF-8 ledger payload raises
-    UnicodeDecodeError before json ever runs; a corrupted persisted
-    revocation row raises RevocationError from the SWEEP's own
-    validation). Enumerations of failure modes under-count; the boundary
-    is defined by WHAT WAS BEING READ, and at this call site every input
-    is persisted."""
+    WIDENED by round 7, made REGION-TOTAL by round 8): the contract is not
+    an exception-type list but a statement — ANY failure to interpret
+    persisted rows, payloads, or revocation records becomes this wrapper.
+    Round 6 enumerated three decode families; round 7 found the family
+    wider (UnicodeDecodeError before json runs; RevocationError from the
+    sweep's own validation); round 8 proved the round-7 tuple STILL
+    under-counted (a 10k-nested persisted payload raises RecursionError,
+    which no enumeration had named). The lesson finally applied to the
+    code, not just the prose: the boundary is a REGION, not a type list.
+    `project_store`'s sole job is interpreting persisted bytes, so within
+    that call ANY Exception is, from the caller's standpoint, "the store
+    cannot be read" — while failures OUTSIDE the interpretation region
+    (the sweep's own logic, our orchestration) still propagate, which the
+    narrowness control proves at the region's edge. BaseException
+    (KeyboardInterrupt, SystemExit) propagates as always."""
 
 
 def _build_projection(store, user_id: str):
+    # REGION-TOTAL (round-8 F2): everything this call does is interpret
+    # persisted bytes, so the catch is Exception, not a family list that
+    # under-counts every round (JSONDecodeError -> +UnicodeDecodeError ->
+    # +RecursionError would be the third enumeration patch; the statement
+    # in the spec was already total and the code was the laggard).
     try:
         return project_store(store, user_id)
-    except (ValidationError, _json.JSONDecodeError, UnicodeDecodeError) as e:
-        raise ProjectionUnreadable(str(e)[:200]) from e
+    except Exception as e:
+        raise ProjectionUnreadable(f"{type(e).__name__}: {str(e)[:200]}") from e
 
 
 def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
@@ -76,21 +86,32 @@ def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
     maps it to FENCED_AS_OF, NEVER EXCLUDED (EXCLUDED uncomputed would
     assert a revocation never established).
     """
-    standing = standing_revocations(store._conn, user_id)
+    try:
+        # Reading and ORDERING the standing set interprets persisted values
+        # too (round-8, the class exhausted past the named finding): a
+        # revocation row whose digest column holds a BLOB makes min() over
+        # mixed bytes/str raise TypeError — a persisted-data interpretation
+        # failure that the old, uncovered read would have leaked as a crash.
+        standing = standing_revocations(store._conn, user_id)
+        d = min(standing) if standing else None  # any standing digest works
+    except Exception:
+        return RestrictionVerdict.UNDETERMINABLE
     if not standing:
         return RestrictionVerdict.CLEAR          # defined outcome, zero sweeps
-    d = sorted(standing)[0]                      # any standing digest works
     try:
         statement = sweep(_build_projection(store, user_id), d)
     except (ProjectionUnreadable, RevocationError):
-        # RevocationError HERE is a persisted-data failure, not an argument
-        # bug: every input to this sweep call — the projection's rows, the
-        # revocation records, the standing digest itself — derives from
-        # persisted store state, so the sweep refusing to validate them is
-        # the store being unreadable (round-7 F2's second family). At any
-        # OTHER call site RevocationError may mean caller error and must
-        # not be swallowed; the narrowness control still proves a
-        # non-persisted-data failure (RuntimeError) propagates.
+        # ProjectionUnreadable carries the WHOLE interpretation region
+        # (round-8: any Exception inside project_store). RevocationError is
+        # different in kind: it is the sweep's DECLARED validation-failure
+        # carrier, and at this call site every input the sweep validates —
+        # the projection's rows, the revocation records, the digest —
+        # derives from persisted store state, so the sweep refusing to
+        # validate them is the store being unreadable (round-7 F2's second
+        # family). At any OTHER call site RevocationError may mean caller
+        # error and must not be swallowed. A raise from the sweep OUTSIDE
+        # its declared contract is a genuine bug and PROPAGATES — the
+        # narrowness control injects RuntimeError exactly there.
         return RestrictionVerdict.UNDETERMINABLE
     if ("edge", edge_id) in set(statement["retire"]):
         return RestrictionVerdict.RESTRICTED

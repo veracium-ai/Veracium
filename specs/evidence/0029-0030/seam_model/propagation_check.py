@@ -371,7 +371,14 @@ CARRIER_REGRESSIONS = (
 #: Carriers whose fix is a PRESENCE requirement rather than an absence.
 CARRIER_PRESENCE = (
     ("C2-2c-carrier-inputs", "the **carrier inputs**", "§2c must inventory them"),
-    ("C7-vbind-carrier", "carrier model updated round-4 C7", "V-BIND/V-ADDITIVE"),
+    # ROUND-8 (post-verdict adoption): the old anchor was the literal prose
+    # "carrier model updated round-4 C7", which the v20 row-head compression
+    # legitimately removed -- a CORRECT row failed the check: the anchored-
+    # comment rung of this file's own anchor-discipline ladder, hit by its
+    # own tuple. Re-anchored on what the check actually wants -- the row
+    # EXISTS and NAMES ITS C7 LINEAGE -- content the row must genuinely
+    # carry, surviving any prose compression that keeps the lineage.
+    ("C7-vbind-carrier", "**V-BIND** (round-2 F4; C7", "the V-BIND row must exist and name its C7 lineage"),
     ("C9-requires-0029", "consumed DIRECTLY", "Spec-Requires must name 0029"),
 )
 

@@ -150,46 +150,35 @@ def bind(envelope: Envelope, snapshot: RawEdgeState,
         return IDENTITY_UNBOUND
     if view is not None and view.user_id != envelope.user_id:
         return IDENTITY_UNBOUND
-    # Leg 6, in two halves that v18's first draft ran together (round-6 X-B/X-C).
+    # Leg 6 (round-8 F1, the rule finally in its stable form):
+    # THE CELL AND THE VIEW ARE A PAIR -- present together, absent together,
+    # and bound to one principal when present. Any violation is a rule-0
+    # refusal, because the failure is the ASSEMBLY (inputs answering two
+    # different questions), not the record.
     #
-    # VIEW PRESENT: the cell is REQUIRED, then its principal must match.
-    # Requiring it is not tidiness -- with the live `view.visible`/`view.decision`
-    # calls gone, the classifier reads visibility FROM the cell, so a bound
-    # view-without-cell either dereferences None (a raise: the one outcome this
-    # design never permits) or skips visibility entirely (fail OPEN). Absence of
-    # the cell, and absence of its principal, are refused exactly as firmly as a
-    # mismatch: an uncheckable provenance claim is not weaker than a wrong one,
-    # it is the same failure with less evidence.
+    # VIEW PRESENT: the cell is REQUIRED (the classifier reads visibility FROM
+    # it; a missing cell means a None dereference or fail-open), and its
+    # principal must match the view's.
     #
-    # VIEW ABSENT: binding is CORRECT and the cell is not consulted. There is no
-    # principal to protect (X-4's narrowing) and rule 1 sends a no-view record to
-    # MALFORMED rather than down the visibility branch, so the cell is surplus.
-    # Stated because v18's first report claimed this case REFUSES while the code
-    # bound it -- the code was right and the description was wrong, which is the
-    # describe-vs-read class landing in the report layer instead of the artifact.
+    # VIEW ABSENT: ANY cell is REFUSED -- principal-bearing or not. History of
+    # this branch, kept because it took three rounds: round 6 bound everything
+    # here ("the cell is surplus and unconsumed" -- false at the classifier's
+    # steps 2 and 10, which consume the cell guarded on ITS presence, not the
+    # view's); round 7 refused only the principal-BEARING cell, reasoning that
+    # a principal-less one "identifies no one" -- but it still carries
+    # visible/shape that steps 2/10 consume, i.e. the same influence channel
+    # MINUS attribution, which is strictly worse; and the producer never emits
+    # a cell without a view (restriction_derivation builds scope_cell=None
+    # there), so refusal costs no legitimate path anything. Round 8's reviewer
+    # asked for exactly this; the permissiveness was the round-6 misreading's
+    # last residue.
     cell = current.scope_cell
     if view is not None:
         if cell is None:
             return IDENTITY_UNBOUND
         if cell.principal != view.principal:
             return IDENTITY_UNBOUND
-    elif cell is not None and cell.principal is not None:
-        # ROUND-7 F1 -- THE MODEL WAS WRONG AND THE SPEC WAS RIGHT.
-        # Round 6's X-C ruled that a no-view record needs no cell check because
-        # "the cell is surplus and unconsumed". That was asserted twice and
-        # never checked against the CONSUMPTION SITES, and it is false: the
-        # classifier's step 2 (`if cell is not None and not cell.visible`) and
-        # step 10 (`scoped_assertable(True, (cell.visible, cell.shape))`) both
-        # guard on `cell is not None` -- NOT on `view is not None`. So with no
-        # view a present cell still decides visibility AND shaping, and a cell
-        # computed for principal Z could answer for an envelope it was never
-        # computed for, silently.
-        # The narrower `cell.principal is not None` is deliberate and matches
-        # the spec: a principal-LESS cell identifies no one to have been
-        # computed for, and its fail-closed effect (hiding) is safe.
-        # THE LESSON, which is the round's: a two-carrier disagreement was
-        # adjudicated without asking the THIRD carrier, and the third was the
-        # normative one. The spec had the answer the whole time.
+    elif cell is not None:
         return IDENTITY_UNBOUND
     return BOUND
 
@@ -240,16 +229,25 @@ def control_no_view_refuses_a_principal_bearing_cell() -> bool:
             and unbound_variant(env, snap, cur, None) == BOUND)
 
 
-def control_no_view_allows_a_principal_less_cell() -> bool:
-    """The other half, kept separate because it is a different claim: a cell
-    carrying NO principal binds under no view. Without this the rule would
-    reject every legitimate viewless record, and the narrowing would be
-    invisible."""
+def control_viewless_cell_is_refused() -> bool:
+    """ROUND-8 F1: ANY cell under no view is refused -- principal-bearing or
+    not. Replaces `control_no_view_allows_a_principal_less_cell`, which asserted
+    the round-7 narrowing this round removed: a principal-less cell still
+    carries the visible/shape the classifier consumes, so it is the same
+    influence channel minus attribution. The bare no-cell case must still BIND,
+    or the rule would reject every legitimate viewless record -- both halves
+    asserted here so neither can silently widen or narrow."""
     env = Envelope("u", "A")
     snap = RawEdgeState("A", "u", "{}")
-    return (bind(env, snap, CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1), None) == BOUND
-            and bind(env, snap, CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
-                                             scope_cell=ScopeCell(True, "full")), None) == BOUND)
+    bare = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1)
+    with_less = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                             scope_cell=ScopeCell(True, "full"))
+    with_full = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1,
+                             scope_cell=ScopeCell(True, "full", principal=("o", "Z")))
+    return (bind(env, snap, bare, None) == BOUND
+            and bind(env, snap, with_less, None) == IDENTITY_UNBOUND
+            and bind(env, snap, with_full, None) == IDENTITY_UNBOUND
+            and unbound_variant(env, snap, with_less, None) == BOUND)
 
 
 def control_cell_principal_is_enforced() -> bool:

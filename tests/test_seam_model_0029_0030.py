@@ -21,12 +21,6 @@ from pathlib import Path
 SEAM = Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0029-0030" / "seam_model"
 sys.path.insert(0, str(SEAM))
 
-import sys
-from pathlib import Path
-
-SEAM = Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0029-0030" / "seam_model"
-sys.path.insert(0, str(SEAM))
-
 from raw_adapter import (Adapted, adapt, control_defaulting_a_missing_field_would_grant,
                          control_flags_are_not_serialized,
                          control_one_disjunct_lets_a_claim_through,
@@ -42,7 +36,7 @@ from current_state_carrier import (BOUND, IDENTITY_UNBOUND, CurrentState, Envelo
                                    control_cell_principal_absence_refused,
                                    control_cell_absence_refused_under_a_view,
                                    control_no_view_refuses_a_principal_bearing_cell,
-                                   control_no_view_allows_a_principal_less_cell)
+                                   control_viewless_cell_is_refused)
 
 
 def _edge(relation="has_diet", disclosure=Disclosure.MENTIONABLE, eid="e1", uid="u"):
@@ -199,12 +193,16 @@ def test_no_view_refuses_a_principal_bearing_cell__with_its_control():
         "visibility and shaping at steps 2 and 10"
 
 
-def test_no_view_allows_a_principal_less_cell__with_its_control():
-    """The narrowing, asserted separately: a cell carrying no principal
-    identifies no one it was computed for, so it binds. Without this the rule
-    would reject every legitimate viewless record."""
-    assert control_no_view_allows_a_principal_less_cell(), \
-        "binding now refuses a principal-less viewless record -- too wide"
+def test_viewless_cell_is_refused__with_its_control():
+    """ROUND-8 F1: the cell and the view are a PAIR. The test that stood here
+    asserted round 7's narrowing (a principal-less cell binds under no view);
+    the reviewer finished the reversal round 7 started -- a principal-less cell
+    still carries the visible/shape the classifier consumes, the same influence
+    channel minus attribution. Both halves asserted: bare viewless record
+    BINDS; any viewless CELL refuses."""
+    assert control_viewless_cell_is_refused(), \
+        "either a viewless cell binds (the influence channel is open) or a " \
+        "bare viewless record refuses (every legitimate host read breaks)"
 
 
 # ------------------------------------------------- the REAL ScopeView ------
@@ -611,17 +609,12 @@ def test_presence_derivation_agrees__with_its_control():
         "actually sees -- _field_rule's disjunction is no longer belt-and-braces"
 
 
-def test_every_control_in_the_seam_model_is_asserted():
-    """THE CLASS, not the instance (round-7 F4).
-
-    Enumerates every `control_*` in the model modules and requires each to be
-    named in this file. A control nothing calls is a description, and we shipped
-    one in two consecutive rounds. Mechanising the sweep stops a third."""
-    import inspect
-    import current_state_carrier, raw_adapter
-    here = open(__file__).read()
-    missing = [f"{m.__name__}.{n}" for m in (current_state_carrier, raw_adapter)
-               for n, o in vars(m).items()
-               if n.startswith("control_") and inspect.isfunction(o)
-               and o.__module__ == m.__name__ and n not in here]
-    assert not missing, f"control(s) defined but asserted by NOTHING: {missing}"
+# The round-7 `test_every_control_in_the_seam_model_is_asserted` lived here.
+# Round-8 F4 found it DOUBLY blind (hardcoded module list missing
+# restriction_derivation's four controls; assertion corpus = this file only,
+# so a store-driver-asserted control would misflag) and its replacement --
+# directory-discovered modules, both drivers as corpus, plus a permanent
+# rule-zero negative -- lives in the STORE driver, a dev file, so future
+# folds of THIS file cannot collide with it. Deleted rather than kept-but-
+# superseded: two sweeps with one name and different scopes is how one of
+# them lies (the round-3 EXPECT_ONCE lesson, applied to a test).

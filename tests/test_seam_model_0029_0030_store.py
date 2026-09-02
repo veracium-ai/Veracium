@@ -405,15 +405,21 @@ def test_malformed_ledger_payload_yields_undeterminable(store):
     assert got is RestrictionVerdict.UNDETERMINABLE
 
 
-def test_only_decode_failures_are_caught__control(store, monkeypatch):
-    """Rule zero for F3's narrowness: a NON-decode failure inside the
-    projection must PROPAGATE — catching it would hide a real bug behind
+def test_failures_outside_the_interpretation_region_propagate__control(
+        store, monkeypatch):
+    """Rule zero for the boundary's narrowness, MOVED to the honest edge
+    (round-8 F2): the interpretation region (`project_store`) is now TOTAL
+    — any Exception inside it is by definition a persisted-data failure —
+    so the old injection site (project_store raising RuntimeError) no
+    longer discriminates. What must still PROPAGATE is a failure OUTSIDE
+    the region: the sweep raising outside its declared RevocationError
+    contract is a genuine bug, and catching it would hide that bug behind
     an honest-looking verdict."""
     e, d = _revoked_superseded_fixture(store)
     import restriction_derivation as rd
     def boom(*a, **k):
-        raise RuntimeError("a real bug, not a decode failure")
-    monkeypatch.setattr(rd, "project_store", boom)
+        raise RuntimeError("a real bug, not a persisted-data failure")
+    monkeypatch.setattr(rd, "sweep", boom)
     with pytest.raises(RuntimeError):
         rd.source_restricted(store, U, e.id)
 
@@ -452,3 +458,170 @@ def test_corrupt_persisted_revocation_row_yields_undeterminable(store):
     store._conn.commit()
     got = source_restricted(store, U, e.id)
     assert got is RestrictionVerdict.UNDETERMINABLE
+
+
+# ------------- round-8 F2: the enumeration under-counted AGAIN; the region
+# is now total, and these two cells are the permanent record of why.
+
+def test_deeply_nested_payload_yields_undeterminable(store):
+    """THE REVIEWER'S ROUND-8 PROBE, permanent: a stored ledger payload of
+    10,000 nested JSON arrays makes json raise RecursionError — a family
+    no round's enumeration had named, which is the point: round 6 listed
+    three types, round 7 added two more, round 8 proved the list still
+    leaked. The fix stops patching the list (the region is total). NOTE
+    the type relationship that makes this cell and the narrowness control
+    BOTH true: RecursionError IS a RuntimeError subclass, and the control
+    proves RuntimeError propagates — OUTSIDE the region. What changed in
+    round 8 is the boundary's definition (a region, not a type list), so
+    the same type is caught inside project_store and propagated outside
+    it. The discriminator is WHERE, no longer WHAT."""
+    import sys as _sys
+    e, d = _revoked_superseded_fixture(store)
+    depth = 10_000
+    assert depth * 4 > _sys.getrecursionlimit()   # the probe stays lethal
+    store._conn.execute(
+        "INSERT INTO contribution_ledger (id, user_id, survivor_type, "
+        "survivor_id, site, identity_digest, evidence_ref_digest, payload, "
+        "op_key, created_at) VALUES ('cl-deep', ?, 'edge', ?, 'absorb', "
+        "NULL, NULL, ?, NULL, ?)",
+        (U, e.id, "[" * depth + "]" * depth, AT))
+    store._conn.commit()
+    import pytest as _pt
+    from restriction_derivation import project_store as _ps
+    with _pt.raises(RecursionError):
+        _ps(store, U)                       # the raw raise is real
+    got = source_restricted(store, U, e.id)
+    assert got is RestrictionVerdict.UNDETERMINABLE
+
+
+def test_blob_digest_revocation_row_yields_undeterminable(store):
+    """The class EXHAUSTED past the named finding (checklist item 9: the
+    reviewer's next mutant, written now): reading and ORDERING the standing
+    set interprets persisted values too. A revocation row whose
+    identity_digest holds a BLOB (SQLite TEXT affinity stores a BLOB
+    unchanged — 0031's affinity rule, live here) yields a mixed bytes/str
+    standing set, and min() over it raises TypeError. Before round 8 that
+    read had NO boundary at all and the raise escaped as a crash."""
+    import sqlite3 as _sq
+    e, d = _revoked_superseded_fixture(store)
+    (max_seq,) = store._conn.execute(
+        "SELECT COALESCE(MAX(seq), 0) FROM source_revocations "
+        "WHERE user_id=?", (U,)).fetchone()
+    store._conn.execute(
+        "INSERT INTO source_revocations (user_id, seq, identity_digest, "
+        "action, at, reason) VALUES (?, ?, ?, 'revoke', ?, 'planted')",
+        (U, max_seq + 1, _sq.Binary(b"f" * 64), AT))
+    store._conn.commit()
+    import pytest as _pt
+    from restriction_derivation import standing_revocations as _sr
+    standing = _sr(store._conn, U)
+    with _pt.raises(TypeError):
+        min(standing)                       # the raw raise is real
+    got = source_restricted(store, U, e.id)
+    assert got is RestrictionVerdict.UNDETERMINABLE
+
+
+# ------------- round-8 F4: the every-control sweep, made EXHAUSTIVE.
+# It lives in THIS file now (the round-7 version lived in the main driver
+# and is removed from it): the sweep's home is arbitrary, and the store
+# driver is where the modules it newly covers are exercised.
+
+def _seam_modules():
+    """Every module in the seam_model DIRECTORY — discovered, not listed.
+    Round-8 F4: the round-7 checker named (current_state_carrier,
+    raw_adapter) — two of the four model modules — so the reviewer planted
+    a control in restriction_derivation and the checker passed. A
+    maintained registry can rot the same way; a directory listing cannot
+    omit a module the directory contains."""
+    import importlib
+    return [importlib.import_module(p.stem)
+            for p in sorted(SEAM.glob("*.py"))
+            if not p.stem.startswith("_")]
+
+
+def _driver_text():
+    here = Path(__file__).resolve().parent
+    return "".join((here / f).read_text() for f in
+                   ("test_seam_model_0029_0030.py",
+                    "test_seam_model_0029_0030_store.py"))
+
+
+def _unasserted_controls(modules, text):
+    import inspect
+    return [f"{m.__name__}.{n}" for m in modules
+            for n, o in sorted(vars(m).items())
+            if n.startswith("control_") and inspect.isfunction(o)
+            and o.__module__ == m.__name__ and n not in text]
+
+
+def test_every_control_in_the_seam_model_is_asserted():
+    """THE CLASS, closed again one level up (round-7 F4 -> round-8 F4).
+    Round 7's closure was itself non-exhaustive TWICE over: it scanned two
+    of four model modules, and it grepped only the MAIN driver's text —
+    so a control asserted only in this store driver would have misflagged
+    the day one existed. Modules are now DISCOVERED from the directory
+    and BOTH drivers form the assertion corpus."""
+    missing = _unasserted_controls(_seam_modules(), _driver_text())
+    assert not missing, f"control(s) defined but asserted by NOTHING: {missing}"
+
+
+def test_the_control_sweep_can_fail__control():
+    """Rule zero for the sweep itself, PERMANENT: a synthetic module
+    carrying an unreferenced control_* function must be NAMED. The
+    planted name is assembled at runtime so this file's own source cannot
+    satisfy the grep the control is designed to defeat — a literal name
+    would make the negative control self-erasing."""
+    import types
+    name = "control_" + "planted_" + "unreferenced"
+    mod = types.ModuleType("synthetic_seam_module")
+    def planted():
+        return True
+    planted.__name__ = name
+    planted.__qualname__ = name
+    planted.__module__ = mod.__name__
+    setattr(mod, name, planted)
+    missing = _unasserted_controls([mod], _driver_text())
+    assert missing == [f"{mod.__name__}.{name}"]
+
+
+# ------------- round-8 F1: the pair rule, end-to-end through the REAL producer
+
+def test_producer_cell_replayed_without_its_view_is_refused(store):
+    """The pair rule (round-8 F1) exercised with a REAL producer cell, not a
+    hand-built one: current_state with a principal emits a scope cell; that
+    exact cell replayed through bind with NO view is IDENTITY_UNBOUND —
+    principal-bearing or not, because a viewless cell is the same influence
+    channel (visible/shape at steps 2/10) minus attribution. The bare
+    producer output (no principal => no cell) still binds viewless, which
+    is the rule's other half: the producer and the rule agree, so the
+    refusal costs no legitimate path anything."""
+    from current_state_carrier import (BOUND, IDENTITY_UNBOUND, Envelope,
+                                       RawEdgeState, bind)
+    e = _edge("Boston")
+    store.add_edge(e)
+    kwargs = dict(principal=Identity(origin=None, source_id="mb-a"),
+                  policy=validate_policy({}, cross_scope_visible=False,
+                                         local_origin=store.local_origin()))
+    with_cell = current_state(store, U, e.id, **kwargs)
+    assert with_cell.scope_cell is not None, "producer emitted no cell"
+    bare = current_state(store, U, e.id)
+    assert bare.scope_cell is None, "the producer's no-principal path " \
+        "emitted a cell — the pair rule's cost claim just became false"
+    env = Envelope(U, e.id)
+    snap = RawEdgeState(e.id, U, with_cell.current_raw)
+    assert bind(env, snap, with_cell, None) == IDENTITY_UNBOUND, \
+        "a viewless producer cell bound — the pair rule is not enforced"
+    # The round-8 HALF, discriminating against the round-7 rule (which this
+    # exact shape slipped past): the SAME producer cell with its principal
+    # stripped — round 8's argument made literal, the same influence channel
+    # minus attribution — must be refused just as firmly.
+    pc = with_cell.scope_cell
+    stripped = CurrentState(U, e.id, with_cell.current_raw,
+                            with_cell.source_restricted, with_cell.read_token,
+                            ScopeCell(pc.visible, pc.shape, pc.fail_closed,
+                                      None))
+    assert bind(env, snap, stripped, None) == IDENTITY_UNBOUND, \
+        "the producer cell minus attribution bound viewless — the round-7 " \
+        "permissiveness is back"
+    assert bind(env, snap, bare, None) == BOUND, \
+        "a bare viewless record no longer binds — the rule over-narrowed"
