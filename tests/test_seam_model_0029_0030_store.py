@@ -1102,8 +1102,19 @@ def test_the_binding_inventory_is_covered_and_current():
         f"uninventoried pattern kinds: {match_classes - (handled | excluded)}"
     for name in handled:
         cls = getattr(_ast, name, None)
-        assert cls is not None, f"{name} is not an ast class on this Python"
+        if cls is None:
+            # UNAVAILABLE on this interpreter (TypeAlias below 3.12) — a
+            # parser fact, not an exclusion; the 3.12+ CI lanes execute the
+            # construct's probes. (Round-13's own CI red: this assert used
+            # to REQUIRE availability, which the 3.10/3.11 lanes correctly
+            # refused the day TypeAlias joined handled.)
+            continue
+        def _parses(src):
+            try:
+                return _ast.parse(src)
+            except SyntaxError:
+                return _ast.parse("pass")
         assert any(
-            any(isinstance(n, cls) for n in _ast.walk(_ast.parse(src)))
+            any(isinstance(n, cls) for n in _ast.walk(_parses(src)))
             for _, src, _ in SHADOW_PROBES), \
             f"{name} has no probe in the shadow battery"
