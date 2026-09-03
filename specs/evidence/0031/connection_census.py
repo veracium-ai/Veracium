@@ -65,6 +65,80 @@ ALLOWED_ATTRS = frozenset({
     "register_converter",
 })
 
+#: THE MODULE-ACCESS FORMS INVENTORY (round-11 F1 — the ELEVENTH RUNG:
+#: the census recognized only import syntax and two dynamic-import
+#: spellings, and `sys.modules["sqlite3"]` — the interpreter's own module
+#: registry, a STANDARD alternate access form — obtained the capability
+#: uncounted; so did a from-imported `import_module` under any local
+#: name, `importlib.reload`, and introspective `vars(sys)` access).
+#: The reviewer's feedback taken as asked: the supported forms are
+#: EXPLICITLY ENUMERATED here and MECHANICALLY CHECKED — every entry
+#: must have a probe in the permanent battery naming it (the causal-
+#: coverage move applied to module access), and any machinery form
+#: OUTSIDE this enumeration is REJECTED CONSERVATIVELY, so the
+#: completeness claim is exactly as wide as this table and no wider.
+MODULE_ACCESS_FORMS = {
+    "static-import": "import M / import M as A / from M import n as A — "
+                     "HANDLED by provenance (protected modules refuse; "
+                     "aliases tracked)",
+    "dunder-import": "__import__(name) — HANDLED: literal unprotected "
+                     "name allowed, protected or non-literal refused, "
+                     "and an UNCALLED reference to __import__ refuses "
+                     "(a captured module-returning capability)",
+    "import-module": "importlib.import_module, as an attribute OR "
+                     "from-imported under ANY local name — HANDLED: same "
+                     "argument rules as __import__; uncalled references "
+                     "refuse",
+    "sys-modules-registry": "sys.modules (subscript or .get, through any "
+                            "alias of sys) — HANDLED: a literal "
+                            "unprotected key is allowed, a protected or "
+                            "non-literal key refuses, and ANY other use "
+                            "of the registry object (aliasing, "
+                            "iteration, passing) refuses — the registry "
+                            "escaping analysis IS the capability "
+                            "escaping analysis",
+    "from-sys-modules": "from sys import modules [as X] — REFUSED at the "
+                        "import; the bound name is tracked and every use "
+                        "refuses",
+    "importlib-machinery": "any importlib attribute beyond import_module "
+                           "(util, reload, machinery, resources, ...) — "
+                           "REFUSED conservatively: unknown machinery "
+                           "forms are outside the enumerated claim. "
+                           "EXEMPT: importlib.metadata, by what it "
+                           "CANNOT do — it reads distribution metadata "
+                           "and returns no module (three legitimate src "
+                           "uses)",
+    "introspective-machinery": "vars(X) / getattr(X, ...) / X.__dict__ "
+                               "where X is sys or importlib (or an alias) "
+                               "— REFUSED conservatively: an "
+                               "introspective read of the interpreter's "
+                               "module machinery cannot be ruled out as "
+                               "registry access",
+    "dynamic-evaluation": "eval(...) / exec(...) — REFUSED "
+                          "conservatively: evaluated text can reach any "
+                          "machinery form above (src has no use; the "
+                          "floor costs nothing)",
+    "machinery-modules": "import of pkgutil / runpy / zipimport / ctypes "
+                         "/ builtins (builtins carries __import__ under "
+                         "its own roof, and __builtins__ as a bare name "
+                         "refuses too) "
+                         "— REFUSED conservatively at the import: each "
+                         "can load modules or the raw sqlite C library "
+                         "by other spellings (pkgutil.resolve_name, "
+                         "runpy.run_module, zipimport loaders, "
+                         "ctypes.CDLL), src has no legitimate use "
+                         "(verified round 11), and refusing the module "
+                         "wholesale is cheaper and stronger than "
+                         "enumerating its surface",
+}
+
+#: The machinery-modules class (round-11, the class exhausted rather than
+#: the named form fixed): stdlib modules that can produce modules or the
+#: raw capability by spellings of their own. Refused at the import, like
+#: _sqlite3 — no per-attribute surface to lag.
+MACHINERY_MODULES = frozenset({"pkgutil", "runpy", "zipimport", "ctypes",
+                               "builtins"})
+
 
 #: 3.12's `type` statement, absent from older parsers — the census must
 #: RECOGNIZE it where the interpreter has it (availability is a parser
@@ -141,6 +215,59 @@ def connect_census(source, rel):
     # (round-10 requirement 3/5 — an alias such as C retains the identity of
     # _sqlite3.Connection even though the import that minted it refused).
     protected_aliases = {}
+    # ROUND-11 F1 pre-pass: the names through which the interpreter's
+    # module machinery is reachable in THIS source. Collected before the
+    # rules run so an alias never outruns its rule.
+    sys_names = {"sys"}
+    importlib_names = {"importlib"}
+    module_returning_fns = {"__import__"}
+    registry_names = set()          # locals bound by `from sys import modules`
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.split(".")[0] in MACHINERY_MODULES:
+                    bump(rel + f" [REFUSED: import of machinery module "
+                               f"{alias.name!r} — can load modules or the "
+                               f"raw capability by its own spellings; "
+                               f"outside the enumerated forms "
+                               f"(round-11)]")
+                elif alias.name == "sys" and alias.asname:
+                    sys_names.add(alias.asname)
+                elif alias.name == "importlib" and alias.asname:
+                    importlib_names.add(alias.asname)
+                elif alias.name.split(".")[0] == "importlib" \
+                        and alias.name != "importlib" \
+                        and alias.name != "importlib.metadata":
+                    bump(rel + f" [REFUSED: import of importlib machinery "
+                               f"submodule {alias.name!r} — outside the "
+                               f"enumerated module-access forms "
+                               f"(round-11); importlib.metadata is the "
+                               f"one exempt leaf]")
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            if node.module.split(".")[0] in MACHINERY_MODULES:
+                bump(rel + f" [REFUSED: from-import of machinery module "
+                           f"{node.module!r} — outside the enumerated "
+                           f"forms (round-11)]")
+            elif node.module == "sys":
+                for alias in node.names:
+                    if alias.name == "modules":
+                        registry_names.add(alias.asname or alias.name)
+                        bump(rel + " [REFUSED: from sys import modules — "
+                                   "the module registry bound to a local "
+                                   "name (round-11: the registry escaping "
+                                   "analysis is the capability escaping "
+                                   "analysis)]")
+            elif node.module == "importlib":
+                for alias in node.names:
+                    if alias.name == "import_module":
+                        module_returning_fns.add(alias.asname or alias.name)
+                    elif alias.name == "metadata":
+                        pass          # exempt by what it cannot do
+                    else:
+                        bump(rel + f" [REFUSED: from importlib import "
+                                   f"{alias.name} — machinery beyond "
+                                   f"import_module is outside the "
+                                   f"enumerated forms (round-11)]")
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module \
                 and (node.module.split(".")[0] in PROTECTED_MODULES):
@@ -165,20 +292,121 @@ def connect_census(source, rel):
                                "second name for the connection surface]")
         if isinstance(node, ast.Call):
             fn = node.func
-            is_dunder = isinstance(fn, ast.Name) and fn.id == "__import__"
+            # ROUND-11: a module-returning capability is the capability,
+            # whatever its local spelling — __import__ AND import_module
+            # from-imported under any name (the eleventh rung's aliased
+            # form) get the same argument rules.
+            is_modfn = (isinstance(fn, ast.Name)
+                        and fn.id in module_returning_fns)
             is_implib = (isinstance(fn, ast.Attribute)
                          and fn.attr == "import_module")
-            if is_dunder or is_implib:
+            if is_modfn or is_implib:
                 arg = node.args[0] if node.args else None
-                if isinstance(arg, ast.Constant) and (
-                        arg.value == "sqlite3"
-                        or (isinstance(arg.value, str)
-                            and arg.value.startswith("sqlite3."))):
-                    bump(rel + " [REFUSED: dynamic acquisition of sqlite3]")
+                if isinstance(arg, ast.Constant) and isinstance(
+                        arg.value, str) and (
+                        arg.value.split(".")[0] in PROTECTED_MODULES):
+                    bump(rel + " [REFUSED: dynamic acquisition of a "
+                               "protected module]")
                 elif not (isinstance(arg, ast.Constant)
                           and isinstance(arg.value, str)):
                     bump(rel + " [REFUSED: non-literal dynamic import — "
-                               "cannot be ruled out as sqlite3]")
+                               "cannot be ruled out as a protected "
+                               "module]")
+            elif (isinstance(fn, ast.Name) and fn.id in ("eval", "exec")):
+                bump(rel + " [REFUSED: dynamic evaluation — evaluated "
+                           "text can reach any module-access form; "
+                           "outside the enumerated claim (round-11)]")
+            elif (isinstance(fn, ast.Name) and fn.id in ("vars", "getattr")
+                    and node.args
+                    and isinstance(node.args[0], ast.Name)
+                    and node.args[0].id in (sys_names | importlib_names)):
+                bump(rel + " [REFUSED: introspective access to interpreter "
+                           "module machinery — cannot be ruled out as "
+                           "registry access (round-11)]")
+        # ROUND-11: an UNCALLED reference to a module-returning function is
+        # a captured capability (the round-6 captured-opener lesson, one
+        # level up: the thing that RETURNS the module is as protected as
+        # the module).
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
+                and node.id in module_returning_fns:
+            par = parent.get(node)
+            if not (isinstance(par, ast.Call) and par.func is node):
+                bump(rel + f" [REFUSED: module-returning capability "
+                           f"{node.id!r} referenced without being called "
+                           f"— captured/passed indirection defeats the "
+                           f"inventory (round-11)]")
+        # ROUND-11: __builtins__ is the same door with no import at all.
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
+                and node.id == "__builtins__":
+            bump(rel + " [REFUSED: __builtins__ reference — carries "
+                       "__import__ with no import statement; outside the "
+                       "enumerated forms (round-11)]")
+        # ROUND-11: uses of a name bound by `from sys import modules`.
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
+                and node.id in registry_names:
+            bump(rel + f" [REFUSED: use of {node.id!r}, a binding of the "
+                       f"module registry (round-11)]")
+        # ROUND-11: the sys.modules REGISTRY and the machinery floor.
+        if isinstance(node, ast.Attribute) \
+                and isinstance(node.value, ast.Name):
+            base = node.value.id
+            if base in sys_names:
+                if node.attr == "modules":
+                    par = parent.get(node)
+                    gpar = parent.get(par) if par is not None else None
+                    key = None
+                    keyed = False
+                    if isinstance(par, ast.Subscript) and par.value is node:
+                        keyed = True
+                        key = par.slice
+                    elif (isinstance(par, ast.Attribute)
+                          and par.value is node and par.attr == "get"
+                          and isinstance(gpar, ast.Call)
+                          and gpar.func is par):
+                        keyed = True
+                        key = gpar.args[0] if gpar.args else None
+                    if keyed:
+                        if isinstance(key, ast.Constant) and isinstance(
+                                key.value, str) and (
+                                key.value.split(".")[0]
+                                not in PROTECTED_MODULES):
+                            pass      # a literal, provably unprotected key
+                        else:
+                            bump(rel + " [REFUSED: sys.modules access "
+                                       "with a protected or non-literal "
+                                       "key — the interpreter's registry "
+                                       "is a standard module-access form "
+                                       "(round-11, the eleventh rung)]")
+                    else:
+                        bump(rel + " [REFUSED: sys.modules used outside "
+                                   "a keyed lookup — the registry "
+                                   "escaping analysis is the capability "
+                                   "escaping analysis (round-11)]")
+                elif node.attr == "__dict__":
+                    bump(rel + " [REFUSED: introspective access to "
+                               "interpreter module machinery — cannot be "
+                               "ruled out as registry access (round-11)]")
+            elif base in importlib_names:
+                par = parent.get(node)
+                if node.attr == "import_module":
+                    if not (isinstance(par, ast.Call)
+                            and par.func is node):
+                        bump(rel + " [REFUSED: importlib.import_module "
+                                   "referenced without being called — a "
+                                   "captured module-returning capability "
+                                   "(round-11)]")
+                elif node.attr == "metadata":
+                    pass              # exempt by what it cannot do
+                elif node.attr == "__dict__":
+                    bump(rel + " [REFUSED: introspective access to "
+                               "interpreter module machinery — cannot be "
+                               "ruled out as registry access (round-11)]")
+                else:
+                    bump(rel + f" [REFUSED: importlib.{node.attr} — "
+                               f"machinery beyond import_module is "
+                               f"outside the enumerated module-access "
+                               f"forms; rejected conservatively "
+                               f"(round-11)]")
         if (isinstance(node, ast.Attribute)
                 and isinstance(node.value, ast.Name)
                 and node.value.id == "sqlite3"):
@@ -308,11 +536,35 @@ def connect_census(source, rel):
                             and par.value is n):
                         bump(rel + " [REFUSED: string annotation with a "
                                    "bare sqlite3 module reference]")
+            if (isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id in sys_names
+                    and n.attr in ("modules", "__dict__")):
+                # ROUND-11, one level down (the rungs-9/10 lesson — the
+                # surface applies recursively): the registry reached from
+                # inside a deferred expression is the registry.
+                bump(rel + " [REFUSED: string annotation reaching the "
+                           "interpreter module registry (round-11)]")
+            elif (isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)
+                    and n.id in ("builtins", "__builtins__")):
+                bump(rel + " [REFUSED: string annotation reaching "
+                           "builtins — carries __import__; deferred use "
+                           "of the door (round-11)]")
+            elif (isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)
+                    and n.id in (module_returning_fns - {"__import__"})
+                    | registry_names):
+                bump(rel + f" [REFUSED: string annotation using "
+                           f"{n.id!r}, a module-returning or registry "
+                           f"binding — deferred use of the capability "
+                           f"(round-11)]")
             if isinstance(n, ast.Call):
                 fn = n.func
                 is_dunder = isinstance(fn, ast.Name) and fn.id == "__import__"
                 is_implib = (isinstance(fn, ast.Attribute)
                              and fn.attr == "import_module")
+                if isinstance(fn, ast.Name) and fn.id in ("eval", "exec"):
+                    bump(rel + " [REFUSED: dynamic evaluation inside a "
+                               "string annotation (round-11)]")
                 if is_dunder or is_implib:
                     arg = n.args[0] if n.args else None
                     if isinstance(arg, ast.Constant) \

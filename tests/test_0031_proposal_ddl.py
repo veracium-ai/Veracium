@@ -359,6 +359,7 @@ def test_resolution_ledger_gate(case, builder, expect):
 import sys as _sys
 _sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
 from connection_census import (ALLOWED_ATTRS,  # noqa: E402
+                               MODULE_ACCESS_FORMS,
                                connect_census as _connect_census)
 
 
@@ -401,11 +402,13 @@ def test_dynamic_sqlite_acquisition_is_refused__controls():
     FIRST cell is the exact original mutant, verbatim."""
     hits = _connect_census(
         'def f(p): return __import__("sqlite3").connect(p)\n', "x.py")
-    assert any("dynamic acquisition of sqlite3" in k for k in hits), hits
+    assert any("dynamic acquisition of a protected module" in k
+               for k in hits), hits
     hits = _connect_census(
         'import importlib\n'
         'def f(): return importlib.import_module("sqlite3")\n', "x.py")
-    assert any("dynamic acquisition of sqlite3" in k for k in hits), hits
+    assert any("dynamic acquisition of a protected module" in k
+               for k in hits), hits
     hits = _connect_census(
         'import importlib\n'
         'def f(name): return importlib.import_module(name)\n', "x.py")
@@ -745,3 +748,125 @@ def test_type_alias_values_are_annotation_positions__controls():
     for label, src in legal:
         hits = _connect_census(src, "x.py")
         assert hits == {}, (label, hits)
+
+
+# Each probe names the MODULE_ACCESS_FORMS entry it exercises — the
+# mechanical check below refuses a form with no probe, and a probe naming
+# no form (the causal-coverage move applied to module access).
+MODULE_ACCESS_PROBES = [
+    ("static-import", "protected import refuses",
+     "import _sqlite3\n", True),
+    ("static-import", "unprotected import clean",
+     "import json\n", False),
+    ("dunder-import", "protected literal refuses",
+     'm = __import__("sqlite3")\n', True),
+    ("dunder-import", "captured __import__ refuses",
+     "f = __import__\n", True),
+    ("dunder-import", "unprotected literal clean (schema.py form)",
+     '_re = __import__("re").compile(r"x")\n', False),
+    ("import-module", "aliased from-import called refuses",
+     'from importlib import import_module as im\nm = im("sqlite3")\n',
+     True),
+    ("import-module", "bare from-import called refuses",
+     'from importlib import import_module\nm = import_module("sqlite3")\n',
+     True),
+    ("import-module", "captured import_module refuses",
+     "import importlib\nf = importlib.import_module\n", True),
+    ("import-module", "unprotected literal clean",
+     'from importlib import import_module\nm = import_module("json")\n',
+     False),
+    ("sys-modules-registry", "THE REVIEWER'S FORM: subscript refuses",
+     'import sys\nc = sys.modules["sqlite3"].connect(":memory:")\n', True),
+    ("sys-modules-registry", ".get refuses",
+     'import sys\nc = sys.modules.get("sqlite3")\n', True),
+    ("sys-modules-registry", "through a sys alias refuses",
+     'import sys as _s\nc = _s.modules["sqlite3"]\n', True),
+    ("sys-modules-registry", "non-literal key refuses",
+     "import sys\nc = sys.modules[name]\n", True),
+    ("sys-modules-registry", "registry aliased out refuses",
+     "import sys\nreg = sys.modules\n", True),
+    ("sys-modules-registry", "reload-smuggle refuses at the registry",
+     'import importlib, sys\n'
+     'm = importlib.reload(sys.modules["sqlite3"])\n', True),
+    ("sys-modules-registry", "literal unprotected key clean",
+     'import sys\nm = sys.modules["json"]\n', False),
+    ("sys-modules-registry", "in a string annotation refuses",
+     'import sys\n'
+     'def f(v: "sys.modules[\'sqlite3\'].Connection"):\n    pass\n', True),
+    ("from-sys-modules", "the import refuses and the name refuses",
+     'from sys import modules as reg\nc = reg["sqlite3"]\n', True),
+    ("importlib-machinery", "importlib.util refuses",
+     'import importlib\ns = importlib.util.find_spec("sqlite3")\n', True),
+    ("importlib-machinery", "machinery submodule import refuses",
+     "import importlib.util\n", True),
+    ("importlib-machinery", "from importlib import util refuses",
+     "from importlib import util\n", True),
+    ("importlib-machinery", "metadata exempt by what it cannot do",
+     'from importlib.metadata import version\nv = version("veracium")\n',
+     False),
+    ("introspective-machinery", "vars(sys) refuses",
+     'import sys\nc = vars(sys)["modules"]["sqlite3"]\n', True),
+    ("introspective-machinery", "getattr(sys, ...) refuses",
+     'import sys\nm = getattr(sys, "modules")\n', True),
+    ("introspective-machinery", "sys.__dict__ refuses",
+     "import sys\nd = sys.__dict__\n", True),
+    ("introspective-machinery", "vars on an ordinary object clean",
+     "class A: pass\nd = vars(A())\n", False),
+    ("dynamic-evaluation", "eval refuses",
+     'x = eval("__import__(\'sqlite3\')")\n', True),
+    ("dynamic-evaluation", "exec refuses",
+     'exec("import sqlite3")\n', True),
+    ("dynamic-evaluation", "in a string annotation refuses",
+     'def f(v: "eval(x)"):\n    pass\n', True),
+    ("machinery-modules", "pkgutil refuses at the import",
+     'import pkgutil\nm = pkgutil.resolve_name("sqlite3")\n', True),
+    ("machinery-modules", "runpy refuses at the import",
+     'import runpy\nrunpy.run_module("sqlite3")\n', True),
+    ("machinery-modules", "ctypes refuses at the import",
+     'import ctypes\nlib = ctypes.CDLL("libsqlite3.so")\n', True),
+    ("machinery-modules", "from-import form refuses",
+     "from pkgutil import resolve_name\n", True),
+    ("machinery-modules", "builtins.__import__ refuses at the import",
+     'import builtins\nm = builtins.__import__("sqlite3")\n', True),
+    ("machinery-modules", "bare __builtins__ refuses with no import",
+     'm = __builtins__["__import__"]("sqlite3")\n', True),
+    ("machinery-modules", "builtins in a string annotation refuses",
+     'def f(v: "builtins.__import__(\'sqlite3\')"):\n    pass\n', True),
+    ("machinery-modules", "unrelated imports stay clean",
+     "import json\nimport os.path\n", False),
+]
+
+
+@pytest.mark.parametrize(
+    "form,label,src,refused", MODULE_ACCESS_PROBES,
+    ids=[f"{f}--{l}".replace(" ", "-") for f, l, _, _ in
+         MODULE_ACCESS_PROBES])
+def test_module_access_form(form, label, src, refused):
+    """Round-11 F1 — THE ELEVENTH RUNG: the census recognized only import
+    syntax and two dynamic-import spellings, and `sys.modules["sqlite3"]`
+    — the interpreter's own registry, a STANDARD alternate access form —
+    obtained the capability uncounted (census {}; so did the aliased
+    import_module, importlib.reload, and vars(sys)). The closure is
+    STRUCTURAL, as the reviewer's feedback asked: MODULE_ACCESS_FORMS
+    enumerates every supported form with its rule, unknown machinery
+    forms are rejected conservatively, and this battery carries one or
+    more probes PER FORM — mechanically bound by the inventory test
+    below."""
+    assert form in MODULE_ACCESS_FORMS, f"probe names unknown form {form!r}"
+    hits = _connect_census(src, "x.py")
+    got = any("REFUSED" in k for k in hits)
+    assert got == refused, (form, label, hits)
+
+
+def test_module_access_forms_inventory_is_mechanically_checked():
+    """Every MODULE_ACCESS_FORMS entry has at least one probe, and every
+    refusing-capable form has at least one REFUSING probe — an inventory
+    row without a probe is a claim without evidence (the reviewer's
+    'explicitly enumerated and mechanically checked', executable)."""
+    probed = {f for f, _, _, _ in MODULE_ACCESS_PROBES}
+    missing = set(MODULE_ACCESS_FORMS) - probed
+    assert not missing, f"inventory forms with NO probe: {sorted(missing)}"
+    refusing = {f for f, _, _, r in MODULE_ACCESS_PROBES if r}
+    never_refuted = set(MODULE_ACCESS_FORMS) - refusing
+    assert not never_refuted, (
+        f"inventory forms with no refusing probe: {sorted(never_refuted)}")
