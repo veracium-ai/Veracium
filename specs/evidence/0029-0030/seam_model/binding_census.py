@@ -255,19 +255,46 @@ def census_source(source, protected_modules=None):
 # RESCOPED to source hygiene (shadowing, identity, acquisition grammar) —
 # useful, but never again the execution claim.
 
-EXECUTED = {}   # (module, qualname) -> True once the result was ASSERTED
+#: The registry holds FUNCTION OBJECTS, never metadata (round-15 joint F1:
+#: the round-14 registry keyed on (__module__, __name__) — WRITABLE
+#: metadata — and the reviewer's impostor with copied module/name/qualname
+#: satisfied the real control's key while the control never ran. Object
+#: identity cannot be reproduced through metadata; the gate compares the
+#: freshly re-resolved discovered callables against these exact objects.)
+EXECUTED = set()
 
 
 def assert_control(control, *args, expect=True, msg=None, **kwargs):
-    """Invoke a seam-model control, ASSERT its result, and record the
-    execution by callable identity. Both halves of the reviewer's round-14
-    requirement live here: the control actually executed (we called it),
-    and its returned result was asserted successfully (below — recording
-    happens only AFTER the assert passes, so a failing control never
-    counts as covered)."""
+    """Invoke a seam-model control, ASSERT its result, and record THE
+    FUNCTION OBJECT ITSELF. Both halves of the round-14 requirement live
+    here — the control actually executed, and its returned result was
+    asserted successfully (recording happens only AFTER the assert passes,
+    so a failing control never counts as covered) — and round-15 fixed the
+    key: identity is the object, never its writable metadata.
+
+    SUPPORTED TOPOLOGY, stated (the reviewer's round-15 boundary ask): the
+    registry is in-process session state; the gate is sound in a
+    SINGLE-PROCESS pytest session only. Under process-splitting (xdist,
+    shards) registrars and the gate can land in different processes, so
+    the gate DETECTS that topology and fails explicitly rather than
+    skipping on a registry no single process can complete."""
     result = control(*args, **kwargs)
     assert result == expect, (
         msg or f"{control.__module__}.{control.__name__} returned "
                f"{result!r}, expected {expect!r}")
-    EXECUTED[(control.__module__, control.__name__)] = True
+    EXECUTED.add(control)
     return result
+
+
+def impostor_of(control, result=True):
+    """The reusable registry probe (the reviewer's round-15 feedback): a
+    DISTINCT callable wearing the control's writable metadata — module,
+    name, qualname — so identity tests can be built without the seam
+    drivers. Under the round-14 metadata key this satisfied the real
+    control's registry entry; under object identity it never can."""
+    def _impostor(*a, **k):
+        return result
+    _impostor.__module__ = control.__module__
+    _impostor.__name__ = control.__name__
+    _impostor.__qualname__ = control.__qualname__
+    return _impostor

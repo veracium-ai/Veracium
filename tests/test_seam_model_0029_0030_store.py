@@ -544,7 +544,7 @@ def _seam_modules():
 
 
 from binding_census import (BINDING_CONSTRUCTS, EXECUTED,  # noqa: E402
-                            assert_control,
+                            assert_control, impostor_of,
                             census_source as _census_source)
 
 
@@ -1143,7 +1143,19 @@ def test_every_control_was_executed_and_asserted():
     unexecuted control is unexecuted, and the gate refuses to guess why;
     the prescribed surfaces (both drivers; the full suite; CI) always
     execute everything."""
-    discovered = {(m.__name__, n)
+    import os
+    assert os.environ.get("PYTEST_XDIST_WORKER") is None, (
+        "UNSUPPORTED TOPOLOGY: the runtime registry is in-process session "
+        "state and this is an xdist worker — registrars and the gate can "
+        "land in different processes, so no single process holds complete "
+        "evidence. Aggregate execution identities across processes before "
+        "applying the gate, or run the seam surface single-process "
+        "(round-15 adjudication: detect and fail explicitly, never skip)")
+    # FRESH re-resolution at gate time (round-15's also-consider, taken):
+    # later module-level reassignment cannot silently change what
+    # "discovered control" means — the gate compares the objects the
+    # modules hold NOW against the objects that actually ran.
+    discovered = {vars(m)[n]
                   for m in _seam_modules()
                   for n in vars(m)
                   if n.startswith("control_")
@@ -1152,12 +1164,16 @@ def test_every_control_was_executed_and_asserted():
     if not EXECUTED:
         pytest.skip("no control executions recorded — the control-invoking "
                     "tests were not selected in this session; run the full "
-                    "seam surface to enforce the runtime gate")
-    unexecuted = discovered - set(EXECUTED)
+                    "seam surface to enforce the runtime gate (the skip is "
+                    "a selection convenience, NEVER positive evidence — "
+                    "round-15 adjudication)")
+    unexecuted = discovered - EXECUTED
     assert not unexecuted, (
         f"control(s) discovered but NEVER EXECUTED-AND-ASSERTED this "
-        f"session: {sorted(unexecuted)} — a syntactic reference is not "
-        f"runtime evidence (round-14)")
+        f"session (by OBJECT identity — metadata cannot satisfy this): "
+        f"{sorted(f'{f.__module__}.{f.__name__}' for f in unexecuted)} "
+        f"— a syntactic reference is not runtime evidence (round-14), and "
+        f"a copied name is not the callable (round-15)")
 
 
 def test_dead_branch_credits_static_but_not_runtime__control():
@@ -1184,5 +1200,34 @@ def test_dead_branch_credits_static_but_not_runtime__control():
         "the static census stopped crediting the dead call — its ceiling " \
         "claim in the runtime gate's docstring is now stale; update both"
     assert violations == []
-    assert ("synthetic_dead_module", name) not in EXECUTED, \
+    assert planted not in EXECUTED, \
         "the runtime registry recorded a call that never ran"
+
+
+def test_metadata_impostor_cannot_satisfy_the_registry__control():
+    """THE REVIEWER'S ROUND-15 CONSTRUCTION, permanent, all four parts: a
+    discovered real control; a DISTINCT callable wearing its copied
+    module/name/qualname metadata (via the reusable `impostor_of` probe —
+    their feedback, so identity tests need no seam drivers); execution and
+    successful assertion of ONLY the impostor; and a gate-view that still
+    identifies the real control as unexecuted. Under the round-14 metadata
+    key the impostor SATISFIED the real control's entry (asserted below as
+    the contrast — the metadata copy is real); under object identity it
+    never can: a copied name is not the callable."""
+    from restriction_derivation import control_bare_id_fails_open as real
+    imp = impostor_of(real)
+    assert imp is not real
+    assert (imp.__module__, imp.__name__) == (real.__module__, real.__name__), \
+        "the impostor's metadata copy failed — the contrast is gone"
+    before = set(EXECUTED)
+    try:
+        assert_control(imp)                       # only the impostor runs
+        assert imp in EXECUTED, "the impostor's own execution must record"
+        # the REAL control gains nothing from the impostor's run:
+        assert (real in EXECUTED) == (real in before), \
+            "a metadata twin satisfied the real control's registry entry — " \
+            "the registry has regressed to descriptive names (round-15)"
+    finally:
+        EXECUTED.discard(imp)                     # probe hygiene: the
+        # impostor is not a discovered control; leaving it recorded would
+        # be harmless to the gate but untidy in the registry
