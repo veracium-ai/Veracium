@@ -376,7 +376,38 @@ def _connect_census(source, rel):
     out = {}
     def bump(key):
         out[key] = out.get(key, 0) + 1
-    for node in ast.walk(ast.parse(source)):
+    tree = ast.parse(source)
+    # ROUND-6 F1: the census recognized `sqlite3.connect` only as the called
+    # expression, so `opener = sqlite3.connect; opener(path)` opened an
+    # unclassified persistent connection — the same completeness class as
+    # round 5, through an ORDINARY spelling. The closure is conservative,
+    # by parenthood: a `sqlite3.connect` attribute that is not itself the
+    # func of a Call is REFUSED (captured, returned, passed, assigned —
+    # indirection of any kind), and a bare `sqlite3` NAME that is not the
+    # value of an attribute access is REFUSED too (the module escaping into
+    # getattr, a parameter, an alias — the next spelling over, refused
+    # before a reviewer plants it). Non-connect attributes (sqlite3.Row,
+    # sqlite3.IntegrityError) stay legal everywhere.
+    parent = {}
+    for n in ast.walk(tree):
+        for c in ast.iter_child_nodes(n):
+            parent[c] = n
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Attribute) and node.attr == "connect"
+                and isinstance(node.value, ast.Name)
+                and node.value.id == "sqlite3"):
+            par = parent.get(node)
+            if not (isinstance(par, ast.Call) and par.func is node):
+                bump(rel + " [REFUSED: sqlite3.connect referenced without "
+                           "being called — captured/passed/assigned "
+                           "indirection defeats the inventory]")
+        elif isinstance(node, ast.Name) and node.id == "sqlite3"                 and isinstance(node.ctx, ast.Load):
+            par = parent.get(node)
+            if not (isinstance(par, ast.Attribute) and par.value is node):
+                bump(rel + " [REFUSED: bare sqlite3 module reference — the "
+                           "module escaping any attribute access cannot be "
+                           "classified]")
+    for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module == "sqlite3":
             bump(rel + " [REFUSED: from-import of sqlite3]")
         if isinstance(node, ast.Import):
@@ -483,3 +514,41 @@ def test_surrogate_text_raises_through_the_driver__mechanism(db):
     _insert(db, "mcp_proposal", BASE)
     with pytest.raises(UnicodeEncodeError):
         _insert(db, "mcp_proposal_resolution", RBASE, resolver="\ud800")
+
+
+def test_captured_connect_reference_is_refused__controls():
+    """Round-6 F1's permanent negatives — the reviewer's EXACT construction
+    first, verbatim: the round-5 census recognized sqlite3.connect only as
+    the called expression, so the connect function escaping into a variable
+    opened an unclassified persistent connection (same completeness class
+    as round 5, ordinary spelling — the reviewer planted it under
+    src/veracium and the inventory test passed). Conservative closure by
+    parenthood: any non-call reference to sqlite3.connect refuses, and a
+    bare sqlite3 name escaping attribute access refuses (getattr and
+    module-passing, the next spellings over, refused before planting)."""
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def open_store(path):\n"
+        "    opener = sqlite3.connect\n"
+        "    return opener(path)\n", "x.py")
+    assert any("referenced without being called" in k for k in hits), hits
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def f(path):\n"
+        "    return getattr(sqlite3, 'connect')(path)\n", "x.py")
+    assert any("bare sqlite3 module reference" in k for k in hits), hits
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def f(opener_factory):\n"
+        "    return opener_factory(sqlite3)\n", "x.py")
+    assert any("bare sqlite3 module reference" in k for k in hits), hits
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def f(path):\n"
+        "    return sqlite3.connect(path)\n", "x.py")
+    assert hits == {"x.py": 1}, hits          # the direct call still counts
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def f(e):\n"
+        "    return isinstance(e, sqlite3.IntegrityError)\n", "x.py")
+    assert hits == {}, hits                   # non-connect attributes legal
