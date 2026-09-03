@@ -539,154 +539,8 @@ def _seam_modules():
             if not p.stem.startswith("_")]
 
 
-def _census_source(source, protected_modules=None):
-    """IDENTITY census over one source text (round-10 F3, the gate's FOURTH
-    rung: mention -> module-discovery -> call-by-name -> call-by-IDENTITY).
-    The round-9 census recorded terminal NAMES, so a call to any unrelated
-    function spelled `control_x` credited the seam control, while alias or
-    dispatch invocation of the genuine callable was invisible.
-
-    This census resolves each call through the file's IMPORTS:
-    - `from M import c [as y]` binds y (or c) to identity (M, c); a Name
-      call through that binding credits (M, c) — aliased from-imports
-      resolve, because the identity is declared at the import.
-    - `import M [as m]` + `m.c()` credits (M, c).
-    - A call through a name bound any other way (a local def, a foreign
-      import, a bare attribute) credits NOTHING for the seam modules.
-
-    And the GRAMMAR IS CONSTRAINED (the 0031 inventory sweep's move) where
-    identity cannot be traced: an assignment that rebinds an imported
-    control to another name is a VIOLATION, returned for the caller to
-    fail on — controls are invoked through their imported bindings, so
-    dispatch tables and aliases cannot silently hide an invocation from
-    the census.
-
-    FIFTH RUNG (round-11 F2): the round-10 census remembered import bindings
-    and never applied LATER name binding — a `def` shadowing an imported
-    control, or a reassigned module alias, left the census crediting the
-    ORIGINAL while runtime invoked a replacement (the reviewer's two probes,
-    verbatim in the negatives below). Scope-aware resolution is a compiler's
-    job, so the CONSTRAINED-GRAMMAR arm is completed instead: the census
-    derives a PROTECTED set — every local name bound to an imported
-    control_* and every module alias of a protected (seam) module — and
-    REFUSES every binding construct that shadows one: def/class, plain,
-    annotated, augmented and unpacked assignment, walrus, for/comprehension
-    targets, with-as, except-as, function parameters, and re-imports.
-
-    Returns (credited, violations): credited = {(module, func)} identities
-    actually called; violations = [description]."""
-    import ast
-    tree = ast.parse(source)
-    from_bindings = {}   # local name -> (module, original_name)
-    mod_bindings = {}    # local name -> module
-    for node in ast.walk(tree):
-        # FIRST binding wins (round-11: a conflicting later import must not
-        # silently DEPROTECT the name by overwriting its map entry — the
-        # last-wins draft of this loop did exactly that, caught by the
-        # conflicting-reimport probe before it shipped).
-        if isinstance(node, ast.ImportFrom) and node.module:
-            for a in node.names:
-                from_bindings.setdefault(a.asname or a.name,
-                                         (node.module, a.name))
-        elif isinstance(node, ast.Import):
-            for a in node.names:
-                mod_bindings.setdefault(a.asname or a.name, a.name)
-    protected = {n for n, (_, orig) in from_bindings.items()
-                 if orig.startswith("control_")}
-    protected |= {n for n, mod in mod_bindings.items()
-                  if mod in (protected_modules or ())}
-
-    def _target_names(t):
-        if isinstance(t, ast.Name):
-            yield t.id
-        elif isinstance(t, (ast.Tuple, ast.List)):
-            for e in t.elts:
-                yield from _target_names(e)
-        elif isinstance(t, ast.Starred):
-            yield from _target_names(t.value)
-
-    credited, violations = set(), []
-
-    def _shadow(name, what):
-        if name in protected:
-            violations.append(
-                f"protected binding {name!r} shadowed by {what} — the census "
-                f"resolves calls through import bindings, so any later "
-                f"rebinding makes it credit a callable that is not the one "
-                f"invoked (round-11 F2)")
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            fn = node.func
-            if isinstance(fn, ast.Name) and fn.id in from_bindings:
-                credited.add(from_bindings[fn.id])
-            elif (isinstance(fn, ast.Attribute)
-                  and isinstance(fn.value, ast.Name)
-                  and fn.value.id in mod_bindings):
-                credited.add((mod_bindings[fn.value.id], fn.attr))
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            _shadow(node.name, "a def")
-            a = node.args
-            for arg in (a.posonlyargs + a.args + a.kwonlyargs
-                        + ([a.vararg] if a.vararg else [])
-                        + ([a.kwarg] if a.kwarg else [])):
-                _shadow(arg.arg, "a function parameter")
-        elif isinstance(node, ast.ClassDef):
-            _shadow(node.name, "a class def")
-        elif isinstance(node, ast.Assign):
-            for t in node.targets:
-                for n in _target_names(t):
-                    _shadow(n, "an assignment")
-            src = node.value
-            rebind = None
-            if isinstance(src, ast.Name) and src.id in from_bindings:
-                rebind = from_bindings[src.id]
-            elif (isinstance(src, ast.Attribute)
-                  and isinstance(src.value, ast.Name)
-                  and src.value.id in mod_bindings):
-                rebind = (mod_bindings[src.value.id], src.attr)
-            if rebind and rebind[1].startswith("control_"):
-                violations.append(
-                    f"control {rebind[0]}.{rebind[1]} rebound to another "
-                    f"name — controls are invoked through their imported "
-                    f"bindings so the identity census can see them")
-        elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
-            for n in _target_names(node.target):
-                _shadow(n, "an annotated/augmented assignment")
-        elif isinstance(node, ast.NamedExpr):
-            for n in _target_names(node.target):
-                _shadow(n, "a walrus assignment")
-        elif isinstance(node, (ast.For, ast.AsyncFor)):
-            for n in _target_names(node.target):
-                _shadow(n, "a for target")
-        elif isinstance(node, ast.comprehension):
-            for n in _target_names(node.target):
-                _shadow(n, "a comprehension target")
-        elif isinstance(node, (ast.With, ast.AsyncWith)):
-            for item in node.items:
-                if item.optional_vars is not None:
-                    for n in _target_names(item.optional_vars):
-                        _shadow(n, "a with-as target")
-        elif isinstance(node, ast.ExceptHandler):
-            if node.name:
-                _shadow(node.name, "an except-as name")
-    # a later import rebinding a protected name to a DIFFERENT target is a
-    # shadow; re-importing the SAME module under the same alias (a common
-    # function-local pattern in these drivers) binds the same identity and
-    # is legitimate.
-    first = {}
-    for node in ast.walk(tree):
-        pairs = []
-        if isinstance(node, ast.ImportFrom) and node.module:
-            pairs = [(a.asname or a.name, ("from", node.module, a.name))
-                     for a in node.names]
-        elif isinstance(node, ast.Import):
-            pairs = [(a.asname or a.name, ("mod", a.name)) for a in node.names]
-        for n, ident in pairs:
-            if n in protected and n in first and first[n] != ident:
-                _shadow(n, "a conflicting re-import")
-            first.setdefault(n, ident)
-    return credited, violations
+from binding_census import (BINDING_CONSTRUCTS,  # noqa: E402
+                            census_source as _census_source)
 
 
 def _invoked_identities():
@@ -1100,6 +954,50 @@ SHADOW_PROBES = [
     ("conflicting-reimport", (
         "import restriction_derivation as rd\n"
         "import somewhere_else as rd\n"), True),
+    # round-12 F1: the reviewer's two probes VERBATIM, then the rest of the
+    # family the closure named (nested patterns reached by walk), then the
+    # async/annotated forms the inventory-coverage test demands probes for.
+    ("reviewer-lambda-parameter (round-12)", (
+        "import restriction_derivation as rd\n"
+        "invoke = lambda rd: rd.control_token_moves_on_mutation()\n"
+        "invoke(replacement_object)\n"), True),
+    ("reviewer-match-capture (round-12)", (
+        "import restriction_derivation as rd\n"
+        "match replacement_object:\n"
+        "    case rd:\n"
+        "        rd.control_token_moves_on_mutation()\n"), True),
+    ("match-star-capture", (
+        "import restriction_derivation as rd\n"
+        "match x:\n"
+        "    case [first, *rd]:\n        pass\n"), True),
+    ("match-mapping-rest-capture", (
+        "import restriction_derivation as rd\n"
+        "match x:\n"
+        "    case {'k': 1, **rd}:\n        pass\n"), True),
+    ("match-nested-class-and-or-pattern", (
+        "import restriction_derivation as rd\n"
+        "match x:\n"
+        "    case Point(x=rd) | [rd]:\n        pass\n"), True),
+    ("async-def-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "async def control_bare_id_fails_open():\n    pass\n"), False),
+    ("annotated-assignment-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "control_bare_id_fails_open: int = 1\n"), False),
+    ("augmented-assignment-shadow", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "control_bare_id_fails_open += 1\n"), False),
+    ("async-for-target-shadow", (
+        "import restriction_derivation as rd\n"
+        "async def f():\n"
+        "    async for rd in xs:\n        pass\n"), True),
+    ("comprehension-target-shadow", (
+        "import restriction_derivation as rd\n"
+        "ys = [1 for rd in xs]\n"), True),
+    ("async-with-target-shadow", (
+        "import restriction_derivation as rd\n"
+        "async def f():\n"
+        "    async with y as rd:\n        pass\n"), True),
 ]
 
 
@@ -1130,3 +1028,30 @@ def test_same_module_local_reimport_is_not_a_violation__control():
            "    return rd.control_bare_id_fails_open\n")
     _, violations = _census_source(src, {"restriction_derivation"})
     assert violations == [], violations
+
+
+def test_the_binding_inventory_is_covered_and_current():
+    """Round-12 F1's mechanical-reviewability ask, executable: the census's
+    BINDING_CONSTRUCTS table is the inventory of Python's name-introducing
+    constructs; every HANDLED entry must appear in at least one probe of the
+    battery above (all of which must VIOLATE — the battery test's contract),
+    every ast.Match* class must be inventoried so a future pattern kind
+    fails loudly instead of slipping the family a third time, and nothing
+    is both handled and excluded. The "every binding construct" claim is
+    now a table plus two assertions, not a sentence."""
+    import ast as _ast
+    handled = set(BINDING_CONSTRUCTS["handled"])
+    excluded = set(BINDING_CONSTRUCTS["excluded"])
+    assert not (handled & excluded)
+    match_classes = {n for n in dir(_ast)
+                     if n.startswith("Match") and n != "Match"
+                     and isinstance(getattr(_ast, n), type)}
+    assert match_classes <= handled | excluded, \
+        f"uninventoried pattern kinds: {match_classes - (handled | excluded)}"
+    for name in handled:
+        cls = getattr(_ast, name, None)
+        assert cls is not None, f"{name} is not an ast class on this Python"
+        assert any(
+            any(isinstance(n, cls) for n in _ast.walk(_ast.parse(src)))
+            for _, src, _ in SHADOW_PROBES), \
+            f"{name} has no probe in the shadow battery"
