@@ -27,6 +27,8 @@ BINDING_CONSTRUCTS = {
         "For", "AsyncFor", "comprehension", "With", "AsyncWith",
         "ExceptHandler", "Import", "ImportFrom",
         "MatchAs", "MatchStar", "MatchMapping",
+        "TypeAlias",   # round-13: handled where the interpreter has it —
+                       # availability is a parser fact, not an exclusion
     ),
     "excluded": {
         "Global": "a declaration, not a binding — the paired Assign is caught",
@@ -34,10 +36,7 @@ BINDING_CONSTRUCTS = {
         "arg": "handled via its owning FunctionDef/AsyncFunctionDef/Lambda",
         "withitem": "handled via its owning With/AsyncWith",
         "alias": "handled via its owning Import/ImportFrom",
-        "TypeAlias": "3.12+ type statement — binds a TYPE name; a protected "
-                     "name shadowed by a type alias would still be refused "
-                     "by mechanical review of this table on the day one "
-                     "appears in a driver (none exists; CI floor is 3.10)",
+
         "MatchValue": "matches a value, binds nothing",
         "MatchSingleton": "matches a constant, binds nothing",
         "MatchSequence": "binds only via nested MatchAs/MatchStar (walked)",
@@ -139,12 +138,21 @@ def census_source(source, protected_modules=None):
             # original while runtime invoked a replacement. Same parameter
             # treatment as a def, per the closure's exact ask.
             if not isinstance(node, ast.Lambda):
-                _shadow(node.name, "a def")
+                _shadow(node.name, f"a def [{node.__class__.__name__}]")
             a = node.args
             for arg in (a.posonlyargs + a.args + a.kwonlyargs
                         + ([a.vararg] if a.vararg else [])
                         + ([a.kwarg] if a.kwarg else [])):
-                _shadow(arg.arg, "a function or lambda parameter")
+                _shadow(arg.arg, f"a parameter [{node.__class__.__name__}]")
+        elif isinstance(node, getattr(ast, "TypeAlias", ())):
+            # Round-13 joint F1: the inventory EXCLUDED TypeAlias with a
+            # reason that conceded the defect — "binds a TYPE name" IS
+            # binding a name, and `type rd = int` shadows a protected
+            # module alias exactly like an assignment (the reviewer proved
+            # both shapes on 3.12). Handled when the interpreter has it;
+            # on older Pythons the construct is UNAVAILABLE, which is a
+            # fact about the parser, never a semantic exclusion.
+            _shadow(node.name.id, "a type statement [TypeAlias]")
         elif isinstance(node, ast.MatchAs):
             # Structural patterns joined round 12: `case rd:` REBINDS rd
             # before the case body runs (the reviewer's second probe).
@@ -152,19 +160,19 @@ def census_source(source, protected_modules=None):
             # MatchAs/MatchStar/MatchMapping-rest anywhere in a pattern tree
             # land here.
             if node.name:
-                _shadow(node.name, "a match capture")
+                _shadow(node.name, "a match capture [MatchAs]")
         elif isinstance(node, ast.MatchStar):
             if node.name:
-                _shadow(node.name, "a match star capture")
+                _shadow(node.name, "a match star capture [MatchStar]")
         elif isinstance(node, ast.MatchMapping):
             if node.rest:
-                _shadow(node.rest, "a match mapping rest capture")
+                _shadow(node.rest, "a match mapping rest capture [MatchMapping]")
         elif isinstance(node, ast.ClassDef):
-            _shadow(node.name, "a class def")
+            _shadow(node.name, "a class def [ClassDef]")
         elif isinstance(node, ast.Assign):
             for t in node.targets:
                 for n in _target_names(t):
-                    _shadow(n, "an assignment")
+                    _shadow(n, "an assignment [Assign]")
             src = node.value
             rebind = None
             if isinstance(src, ast.Name) and src.id in from_bindings:
@@ -180,24 +188,24 @@ def census_source(source, protected_modules=None):
                     f"bindings so the identity census can see them")
         elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
             for n in _target_names(node.target):
-                _shadow(n, "an annotated/augmented assignment")
+                _shadow(n, f"an assignment [{node.__class__.__name__}]")
         elif isinstance(node, ast.NamedExpr):
             for n in _target_names(node.target):
-                _shadow(n, "a walrus assignment")
+                _shadow(n, "a walrus assignment [NamedExpr]")
         elif isinstance(node, (ast.For, ast.AsyncFor)):
             for n in _target_names(node.target):
-                _shadow(n, "a for target")
+                _shadow(n, f"a for target [{node.__class__.__name__}]")
         elif isinstance(node, ast.comprehension):
             for n in _target_names(node.target):
-                _shadow(n, "a comprehension target")
+                _shadow(n, "a comprehension target [comprehension]")
         elif isinstance(node, (ast.With, ast.AsyncWith)):
             for item in node.items:
                 if item.optional_vars is not None:
                     for n in _target_names(item.optional_vars):
-                        _shadow(n, "a with-as target")
+                        _shadow(n, f"a with-as target [{node.__class__.__name__}]")
         elif isinstance(node, ast.ExceptHandler):
             if node.name:
-                _shadow(node.name, "an except-as name")
+                _shadow(node.name, "an except-as name [ExceptHandler]")
     # a later import rebinding a protected name to a DIFFERENT target is a
     # shadow; re-importing the SAME module under the same alias (a common
     # function-local pattern in these drivers) binds the same identity and
@@ -212,7 +220,8 @@ def census_source(source, protected_modules=None):
             pairs = [(a.asname or a.name, ("mod", a.name)) for a in node.names]
         for n, ident in pairs:
             if n in protected and n in first and first[n] != ident:
-                _shadow(n, "a conflicting re-import")
+                _shadow(n, f"a conflicting re-import "
+                        f"[{node.__class__.__name__}]")
             first.setdefault(n, ident)
     return credited, violations
 

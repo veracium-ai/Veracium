@@ -998,7 +998,29 @@ SHADOW_PROBES = [
         "import restriction_derivation as rd\n"
         "async def f():\n"
         "    async with y as rd:\n        pass\n"), True),
+    # round-13: ImportFrom as the CAUSAL conflicting re-import (the reviewer's
+    # causality point — an initial from-import satisfied appears-somewhere
+    # coverage while a different node supplied every probe's violation).
+    ("conflicting-refrom-import", (
+        "from restriction_derivation import control_bare_id_fails_open\n"
+        "from elsewhere import other as control_bare_id_fails_open\n"), False),
 ]
+
+import sys as _s
+if _s.version_info >= (3, 12):
+    # round-13 joint F1: the reviewer's two TypeAlias probes VERBATIM. The
+    # construct is UNAVAILABLE below 3.12 (a parser fact), never excluded.
+    SHADOW_PROBES.extend([
+        ("reviewer-typealias-module-shadow (round-13)", (
+            "import restriction_derivation as rd\n"
+            "type rd = int\n"
+            "rd.control_token_moves_on_mutation()\n"), True),
+        ("reviewer-typealias-control-shadow (round-13)", (
+            "from restriction_derivation import "
+            "control_token_moves_on_mutation\n"
+            "type control_token_moves_on_mutation = int\n"
+            "control_token_moves_on_mutation()\n"), False),
+    ])
 
 
 @pytest.mark.parametrize("case,src,needs_mod", SHADOW_PROBES,
@@ -1028,6 +1050,36 @@ def test_same_module_local_reimport_is_not_a_violation__control():
            "    return rd.control_bare_id_fails_open\n")
     _, violations = _census_source(src, {"restriction_derivation"})
     assert violations == [], violations
+
+
+def test_the_binding_inventory_is_covered_causally():
+    """Round-13 joint F1's coverage upgrade (the reviewer taking the
+    round-13 README's own attack point #1): appears-somewhere coverage let
+    an initial import satisfy ImportFrom while a different node supplied
+    every probe's actual violation. Coverage is now CAUSAL — every handled
+    construct must have a probe whose returned violation NAMES that
+    construct as the shadowing source (the census brackets the AST class
+    in each violation). A construct the running interpreter cannot parse
+    (TypeAlias below 3.12) is UNAVAILABLE — skipped with its reason —
+    never semantically excluded."""
+    import ast as _ast
+    for name in BINDING_CONSTRUCTS["handled"]:
+        if getattr(_ast, name, None) is None:
+            continue                    # unavailable on this interpreter
+        tag = f"[{name}]"
+        causal = False
+        for _, src, needs in SHADOW_PROBES:
+            try:
+                mods = {"restriction_derivation"} if needs else None
+                _, viol = _census_source(src, mods)
+            except SyntaxError:
+                continue
+            if any(tag in v for v in viol):
+                causal = True
+                break
+        assert causal, \
+            f"{name}: no probe's violation names it as the shadowing " \
+            f"source — coverage regressed to appears-somewhere"
 
 
 def test_the_binding_inventory_is_covered_and_current():
