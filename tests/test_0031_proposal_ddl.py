@@ -359,7 +359,7 @@ def test_resolution_ledger_gate(case, builder, expect):
 import sys as _sys
 _sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
 from connection_census import (ALLOWED_ATTRS,  # noqa: E402
-                               MODULE_ACCESS_FORMS,
+                               CAPABILITY_DISCOVERY_FORMS,
                                connect_census as _connect_census)
 
 
@@ -750,10 +750,10 @@ def test_type_alias_values_are_annotation_positions__controls():
         assert hits == {}, (label, hits)
 
 
-# Each probe names the MODULE_ACCESS_FORMS entry it exercises — the
+# Each probe names the CAPABILITY_DISCOVERY_FORMS entry it exercises — the
 # mechanical check below refuses a form with no probe, and a probe naming
 # no form (the causal-coverage move applied to module access).
-MODULE_ACCESS_PROBES = [
+CAPABILITY_DISCOVERY_PROBES = [
     ("static-import", "protected import refuses",
      "import _sqlite3\n", True),
     ("static-import", "unprotected import clean",
@@ -834,39 +834,159 @@ MODULE_ACCESS_PROBES = [
      'def f(v: "builtins.__import__(\'sqlite3\')"):\n    pass\n', True),
     ("machinery-modules", "unrelated imports stay clean",
      "import json\nimport os.path\n", False),
+    ("machinery-modules", "inspect refuses at the import (frames)",
+     "import inspect\ng = inspect.currentframe().f_globals\n", True),
+    ("machinery-modules", "pickle refuses at the import (unpickled imports)",
+     "import pickle\n", True),
+    ("machinery-modules", "__main__ refuses at the import",
+     "import __main__\nb = __main__.__builtins__\n", True),
+    # ---- round-12 F1: THE TWELFTH RUNG — namespace mappings ----
+    ("namespace-mappings", "THE REVIEWER'S ROUTE: globals()['__builtins__']",
+     'b = globals()["__builtins__"]\n', True),
+    ("namespace-mappings", "reaching __import__ through the mapping",
+     'm = globals()["__builtins__"].__import__("sqlite3")\n', True),
+    ("namespace-mappings", "locals() mapping refuses",
+     'b = locals()["__builtins__"]\n', True),
+    ("namespace-mappings", "vars() with no argument refuses",
+     'b = vars()["__builtins__"]\n', True),
+    ("namespace-mappings", ".get retrieval refuses",
+     'b = globals().get("__builtins__")\n', True),
+    ("namespace-mappings", "mapping aliased out refuses",
+     "g = globals()\n", True),
+    ("namespace-mappings", "mapping passed refuses",
+     "f(globals())\n", True),
+    ("namespace-mappings", "non-literal key refuses",
+     "x = globals()[k]\n", True),
+    ("namespace-mappings", "dunder literal key refuses (facilities live there)",
+     'n = globals()["__name__"]\n', True),
+    ("namespace-mappings", "inside a string annotation refuses",
+     'def f(v: "globals()[\'__builtins__\']"):\n    pass\n', True),
+    ("namespace-mappings", "harmless non-dunder literal key clean",
+     'x = globals()["config"]\n', False),
+    ("namespace-mappings", "vars(obj) with an argument is not the namespace",
+     "d = vars(A())\n", False),
+    # ---- round-12, the class exhausted: frame/loader introspection ----
+    ("frame-introspection", "sys._getframe refuses",
+     "import sys\ng = sys._getframe().f_globals\n", True),
+    ("frame-introspection", "function __globals__ refuses",
+     "def f(): pass\ng = f.__globals__\n", True),
+    ("frame-introspection", "module __loader__ refuses",
+     'import json\nm = json.__loader__.load_module("sqlite3")\n', True),
+    ("frame-introspection", "__subclasses__ hunt refuses",
+     "cs = object.__subclasses__()\n", True),
+    ("frame-introspection", "traceback tb_frame chain refuses at tb_frame",
+     "try:\n    pass\nexcept Exception as e:\n"
+     "    g = e.__traceback__.tb_frame.f_globals\n", True),
+    ("frame-introspection", "getattr with a dunder literal refuses",
+     'import json\nl = getattr(json, "__loader__")\n', True),
+    ("frame-introspection", "getattr non-literal on a module refuses",
+     "import json\nx = getattr(json, name)\n", True),
+    ("frame-introspection", "inside a string annotation refuses",
+     'def f(v: "f.__globals__"):\n    pass\n', True),
+    ("frame-introspection", "exc.__traceback__ formatting clean (the src use)",
+     'import traceback\n'
+     'tb = "".join(traceback.format_exception(type(exc), exc, '
+     'exc.__traceback__))\n', False),
+    ("frame-introspection", "getattr(self, f) clean (the src use; self cannot be a module)",
+     "class A:\n    def m(self):\n        for f in self.fields:\n"
+     "            if type(getattr(self, f)) is not int: pass\n", False),
+    ("frame-introspection", "getattr with a plain literal name clean",
+     'x = getattr(llm, "metering_capability", None)\n', False),
+    ("frame-introspection", "an __mro__ walk is inert (classes, not namespaces)",
+     "b = type(x).__mro__[-1]\n", False),
+    # ---- round-12, research's red-team: the two rules that close the class ----
+    ("captured-primitive", "G3: getattr curried by functools.partial refuses",
+     "import functools, sys\ng = functools.partial(getattr, sys)\n"
+     "m = g('modules')\n", True),
+    ("captured-primitive", "globals captured as a value refuses",
+     "g = globals\nb = g()['__builtins__']\n", True),
+    ("captured-primitive", "eval passed to map refuses",
+     "r = list(map(eval, exprs))\n", True),
+    ("captured-primitive", "import_module alias stored refuses",
+     "from importlib import import_module as im\nf = im\n", True),
+    ("captured-primitive", "a primitive as a default argument refuses",
+     "def f(g=getattr):\n    return g(o, 'x')\n", True),
+    ("captured-primitive", "captured inside a string annotation refuses",
+     'def f(v: "partial(getattr, sys)"):\n    pass\n', True),
+    ("captured-primitive", "a primitive CALLED under its own rules is clean",
+     'x = getattr(llm, "metering_capability", None)\n'
+     'n = globals()["config"]\n', False),
+    ("accessor-constructors", "G1: attrgetter with a dunder refuses",
+     'import operator\ng = operator.attrgetter("__globals__")(f)\n', True),
+    ("accessor-constructors", "from-imported attrgetter under an alias refuses",
+     'from operator import attrgetter as ag\ng = ag("__globals__")(f)\n',
+     True),
+    ("accessor-constructors", "methodcaller with a dunder refuses",
+     'import operator\nm = operator.methodcaller("__subclasses__")\n', True),
+    ("accessor-constructors", "itemgetter with a dunder refuses",
+     'from operator import itemgetter\ng = itemgetter("__builtins__")\n',
+     True),
+    ("accessor-constructors", "non-literal argument refuses",
+     "import operator\ng = operator.attrgetter(name)\n", True),
+    ("accessor-constructors", "inside a string annotation refuses",
+     'def f(v: "operator.attrgetter(\'x\')"):\n    pass\n', True),
+    ("accessor-constructors", "G2: attrgetter with a benign literal clean",
+     'import operator\nk = operator.attrgetter("name")\n', False),
+    ("accessor-constructors", "itemgetter with a benign literal clean",
+     'from operator import itemgetter\nk = itemgetter("id")\n', False),
+    ("accessor-constructors", "itemgetter on an ESCAPED mapping refuses upstream (layering)",
+     'import operator\nb = operator.itemgetter("id")(globals())\n', True),
+    ("namespace-mappings", "dir() is inert (names, not objects)",
+     "names = dir()\n", False),
+    ("dynamic-evaluation", "bare compile refuses (FunctionType runs code without exec)",
+     'c = compile("import sqlite3", "", "exec")\n', True),
+    ("dynamic-evaluation", "needs_recompile is not compile (the src form)",
+     "if needs_recompile(store, uid, n): pass\n", False),
 ]
 
 
 @pytest.mark.parametrize(
-    "form,label,src,refused", MODULE_ACCESS_PROBES,
+    "form,label,src,refused", CAPABILITY_DISCOVERY_PROBES,
     ids=[f"{f}--{l}".replace(" ", "-") for f, l, _, _ in
-         MODULE_ACCESS_PROBES])
-def test_module_access_form(form, label, src, refused):
+         CAPABILITY_DISCOVERY_PROBES])
+def test_capability_discovery_form(form, label, src, refused):
     """Round-11 F1 — THE ELEVENTH RUNG: the census recognized only import
     syntax and two dynamic-import spellings, and `sys.modules["sqlite3"]`
     — the interpreter's own registry, a STANDARD alternate access form —
     obtained the capability uncounted (census {}; so did the aliased
     import_module, importlib.reload, and vars(sys)). The closure is
-    STRUCTURAL, as the reviewer's feedback asked: MODULE_ACCESS_FORMS
+    STRUCTURAL, as the reviewer's feedback asked: CAPABILITY_DISCOVERY_FORMS
     enumerates every supported form with its rule, unknown machinery
     forms are rejected conservatively, and this battery carries one or
     more probes PER FORM — mechanically bound by the inventory test
     below."""
-    assert form in MODULE_ACCESS_FORMS, f"probe names unknown form {form!r}"
+    assert form in CAPABILITY_DISCOVERY_FORMS, f"probe names unknown form {form!r}"
     hits = _connect_census(src, "x.py")
     got = any("REFUSED" in k for k in hits)
     assert got == refused, (form, label, hits)
 
 
-def test_module_access_forms_inventory_is_mechanically_checked():
-    """Every MODULE_ACCESS_FORMS entry has at least one probe, and every
-    refusing-capable form has at least one REFUSING probe — an inventory
-    row without a probe is a claim without evidence (the reviewer's
-    'explicitly enumerated and mechanically checked', executable)."""
-    probed = {f for f, _, _, _ in MODULE_ACCESS_PROBES}
-    missing = set(MODULE_ACCESS_FORMS) - probed
+#: Forms with NO legitimate positive example by construction (round-12's
+#: "where applicable"): each is refused wholesale, so a clean probe would
+#: have nothing to show. Every other form must carry BOTH directions.
+NO_POSITIVE_FORMS = frozenset({"from-sys-modules"})
+
+
+def test_capability_discovery_inventory_is_mechanically_checked():
+    """Every CAPABILITY_DISCOVERY_FORMS entry has at least one probe, every
+    form has at least one REFUSING probe, and every form outside
+    NO_POSITIVE_FORMS also has at least one CLEAN probe — the reviewer's
+    round-12 ask ("both a positive and negative example where
+    applicable"), executable: an inventory row without both directions is
+    a rule whose boundary has not been shown."""
+    probed = {f for f, _, _, _ in CAPABILITY_DISCOVERY_PROBES}
+    missing = set(CAPABILITY_DISCOVERY_FORMS) - probed
     assert not missing, f"inventory forms with NO probe: {sorted(missing)}"
-    refusing = {f for f, _, _, r in MODULE_ACCESS_PROBES if r}
-    never_refuted = set(MODULE_ACCESS_FORMS) - refusing
+    assert probed <= set(CAPABILITY_DISCOVERY_FORMS), (
+        f"probes naming no inventory form: "
+        f"{sorted(probed - set(CAPABILITY_DISCOVERY_FORMS))}")
+    refusing = {f for f, _, _, r in CAPABILITY_DISCOVERY_PROBES if r}
+    never_refuted = set(CAPABILITY_DISCOVERY_FORMS) - refusing
     assert not never_refuted, (
         f"inventory forms with no refusing probe: {sorted(never_refuted)}")
+    clean = {f for f, _, _, r in CAPABILITY_DISCOVERY_PROBES if not r}
+    no_positive = set(CAPABILITY_DISCOVERY_FORMS) - clean - NO_POSITIVE_FORMS
+    assert not no_positive, (
+        f"inventory forms with no CLEAN probe and not declared "
+        f"NO_POSITIVE: {sorted(no_positive)}")
+    assert NO_POSITIVE_FORMS <= set(CAPABILITY_DISCOVERY_FORMS)

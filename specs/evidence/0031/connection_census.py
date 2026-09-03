@@ -65,7 +65,12 @@ ALLOWED_ATTRS = frozenset({
     "register_converter",
 })
 
-#: THE MODULE-ACCESS FORMS INVENTORY (round-11 F1 — the ELEVENTH RUNG:
+#: THE CAPABILITY-DISCOVERY FORMS INVENTORY (renamed at round 12 on the
+#: reviewer's feedback — "module-access forms" named the round-11 class;
+#: the round-12 class, NAMESPACE MAPPINGS, showed the real subject is
+#: every route by which running code can DISCOVER a capability it did
+#: not import: module registries, namespace mappings, frames, loaders,
+#: and future equivalent carriers). Originally round-11 F1 — the ELEVENTH RUNG:
 #: the census recognized only import syntax and two dynamic-import
 #: spellings, and `sys.modules["sqlite3"]` — the interpreter's own module
 #: registry, a STANDARD alternate access form — obtained the capability
@@ -77,7 +82,7 @@ ALLOWED_ATTRS = frozenset({
 #: coverage move applied to module access), and any machinery form
 #: OUTSIDE this enumeration is REJECTED CONSERVATIVELY, so the
 #: completeness claim is exactly as wide as this table and no wider.
-MODULE_ACCESS_FORMS = {
+CAPABILITY_DISCOVERY_FORMS = {
     "static-import": "import M / import M as A / from M import n as A — "
                      "HANDLED by provenance (protected modules refuse; "
                      "aliases tracked)",
@@ -119,25 +124,111 @@ MODULE_ACCESS_FORMS = {
                           "machinery form above (src has no use; the "
                           "floor costs nothing)",
     "machinery-modules": "import of pkgutil / runpy / zipimport / ctypes "
-                         "/ builtins (builtins carries __import__ under "
-                         "its own roof, and __builtins__ as a bare name "
-                         "refuses too) "
-                         "— REFUSED conservatively at the import: each "
-                         "can load modules or the raw sqlite C library "
-                         "by other spellings (pkgutil.resolve_name, "
-                         "runpy.run_module, zipimport loaders, "
-                         "ctypes.CDLL), src has no legitimate use "
-                         "(verified round 11), and refusing the module "
-                         "wholesale is cheaper and stronger than "
-                         "enumerating its surface",
+                         "/ builtins / inspect / gc / __main__ / pickle / "
+                         "marshal / shelve / pydoc / code / codeop / "
+                         "unittest / doctest — REFUSED conservatively at "
+                         "the import: each can load modules, reach "
+                         "frames or namespaces, or unpickle an import "
+                         "by spellings of its own (pkgutil.resolve_name, "
+                         "runpy.run_module, inspect.currentframe, "
+                         "gc.get_objects, pickle.loads, pydoc.locate, "
+                         "mock.patch's dotted resolution, ...); src has "
+                         "no legitimate use of any (verified rounds "
+                         "11-12), and refusing the module wholesale is "
+                         "cheaper and stronger than enumerating its "
+                         "surface. builtins carries __import__ under its "
+                         "own roof; __builtins__ as a bare name refuses "
+                         "too",
+    "namespace-mappings": "globals() / locals() / vars() with no argument "
+                          "— the round-12 route: the current namespace "
+                          "mapping carries __builtins__ — HANDLED like "
+                          "the module registry: a keyed lookup "
+                          "(subscript or .get) with a LITERAL key that "
+                          "is provably harmless (not a dunder, not a "
+                          "protected or machinery module name) is "
+                          "allowed; a dunder or otherwise unsafe literal "
+                          "key, a non-literal key, and the mapping "
+                          "escaping any keyed lookup (aliased, passed, "
+                          "iterated) all refuse; inside a deferred type "
+                          "expression the call itself refuses",
+    "frame-introspection": "attributes that BY DOCUMENTED SEMANTICS carry "
+                           "a namespace, a frame, or a loader, on ANY "
+                           "base — f_globals f_locals f_builtins f_back "
+                           "tb_frame gi_frame cr_frame ag_frame "
+                           "__globals__ __builtins__ __dict__ __loader__ "
+                           "__spec__ __subclasses__ — REFUSED "
+                           "conservatively, as are sys._getframe and "
+                           "sys._current_frames; getattr() with such a "
+                           "name as a literal refuses, and getattr() "
+                           "with a NON-literal name refuses unless the "
+                           "base is `self` or `cls` (an instance or "
+                           "class of the enclosing scope, which cannot "
+                           "be a module, frame, or mapping — exempt BY "
+                           "WHAT IT CANNOT BE; the one src use). "
+                           "exc.__traceback__ itself stays allowed (one "
+                           "legitimate src formatting use) — the "
+                           "discovery step is tb_frame, and that "
+                           "refuses. An __mro__ walk and dir() are "
+                           "inert by what they cannot do: classes and "
+                           "names, not namespaces",
+    "captured-primitive": "a discovery PRIMITIVE — getattr, __import__, "
+                          "import_module (any local name), eval, exec, "
+                          "compile, vars, globals, locals — referenced as "
+                          "a bare VALUE rather than as the func of a call "
+                          "(passed to functools.partial, aliased, stored, "
+                          "handed to map/reduce/a default argument) — "
+                          "REFUSED: capturing the primitive IS the "
+                          "violation, whoever the courier is, so no "
+                          "currying vehicle ever needs a row (round-12, "
+                          "research's red-team; the round-6 captured-"
+                          "opener lesson generalized). Principle: a "
+                          "refused name does not become permitted by "
+                          "becoming a value",
+    "accessor-constructors": "operator.attrgetter / methodcaller / "
+                             "itemgetter (attribute form, or from-"
+                             "imported under any local name) — these "
+                             "MINT an accessor from a string, so the "
+                             "captured-primitive rule cannot see them — "
+                             "HANDLED with the getattr name rules: a "
+                             "dunder, frame-attribute, unsafe, or "
+                             "non-literal argument refuses; a benign "
+                             "literal is clean (operator has a large "
+                             "legitimate surface, so wholesale refusal "
+                             "would be the builtins false-fire shape "
+                             "without the zero-cost receipt). itemgetter "
+                             "against an ESCAPED mapping needs nothing: "
+                             "the escape already refused upstream",
 }
+
+#: The discovery primitives (round-12): each is a door when CALLED under
+#: its own rules, and a captured door when referenced as a value.
+DISCOVERY_PRIMITIVES = frozenset({
+    "getattr", "__import__", "eval", "exec", "compile",
+    "vars", "globals", "locals",
+})
+
+#: Attributes whose documented semantics carry a namespace, a frame, or a
+#: loader (round-12): reaching one is the discovery step, whatever the
+#: base. __closure__ is deliberately absent — cells hold arbitrary objects,
+#: not a namespace — and __traceback__ is absent because the traceback is
+#: not the frame: tb_frame is, and it is here.
+FRAME_ATTRS = frozenset({
+    "f_globals", "f_locals", "f_builtins", "f_back", "tb_frame", "gi_frame",
+    "cr_frame", "ag_frame", "__globals__", "__builtins__", "__dict__",
+    "__loader__", "__spec__", "__subclasses__",
+})
+
+#: The no-argument namespace-mapping calls (round-12).
+NAMESPACE_CALLS = frozenset({"globals", "locals", "vars"})
 
 #: The machinery-modules class (round-11, the class exhausted rather than
 #: the named form fixed): stdlib modules that can produce modules or the
 #: raw capability by spellings of their own. Refused at the import, like
 #: _sqlite3 — no per-attribute surface to lag.
 MACHINERY_MODULES = frozenset({"pkgutil", "runpy", "zipimport", "ctypes",
-                               "builtins"})
+                               "builtins", "inspect", "gc", "__main__",
+                               "pickle", "marshal", "shelve", "pydoc",
+                               "code", "codeop", "unittest", "doctest"})
 
 
 #: 3.12's `type` statement, absent from older parsers — the census must
@@ -157,6 +248,16 @@ def _type_param_positions(node):
             sub = getattr(tp, attr, None)
             if sub is not None:
                 yield sub
+
+
+def _harmless_literal_key(key):
+    """A LITERAL mapping key that is provably harmless (round-12): a str
+    that is not a dunder (the builtins facility and every loader live
+    under dunder names) and names no protected or machinery module."""
+    return (isinstance(key, ast.Constant) and isinstance(key.value, str)
+            and not key.value.startswith("__")
+            and key.value.split(".")[0] not in PROTECTED_MODULES
+            and key.value.split(".")[0] not in MACHINERY_MODULES)
 
 
 def _annotation_nodes(tree):
@@ -222,6 +323,7 @@ def connect_census(source, rel):
     importlib_names = {"importlib"}
     module_returning_fns = {"__import__"}
     registry_names = set()          # locals bound by `from sys import modules`
+    getter_names = set()            # locals bound to operator.attrgetter/methodcaller
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
@@ -240,7 +342,7 @@ def connect_census(source, rel):
                         and alias.name != "importlib.metadata":
                     bump(rel + f" [REFUSED: import of importlib machinery "
                                f"submodule {alias.name!r} — outside the "
-                               f"enumerated module-access forms "
+                               f"enumerated capability-discovery forms "
                                f"(round-11); importlib.metadata is the "
                                f"one exempt leaf]")
         elif isinstance(node, ast.ImportFrom) and node.module:
@@ -257,6 +359,11 @@ def connect_census(source, rel):
                                    "name (round-11: the registry escaping "
                                    "analysis is the capability escaping "
                                    "analysis)]")
+            elif node.module == "operator":
+                for alias in node.names:
+                    if alias.name in ("attrgetter", "methodcaller",
+                                      "itemgetter"):
+                        getter_names.add(alias.asname or alias.name)
             elif node.module == "importlib":
                 for alias in node.names:
                     if alias.name == "import_module":
@@ -312,10 +419,14 @@ def connect_census(source, rel):
                     bump(rel + " [REFUSED: non-literal dynamic import — "
                                "cannot be ruled out as a protected "
                                "module]")
-            elif (isinstance(fn, ast.Name) and fn.id in ("eval", "exec")):
-                bump(rel + " [REFUSED: dynamic evaluation — evaluated "
-                           "text can reach any module-access form; "
-                           "outside the enumerated claim (round-11)]")
+            elif (isinstance(fn, ast.Name)
+                    and fn.id in ("eval", "exec", "compile")):
+                bump(rel + " [REFUSED: dynamic evaluation — evaluated or "
+                           "compiled text can reach any capability-"
+                           "discovery form; outside the enumerated claim "
+                           "(round-11; compile added round-12: "
+                           "FunctionType(code, globals) runs it without "
+                           "exec)]")
             elif (isinstance(fn, ast.Name) and fn.id in ("vars", "getattr")
                     and node.args
                     and isinstance(node.args[0], ast.Name)
@@ -323,18 +434,87 @@ def connect_census(source, rel):
                 bump(rel + " [REFUSED: introspective access to interpreter "
                            "module machinery — cannot be ruled out as "
                            "registry access (round-11)]")
-        # ROUND-11: an UNCALLED reference to a module-returning function is
-        # a captured capability (the round-6 captured-opener lesson, one
-        # level up: the thing that RETURNS the module is as protected as
-        # the module).
+            elif (isinstance(fn, ast.Name) and fn.id in NAMESPACE_CALLS
+                    and not node.args):
+                # ROUND-12 F1 — THE TWELFTH RUNG: the current namespace
+                # mapping carries __builtins__; the registry rules apply.
+                par = parent.get(node)
+                gpar = parent.get(par) if par is not None else None
+                keyed, key = False, None
+                if isinstance(par, ast.Subscript) and par.value is node:
+                    keyed, key = True, par.slice
+                elif (isinstance(par, ast.Attribute) and par.value is node
+                      and par.attr == "get" and isinstance(gpar, ast.Call)
+                      and gpar.func is par):
+                    keyed, key = True, (gpar.args[0] if gpar.args else None)
+                if keyed:
+                    if not _harmless_literal_key(key):
+                        bump(rel + f" [REFUSED: {fn.id}() namespace "
+                                   f"mapping keyed by a dunder, unsafe, "
+                                   f"or non-literal key — the mapping "
+                                   f"carries __builtins__ (round-12, the "
+                                   f"twelfth rung)]")
+                else:
+                    bump(rel + f" [REFUSED: {fn.id}() namespace mapping "
+                               f"escaping a keyed lookup — aliased, "
+                               f"passed, or iterated, the mapping IS the "
+                               f"capability escaping analysis "
+                               f"(round-12)]")
+            elif ((isinstance(fn, ast.Name) and fn.id in getter_names
+                   and node.args)
+                  or (isinstance(fn, ast.Attribute)
+                      and fn.attr in ("attrgetter", "methodcaller",
+                                      "itemgetter")
+                      and isinstance(fn.value, ast.Name)
+                      and fn.value.id == "operator" and node.args)):
+                # ROUND-12 ACCESSOR-CONSTRUCTOR RULE (research's red-team,
+                # the row's shape theirs): these MINT an accessor from a
+                # string — getattr's name rules, with no base to exempt.
+                name_arg = node.args[0]
+                if not (isinstance(name_arg, ast.Constant)
+                        and isinstance(name_arg.value, str)) \
+                        or name_arg.value.startswith("__") \
+                        or name_arg.value.split(".")[0] in FRAME_ATTRS \
+                        or any(part in FRAME_ATTRS or part.startswith("__")
+                               for part in name_arg.value.split(".")):
+                    bump(rel + " [REFUSED: operator accessor constructor "
+                               "(attrgetter/methodcaller/itemgetter) with "
+                               "a dunder, frame-attribute, or non-literal "
+                               "name — an accessor minted from a string "
+                               "(round-12)]")
+            elif (isinstance(fn, ast.Name) and fn.id == "getattr"
+                    and len(node.args) >= 2):
+                name_arg = node.args[1]
+                base = node.args[0]
+                if isinstance(name_arg, ast.Constant) \
+                        and isinstance(name_arg.value, str):
+                    if name_arg.value.startswith("__") \
+                            or name_arg.value in FRAME_ATTRS:
+                        bump(rel + f" [REFUSED: getattr with the dunder/"
+                                   f"frame name {name_arg.value!r} — a "
+                                   f"spelling of attribute-based "
+                                   f"discovery (round-12)]")
+                elif not (isinstance(base, ast.Name)
+                          and base.id in ("self", "cls")):
+                    bump(rel + " [REFUSED: getattr with a non-literal "
+                               "name on a base that could be a module, "
+                               "frame, or mapping — safety cannot be "
+                               "established (round-12; self/cls exempt "
+                               "by what they cannot be)]")
+        # ROUND-12 CAPTURED-PRIMITIVE RULE (research's red-team; the
+        # round-6 captured-opener lesson generalized): a discovery
+        # primitive referenced as a bare VALUE — not the func of a call —
+        # refuses, whoever the courier is (partial, map, reduce, aliasing,
+        # a default argument). A refused name does not become permitted
+        # by becoming a value.
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
-                and node.id in module_returning_fns:
+                and node.id in (DISCOVERY_PRIMITIVES | module_returning_fns):
             par = parent.get(node)
             if not (isinstance(par, ast.Call) and par.func is node):
-                bump(rel + f" [REFUSED: module-returning capability "
-                           f"{node.id!r} referenced without being called "
-                           f"— captured/passed indirection defeats the "
-                           f"inventory (round-11)]")
+                bump(rel + f" [REFUSED: discovery primitive {node.id!r} "
+                           f"referenced as a value without being called "
+                           f"— a captured capability; the courier is "
+                           f"irrelevant (round-12)]")
         # ROUND-11: __builtins__ is the same door with no import at all.
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
                 and node.id == "__builtins__":
@@ -346,12 +526,26 @@ def connect_census(source, rel):
                 and node.id in registry_names:
             bump(rel + f" [REFUSED: use of {node.id!r}, a binding of the "
                        f"module registry (round-11)]")
+        # ROUND-12: attributes that carry a namespace/frame/loader refuse
+        # on ANY base — the discovery step is the attribute, whatever holds
+        # it (a function's __globals__, a traceback's tb_frame, a
+        # generator's gi_frame, a module's __dict__/__loader__, a class's
+        # __subclasses__).
+        if isinstance(node, ast.Attribute) and node.attr in FRAME_ATTRS:
+            bump(rel + f" [REFUSED: .{node.attr} — an attribute that "
+                       f"carries a namespace, frame, or loader by its "
+                       f"documented semantics; reaching it is the "
+                       f"capability-discovery step (round-12)]")
         # ROUND-11: the sys.modules REGISTRY and the machinery floor.
         if isinstance(node, ast.Attribute) \
                 and isinstance(node.value, ast.Name):
             base = node.value.id
             if base in sys_names:
-                if node.attr == "modules":
+                if node.attr in ("_getframe", "_current_frames"):
+                    bump(rel + f" [REFUSED: sys.{node.attr} — frame "
+                               f"access reaches every namespace mapping "
+                               f"(round-12)]")
+                elif node.attr == "modules":
                     par = parent.get(node)
                     gpar = parent.get(par) if par is not None else None
                     key = None
@@ -557,14 +751,42 @@ def connect_census(source, rel):
                            f"{n.id!r}, a module-returning or registry "
                            f"binding — deferred use of the capability "
                            f"(round-11)]")
+            if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load) \
+                    and n.id in (DISCOVERY_PRIMITIVES | module_returning_fns):
+                par_ = eparent.get(n)
+                if not (isinstance(par_, ast.Call) and par_.func is n):
+                    bump(rel + f" [REFUSED: discovery primitive {n.id!r} "
+                               f"captured as a value inside a string "
+                               f"annotation (round-12)]")
+            if isinstance(n, ast.Attribute) and n.attr in FRAME_ATTRS:
+                bump(rel + f" [REFUSED: .{n.attr} inside a string "
+                           f"annotation — a namespace/frame/loader "
+                           f"attribute in a deferred expression "
+                           f"(round-12)]")
             if isinstance(n, ast.Call):
                 fn = n.func
                 is_dunder = isinstance(fn, ast.Name) and fn.id == "__import__"
                 is_implib = (isinstance(fn, ast.Attribute)
                              and fn.attr == "import_module")
-                if isinstance(fn, ast.Name) and fn.id in ("eval", "exec"):
+                if isinstance(fn, ast.Name) \
+                        and fn.id in ("eval", "exec", "compile"):
                     bump(rel + " [REFUSED: dynamic evaluation inside a "
                                "string annotation (round-11)]")
+                if isinstance(fn, ast.Name) and fn.id in NAMESPACE_CALLS \
+                        and not n.args:
+                    bump(rel + " [REFUSED: namespace mapping reached "
+                               "inside a string annotation — deferred "
+                               "use of the mapping (round-12)]")
+                if isinstance(fn, ast.Name) and fn.id == "getattr":
+                    bump(rel + " [REFUSED: getattr inside a string "
+                               "annotation — attribute discovery in a "
+                               "deferred expression (round-12)]")
+                if (isinstance(fn, ast.Name) and fn.id in getter_names) or (
+                        isinstance(fn, ast.Attribute)
+                        and fn.attr in ("attrgetter", "methodcaller",
+                                        "itemgetter")):
+                    bump(rel + " [REFUSED: accessor constructor inside a "
+                               "string annotation (round-12)]")
                 if is_dunder or is_implib:
                     arg = n.args[0] if n.args else None
                     if isinstance(arg, ast.Constant) \
