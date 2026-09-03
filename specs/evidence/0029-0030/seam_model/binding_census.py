@@ -15,6 +15,7 @@ entry must have a probe in the driver's battery (asserted there), and every
 Python binding form fails loudly instead of slipping the family again.
 """
 import ast
+import types
 
 #: The name-introducing constructs of the Python grammar this census either
 #: HANDLES (refuses when they shadow a protected binding) or EXCLUDES with
@@ -261,7 +262,21 @@ def census_source(source, protected_modules=None):
 #: satisfied the real control's key while the control never ran. Object
 #: identity cannot be reproduced through metadata; the gate compares the
 #: freshly re-resolved discovered callables against these exact objects.)
-EXECUTED = set()
+#:
+#: ROUND-16 joint F1 fixed the COMPARISON: a set membership test compares
+#: by __hash__/__eq__, which arbitrary callables can define — the reviewer
+#: built two DISTINCT equal-comparing instances, recorded one, and
+#: membership reported the other present. The registry is now an IDENTITY
+#: registry: keyed by id() with the object reference RETAINED (a held
+#: reference pins the id for the life of the session, so an id can never
+#: be reused by a different object), and membership is an id lookup —
+#: identity by construction, with no path through user-definable equality.
+#: The definitional half of the closure: a "control callable" IS an
+#: ordinary Python function (types.FunctionType), enforced at
+#: registration below and at discovery in the gate — functions cannot
+#: override __eq__/__hash__, and the enforcement makes the identity
+#: contract a checked property rather than an inference.
+EXECUTED = {}
 
 
 def assert_control(control, *args, expect=True, msg=None, **kwargs):
@@ -269,8 +284,15 @@ def assert_control(control, *args, expect=True, msg=None, **kwargs):
     FUNCTION OBJECT ITSELF. Both halves of the round-14 requirement live
     here — the control actually executed, and its returned result was
     asserted successfully (recording happens only AFTER the assert passes,
-    so a failing control never counts as covered) — and round-15 fixed the
-    key: identity is the object, never its writable metadata.
+    so a failing control never counts as covered) — round-15 fixed the
+    key (identity is the object, never its writable metadata), and
+    round-16 fixed the comparison (identity is `id()` with the reference
+    retained, never set membership, which an equal-comparing callable can
+    satisfy without being the object).
+
+    A control is an ORDINARY FUNCTION, enforced (round-16's definitional
+    ask): anything else — a callable instance, a partial, a bound
+    method — can carry user-defined equality and REFUSES here, loudly.
 
     SUPPORTED TOPOLOGY, stated (the reviewer's round-15 boundary ask): the
     registry is in-process session state; the gate is sound in a
@@ -278,11 +300,16 @@ def assert_control(control, *args, expect=True, msg=None, **kwargs):
     shards) registrars and the gate can land in different processes, so
     the gate DETECTS that topology and fails explicitly rather than
     skipping on a registry no single process can complete."""
+    assert isinstance(control, types.FunctionType), (
+        f"control must be an ordinary function (types.FunctionType), got "
+        f"{type(control).__name__}: the identity contract is enforced at "
+        f"the door — arbitrary callables can define __eq__/__hash__ and "
+        f"equality is not identity (round-16 joint F1)")
     result = control(*args, **kwargs)
     assert result == expect, (
         msg or f"{control.__module__}.{control.__name__} returned "
                f"{result!r}, expected {expect!r}")
-    EXECUTED.add(control)
+    EXECUTED[id(control)] = control
     return result
 
 

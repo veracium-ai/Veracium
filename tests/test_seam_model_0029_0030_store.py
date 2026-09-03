@@ -14,6 +14,7 @@ sweep's closure, which is accepted 0022 ground.
 from __future__ import annotations
 
 import sys
+import types as _types
 import uuid
 from pathlib import Path
 
@@ -1155,19 +1156,37 @@ def test_every_control_was_executed_and_asserted():
     # later module-level reassignment cannot silently change what
     # "discovered control" means — the gate compares the objects the
     # modules hold NOW against the objects that actually ran.
-    discovered = {vars(m)[n]
+    candidates = [(m.__name__, n, vars(m)[n])
                   for m in _seam_modules()
                   for n in vars(m)
                   if n.startswith("control_")
                   and callable(vars(m)[n])
-                  and getattr(vars(m)[n], "__module__", None) == m.__name__}
+                  and getattr(vars(m)[n], "__module__", None) == m.__name__]
+    # ROUND-16 joint F1, the definitional half: a control IS an ordinary
+    # function, and the gate ENFORCES it rather than narrowing discovery —
+    # a callable instance named control_* fails HERE, loudly, instead of
+    # slipping out of the discovered set (silent narrowing would be the
+    # same under-protection one carrier up).
+    nonfunctions = [(mn, n, type(f).__name__) for mn, n, f in candidates
+                    if not isinstance(f, _types.FunctionType)]
+    assert not nonfunctions, (
+        f"control_* object(s) that are not ordinary functions: "
+        f"{nonfunctions} — arbitrary callables can define __eq__/__hash__, "
+        f"so only types.FunctionType is admitted to the identity contract "
+        f"(round-16 joint F1); rewrite the control as a def or rename it")
+    discovered = [f for _, _, f in candidates]
     if not EXECUTED:
         pytest.skip("no control executions recorded — the control-invoking "
                     "tests were not selected in this session; run the full "
                     "seam surface to enforce the runtime gate (the skip is "
                     "a selection convenience, NEVER positive evidence — "
                     "round-15 adjudication)")
-    unexecuted = discovered - EXECUTED
+    # ROUND-16 joint F1, the comparison half: membership is an id() lookup
+    # against a registry that RETAINS its references (a held reference pins
+    # the id for the session, so no reuse), never set membership — sets
+    # compare by __eq__/__hash__, and the reviewer's two distinct
+    # equal-comparing instances satisfied each other's entry.
+    unexecuted = [f for f in discovered if id(f) not in EXECUTED]
     assert not unexecuted, (
         f"control(s) discovered but NEVER EXECUTED-AND-ASSERTED this "
         f"session (by OBJECT identity — metadata cannot satisfy this): "
@@ -1200,7 +1219,7 @@ def test_dead_branch_credits_static_but_not_runtime__control():
         "the static census stopped crediting the dead call — its ceiling " \
         "claim in the runtime gate's docstring is now stale; update both"
     assert violations == []
-    assert planted not in EXECUTED, \
+    assert id(planted) not in EXECUTED, \
         "the runtime registry recorded a call that never ran"
 
 
@@ -1219,15 +1238,86 @@ def test_metadata_impostor_cannot_satisfy_the_registry__control():
     assert imp is not real
     assert (imp.__module__, imp.__name__) == (real.__module__, real.__name__), \
         "the impostor's metadata copy failed — the contrast is gone"
-    before = set(EXECUTED)
+    before = set(EXECUTED)                        # snapshot of id keys
     try:
         assert_control(imp)                       # only the impostor runs
-        assert imp in EXECUTED, "the impostor's own execution must record"
+        assert id(imp) in EXECUTED, \
+            "the impostor's own execution must record"
         # the REAL control gains nothing from the impostor's run:
-        assert (real in EXECUTED) == (real in before), \
+        assert (id(real) in EXECUTED) == (id(real) in before), \
             "a metadata twin satisfied the real control's registry entry — " \
             "the registry has regressed to descriptive names (round-15)"
     finally:
-        EXECUTED.discard(imp)                     # probe hygiene: the
+        EXECUTED.pop(id(imp), None)               # probe hygiene: the
         # impostor is not a discovered control; leaving it recorded would
         # be harmless to the gate but untidy in the registry
+
+
+class _EqualCallable:
+    """THE REVIEWER'S ROUND-16 CONSTRUCTION: distinct instances that
+    compare and hash EQUAL — legal Python, and exactly what set membership
+    cannot tell apart. Kept as a class (not a fixture) so the probe below
+    reads as the reviewer wrote it."""
+    def __call__(self, *a, **k):
+        return True
+    def __eq__(self, other):
+        return isinstance(other, _EqualCallable)
+    def __hash__(self):
+        return 0xC0FFEE
+
+
+def test_equal_comparing_callables_cannot_satisfy_each_other__control():
+    """THE REVIEWER'S ROUND-16 CONSTRUCTION, permanent, both halves of the
+    closure asserted:
+
+    THE DOOR (the definitional half): `assert_control` REFUSES a callable
+    instance outright — a control IS an ordinary function
+    (types.FunctionType, enforced), because anything else can define
+    __eq__/__hash__ and equality is not identity.
+
+    THE COMPARISON (the identity half): even placed directly into the
+    registry mechanics — the reviewer's move, done first, bypassing the
+    door — recording one of two distinct equal-comparing instances leaves
+    the other reported as unexecuted, because membership is an id()
+    lookup against retained references, with no path through
+    user-definable equality. The CONTRAST is asserted too: a set of the
+    same registry values still reports the twin present, which is exactly
+    the round-16 finding and why the registry is not a set."""
+    a, b = _EqualCallable(), _EqualCallable()
+    assert a is not b and a == b and hash(a) == hash(b), \
+        "the construction lost its premise — distinct but equal-comparing"
+
+    with pytest.raises(AssertionError, match="ordinary function"):
+        assert_control(a)                     # the door refuses, loudly
+    assert id(a) not in EXECUTED, "a refused callable must not record"
+
+    before = set(EXECUTED)
+    try:
+        EXECUTED[id(a)] = a                   # the reviewer's bypass
+        assert id(b) not in EXECUTED, (
+            "an equal-comparing twin satisfied the identity registry — "
+            "membership has regressed to equality (round-16 joint F1)")
+        # the contrast: equality-based membership WOULD be satisfied,
+        # which is the reproduced finding and the reason for the id keys
+        assert b in set(EXECUTED.values()), \
+            "the contrast is gone — the twins no longer compare equal"
+    finally:
+        for k in set(EXECUTED) - before:
+            EXECUTED.pop(k, None)             # probe hygiene
+
+
+def test_nonfunction_control_fails_the_gate_loudly__control(monkeypatch):
+    """The next mutant, claimed before it can be offered (round-16's
+    definitional ask, enforced at DISCOVERY too): a callable instance
+    named control_* planted in a seam module makes the runtime gate fail
+    LOUDLY at its type check — never silently narrowed out of discovery
+    (which would under-protect: an unexecuted control invisible to the
+    gate), and never admitted to the identity contract."""
+    import restriction_derivation as rd
+    planted = _EqualCallable()
+    monkeypatch.setattr(rd, "control_planted_instance", planted,
+                        raising=False)
+    monkeypatch.setattr(
+        _EqualCallable, "__module__", rd.__name__, raising=False)
+    with pytest.raises(AssertionError, match="not ordinary functions"):
+        test_every_control_was_executed_and_asserted()
