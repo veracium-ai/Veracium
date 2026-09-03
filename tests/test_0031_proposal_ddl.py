@@ -356,84 +356,10 @@ def test_resolution_ledger_gate(case, builder, expect):
 
 # ---------- round-4 F4: the connection-path inventory-completeness sweep
 
-def _connect_census(source, rel):
-    """The sweep's grammar over ONE source text, factored so the permanent
-    negatives run the REAL logic on synthetic sources. THE GRAMMAR IS
-    CONSTRAINED so a simple shape suffices — and round-5 F2 is why the
-    constraint now covers DYNAMIC ACQUISITION: the first mutant campaign's
-    `__import__("sqlite3").connect` taught the round-4 sweep to refuse
-    ALIASES, and the ORIGINAL spelling was never re-planted against the
-    strengthened check — the reviewer re-ran it and it passed silently.
-    The rule, stated fully: sqlite3 arrives by plain `import sqlite3` and
-    is used as `sqlite3.connect(...)`; a from-import, an aliased import,
-    a literal dynamic acquisition (`__import__("sqlite3")` /
-    `importlib.import_module("sqlite3")`), or ANY dynamic import whose
-    name is not a string literal (it cannot be ruled out as sqlite3) is
-    REFUSED. src/veracium's only dynamic imports today are literal and
-    unrelated (`__import__("re")`, importlib.metadata), so the constraint
-    costs nothing and forces classification the day one appears."""
-    import ast
-    out = {}
-    def bump(key):
-        out[key] = out.get(key, 0) + 1
-    tree = ast.parse(source)
-    # ROUND-6 F1: the census recognized `sqlite3.connect` only as the called
-    # expression, so `opener = sqlite3.connect; opener(path)` opened an
-    # unclassified persistent connection — the same completeness class as
-    # round 5, through an ORDINARY spelling. The closure is conservative,
-    # by parenthood: a `sqlite3.connect` attribute that is not itself the
-    # func of a Call is REFUSED (captured, returned, passed, assigned —
-    # indirection of any kind), and a bare `sqlite3` NAME that is not the
-    # value of an attribute access is REFUSED too (the module escaping into
-    # getattr, a parameter, an alias — the next spelling over, refused
-    # before a reviewer plants it). Non-connect attributes (sqlite3.Row,
-    # sqlite3.IntegrityError) stay legal everywhere.
-    parent = {}
-    for n in ast.walk(tree):
-        for c in ast.iter_child_nodes(n):
-            parent[c] = n
-    for node in ast.walk(tree):
-        if (isinstance(node, ast.Attribute) and node.attr == "connect"
-                and isinstance(node.value, ast.Name)
-                and node.value.id == "sqlite3"):
-            par = parent.get(node)
-            if not (isinstance(par, ast.Call) and par.func is node):
-                bump(rel + " [REFUSED: sqlite3.connect referenced without "
-                           "being called — captured/passed/assigned "
-                           "indirection defeats the inventory]")
-        elif isinstance(node, ast.Name) and node.id == "sqlite3"                 and isinstance(node.ctx, ast.Load):
-            par = parent.get(node)
-            if not (isinstance(par, ast.Attribute) and par.value is node):
-                bump(rel + " [REFUSED: bare sqlite3 module reference — the "
-                           "module escaping any attribute access cannot be "
-                           "classified]")
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "sqlite3":
-            bump(rel + " [REFUSED: from-import of sqlite3]")
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                if alias.name == "sqlite3" and alias.asname:
-                    bump(rel + " [REFUSED: aliased sqlite3]")
-        if isinstance(node, ast.Call):
-            fn = node.func
-            # dynamic acquisition: __import__(...) / importlib.import_module(...)
-            is_dunder = isinstance(fn, ast.Name) and fn.id == "__import__"
-            is_implib = (isinstance(fn, ast.Attribute)
-                         and fn.attr == "import_module")
-            if is_dunder or is_implib:
-                arg = node.args[0] if node.args else None
-                if isinstance(arg, ast.Constant) and arg.value == "sqlite3":
-                    bump(rel + " [REFUSED: dynamic acquisition of sqlite3]")
-                elif not (isinstance(arg, ast.Constant)
-                          and isinstance(arg.value, str)):
-                    bump(rel + " [REFUSED: non-literal dynamic import — "
-                               "cannot be ruled out as sqlite3]")
-            if (isinstance(fn, ast.Attribute)
-                    and fn.attr == "connect"
-                    and isinstance(fn.value, ast.Name)
-                    and fn.value.id == "sqlite3"):
-                bump(rel)
-    return out
+import sys as _sys
+_sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
+from connection_census import (ALLOWED_ATTRS,  # noqa: E402
+                               connect_census as _connect_census)
 
 
 def test_connection_path_inventory_is_complete():
@@ -552,3 +478,77 @@ def test_captured_connect_reference_is_refused__controls():
         "def f(e):\n"
         "    return isinstance(e, sqlite3.IntegrityError)\n", "x.py")
     assert hits == {}, hits                   # non-connect attributes legal
+
+
+def test_connection_constructors_and_submodules_refuse__controls():
+    """Round-7 F1's permanent negatives, the reviewer's two EXECUTED bypasses
+    verbatim first: the constructor makes usable connections and the
+    round-6 rule waved it through as a harmless non-connect attribute; the
+    dbapi2 submodule re-exports the whole surface under a second name. The
+    surface is now POSITIVE: connect (direct call only), Connection
+    (annotation position only), ALLOWED_ATTRS, nothing else."""
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def open_store(path):\n"
+        "    return sqlite3.Connection(path)\n", "x.py")
+    assert any("constructed directly" in k for k in hits), hits
+    hits = _connect_census(
+        "import sqlite3.dbapi2\n"
+        "def open_store(path):\n"
+        "    return sqlite3.dbapi2.connect(path)\n", "x.py")
+    assert any("submodule import" in k for k in hits), hits
+    hits = _connect_census(
+        "import sqlite3\n"
+        "opener = sqlite3.Connection\n", "x.py")
+    assert any("captured outside annotation" in k for k in hits), hits
+    hits = _connect_census(
+        "import sqlite3\n"
+        "x = sqlite3.mystery_attr\n", "x.py")
+    assert any("unclassified sqlite3 attribute" in k for k in hits), hits
+    # POSITIVE CONTROLS — the reviewer's named legitimate uses stay legal:
+    hits = _connect_census(
+        "import sqlite3\n"
+        "def f(conn: sqlite3.Connection) -> sqlite3.Connection:\n"
+        "    row = sqlite3.Row\n"
+        "    try:\n        pass\n"
+        "    except sqlite3.IntegrityError:\n        pass\n"
+        "    return conn\n", "x.py")
+    assert hits == {}, hits
+    hits = _connect_census(
+        "import sqlite3\nsqlite3.connect(':memory:')\n", "x.py")
+    assert hits == {"x.py": 1}, hits
+
+
+def test_every_runtime_opener_spelling_is_refused__matrix():
+    """The reviewer's matrix ask, DERIVED FROM THE RUNTIME rather than
+    enumerated: every attribute of the running sqlite3 module (one
+    submodule level included) whose value IS the connect function or the
+    Connection class is an opener spelling; each must refuse through the
+    census except the one blessed direct call. A future stdlib re-export
+    fails this test loudly instead of quietly widening the surface."""
+    import sqlite3 as _sq
+    import types
+    spellings = []
+    for name in dir(_sq):
+        val = getattr(_sq, name)
+        if val is _sq.connect or val is _sq.Connection:
+            spellings.append((f"sqlite3.{name}",
+                              f"import sqlite3\nx = sqlite3.{name}(p)\n"))
+        elif isinstance(val, types.ModuleType) and not name.startswith("_"):
+            for sub in dir(val):
+                sval = getattr(val, sub, None)
+                if sval is _sq.connect or sval is _sq.Connection:
+                    spellings.append(
+                        (f"sqlite3.{name}.{sub}",
+                         f"import sqlite3.{name}\n"
+                         f"x = sqlite3.{name}.{sub}(p)\n"))
+    assert len(spellings) >= 4, \
+        f"the runtime matrix collapsed — expected connect/Connection x " \
+        f"top-level/dbapi2 at least, found {spellings}"
+    for spelling, src in spellings:
+        hits = _connect_census(src, "x.py")
+        if spelling == "sqlite3.connect":
+            assert hits == {"x.py": 1}, (spelling, hits)   # the blessed call
+        else:
+            assert any("REFUSED" in k for k in hits), \
+                f"opener spelling {spelling} passed the census silently"
