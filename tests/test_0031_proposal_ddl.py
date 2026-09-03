@@ -810,8 +810,10 @@ CAPABILITY_DISCOVERY_PROBES = [
      'import sys\nm = getattr(sys, "modules")\n', True),
     ("introspective-machinery", "sys.__dict__ refuses",
      "import sys\nd = sys.__dict__\n", True),
-    ("introspective-machinery", "vars on an ordinary object clean",
-     "class A: pass\nd = vars(A())\n", False),
+    ("introspective-machinery", "ROUND-13: vars on any object refuses (receiver type not establishable)",
+     "class A: pass\nd = vars(A())\n", True),
+    ("introspective-machinery", "getattr with a plain literal name on any receiver clean (the name is what the census establishes)",
+     'x = getattr(record, "lineage", None)\n', False),
     ("dynamic-evaluation", "eval refuses",
      'x = eval("__import__(\'sqlite3\')")\n', True),
     ("dynamic-evaluation", "exec refuses",
@@ -863,8 +865,10 @@ CAPABILITY_DISCOVERY_PROBES = [
      'def f(v: "globals()[\'__builtins__\']"):\n    pass\n', True),
     ("namespace-mappings", "harmless non-dunder literal key clean",
      'x = globals()["config"]\n', False),
-    ("namespace-mappings", "vars(obj) with an argument is not the namespace",
-     "d = vars(A())\n", False),
+    ("namespace-mappings", "ROUND-13: vars(obj) with an argument refuses — the receiver's type is not establishable",
+     "d = vars(A())\n", True),
+    ("namespace-mappings", "vars(module) is the module's namespace — refuses",
+     'import json\nb = vars(json)["__builtins__"]\n', True),
     # ---- round-12, the class exhausted: frame/loader introspection ----
     ("frame-introspection", "sys._getframe refuses",
      "import sys\ng = sys._getframe().f_globals\n", True),
@@ -887,9 +891,20 @@ CAPABILITY_DISCOVERY_PROBES = [
      'import traceback\n'
      'tb = "".join(traceback.format_exception(type(exc), exc, '
      'exc.__traceback__))\n', False),
-    ("frame-introspection", "getattr(self, f) clean (the src use; self cannot be a module)",
+    ("frame-introspection", "ROUND-13: getattr(self, f) REFUSES — `self` is a parameter name, not a checked property",
      "class A:\n    def m(self):\n        for f in self.fields:\n"
-     "            if type(getattr(self, f)) is not int: pass\n", False),
+     "            if type(getattr(self, f)) is not int: pass\n", True),
+    ("frame-introspection", "ROUND-13: getattr(cls, f) refuses too — adjudicated separately, same reason",
+     "class A:\n    @classmethod\n    def m(cls, f):\n        return getattr(cls, f)\n", True),
+    ("frame-introspection", "ROUND-13: the unbound-method-with-a-module receiver (the reviewer's construction) refuses",
+     'import json\nclass A:\n    def m(self, name):\n        return getattr(self, name)\n'
+     'x = A.m(json, "__loader__")\n', True),
+    ("frame-introspection", "the rewritten legitimate site (literal attribute access) stays clean",
+     "class R:\n    def problems(self):\n        p = []\n"
+     "        for f, val in ((\"from_version\", self.from_version),\n"
+     "                       (\"to_version\", self.to_version)):\n"
+     "            if type(val) is not int:\n                p.append(f)\n"
+     "        return p\n", False),
     ("frame-introspection", "getattr with a plain literal name clean",
      'x = getattr(llm, "metering_capability", None)\n', False),
     ("frame-introspection", "an __mro__ walk is inert (classes, not namespaces)",
@@ -990,3 +1005,98 @@ def test_capability_discovery_inventory_is_mechanically_checked():
         f"inventory forms with no CLEAN probe and not declared "
         f"NO_POSITIVE: {sorted(no_positive)}")
     assert NO_POSITIVE_FORMS <= set(CAPABILITY_DISCOVERY_FORMS)
+
+def test_receiver_names_do_not_determine_runtime_type__control():
+    """Round-13 F1 — THE THIRTEENTH RUNG, the reviewer taking attack point
+    #3 exactly: the round-12 exemption for `getattr(self, name)` rested
+    on `self` "not being able to be a module" — a NAMING CONVENTION. This
+    test EXECUTES the reviewer's argument: an unbound method invoked with
+    a module as its receiver reaches the module's loader through the very
+    call the exemption blessed. Receiver names do not determine runtime
+    type; a checked property does. The census now refuses non-literal
+    getattr regardless of receiver name (asserted here too), and the one
+    legitimate project usage was rewritten to literal access — so the
+    exemption was deleted, not replaced."""
+    import json
+
+    class Holder:
+        def peek(self, name):
+            return getattr(self, name)
+
+    loader = Holder.peek(json, "__loader__")      # `self` IS a module here
+    assert loader is json.__loader__, "the naming convention held nothing"
+    hits = _connect_census(
+        "class Holder:\n    def peek(self, name):\n"
+        "        return getattr(self, name)\n", "x.py")
+    assert any("not a checked propert" in k or "parameter names" in k
+               for k in hits), hits
+
+
+def test_the_legitimate_project_site_is_literal_and_clean__control():
+    """The positive half the reviewer asked for: the EXACT project usage
+    the round-12 exemption existed to preserve (release_migration's
+    from_version/to_version int check) now reads its two fields by
+    literal attribute access — the idiom the same function already used
+    two lines above for store_changed/transaction_committed — and the
+    census over the shipped file is clean of any non-literal getattr."""
+    src_file = (SPEC.parents[1] / "src" / "veracium" / "store"
+                / "release_migration.py")
+    text = src_file.read_text()
+    assert 'getattr(self, f)' not in text, "the dynamic idiom is back"
+    assert '("from_version", self.from_version)' in text
+    hits = _connect_census(text, "store/release_migration.py")
+    assert not any("REFUSED" in k for k in hits), hits
+
+
+def test_sibling_exemptions_rest_on_documented_semantics__controls():
+    """Round-13's lesson applied to its siblings BEFORE the reviewer has
+    to: the remaining by-what-they-cannot-be exemptions (__closure__,
+    __mro__, dir(), __traceback__ short of tb_frame) are each pinned to
+    an EXECUTED language property, never a naming convention.
+
+    (a) __closure__: a cell holds whatever the enclosing scope bound — a
+        module included (executed) — but a closure over a PROTECTED
+        module needs `m = sqlite3`, which the bare-name rule refuses at
+        the binding site; the cell reaches nothing its scope could not.
+    (b) __mro__: the only namespace path from a class is through
+        __globals__/__dict__/__subclasses__, each refused.
+    (c) dir(): strings only (executed).
+    (d) __traceback__: its public attributes are EXACTLY tb_frame,
+        tb_lasti, tb_lineno, tb_next (enumerated from the runtime
+        object) — two ints, a traceback-or-None, and tb_frame, the one
+        object-typed attribute, which refuses."""
+    import json
+
+    def outer():
+        m = json
+
+        def inner():
+            return m
+        return inner
+    assert outer().__closure__[0].cell_contents is json     # (a) executed
+    clean = _connect_census(
+        "import json\ndef outer():\n    m = json\n    def inner():\n"
+        "        return m\n    return inner\n"
+        "x = outer().__closure__[0].cell_contents\n", "x.py")
+    assert not any("REFUSED" in k for k in clean), clean
+    upstream = _connect_census(
+        "import sqlite3\ndef outer():\n    m = sqlite3\n"
+        "    def inner():\n        return m\n    return inner\n", "x.py")
+    assert any("bare sqlite3 module reference" in k for k in upstream), \
+        upstream                                             # (a) refused upstream
+    for src in ("import json\ng = type(json).__mro__[0].__init__.__globals__\n",
+                "import json\nd = type(json).__mro__[-1].__dict__\n",
+                "cs = type(x).__mro__[-1].__subclasses__()\n"):
+        assert any("REFUSED" in k for k in _connect_census(src, "x.py")), src  # (b)
+    assert all(isinstance(n, str) for n in dir(json))        # (c) executed
+    try:
+        raise ValueError("probe")
+    except ValueError as e:
+        tb = e.__traceback__
+    public = sorted(a for a in dir(tb) if not a.startswith("_"))
+    assert public == ["tb_frame", "tb_lasti", "tb_lineno", "tb_next"], public
+    assert isinstance(tb.tb_lasti, int) and isinstance(tb.tb_lineno, int)
+    assert tb.tb_next is None or type(tb.tb_next) is type(tb)   # (d) enumerated
+    assert any("REFUSED" in k for k in _connect_census(
+        "try:\n    pass\nexcept Exception as e:\n"
+        "    f = e.__traceback__.tb_next.tb_frame\n", "x.py"))

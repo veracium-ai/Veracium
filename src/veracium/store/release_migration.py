@@ -212,8 +212,9 @@ class TerminalFacts(_TerminalFactsBase):
             if val is not None and val is not True and val is not False:
                 p.append(f"{f} must be True, False, or None (unknown), not "
                          f"{_safe_repr(val)}")
-        for f in ("from_version", "to_version"):
-            if type(getattr(self, f)) is not int:
+        for f, val in (("from_version", self.from_version),
+                       ("to_version", self.to_version)):
+            if type(val) is not int:
                 p.append(f"{f} must be an int")
         if type(self.from_version) is int and type(self.to_version) is int \
                 and not (0 <= self.from_version

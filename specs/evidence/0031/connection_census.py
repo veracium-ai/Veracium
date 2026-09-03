@@ -118,7 +118,15 @@ CAPABILITY_DISCOVERY_FORMS = {
                                "— REFUSED conservatively: an "
                                "introspective read of the interpreter's "
                                "module machinery cannot be ruled out as "
-                               "registry access",
+                               "registry access. ROUND-13: vars(X) with "
+                               "ANY argument refuses — the argument's "
+                               "runtime type is not statically "
+                               "establishable, and a module's vars() IS "
+                               "its namespace (src has no use). getattr "
+                               "with a plain literal name on any "
+                               "receiver stays clean: the NAME is what "
+                               "the census can establish, and a harmless "
+                               "literal name discovers nothing",
     "dynamic-evaluation": "eval(...) / exec(...) — REFUSED "
                           "conservatively: evaluated text can reach any "
                           "machinery form above (src has no use; the "
@@ -160,11 +168,17 @@ CAPABILITY_DISCOVERY_FORMS = {
                            "conservatively, as are sys._getframe and "
                            "sys._current_frames; getattr() with such a "
                            "name as a literal refuses, and getattr() "
-                           "with a NON-literal name refuses unless the "
-                           "base is `self` or `cls` (an instance or "
-                           "class of the enclosing scope, which cannot "
-                           "be a module, frame, or mapping — exempt BY "
-                           "WHAT IT CANNOT BE; the one src use). "
+                           "with a NON-literal name refuses REGARDLESS "
+                           "of the receiver's name (round-13: the "
+                           "round-12 `self`/`cls` exemption rested on a "
+                           "naming convention Python does not enforce — "
+                           "an unbound method takes any receiver — so it "
+                           "was DELETED, not replaced; the one legitimate "
+                           "src use was rewritten to literal access; "
+                           "`cls` adjudicated separately, refused for "
+                           "the same reason). Exemptions are classified "
+                           "by ENFORCEABLE receiver properties, never by "
+                           "conventional names. "
                            "exc.__traceback__ itself stays allowed (one "
                            "legitimate src formatting use) — the "
                            "discovery step is tb_frame, and that "
@@ -209,9 +223,16 @@ DISCOVERY_PRIMITIVES = frozenset({
 
 #: Attributes whose documented semantics carry a namespace, a frame, or a
 #: loader (round-12): reaching one is the discovery step, whatever the
-#: base. __closure__ is deliberately absent — cells hold arbitrary objects,
-#: not a namespace — and __traceback__ is absent because the traceback is
-#: not the frame: tb_frame is, and it is here.
+#: base. __closure__ is deliberately absent, for a LANGUAGE property (the
+#: round-13 sharpening — a reason, not a convention): a cell carries a
+#: binding the enclosing scope already made, and every binding was
+#: classified at its own site — a closure over a protected module needs
+#: `m = sqlite3`, which the bare-name rule refuses upstream; a cell can
+#: reach nothing its scope could not. __traceback__ is absent because the
+#: traceback is not the frame: its public surface is exactly tb_frame,
+#: tb_lasti, tb_lineno, tb_next (enumerated from the runtime object, and
+#: pinned by test) — two ints, a traceback-or-None, and the one
+#: object-typed attribute, tb_frame, which is here.
 FRAME_ATTRS = frozenset({
     "f_globals", "f_locals", "f_builtins", "f_back", "tb_frame", "gi_frame",
     "cr_frame", "ag_frame", "__globals__", "__builtins__", "__dict__",
@@ -434,6 +455,17 @@ def connect_census(source, rel):
                 bump(rel + " [REFUSED: introspective access to interpreter "
                            "module machinery — cannot be ruled out as "
                            "registry access (round-11)]")
+            elif isinstance(fn, ast.Name) and fn.id == "vars" and node.args:
+                # ROUND-13: vars(x) yields x's namespace mapping, and x's
+                # runtime type is not statically establishable (a module
+                # passed where an instance was expected — the reviewer's
+                # unbound-receiver argument, applied to vars). The
+                # no-argument form is the namespace-mappings row; the
+                # argument form refuses here. src has no use.
+                bump(rel + " [REFUSED: vars() with an argument — the "
+                           "receiver's namespace mapping, and the receiver's "
+                           "type is not statically establishable "
+                           "(round-13)]")
             elif (isinstance(fn, ast.Name) and fn.id in NAMESPACE_CALLS
                     and not node.args):
                 # ROUND-12 F1 — THE TWELFTH RUNG: the current namespace
@@ -494,13 +526,23 @@ def connect_census(source, rel):
                                    f"frame name {name_arg.value!r} — a "
                                    f"spelling of attribute-based "
                                    f"discovery (round-12)]")
-                elif not (isinstance(base, ast.Name)
-                          and base.id in ("self", "cls")):
+                else:
+                    # ROUND-13 F1 — THE THIRTEENTH RUNG: the round-12
+                    # self/cls exemption rested on a NAMING CONVENTION —
+                    # `self` is an ordinary parameter, an unbound method
+                    # can be invoked with a module as its receiver, and
+                    # the language enforces none of it. A name-based
+                    # exemption is not a checked property. DELETED, not
+                    # replaced: the one legitimate src use was rewritten
+                    # to literal attribute access (the idiom the same
+                    # function already used two lines above), so no
+                    # allowance is needed. `cls` adjudicated separately
+                    # and refused for the same reason: also just a name.
                     bump(rel + " [REFUSED: getattr with a non-literal "
-                               "name on a base that could be a module, "
-                               "frame, or mapping — safety cannot be "
-                               "established (round-12; self/cls exempt "
-                               "by what they cannot be)]")
+                               "name — the receiver's runtime type is not "
+                               "statically establishable whatever it is "
+                               "named (round-13: `self`/`cls` are "
+                               "parameter names, not checked properties)]")
         # ROUND-12 CAPTURED-PRIMITIVE RULE (research's red-team; the
         # round-6 captured-opener lesson generalized): a discovery
         # primitive referenced as a bare VALUE — not the func of a call —
