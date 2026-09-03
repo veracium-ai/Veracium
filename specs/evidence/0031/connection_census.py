@@ -38,6 +38,22 @@ import ast
 #: inventory. Derived from src/veracium's actual usage plus the standard
 #: exception hierarchy and constants; a new legitimate attribute is one
 #: line here, reviewed.
+#: THE PROTECTED IMPORT ORIGINS (round-10 F1's feedback, taken as the
+#: reviewer asked: one structured table instead of rules distributed
+#: between literal-name checks and annotation recursion). The census
+#: classifies acquisition BY PROVENANCE from these modules, never by
+#: searching text for a spelling — round 10's lesson: recursion is no
+#: fail-closed floor if ENTERING it depends on the forbidden capability
+#: keeping one spelling ("_sqlite3" opened connections invisibly).
+PROTECTED_MODULES = {
+    "sqlite3": "the public module — the blessed opener's home; every use "
+               "governed by the positive surface below",
+    "_sqlite3": "the underlying C extension — src/veracium has NO legal "
+                "use (verified round 10); EVERY reference refuses: import, "
+                "from-import, attribute, bare name, and any alias derived "
+                "from it, in code and inside parsed string annotations",
+}
+
 ALLOWED_ATTRS = frozenset({
     "Error", "Warning", "DatabaseError", "DataError", "IntegrityError",
     "InterfaceError", "InternalError", "NotSupportedError",
@@ -50,9 +66,35 @@ ALLOWED_ATTRS = frozenset({
 })
 
 
+#: 3.12's `type` statement, absent from older parsers — the census must
+#: RECOGNIZE it where the interpreter has it (availability is a parser
+#: fact, the round-13 joint lesson) and cannot see it below 3.12, where
+#: such sources are a SyntaxError before the census runs.
+_TYPE_ALIAS = getattr(ast, "TypeAlias", None)
+
+
+def _type_param_positions(node):
+    """3.12 type-parameter bounds (and 3.13 defaults) are LAZILY
+    evaluated annotation-like expressions — string-bearing positions the
+    round-10 rules must visit, claimed here before a reviewer plants
+    `type T[X: "sqlite3.Connection(':memory:')"] = int`."""
+    for tp in getattr(node, "type_params", None) or []:
+        for attr in ("bound", "default_value"):
+            sub = getattr(tp, attr, None)
+            if sub is not None:
+                yield sub
+
+
 def _annotation_nodes(tree):
     """Every node inside an annotation subtree — the positions where
-    `sqlite3.Connection` names a TYPE rather than acquires a connection."""
+    `sqlite3.Connection` names a TYPE rather than acquires a connection.
+
+    The TypeAlias VALUE is one of these positions (the pre-round-11
+    red-team seam, two-sided): `type T = sqlite3.Connection` is exactly
+    the non-executing type reference the exemption exists to permit, and
+    its string form defers evaluation the same way an annotation string
+    does — so it is exempt as a reference, parsed as a string, and
+    refused as a call, by the SAME rules, not a parallel set."""
     ann_roots = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -64,8 +106,14 @@ def _annotation_nodes(tree):
                     ann_roots.append(arg.annotation)
             if node.returns is not None:
                 ann_roots.append(node.returns)
+            ann_roots.extend(_type_param_positions(node))
+        elif isinstance(node, ast.ClassDef):
+            ann_roots.extend(_type_param_positions(node))
         elif isinstance(node, ast.AnnAssign) and node.annotation is not None:
             ann_roots.append(node.annotation)
+        elif _TYPE_ALIAS is not None and isinstance(node, _TYPE_ALIAS):
+            ann_roots.append(node.value)
+            ann_roots.extend(_type_param_positions(node))
     ids = set()
     for root in ann_roots:
         for n in ast.walk(root):
@@ -88,14 +136,29 @@ def connect_census(source, rel):
     for n in ast.walk(tree):
         for c in ast.iter_child_nodes(n):
             parent[c] = n
+    # Aliases bound (by from-import) to PROTECTED-module objects: tracked so
+    # parsed string annotations resolve them back to their provenance
+    # (round-10 requirement 3/5 — an alias such as C retains the identity of
+    # _sqlite3.Connection even though the import that minted it refused).
+    protected_aliases = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module \
-                and (node.module == "sqlite3"
-                     or node.module.startswith("sqlite3.")):
-            bump(rel + " [REFUSED: from-import of sqlite3 or a submodule]")
+                and (node.module.split(".")[0] in PROTECTED_MODULES):
+            root = node.module.split(".")[0]
+            for alias in node.names:
+                protected_aliases[alias.asname or alias.name] = (
+                    node.module, alias.name)
+            bump(rel + f" [REFUSED: from-import of protected module "
+                       f"{node.module!r}]")
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name == "sqlite3" and alias.asname:
+                root = alias.name.split(".")[0]
+                if root == "_sqlite3":
+                    bump(rel + " [REFUSED: import of _sqlite3 — the "
+                               "underlying C extension has no legal use "
+                               "(round-10: it opens connections without "
+                               "the public spelling)]")
+                elif alias.name == "sqlite3" and alias.asname:
                     bump(rel + " [REFUSED: aliased sqlite3]")
                 elif alias.name.startswith("sqlite3."):
                     bump(rel + " [REFUSED: sqlite3 submodule import — a "
@@ -163,6 +226,10 @@ def connect_census(source, rel):
                 bump(rel + f" [REFUSED: unclassified sqlite3 attribute "
                            f"{node.attr!r} — the surface is positive; "
                            f"classify it or it refuses]")
+        elif isinstance(node, ast.Name) and node.id == "_sqlite3" \
+                and isinstance(node.ctx, ast.Load):
+            bump(rel + " [REFUSED: reference to _sqlite3 — the underlying "
+                       "C extension has no legal use in any position]")
         elif isinstance(node, ast.Name) and node.id == "sqlite3" \
                 and isinstance(node.ctx, ast.Load):
             par = parent.get(node)
@@ -199,9 +266,13 @@ def connect_census(source, rel):
         for n in ast.walk(expr_tree):
             if (isinstance(n, ast.Attribute)
                     and isinstance(n.value, ast.Name)
-                    and n.value.id == "sqlite3"):
+                    and n.value.id in PROTECTED_MODULES):
+                mod = n.value.id
                 par = eparent.get(n)
-                if n.attr == "Connection":
+                if mod == "_sqlite3":
+                    bump(rel + " [REFUSED: string annotation referencing "
+                               "_sqlite3 — no legal use in any position]")
+                elif n.attr == "Connection":
                     if isinstance(par, ast.Call):
                         bump(rel + " [REFUSED: string annotation whose "
                                    "parsed structure makes sqlite3."
@@ -216,29 +287,76 @@ def connect_census(source, rel):
                     bump(rel + f" [REFUSED: string annotation with "
                                f"unclassified sqlite3 attribute "
                                f"{n.attr!r}]")
-            elif isinstance(n, ast.Name) and n.id == "sqlite3"                     and isinstance(n.ctx, ast.Load):
-                par = eparent.get(n)
-                if not (isinstance(par, ast.Attribute) and par.value is n):
-                    bump(rel + " [REFUSED: string annotation with a bare "
-                               "sqlite3 module reference]")
+            elif isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load):
+                # ROUND-10 requirement 5: names inside parsed strings
+                # resolve against PROTECTED import bindings — an alias
+                # such as C retains the identity of _sqlite3.Connection,
+                # so its use in a deferred expression refuses by
+                # PROVENANCE, whatever it is spelled.
+                if n.id in protected_aliases:
+                    src_mod, src_name = protected_aliases[n.id]
+                    bump(rel + f" [REFUSED: string annotation using "
+                               f"{n.id!r}, an alias of "
+                               f"{src_mod}.{src_name} — protected "
+                               f"provenance, not a type reference]")
+                elif n.id in PROTECTED_MODULES and n.id == "_sqlite3":
+                    bump(rel + " [REFUSED: string annotation referencing "
+                               "_sqlite3 — no legal use in any position]")
+                elif n.id == "sqlite3":
+                    par = eparent.get(n)
+                    if not (isinstance(par, ast.Attribute)
+                            and par.value is n):
+                        bump(rel + " [REFUSED: string annotation with a "
+                                   "bare sqlite3 module reference]")
+            if isinstance(n, ast.Call):
+                fn = n.func
+                is_dunder = isinstance(fn, ast.Name) and fn.id == "__import__"
+                is_implib = (isinstance(fn, ast.Attribute)
+                             and fn.attr == "import_module")
+                if is_dunder or is_implib:
+                    arg = n.args[0] if n.args else None
+                    if isinstance(arg, ast.Constant) \
+                            and isinstance(arg.value, str) \
+                            and arg.value.split(".")[0] in PROTECTED_MODULES:
+                        bump(rel + " [REFUSED: string annotation "
+                                   "dynamically importing a protected "
+                                   "module]")
+                    elif not (isinstance(arg, ast.Constant)
+                              and isinstance(arg.value, str)):
+                        # ROUND-10 requirement 6: a COMPUTED module name in
+                        # a deferred expression ('sql'+'ite3') cannot be
+                        # statically ruled out as SQLite — fail closed.
+                        bump(rel + " [REFUSED: computed dynamic import "
+                                   "inside a string annotation — the "
+                                   "module cannot be ruled out as SQLite; "
+                                   "failing closed]")
 
+    # ROUND-10 F1: EVERY string in annotation position is parsed —
+    # entering the recursion no longer depends on the forbidden capability
+    # keeping one spelling (the round-10 lesson; "_sqlite3"-through-alias
+    # acquired invisibly under the substring trigger). A string that
+    # cannot parse cannot have its inertness established and FAILS
+    # CLOSED, whatever it mentions; a parseable string referencing
+    # nothing protected is inert and untouched.
     for root in ann_roots:
         for n in ast.walk(root):
-            if isinstance(n, ast.Constant) and isinstance(n.value, str)                     and "sqlite3" in n.value:
+            if isinstance(n, ast.Constant) and isinstance(n.value, str):
                 try:
                     sub = ast.parse(n.value, mode="eval")
                 except SyntaxError:
-                    bump(rel + " [REFUSED: malformed string annotation "
-                               "mentioning sqlite3 — safety cannot be "
-                               "established, failing closed]")
+                    bump(rel + " [REFUSED: unparseable string annotation "
+                               "— inertness cannot be established, "
+                               "failing closed (round-10: refusal no "
+                               "longer requires a spelling)]")
                     continue
                 _string_annotation_rules(sub)
             elif isinstance(n, (ast.JoinedStr, ast.BinOp)):
                 frags = [c.value for c in ast.walk(n)
                          if isinstance(c, ast.Constant)
                          and isinstance(c.value, str)]
-                if any("sqlite3" in f for f in frags):
+                if frags:
                     bump(rel + " [REFUSED: dynamically assembled string "
-                               "annotation mentioning sqlite3 — safety "
-                               "cannot be established, failing closed]")
+                               "annotation — the assembled text cannot be "
+                               "statically established as inert, failing "
+                               "closed (round-10: no spelling trigger)]")
     return out

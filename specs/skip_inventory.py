@@ -46,6 +46,14 @@ INVENTORY = [
                          "the seam-model tests are transplanted without "
                          "specs/ — a full checkout AND the extracted review "
                          "package both carry the spec, so neither skips"),
+    ("tests/test_0031_proposal_ddl.py", "skipif", "SyntaxError below",
+     "host-conditional", "the TypeAlias-position battery (0031 pre-round-11 "
+                         "red-team): its probe sources use the 3.12 `type` "
+                         "statement, which older parsers refuse before the "
+                         "census can see it — availability is a parser fact "
+                         "(the 0029/0030 round-13 lesson). 1 test; the 3.12 "
+                         "CI lane executes it, 3.10/3.11 skip with this "
+                         "reason"),
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the two 0015 lock-adapter tests run the POSIX kernel "
                          "contract via independent processes; they skip on "

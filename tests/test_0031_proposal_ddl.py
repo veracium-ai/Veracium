@@ -632,3 +632,116 @@ def test_string_annotations_apply_the_surface_recursively__controls():
     for label, src in legal_cases:
         hits = _connect_census(src, "x.py")
         assert hits == {}, (label, hits)
+
+
+def test_acquisition_is_classified_by_provenance_not_spelling__controls():
+    """Round-10 F1 — THE TENTH RUNG, found where the round-10 attack point
+    #2 pointed: the string-annotation recursion was ENTERED on the
+    contiguous substring "sqlite3", so the underscore C module acquired
+    connections invisibly (the reviewer's three variants, each census-{}
+    and runtime-live). The census now classifies by IMPORT PROVENANCE
+    against the structured PROTECTED_MODULES table: _sqlite3 refuses in
+    EVERY position; protected from-import aliases are tracked so a name
+    like C retains the identity of _sqlite3.Connection inside parsed
+    strings; EVERY string annotation is parsed regardless of spelling;
+    unparseable and assembled strings fail closed with no trigger; and a
+    computed dynamic import in a deferred expression refuses because the
+    module cannot be ruled out. Their full required battery, plus the
+    round-9 exact construction as the regression anchor."""
+    refused = [
+        ("direct-_sqlite3-Connection",
+         "import _sqlite3\ndef f(p):\n    return _sqlite3.Connection(p)\n"),
+        ("imported-_sqlite3-alias-called",
+         "from _sqlite3 import Connection as C\ndef f(p):\n    return C(p)\n"),
+        ("alias-in-param-string",
+         "from _sqlite3 import Connection as C\n"
+         "def f(v: \"C(':memory:')\"):\n    pass\n"),
+        ("alias-in-return-string",
+         "from _sqlite3 import Connection as C\n"
+         "def f() -> \"C('x')\":\n    pass\n"),
+        ("alias-in-annassign-string",
+         "from _sqlite3 import Connection as C\nx: \"C('x')\" = None\n"),
+        ("composed-module-in-string",
+         "def f(v: \"__import__('sql'+'ite3').connect(':memory:')\"):\n"
+         "    pass\n"),
+        ("alias-passed-to-evaluator-in-string",
+         "from _sqlite3 import Connection as C\ndef f(v: \"make(C)\"):\n"
+         "    pass\n"),
+        ("round-9-exact-regression",
+         'import sqlite3\n'
+         'def f(value: "sqlite3.Connection(\':memory:\')"):\n    pass\n'),
+    ]
+    for label, src in refused:
+        hits = _connect_census(src, "x.py")
+        assert any("REFUSED" in k for k in hits), (label, hits)
+    legal = [
+        ("unrelated-forward-ref", 'def f(c: "np.ndarray"):\n    pass\n'),
+        ("bare-string-ref",
+         'import sqlite3\ndef f(c: "sqlite3.Connection"):\n    pass\n'),
+        ("subscript-string",
+         'import sqlite3\ndef f(c: "Optional[sqlite3.Connection]"):\n'
+         '    pass\n'),
+        ("union-string",
+         'import sqlite3\ndef f(c: "sqlite3.Connection | None"):\n'
+         '    pass\n'),
+    ]
+    for label, src in legal:
+        hits = _connect_census(src, "x.py")
+        assert hits == {}, (label, hits)
+
+
+@pytest.mark.skipif(_sys.version_info < (3, 12),
+                    reason="the `type` statement is a SyntaxError below "
+                           "3.12 — the census cannot see a position the "
+                           "parser refuses to build (availability is a "
+                           "parser fact; the 3.12 CI lane executes these)")
+def test_type_alias_values_are_annotation_positions__controls():
+    """Pre-round-11 red-team (research's pass, the batch rule working):
+    the 3.12 `type` statement's VALUE was absent from the annotation-
+    position model — a TWO-SIDED finding, the signature of a missing
+    position: T1 `type T = "sqlite3.Connection(':memory:')"` sailed
+    through silently (the string-bearing position the round-10 entry
+    grammar never visited), while T3 `type T = sqlite3.Connection` — the
+    LEGITIMATE alias form the exemption exists to permit — false-fired
+    as "captured outside annotation position". A position missing from
+    the model is under- AND over-protective at once. The fix admits
+    TypeAlias values (and 3.12 type-parameter bounds, the next mutant,
+    claimed preemptively) into the SAME annotation-position rules:
+    exempt as a reference, parsed as a string, refused as a call."""
+    refused = [
+        ("T1-string-in-alias-value",
+         'import sqlite3\ntype T = "sqlite3.Connection(\':memory:\')"\n'),
+        ("T2-direct-call-in-alias-value",
+         "import sqlite3\ntype T = sqlite3.Connection(':memory:')\n"),
+        ("T4-protected-alias-in-alias-string",
+         'from sqlite3 import Connection as C\ntype T = "C(\':memory:\')"\n'),
+        ("bound-string-on-type-statement",
+         'import sqlite3\n'
+         'type T[X: "sqlite3.Connection(\':memory:\')"] = int\n'),
+        ("bound-string-on-function",
+         'import sqlite3\n'
+         'def f[X: "sqlite3.Connection(\':memory:\')"](x): pass\n'),
+        ("bound-string-on-class",
+         'import sqlite3\n'
+         'class K[X: "sqlite3.Connection(\':memory:\')"]: pass\n'),
+        ("unparseable-alias-string", 'type T = "foo bar("\n'),
+        ("underscore-module-in-alias-string",
+         'type T = "_sqlite3.Connection"\n'),
+    ]
+    for label, src in refused:
+        hits = _connect_census(src, "x.py")
+        assert any("REFUSED" in k for k in hits), (label, hits)
+    legal = [
+        ("T3-legit-alias-reference",
+         "import sqlite3\ntype T = sqlite3.Connection\n"),
+        ("subscripted-alias-value",
+         "import sqlite3\ntype T = list[sqlite3.Connection]\n"),
+        ("union-alias-value",
+         "import sqlite3\ntype T = sqlite3.Connection | None\n"),
+        ("legit-bound-on-function",
+         "import sqlite3\ndef f[X: sqlite3.Connection](x): pass\n"),
+        ("unrelated-alias-string", 'type T = "np.ndarray"\n'),
+    ]
+    for label, src in legal:
+        hits = _connect_census(src, "x.py")
+        assert hits == {}, (label, hits)
