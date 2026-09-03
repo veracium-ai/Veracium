@@ -552,3 +552,39 @@ def test_every_runtime_opener_spelling_is_refused__matrix():
         else:
             assert any("REFUSED" in k for k in hits), \
                 f"opener spelling {spelling} passed the census silently"
+
+
+def test_evaluated_annotation_acquisition_is_refused__controls():
+    """Round-8 F1 — THE EIGHTH RUNG, found exactly where attack point #4
+    invited: the round-7 exemption tested annotation LOCATION, not
+    type-reference STRUCTURE, and annotations are ordinary expressions
+    evaluated at def time — the reviewer's probe opened a REAL connection
+    that lived in f.__annotations__. Calls are now processed BEFORE the
+    exemption (their safer formulation, taken exactly), and the exemption
+    admits only non-executing type-reference structure. The battery: the
+    reviewer's construction verbatim, the return-annotation and
+    annotated-assignment variants they asked for, and the NEXT mutant —
+    Connection passed as an ARGUMENT to an evaluating callee inside an
+    annotation — refused before anyone plants it. Positive controls: the
+    bare, subscripted, and union type references stay legal."""
+    for label, src in [
+        ("reviewer-param", 'import sqlite3\n'
+         'def f(value: sqlite3.Connection(":memory:")):\n    pass\n'),
+        ("return-annotation", 'import sqlite3\n'
+         'def f() -> sqlite3.Connection("x"):\n    pass\n'),
+        ("annassign", 'import sqlite3\nx: sqlite3.Connection("x") = None\n'),
+        ("passed-to-callee", 'import sqlite3\n'
+         'def f(v: make(sqlite3.Connection)):\n    pass\n'),
+    ]:
+        hits = _connect_census(src, "x.py")
+        assert any("REFUSED" in k for k in hits), (label, hits)
+    for label, src in [
+        ("bare", 'import sqlite3\n'
+         'def f(c: sqlite3.Connection) -> sqlite3.Connection:\n    pass\n'),
+        ("subscript", 'import sqlite3\nfrom typing import Optional\n'
+         'def f(c: Optional[sqlite3.Connection]):\n    pass\n'),
+        ("union", 'import sqlite3\ndef f(c: sqlite3.Connection | None):\n'
+         '    pass\n'),
+    ]:
+        hits = _connect_census(src, "x.py")
+        assert hits == {}, (label, hits)

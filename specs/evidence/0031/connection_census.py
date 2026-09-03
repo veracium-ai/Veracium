@@ -126,13 +126,36 @@ def connect_census(source, rel):
                                "without being called — captured/passed/"
                                "assigned indirection defeats the inventory]")
             elif node.attr == "Connection":
-                if id(node) in ann_ids:
-                    pass                     # a TYPE annotation, not an opener
-                elif isinstance(par, ast.Call) and par.func is node:
+                # ROUND-8 F1 — the eighth rung, found where attack point #4
+                # invited: the round-7 exemption tested syntactic LOCATION
+                # (anywhere beneath an annotation root) instead of
+                # type-reference STRUCTURE, and annotations are ordinary
+                # expressions evaluated at def time — the reviewer's
+                # `def f(value: sqlite3.Connection(":memory:")):` opened a
+                # REAL connection that lived in f.__annotations__. The
+                # reviewer's safer formulation, taken exactly: opening
+                # CALLS are processed BEFORE any annotation exemption, and
+                # the exemption then admits only non-executing
+                # type-reference structure — a Connection that is any part
+                # of a Call inside an annotation (its func, OR an argument
+                # handed to an evaluating callee: the next mutant over,
+                # refused before it is planted) is not a type reference.
+                if isinstance(par, ast.Call) and par.func is node:
                     bump(rel + " [REFUSED: sqlite3.Connection constructed "
                                "directly — the constructor is an opener "
-                               "(round-7: it makes usable connections) and "
-                               "only the blessed opener acquires]")
+                               "(round-7: it makes usable connections; "
+                               "round-8: annotation ancestry exempts "
+                               "nothing that CALLS) and only the blessed "
+                               "opener acquires]")
+                elif id(node) in ann_ids:
+                    if isinstance(par, ast.Call):
+                        bump(rel + " [REFUSED: sqlite3.Connection passed "
+                                   "into a call inside an annotation — an "
+                                   "evaluating callee can open with it; a "
+                                   "type reference is never a call "
+                                   "participant]")
+                    else:
+                        pass                 # a non-executing TYPE reference
                 else:
                     bump(rel + " [REFUSED: sqlite3.Connection captured "
                                "outside annotation position]")
