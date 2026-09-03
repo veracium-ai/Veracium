@@ -1176,7 +1176,14 @@ def test_every_control_was_executed_and_asserted():
     ruling): this gate is evidence tooling within a COOPERATING process;
     it is not a defense against arbitrary mutation by its own process —
     code that rebinds the gate's inventory or registry is inside the
-    boundary the topology statement already draws."""
+    boundary the topology statement already draws.
+
+    FROZEN at round 18 (2026-09-03): the reviewer accepted this gate's
+    invariant surface as stated above (the boundary adjudicated
+    "sufficiently honest for evidence tooling"; import-time capture plus
+    end-of-session addition discovery "closes the relevant window").
+    Changes altering the invariant surface reopen architectural review;
+    refinements below it are implementation obligations."""
     import os
     assert os.environ.get("PYTEST_XDIST_WORKER") is None, (
         "UNSUPPORTED TOPOLOGY: the runtime registry is in-process session "

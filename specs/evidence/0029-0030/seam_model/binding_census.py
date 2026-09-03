@@ -276,6 +276,14 @@ def census_source(source, protected_modules=None):
 #: registration below and at discovery in the gate — functions cannot
 #: override __eq__/__hash__, and the enforcement makes the identity
 #: contract a checked property rather than an inference.
+#:
+#: FROZEN at round 18 (2026-09-03): the reviewer accepted 0030 v29 and the
+#: joint seam on this invariant surface — session-start obligation
+#: inventory; every obligation present, structurally valid, and executed
+#: by the currently bound function; identity comparison with retained
+#: references; a single cooperating process, multi-process failing
+#: explicitly. Changes altering that surface REOPEN architectural review;
+#: refinements below it are implementation obligations.
 EXECUTED = {}
 
 
