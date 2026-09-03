@@ -107,8 +107,9 @@ def test_typed_membership_restricts__bare_id_is_the_control(store):
     row = store._conn.execute("SELECT json FROM edges WHERE id=?", (e.id,)).fetchone()[0]
     assert json.loads(row)["invalidation_reason"] == "superseded"
     # NEGATIVE CONTROL — round-3 F1's fail-open, permanent:
-    assert control_bare_id_fails_open(store, U, e.id), \
-        "bare-id membership no longer fails open — control is vacuous"
+    assert_control(control_bare_id_fails_open, store, U, e.id,
+                   msg="bare-id membership no longer fails open — control "
+                       "is vacuous")
 
 
 def test_direct_case_is_in_retire__affected_misses_it(store):
@@ -116,9 +117,10 @@ def test_direct_case_is_in_retire__affected_misses_it(store):
     is caught by `retire` and can be entirely absent from `affected`."""
     e, _ = _revoked_superseded_fixture(store)
     assert source_restricted(store, U, e.id)
-    assert control_affected_misses_the_direct_case(store, U, e.id), \
-        "affected now covers the direct case — retire it as a control " \
-        "only with a fixture where it still discriminates"
+    assert_control(control_affected_misses_the_direct_case, store, U, e.id,
+                   msg="affected now covers the direct case — retire it as "
+                       "a control only with a fixture where it still "
+                       "discriminates")
 
 
 def test_no_standing_case_is_defined_and_calls_no_sweep(store, monkeypatch):
@@ -135,8 +137,10 @@ def test_no_standing_case_is_defined_and_calls_no_sweep(store, monkeypatch):
 
 def test_lift_flips_the_input_without_touching_the_row(store):
     e, _ = _revoked_superseded_fixture(store)
-    assert control_lift_flips_with_no_row_rewrite(store, U, e.id, AT), \
-        "lift no longer flips the input with the row untouched"
+    assert_control(control_lift_flips_with_no_row_rewrite,
+                   store, U, e.id, AT,
+                   msg="lift no longer flips the input with the row "
+                       "untouched")
 
 
 # ------------------------------------------------ CurrentState (F2, one read)
@@ -150,9 +154,9 @@ def test_current_state_is_bound_and_token_moves(store):
     assert cs.source_restricted is RestrictionVerdict.RESTRICTED
     # NEGATIVE CONTROL — the token must move on ANY user mutation; this
     # assertion fails the day a mutator skips the write-counter bump:
-    assert control_token_moves_on_mutation(
-        store, U, e.id, lambda: store.add_edge(_edge("Lyon"))), \
-        "a mutation did not advance the read token"
+    assert_control(control_token_moves_on_mutation,
+                   store, U, e.id, lambda: store.add_edge(_edge("Lyon")),
+                   msg="a mutation did not advance the read token")
 
 
 def test_missing_row_is_a_defined_carrier_state(store):
@@ -539,7 +543,8 @@ def _seam_modules():
             if not p.stem.startswith("_")]
 
 
-from binding_census import (BINDING_CONSTRUCTS,  # noqa: E402
+from binding_census import (BINDING_CONSTRUCTS, EXECUTED,  # noqa: E402
+                            assert_control,
                             census_source as _census_source)
 
 
@@ -1118,3 +1123,66 @@ def test_the_binding_inventory_is_covered_and_current():
             any(isinstance(n, cls) for n in _ast.walk(_parses(src)))
             for _, src, _ in SHADOW_PROBES), \
             f"{name} has no probe in the shadow battery"
+
+
+# ------------- round-14 F1: the RUNTIME execution gate — the census ladder's
+# static side closed at its ceiling (the reviewer's `if False:` call credited
+# as "actually called"), so the execution claim now rides runtime evidence.
+
+def test_every_control_was_executed_and_asserted():
+    """THE RUNTIME GATE (round-14 joint F1): every discovered control_*
+    callable must have EXECUTED in this test session with its result
+    ASSERTED — recorded by `assert_control` at the moment the assertion
+    passed, keyed by callable identity. The static census is RESCOPED to
+    source hygiene; AST call identity credits dead branches (`if False:`,
+    TYPE_CHECKING, uncalled functions) and can never carry this claim.
+
+    Ordering: a conftest hook anchors this test LAST after pytest-randomly
+    shuffles, so every control-invoking test has run. Scope: a partial run
+    that invokes some controls but not others FAILS here by design — an
+    unexecuted control is unexecuted, and the gate refuses to guess why;
+    the prescribed surfaces (both drivers; the full suite; CI) always
+    execute everything."""
+    discovered = {(m.__name__, n)
+                  for m in _seam_modules()
+                  for n in vars(m)
+                  if n.startswith("control_")
+                  and callable(vars(m)[n])
+                  and getattr(vars(m)[n], "__module__", None) == m.__name__}
+    if not EXECUTED:
+        pytest.skip("no control executions recorded — the control-invoking "
+                    "tests were not selected in this session; run the full "
+                    "seam surface to enforce the runtime gate")
+    unexecuted = discovered - set(EXECUTED)
+    assert not unexecuted, (
+        f"control(s) discovered but NEVER EXECUTED-AND-ASSERTED this "
+        f"session: {sorted(unexecuted)} — a syntactic reference is not "
+        f"runtime evidence (round-14)")
+
+
+def test_dead_branch_credits_static_but_not_runtime__control():
+    """THE REVIEWER'S ROUND-14 CONSTRUCTION, permanent, as the two gates'
+    discriminating pair: the STATIC hygiene census CREDITS a call under
+    `if False:` (asserted — that is its ceiling, stated), while the RUNTIME
+    registry records nothing for it (asserted — that is why the execution
+    claim lives there). One probe, both verdicts, the division of labor
+    executable."""
+    import types
+    name = "control_dead_branch_probe"
+    mod = types.ModuleType("synthetic_dead_module")
+    def planted():
+        return True
+    planted.__name__ = name
+    planted.__qualname__ = name
+    planted.__module__ = mod.__name__
+    setattr(mod, name, planted)
+    src = ("import synthetic_dead_module as sdm\n"
+           "if False:\n"
+           f"    sdm.{name}()\n")
+    credited, violations = _census_source(src, {"synthetic_dead_module"})
+    assert ("synthetic_dead_module", name) in credited, \
+        "the static census stopped crediting the dead call — its ceiling " \
+        "claim in the runtime gate's docstring is now stale; update both"
+    assert violations == []
+    assert ("synthetic_dead_module", name) not in EXECUTED, \
+        "the runtime registry recorded a call that never ran"

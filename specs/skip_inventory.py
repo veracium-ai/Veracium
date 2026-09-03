@@ -29,6 +29,16 @@ shipped inventory fails in the reviewer's own run.
 """
 
 INVENTORY = [
+    ("tests/test_seam_model_0029_0030_store.py", "skip",
+     "no control executions recorded",
+     "selection-conditional", "the RUNTIME execution gate (0029/0030 round "
+                              "14): compares the discovered control set "
+                              "against the assert_control registry; skips "
+                              "only when a -k selection ran NO "
+                              "control-invoking test at all, so there is "
+                              "nothing to compare — the full suite, both "
+                              "drivers, and CI always record and always "
+                              "enforce"),
     ("tests/test_seam_model_0029_0030.py", "skip",
      "0030 spec not reachable from this tree",
      "host-conditional", "the seam model's propagation check reads the 0030 "
@@ -165,7 +175,8 @@ def render(rs_output: str = "") -> str:
     # than being silently dropped — the renderer's domain is INVENTORY's, not
     # a list someone remembered to extend.
     order = ["git-checkout", "env-flag", "optional-dependency", "package-artifact",
-             "host-conditional", "future-obligation", "recursion-bound"]
+             "host-conditional", "future-obligation", "recursion-bound",
+             "selection-conditional"]
     unordered = sorted(set(classes) - set(order))
     if unordered:
         raise ValueError(
@@ -194,6 +205,12 @@ def render(rs_output: str = "") -> str:
                             "and never at the top level — the closure-evidence "
                             "runner marks its children so they do not re-enter "
                             "it; at the top level this test EXECUTES):"),
+        "selection-conditional": ("selection-conditional (SKIPS ONLY when a "
+                                  "-k selection ran no test that could feed "
+                                  "the check — the full suite, the prescribed "
+                                  "offline surfaces, and CI always feed and "
+                                  "always enforce; 0029/0030 round 14's "
+                                  "runtime execution gate is the instance):"),
         "future-obligation": ("future-obligation (SKIPPED UNCONDITIONALLY on every host, "
                               "including yours and ours — each names a primitive or a "
                               "live-model probe a spec marks FUTURE. These four were "

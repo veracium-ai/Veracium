@@ -29,3 +29,21 @@ if os.environ.get("VERACIUM_FORBID_NETWORK") == "1":
             super().__init__(family, type, *a, **kw)
 
     socket.socket = _ForbiddenSocket
+
+
+import pytest
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(items):
+    """Anchor the seam model's RUNTIME execution gate LAST — after
+    pytest-randomly's shuffle (trylast runs after its hook), so every
+    control-invoking test has executed before the gate compares the
+    discovered control set against the runtime registry (0029/0030
+    external round 14: AST call identity credits dead branches; the
+    execution claim rides runtime evidence recorded by assert_control)."""
+    gate = [i for i in items
+            if i.name == "test_every_control_was_executed_and_asserted"]
+    for g in gate:
+        items.remove(g)
+        items.append(g)

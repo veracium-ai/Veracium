@@ -21,6 +21,7 @@ from pathlib import Path
 SEAM = Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0029-0030" / "seam_model"
 sys.path.insert(0, str(SEAM))
 
+from binding_census import assert_control
 from raw_adapter import (Adapted, adapt, control_defaulting_a_missing_field_would_grant,
                          control_flags_are_not_serialized,
                          control_one_disjunct_lets_a_claim_through,
@@ -60,8 +61,9 @@ def test_flags_are_derived_not_read__with_its_control():
     """F3: the flags are @property and appear in NO payload."""
     payload = json.loads(_edge().model_dump_json())
     # CONTROL: a field-reading adapter would refuse every payload.
-    assert control_flags_are_not_serialized(payload), \
-        "flags appear in the payload -- the derivation is no longer necessary"
+    assert_control(
+        control_flags_are_not_serialized, payload,
+        msg=("flags appear in the payload -- the derivation is no longer necessary"))
     # and the derivation still produces them
     a = adapt(json.dumps(payload), expect_id="e1", expect_user="u")
     assert a.quarantined is False
@@ -75,8 +77,9 @@ def test_quarantined_has_TWO_disjuncts__with_its_control():
     assert derive_quarantined("has_diet", Disclosure.QUARANTINED.value)
     assert derive_use_only(Disclosure.USE_ONLY.value)
     # CONTROL: the one-disjunct shortcut lets a third-party CLAIM through.
-    assert control_one_disjunct_lets_a_claim_through(), \
-        "the one-disjunct derivation no longer differs -- control is vacuous"
+    assert_control(
+        control_one_disjunct_lets_a_claim_through,
+        msg=("the one-disjunct derivation no longer differs -- control is vacuous"))
 
 
 def test_third_party_claim_is_quarantined_end_to_end():
@@ -91,8 +94,9 @@ def test_incomplete_provenance_refuses__with_its_control():
     text = json.dumps(m)
     assert adapt(text, expect_id="e1", expect_user="u") is None
     # CONTROL: defaulting instead of refusing would GRANT (use_only False).
-    assert control_defaulting_a_missing_field_would_grant(text), \
-        "defaulting no longer grants -- control is vacuous"
+    assert_control(
+        control_defaulting_a_missing_field_would_grant, text,
+        msg=("defaulting no longer grants -- control is vacuous"))
 
 
 def test_foreign_payload_identity_refuses():
@@ -135,21 +139,25 @@ def test_six_leg_binding__with_its_control():
     cur = CurrentState("u", "A", "{}", RestrictionVerdict.CLEAR, 1, scope_cell=cell)
     assert bind(env, snap, cur, View("u", principal=("orig", "P"))) == BOUND
     # CONTROL: an unbound variant accepts a foreign current leg.
-    assert control_binding_is_load_bearing(), \
-        "binding no longer discriminates -- control is vacuous"
+    assert_control(
+        control_binding_is_load_bearing,
+        msg=("binding no longer discriminates -- control is vacuous"))
 
 
 def test_view_leg_is_bound__with_its_control():
-    assert control_view_leg_is_bound(), "the view leg is not actually bound"
+    assert_control(
+        control_view_leg_is_bound,
+        msg=("the view leg is not actually bound"))
 
 
 def test_binding_is_parse_independent__with_its_control():
-    assert control_binding_survives_a_corrupt_payload(), \
-        "binding now depends on the payload -- C-2 regressed"
+    assert_control(
+        control_binding_survives_a_corrupt_payload,
+        msg=("binding now depends on the payload -- C-2 regressed"))
 
 
 def test_absence_never_grants__with_its_control():
-    assert control_absence_does_not_grant()
+    assert_control(control_absence_does_not_grant)
 
 
 # --------------------------------------------- ROUND-6 F2: THE SIXTH LEG ----
@@ -164,22 +172,23 @@ def test_absence_never_grants__with_its_control():
 # detectable; disabling any half of it now fails here.
 
 def test_cell_principal_mismatch_is_refused__with_its_control():
-    assert control_cell_principal_is_enforced(), \
-        "leg 6 is not enforcing the cell's principal -- a cell computed for A " \
-        "can answer for an envelope classified under B"
+    assert_control(
+        control_cell_principal_is_enforced,
+        msg=("leg 6 is not enforcing the cell's principal -- a cell computed for A " "can answer for an envelope classified under B"))
 
 
 def test_cell_principal_absence_is_refused__with_its_control():
-    assert control_cell_principal_absence_refused(), \
-        "a cell carrying NO principal passes leg 6 -- `principal=None` is a " \
-        "skeleton key past the bind"
+    assert_control(
+        control_cell_principal_absence_refused,
+        msg=("a cell carrying NO principal passes leg 6 -- `principal=None` is a " "skeleton key past the bind"))
 
 
 def test_cell_absence_under_a_view_is_refused__with_its_control():
     """X-B: the dangerous direction. The classifier reads visibility FROM the
     cell, so binding a view-without-cell either raises on None or fails open."""
-    assert control_cell_absence_refused_under_a_view(), \
-        "a view with no scope cell BINDS -- the classifier will consume a None cell"
+    assert_control(
+        control_cell_absence_refused_under_a_view,
+        msg=("a view with no scope cell BINDS -- the classifier will consume a None cell"))
 
 
 def test_no_view_refuses_a_principal_bearing_cell__with_its_control():
@@ -189,18 +198,18 @@ def test_no_view_refuses_a_principal_bearing_cell__with_its_control():
     presence and NOT the view's, so a cell computed for Z can decide visibility
     and shaping for an envelope it was never computed for. The spec said so all
     along; the model and this test never asked it."""
-    assert control_no_view_refuses_a_principal_bearing_cell(), \
-        "a principal-bearing cell BINDS with no view -- it still gates " \
-        "visibility and shaping at steps 2 and 10"
+    assert_control(
+        control_no_view_refuses_a_principal_bearing_cell,
+        msg=("a principal-bearing cell BINDS with no view -- it still gates " "visibility and shaping at steps 2 and 10"))
 
 
 def test_principal_less_pair_is_refused__with_its_control():
     """ROUND-9 F3: 'one principal when present' -- ONE, not merely EQUAL. A
     present pair with both principals None satisfied `!=` and bound while
     naming no principal at all. Presence precedes equality."""
-    assert control_principal_less_pair_is_refused(), \
-        "a present pair with NO principal binds -- equality is standing in " \
-        "for presence again"
+    assert_control(
+        control_principal_less_pair_is_refused,
+        msg=("a present pair with NO principal binds -- equality is standing in " "for presence again"))
 
 
 def test_viewless_cell_is_refused__with_its_control():
@@ -210,9 +219,9 @@ def test_viewless_cell_is_refused__with_its_control():
     still carries the visible/shape the classifier consumes, the same influence
     channel minus attribution. Both halves asserted: bare viewless record
     BINDS; any viewless CELL refuses."""
-    assert control_viewless_cell_is_refused(), \
-        "either a viewless cell binds (the influence channel is open) or a " \
-        "bare viewless record refuses (every legitimate host read breaks)"
+    assert_control(
+        control_viewless_cell_is_refused,
+        msg=("either a viewless cell binds (the influence channel is open) or a " "bare viewless record refuses (every legitimate host read breaks)"))
 
 
 # ------------------------------------------------- the REAL ScopeView ------
@@ -277,8 +286,9 @@ def test_incomplete_provenance_refuses_because_it_feeds_scope(scope_view):
     del m["provenance"]["author_of_evidence"]
     text = json.dumps(m)
     assert adapt(text, expect_id="e1", expect_user="u") is None
-    assert control_defaulting_author_fabricates_a_scope_decision(text, scope_view), \
-        "defaulting the author no longer produces a classifiable record -- vacuous"
+    assert_control(
+        control_defaulting_author_fabricates_a_scope_decision, text, scope_view,
+        msg=("defaulting the author no longer produces a classifiable record -- vacuous"))
 
 
 @pytest.mark.parametrize("missing", sorted(
@@ -362,8 +372,9 @@ def test_the_propagation_check_can_fail__its_own_control():
     A propagation check that cannot fail is the exact class this round was
     spent learning, and writing one today would be a poor joke.
     """
-    assert PC.control_check_can_fail(_spec_text()), \
-        "the propagation check no longer detects an un-propagated rule"
+    assert_control(
+        PC.control_check_can_fail, _spec_text(),
+        msg=("the propagation check no longer detects an un-propagated rule"))
 
 
 def test_it_retro_detects_the_REAL_v14_defect():
@@ -614,9 +625,9 @@ def test_carrier_type_drift_is_caught__its_control():
 
 def test_presence_derivation_agrees__with_its_control():
     from raw_adapter import control_presence_derivation_agrees
-    assert control_presence_derivation_agrees(), \
-        "the two requiredness derivations disagree on a field _check_derived " \
-        "actually sees -- _field_rule's disjunction is no longer belt-and-braces"
+    assert_control(
+        control_presence_derivation_agrees,
+        msg=("the two requiredness derivations disagree on a field _check_derived " "actually sees -- _field_rule's disjunction is no longer belt-and-braces"))
 
 
 # The round-7 `test_every_control_in_the_seam_model_is_asserted` lived here.
@@ -636,6 +647,6 @@ def test_deref_safety_rule__with_its_control():
     applied to the rule itself: a synthetic deref-before-guard classifier must
     be flagged, the guarded form must pass."""
     import propagation_check as pc
-    assert pc.control_deref_safety_can_fail(), \
-        "the deref-safety rule cannot fail -- it would pass a spec whose " \
-        "pseudocode raises on a None view-principal"
+    assert_control(
+        pc.control_deref_safety_can_fail,
+        msg=("the deref-safety rule cannot fail -- it would pass a spec whose " "pseudocode raises on a None view-principal"))

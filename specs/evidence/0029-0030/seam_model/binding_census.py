@@ -127,6 +127,20 @@ def census_source(source, protected_modules=None):
             fn = node.func
             if isinstance(fn, ast.Name) and fn.id in from_bindings:
                 credited.add(from_bindings[fn.id])
+                # THE RUNNER IDIOM (round-14): a control handed as the FIRST
+                # argument to binding_census.assert_control is invoked
+                # through the recording runner — the hygiene census credits
+                # the REFERENCE; the runtime registry alone carries the
+                # EXECUTION claim.
+                if from_bindings[fn.id] == ("binding_census",
+                                            "assert_control") and node.args:
+                    a0 = node.args[0]
+                    if isinstance(a0, ast.Name) and a0.id in from_bindings:
+                        credited.add(from_bindings[a0.id])
+                    elif (isinstance(a0, ast.Attribute)
+                          and isinstance(a0.value, ast.Name)
+                          and a0.value.id in mod_bindings):
+                        credited.add((mod_bindings[a0.value.id], a0.attr))
             elif (isinstance(fn, ast.Attribute)
                   and isinstance(fn.value, ast.Name)
                   and fn.value.id in mod_bindings):
@@ -227,3 +241,33 @@ def census_source(source, protected_modules=None):
 
 
 # The driver imports census_source; probes import it from here directly.
+
+
+# ---------------------------------------------------------------------------
+# THE RUNTIME EXECUTION REGISTRY (round-14 joint F1 — the census's final
+# honest gap): every prior rung strengthened what a STATIC reference proves,
+# and the reviewer's `if False: rd.control_x()` closed the ladder's static
+# side by showing its ceiling — AST call identity credits calls that can
+# never run. The execution claim is now carried by RUNTIME evidence: drivers
+# invoke controls through `assert_control`, which records the exact callable
+# identity AND asserts the returned result, and the session-end gate compares
+# the discovered control set against this registry. The static census is
+# RESCOPED to source hygiene (shadowing, identity, acquisition grammar) —
+# useful, but never again the execution claim.
+
+EXECUTED = {}   # (module, qualname) -> True once the result was ASSERTED
+
+
+def assert_control(control, *args, expect=True, msg=None, **kwargs):
+    """Invoke a seam-model control, ASSERT its result, and record the
+    execution by callable identity. Both halves of the reviewer's round-14
+    requirement live here: the control actually executed (we called it),
+    and its returned result was asserted successfully (below — recording
+    happens only AFTER the assert passes, so a failing control never
+    counts as covered)."""
+    result = control(*args, **kwargs)
+    assert result == expect, (
+        msg or f"{control.__module__}.{control.__name__} returned "
+               f"{result!r}, expected {expect!r}")
+    EXECUTED[(control.__module__, control.__name__)] = True
+    return result
