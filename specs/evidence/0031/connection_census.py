@@ -70,7 +70,7 @@ def _annotation_nodes(tree):
     for root in ann_roots:
         for n in ast.walk(root):
             ids.add(id(n))
-    return ids
+    return ids, ann_roots
 
 
 def connect_census(source, rel):
@@ -83,7 +83,7 @@ def connect_census(source, rel):
         out[key] = out.get(key, 0) + 1
 
     tree = ast.parse(source)
-    ann_ids = _annotation_nodes(tree)
+    ann_ids, ann_roots = _annotation_nodes(tree)
     parent = {}
     for n in ast.walk(tree):
         for c in ast.iter_child_nodes(n):
@@ -177,4 +177,68 @@ def connect_census(source, rel):
                 and isinstance(parent.get(node), ast.Call)
                 and parent[node].func is node):
             bump(rel)
+    # ROUND-9 F1 — THE NINTH RUNG, found where the round-9 attack point #2
+    # pointed: a STRING annotation defers execution past this census
+    # (`def f(value: "sqlite3.Connection(':memory:')")` looked inert here
+    # and get_type_hints evaluated it into a live connection). The contract
+    # says NON-EXECUTING; a string whose structure cannot be established is
+    # not provably non-executing, so (the reviewer's option 1 + fail-closed):
+    # every string in annotation position that MENTIONS sqlite3 is PARSED
+    # as an expression and the same positive-surface rules apply
+    # recursively — Connection legal only outside any Call, connect never a
+    # type, unknown attributes refused, bare module refused — and a string
+    # that cannot be parsed, or is dynamically ASSEMBLED (f-string,
+    # concatenation) with any fragment mentioning sqlite3, FAILS CLOSED:
+    # safety that cannot be established is not exempted. Strings that never
+    # mention sqlite3 are outside this surface and stay untouched.
+    def _string_annotation_rules(expr_tree):
+        eparent = {}
+        for n in ast.walk(expr_tree):
+            for c in ast.iter_child_nodes(n):
+                eparent[c] = n
+        for n in ast.walk(expr_tree):
+            if (isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == "sqlite3"):
+                par = eparent.get(n)
+                if n.attr == "Connection":
+                    if isinstance(par, ast.Call):
+                        bump(rel + " [REFUSED: string annotation whose "
+                                   "parsed structure makes sqlite3."
+                                   "Connection a call participant — the "
+                                   "deferred constructor executes when the "
+                                   "annotation is resolved (round-9)]")
+                elif n.attr == "connect":
+                    bump(rel + " [REFUSED: string annotation referencing "
+                               "sqlite3.connect — an opener is never a "
+                               "type]")
+                elif n.attr not in ALLOWED_ATTRS:
+                    bump(rel + f" [REFUSED: string annotation with "
+                               f"unclassified sqlite3 attribute "
+                               f"{n.attr!r}]")
+            elif isinstance(n, ast.Name) and n.id == "sqlite3"                     and isinstance(n.ctx, ast.Load):
+                par = eparent.get(n)
+                if not (isinstance(par, ast.Attribute) and par.value is n):
+                    bump(rel + " [REFUSED: string annotation with a bare "
+                               "sqlite3 module reference]")
+
+    for root in ann_roots:
+        for n in ast.walk(root):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)                     and "sqlite3" in n.value:
+                try:
+                    sub = ast.parse(n.value, mode="eval")
+                except SyntaxError:
+                    bump(rel + " [REFUSED: malformed string annotation "
+                               "mentioning sqlite3 — safety cannot be "
+                               "established, failing closed]")
+                    continue
+                _string_annotation_rules(sub)
+            elif isinstance(n, (ast.JoinedStr, ast.BinOp)):
+                frags = [c.value for c in ast.walk(n)
+                         if isinstance(c, ast.Constant)
+                         and isinstance(c.value, str)]
+                if any("sqlite3" in f for f in frags):
+                    bump(rel + " [REFUSED: dynamically assembled string "
+                               "annotation mentioning sqlite3 — safety "
+                               "cannot be established, failing closed]")
     return out

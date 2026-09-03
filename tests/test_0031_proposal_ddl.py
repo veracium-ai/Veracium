@@ -588,3 +588,47 @@ def test_evaluated_annotation_acquisition_is_refused__controls():
     ]:
         hits = _connect_census(src, "x.py")
         assert hits == {}, (label, hits)
+
+
+def test_string_annotations_apply_the_surface_recursively__controls():
+    """Round-9 F1 — THE NINTH RUNG, found where the round-9 attack point #2
+    pointed: a STRING annotation deferred the constructor past the census
+    (the reviewer evaluated it with get_type_hints into a live connection
+    that answered SELECT 1). The positive surface now applies RECURSIVELY
+    into parsed string annotations, and strings whose safety cannot be
+    established FAIL CLOSED — their full required battery: the exact
+    deferred constructor, all three annotation forms, the
+    nested-evaluator string, string equivalents of the three legal type
+    references, malformed, and dynamically assembled."""
+    refused_cases = [
+        ("reviewer-deferred-constructor",
+         'import sqlite3\n'
+         'def f(value: "sqlite3.Connection(\':memory:\')"):\n    pass\n'),
+        ("string-return-form",
+         'import sqlite3\ndef f() -> "sqlite3.Connection(\'x\')":\n    pass\n'),
+        ("string-annassign-form",
+         'import sqlite3\nx: "sqlite3.Connection(\'x\')" = None\n'),
+        ("string-nested-evaluator",
+         'import sqlite3\ndef f(v: "make(sqlite3.Connection)"):\n    pass\n'),
+        ("malformed-mentioning-sqlite3",
+         'import sqlite3\ndef f(c: "sqlite3.Connection("):\n    pass\n'),
+        ("assembled-f-string",
+         'import sqlite3\ndef f(c: f"sqlite3.{name}"):\n    pass\n'),
+    ]
+    for label, src in refused_cases:
+        hits = _connect_census(src, "x.py")
+        assert any("REFUSED" in k for k in hits), (label, hits)
+    legal_cases = [
+        ("string-bare", 'import sqlite3\ndef f(c: "sqlite3.Connection"):\n'
+         '    pass\n'),
+        ("string-subscript",
+         'import sqlite3\ndef f(c: "Optional[sqlite3.Connection]"):\n'
+         '    pass\n'),
+        ("string-union",
+         'import sqlite3\ndef f(c: "sqlite3.Connection | None"):\n    pass\n'),
+        ("unrelated-string", 'import sqlite3\ndef f(c: "np.ndarray"):\n'
+         '    pass\n'),
+    ]
+    for label, src in legal_cases:
+        hits = _connect_census(src, "x.py")
+        assert hits == {}, (label, hits)
