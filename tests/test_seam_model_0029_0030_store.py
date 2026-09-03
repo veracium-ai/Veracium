@@ -549,6 +549,22 @@ from binding_census import (BINDING_CONSTRUCTS, EXECUTED,  # noqa: E402
                             census_source as _census_source)
 
 
+#: THE SESSION-START INVENTORY (round-17 joint F1): captured at IMPORT
+#: time — before any test executes — this tuple is the obligation the
+#: runtime gate verifies at session end. The reviewer's framing, taken:
+#: the beginning of the session defines what must remain present; the
+#: end verifies both PRESERVATION and EXECUTION. Without it, the gate's
+#: discovery filters (callable, module-match) silently OMITTED a control
+#: replaced with a non-callable, a foreign function, or nothing at all —
+#: success reported over a reduced set. A change must produce an
+#: explicit failure, never remove an obligation.
+_EXPECTED_CONTROLS = tuple(sorted(
+    (m.__name__, n)
+    for m in _seam_modules()
+    for n in vars(m)
+    if n.startswith("control_")))
+
+
 def _invoked_identities():
     """The identity census over BOTH drivers; shadow violations fail here.
     The protected-module set is DERIVED from the seam_model directory (no
@@ -1143,7 +1159,24 @@ def test_every_control_was_executed_and_asserted():
     that invokes some controls but not others FAILS here by design — an
     unexecuted control is unexecuted, and the gate refuses to guess why;
     the prescribed surfaces (both drivers; the full suite; CI) always
-    execute everything."""
+    execute everything.
+
+    THE OBLIGATION IS SESSION-START, THE VERIFICATION SESSION-END
+    (round-17 joint F1): `_EXPECTED_CONTROLS`, captured at import before
+    any test executes, defines what must remain present; this gate then
+    validates all four clauses per obligation — present, an ordinary
+    function, of its own module, and the PRESENT identity executed. Fresh
+    re-resolution alone was not enough: a control replaced with a
+    non-callable, a foreign function, or nothing at all fell out of the
+    discovery FILTERS before validation, and the gate reported success
+    over a reduced set. A change fails explicitly; it never removes an
+    obligation. Additions join the obligation under the same clauses.
+
+    TRUST BOUNDARY, stated beside the topology contract (round-17
+    ruling): this gate is evidence tooling within a COOPERATING process;
+    it is not a defense against arbitrary mutation by its own process —
+    code that rebinds the gate's inventory or registry is inside the
+    boundary the topology statement already draws."""
     import os
     assert os.environ.get("PYTEST_XDIST_WORKER") is None, (
         "UNSUPPORTED TOPOLOGY: the runtime registry is in-process session "
@@ -1156,25 +1189,57 @@ def test_every_control_was_executed_and_asserted():
     # later module-level reassignment cannot silently change what
     # "discovered control" means — the gate compares the objects the
     # modules hold NOW against the objects that actually ran.
-    candidates = [(m.__name__, n, vars(m)[n])
-                  for m in _seam_modules()
-                  for n in vars(m)
-                  if n.startswith("control_")
-                  and callable(vars(m)[n])
-                  and getattr(vars(m)[n], "__module__", None) == m.__name__]
-    # ROUND-16 joint F1, the definitional half: a control IS an ordinary
-    # function, and the gate ENFORCES it rather than narrowing discovery —
-    # a callable instance named control_* fails HERE, loudly, instead of
-    # slipping out of the discovered set (silent narrowing would be the
-    # same under-protection one carrier up).
-    nonfunctions = [(mn, n, type(f).__name__) for mn, n, f in candidates
-                    if not isinstance(f, _types.FunctionType)]
+    # ROUND-17 joint F1: validate EVERY session-start obligation before
+    # any filter — the four clauses, in the reviewer's order. Discovery
+    # filters silently omitted a changed control (non-callable, foreign
+    # module, removed); the inventory turns each omission into a named
+    # failure. A same-module replacement passes ONLY if the newly present
+    # function itself was executed (clause 4 on the PRESENT identity).
+    mods = {m.__name__: m for m in _seam_modules()}
+    _MISSING = object()
+    problems = []
+    present = []
+    for mod_name, attr in _EXPECTED_CONTROLS:
+        m = mods.get(mod_name)
+        obj = vars(m).get(attr, _MISSING) if m is not None else _MISSING
+        if obj is _MISSING:
+            problems.append(f"{mod_name}.{attr}: attribute REMOVED — an "
+                            f"obligation cannot be deleted")
+        elif not isinstance(obj, _types.FunctionType):
+            problems.append(f"{mod_name}.{attr}: replaced with a "
+                            f"non-function ({type(obj).__name__})")
+        elif getattr(obj, "__module__", None) != mod_name:
+            problems.append(f"{mod_name}.{attr}: replaced with a function "
+                            f"from module {getattr(obj, '__module__', None)!r}")
+        else:
+            present.append(obj)
+    assert not problems, (
+        "session-start control obligations violated (round-17 joint F1 — "
+        "a change fails explicitly, it never removes an obligation): "
+        + "; ".join(problems))
+    # ADDITIONS: control-named attributes not in the inventory join the
+    # obligation (they must be ordinary same-module functions — the
+    # round-16 door — and must have executed like any control).
+    expected = set(_EXPECTED_CONTROLS)
+    added = [(mn, n, vars(m)[n]) for mn, m in mods.items()
+             for n in vars(m)
+             if n.startswith("control_") and (mn, n) not in expected]
+    nonfunctions = [(mn, n, type(f).__name__) for mn, n, f in added
+                    if not isinstance(f, _types.FunctionType)
+                    or getattr(f, "__module__", None) != mn]
     assert not nonfunctions, (
-        f"control_* object(s) that are not ordinary functions: "
-        f"{nonfunctions} — arbitrary callables can define __eq__/__hash__, "
-        f"so only types.FunctionType is admitted to the identity contract "
-        f"(round-16 joint F1); rewrite the control as a def or rename it")
-    discovered = [f for _, _, f in candidates]
+        f"added control_* object(s) that are not ordinary functions of "
+        f"their own module: {nonfunctions} — arbitrary callables can "
+        f"define __eq__/__hash__, so only types.FunctionType is admitted "
+        f"to the identity contract (round-16 joint F1); rewrite the "
+        f"control as a def or rename it")
+    discovered = present + [f for _, _, f in added]
+    # The selection convenience sits AFTER the structural clauses (1-3 and
+    # the additions door), which need no registry: a direct call with an
+    # empty registry must still fail loudly on a planted non-function —
+    # placing this skip first made that outcome ORDER-DEPENDENT under
+    # pytest-randomly (caught at the round-18 gating run: 2479/9 on one
+    # seed vs 2480/8 deterministic — the found-in-fix class).
     if not EXECUTED:
         pytest.skip("no control executions recorded — the control-invoking "
                     "tests were not selected in this session; run the full "
@@ -1304,6 +1369,73 @@ def test_equal_comparing_callables_cannot_satisfy_each_other__control():
     finally:
         for k in set(EXECUTED) - before:
             EXECUTED.pop(k, None)             # probe hygiene
+
+
+def test_changed_controls_fail_explicitly_not_silently__controls(
+        monkeypatch):
+    """THE REVIEWER'S ROUND-17 CONSTRUCTION, permanent, all four cases —
+    run against the REAL gate over a controlled one-module inventory (a
+    synthetic module + a monkeypatched session-start inventory, so each
+    case exercises the gate's own clauses end-to-end, mid-session,
+    without depending on the rest of the surface having run):
+
+      1. replacement with a non-callable value    -> explicit failure
+      2. replacement with a foreign-module function -> explicit failure
+      3. removal of the attribute                 -> explicit failure
+      4. replacement with a NEW valid same-module function:
+           unexecuted -> explicit failure;
+           executed-and-asserted -> the gate ACCEPTS it (the reviewer's
+           "unless the newly present function itself was executed").
+
+    Before round 17 the discovery filters silently OMITTED cases 1-3 —
+    the gate reported success over a reduced set; the session-start
+    inventory turns every change into a named failure: a change never
+    removes an obligation."""
+    import types as _t
+    fake = _t.ModuleType("fake_seam_mod")
+
+    def control_probe():
+        return True
+    control_probe.__module__ = "fake_seam_mod"
+    fake.control_probe = control_probe
+    monkeypatch.setattr(sys.modules[__name__], "_EXPECTED_CONTROLS",
+                        (("fake_seam_mod", "control_probe"),))
+    monkeypatch.setattr(sys.modules[__name__], "_seam_modules",
+                        lambda: [fake])
+    keys_before = set(EXECUTED)
+    try:
+        assert_control(control_probe)             # the obligation ran
+
+        fake.control_probe = 42                   # case 1: non-callable
+        with pytest.raises(AssertionError, match="non-function"):
+            test_every_control_was_executed_and_asserted()
+
+        import json                               # case 2: foreign module
+        fake.control_probe = json.dumps
+        with pytest.raises(AssertionError,
+                           match="function from module 'json'"):
+            test_every_control_was_executed_and_asserted()
+
+        del fake.control_probe                    # case 3: removed
+        with pytest.raises(AssertionError, match="REMOVED"):
+            test_every_control_was_executed_and_asserted()
+
+        def _fresh():                             # case 4: valid same-module
+            return True
+        _fresh.__module__ = "fake_seam_mod"
+        _fresh.__name__ = "control_probe"
+        fake.control_probe = _fresh
+        with pytest.raises(AssertionError,
+                           match="NEVER EXECUTED-AND-ASSERTED"):
+            test_every_control_was_executed_and_asserted()  # unexecuted
+        assert_control(_fresh)                    # ...but executed is
+        test_every_control_was_executed_and_asserted()      # permitted
+
+        fake.control_probe = control_probe        # the honest baseline
+        test_every_control_was_executed_and_asserted()
+    finally:
+        for k in set(EXECUTED) - keys_before:
+            EXECUTED.pop(k, None)                 # probe hygiene
 
 
 def test_nonfunction_control_fails_the_gate_loudly__control(monkeypatch):
