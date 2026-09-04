@@ -242,6 +242,12 @@ FRAME_ATTRS = frozenset({
     "f_globals", "f_locals", "f_builtins", "f_back", "tb_frame", "gi_frame",
     "cr_frame", "ag_frame", "__globals__", "__builtins__", "__dict__",
     "__loader__", "__spec__", "__subclasses__",
+    # ROUND-15: the LOOKUP dunders — getattr by another name, and the
+    # import primitive as an attribute — join the enumerated set, and the
+    # set is the ONE dunder rule for BOTH forms: membership, never shape
+    # (a dunder like __name__ / __class__ / __version__ / __traceback__
+    # is ordinary data; 96 dotted dunders in src are exactly those).
+    "__getattribute__", "__getattr__", "__import__",
 })
 
 #: The no-argument namespace-mapping calls (round-12).
@@ -329,7 +335,7 @@ def getattr_census(source, rel):
     as {(rel, receiver, attr): count} — the reader the both-directions
     sweep compares against GETATTR_ALLOWANCES. Refusals (untabled sites)
     are connect_census's business; this reader only counts allowances."""
-    seen = {}
+    seen, untabled = {}, []
     for n in ast.walk(ast.parse(source)):
         if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                 and n.func.id == "getattr" and len(n.args) >= 2
@@ -338,7 +344,128 @@ def getattr_census(source, rel):
             key = (rel, ast.unparse(n.args[0]), n.args[1].value)
             if key in GETATTR_ALLOWANCES:
                 seen[key] = seen.get(key, 0) + 1
+            else:
+                untabled.append(key)
+    seen["__untabled__"] = tuple(untabled)
     return seen
+
+
+#: THE SHARED ATTRIBUTE-ACCESS CLASSES (round-15 F1 — the FIFTEENTH RUNG:
+#: the round-14 dotted-access boundary was SYNTACTIC — `obj.a` and
+#: `getattr(obj, "a")` perform the same receiver-dependent resolution,
+#: and "declared uncertainty" was authoring style, not a property the
+#: census can establish). ONE semantic rule classifies BOTH forms:
+#:   refused         — a dunder or FRAME_ATTRS name on ANY receiver
+#:                     (attribute-based discovery, whatever the base)
+#:   module-protected — the receiver is a protected module (sqlite3 /
+#:                     _sqlite3 / their aliases): the positive-surface
+#:                     rules govern (dotted: blessed opener only as a
+#:                     direct call, Connection annotation-only, ALLOWED_
+#:                     ATTRS or refuse; getattr: always a string-named
+#:                     lookup, never the blessed direct call — refused)
+#:   module-machinery — the receiver is sys / importlib / a machinery
+#:                     module: the registry and machinery rules govern
+#:                     (getattr: refused)
+#:   module-plain    — the receiver is an UNPROTECTED module-valued name
+#:                     (every import tracked, propagated through simple
+#:                     assignments): an ordinary attribute of an ordinary
+#:                     module — allowed, both forms
+#:   dataflow        — the receiver cannot be established as module-
+#:                     valued: OBJECT DATAFLOW. Outside the census's
+#:                     completeness claim for BOTH forms, stated: the
+#:                     census does not know the receiver's runtime type
+#:                     under either syntax, and dotted syntax proves
+#:                     nothing about it. The receiver was constructed
+#:                     somewhere under the rules governing its
+#:                     construction; a hostile __getattr__ returning a
+#:                     facility is that object's behaviour, not ambient-
+#:                     facility discovery by src.
+#: The ONE mechanically justified difference between the forms: a
+#: getattr name can be NON-LITERAL (computed), which dotted syntax cannot
+#: express — non-literal names refuse (round 13). GETATTR_ALLOWANCES is
+#: retained as the INVENTORY of literal-getattr sites with their
+#: consumption — hygiene swept both directions, no longer a safety claim
+#: for one syntax.
+ATTRIBUTE_CLASSES = ("refused", "module-protected", "module-machinery",
+                     "module-plain", "dataflow")
+
+
+def _classify_attribute(base, attr, ctx):
+    """The shared decision for one attribute access, either form. `ctx`
+    is the per-source binding context the main walk builds."""
+    root = base.id if isinstance(base, ast.Name) else None
+    if attr in FRAME_ATTRS:
+        return "refused"
+    if root in PROTECTED_MODULES or root in ctx["protected_aliases"]:
+        return "module-protected"
+    if root in ctx["sys_names"] or root in ctx["importlib_names"] \
+            or root in MACHINERY_MODULES:
+        return "module-machinery"
+    if root in ctx["module_valued"] or ast.unparse(base) in ctx["module_valued"]:
+        return "module-plain"
+    return "dataflow"
+
+
+def _binding_context(tree):
+    """The per-source binding context the classifier needs — the same
+    facts the main walk collects (kept in one place so both forms and
+    the readers see ONE context)."""
+    sys_names, importlib_names = {"sys"}, {"importlib"}
+    protected_aliases, module_valued = {}, set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                local = alias.asname or alias.name.split(".")[0]
+                module_valued.add(local)
+                if alias.name == "sys" and alias.asname:
+                    sys_names.add(alias.asname)
+                elif alias.name == "importlib" and alias.asname:
+                    importlib_names.add(alias.asname)
+        elif isinstance(node, ast.ImportFrom) and node.module \
+                and node.module.split(".")[0] in PROTECTED_MODULES:
+            for alias in node.names:
+                protected_aliases[alias.asname or alias.name] = (
+                    node.module, alias.name)
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Name) \
+                    and node.value.id in module_valued:
+                for tgt in node.targets:
+                    txt = ast.unparse(tgt)
+                    if txt not in module_valued:
+                        module_valued.add(txt); changed = True
+    return {"sys_names": sys_names, "importlib_names": importlib_names,
+            "protected_aliases": protected_aliases,
+            "module_valued": module_valued}
+
+
+def attribute_census(source, rel):
+    """THE SHARED SEMANTIC INVENTORY (the reviewer's round-15 feedback):
+    every attribute access in `source`, BOTH forms, classified by the one
+    rule — [(form, receiver, attr, class)] with form in {"dotted",
+    "getattr"}; a non-literal getattr name is reported as class
+    "refused" with attr "<non-literal>". Paired tests compare the class
+    of the same (receiver, attr) through both forms; the src sweep
+    counts by form x class."""
+    tree = ast.parse(source)
+    ctx = _binding_context(tree)
+    out = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Attribute):
+            out.append(("dotted", ast.unparse(n.value), n.attr,
+                        _classify_attribute(n.value, n.attr, ctx)))
+        elif (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+              and n.func.id == "getattr" and len(n.args) >= 2):
+            name = n.args[1]
+            if isinstance(name, ast.Constant) and isinstance(name.value, str):
+                out.append(("getattr", ast.unparse(n.args[0]), name.value,
+                            _classify_attribute(n.args[0], name.value, ctx)))
+            else:
+                out.append(("getattr", ast.unparse(n.args[0]),
+                            "<non-literal>", "refused"))
+    return out
 
 #: The machinery-modules class (round-11, the class exhausted rather than
 #: the named form fixed): stdlib modules that can produce modules or the
@@ -650,37 +777,32 @@ def connect_census(source, rel):
                 base = node.args[0]
                 if isinstance(name_arg, ast.Constant) \
                         and isinstance(name_arg.value, str):
-                    if name_arg.value.startswith("__") \
-                            or name_arg.value in FRAME_ATTRS:
+                    # ROUND-15 F1 — THE FIFTEENTH RUNG: the SAME classifier
+                    # as dotted access. Refused classes refuse; module-
+                    # plain and dataflow pass here exactly as their dotted
+                    # twins do (the inventory sweep, not the census,
+                    # polices the GETATTR_ALLOWANCES hygiene).
+                    ctx = {"sys_names": sys_names,
+                           "importlib_names": importlib_names,
+                           "protected_aliases": protected_aliases,
+                           "module_valued": module_valued}
+                    cls = _classify_attribute(base, name_arg.value, ctx)
+                    if cls == "refused":
                         bump(rel + f" [REFUSED: getattr with the dunder/"
                                    f"frame name {name_arg.value!r} — a "
                                    f"spelling of attribute-based "
                                    f"discovery (round-12)]")
-                    elif ast.unparse(base) in module_valued \
-                            or (isinstance(base, ast.Name)
-                                and base.id in module_valued):
-                        bump(rel + f" [REFUSED: literal getattr on "
-                                   f"{ast.unparse(base)}, a MODULE-VALUED "
-                                   f"name in this file — attribute "
-                                   f"discovery on a namespace is never a "
-                                   f"tabled probe, whatever the name "
-                                   f"(round-14; the binding is what the "
-                                   f"census can establish)]")
-                    elif (rel, ast.unparse(base), name_arg.value) \
-                            not in GETATTR_ALLOWANCES:
-                        # ROUND-14 F1 — THE FOURTEENTH RUNG: the name is
-                        # proven, the receiver is not; a literal getattr is
-                        # a declared uncertainty about its receiver, and
-                        # every one src carries is tabled with its
-                        # provenance and consumption. Untabled refuses.
-                        bump(rel + f" [REFUSED: literal getattr "
-                                   f"{ast.unparse(base)}.{name_arg.value} "
-                                   f"on a receiver whose provenance is not "
-                                   f"tabled — a harmless name does not "
-                                   f"establish a safe receiver (round-14); "
-                                   f"table it with its category and "
-                                   f"consumption or use dotted access on "
-                                   f"a known type]")
+                    elif cls == "module-protected":
+                        bump(rel + " [REFUSED: getattr on a protected "
+                                   "module — a string-named lookup is "
+                                   "never the blessed direct call "
+                                   "(round-15: one classifier, both "
+                                   "forms)]")
+                    elif cls == "module-machinery":
+                        bump(rel + " [REFUSED: introspective access to "
+                                   "interpreter module machinery — cannot "
+                                   "be ruled out as registry access "
+                                   "(round-11)]")
                 else:
                     # ROUND-13 F1 — THE THIRTEENTH RUNG: the round-12
                     # self/cls exemption rested on a NAMING CONVENTION —

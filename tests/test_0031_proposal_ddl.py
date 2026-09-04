@@ -359,8 +359,10 @@ def test_resolution_ledger_gate(case, builder, expect):
 import sys as _sys
 _sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
 from connection_census import (ALLOWED_ATTRS,  # noqa: E402
+                               ATTRIBUTE_CLASSES,
                                CAPABILITY_DISCOVERY_FORMS,
                                GETATTR_ALLOWANCES,
+                               attribute_census as _attribute_census,
                                connect_census as _connect_census,
                                getattr_census as _getattr_census)
 
@@ -824,17 +826,16 @@ CAPABILITY_DISCOVERY_PROBES = [
      "import sys\nd = sys.__dict__\n", True),
     ("introspective-machinery", "ROUND-13: vars on any object refuses (receiver type not establishable)",
      "class A: pass\nd = vars(A())\n", True),
-    ("introspective-machinery", "ROUND-14: a plain literal getattr on an UNTABLED receiver refuses — the name is proven, the receiver is not",
-     'x = getattr(record, "lineage", None)\n', True),
+    ("introspective-machinery", "ROUND-15: a plain literal getattr on an unestablished receiver is OBJECT DATAFLOW — clean, exactly like its dotted twin (outside the claim for both forms; the inventory sweep, not the census, polices the table)",
+     'x = getattr(record, "lineage", None)\n', False),
     ("introspective-machinery", "a TABLED site (semantic.py: embed.id) is clean at its own file",
      ("semantic.py", 'ident = getattr(embed, "id", None)\n'), False),
     ("introspective-machinery", "ROUND-14 red-team: a tabled receiver NAME rebound to a module refuses (the binding is what the census can establish)",
      ("__init__.py", 'import sys\nllm = sys\nx = getattr(llm, "metering_capability", None)\n'), True),
-    ("introspective-machinery", "an unprotected module bound to the tabled name refuses too (module-valued is the category)",
-     ("__init__.py", 'import json\nllm = json\nx = getattr(llm, "metering_capability", None)\n'), True),
-    ("introspective-machinery", "an instance attribute assigned a module refuses at the probe",
-     ("__init__.py", 'import json\nclass A:\n    def m(self):\n        self.llm = json\n'
-                     '        return getattr(self.llm, "remove_usage_listener", None)\n'), True),
+    ("introspective-machinery", "ROUND-15: an unprotected module bound to the tabled name is MODULE-PLAIN — clean, exactly like `json.metering_capability` dotted",
+     ("__init__.py", 'import json\nllm = json\nx = getattr(llm, "metering_capability", None)\n'), False),
+    ("introspective-machinery", "getattr on a PROTECTED module refuses (a string-named lookup is never the blessed direct call)",
+     'import sqlite3\nf = getattr(sqlite3, "connect", None)\n', True),
     ("dynamic-evaluation", "eval refuses",
      'x = eval("__import__(\'sqlite3\')")\n', True),
     ("dynamic-evaluation", "exec refuses",
@@ -926,8 +927,8 @@ CAPABILITY_DISCOVERY_PROBES = [
      "                       (\"to_version\", self.to_version)):\n"
      "            if type(val) is not int:\n                p.append(f)\n"
      "        return p\n", False),
-    ("frame-introspection", "ROUND-14: the same literal at an untabled file refuses; at its tabled file it is clean",
-     'x = getattr(llm, "metering_capability", None)\n', True),
+    ("frame-introspection", "ROUND-15: the same literal getattr is DATAFLOW at any file — one class for both forms; the table is inventory, not classification",
+     'x = getattr(llm, "metering_capability", None)\n', False),
     ("frame-introspection", "the tabled __init__.py site is clean at its own file",
      ("__init__.py", 'x = getattr(llm, "metering_capability", None)\n'), False),
     ("frame-introspection", "an __mro__ walk is inert (classes, not namespaces)",
@@ -1147,11 +1148,17 @@ def test_identical_literal_names_differ_by_receiver__control():
 
     assert getattr(Plain(), "lineage", None) == ["a", "b"]
     assert getattr(Hostile(), "lineage", None) is json     # same name, a facility
-    refused = _connect_census('x = getattr(record, "lineage", None)\n', "x.py")
-    assert any("provenance is not tabled" in k for k in refused), refused
-    allowed = _connect_census('x = getattr(record, "lineage", None)\n',
-                              "scope_read.py")
-    assert not any("REFUSED" in k for k in allowed), allowed
+    # ROUND-15: the census classifies BOTH forms of this access as object
+    # DATAFLOW — outside its claim under either syntax — and the
+    # GETATTR_ALLOWANCES sweep (not the census) inventories the getattr
+    # form: at x.py the site is UNTABLED, at scope_read.py it is tabled.
+    both = _attribute_census('x = getattr(record, "lineage", None)\n'
+                             'y = record.lineage\n', "x.py")
+    assert {c for _, _, _, c in both} == {"dataflow"}, both
+    assert ("x.py", "record", "lineage") in _getattr_census(
+        'x = getattr(record, "lineage", None)\n', "x.py")["__untabled__"]
+    assert _getattr_census('x = getattr(record, "lineage", None)\n',
+                           "scope_read.py")["__untabled__"] == ()
 
 
 def test_getattr_allowances_sweep_both_directions():
@@ -1168,7 +1175,11 @@ def test_getattr_allowances_sweep_both_directions():
     for py in sorted(root.rglob("*.py")):
         rel = str(py.relative_to(root))
         text = py.read_text()
-        for key, n in _getattr_census(text, rel).items():
+        seen = _getattr_census(text, rel)
+        assert seen.pop("__untabled__") == (), (
+            f"UNTABLED literal getattr in {rel} — inventory it in "
+            f"GETATTR_ALLOWANCES with its category and consumption")
+        for key, n in seen.items():
             observed[key] += n
         hits = _connect_census(text, rel)
         assert not any("REFUSED" in k for k in hits), (rel, hits)
@@ -1179,3 +1190,88 @@ def test_getattr_allowances_sweep_both_directions():
     for (rel, _, _), (count, category, consumption) in GETATTR_ALLOWANCES.items():
         assert (root / rel).exists(), rel
         assert count >= 1 and category and consumption
+
+
+# ---------- round-15 F1: ONE semantic rule for both attribute-access forms
+
+PAIRED_ACCESSES = [
+    # (label, preamble, receiver expr, attr, expected class for BOTH forms)
+    ("plain receiver, plain name -> object dataflow",
+     "", "record", "lineage", "dataflow"),
+    ("call receiver (a hostile instance), plain name -> object dataflow",
+     "", "Hostile()", "lineage", "dataflow"),
+    ("attribute receiver, plain name -> object dataflow",
+     "", "self.store", "local_origin", "dataflow"),
+    ("dunder name on any receiver -> refused",
+     "", "record", "__dict__", "refused"),
+    ("frame attribute on any receiver -> refused",
+     "", "f", "__globals__", "refused"),
+    ("unprotected module, plain name -> module-plain",
+     "import json\n", "json", "dumps", "module-plain"),
+    ("module rebound through assignment, plain name -> module-plain",
+     "import json\nllm = json\n", "llm", "metering_capability",
+     "module-plain"),
+    ("unprotected module, dunder name -> refused",
+     "import json\n", "json", "__loader__", "refused"),
+    ("protected module -> module-protected",
+     "import sqlite3\n", "sqlite3", "connect", "module-protected"),
+    ("machinery module -> module-machinery",
+     "import sys\n", "sys", "modules", "module-machinery"),
+]
+
+
+@pytest.mark.parametrize("label,pre,recv,attr,expected", PAIRED_ACCESSES,
+                         ids=[p[0] for p in PAIRED_ACCESSES])
+def test_both_attribute_forms_share_one_classification(label, pre, recv,
+                                                        attr, expected):
+    """Round-15 F1 — THE FIFTEENTH RUNG: the round-14 boundary between
+    `getattr(obj, "a")` and `obj.a` was SYNTACTIC — both forms perform
+    receiver-dependent resolution and Python enforces no distinction —
+    so ONE classifier now decides both. The reviewer's required paired
+    test: the same receiver and attribute through both forms receive the
+    same class. The only mechanically justified difference (a non-literal
+    getattr name, which dotted syntax cannot express) is tested below."""
+    src = pre + f"a = getattr({recv}, {attr!r}, None)\nb = {recv}.{attr}\n"
+    rows = _attribute_census(src, "x.py")
+    got = {form: cls for form, r, a, cls in rows if r == recv and a == attr}
+    assert set(got) == {"getattr", "dotted"}, rows
+    assert got["getattr"] == got["dotted"] == expected, (label, got)
+    assert expected in ATTRIBUTE_CLASSES
+
+
+def test_the_one_justified_difference_is_the_non_literal_name__control():
+    """The single asymmetry the classifier keeps, and why it is
+    mechanical: a getattr name can be COMPUTED, which dotted syntax
+    cannot express — so a non-literal name refuses (round 13) while no
+    dotted access can reach that class. Asserted on the reader."""
+    rows = _attribute_census("x = getattr(obj, name)\n", "x.py")
+    assert rows == [("getattr", "obj", "<non-literal>", "refused")], rows
+    assert not any(a == "<non-literal>" for f, _, a, _ in
+                   _attribute_census("y = obj.name\n", "x.py") if f == "dotted")
+
+
+def test_shared_attribute_inventory_over_src():
+    """THE SHARED SEMANTIC INVENTORY (the reviewer's round-15 feedback),
+    swept over the shipped source: every attribute access in
+    src/veracium, both forms, falls in exactly one of the five classes;
+    NO access in src is 'refused' (an untabled dunder/frame access would
+    be); the module-governed classes are the ones the census's rules
+    reach; and the DATAFLOW count — the bulk of an ordinary program — is
+    reported as the size of what the completeness claim explicitly does
+    NOT cover under either syntax. The claim is as wide as the module-
+    governed classes and no wider, and it never says dotted syntax proves
+    a known type."""
+    import collections
+    root = SPEC.parents[1] / "src" / "veracium"
+    counts = collections.Counter()
+    for py in sorted(root.rglob("*.py")):
+        rel = str(py.relative_to(root))
+        for form, recv, attr, cls in _attribute_census(py.read_text(), rel):
+            assert cls in ATTRIBUTE_CLASSES, (rel, form, recv, attr, cls)
+            counts[(form, cls)] += 1
+    assert counts[("dotted", "refused")] == 0, dict(counts)
+    assert counts[("getattr", "refused")] == 0, dict(counts)
+    assert counts[("dotted", "dataflow")] > 1000     # an ordinary program
+    assert counts[("getattr", "dataflow")] == sum(
+        v[0] for v in GETATTR_ALLOWANCES.values()), (
+        "every literal-getattr site in src is dataflow and inventoried")
