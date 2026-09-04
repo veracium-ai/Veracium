@@ -134,7 +134,9 @@ def remember_report(mem: Memory, user_id: str, text: str,
          Invalid values raised and were never classified — not counted. An
          equal restatement of the baseline is inert but not an attempted
          raise — not counted. A restriction under `direct` is honoured — not
-         counted;
+         counted. The counter counts discards on COMPLETED writes: a
+         write that raises reports nothing and counts nothing (the raise is
+         the operator's signal on that path);
       6. only the effective values are persisted, through the §3a PINNED
          bridge: `direct` + nothing → `EvidenceContext.direct()`; `direct` +
          `derived_from=X` → `EvidenceContext.derived(X)` (the restriction

@@ -223,8 +223,8 @@ def test_author_has_no_default_of_its_own(tmp_path):
     try:
         server = build_server(mem, default_user=U)
         rem = [t for t in asyncio.run(server.list_tools()) if t.name == "remember"][0]
-        assert "default" not in rem.inputSchema["properties"]["author"] or \
-            rem.inputSchema["properties"]["author"]["default"] is None
+        author = _schema(rem, "input")["properties"]["author"]
+        assert author.get("default") is None
     finally:
         mem.close()
 
@@ -475,6 +475,20 @@ def test_no_umbrella_ordering_claim():
 # E2 / E3 / V-NO-USER-ID-ARG — the REFLECTED surface (discovered, not listed)
 # --------------------------------------------------------------------------- #
 
+def _schema(tool, which: str) -> dict:
+    """The reflected schema, SDK-version-tolerant (mcp 1.x spells it
+    `inputSchema`, 2.x `input_schema`) — and ASSERTED present for inputs:
+    a sweep over a missing key passes vacuously, which is how the first
+    branch CI run found this test sweeping nothing under the 2.x SDK."""
+    d = tool if isinstance(tool, dict) else tool.model_dump()
+    for k in (f"{which}Schema", f"{which}_schema"):
+        if d.get(k) is not None:
+            return d[k]
+    if which == "input":
+        raise AssertionError(f"no input schema reflected for tool {d.get('name')!r}: {sorted(d)}")
+    return {}
+
+
 def _reflected(tmp_path, cap=None):
     pytest.importorskip("mcp")
     mem = _mem(tmp_path, f"reflect-{cap}")
@@ -493,8 +507,9 @@ def test_capability_is_host_only(tmp_path):
         tools = _reflected(tmp_path, cap)
         assert tools, "no tools registered"
         for t in tools:
-            flat = json.dumps({"in": t.get("inputSchema"), "out": t.get("outputSchema"),
+            flat = json.dumps({"in": _schema(t, "input"), "out": _schema(t, "output"),
                                "desc": t.get("description")})
+            assert "properties" in _schema(t, "input") or t["name"] == "maintain"
             assert "capability" not in flat, (t["name"], cap)
             assert "provenance_raises_discarded" not in flat, (t["name"], cap)
 
@@ -506,15 +521,47 @@ def test_tool_schemas_omit_identity_arguments(tmp_path):
     built server's reflected schema of every registered tool, no allowlist.
     A model-suppliable `user_id` on recall would be a cross-principal READ."""
     tools = {t["name"]: t for t in _reflected(tmp_path)}
-    assert set(tools["remember"]["inputSchema"]["properties"]) == \
-        {"text", "author", "event_type", "date", "derived_from"}
-    assert set(tools["recall"]["inputSchema"]["properties"]) == {"query", "token_budget"}
-    assert set(tools["answer"]["inputSchema"]["properties"]) == {"query"}
-    assert set(tools["maintain"]["inputSchema"]["properties"]) == set()
+    props = {n: set(_schema(t_, "input").get("properties", {})) for n, t_ in tools.items()}
+    assert props["remember"] == {"text", "author", "event_type", "date", "derived_from"}
+    assert props["recall"] == {"query", "token_budget"}
+    assert props["answer"] == {"query"}
+    assert props["maintain"] == set()
     for name, t_ in tools.items():
-        flat = json.dumps({"in": t_.get("inputSchema"), "out": t_.get("outputSchema")})
+        flat = json.dumps({"in": _schema(t_, "input"), "out": _schema(t_, "output")})
         for forbidden in ("user_id", "proposer", "resolver", "turn_id", "principal"):
             assert forbidden not in flat, (name, forbidden)
+
+
+def test_a_smuggled_user_id_is_inert_on_every_read_tool(tmp_path):
+    """Research's red-team probe (2026-09-04), made permanent: absence-by-
+    schema is the mechanism, and this is its INERTNESS demonstrated rather
+    than asserted. With the deployment principal's fact written, a call that
+    smuggles `user_id="mallory"` through the framework (which drops unknown
+    arguments rather than refusing) returns the DEPLOYMENT principal's data,
+    and the foreign id's store holds nothing — on recall, answer and
+    maintain alike. The identity boundary holds by construction; a
+    conformant transport that refuses instead of dropping is stricter, and
+    also fine."""
+    pytest.importorskip("mcp")
+    mem = _mem(tmp_path, "smuggle", scripts=[
+        {"triples": [TRIPLE], "episode": "diet noted"}, "no"])
+    try:
+        server = build_server(mem, default_user=U, capability="direct")
+        asyncio.run(server.call_tool("remember", {"text": "(scripted)"}))
+        assert len(mem.store.edges(U)) == 1
+        for tool, args in (("recall", {"query": "diet"}), ("answer", {"query": "diet?"}),
+                           ("maintain", {})):
+            try:
+                out = asyncio.run(server.call_tool(tool, dict(args, user_id="mallory")))
+            except Exception as e:                       # a refusing transport is stricter, also fine
+                assert "user_id" in str(e) or "unexpected" in str(e).lower(), e
+                continue
+            if tool == "recall":
+                assert "dairy" in json.dumps(out, default=str)
+        assert mem.store.edges("mallory", active_only=False, include_quarantined=True) == []
+        assert len(mem.store.edges(U)) == 1
+    finally:
+        mem.close()
 
 
 def test_phase_a_inventory(tmp_path):
