@@ -144,7 +144,10 @@ documents.
 **4a. Who accepts a spec** *(Quentin, 2026-08-02)*.
 
 > **External review is required to reach `accepted`. Dev sets the status once
-> the review's comments have been satisfied.**
+> the review's comments have been satisfied — or, for a spec the owner rules
+> needs no external round, on the owner's explicit acceptance word, recorded
+> as such in the spec's Review-closure section.** *(the second path: Quentin,
+> 2026-09-04, accepting specs/0032 — the first spec to take it)*
 
 Research advises and rules on trust semantics; **external review is not
 optional and not advisory for this step** — a spec cannot reach `accepted`

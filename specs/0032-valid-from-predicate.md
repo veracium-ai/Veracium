@@ -1,10 +1,11 @@
 # Feature spec: the valid-time predicate at the present
 
-Spec-Status: draft
+Spec-Status: accepted
 
 | | |
 |---|---|
-| **Version** | **v1** — drafted 2026-09-04 by dev on Quentin's ruling of the same day (**option (a)**: "a short owner-accepted `valid_from`-predicate spec"), the ruling that resolves the second leg of specs/0031 §5's ordering precondition. The mechanism this spec pins is ALREADY SHIPPED at `d83775d` (the S2 commit, CI 33870294444 test lanes green; the process gate's red and its closure at `34a16b0`/`76a205b` are disclosed in that line's history) — this document exists so that the precondition's letter ("that spec exists, is accepted, and lands") is satisfied by a specification, not by an inference from a changelog. Research co-checks against 0030 §2c/V-NORM-TOTAL, 0028 §4a, 0030 §3/§4e and 0031 §5 before the acceptance word (done 2026-09-04; its edits are in this text). |
+| **Version** | **v2** — **ACCEPTED 2026-09-04 by the owner's word** (Quentin, in the dev session: "I accept", covering three items together: this spec's status flip; research's harness manifest re-pin, committed as `53e2d75` (digest `57d85ef2…`); the PROCESS §4a owner-acceptance line). Drafted, co-checked and pushed as `cf61cb5` the same day; the acceptance fold is the commit carrying this cell. |
+| | **v1** — drafted 2026-09-04 by dev on Quentin's ruling of the same day (**option (a)**: "a short owner-accepted `valid_from`-predicate spec"), the ruling that resolves the second leg of specs/0031 §5's ordering precondition. The mechanism this spec pins is ALREADY SHIPPED at `d83775d` (the S2 commit, CI 33870294444 test lanes green; the process gate's red and its closure at `34a16b0`/`76a205b` are disclosed in that line's history) — this document exists so that the precondition's letter ("that spec exists, is accepted, and lands") is satisfied by a specification, not by an inference from a changelog. Research co-checks against 0030 §2c/V-NORM-TOTAL, 0028 §4a, 0030 §3/§4e and 0031 §5 before the acceptance word (done 2026-09-04; its edits are in this text). |
 | **Author / session** | dev (veracium-69); mechanism, cells and CHANGELOG entry by dev; the ruling and the acceptance Quentin's; research's harness Tier-7/S2 receipt at `d83775d` is the acceptance instrument (both directions observed live) |
 | **Scope** | one predicate, two records, the present only: `Edge.valid_now`, `Episode.valid_now`, folded into `Edge.assertable` / `Episode.assertable`. No change to the as-of path (0028/0030), to ingest's skew refusal (`MAX_FUTURE_SKEW`), or to the gate's routing (0023 §4a-iv) |
 | **Acceptance** | owner-accepted, no external round — specs/0031 round-1 F6 requires that the spec "exist, be accepted, and land" and does not demand an external round for it; the owner's option-(a) ruling of 2026-09-04 fixes that path; see `## Review closure` |
@@ -185,7 +186,7 @@ turn True into False, never the reverse).
 | **V-EPISODE** the episode twin, by ISO date | `::test_episode_valid_now_by_iso_date` (5 dates incl. time parts) | CI |
 | **V-GATE** the GROUNDED block excludes both sleepers; the edge is withheld, the episode fenced (0023 §4a-iv) | `::test_gate_grounded_block_excludes_not_yet_valid_records` | CI |
 | **V-CLOSED-DEFAULT** an unresolvable or future value costs assertability, never grants it | every cell above refuses in the doubtful direction; the clock-backwards case in §7 | CI |
-| **The live instrument** (acceptance): the frozen harness Tier-7 / S2 case, both directions | research's harness, run against `d83775d` under the FROZEN manifest digest `2ffb5ed5588dd482` (the measurement: inside-skew future `valid_from` → `assertable` False, violating the frozen pre-ruling expectation in exactly the predicted direction; the same edge, byte-unchanged, `assertable` True after its `valid_from` arrived — the +8 s live probe). The going-forward expectation is the RE-PINNED manifest `57d85ef2…` (S2's expectation flipped to `assertable: false` with the ruling, the sha, and the original prediction preserved in its `why`), staged in the harness tree and committed WITH this spec's acceptance — one owner word covering both, so the instrument reference is never ambiguous between the two digests | harness (research), receipt banked 2026-09-04 |
+| **The live instrument** (acceptance): the frozen harness Tier-7 / S2 case, both directions | research's harness, run against `d83775d` under the FROZEN manifest digest `2ffb5ed5588dd482` (the measurement: inside-skew future `valid_from` → `assertable` False, violating the frozen pre-ruling expectation in exactly the predicted direction; the same edge, byte-unchanged, `assertable` True after its `valid_from` arrived — the +8 s live probe). The going-forward expectation is the RE-PINNED manifest `57d85ef2…` (S2's expectation flipped to `assertable: false` with the ruling, the sha, and the original prediction preserved in its `why`), committed in the harness tree as `53e2d75da35b5a7fac1e244e17947cb1a710a647` (Tier-7 9/9 green re-verified before the commit) under the SAME owner word as this spec's acceptance, 2026-09-04 — the commit joins the second reference only; the receipt's measurement stays under the frozen digest, a historical fact | harness (research), receipt banked 2026-09-04 |
 
 **Reproducer retention:** 0030 §4e's measured construction is the
 permanent +23 h cell.
@@ -277,8 +278,8 @@ episode belongs in the fenced section at all.
 
 ## Review closure
 
-**Owner-accepted (pending Quentin's acceptance word on this text), no
-external round by design.** specs/0031 §5 records the owner's ruling of
+**Owner-accepted — Quentin's word "I accept", 2026-09-04, in the dev
+session, on v1 as pushed at `cf61cb5` — no external round by design.** specs/0031 §5 records the owner's ruling of
 2026-08-31 that the `valid_from` predicate closes "separately (option (b))";
 0031's round-1 finding F6 required that a specification exist, be
 accepted, and land before Phase A; Quentin chose option (a) on 2026-09-04
@@ -289,7 +290,7 @@ What closes instead:
 | # | obligation | closed by |
 |---|---|---|
 | 1 | the predicate LANDS | `d83775d` (`Edge.valid_now`, `Episode.valid_now`, `schema.as_utc`); `tests/test_s2_valid_from_predicate.py` — 16 cells |
-| 2 | the acceptance instrument passes both directions | research's frozen harness Tier-7 / S2 receipt against `d83775d` (inside-skew future `valid_from` → `assertable` False; the arrived `valid_from` → True, nothing rewritten), 2026-09-04 |
+| 2 | the acceptance instrument passes both directions | research's frozen harness Tier-7 / S2 receipt against `d83775d` (inside-skew future `valid_from` → `assertable` False; the arrived `valid_from` → True, nothing rewritten), 2026-09-04, measured under the frozen digest `2ffb5ed5588dd482`; the going-forward expectation re-pinned at `53e2d75` @ `57d85ef2…` |
 | 3 | 0030 §4e's measured divergence cell reads agreement, the other cell untouched | `::test_the_0030_divergence_cell_is_closed`; 0030's implementation-note cell (research) |
-| 4 | 0031 §5's precondition, both legs | leg 1 (owner-ruled, S2 instrument): #2; leg 2 (spec exists, is accepted, lands): this spec + its acceptance + #1 |
+| 4 | 0031 §5's precondition, both legs | leg 1 (owner-ruled, S2 instrument): #2; leg 2 (spec exists, is accepted, lands): this spec (`cf61cb5`) + the acceptance word of 2026-09-04 (v2 cell) + #1 — DISCHARGED |
 | 5 | the specification exists and is co-checked | research's co-check, 2026-09-04: every §2c-ii printed result re-derived from the tree; every line cite landed; §3's one-flipped-cell claim consistent with 0030 §4e; the §6 instrument row matched to the receipt and the staged re-pin; one substantive edit (the naive≡UTC attribution, §2/V-NORM — taken) and a citation family of four (taken, including the shipped `as_utc` docstring) |
