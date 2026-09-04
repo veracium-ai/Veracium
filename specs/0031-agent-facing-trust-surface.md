@@ -1651,7 +1651,7 @@ the human who resolves it?
 | external 16 (SENT) | 2026-09-04 | — | SENT (round-16 package 1aabb39e517ceef1… @ pin c0affa0 — the RESEAL; the first seal 95d8ac8f… @ caf3bf4 was refused pre-dispatch by research's probe re-run and disclosed in the package; sealed AFTER this row; sha pinned on return) |
 | external 16 (verdict) | 2026-09-04 | 0 | ACCEPTED — 0031 v21 (the reseal 1aabb39e… @ c0affa03…); the invariant surface frozen; no findings |
 
-**Per-finding closure ledger — PROCESS §4a.** **38 finding(s) for `0031`; 220 across the 6 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **38 finding(s) for `0031`; 277 across the 7 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

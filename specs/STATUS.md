@@ -4,7 +4,7 @@
 
 # Spec status
 
-**32 specs · 30 accepted · 349 external review
+**32 specs · 30 accepted · 367 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -41,8 +41,8 @@ is the number that decides what can be built.
 | **0026** | label/value agreement check | `accepted` | 2026-09-04 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0028** | as-of / point-in-time query | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
-| **0029** | transaction-time carrier | `accepted` | 2026-09-01 | 0 | 0 | 0 | 0 | 0 | — |
-| **0030** | time-relative trust classification | `accepted` | 2026-09-03 | 0 | 0 | 0 | 0 | 0 | — |
+| **0029** | transaction-time carrier | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
+| **0030** | time-relative trust classification | `accepted` | 2026-09-04 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-04 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 

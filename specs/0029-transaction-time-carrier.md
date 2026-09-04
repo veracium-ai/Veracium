@@ -631,3 +631,9 @@ assertion with an asserted negative control; seven mutations proven, three
 cross-machine. §6a's full acceptance corpus (the fifteen joint scenarios)
 is an implementation obligation, frozen model-free before the first run
 per the house pattern.
+
+**Structured record:** the joint arc's ONE generated ledger — every finding
+of all eighteen rounds, each row naming its target artifact (`→ 0029` for
+the rows above) — lives in specs/0030 `## Review closure`, validated by
+`specs/render_closure.py` against `specs/reviews.py` (research's ruling,
+2026-09-04). The narrative here stays; the machine-checkable half is there.

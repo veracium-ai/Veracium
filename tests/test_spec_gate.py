@@ -2197,11 +2197,39 @@ def test_new_closure_evidence_is_behavioral():
         # permanent batteries). Growing this is a visible diff.
         ("0031", "external"): 4,
     }
+    # 0030 (2026-09-04, the joint arc's ledger written after acceptance):
+    # its text-only closures are NOT prefix-shaped — design/prose findings
+    # interleave with mechanism findings (round 1 entirely text: the
+    # spec-designated tests do not exist because implementation is coupled
+    # to acceptance; then R2 F1/F3/F7/F8 and R3 F5 beside mechanism rows in
+    # the same rounds). A round cutoff would silently exempt every
+    # mechanism finding in those rounds too. So: a PER-FINDING table,
+    # finding id → reason, which keeps exactly the property the cutoff
+    # bought (growing it is a visible diff) at finding grain. Every exempt
+    # row must STILL cite an openable fold (`git show`), never prose —
+    # tests/test_0030_closure_ledger.py holds that and the table's totality.
+    TEXT_ONLY = {
+        '0030-R1-1': 'both: [F1] The pair cannot reconstruct `EdgeStateAt(known_as_of)` — same-ID ',
+        '0030-R1-2': 'both: [F2] Current trust and historical knowledge require two separate state',
+        '0030-R1-3': '0029: [F3] 0029\'s event cuts can split an atomic mutation — a cutoff between',
+        '0030-R1-4': '0029: [F4] V-TOTAL misses a shipped classification-relevant mutation — four ',
+        '0030-R1-5': '0029: [F5] 0029\'s event schema remains unresolved — one `content_digest` col',
+        '0030-R1-6': '0030: [F6] 0030\'s exact classifier still does not implement its input contra',
+        '0030-R1-7': '0030: [F7] 0030 evaluates hidden records before applying visibility — a hidd',
+        '0030-R1-8': '0030: [F8] 0030\'s prior fixes were not swept through every carrier — six rem',
+        '0030-R2-1': '0029: [F1] migrated edges still lack reconstructable epoch state (no baselin',
+        '0030-R2-3': '0030: [F3] current valid-time and semantic changes do not subtract (snapshot',
+        '0030-R2-7': '0030: [F7] datetime normalization is not total (`as_utc(None) -> None` lets ',
+        '0030-R2-8': 'both: [F8] 0029 \'digest-only\'/\'one digest\'/data-handling residue; 0030 unkno',
+        '0030-R3-5': '0030: [F5] 0030 — the reason×cutoff matrix contradicts rule 8 and V-SUBTRACT',
+    }
     offenders = []
     for row in closure_findings.CLOSURES:
         spec, kind, rnd, fid = row[0], row[1], row[2], row[3]
         evidence = row[6]
         if rnd <= CUTOFFS.get((spec, kind), 0):
+            continue
+        if fid in TEXT_ONLY and evidence.startswith("git show "):
             continue
         if _p4_evidence_problem(evidence):
             offenders.append(f"{spec} {kind} {rnd} {fid}: "

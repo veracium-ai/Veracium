@@ -356,9 +356,26 @@ SPEC_0030 = (Path(__file__).resolve().parents[1]
 
 
 def _spec_text():
+    """The spec's NORMATIVE text. The propagation and carrier checks stop at
+    `## Review closure` — the same history boundary `lint_withdrawn`,
+    `render_index` and the invariant-citation gate use — because the
+    generated ledger there (landed 2026-09-04, after acceptance) quotes each
+    round's finding VERBATIM, and round 1's findings name the pre-carrier
+    signature by construction. A stale carrier is a superseded form in
+    normative text; a closure row saying "this was the old form and here is
+    the fold that removed it" is the record of exactly that removal. The
+    boundary is scoping, not a change to the frozen invariant surface."""
     if not SPEC_0030.exists():
         pytest.skip("0030 spec not reachable from this tree")
-    return SPEC_0030.read_text()
+    text = SPEC_0030.read_text()
+    # The heading must occur ONCE: a normative sentence quoting the literal
+    # heading would otherwise cut the scope early and silently NARROW the
+    # check (research's hardening note, 2026-09-04). Missing → whole text,
+    # the safe direction.
+    heading = "\n## Review closure"
+    assert text.count(heading) <= 1, "the closure heading occurs more than once"
+    cut = text.rfind(heading)
+    return text[:cut] if cut != -1 else text
 
 
 def test_every_model_rule_is_propagated_to_the_spec():

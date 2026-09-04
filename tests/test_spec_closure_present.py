@@ -9,17 +9,20 @@ an accepted spec whose closure section is still the template's draft text
 the next implementation commit trips over it. That is exactly how 0031
 reached `accepted` (round 16, 2026-09-04) with the placeholder and turned
 CI red at `d83775d`; 0030 reached `accepted` at joint round 18 the day
-before with the same placeholder and is still carrying it.
+before with the same placeholder and carried it until its ledger landed on
+2026-09-04.
 
 Property, checked over EVERY accepted spec (the domain, not the motivating
 case): at least one heading contains "Review closure" (0009/0010 use
-per-round headings plus a "Review closure ledger" subsection; 0026/0031
+per-round headings plus a "Review closure ledger" subsection; 0026/0030/0031
 carry the generated block; 0029/0032 are hand-written), and the text under
 the LAST such heading is not the placeholder.
 
-0030 is a STRICT xfail, not a name exemption: the row FAILS the suite the
-moment its ledger lands, forcing this file to forget it. A debt that expires
-by itself is a property; a name in an allow-list is not.
+A spec that is accepted-with-placeholder goes in PLACEHOLDER_DEBT as a
+STRICT xfail, not a name exemption: the row FAILS the suite the moment its
+ledger lands, forcing this file to forget it (0030 was the first and only
+entry, for one day). A debt that expires by itself is a property; a name in
+an allow-list is not.
 """
 from __future__ import annotations
 
@@ -32,10 +35,9 @@ SPECS = pathlib.Path(__file__).resolve().parent.parent / "specs"
 
 # Accepted specs whose closure section is KNOWN to be the placeholder, with
 # the reason and date. Strict: passing here is a failure — remove the row.
-PLACEHOLDER_DEBT = {
-    "0030": "accepted at joint round 18 (2026-09-03) with the template placeholder; "
-    "its 18-round ledger is queued (research's ruling: one ledger, target "
-    "artifact named per row) — remove this row when it lands",
+PLACEHOLDER_DEBT: dict[str, str] = {
+    # 0030 sat here from 2026-09-04 (accepted at joint round 18 with the
+    # template placeholder) until its ledger landed the same day.
 }
 
 PLACEHOLDER = re.compile(r"^\*n/a\s+[—-]\s+draft", re.I)

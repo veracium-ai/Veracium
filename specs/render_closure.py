@@ -29,7 +29,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SPECS = ROOT / "specs"
-TRACKED = ("0001", "0022", "0023", "0024", "0025", "0031")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3)
+TRACKED = ("0001", "0022", "0023", "0024", "0025", "0030", "0031")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3)
 
 
 def _is_sent(row) -> bool:
@@ -104,9 +104,16 @@ def render(spec: str) -> str:
     out.append("")
     out.append("| finding | round | what it was | closed in | evidence (runnable) |")
     out.append("|---|---|---|---|---|")
+    # a joint-arc ledger names the artifact each finding targeted (0030:
+    # research's ruling 2026-09-04) — shown in the row, read from TARGETS
+    try:
+        from closure_findings import TARGETS
+    except ImportError:  # pragma: no cover
+        TARGETS = {}
     for _spec, kind, rno, fid, summary, closed_in, evidence in mine:
         e = evidence.replace("|", "\\|")
-        out.append(f"| **{fid}** | {kind} {rno} | {summary} | {closed_in} | "
+        tgt = f"**→ {TARGETS[fid]}** " if fid in TARGETS else ""
+        out.append(f"| **{fid}** | {kind} {rno} | {tgt}{summary} | {closed_in} | "
                    f"`{e}` |")
     out.append("")
     out.append(END)
