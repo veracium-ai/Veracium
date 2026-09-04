@@ -1338,16 +1338,31 @@ def test_every_closure_evidence_command_actually_runs():
     NEEDS_QUIET = ("store_concurrency_harness",)
 
     runnable, quiet, skipped = [], [], []
+    # A text-only closure cites its fold with `git show <sha> -- <spec>` (the
+    # 0031 and 0030 ledgers, 2026-09-04). That is openable evidence in a git
+    # checkout and NOTHING in an sdist export — the offline launcher runs the
+    # suite from exactly such a tree, and the 0.19.0 release battery found it
+    # red for that reason alone. Outside a checkout those rows are SKIPPED
+    # WITH THEIR CAUSE NAMED in the transcript, the same class as the suite's
+    # other "not a git checkout" skips; inside one, none may be skipped, so
+    # the guard cannot hide a row from CI.
+    in_git_checkout = (root / ".git").exists()
     for row in CLOSURES:
         spec, _kind, _rno, fid, _summary, _closed, evidence = row
         # the launcher builds a venv and runs the entire suite: running it from
         # inside the suite would recurse
         if "run_offline.sh" in evidence:
             skipped.append(f"{spec} {fid} (launcher — run separately at seal)")
+        elif evidence.lstrip().startswith("git show ") and not in_git_checkout:
+            skipped.append(f"{spec} {fid} (history-citing evidence — not a git checkout)")
         elif any(n in evidence for n in NEEDS_QUIET):
             quiet.append((spec, fid, evidence))
         else:
             runnable.append((spec, fid, evidence))
+    if in_git_checkout:
+        assert not [s for s in skipped if "history-citing" in s], (
+            "history-citing rows were skipped inside a git checkout — the guard "
+            "must only fire where `git show` cannot run")
     assert quiet, ("no command claims the quiet lane — the harness that "
                    "measures contention was renamed, and it is now being "
                    "measured under load")

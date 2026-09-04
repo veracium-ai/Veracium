@@ -23,6 +23,16 @@ first contact) and receipted after merge (harness `5c778f6`: the P3-3
 elevation retired on purpose with its structured re-pin receipt; before-state
 preserved at digest `ebfabbfd…`).
 
+- **Fixed: the offline launcher's suite passes from a source export.** The
+  review-closure ledgers landed this week cite text-only closures with
+  `git show <fold-sha> -- <spec>`; those rows are openable in a git checkout
+  and unrunnable in an sdist export, which is where
+  `specs/evidence/offline/run_offline.sh` runs the suite — found red by this
+  release's own battery. The evidence runner now declares those rows skipped
+  with the cause named in its transcript when the tree has no `.git`, as a
+  whole set only (a partial skip is refused by the transcript validator), and
+  refuses any such skip inside a checkout, so CI still executes every row.
+
 *Note on this file:* the 2026-09-02 fold `efab441` overwrote the `## 0.18.0`
 heading with `## Unreleased`; it is restored below exactly as tagged.
 

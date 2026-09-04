@@ -143,9 +143,30 @@ def validate(transcript_path: pathlib.Path, specs_dir: pathlib.Path) -> list:
                         f"{len(commands)} command records")
 
     ledger = _ledger(specs_dir)
-    expected = {(c[0], c[3], c[6]) for c in ledger if "run_offline.sh" not in c[6]}
     launcher = {f"{c[0]} {c[3]} (launcher — run separately at seal)"
                 for c in ledger if "run_offline.sh" in c[6]}
+    # History-citing rows (`git show <fold-sha> -- <spec>`, the 0030/0031
+    # text-only closures) are openable in a git checkout and unrunnable in a
+    # source export — where the offline launcher runs the suite (found red at
+    # the 0.19.0 release battery, 2026-09-04). A transcript may declare them
+    # skipped with that ONE cause, and only as a WHOLE SET: every such row or
+    # none, never a subset — a partial skip would be a way to hide a failing
+    # row behind an environment claim. The runner asserts zero such skips
+    # inside a checkout, so the disposition exists only where `git show`
+    # cannot run.
+    history = {f"{c[0]} {c[3]} (history-citing evidence — not a git checkout)"
+               for c in ledger if c[6].lstrip().startswith("git show ")}
+    declared = set(data.get("skipped") or [])
+    history_declared = {s for s in declared if "history-citing" in s}
+    if history_declared and history_declared != history:
+        problems.append(
+            f"history-citing skips must be all-or-nothing: declared "
+            f"{sorted(history_declared)}, the ledger's history-citing rows are "
+            f"{sorted(history)}")
+    history_skipped = bool(history_declared) and history_declared == history
+    expected = {(c[0], c[3], c[6]) for c in ledger
+                if "run_offline.sh" not in c[6]
+                and not (history_skipped and c[6].lstrip().startswith("git show "))}
 
     seen = []
     for i, c in enumerate(commands):
@@ -186,9 +207,11 @@ def validate(transcript_path: pathlib.Path, specs_dir: pathlib.Path) -> list:
         problems.append(f"{spec} {fid}: executed but matches no closure row "
                         f"(argv differs, or the row was removed)")
 
-    if set(data.get("skipped") or []) != launcher:
-        problems.append(f"the skipped set is {sorted(data.get('skipped') or [])}, "
-                        f"expected exactly the launcher row(s) {sorted(launcher)}")
+    allowed = launcher | (history if history_skipped else set())
+    if declared != allowed:
+        problems.append(f"the skipped set is {sorted(declared)}, "
+                        f"expected exactly {sorted(allowed)} (the launcher row(s)"
+                        f"{', plus the history-citing rows as a whole' if history_skipped else ''})")
     return problems
 
 
