@@ -2187,6 +2187,15 @@ def test_new_closure_evidence_is_behavioral():
         # to point at. Growing a cutoff is meant to be a visible diff.
         ("0011", "internal"): 2,
         ("0026", "internal"): 2,
+        # 0031 (2026-09-04, the ledger written at acceptance after sixteen
+        # rounds): rounds 1-4 folded SPEC TEXT — the lattice, the direct
+        # bridge, the identity boundary, the digest minting, the retired
+        # umbrella — before behaviour existed to point at; their text-only
+        # closures cite the fold commit (`git show`), and their mechanism
+        # closures already cite pytest nodes. Every round from 5 on is
+        # governed and behavioral (the connection-acquisition ladder's
+        # permanent batteries). Growing this is a visible diff.
+        ("0031", "external"): 4,
     }
     offenders = []
     for row in closure_findings.CLOSURES:
