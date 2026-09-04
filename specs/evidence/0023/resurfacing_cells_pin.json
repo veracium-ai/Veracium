@@ -1,0 +1,174 @@
+{
+ "cells": {
+  "R1": {
+   "consequence": {
+    "value_in_context": true,
+    "value_in_grounded": false,
+    "value_in_unverified": true
+   },
+   "digest_matches_source": true,
+   "stored": {
+    "edges": [
+     {
+      "active": true,
+      "assertable": false,
+      "disclosure": "quarantined",
+      "object": "Porto"
+     }
+    ],
+    "episodes": [
+     {
+      "assertable": false,
+      "disclosure": "quarantined"
+     }
+    ],
+    "report": {
+     "birth_revocation_digest_present": true,
+     "facts": 0,
+     "quarantined": 1,
+     "quarantined_at_birth": 1
+    }
+   },
+   "values": [
+    "Porto"
+   ]
+  },
+  "R2": {
+   "consequence": {
+    "value_in_context": true,
+    "value_in_grounded": false,
+    "value_in_unverified": true
+   },
+   "statement": {
+    "complete": false,
+    "counts": {
+     "class-a-linked": 0,
+     "class-b-linkless": 0,
+     "class-c-unattributed": 2
+    },
+    "direct": 0
+   },
+   "stored": {
+    "edges": [
+     {
+      "active": true,
+      "assertable": false,
+      "disclosure": "use_only",
+      "object": "Lisbon"
+     }
+    ],
+    "episodes": [
+     {
+      "assertable": false,
+      "disclosure": "use_only"
+     }
+    ],
+    "report": {
+     "birth_revocation_digest_present": false,
+     "facts": 1,
+     "quarantined": 0,
+     "quarantined_at_birth": 0
+    }
+   },
+   "values": [
+    "Lisbon"
+   ]
+  },
+  "R3": {
+   "consequence": {
+    "Braga": {
+     "value_in_context": true,
+     "value_in_grounded": false,
+     "value_in_unverified": true
+    },
+    "carpenter": {
+     "value_in_context": true,
+     "value_in_grounded": false,
+     "value_in_unverified": true
+    }
+   },
+   "report_identified": {
+    "digest_matches_source": true,
+    "quarantined_at_birth": 1
+   },
+   "statement": {
+    "complete": false,
+    "counts": {
+     "class-a-linked": 0,
+     "class-b-linkless": 0,
+     "class-c-unattributed": 2
+    },
+    "direct": 2
+   },
+   "stored": {
+    "edges": [
+     {
+      "active": true,
+      "assertable": false,
+      "disclosure": "quarantined",
+      "object": "Braga"
+     },
+     {
+      "active": true,
+      "assertable": false,
+      "disclosure": "use_only",
+      "object": "carpenter"
+     }
+    ],
+    "episodes": [
+     {
+      "assertable": false,
+      "disclosure": "quarantined"
+     },
+     {
+      "assertable": false,
+      "disclosure": "use_only"
+     }
+    ],
+    "report": {
+     "birth_revocation_digest_present": false,
+     "facts": 1,
+     "quarantined": 0,
+     "quarantined_at_birth": 0
+    }
+   },
+   "values": {
+    "identified": "Braga",
+    "stripped": "carpenter"
+   }
+  },
+  "R4": {
+   "consequence_after_lift": {
+    "value_in_context": true,
+    "value_in_grounded": false,
+    "value_in_unverified": true
+   },
+   "digest_matches_source": true,
+   "stored_after_lift": {
+    "edges": [
+     {
+      "active": true,
+      "assertable": false,
+      "disclosure": "quarantined",
+      "object": "Faro"
+     }
+    ],
+    "episodes": [
+     {
+      "assertable": false,
+      "disclosure": "quarantined"
+     }
+    ],
+    "report": {
+     "birth_revocation_digest_present": true,
+     "facts": 0,
+     "quarantined": 1,
+     "quarantined_at_birth": 1
+    }
+   },
+   "values": [
+    "Faro"
+   ]
+  }
+ }
+}
