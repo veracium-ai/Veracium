@@ -1,6 +1,30 @@
 # Changelog
 
-## Unreleased
+## 0.19.0 — 2026-09-04
+
+**Upgrade recommendation:** every host running `veracium-mcp` should take
+this release — the MCP surface's provenance is now attested by the HOST, not
+declared by the model (specs/0031 Phase A). A deployment that declares nothing
+runs as before EXCEPT that new MCP writes carry the `third_party` baseline and
+a model-supplied `derived_from="user"` no longer elevates a write to
+mentionable; a first-party embedded host sets `VERACIUM_MCP_CAPABILITY=direct`
+(or `build_server(capability="direct")`) and recovers the mentionable class by
+attestation. Every MCP tool loses its `user_id` argument (the host process is
+the identity boundary). **Rollback rule:** roll back only to **0.18.1**, the
+designated compat release — never to 0.18.0, which would silently ignore the
+capability variable and restore the pre-attestation default. Records written
+under `direct` keep their meaning after a rollback. The on-disk store schema
+and the export format are unchanged from 0.18.0; no migration.
+
+*Acceptance evidence (research):* the Phase A capability floor was verified
+against a pre-committed instrument frozen BEFORE the implementation existed
+(veracium-harness `23c3ba5a`, tier-8 manifest digest `662ac798…`, 21/21 on
+first contact) and receipted after merge (harness `5c778f6`: the P3-3
+elevation retired on purpose with its structured re-pin receipt; before-state
+preserved at digest `ebfabbfd…`).
+
+*Note on this file:* the 2026-09-02 fold `efab441` overwrote the `## 0.18.0`
+heading with `## Unreleased`; it is restored below exactly as tagged.
 
 - **⚠ BREAKING (MCP surface): the host attests provenance; the model can only
   restrict it — specs/0031 Phase A.** Three changes to `veracium-mcp`, all
@@ -80,6 +104,8 @@
   ledgers outliving their writer. Found by the 0029/0030 external review
   (round 9); regression coverage: the reviewer's exact payload plus a
   12-cell field×type×side matrix, both operation orders.
+
+## 0.18.0 — 2026-08-31
 
 **Upgrade recommendation:** hosts that want paraphrase/synonym recall
 ("my vacation" finding "trip to Tokyo") should take this release and
