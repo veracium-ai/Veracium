@@ -1765,7 +1765,7 @@ drifts.)*
 | external 19 (SENT) | 2026-08-29 | — | SENT (package `0011-v19`, candidate draft v22 — the round-18 fold; §28 maps the finding). PROCESS-R18-1 closed by IDENTITY: one sentinel exception OBJECT per copy2/copytree case, raised as that exact object and asserted with caught.value IS sentinel; the cleanup-path assertions and the cleanup-delet… |
 | external 19 (verdict) | 2026-08-29 | 0 | 🏁 ACCEPTED — the exact package `0011-v19` (sha 71fae9d6 verified by the reviewer) and candidate draft v22; NO blocking, major, minor, policy or trust-model findings; finite design acceptance remains in force on the frozen S1-S7 invariant surface, and dev is authorized to advance the spec to accepted… |
 
-**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0011`; 182 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0011`; 220 across the 6 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
