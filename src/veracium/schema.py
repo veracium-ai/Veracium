@@ -30,7 +30,9 @@ def as_utc(dt: datetime) -> datetime:
     naive value is taken as UTC (the store's convention), an aware value
     is converted. Comparing naive to aware raises; comparing two aware
     values in different zones is correct but easy to misread. One
-    function, shared by every time predicate (specs/0030 §10)."""
+    function, shared by every time predicate. The normalize-before-compare
+    obligation is specs/0030's (§2c, V-NORM-TOTAL); the naive-means-UTC
+    convention is specs/0032's (§2, V-NORM)."""
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
@@ -509,8 +511,9 @@ class Edge(BaseModel):
         """THE VALID-TIME PREDICATE AT T = NOW (the S2 ruling, owner 2026-08-31,
         implemented 2026-09-04): a fact whose `valid_from` has not yet
         arrived is not assertable now — the lower bound of the half-open
-        interval `[valid_from, invalidated_at)` that specs/0028 §4b and
-        0030 §4b state for the as-of path, applied to the present. The
+        interval `[valid_from, invalidated_at)` that specs/0028 §4a step 3
+        and 0030 §3 (V-INTERVAL) state for the as-of path, applied to the
+        present (specs/0032 §4). The
         upper bound stays with `active` (an edge with `invalidated_at` set
         is inactive) — the future-`invalidated_at` cell is the 0019 question
         0030 deliberately leaves open, untouched here. Before this landed,
