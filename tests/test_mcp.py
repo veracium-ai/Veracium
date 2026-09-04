@@ -31,8 +31,12 @@ def test_mcp_tools_route_correctly():
         mem = Memory(llm=Fake(scripts),
                      config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
 
-        # user-authored fact
-        r = remember_impl(mem, "u", "USER: I have a cat named Minerva.", author="user", date="2026-06-01")
+        # user-authored fact. specs/0031 Phase A: `author="user"` is the
+        # model's say-so; what makes it the USER's class is the DEPLOYMENT's
+        # attestation (`capability="direct"`), which this test's intent
+        # always assumed and now states.
+        r = remember_impl(mem, "u", "USER: I have a cat named Minerva.", author="user",
+                          date="2026-06-01", capability="direct")
         assert r["facts"] == 1 and r["quarantined"] == 0
 
         # third-party content → quarantined, never a fact
@@ -170,8 +174,11 @@ def test_the_assistant_author_is_accepted_as_a_self_demotion(tmp_path):
     ]), config=MemoryConfig(
         db_path=f"{tmp_path}/m.db", wiki_recompile_after_writes=0))
     try:
+        # specs/0031 Phase A: the self-demotion is honoured where the
+        # deployment attests the model's labelling as its own (`direct`) —
+        # a RESTRICTION below the `user` baseline, stored as ASSISTANT.
         r = remember_impl(mem, "u", "the deploy succeeded",
-                          author="assistant")
+                          author="assistant", capability="direct")
         assert r is not None
         edges = list(mem.store.edges("u"))
         assert edges, "the assistant record did not reach the store"
@@ -182,5 +189,23 @@ def test_the_assistant_author_is_accepted_as_a_self_demotion(tmp_path):
                    for e in edges), (
             "assistant-authored material must be held at use_only — it may "
             "inform, never assert")
+    finally:
+        mem.close()
+    # ...and under `none` (the default, no attestation) the same declaration
+    # is INERT: the round-1 F1 cell — `assistant` scores authority 1, and a
+    # baseline must be jointly minimal on its own, so the record stores the
+    # `third_party` baseline (V-INERT-UNDER-NONE; tests/test_0031_phase_a.py).
+    mem = Memory(llm=Fake([
+        {"triples": [{"subject": "user", "relation": "deployed",
+                      "object": "the release", "volatility": "durable"}],
+         "episode": "The assistant reported the deploy succeeded."},
+    ]), config=MemoryConfig(
+        db_path=f"{tmp_path}/n.db", wiki_recompile_after_writes=0))
+    try:
+        remember_impl(mem, "u", "the deploy succeeded", author="assistant")
+        edges = list(mem.store.edges("u"))
+        assert edges and all(
+            e.provenance.author_of_evidence is EvidenceAuthor.THIRD_PARTY
+            for e in edges)
     finally:
         mem.close()

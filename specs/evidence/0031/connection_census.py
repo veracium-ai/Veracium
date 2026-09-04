@@ -437,13 +437,13 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: CLASSES or the completeness scope reopens design review. Each
 #: regeneration is recorded in the spec's implementation-note cells.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4594,
+    "dotted/dataflow": 4604,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 248,
+    "dotted/module-plain": 251,
     "dotted/module-protected": 35,
     "getattr/dataflow": 21,
 }
-SRC_ATTRIBUTE_TOTAL = 4917
+SRC_ATTRIBUTE_TOTAL = 4930
 SRC_DATA_DUNDERS_IN_DATAFLOW = 96
 
 

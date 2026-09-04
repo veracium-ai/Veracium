@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+- **⚠ BREAKING (MCP surface): the host attests provenance; the model can only
+  restrict it — specs/0031 Phase A.** Three changes to `veracium-mcp`, all
+  from the accepted spec's own text:
+  1. **`author` has no default.** An MCP `remember` with no `author` now
+     stores the DEPLOYMENT's baseline class instead of `"user"`: `third_party`
+     unless the host attests otherwise. A supplied `author` or `derived_from`
+     can only restrict trust below that baseline; an attempted raise is
+     discarded (and counted for the operator in the library-level report as
+     `provenance_raises_discarded`, which never reaches the tool result).
+     Under the default, a model-supplied `derived_from="user"` therefore no
+     longer elevates a write to mentionable, and `author="assistant"` stores
+     the baseline rather than the assistant class (specs/0031 §2c-i, V-INERT-
+     UNDER-NONE). Malformed values still raise, regardless of capability.
+  2. **`VERACIUM_MCP_CAPABILITY`** (or `build_server(..., capability=...)`,
+     keyword-only): the host's attestation about every call on this server.
+     Unset means `none`. `direct` means every call originates in a turn with
+     the authenticated principal AND the deployment stands behind the model's
+     authorship labelling as its own; events then default to the user's class
+     and are mentionable. Read once at startup; the empty string or any other
+     value refuses to start. **Attested by the host, not verified by
+     veracium** — a server reachable by a public or untrusted agent must
+     leave it unset.
+  3. **Every tool loses `user_id`** (specs/0031 §4b-iii): `remember`,
+     `recall`, `answer` and `maintain` act on the deployment's user
+     (`VERACIUM_USER` / `default_user`). The host process is the identity
+     boundary; over stdio a model-supplied id bound nothing — and on `recall`
+     it was a cross-principal read. Multi-user hosts run one process per
+     principal.
+  Regimes (specs/0031 §5): a host that declares nothing runs identically to
+  before EXCEPT that MCP writes now carry the third-party baseline and a
+  model's `derived_from="user"` no longer raises trust; an embedded
+  first-party host declares `direct` and recovers the mentionable class by
+  attestation. **Who should take this release:** every host running
+  `veracium-mcp` whose memory is populated through the `remember` tool —
+  writes made before this release keep their stored provenance (a record is
+  a fact about its write, not a view over current configuration); writes
+  after it are held at the baseline until the deployment attests. Hosts
+  embedding the `*_impl` functions get the same behaviour through
+  `remember_impl(..., capability=...)` and the new `remember_report` (the
+  full report with operator counters). Phase B (proposals) is not in this
+  release.
 - **⚠ BREAKING (behaviour): a fact is not assertable before it is true.**
   `Edge.assertable` and `Episode.assertable` now consult a valid-time
   predicate at the present — `valid_now`: an edge whose `valid_from` has not

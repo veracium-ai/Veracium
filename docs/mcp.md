@@ -21,7 +21,8 @@ from the environment).
 | var | default | meaning |
 |---|---|---|
 | `VERACIUM_DB_PATH` | `veracium.db` | SQLite memory file. |
-| `VERACIUM_USER` | `default` | user id used when a tool call omits `user_id`. |
+| `VERACIUM_USER` | `default` | the deployment's user id. Every tool acts on it; no tool takes a `user_id` — the host process is the identity boundary (specs/0031 §4b-iii, §4e). |
+| `VERACIUM_MCP_CAPABILITY` | *(unset = `none`)* | **The host's attestation about every call on this server** (specs/0031 §4a). Unset = `none`: events default to the third-party class and a model-supplied `author`/`derived_from` can only restrict trust below that, never raise it. `direct` = every call originates in a turn with the authenticated principal **and this deployment stands behind the model's authorship labelling as its own**; events then default to the user's class. Read once at startup; any other value — the empty string included — refuses to start. **Attested by the host, not verified by veracium**: a server reachable by a public or untrusted agent must leave it unset. |
 | `ANTHROPIC_API_KEY` | — | for the reference provider. |
 
 ## Register with a client
@@ -49,23 +50,25 @@ Restart the client; the four tools below become available to the agent.
 
 | tool | purpose |
 |---|---|
-| `remember(text, user_id?, author?, event_type?, date?, derived_from?)` | store an interaction event. **Set `author="third_party"`** for received email / external docs so their claims are quarantined. If your own event's *text* quotes lower-trust content (a summary of a received email), **set `derived_from="third_party"`** — trust is capped at the minimum, so quoted material can never become an asserted fact. |
-| `recall(query, user_id?, token_budget?)` | return a grounded memory context block (unverified claims fenced under a never-assert marker). `token_budget` (approximate) caps the block, keeping query-matched facts and claim flags in preference to the wiki and old episodes. |
-| `answer(query, user_id?)` | answer from memory with the abstention gate (never asserts unverified claims; abstains rather than guesses). |
-| `maintain(user_id?)` | expire stale facts and consolidate old history; call periodically. |
+| `remember(text, author?, event_type?, date?, derived_from?)` | store an interaction event for the deployment's user. Provenance comes from the deployment's attestation (`VERACIUM_MCP_CAPABILITY`), not from this call: an omitted `author` takes the deployment's baseline class, and a supplied `author`/`derived_from` can only **restrict** trust below it (an attempted raise is discarded). **Set `author="third_party"`** for received email / external docs so their claims are quarantined. If your own event's *text* quotes lower-trust content (a summary of a received email), **set `derived_from="third_party"`** — trust is capped at the minimum, so quoted material can never become an asserted fact. |
+| `recall(query?, token_budget?)` | return a grounded memory context block (unverified claims fenced under a never-assert marker). `token_budget` (approximate) caps the block, keeping query-matched facts and claim flags in preference to the wiki and old episodes. |
+| `answer(query)` | answer from memory with the abstention gate (never asserts unverified claims; abstains rather than guesses). |
+| `maintain()` | expire stale facts and consolidate old history; call periodically. |
 
 (Deliberately *not* MCP tools: `forget`, `dispute`/`confirm`, and entity
 listing — suppress/wipe/enumerate verbs callable by an agent are
 prompt-injection targets. They're library/CLI surface for the host; see
 [design rationale](design-rationale.md).)
 
-`user_id` defaults to `VERACIUM_USER`. For a single-user assistant, leave it unset;
-for a multi-user host, pass the id of the user being served (memory is isolated
-per id).
+No tool takes a `user_id`: every tool acts on the deployment's user
+(`VERACIUM_USER`). Over stdio the transport cannot distinguish callers, so the
+honest options for multi-user are one process per principal or an authenticated
+transport, not a model-supplied argument — which on `recall` would be a
+cross-principal read (specs/0031 §4b-iii, §4e).
 
 ## Per-user isolation & scheduling
 
-- Memory never crosses `user_id` boundaries — pass a stable id per end user.
+- Memory never crosses `user_id` boundaries — one server process per end user (`VERACIUM_USER`).
 - `maintain` is idempotent; a host can call it on a daily schedule per active user
   (the "overnight" consolidation pattern).
 

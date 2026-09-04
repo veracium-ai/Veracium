@@ -69,6 +69,17 @@ INVENTORY = [
                             "run without the SDK. Author line: all 5 PASS (mcp "
                             "importable in the authoring venv); an mcp-absent "
                             "environment sees 4 PASS + 1 SKIP"),
+    ("tests/test_0031_phase_a.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — specs/0031 Phase A's "
+                            "REFLECTED-surface tests (E2 host-only sweep, "
+                            "V-NO-USER-ID-ARG, E3 inventory, A6/A7 precedence "
+                            "and immutability through the built server, I3's "
+                            "operator log) need the framework that reflects the "
+                            "schemas; the importorskip is INSIDE those seven "
+                            "tests only — the pipeline, counter, bridge and "
+                            "invariant tests run without the SDK. Author line: "
+                            "all PASS (mcp importable in the authoring venv); "
+                            "an mcp-absent environment sees 7 SKIP"),
     # ---- FOUR ENTRIES MISSING SINCE 0021 SHIPPED (external round 3, R3-5).
     # These skip UNCONDITIONALLY on every host and were in no category, so the
     # generated inventory decomposed a measured line it could not account for

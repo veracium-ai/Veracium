@@ -33,7 +33,14 @@
         },
         {
           "name": "VERACIUM_USER",
-          "description": "Default user id when a tool call omits user_id",
+          "description": "The deployment's user id: every tool acts on it; no tool takes a user_id (the host process is the identity boundary)",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "VERACIUM_MCP_CAPABILITY",
+          "description": "The host's attestation about every call on this server (specs/0031). Unset = none: events default to the third-party class and model-supplied provenance can only restrict. direct = every call originates in a turn with the authenticated principal and this deployment stands behind the model's authorship labelling as its own. Attested by the host, not verified by veracium: a server reachable by a public or untrusted agent must leave it unset. Any other value refuses to start.",
           "format": "string",
           "isRequired": false,
           "isSecret": false
