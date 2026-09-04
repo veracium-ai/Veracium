@@ -82,6 +82,22 @@ ALLOWED_ATTRS = frozenset({
 #: coverage move applied to module access), and any machinery form
 #: OUTSIDE this enumeration is REJECTED CONSERVATIVELY, so the
 #: completeness claim is exactly as wide as this table and no wider.
+#: FROZEN at round 16 (2026-09-04): the reviewer ACCEPTED 0031 v21 on this
+#: invariant surface — both attribute-access syntaxes use the same
+#: classifier; protected and machinery-bearing modules remain governed by
+#: conservative rules; ordinary imported modules form a separate permitted
+#: category; receivers whose runtime type cannot be established are
+#: explicitly outside the completeness claim; non-literal attribute names
+#: remain conservatively refused; all source accesses belong to exactly
+#: one measured class; the measured partition is bound mechanically to
+#: the specification. THE GOVERNING RULE, in the reviewer's words (quoted
+#: from the banked verdict, never paraphrased): "Further discoveries
+#: inside the expressly excluded object-dataflow category should be
+#: treated as implementation considerations unless they invalidate the
+#: stated boundary. Changes to the five-class partition or the
+#: completeness scope would reopen design review." Editing
+#: CAPABILITY_DISCOVERY_FORMS, ATTRIBUTE_CLASSES, or SRC_ATTRIBUTE_
+#: PARTITION below is that reopening, not a constant edit.
 CAPABILITY_DISCOVERY_FORMS = {
     "static-import": "import M / import M as A / from M import n as A — "
                      "HANDLED by provenance (protected modules refuse; "
