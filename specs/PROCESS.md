@@ -152,7 +152,10 @@ documents.
 Research advises and rules on trust semantics; **external review is not
 optional and not advisory for this step** — a spec cannot reach `accepted`
 without one. There is **no lightweight lane**: a spec that would touch a
-guarded file goes through external review, whatever its §3 says.
+guarded file goes through external review, whatever its §3 says — unless the
+owner rules otherwise under the second path above *(clause: Quentin, 2026-09-04;
+the lane had already run at `d83775d` under the owner's sequencing ruling, so
+the text now matches a lane the owner has exercised twice)*.
 
 **Dev is the acceptor, which means dev judges whether the comments are
 satisfied — and dev's judgement on exactly that has been wrong three times.**
