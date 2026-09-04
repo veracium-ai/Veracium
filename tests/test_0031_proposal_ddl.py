@@ -360,7 +360,9 @@ import sys as _sys
 _sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
 from connection_census import (ALLOWED_ATTRS,  # noqa: E402
                                CAPABILITY_DISCOVERY_FORMS,
-                               connect_census as _connect_census)
+                               GETATTR_ALLOWANCES,
+                               connect_census as _connect_census,
+                               getattr_census as _getattr_census)
 
 
 def test_connection_path_inventory_is_complete():
@@ -790,6 +792,16 @@ CAPABILITY_DISCOVERY_PROBES = [
      'm = importlib.reload(sys.modules["sqlite3"])\n', True),
     ("sys-modules-registry", "literal unprotected key clean",
      'import sys\nm = sys.modules["json"]\n', False),
+    ("sys-modules-registry", "ROUND-14 B1 (research): sys assignment-aliased then the registry refuses AT THE ESCAPE",
+     'import sys\nllm = sys\nc = llm.modules["sqlite3"]\n', True),
+    ("sys-modules-registry", "sys passed as an argument refuses (escaping attribute access)",
+     "import sys\nf(sys)\n", True),
+    ("sys-modules-registry", "sys returned refuses",
+     "import sys\ndef g():\n    return sys\n", True),
+    ("sys-modules-registry", "legitimate dotted uses stay clean: sys.argv, sys.stderr",
+     'import sys\nprint(sys.argv, file=sys.stderr)\n', False),
+    ("importlib-machinery", "bare importlib escaping refuses",
+     "import importlib\nq = importlib\nm = q.import_module('sqlite3')\n", True),
     ("sys-modules-registry", "in a string annotation refuses",
      'import sys\n'
      'def f(v: "sys.modules[\'sqlite3\'].Connection"):\n    pass\n', True),
@@ -812,8 +824,17 @@ CAPABILITY_DISCOVERY_PROBES = [
      "import sys\nd = sys.__dict__\n", True),
     ("introspective-machinery", "ROUND-13: vars on any object refuses (receiver type not establishable)",
      "class A: pass\nd = vars(A())\n", True),
-    ("introspective-machinery", "getattr with a plain literal name on any receiver clean (the name is what the census establishes)",
-     'x = getattr(record, "lineage", None)\n', False),
+    ("introspective-machinery", "ROUND-14: a plain literal getattr on an UNTABLED receiver refuses — the name is proven, the receiver is not",
+     'x = getattr(record, "lineage", None)\n', True),
+    ("introspective-machinery", "a TABLED site (semantic.py: embed.id) is clean at its own file",
+     ("semantic.py", 'ident = getattr(embed, "id", None)\n'), False),
+    ("introspective-machinery", "ROUND-14 red-team: a tabled receiver NAME rebound to a module refuses (the binding is what the census can establish)",
+     ("__init__.py", 'import sys\nllm = sys\nx = getattr(llm, "metering_capability", None)\n'), True),
+    ("introspective-machinery", "an unprotected module bound to the tabled name refuses too (module-valued is the category)",
+     ("__init__.py", 'import json\nllm = json\nx = getattr(llm, "metering_capability", None)\n'), True),
+    ("introspective-machinery", "an instance attribute assigned a module refuses at the probe",
+     ("__init__.py", 'import json\nclass A:\n    def m(self):\n        self.llm = json\n'
+                     '        return getattr(self.llm, "remove_usage_listener", None)\n'), True),
     ("dynamic-evaluation", "eval refuses",
      'x = eval("__import__(\'sqlite3\')")\n', True),
     ("dynamic-evaluation", "exec refuses",
@@ -905,8 +926,10 @@ CAPABILITY_DISCOVERY_PROBES = [
      "                       (\"to_version\", self.to_version)):\n"
      "            if type(val) is not int:\n                p.append(f)\n"
      "        return p\n", False),
-    ("frame-introspection", "getattr with a plain literal name clean",
-     'x = getattr(llm, "metering_capability", None)\n', False),
+    ("frame-introspection", "ROUND-14: the same literal at an untabled file refuses; at its tabled file it is clean",
+     'x = getattr(llm, "metering_capability", None)\n', True),
+    ("frame-introspection", "the tabled __init__.py site is clean at its own file",
+     ("__init__.py", 'x = getattr(llm, "metering_capability", None)\n'), False),
     ("frame-introspection", "an __mro__ walk is inert (classes, not namespaces)",
      "b = type(x).__mro__[-1]\n", False),
     # ---- round-12, research's red-team: the two rules that close the class ----
@@ -923,9 +946,9 @@ CAPABILITY_DISCOVERY_PROBES = [
      "def f(g=getattr):\n    return g(o, 'x')\n", True),
     ("captured-primitive", "captured inside a string annotation refuses",
      'def f(v: "partial(getattr, sys)"):\n    pass\n', True),
-    ("captured-primitive", "a primitive CALLED under its own rules is clean",
-     'x = getattr(llm, "metering_capability", None)\n'
-     'n = globals()["config"]\n', False),
+    ("captured-primitive", "a primitive CALLED under its own rules is clean (a tabled getattr; a harmless mapping key)",
+     ("__init__.py", 'x = getattr(llm, "metering_capability", None)\n'
+                     'n = globals()["config"]\n'), False),
     ("accessor-constructors", "G1: attrgetter with a dunder refuses",
      'import operator\ng = operator.attrgetter("__globals__")(f)\n', True),
     ("accessor-constructors", "from-imported attrgetter under an alias refuses",
@@ -971,7 +994,10 @@ def test_capability_discovery_form(form, label, src, refused):
     more probes PER FORM — mechanically bound by the inventory test
     below."""
     assert form in CAPABILITY_DISCOVERY_FORMS, f"probe names unknown form {form!r}"
-    hits = _connect_census(src, "x.py")
+    rel = "x.py"
+    if isinstance(src, tuple):
+        rel, src = src              # a probe run AS a tabled project site
+    hits = _connect_census(src, rel)
     got = any("REFUSED" in k for k in hits)
     assert got == refused, (form, label, hits)
 
@@ -1100,3 +1126,56 @@ def test_sibling_exemptions_rest_on_documented_semantics__controls():
     assert any("REFUSED" in k for k in _connect_census(
         "try:\n    pass\nexcept Exception as e:\n"
         "    f = e.__traceback__.tb_next.tb_frame\n", "x.py"))
+
+
+def test_identical_literal_names_differ_by_receiver__control():
+    """Round-14 F1 — THE FOURTEENTH RUNG, the reviewer's argument
+    EXECUTED: the same literal attribute name is ordinary data on one
+    receiver and a module facility on another, because a receiver can
+    determine attribute results dynamically. The census cannot know
+    which it faces from the name; it now allows a literal getattr ONLY
+    at a site tabled with its receiver's provenance and its result's
+    consumption, and refuses everywhere else."""
+    import json
+
+    class Plain:
+        lineage = ["a", "b"]
+
+    class Hostile:
+        def __getattr__(self, name):
+            return json                       # any name -> a module
+
+    assert getattr(Plain(), "lineage", None) == ["a", "b"]
+    assert getattr(Hostile(), "lineage", None) is json     # same name, a facility
+    refused = _connect_census('x = getattr(record, "lineage", None)\n', "x.py")
+    assert any("provenance is not tabled" in k for k in refused), refused
+    allowed = _connect_census('x = getattr(record, "lineage", None)\n',
+                              "scope_read.py")
+    assert not any("REFUSED" in k for k in allowed), allowed
+
+
+def test_getattr_allowances_sweep_both_directions():
+    """The positive half the reviewer asked for, over EVERY retained
+    project use: each GETATTR_ALLOWANCES row is observed in the shipped
+    src file with exactly its tabled count (a row nobody uses is a stale
+    allowance), every literal getattr the census allows is tabled (an
+    untabled site would already have refused — asserted by running the
+    full census over each file), and the table's files all exist. Counts
+    are compared so a duplicated probe fails until the table says why."""
+    import collections
+    root = SPEC.parents[1] / "src" / "veracium"
+    observed = collections.Counter()
+    for py in sorted(root.rglob("*.py")):
+        rel = str(py.relative_to(root))
+        text = py.read_text()
+        for key, n in _getattr_census(text, rel).items():
+            observed[key] += n
+        hits = _connect_census(text, rel)
+        assert not any("REFUSED" in k for k in hits), (rel, hits)
+    expected = {k: v[0] for k, v in GETATTR_ALLOWANCES.items()}
+    assert dict(observed) == expected, (
+        f"getattr allowances drifted from src:\n  observed: {dict(observed)}"
+        f"\n  tabled:   {expected}")
+    for (rel, _, _), (count, category, consumption) in GETATTR_ALLOWANCES.items():
+        assert (root / rel).exists(), rel
+        assert count >= 1 and category and consumption

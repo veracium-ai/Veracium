@@ -122,11 +122,16 @@ CAPABILITY_DISCOVERY_FORMS = {
                                "ANY argument refuses — the argument's "
                                "runtime type is not statically "
                                "establishable, and a module's vars() IS "
-                               "its namespace (src has no use). getattr "
-                               "with a plain literal name on any "
-                               "receiver stays clean: the NAME is what "
-                               "the census can establish, and a harmless "
-                               "literal name discovers nothing",
+                               "its namespace (src has no use). ROUND-14: "
+                               "getattr with a plain literal name is "
+                               "allowed ONLY at a site tabled in "
+                               "GETATTR_ALLOWANCES by (file, receiver, "
+                               "attribute) with its receiver category and "
+                               "result consumption — the name is proven, "
+                               "the receiver is not, and a literal probe "
+                               "is a declared uncertainty about its "
+                               "receiver; untabled sites refuse; the table "
+                               "is swept both directions against src",
     "dynamic-evaluation": "eval(...) / exec(...) — REFUSED "
                           "conservatively: evaluated text can reach any "
                           "machinery form above (src has no use; the "
@@ -242,6 +247,99 @@ FRAME_ATTRS = frozenset({
 #: The no-argument namespace-mapping calls (round-12).
 NAMESPACE_CALLS = frozenset({"globals", "locals", "vars"})
 
+#: THE GETATTR ALLOWANCE TABLE (round-14 F1 — the FOURTEENTH RUNG: a
+#: literal attribute name proves the NAME, not what the RECEIVER returns;
+#: a custom __getattr__ makes the same literal data on one receiver and a
+#: facility on another). The positive-surface move (round 7's lesson)
+#: applied to attribute probes: a literal getattr is a DECLARED
+#: UNCERTAINTY about its receiver — that is why the probing form is used
+#: instead of dotted access — and every declared uncertainty src carries
+#: is tabled here by (file, receiver expression, attribute) with its
+#: receiver category, how the RESULT is consumed, and its site count. A
+#: literal getattr not in this table REFUSES; a tabled site is swept both
+#: directions against src by test (every row observed with its count;
+#: every allowed site tabled). THE INVARIANT EVERY ROW SATISFIES: the
+#: result is consumed as data (compared, tested for truth, used as a
+#: number or label) or invoked as the receiver's OWN behaviour in the
+#: host's own process — no tabled result is ever used to open a
+#: connection or reach a module facility. Whatever a receiver returns,
+#: src does nothing with it that discovers a capability.
+GETATTR_ALLOWANCES = {
+    # (file relative to src/veracium, receiver expression, attribute):
+    #     (count, receiver category, consumption)
+    ("__init__.py", "llm", "metering_capability"):
+        (1, "host-supplied LLM adapter (duck-typed protocol)",
+         "compared to the METERING_CAPABILITY constant"),
+    ("__init__.py", "llm", "add_usage_listener"):
+        (1, "host-supplied LLM adapter (duck-typed protocol)",
+         "None-checked, then invoked as the host's own method with a "
+         "listener — host code in the host's process"),
+    ("__init__.py", "self.llm", "remove_usage_listener"):
+        (1, "host-supplied LLM adapter (duck-typed protocol)",
+         "None-checked, then invoked as the host's own method with the "
+         "metered handle"),
+    ("__init__.py", "self.store", "local_origin"):
+        (1, "Store (project SqliteStore or a host implementation)",
+         "None-checked (ScopeError), then passed to validate_policy as "
+         "the origin value"),
+    ("cli.py", "e", "readback_route"):
+        (1, "project PackageConsistencyError instance",
+         "compared to the five route names"),
+    ("compile.py", "llm", "_veracium_no_llm"):
+        (1, "host-supplied LLM adapter (duck-typed protocol)",
+         "truthiness flag (provider-free reader)"),
+    ("lifecycle.py", "config", "consolidate_lease_seconds"):
+        (1, "project Config (optional field, default 300)",
+         "numeric lease passed to the store"),
+    ("llm/anthropic.py", "b", "type"):
+        (1, "third-party SDK content block (anthropic)",
+         "compared to \"text\""),
+    ("proactive.py", "config", "item_cap_tokens"):
+        (3, "project Config (optional field, default 512)",
+         "numeric budget, validated downstream"),
+    ("proactive.py", "config", "proactive_default_budget_tokens"):
+        (1, "project Config (optional field, default 1200)",
+         "numeric budget, validated by validate_budget"),
+    ("proactive.py", "config", "group_heading_allowance_tokens"):
+        (1, "project Config (optional field)",
+         "numeric allowance"),
+    ("proactive.py", "unit", "id"):
+        (1, "project Edge or Episode record",
+         "label string, repr fallback"),
+    ("registry.py", "v", "desc"):
+        (2, "project RelationSpec value",
+         "string compared to the canonical desc"),
+    ("scope_read.py", "record", "lineage"):
+        (2, "project scope record model",
+         "truthiness / len as a count"),
+    ("semantic.py", "embed", "id"):
+        (1, "host-supplied Embed protocol",
+         "None-checked identity, used as a string"),
+    ("semantic.py", "embed", "dim"):
+        (1, "host-supplied Embed protocol",
+         "None-checked, then invoked as the host's own method"),
+    ("store/release_migration.py", "event", "event"):
+        (1, "project migration event record",
+         "compared to \"migration_attempted\""),
+}
+
+
+def getattr_census(source, rel):
+    """The observed TABLED literal-getattr sites in `source` under `rel`,
+    as {(rel, receiver, attr): count} — the reader the both-directions
+    sweep compares against GETATTR_ALLOWANCES. Refusals (untabled sites)
+    are connect_census's business; this reader only counts allowances."""
+    seen = {}
+    for n in ast.walk(ast.parse(source)):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id == "getattr" and len(n.args) >= 2
+                and isinstance(n.args[1], ast.Constant)
+                and isinstance(n.args[1].value, str)):
+            key = (rel, ast.unparse(n.args[0]), n.args[1].value)
+            if key in GETATTR_ALLOWANCES:
+                seen[key] = seen.get(key, 0) + 1
+    return seen
+
 #: The machinery-modules class (round-11, the class exhausted rather than
 #: the named form fixed): stdlib modules that can produce modules or the
 #: raw capability by spellings of their own. Refused at the import, like
@@ -345,6 +443,38 @@ def connect_census(source, rel):
     module_returning_fns = {"__import__"}
     registry_names = set()          # locals bound by `from sys import modules`
     getter_names = set()            # locals bound to operator.attrgetter/methodcaller
+    # ROUND-14 (dev's red-team on the allowance table): the names that HOLD
+    # A MODULE in this file — every import binds one, and a simple
+    # assignment from a module-valued name propagates it (transitively,
+    # first binding wins, the joint arc's binding-census rule). A getattr
+    # whose receiver is module-valued is attribute-based discovery on a
+    # namespace, never a tabled probe — the table asserts a receiver
+    # CATEGORY, and this is the one category the census can establish by
+    # itself, so it is enforced regardless of the table.
+    module_valued = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                module_valued.add(alias.asname or alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom) and node.module \
+                and node.level == 0:
+            for alias in node.names:
+                # `from pkg import mod` binds a module iff the name is a
+                # submodule; unknowable statically for third-party pkgs —
+                # conservatively, names imported from a package whose
+                # own name is module-valued machinery are already handled
+                # elsewhere; here we track the certain case only.
+                pass
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Name) \
+                    and node.value.id in module_valued:
+                for tgt in node.targets:
+                    txt = ast.unparse(tgt)
+                    if txt not in module_valued:
+                        module_valued.add(txt); changed = True
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
@@ -526,6 +656,31 @@ def connect_census(source, rel):
                                    f"frame name {name_arg.value!r} — a "
                                    f"spelling of attribute-based "
                                    f"discovery (round-12)]")
+                    elif ast.unparse(base) in module_valued \
+                            or (isinstance(base, ast.Name)
+                                and base.id in module_valued):
+                        bump(rel + f" [REFUSED: literal getattr on "
+                                   f"{ast.unparse(base)}, a MODULE-VALUED "
+                                   f"name in this file — attribute "
+                                   f"discovery on a namespace is never a "
+                                   f"tabled probe, whatever the name "
+                                   f"(round-14; the binding is what the "
+                                   f"census can establish)]")
+                    elif (rel, ast.unparse(base), name_arg.value) \
+                            not in GETATTR_ALLOWANCES:
+                        # ROUND-14 F1 — THE FOURTEENTH RUNG: the name is
+                        # proven, the receiver is not; a literal getattr is
+                        # a declared uncertainty about its receiver, and
+                        # every one src carries is tabled with its
+                        # provenance and consumption. Untabled refuses.
+                        bump(rel + f" [REFUSED: literal getattr "
+                                   f"{ast.unparse(base)}.{name_arg.value} "
+                                   f"on a receiver whose provenance is not "
+                                   f"tabled — a harmless name does not "
+                                   f"establish a safe receiver (round-14); "
+                                   f"table it with its category and "
+                                   f"consumption or use dotted access on "
+                                   f"a known type]")
                 else:
                     # ROUND-13 F1 — THE THIRTEENTH RUNG: the round-12
                     # self/cls exemption rested on a NAMING CONVENTION —
@@ -557,6 +712,23 @@ def connect_census(source, rel):
                            f"referenced as a value without being called "
                            f"— a captured capability; the courier is "
                            f"irrelevant (round-12)]")
+        # ROUND-14 (research's red-team, B1/REBIND-2): the round-11
+        # bare-protected-name rule EXTENDED to the machinery-bearing tracked
+        # modules — a bare `sys` / `importlib` reference that is not the
+        # base of an attribute access REFUSES, because the registry-bearing
+        # module escaping analysis IS the registry escaping analysis: an
+        # assignment alias (`llm = sys`) walked through both the tabled
+        # getattr allowance and the import-keyed registry rule. Refusing
+        # at the escape kills both upstream of table and registry alike.
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
+                and node.id in (sys_names | importlib_names):
+            par = parent.get(node)
+            if not (isinstance(par, ast.Attribute) and par.value is node):
+                bump(rel + f" [REFUSED: bare {node.id} reference escaping "
+                           f"attribute access — a registry-bearing module "
+                           f"escaping analysis is the registry escaping "
+                           f"analysis (round-14; the round-11 bare-name "
+                           f"rule extended)]")
         # ROUND-11: __builtins__ is the same door with no import at all.
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) \
                 and node.id == "__builtins__":
