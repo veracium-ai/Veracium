@@ -360,6 +360,9 @@ import sys as _sys
 _sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
 from connection_census import (ALLOWED_ATTRS,  # noqa: E402
                                ATTRIBUTE_CLASSES,
+                               SRC_ATTRIBUTE_PARTITION,
+                               SRC_ATTRIBUTE_TOTAL,
+                               SRC_DATA_DUNDERS_IN_DATAFLOW,
                                CAPABILITY_DISCOVERY_FORMS,
                                GETATTR_ALLOWANCES,
                                attribute_census as _attribute_census,
@@ -1264,14 +1267,55 @@ def test_shared_attribute_inventory_over_src():
     import collections
     root = SPEC.parents[1] / "src" / "veracium"
     counts = collections.Counter()
+    dunders = 0
     for py in sorted(root.rglob("*.py")):
         rel = str(py.relative_to(root))
         for form, recv, attr, cls in _attribute_census(py.read_text(), rel):
             assert cls in ATTRIBUTE_CLASSES, (rel, form, recv, attr, cls)
             counts[(form, cls)] += 1
+            if form == "dotted" and cls == "dataflow" and attr.startswith("__"):
+                dunders += 1
     assert counts[("dotted", "refused")] == 0, dict(counts)
     assert counts[("getattr", "refused")] == 0, dict(counts)
-    assert counts[("dotted", "dataflow")] > 1000     # an ordinary program
     assert counts[("getattr", "dataflow")] == sum(
         v[0] for v in GETATTR_ALLOWANCES.values()), (
         "every literal-getattr site in src is dataflow and inventoried")
+    # ROUND-16 pre-dispatch refusal: the partition is asserted by EQUALITY
+    # against the one constants row the spec quotes — "> 1000" certified an
+    # ordinary program, not the figure we print, and the printed figure
+    # went stale when the membership rule moved 96 data-dunders into
+    # dataflow. A drift in either direction fails here.
+    measured = {f"{form}/{cls}": n for (form, cls), n in counts.items()}
+    assert measured == SRC_ATTRIBUTE_PARTITION, (
+        f"the src attribute partition drifted from the quoted row:\n"
+        f"  measured: {measured}\n  quoted:   {SRC_ATTRIBUTE_PARTITION}\n"
+        f"Regenerate the row from the measurement and update every carrier "
+        f"that quotes it (spec, README) in the same commit.")
+    assert sum(counts.values()) == SRC_ATTRIBUTE_TOTAL
+    assert dunders == SRC_DATA_DUNDERS_IN_DATAFLOW, dunders
+
+
+def test_spec_quotes_the_measured_partition_exactly():
+    """The spec's narrated figures for the shared attribute inventory are
+    BOUND to the constants row the sweep asserts: every value in
+    SRC_ATTRIBUTE_PARTITION (and the total, and the data-dunder count)
+    appears in the spec's text, and the superseded figure appears only as
+    a narrated correction. A figure quoted in prose but absent from the
+    row — or a row value absent from the prose — fails here, so a
+    re-measurement must reach every carrier in the same commit."""
+    text = SPEC.read_text()
+    for key, n in SRC_ATTRIBUTE_PARTITION.items():
+        assert f"{n:,}" in text or str(n) in text, (key, n)
+    # the spec narrates the DOTTED total (the figure measured before the
+    # rule was designed); it is derived here from the row, never retyped
+    dotted_total = sum(n for k, n in SRC_ATTRIBUTE_PARTITION.items()
+                       if k.startswith("dotted/"))
+    assert f"{dotted_total:,}" in text, dotted_total
+    assert dotted_total + SRC_ATTRIBUTE_PARTITION["getattr/dataflow"] \
+        == SRC_ATTRIBUTE_TOTAL
+    assert str(SRC_DATA_DUNDERS_IN_DATAFLOW) in text
+    # the stale figure survives only where it is being corrected
+    for i, line in enumerate(text.splitlines(), 1):
+        if "4,487" in line or "4487" in line:
+            assert any(w in line.lower() for w in
+                       ("supersed", "stale", "correct", "was ")), (i, line[:120])

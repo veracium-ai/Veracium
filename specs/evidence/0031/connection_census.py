@@ -389,6 +389,24 @@ def getattr_census(source, rel):
 ATTRIBUTE_CLASSES = ("refused", "module-protected", "module-machinery",
                      "module-plain", "dataflow")
 
+#: THE MEASURED PARTITION OF src/veracium, the ONE row the spec quotes and
+#: the sweep asserts by EQUALITY (round-16 pre-dispatch refusal: a
+#: narrated measurement nobody asserted went stale — 4,487 was taken before
+#: the membership rule moved the 96 data-dunders INTO dataflow, and the
+#: test certified only "> 1000"). GENERATED from the measurement, never
+#: retyped; a drift fails test_shared_attribute_inventory_over_src, and
+#: the spec's cited figures are bound to this row by test. The 96
+#: ordinary-data dunders are INSIDE dotted/dataflow (no sixth bucket).
+SRC_ATTRIBUTE_PARTITION = {
+    "dotted/dataflow": 4583,
+    "dotted/module-machinery": 19,
+    "dotted/module-plain": 248,
+    "dotted/module-protected": 35,
+    "getattr/dataflow": 21,
+}
+SRC_ATTRIBUTE_TOTAL = 4906
+SRC_DATA_DUNDERS_IN_DATAFLOW = 96
+
 
 def _classify_attribute(base, attr, ctx):
     """The shared decision for one attribute access, either form. `ctx`
