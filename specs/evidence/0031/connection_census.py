@@ -96,8 +96,11 @@ ALLOWED_ATTRS = frozenset({
 #: treated as implementation considerations unless they invalidate the
 #: stated boundary. Changes to the five-class partition or the
 #: completeness scope would reopen design review." Editing
-#: CAPABILITY_DISCOVERY_FORMS, ATTRIBUTE_CLASSES, or SRC_ATTRIBUTE_
-#: PARTITION below is that reopening, not a constant edit.
+#: CAPABILITY_DISCOVERY_FORMS or ATTRIBUTE_CLASSES below is that
+#: reopening, not a constant edit; SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE
+#: is the frozen measurement the spec quotes, and SRC_ATTRIBUTE_PARTITION
+#: is the LIVE row, regenerated from the measurement at every src change
+#: (an implementation consideration under the same rule).
 CAPABILITY_DISCOVERY_FORMS = {
     "static-import": "import M / import M as A / from M import n as A — "
                      "HANDLED by provenance (protected modules refuse; "
@@ -413,14 +416,34 @@ ATTRIBUTE_CLASSES = ("refused", "module-protected", "module-machinery",
 #: retyped; a drift fails test_shared_attribute_inventory_over_src, and
 #: the spec's cited figures are bound to this row by test. The 96
 #: ordinary-data dunders are INSIDE dotted/dataflow (no sixth bucket).
-SRC_ATTRIBUTE_PARTITION = {
+SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE = {
     "dotted/dataflow": 4583,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 248,
     "dotted/module-protected": 35,
     "getattr/dataflow": 21,
 }
-SRC_ATTRIBUTE_TOTAL = 4906
+SRC_ATTRIBUTE_TOTAL_AT_ACCEPTANCE = 4906
+SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
+
+#: THE LIVE PARTITION at HEAD — regenerated from the measurement (never
+#: retyped) at EVERY change to src, and asserted by EQUALITY in the sweep.
+#: The row above is the measurement AT THE ACCEPTANCE PIN (c0affa03…,
+#: quoted by the accepted spec and bound to it by test); this row is the
+#: census's current fact. Per the reviewer's governing rule, a change to
+#: these NUMBERS is an implementation consideration — the S2 valid_from
+#: predicate (2026-09-04) added its attribute accesses to schema.py and
+#: moved dotted/dataflow 4,583 -> 4,594 — while a change to the five
+#: CLASSES or the completeness scope reopens design review. Each
+#: regeneration is recorded in the spec's implementation-note cells.
+SRC_ATTRIBUTE_PARTITION = {
+    "dotted/dataflow": 4594,
+    "dotted/module-machinery": 19,
+    "dotted/module-plain": 248,
+    "dotted/module-protected": 35,
+    "getattr/dataflow": 21,
+}
+SRC_ATTRIBUTE_TOTAL = 4917
 SRC_DATA_DUNDERS_IN_DATAFLOW = 96
 
 

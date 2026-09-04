@@ -361,7 +361,10 @@ _sys.path.insert(0, str(SPEC.parents[1] / "specs" / "evidence" / "0031"))
 from connection_census import (ALLOWED_ATTRS,  # noqa: E402
                                ATTRIBUTE_CLASSES,
                                SRC_ATTRIBUTE_PARTITION,
+                               SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE,
                                SRC_ATTRIBUTE_TOTAL,
+                               SRC_ATTRIBUTE_TOTAL_AT_ACCEPTANCE,
+                               SRC_DATA_DUNDERS_AT_ACCEPTANCE,
                                SRC_DATA_DUNDERS_IN_DATAFLOW,
                                CAPABILITY_DISCOVERY_FORMS,
                                GETATTR_ALLOWANCES,
@@ -1304,16 +1307,20 @@ def test_spec_quotes_the_measured_partition_exactly():
     row — or a row value absent from the prose — fails here, so a
     re-measurement must reach every carrier in the same commit."""
     text = SPEC.read_text()
-    for key, n in SRC_ATTRIBUTE_PARTITION.items():
+    # The ACCEPTED spec quotes the measurement AT THE ACCEPTANCE PIN — a
+    # frozen, dated row; the live row (asserted by equality in the sweep)
+    # moves with src and is recorded in implementation-note cells.
+    for key, n in SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE.items():
         assert f"{n:,}" in text or str(n) in text, (key, n)
-    # the spec narrates the DOTTED total (the figure measured before the
-    # rule was designed); it is derived here from the row, never retyped
-    dotted_total = sum(n for k, n in SRC_ATTRIBUTE_PARTITION.items()
+    dotted_total = sum(n for k, n in SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE.items()
                        if k.startswith("dotted/"))
     assert f"{dotted_total:,}" in text, dotted_total
-    assert dotted_total + SRC_ATTRIBUTE_PARTITION["getattr/dataflow"] \
-        == SRC_ATTRIBUTE_TOTAL
-    assert str(SRC_DATA_DUNDERS_IN_DATAFLOW) in text
+    assert dotted_total + SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE["getattr/dataflow"] \
+        == SRC_ATTRIBUTE_TOTAL_AT_ACCEPTANCE
+    assert str(SRC_DATA_DUNDERS_AT_ACCEPTANCE) in text
+    # the two rows share the five classes (the frozen partition) even when
+    # their numbers differ
+    assert set(SRC_ATTRIBUTE_PARTITION) == set(SRC_ATTRIBUTE_PARTITION_AT_ACCEPTANCE)
     # the stale figure survives only where it is being corrected
     for i, line in enumerate(text.splitlines(), 1):
         if "4,487" in line or "4487" in line:

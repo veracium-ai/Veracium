@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **⚠ BREAKING (behaviour): a fact is not assertable before it is true.**
+  `Edge.assertable` and `Episode.assertable` now consult a valid-time
+  predicate at the present — `valid_now`: an edge whose `valid_from` has not
+  yet arrived, or an episode whose `date` is after today (UTC), is no longer
+  asserted as fact by recall's GROUNDED channel, the wiki compile, or any
+  other consumer of `assertable`; it stays stored and becomes assertable by
+  itself when its time arrives (nothing is rewritten). Routing of the
+  withheld records follows the accepted 0023 §4a-iv contract unchanged: a
+  not-yet-valid edge is withheld from recall exactly as an inactive edge
+  is, and a future-dated episode is fenced into the unverified section
+  (visible as a claim, never asserted) rather than suppressed. This is the S2
+  ruling (owner, 2026-08-31; specs/0031 §5's ordering precondition; the
+  measured divergence cell in specs/0030 §4e): ingest already refuses dates
+  beyond `MAX_FUTURE_SKEW` (1 day), but inside that window an MCP
+  `remember` could write a fact that was assertable a day before it became
+  true. **Who should take this release:** hosts whose agents can write
+  future-dated facts through the MCP `remember` tool — under 0031 Phase A's
+  `capability=direct` (not yet shipped) that window becomes agent-reachable,
+  and this release closes it first, as ruled. Hosts that never write
+  future dates see byte-identical behaviour. Comparisons are UTC-aware via
+  the new `schema.as_utc` (a naive `valid_from` is taken as UTC).
 - **Fixed: the revocation sweep's recompute path now refuses malformed
   persisted absorption payloads with its declared `RevocationError`
   instead of crashing.** A `contribution_ledger` absorption row whose

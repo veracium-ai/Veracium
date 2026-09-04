@@ -25,6 +25,17 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def as_utc(dt: datetime) -> datetime:
+    """Normalize a datetime to UTC-aware before any time comparison: a
+    naive value is taken as UTC (the store's convention), an aware value
+    is converted. Comparing naive to aware raises; comparing two aware
+    values in different zones is correct but easy to misread. One
+    function, shared by every time predicate (specs/0030 §10)."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 # --------------------------------------------------------------------------- #
 # Provenance — shared by edges and episodes. The abstention gate reads these.
 # --------------------------------------------------------------------------- #
@@ -494,11 +505,32 @@ class Edge(BaseModel):
         return self.provenance.disclosure == Disclosure.USE_ONLY
 
     @property
+    def valid_now(self) -> bool:
+        """THE VALID-TIME PREDICATE AT T = NOW (the S2 ruling, owner 2026-08-31,
+        implemented 2026-09-04): a fact whose `valid_from` has not yet
+        arrived is not assertable now — the lower bound of the half-open
+        interval `[valid_from, invalidated_at)` that specs/0028 §4b and
+        0030 §4b state for the as-of path, applied to the present. The
+        upper bound stays with `active` (an edge with `invalidated_at` set
+        is inactive) — the future-`invalidated_at` cell is the 0019 question
+        0030 deliberately leaves open, untouched here. Before this landed,
+        an MCP `remember` with a `date` inside `MAX_FUTURE_SKEW` produced an
+        edge that was assertable a day before it became true (measured,
+        0030 §4e); with 0031 Phase A that window becomes agent-reachable,
+        which is why the ruling sequences this BEFORE Phase A. UTC-aware
+        comparison only."""
+        return as_utc(self.valid_from) <= utcnow()
+
+    @property
     def assertable(self) -> bool:
-        """Safe to state as fact: active, not a quarantined claim, and not an
-        unconfirmed third-party inference. The gate's GROUNDED bucket keys on
-        this — everything else is context, not assertion material."""
-        return self.active and not self.quarantined and not self.use_only
+        """Safe to state as fact: active, not a quarantined claim, not an
+        unconfirmed third-party inference, AND valid now (`valid_now` — the
+        S2 ruling). The gate's GROUNDED bucket keys on this — everything
+        else is context, not assertion material. A not-yet-valid edge stays
+        stored and becomes assertable by itself when its `valid_from`
+        arrives; nothing is rewritten."""
+        return (self.active and not self.quarantined and not self.use_only
+                and self.valid_now)
 
 
 class Outcome(str, Enum):
@@ -586,8 +618,22 @@ class Episode(BaseModel):
         inference. LIFECYCLE MUST NOT CALL THIS (the §7a lifecycle row,
         internal R3-3): expiry applies to fenced content too, and routing
         lifecycle through assertable dropped ordinary quarantined episodes
-        from aging in stores with zero revocations."""
-        return self.active and not self.quarantined and not self.use_only
+        from aging in stores with zero revocations.
+
+        AND valid now (the S2 ruling, 2026-09-04): an episode is the
+        narrative twin of the edges the same `remember` writes — its
+        `date` is an ISO date string, so a future-dated episode is not yet
+        true either, and is not rendered as narrative until its date
+        arrives. `valid_now` compares ISO date strings (lexical order is
+        chronological for ISO dates) against today's UTC date."""
+        return (self.active and not self.quarantined and not self.use_only
+                and self.valid_now)
+
+    @property
+    def valid_now(self) -> bool:
+        """The episode's valid-time predicate at T = now: `date` (ISO date,
+        possibly with a time part) is not after today's UTC date."""
+        return self.date[:10] <= utcnow().date().isoformat()
 
     # --- specs/0009 outcome-authorship chain (append-only history) --------------
     # Store-assigned, OUTCOME-ONLY (None on any non-outcome episode). Never
