@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.18.1 — 2026-09-04 — the designated compat release for 0031 Phase A rollback
+
+**Upgrade recommendation:** this release exists for one purpose. Hosts on
+0.18.0 need not take it. **Hosts that ever run veracium >= 0.19 (0031 Phase A,
+the host-attested MCP surface) and later roll back MUST roll back to this
+release, never to 0.18.0** — a naive downgrade with `VERACIUM_MCP_CAPABILITY`
+still set would silently ignore the variable and restore the pre-Phase-A
+`author="user"` default, reopening exactly the elevation path Phase A closed
+(0031 punch-list I4; Quentin's ruling, 2026-09-04).
+
+- **`VERACIUM_MCP_CAPABILITY` is recognised, not implemented.** Unset or
+  `"none"` runs; `direct` — or any other value, the empty string included —
+  refuses to start with a message naming the variable and the release that
+  implements attestation (`>= 0.19.0`). `build_server(..., capability=)` is
+  accepted for signature compatibility and refuses the same values.
+- **⚠ BREAKING (MCP surface): the conservative provenance baseline, kept.**
+  An MCP `remember` with no `author` stores `third_party`, not `"user"`; a
+  model-supplied `author` or `derived_from` is validated (an unknown value
+  still raises) and then inert. The two behaviours Phase A's frozen
+  before-receipts record (harness `tier8_before_receipts.json`, digest
+  `ebfabbfd…`) are therefore NOT restored by a rollback: `stored_author="user"`
+  on an authorless write, and `derived_from="user"` reaching `mentionable`.
+- **Unchanged from 0.18.0, and disclosed:** the tool schemas — the 0.18
+  line RETAINS the model-suppliable `user_id` tool argument that Phase A's
+  §4b-iii removes (the cross-principal READ surface); it is outside the ruled
+  two-behaviour enumeration and dropping it in a patch release would change
+  behaviour for deployments legitimately using it. **Deployments requiring the
+  host-side identity boundary must run >= 0.19.0.** Also unchanged: the store
+  format and every non-MCP surface. **Stored provenance is never
+  reinterpreted:** a record written under 0.19's `direct` keeps its meaning
+  after a rollback; provenance is a fact about its write, not a view over the
+  current configuration.
+
 ## 0.18.0 — 2026-08-31
 
 **Upgrade recommendation:** hosts that want paraphrase/synonym recall

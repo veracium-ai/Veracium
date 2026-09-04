@@ -175,9 +175,14 @@ def test_the_assistant_author_is_accepted_as_a_self_demotion(tmp_path):
         assert r is not None
         edges = list(mem.store.edges("u"))
         assert edges, "the assistant record did not reach the store"
-        assert all(e.provenance.author_of_evidence is EvidenceAuthor.ASSISTANT
+        # 0.18.1 compat: the declaration is accepted (an unknown value would
+        # raise) and INERT — the conservative baseline stores third_party
+        # (the round-1 F1 cell of specs/0031: assistant scores authority 1
+        # and must not be reachable by the model's say-so). 0.19's `direct`
+        # honours it as a restriction.
+        assert all(e.provenance.author_of_evidence is EvidenceAuthor.THIRD_PARTY
                    for e in edges), (
-            "the assistant surface wrote some other author class")
+            "the compat baseline must store third_party, not the model's class")
         assert all(e.provenance.disclosure is Disclosure.USE_ONLY
                    for e in edges), (
             "assistant-authored material must be held at use_only — it may "

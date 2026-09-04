@@ -36,6 +36,15 @@ INVENTORY = [
                          "implementation obligation per 0015 R9-4/R10-3)"),
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the death-release half of the same POSIX pair"),
+    ("tests/test_0031_compat_release.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — 0.18.1's compat-release "
+                            "tests need the framework for the two cells that "
+                            "go through the built server (build_server/main "
+                            "refusing `direct`; the 0.18.0 tool surface); the "
+                            "importorskip is INSIDE those two tests only. "
+                            "Author line: all PASS (mcp importable in the "
+                            "authoring venv); an mcp-absent environment sees "
+                            "2 SKIP"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "

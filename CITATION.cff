@@ -8,7 +8,7 @@ authors:
 repository-code: "https://github.com/veracium-ai/Veracium"
 url: "https://github.com/veracium-ai/Veracium"
 license: MIT
-version: 0.18.0
+version: 0.18.1
 date-released: 2026-08-31
 keywords:
   - agent memory
