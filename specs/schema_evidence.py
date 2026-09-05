@@ -362,7 +362,7 @@ def build_version_artifact(strict: bool = True) -> dict:
         # shapes PLUS the additive objects, which the constructor manifest
         # at v12 already carries (`ctor` below is identity(manifest) at the
         # loop version, so the same 2x2 manipulation inherits them).
-        if version in (10, 11, 12):   # specs/0001 I13c (candidate): v11
+        if version in (10, 11, 12, 13):   # specs/0001 I13c (candidate): v11
             # inherits EVERY accepted v10 manifestation BY CONSTRUCTION —
             # the same 2x2 object manipulation, digested at 11 (SCHEMA_V11
             # is SCHEMA_V10, so exact inheritance is the same code path)
@@ -397,7 +397,8 @@ def build_version_artifact(strict: bool = True) -> dict:
                         "provenance": f"migrated->v{version} (0025 §4b-v: {ops_tag}; "
                                       f"{ledger_tag})"
                                       + (" [v10 shape inherited at v11 — specs/0001 I13c]" if version == 11 else "")
-                                      + (" [v11 shape + the 0027 additive diff — specs/0027 §4f]" if version == 12 else ""),
+                                      + (" [v11 shape + the 0027 additive diff — specs/0027 §4f]" if version == 12 else "")
+                                      + (" [v12 shape + the 0029 additive diff — specs/0029 §4e]" if version == 13 else ""),
                         "digest": sv._digest_of_identity(alt, version),
                         "objects": alt})
         c.close()

@@ -433,18 +433,23 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: census's current fact. Per the reviewer's governing rule, a change to
 #: these NUMBERS is an implementation consideration — the S2 valid_from
 #: predicate (2026-09-04) added its attribute accesses to schema.py and
-#: moved dotted/dataflow 4,583 -> 4,594 — while a change to the five
-#: CLASSES or the completeness scope reopens design review. Each
-#: regeneration is recorded in the spec's implementation-note cells.
+#: moved dotted/dataflow 4,583 -> 4,594; 0031 Phase A (2026-09-04) moved it
+#: to 4,604; 0029's carrier (2026-09-05: the choke point, the write
+#: transaction, the read surface, the event helpers) moved dotted/dataflow
+#: 4,604 -> 4,687, module-plain 251 -> 253, module-protected 35 -> 43 (the
+#: store's own `_txn_alloc`/`_journal_scope`/`_write_txn` uses), data
+#: dunders 96 -> 97 — while a change to the five CLASSES or the completeness
+#: scope reopens design review. Each regeneration is recorded in the
+#: implementing spec's closure/implementation notes (0032 §; 0029 closure).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4604,
+    "dotted/dataflow": 4687,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 251,
-    "dotted/module-protected": 35,
+    "dotted/module-plain": 253,
+    "dotted/module-protected": 43,
     "getattr/dataflow": 21,
 }
-SRC_ATTRIBUTE_TOTAL = 4930
-SRC_DATA_DUNDERS_IN_DATAFLOW = 96
+SRC_ATTRIBUTE_TOTAL = 5023
+SRC_DATA_DUNDERS_IN_DATAFLOW = 97
 
 
 def _classify_attribute(base, attr, ctx):

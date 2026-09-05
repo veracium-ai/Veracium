@@ -226,6 +226,18 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
                 diff="the v9->v10 ALTER produced DDL matching NEITHER frozen "
                      "expectation (0025 §4b-v) — the migration or runtime is "
                      "wrong; the expectations never move")
+    # specs/0029 §4e: crossing INTO v13 journals the EPOCH BASELINE — every
+    # pre-existing edge row once, as found (bytes), reason NULL, one batch per
+    # user — and mints the per-store `store_epoch` row, in THIS transaction
+    # with the stamp: partial states are unrepresentable and a crash-retry
+    # (base still 12) mints exactly one baseline. A DATA step the additive
+    # DDL cannot express, the `store_identity` mint's shape. Guarded
+    # base<13<=head so it fires exactly once, on the v12→v13 cross.
+    if base < 13 <= SCHEMA_VERSION:
+        from .edge_events import journal_baselines, mint_store_epoch
+        now_iso = datetime.now(timezone.utc).isoformat()   # ONE clock read
+        journal_baselines(conn, now_iso)
+        mint_store_epoch(conn, now_iso, 13)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 

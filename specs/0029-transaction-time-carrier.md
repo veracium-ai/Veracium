@@ -632,6 +632,33 @@ cross-machine. §6a's full acceptance corpus (the fifteen joint scenarios)
 is an implementation obligation, frozen model-free before the first run
 per the house pattern.
 
+**§6a corpus FROZEN (2026-09-05, before the first choke-point commit):**
+research — the seat that does not implement — derived every expectation
+from this spec's text alone and froze `tests/eval/edge_events/MANIFEST.json`,
+sha256 `820cabee48112d8e674bfbff1917a0eca22d58d6b8bfebd7a101ff2a147f6f81`
+(ten named scenarios with event sequences and reconstructions, scenario 9's
+literal `epoch_txn = 0` cell, scenario 10's both schedules, the five
+0030-owned classification cells, the nine retained v2 scenarios, the four
+pass criteria copied from §6a). Two mechanism questions are marked OPEN
+there rather than guessed (scenario 6's equal `recorded_at`; scenario
+10(b)'s failure surface) and are answered by dev's builder, which lives
+beside the manifest (`tests/eval/edge_events/corpus_runner.py`, run on
+every CI run by `test_0029_acceptance_corpus.py`). **Amendment 1** (research,
+same day, after dev's answers): the two questions moved to
+`OPEN_QUESTIONS_CLOSED` with the declared mechanisms; NO expectation
+changed; sha256 `c844523962fecdf8ea369312e86a9756a505001f674bc017e8bf2363a1c6da8b`
+supersedes `820cabee…` as the shipped text, and the runner pins it.
+*Implementation note (2026-09-05):* the carrier's code moved 0031's LIVE
+attribute-partition row (an implementation consideration under its
+governing rule, not a design change): dotted/dataflow 4,604 → 4,687,
+module-plain 251 → 253, module-protected 35 → 43, data-dunders 96 → 97;
+regenerated from the census walker and bound in
+`specs/evidence/0031/connection_census.py`. **V-COMPAT's pre-feature oracle:**
+`specs/evidence/0029/pre_feature_oracle/pre_feature_capture.json`, sha256
+`186a0909df6ac11dc20801800b59d1778e7073fa728f0e42f88a93f398edb947`,
+captured at main `1fc357f4` (four surfaces; two measured non-behaviour
+exclusions named in `CAPTURE.md`).
+
 **Structured record:** the joint arc's ONE generated ledger — every finding
 of all eighteen rounds, each row naming its target artifact (`→ 0029` for
 the rows above) — lives in specs/0030 `## Review closure`, validated by

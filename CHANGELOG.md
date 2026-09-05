@@ -1,5 +1,58 @@
 # Changelog
 
+## Unreleased
+
+**BREAKING for existing stores — schema 12 → 13 (specs/0029, the
+transaction-time carrier).** Two additive tables (`edge_event`, `store_epoch`)
+and ONE data step: the migration journals every existing edge exactly once as
+a `baseline` event holding the row's json as found, in one transaction with
+the stamp. A store created by ≤ 0.19 must be migrated offline before this
+build opens it — `veracium migrate --db X --i-have-quiesced --backup REF`
+(specs/0013's operation; a below-head store refuses to open otherwise).
+**Who must act:** every operator with an on-disk store. Library and MCP
+callers change nothing: no public surface reads or accepts the new carrier
+(V-INERT, V-MINT), and with no consumer every existing surface — recall, the
+context block, export, the MCP tools — reproduces the pre-feature oracle
+byte-identically (V-COMPAT, captured at the pre-feature tree before any
+journaling code existed; `specs/evidence/0029/pre_feature_oracle/`).
+
+- **Added: the append-only edge-event journal** (`edge_event`). Every write to
+  the `edges` table — creation, same-id replacement, confirmation, invalidation,
+  reinstatement, recompute, import — emits ONE event in the same transaction
+  carrying the edge's FULL post-write serialization; an unchanged serialization
+  emits nothing (the full-state trigger basis, 0030 R1-4's fourth site
+  included). Kinds are closed: `created`, `mutated`, `invalidated`,
+  `reinstated`, and the migration-only `baseline`. Events share a per-user
+  transaction id (`txn`) per event-emitting write transaction, so a
+  supersession's invalidate-A + create-B is one batch that any cutoff includes
+  or excludes whole; `seq` is the ordering authority and `recorded_at`
+  (store-minted, once per batch, never backwards) is telemetry.
+- **Added: the read surface** `Store.edge_events(user_id, *, edge_id=None,
+  until_txn=None)`, `Store.edge_state_at(user_id, edge_id, until_txn)` — the
+  RAW carrier (`RawEdgeState`: payload VERBATIM text, identity from the row
+  columns, no parse) — and `Store.epoch_txn(user_id)`. A cutoff below a
+  migrated user's epoch raises `PreEpochQuery` (the store fabricates no
+  pre-epoch knowledge); a fully-journaled user has epoch 0 and never refuses.
+- **Changed: every edge-writing entry point takes `BEGIN IMMEDIATE` before any
+  allocation read** (specs/0029 §4a; two `SqliteStore` instances on one file
+  allocate disjointly; the DEFERRED schedule is kept as an executable negative
+  control). The 0007 busy-timeout discipline applies: waits, then refuses loudly.
+- **Changed (fail-closed, one layer earlier): an invalidation reason outside
+  `DISPOSITIONED_REASONS` now REFUSES the write** (V-KIND) instead of retiring
+  the edge with an unregistered reason. Before, such a reason reached the wiki
+  drop's retain-set check; now it never reaches the writer. The refusal is
+  TOTAL across producers because it sits in the emission choke point
+  (`_journal_edge_write`), which every `edges` writer calls, and
+  `_invalidate_edge_row` is the sole `active=0` writer (0004 W7's structural
+  test) — not in `invalidate_edge`, where a reader checking one entry point
+  would find no guard. 0004's retain-set polarity is unchanged over the
+  registered domain (test updated to say so).
+- **Changed: `forget_user` erases the user's events in the same transaction**
+  (V-ERASE).
+- Write-path cost: one extra row per edge write plus two `MAX()` reads inside
+  the already-held write lock. No figure is stated until it is measured under
+  the harness's conditions (the 0027 ~6% note is the precedent for how).
+
 ## 0.19.0 — 2026-09-04
 
 **Upgrade recommendation:** every host running `veracium-mcp` should take

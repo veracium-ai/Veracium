@@ -11,7 +11,7 @@ also the isolation boundary (one user's memory can never leak into another's).
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from ..schema import (ConsolidationOp, ConsolidationOutputDraft, Confirmation,
                       ConfirmationActor, ConfirmationCallPath, Edge, Episode,
@@ -121,6 +121,61 @@ class ReceiptSchemaBoundaryError(SupersessionIntegrityError):
     replayed; recovery is a fresh operation id."""
 
 
+# --------------------------------------------------------------------------- #
+# specs/0029 — the transaction-time carrier's read-side types (§4b, §4b-ii, §4d)
+# --------------------------------------------------------------------------- #
+
+#: §4b — the closed kind set. `baseline` is written ONLY by the v13 migration
+#: (§4e), never by a runtime mutator; V-KIND holds the vocabulary closed and
+#: the store refuses to write or read an unknown kind.
+EVENT_KINDS: tuple = ("created", "mutated", "invalidated", "reinstated", "baseline")
+
+
+class EdgeEvent(NamedTuple):
+    """One journal row (§4a), typed, in `seq` order. `state` is the edge's FULL
+    canonical serialization AFTER the mutation, as VERBATIM TEXT — never parsed
+    at this surface (V-VERBATIM). `reason` is the EVENT's reason: non-NULL iff
+    kind == "invalidated"; it is never a classifier input (V-COLUMN-NOT-INPUT
+    on the consumer side — the state's own `invalidation_reason` lives inside
+    the payload). `recorded_at` is store-minted telemetry; `seq`/`txn` are the
+    ordering authority."""
+    user_id: str
+    seq: int
+    txn: int
+    edge_id: str
+    kind: str
+    reason: Optional[str]
+    state: str
+    recorded_at: str
+
+
+class RawEdgeState(NamedTuple):
+    """§4b-ii — the RAW SNAPSHOT CARRIER `edge_state_at` returns (F5, C-1, C-2):
+    `state` is the journal payload VERBATIM (text; parsing is the CONSUMER's
+    step — 0030's), and `edge_id`/`user_id` are authoritative FROM THE ROW
+    COLUMNS, byte-equal to them, never derived from the payload. 0029 promises
+    byte fidelity and nothing about payload validity."""
+    edge_id: str
+    user_id: str
+    state: str
+    txn: int
+    seq: int
+    kind: str
+    recorded_at: str
+
+
+class PreEpochQuery(ValueError):
+    """§4e / V-EPOCH — `until_txn < epoch_txn(user)`: the store holds no journal
+    before the user's epoch and fabricates none. A typed refusal, never `None`
+    (which honestly means "no such edge at any txn <= K" AFTER the epoch)."""
+
+
+class CutoffDomainError(ValueError):
+    """§4d — cutoff tokens are `txn` values: non-negative integers, the ONE
+    cutoff domain (F6). A non-integer or negative `until_txn` is a typed
+    refusal; `None` means unbounded."""
+
+
 def store_mutator(fn):
     """Marks a Store method that writes persistent state.
 
@@ -208,6 +263,30 @@ class Store(ABC):
         like the 0003 refusal inventory. Not abstract."""
         raise NotImplementedError(
             f"{type(self).__name__} does not implement contributions")
+
+    # -- specs/0029: the transaction-time carrier (read surface; additive) -----
+
+    def edge_events(self, user_id: str, *, edge_id: Optional[str] = None,
+                    until_txn: Optional[int] = None) -> list:
+        """§4d — typed `EdgeEvent` rows in `seq` order; `until_txn` bounds by
+        WHOLE transaction batches (F3: a batch is included or excluded entire,
+        never split); a cutoff earlier than the user's epoch REFUSES
+        (`PreEpochQuery`); `None` is unbounded."""
+        ...
+
+    def edge_state_at(self, user_id: str, edge_id: str,
+                      until_txn: Optional[int]):
+        """§4b-ii — the `state` payload of the LAST event for the edge with
+        `txn <= until_txn`, as the RAW carrier (`RawEdgeState`), or `None` when
+        the store held no such edge at any `txn <= K` (post-epoch); a pre-epoch
+        cutoff REFUSES. A single lookup — no delta replay, no fabrication."""
+        ...
+
+    def epoch_txn(self, user_id: str) -> int:
+        """§4e — the user's baseline batch `txn` for users predating v13; `0`
+        for users whose entire life is journaled. DERIVED from the `baseline`
+        events, never stored."""
+        ...
 
     def contributions_naming(self, user_id: str, contributor_ref: str) -> list:
         """specs/0021 §7b (the 0014 amendment's typed link): every ledger row

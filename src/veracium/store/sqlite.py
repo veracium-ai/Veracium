@@ -8,6 +8,7 @@ Postgres `Store` can replace this for very large multi-tenant deployments.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import sqlite3
@@ -24,10 +25,13 @@ from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationSt
                       Provenance, RECOVERY_PENDING_STATES,
                       SupersessionPlan, SupersessionRefusal, SupersessionResult,
                       is_historical_id, to_historical_id,
-                      WIKI_RETAINING_REASONS)
-from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
+                      WIKI_RETAINING_REASONS, DISPOSITIONED_REASONS)
+from .base import (CutoffDomainError, EdgeEvent, PreEpochQuery, RawEdgeState,
+                   DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
                    PLAN_STALE, ReceiptSchemaBoundaryError, Store,
                    SupersessionIntegrityError)
+from .edge_events import (append_event, mint_recorded_at, next_seq,  # noqa: F401
+                          next_txn)
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              PostCommitAuditError,
                              StoreVersionError, open_versioned)
@@ -40,6 +44,45 @@ from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
 # creation now happens exactly once, on the §4 "new" path, inside the open
 # transaction.
 _SCHEMA = ";\n".join(o.ddl for o in SCHEMAS[SCHEMA_VERSION]) + ";\n"
+
+# specs/0029 §4b — EVERY function in this module that writes the `edges` table,
+# with its event ruling. `tests/test_0029_carrier.py::
+# test_every_edge_writing_site_carries_an_event_ruling` DERIVES the population
+# (a regex over the raw UPDATE / INSERT ... INTO / DELETE FROM forms, literal
+# and interpolated) and refuses a site absent here. KIND IS NOT A PROPERTY OF
+# THE SITE — it is decided per WRITE by `_journal_edge_write` from prior
+# presence × serialization delta (v4 F-A: no site→kind mapping can be total);
+# the only site-determined kinds are the two `active` flips, passed as a hint.
+_ERASE_TABLES = ("contribution_ledger",
+                 "edges", "episodes", "wiki", "write_counter",
+                 "confirmations", "consolidation_ops",
+                 "supersession_refusals", "supersession_operations",
+                 "edge_embedding", "edge_event")
+EDGE_WRITE_SITE_RULINGS = {
+    "_upsert_edge_row": {
+        "ruling": "reads the persisted prior, upserts, journals through the choke "
+                  "point (created / mutated / no event on unchanged bytes)"},
+    "confirm_edge": {
+        "ruling": "rewrites the edge json in place; journals (mutated, or no "
+                  "event when the confirmation changed no byte)"},
+    "_invalidate_edge_row": {
+        "ruling": "the SOLE active=0 writer; journals with the site hint "
+                  "`invalidated`, reason validated against DISPOSITIONED_REASONS"},
+    "_reinstate_edge_row": {
+        "ruling": "the SOLE active=1-restoring writer; journals with the site "
+                  "hint `reinstated`, reason NULL"},
+    "_recompute_edge_row": {
+        "ruling": "the fourth site (R1-4): rewrites valid_from/observed_at/"
+                  "confidence; journals on the FULL-STATE delta (mutated)"},
+    "commit_outcome_import_plan": {
+        "ruling": "imports edges through the choke point (created for new ids, "
+                  "mutated for a changed same-id row, none when byte-identical)"},
+    "forget_user": {
+        "ruling": "erasure: deletes the user's edges AND the user's events in "
+                  "the same transaction (V-ERASE); journals nothing — the "
+                  "journal is what is being erased",
+        "tables": _ERASE_TABLES},
+}
 
 
 class SqliteStore(Store):
@@ -75,6 +118,9 @@ class SqliteStore(Store):
             self._conn.close()
             raise
         self._lock = threading.Lock()
+        # specs/0029 §4a: the per-transaction allocation scope (txn per user,
+        # one clock read per batch). None outside a journaled write.
+        self._txn_alloc = None
 
     def _bump(self, user_id: str) -> None:
         self._conn.execute(
@@ -94,6 +140,153 @@ class SqliteStore(Store):
                 "store_identity singleton is missing — a v5 store mints it at "
                 "creation/migration (specs/0006 §4.2); this store did not")
         return row[0]
+
+    # -- specs/0029: the journaled write transaction and its choke point ----
+    @contextlib.contextmanager
+    def _journal_scope(self):
+        """The allocation scope of ONE event-emitting transaction: a fresh
+        per-user txn map and one clock read. Re-entrant (an inner scope joins
+        the outer's batch — V-BATCH). Opened by `_write_txn`, and by the
+        revocation operation around its own `BEGIN IMMEDIATE`."""
+        if self._txn_alloc is not None:
+            yield
+            return
+        self._txn_alloc = {"clock": None, "users": {}}
+        try:
+            yield
+        finally:
+            self._txn_alloc = None
+
+    @contextlib.contextmanager
+    def _write_txn(self):
+        """specs/0029 §4a: every edge-writing entry point runs inside this.
+        Takes `BEGIN IMMEDIATE` BEFORE any allocation read (V-TXN-ALLOC —
+        the DEFERRED schedule lets two connections read one maximum; the
+        seam model keeps that reproduction as the negative control) and
+        commits or rolls back the WHOLE batch. JOINS an already-open
+        transaction (the caller owns commit) instead of nesting. The 0007
+        §4c discipline: `busy_timeout` waits, then this refuses loudly."""
+        with self._journal_scope():
+            if self._conn.in_transaction:
+                yield
+                return
+            try:
+                self._conn.execute("BEGIN IMMEDIATE")
+            except sqlite3.OperationalError as e:
+                raise sqlite3.OperationalError(
+                    f"could not take the write lock for a journaled edge write "
+                    f"({e}) — refusing rather than allocating under a DEFERRED "
+                    f"schedule (specs/0029 §4a; 0007 §4c)") from e
+            try:
+                yield
+            except BaseException:
+                if self._conn.in_transaction:
+                    self._conn.rollback()
+                raise
+            else:
+                if self._conn.in_transaction:
+                    self._conn.commit()
+
+    _SITE_KINDS = frozenset({"invalidated", "reinstated"})
+
+    def _journal_edge_write(self, user_id: str, edge_id: str, new_json: str,
+                            prior_json: Optional[str], *, kind: Optional[str] = None,
+                            reason: Optional[str] = None) -> Optional[str]:
+        """THE emission choke point (specs/0029 §4b): called by every `edges`
+        writer AFTER its row write, inside the same transaction. Decides the
+        kind from the WRITE — prior absent → `created`; prior present and the
+        serialization changed → `mutated`, or the site's `active`-flip hint;
+        prior present and bytes unchanged → NO event (the full-state trigger
+        basis, F4). `baseline` is the migration's kind and refused here.
+        `reason` is non-NULL iff kind == invalidated and must be one of the
+        seven DISPOSITIONED_REASONS — an unregistered reason refuses the
+        WRITE (the exception unwinds the transaction). Returns the kind
+        journaled, or None."""
+        if self._txn_alloc is None or not self._conn.in_transaction:
+            raise RuntimeError(
+                "edge write outside a journaled write transaction — every "
+                "edges writer runs inside _write_txn (specs/0029 §4a)")
+        if kind is not None and kind not in self._SITE_KINDS:
+            raise ValueError(
+                f"kind {kind!r} is not a site-determinable kind — only the two "
+                f"active flips are; created/mutated derive from the write and "
+                f"baseline is the migration's alone (specs/0029 §4b)")
+        if prior_json is None:
+            if kind is not None:
+                raise ValueError(f"{kind!r} write with no prior row for {edge_id!r}")
+            kind = "created"
+        elif new_json == prior_json:
+            return None                          # unchanged serialization: no event
+        elif kind is None:
+            kind = "mutated"
+        if kind == "invalidated":
+            if reason not in DISPOSITIONED_REASONS:
+                raise ValueError(
+                    f"invalidation reason {reason!r} is not registered in "
+                    f"DISPOSITIONED_REASONS — the write is refused (specs/0029 V-KIND)")
+        else:
+            reason = None
+        alloc = self._txn_alloc
+        if alloc["clock"] is None:
+            alloc["clock"] = self._now()         # ONE clock read per batch (§4c)
+        if user_id not in alloc["users"]:
+            alloc["users"][user_id] = (
+                next_txn(self._conn, user_id),
+                mint_recorded_at(self._conn, user_id, alloc["clock"]))
+        txn, recorded_at = alloc["users"][user_id]
+        append_event(self._conn, user_id=user_id, seq=next_seq(self._conn, user_id),
+                     txn=txn, edge_id=edge_id, kind=kind, reason=reason,
+                     state=new_json, recorded_at=recorded_at)
+        return kind
+
+    # -- specs/0029 read surface --------------------------------------------
+    def edge_events(self, user_id: str, *, edge_id: Optional[str] = None,
+                    until_txn: Optional[int] = None) -> list[EdgeEvent]:
+        q = ("SELECT user_id, seq, txn, edge_id, kind, reason, state, recorded_at "
+             "FROM edge_event WHERE user_id=?")
+        args: list = [user_id]
+        if edge_id is not None:
+            q += " AND edge_id=?"; args.append(edge_id)
+        if until_txn is not None:
+            q += " AND txn<=?"; args.append(self._cutoff(until_txn))
+        q += " ORDER BY seq"
+        return [EdgeEvent(*r) for r in self._conn.execute(q, args).fetchall()]
+
+    @staticmethod
+    def _cutoff(until_txn) -> int:
+        if isinstance(until_txn, bool) or not isinstance(until_txn, int):
+            raise CutoffDomainError(
+                f"until_txn must be an int, got {type(until_txn).__name__}")
+        return until_txn
+
+    def edge_state_at(self, user_id: str, edge_id: str, until_txn: int):
+        """specs/0029 §4b-ii: the RAW carrier — the `state` of the last event
+        with txn ≤ until_txn, VERBATIM text, identity from the ROW COLUMNS;
+        None before the edge's first event; a typed refusal below the user's
+        epoch (V-EPOCH: a migrated store fabricates no pre-epoch knowledge)."""
+        k = self._cutoff(until_txn)
+        epoch = self.epoch_txn(user_id)
+        if k < epoch:
+            raise PreEpochQuery(
+                f"until_txn {k} precedes user {user_id!r}'s journaling epoch "
+                f"(txn {epoch}) — no state is known before it (specs/0029 §4e)")
+        row = self._conn.execute(
+            "SELECT edge_id, user_id, state, txn, seq, kind, recorded_at "
+            "FROM edge_event WHERE user_id=? AND edge_id=? AND txn<=? "
+            "ORDER BY seq DESC LIMIT 1", (user_id, edge_id, k)).fetchone()
+        if row is None:
+            return None
+        return RawEdgeState(edge_id=row[0], user_id=row[1], state=row[2], txn=row[3],
+                            seq=row[4], kind=row[5], recorded_at=row[6])
+
+    def epoch_txn(self, user_id: str) -> int:
+        """§4e: the txn of the user's migration baseline batch — DERIVED
+        (MIN over the user's `baseline` events); 0 for a user journaled from
+        the first write, which no cutoff can precede."""
+        row = self._conn.execute(
+            "SELECT MIN(txn) FROM edge_event WHERE user_id=? AND kind='baseline'",
+            (user_id,)).fetchone()
+        return int(row[0]) if row and row[0] is not None else 0
 
     # -- edges -------------------------------------------------------------
     def _upsert_edge_row(self, edge: Edge) -> None:
@@ -131,14 +324,17 @@ class SqliteStore(Store):
                     f"({prior_edge.ungrounded} → {edge.ungrounded}) on edge "
                     f"{edge.id!r} — a stored flag is immutable in both "
                     f"directions (specs/0019 §4d, U4)")
+        new_json = edge.model_dump_json()
         self._conn.execute(
             "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
             "VALUES(?,?,?,?,?,?,?,?)",
             (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
-             int(edge.active), int(edge.quarantined), edge.model_dump_json()))
+             int(edge.active), int(edge.quarantined), new_json))
+        self._journal_edge_write(edge.user_id, edge.id, new_json,
+                                 prior[1] if prior is not None else None)
 
     def add_edge(self, edge: Edge) -> None:
-        with self._lock:
+        with self._lock, self._write_txn():
             self._upsert_edge_row(edge)
             self._bump(edge.user_id)
             self._conn.commit()
@@ -155,7 +351,7 @@ class SqliteStore(Store):
                      request_digest, confirmed_at) -> Confirmation:
         _COLS = ("id, user_id, edge_id, confirmed_at, actor, call_path, "
                  "correlation_id, request_digest")
-        with self._lock:
+        with self._lock, self._write_txn():
             row = self._conn.execute(
                 "SELECT json FROM edges WHERE id=? AND user_id=?",
                 (edge_id, user_id)).fetchone()
@@ -188,8 +384,10 @@ class SqliteStore(Store):
             actor_v = ConfirmationActor(actor).value
             call_v = ConfirmationCallPath(call_path).value
             try:
+                new_json = edge.model_dump_json()
                 self._conn.execute("UPDATE edges SET json=? WHERE id=?",
-                                   (edge.model_dump_json(), edge_id))
+                                   (new_json, edge_id))
+                self._journal_edge_write(user_id, edge_id, new_json, row[0])
                 self._conn.execute(
                     "INSERT OR REPLACE INTO episodes(id,user_id,date,json) "
                     "VALUES(?,?,?,?)",
@@ -249,14 +447,21 @@ class SqliteStore(Store):
         edge = Edge.model_validate_json(row[0])
         edge.invalidated_at = at
         edge.invalidation_reason = reason
+        new_json = edge.model_dump_json()
         self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
-                           (edge.model_dump_json(), edge_id))
+                           (new_json, edge_id))
+        # specs/0029 §4b: the site-determined kind (the SOLE active=0 writer);
+        # an unregistered reason refuses the whole write here (V-KIND)
+        self._journal_edge_write(row[1], edge_id, new_json, row[0],
+                                 kind="invalidated", reason=reason)
         # specs/0004 (W1/W2, internal R2): the wiki drop lives HERE, in the sole
         # active=0 writer, so every invalidation path — present and future —
         # inherits it by construction instead of having to remember it. The
-        # RETAIN-set is consulted, never a drop-list: an unrecognised reason
-        # drops (§2c, fail-closed). The refusal-contention drops in the callers
-        # are 0003's independent, reason-blind condition and remain beside this.
+        # RETAIN-set is consulted, never a drop-list: a registered reason
+        # outside it drops (§2c, fail-closed). An UNREGISTERED reason never
+        # reaches this line — specs/0029 V-KIND refused the write just above.
+        # The refusal-contention drops in the callers are 0003's independent,
+        # reason-blind condition and remain beside this.
         if reason not in WIKI_RETAINING_REASONS:
             self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
         return row[1]
@@ -297,8 +502,10 @@ class SqliteStore(Store):
         # IS the reinstatement; the column mirrors it
         edge.invalidated_at = None
         edge.invalidation_reason = None
+        new_json = edge.model_dump_json()
         self._conn.execute("UPDATE edges SET active=1, json=? WHERE id=?",
-                           (edge.model_dump_json(), edge_id))
+                           (new_json, edge_id))
+        self._journal_edge_write(row[1], edge_id, new_json, row[0], kind="reinstated")
         self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
 
     def _reinstate_episode_row(self, episode_id: str) -> None:
@@ -331,8 +538,11 @@ class SqliteStore(Store):
         edge.valid_from = _parse(values["valid_from"])
         edge.provenance.observed_at = _parse(values["observed_at"])
         edge.provenance.confidence = float(values["confidence"])
+        new_json = edge.model_dump_json()
         self._conn.execute("UPDATE edges SET json=? WHERE id=?",
-                           (edge.model_dump_json(), edge_id))
+                           (new_json, edge_id))
+        # the fourth site (0030 R1-4): digest-invisible, full-state-visible
+        self._journal_edge_write(row[1], edge_id, new_json, row[0])
         self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
 
     def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:
@@ -344,7 +554,7 @@ class SqliteStore(Store):
             (user_id, edge_id, edge_id)).fetchone() is not None
 
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None:
-        with self._lock:
+        with self._lock, self._write_txn():
             uid = self._invalidate_edge_row(edge_id, at, reason)
             if uid is None:
                 return
@@ -522,7 +732,7 @@ class SqliteStore(Store):
         from .base import CorrectionAuthorisationError
         inc = plan.incoming_edge
         user_id = inc.user_id
-        with self._lock:
+        with self._lock, self._write_txn():
             # 1. receipt check — PRECEDES the CAS check, so a committed op REPLAYS rather
             #    than tripping PlanStale on its own now-stale expected_state (§4f, r9 B3),
             #    AND precedes EVERY digest computation: the 0016 D2 era boundary fires
@@ -1329,7 +1539,7 @@ class SqliteStore(Store):
                     f"never selected (0009 §4c as amended, R9-3/R13-1)")
             validate_payload(row["site"], row["payload"])   # site registry
             contrib_by_surv.setdefault(row["survivor_id"], []).append(row)
-        with self._lock:
+        with self._lock, self._write_txn():
             # (1) Revalidate EVERY destination assumption the preflight reasoned
             # about (round-6 Correction B) — atomically, before any write.
             for eid, expect_present in expected_destination_state.get(
@@ -1396,11 +1606,16 @@ class SqliteStore(Store):
             # the SAME transaction — nothing is durable after a prefix).
             try:
                 for edge in edges:
+                    prior = self._conn.execute(
+                        "SELECT json FROM edges WHERE id=?", (edge.id,)).fetchone()
+                    new_json = edge.model_dump_json()
                     self._conn.execute(
                         "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
                         "VALUES(?,?,?,?,?,?,?,?)",
                         (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
-                         int(edge.active), int(edge.quarantined), edge.model_dump_json()))
+                         int(edge.active), int(edge.quarantined), new_json))
+                    self._journal_edge_write(user_id, edge.id, new_json,
+                                             prior[0] if prior is not None else None)
                 for ep in episodes:
                     self._conn.execute(
                         "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
@@ -1751,7 +1966,7 @@ class SqliteStore(Store):
 
     # -- compliance erasure -------------------------------------------------
     def forget_user(self, user_id) -> dict:
-        with self._lock:
+        with self._lock, self._write_txn():
             n_edges = self._conn.execute(
                 "SELECT COUNT(*) FROM edges WHERE user_id=?", (user_id,)).fetchone()[0]
             n_eps = self._conn.execute(
@@ -1768,11 +1983,13 @@ class SqliteStore(Store):
             # specs/0027 §4f (V-ERASE): the user's embedding rows go in the
             # SAME transaction — erasure requires the bytes gone; V-FRESH
             # blocking recall of an orphan does not satisfy erasure.
-            for table in ("contribution_ledger",
-                          "edges", "episodes", "wiki", "write_counter",
-                          "confirmations", "consolidation_ops",
-                          "supersession_refusals", "supersession_operations",
-                          "edge_embedding"):
+            # specs/0029 §4f (V-ERASE): the user's events go in the SAME
+            # transaction — the journal is erasable data, and this is the ONE
+            # place that deletes from it (V-APPEND names this statement).
+            self._conn.execute("DELETE FROM edge_event WHERE user_id=?", (user_id,))
+            for table in _ERASE_TABLES:
+                if table == "edge_event":
+                    continue                      # deleted above, by name
                 self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
             self._conn.commit()
         return {"edges": n_edges, "episodes": n_eps, "confirmations": n_conf}

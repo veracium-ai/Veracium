@@ -122,11 +122,27 @@ def test_invalidation_reason_registry_is_total():
 
 
 def test_runtime_consults_only_the_retain_set(tmp_path):
-    """An INVENTED reason string drops — proving the runtime branches on
-    retain-set membership, never on a drop-list (internal R1's polarity)."""
+    """The runtime branches on retain-set membership, never on a drop-list
+    (internal R1's polarity): EVERY registered reason outside the retain set
+    drops. An INVENTED reason string no longer reaches this branch at all —
+    specs/0029 V-KIND (accepted 2026-09-01) refuses the WRITE for a reason
+    outside DISPOSITIONED_REASONS, which is fail-closed one layer earlier:
+    the edge stays live and the wiki stays as it was, because nothing
+    happened. Before 0029 this test drove the invented string through and
+    asserted the drop; the polarity claim is the same, exercised over the
+    registered domain (the only one the writer can now see)."""
+    from veracium.schema import DISPOSITIONED_REASONS, WIKI_RETAINING_REASONS
     s, e = _store_with_wiki(tmp_path)
-    s.invalidate_edge(e.id, utcnow(), "some_reason_no_spec_has_named")
-    assert s.get_wiki(U) is None
+    with pytest.raises(ValueError):
+        s.invalidate_edge(e.id, utcnow(), "some_reason_no_spec_has_named")
+    assert s.get_wiki(U) is not None, "a refused write must touch nothing"
+    non_retaining = sorted(set(DISPOSITIONED_REASONS) - WIKI_RETAINING_REASONS)
+    assert non_retaining, "the polarity needs at least one registered non-retaining reason"
+    for reason in non_retaining:
+        d = tmp_path / reason; d.mkdir()
+        s2, e2 = _store_with_wiki(d)
+        s2.invalidate_edge(e2.id, utcnow(), reason)
+        assert s2.get_wiki(U) is None, f"registered non-retaining reason {reason!r} did not drop"
 
 
 # --- W6: 0003's refusal-contention drop still fires, independently -----------

@@ -301,6 +301,22 @@
       "store_schema_version": 12,
       "digest": "ee2e1e869ddc320d0e53315de751cc7126dd6bdf3746ec0419638c0b4fd39dfa",
       "result": "ok"
+    },
+    {
+      "tag": "v0.18.1",
+      "commit": "b8a44893a9d43d802ab036674d8c677ff1a89a33",
+      "on_disk_user_version": 12,
+      "store_schema_version": 12,
+      "digest": "ee2e1e869ddc320d0e53315de751cc7126dd6bdf3746ec0419638c0b4fd39dfa",
+      "result": "ok"
+    },
+    {
+      "tag": "v0.19.0",
+      "commit": "9cc0cea72da1a0857e74a0caf1a22abd91d89833",
+      "on_disk_user_version": 12,
+      "store_schema_version": 12,
+      "digest": "ee2e1e869ddc320d0e53315de751cc7126dd6bdf3746ec0419638c0b4fd39dfa",
+      "result": "ok"
     }
   ]
 }

@@ -1055,6 +1055,15 @@ closed. This section was the template's placeholder from acceptance
 (2026-09-03) until 2026-09-04 — the gap the standing closure-presence test
 now refuses.
 
+**§6a corpus FROZEN (2026-09-05, before implementation):** the shared
+0029/0030 acceptance manifest, `tests/eval/edge_events/MANIFEST.json`,
+sha256 `820cabee48112d8e674bfbff1917a0eca22d58d6b8bfebd7a101ff2a147f6f81`,
+frozen by research from the specs' text; the five classification cells this
+spec owns are named there and specified in §6a above. Dev owns the builder
+(`tests/eval/edge_events/corpus_runner.py`). Amendment 1 (same day, the two
+OPEN mechanism questions closed, no expectation changed): sha256
+`c844523962fecdf8ea369312e86a9756a505001f674bc017e8bf2363a1c6da8b`.
+
 <!-- GENERATED:review-closure -->
 
 **0 internal round(s) and 18 external round(s) with a returned VERDICT are recorded for `0030`; 18 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.

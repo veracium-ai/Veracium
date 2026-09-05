@@ -467,12 +467,48 @@ SCHEMA_V12 = SCHEMA_V11 + (
                  "ON edge_embedding(user_id, embedder_id, dim)", REBUILDABLE),
 )
 
+# specs/0029 §4a/§4e — the additive v13: the `edge_event` transaction-time
+# carrier (the §4a DDL, pinned EXACTLY — the SQL comments of the spec's block
+# are documentation and are not carried into sqlite_master; the column shapes,
+# the PK and BOTH indexes are the pinned artifact) plus the `store_epoch` row
+# "in store_identity's pattern" (spec :88) — a checked single-row table whose
+# guard lives in the SCHEMA, minted inside the v13 migration's ONE transaction
+# beside the baseline batch and the stamp (§4e). Policies: the table REQUIRED
+# ("an audit record is not derivable from current state, so its absence is
+# damage, not drift" — V-INERT); the indexes REBUILDABLE (the 0027 precedent;
+# the PK is the ordering backstop, the indexes are lookup accelerators).
+# `epoch_txn(user)` is DERIVED from the user's `baseline` events, never stored
+# (co-check 2026-09-05: a stored per-user epoch would be a second source of
+# truth for something the events already determine).
+SCHEMA_V13 = SCHEMA_V12 + (
+    SchemaObject("table", "edge_event", """CREATE TABLE edge_event (
+    user_id     TEXT    NOT NULL,
+    seq         INTEGER NOT NULL,
+    txn         INTEGER NOT NULL,
+    edge_id     TEXT    NOT NULL,
+    kind        TEXT    NOT NULL,
+    reason      TEXT,
+    state       TEXT    NOT NULL,
+    recorded_at TEXT    NOT NULL,
+    PRIMARY KEY (user_id, seq)
+)""", REQUIRED),
+    SchemaObject("index", "ix_edge_event_lookup",
+                 "CREATE INDEX ix_edge_event_lookup ON edge_event(user_id, edge_id, seq)",
+                 REBUILDABLE),
+    SchemaObject("index", "ix_edge_event_txn",
+                 "CREATE INDEX ix_edge_event_txn ON edge_event(user_id, txn)",
+                 REBUILDABLE),
+    SchemaObject("table", "store_epoch", """CREATE TABLE store_epoch (
+    id INTEGER PRIMARY KEY CHECK(id = 1), started_at TEXT NOT NULL, schema_at INTEGER NOT NULL
+)""", REQUIRED),
+)
+
 SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
            6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8, 9: SCHEMA_V9,
            10: SCHEMA_V10,
-           11: SCHEMA_V11, 12: SCHEMA_V12}
+           11: SCHEMA_V11, 12: SCHEMA_V12, 13: SCHEMA_V13}
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
@@ -513,6 +549,12 @@ def create(conn: sqlite3.Connection, version: int = SCHEMA_VERSION) -> None:
     # validation (shape-only) is unaffected.
     if version >= 5:
         _mint_store_identity(conn)
+    # specs/0029 §4e: a NEW v13+ store's journaling epoch is its creation —
+    # every write is journaled from the first, epoch_txn(user) = 0. Row data,
+    # not shape (the runtime gate rebuilds EVERY version through here).
+    if version >= 13:
+        from .edge_events import mint_store_epoch
+        mint_store_epoch(conn, datetime.now(timezone.utc).isoformat(), version)
 
 
 def manifest(conn: sqlite3.Connection) -> dict:

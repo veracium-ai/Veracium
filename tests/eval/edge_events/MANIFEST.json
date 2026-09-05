@@ -1,0 +1,394 @@
+{
+ "OPEN_QUESTIONS_CLOSED": [
+  {
+   "answer": "The store's injectable clock (SqliteStore(path, clock=...), the 0010 \u00a74b-ii lease clock), held frozen across both transactions.",
+   "answered_by": "dev, 2026-09-05, from the implementation",
+   "question": "Scenario 6: how the builder forces an equal recorded_at.",
+   "research_note": "ACCEPTED \u2014 this is a mechanism the SPEC already provides rather than one invented for the test, which is what the question was asking. The requirement I pinned is untouched; only the how was open."
+  },
+  {
+   "answer": "Verbatim and immediate on the seam-model runner at busy_timeout 0; embedded in the re-raised message on the product path. Asserted as the substring 'locked', which holds on both.",
+   "answered_by": "dev, 2026-09-05, from the implementation",
+   "question": "Scenario 10(b): whether `database is locked` surfaces verbatim or wrapped.",
+   "research_note": "ACCEPTED. Substring rather than equality is the right call and not a weakening: an assertion on the exact string would bind the corpus to one of the two paths and break on the other, which is the brittle-matcher defect this programme keeps re-finding."
+  }
+ ],
+ "OPEN_QUESTIONS_FOR_DEV": [],
+ "amendments": [
+  {
+   "n": 1,
+   "supersedes_sha256": "820cabee48112d8e674bfbff1917a0eca22d58d6b8bfebd7a101ff2a147f6f81",
+   "utc": "2026-09-05",
+   "what": "Both OPEN questions closed with dev's implementation answers, folded into the scenarios they govern (S06 setup + mechanism, S10 failure surface). NO EXPECTATION CHANGED \u2014 the amendment records mechanisms, which were dev's to declare, not bars, which were mine to set. The open list is emptied rather than deleted so the amendment shows what it closed."
+  }
+ ],
+ "classification_cells_owned_by_0030": [
+  "superseded-then-restricted source",
+  "open-at-K superseded later, T past the current interval",
+  "same-ID semantic replacement after K",
+  "mismatched identities",
+  "malformed state through the real load path \u2014 hidden AND visible"
+ ],
+ "corpus": "0029/0030 shared acceptance corpus (specs/0029 \u00a76a, specs/0030 \u00a76a)",
+ "derivation": "EVERY expectation derived from the SPEC's own text, never from dev's plan or code. Each scenario carries the spec line that determines it. Where the spec does not determine a value it is marked OPEN, not guessed.",
+ "frozen_by": "research (veracium-research) \u2014 the seat that does NOT implement",
+ "frozen_utc": "2026-09-05",
+ "pass_criteria_precommitted": [
+  "(1) EXACTNESS \u2014 every scenario's event sequence AND every named reconstruction equal the expected values, 100%",
+  "(2) scenario 1 shows the invalidation's transaction at the CORRECTION'S WRITE, not its valid-time",
+  "(3) V-ATOMIC's injected-fault case leaves NEITHER write",
+  "(4) scenario 5's boundary cutoffs NEVER observe a half-applied supersession"
+ ],
+ "retained_v2_scenarios": [
+  "create",
+  "supersede",
+  "confirm",
+  "note-append",
+  "absorb",
+  "dispute",
+  "expiry",
+  "import",
+  "erase"
+ ],
+ "scenarios": [
+  {
+   "expected_events": [
+    {
+     "edge": "E1",
+     "kind": "created",
+     "reason": null,
+     "txn": "t1"
+    },
+    {
+     "REQUIRED": "the invalidation's TXN is the CORRECTION'S WRITE (t2), never its valid-time (2025-06-01) \u2014 pass-criterion (2), 'the carrier answering what 0028 could not'",
+     "edge": "E1",
+     "kind": "invalidated",
+     "reason": "corrected",
+     "txn": "t2"
+    },
+    {
+     "edge": "E2",
+     "kind": "created",
+     "note": "same batch as the invalidation \u2014 V-BATCH",
+     "reason": null,
+     "txn": "t2"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "edge": "E1",
+     "expect": "the created payload, verbatim",
+     "until_txn": "t1"
+    },
+    {
+     "edge": "E1",
+     "expect": "the invalidated payload (invalidated_at + reason INSIDE the json)",
+     "until_txn": "t2"
+    }
+   ],
+   "id": "S01",
+   "notes": "K before/after the RECORDED transaction, not the backdated valid_from \u2014 the whole point of the scenario.",
+   "setup": [
+    "create E1 valid_from=2026-01-01 (txn t1)",
+    "correct E1 at wall-clock t2 with date=2025-06-01 (backdated)"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.1 + pass-criterion (2)",
+   "title": "backdated correction, K before and after its recorded transaction"
+  },
+  {
+   "expected_events": [
+    {
+     "edge": "E1",
+     "kind": "created",
+     "txn": "t1"
+    },
+    {
+     "edge": "E1",
+     "kind": "invalidated",
+     "reason": "revoked_source",
+     "txn": "t2"
+    },
+    {
+     "edge": "E1",
+     "kind": "reinstated",
+     "reason": null,
+     "txn": "t3"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "edge": "E1",
+     "expect": "the payload WITH invalidated_at and invalidation_reason set \u2014 the ERASED values recovered from the journal, which the live row no longer carries after t3",
+     "until_txn": "t2"
+    }
+   ],
+   "id": "S02",
+   "notes": "The recovery IS the scenario: after t3 the live row has been erased of those fields; only the journal holds the K-state.",
+   "setup": [
+    "create E1 (t1)",
+    "revoke source S (t2) -> E1 invalidated",
+    "lift the revocation (t3) -> E1 reinstated"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.2",
+   "title": "revocation then reinstatement, K between"
+  },
+  {
+   "expected_events": [
+    {
+     "edge": "E1",
+     "kind": "created",
+     "txn": "t1"
+    },
+    {
+     "REQUIRED": "an event MUST be emitted \u2014 the 0027 content digest never sees these fields, so a digest-based trigger would MISS this write. Full-state basis is what catches it (v3 F4).",
+     "edge": "E1",
+     "kind": "mutated",
+     "txn": "t2"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "edge": "E1",
+     "expect": "the pre-recompute valid_from",
+     "until_txn": "t1"
+    },
+    {
+     "edge": "E1",
+     "expect": "the post-recompute valid_from",
+     "until_txn": "t2"
+    }
+   ],
+   "id": "S03",
+   "setup": [
+    "create E1 (t1)",
+    "recompute E1 (t2) replacing valid_from/observed_at/confidence"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.3 + \u00a74b's fourth site (_recompute_edge_row, sqlite.py:334)",
+   "title": "valid_from changed by recompute after K (the fourth-site case)"
+  },
+  {
+   "expected_events": [
+    {
+     "edge": "E1",
+     "kind": "created",
+     "txn": "t1"
+    },
+    {
+     "REQUIRED": "emitted because the SERIALIZATION changed, though the content digest did not",
+     "edge": "E1",
+     "kind": "mutated",
+     "txn": "t2"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "edge": "E1",
+     "expect": "the pre-replacement disclosure",
+     "until_txn": "t1"
+    },
+    {
+     "edge": "E1",
+     "expect": "the post-replacement disclosure",
+     "until_txn": "t2"
+    }
+   ],
+   "id": "S04",
+   "setup": [
+    "create E1 (t1)",
+    "replace E1 with identical subject/relation/object/note but different provenance.disclosure (t2)"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.4 (the digest-invisible class)",
+   "title": "same-text replacement changing disclosure or scope provenance"
+  },
+  {
+   "expected_events": [
+    {
+     "edge": "A",
+     "kind": "created",
+     "txn": "t1"
+    },
+    {
+     "edge": "B",
+     "kind": "created",
+     "txn": "t2"
+    },
+    {
+     "edge": "A",
+     "kind": "invalidated",
+     "reason": "superseded",
+     "txn": "t3"
+    },
+    {
+     "edge": "C",
+     "kind": "created",
+     "txn": "t3"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "expect": "A active, C absent \u2014 the batch is wholly EXCLUDED",
+     "until_txn": "t2"
+    },
+    {
+     "expect": "A invalidated, C present \u2014 the batch is wholly INCLUDED",
+     "until_txn": "t3"
+    },
+    {
+     "REQUIRED": "NO cutoff observes A-invalidated-without-C or C-without-A-invalidated \u2014 pass-criterion (4), a half-applied supersession is unobservable"
+    }
+   ],
+   "id": "S05",
+   "setup": [
+    "create A and B (t1, t2)",
+    "one supersession transaction invalidating A and creating C (t3)"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.5 + pass-criterion (4)",
+   "title": "multi-edge supersession, cutoff AT the transaction boundary"
+  },
+  {
+   "expected_events": [
+    {
+     "recorded_at": "X",
+     "txn": "t1"
+    },
+    {
+     "recorded_at": "X",
+     "txn": "t2"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "REQUIRED": "txn DISTINGUISHES them; recorded_at is demoted to telemetry and orders nothing (v3 F3)"
+    }
+   ],
+   "id": "S06",
+   "mechanism_declared_by_dev_2026_09_05": "injected clock, frozen. The requirement is unchanged: txn differs (1 and 2), seq orders, and the monotone guard (recorded_at never goes backwards per user under a backwards clock step, V-MINT) is ORTHOGONAL to this scenario and must not be conflated with it.",
+   "setup": [
+    "two event-emitting transactions under an INJECTED, FROZEN store clock: SqliteStore(path, clock=callable) \u2014 the 0010 \u00a74b-ii lease clock, already a constructor parameter. The builder holds the clock at one instant across both transactions; \u00a74c mints once per batch from that clock, so both batches carry the same recorded_at."
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.6 + \u00a74c (recorded_at minted ONCE PER BATCH)",
+   "title": "two transactions sharing one recorded_at"
+  },
+  {
+   "expected_events": [
+    {
+     "edge": "E1",
+     "kind": "created",
+     "txn": "t1"
+    },
+    {
+     "edge": "E1",
+     "kind": "invalidated",
+     "reason": "disputed",
+     "txn": "t2"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "edge": "E1",
+     "expect": "the pre-dispute payload \u2014 0029 RECONSTRUCTS the held belief",
+     "until_txn": "t1"
+    }
+   ],
+   "id": "S07",
+   "notes": "0029 owns reconstruction ONLY. Whether that belief may be ASSERTED at T is 0030's caps (F2) \u2014 specified in 0030 \u00a76a over this same corpus.",
+   "setup": [
+    "create E1 (t1)",
+    "dispute E1 (t2)"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.7 \u2014 the JOINT half",
+   "title": "a later correction/dispute/revocation applied to an EARLIER snapshot"
+  },
+  {
+   "expected_events": [
+    {
+     "REQUIRED": "0029 journals it like any other state \u2014 no validation at this surface",
+     "edge": "E1",
+     "kind": "created"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "expect": "the RAW carrier returns the payload VERBATIM and lets it traverse the interface (V-VERBATIM); identity comes from the ROW COLUMNS, not the payload (C-2)"
+    }
+   ],
+   "id": "S08",
+   "notes": "0030's outer-visibility rule owns the CLASSIFICATION. 0029 must not classify.",
+   "setup": [
+    "journal an edge whose payload the current model REJECTS"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.8",
+   "title": "a malformed edge hidden from the querying principal"
+  },
+  {
+   "expected_events": [
+    {
+     "REQUIRED": "payload equal to the state AS FOUND (bytes, not re-serialized \u2014 V-BASELINE); reason NULL ALWAYS (the found invalidation_reason lives INSIDE the payload \u2014 V-COLUMN-NOT-INPUT); ONE baseline per edge; one batch per user",
+     "edge": "each pre-existing edge",
+     "kind": "baseline",
+     "txn": "epoch_txn(u)"
+    },
+    {
+     "edge": "the mutated one",
+     "kind": "mutated",
+     "txn": "t_next"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "expect": "REFUSAL (typed) \u2014 pre-epoch, V-EPOCH",
+     "until_txn": "epoch_txn - 1"
+    },
+    {
+     "expect": "the baseline payload, EXACT",
+     "until_txn": "epoch_txn"
+    },
+    {
+     "expect": "still the baseline payload \u2014 the pre-mutation state is NEVER None and never lost",
+     "until_txn": "between epoch and t_next"
+    },
+    {
+     "expect": "the mutated payload",
+     "until_txn": "t_next"
+    },
+    {
+     "CONTRAST_CELL": "a user created AFTER migration has epoch_txn = 0 \u2014 the LITERAL ZERO in the expected outcomes, not prose \u2014 and NO cutoff refuses for them"
+    }
+   ],
+   "id": "S09",
+   "notes": "Crash-retry mints exactly one baseline (the migration's single transaction).",
+   "setup": [
+    "v12 store with pre-existing ACTIVE and INACTIVE edges",
+    "migrate to v13",
+    "mutate one migrated edge after the upgrade"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.9 (round 2)",
+   "title": "migrated pre-existing edge AT the epoch, plus the epoch_txn=0 contrast"
+  },
+  {
+   "expected_events": [
+    {
+     "REQUIRED": "all batches whole and distinct; txns unique per user; seq gapless-monotone in the order the DATABASE serialized; ZERO allocation refusals; ZERO PK firings",
+     "schedule": "(a) POSITIVE \u2014 BEGIN IMMEDIATE before any allocation read"
+    },
+    {
+     "REQUIRED": "both connections read the SAME maxima and the second fails `database is locked` \u2014 the round-3 reviewer's reproduction, retained to prove the requirement is load-bearing rather than stylistic",
+     "schedule": "(b) NEGATIVE CONTROL \u2014 the DEFERRED schedule the spec FORBIDS"
+    }
+   ],
+   "expected_reconstructions": [
+    {
+     "note": "no reconstruction cell; this scenario scores the allocation schedule"
+    }
+   ],
+   "failure_surface_declared_by_dev_2026_09_05": "The DEFERRED schedule is executed by the seam model's runner (specs/evidence/0029-0030/seam_model/allocation_schedule.py::run_two_connection_schedule(path, deferred_batch, busy_timeout_ms=0)), NEVER by the product store \u2014 the product path only knows BEGIN IMMEDIATE. With busy_timeout 0 the loser raises sqlite3.OperationalError carrying sqlite's verbatim 'database is locked', immediately. In the PRODUCT store the analogous refusal (_write_txn cannot take the write lock after the 0007 busy wait) re-raises sqlite3.OperationalError whose message EMBEDS the original text, so the assertion is on the SUBSTRING 'locked' and holds on both paths. 'No partial batch persists' is checked twice: the runner's seqs-disjointness assertion and the corpus runner's whole-batch check.",
+   "id": "S10",
+   "setup": [
+    "two SqliteStore instances on ONE file, interleaved event-emitting writes"
+   ],
+   "spec_cite": "specs/0029-transaction-time-carrier.md \u00a76a.10 (round 2; schedule pinned round 3) + \u00a74a",
+   "title": "concurrent allocation from TWO connections \u2014 both schedules"
+  }
+ ],
+ "topology_discipline": "pinned ids, per-position instants (the 0027 v2.2 discipline)"
+}

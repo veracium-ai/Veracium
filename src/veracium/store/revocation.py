@@ -290,10 +290,15 @@ def revoke_source(store, user_id: str, target_digest: str, action: str,
             statement.update(st)
             return st["effects"]
 
-        revocation_operation(
-            store._conn, user_id, target_digest, action, reason, at,
-            plan=plan,
-            apply_effect=lambda _conn, e: _apply_statement_effect(store, at, e))
+        # specs/0029 §4a: the effects write `edges` through the store's sole
+        # writers, which journal — the allocation scope is THIS operation's
+        # (one txn for every effect of one revocation/lift — V-BATCH); the
+        # transaction itself is the R19 construction's own BEGIN IMMEDIATE.
+        with store._journal_scope():
+            revocation_operation(
+                store._conn, user_id, target_digest, action, reason, at,
+                plan=plan,
+                apply_effect=lambda _conn, e: _apply_statement_effect(store, at, e))
         store._bump(user_id)
         store._conn.commit()
         return statement
