@@ -38,6 +38,31 @@ def as_utc(dt: datetime) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
+def as_utc_required(value) -> datetime:
+    """specs/0030 V-NORM-TOTAL — the REQUIRED normalizer: a datetime, or the
+    ISO-8601 TEXT a raw journal payload carries (the classifier consumes raw
+    carriers, so timestamps arrive as strings), → UTC-aware. Type-checked
+    BEFORE `as_utc` (which assumes a datetime): `None`, a bool, a number or
+    any other type raises TypeError; unparseable text raises ValueError. Both
+    are the caller's MALFORMED. `as_utc(None) -> None` previously let `T=None`
+    reach a comparison; this refuses it."""
+    if isinstance(value, bool) or value is None:
+        raise TypeError(f"a datetime is required, got {type(value).__name__}")
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if not isinstance(value, datetime):
+        raise TypeError(f"a datetime is required, got {type(value).__name__}")
+    return as_utc(value)
+
+
+def as_utc_optional(value) -> Optional[datetime]:
+    """specs/0030 V-NORM-TOTAL — the OPTIONAL normalizer, for `invalidated_at`
+    only: None stays None; anything else goes through `as_utc_required`."""
+    if value is None:
+        return None
+    return as_utc_required(value)
+
+
 # --------------------------------------------------------------------------- #
 # Provenance — shared by edges and episodes. The abstention gate reads these.
 # --------------------------------------------------------------------------- #
@@ -426,6 +451,39 @@ DISPOSITIONED_REASONS: dict = {
     "decayed": "retain",           # W3
     "absorbed_duplicate": "retain",  # W8
 }
+
+
+# specs/0030 §2a — the TOTAL as-of disposition, keyed on the SAME reasons as
+# DISPOSITIONED_REASONS and placed beside it so a new reason is ruled in BOTH
+# registries in one edit. NOT an allow-set: an allow-set cannot distinguish
+# "deliberately never groundable" from "forgotten when a reason was added".
+# The build-time equality below FAILS THE IMPORT on any undispositioned
+# reason in either direction (V-FAILCLOSED); the runtime lookup DEFAULTS an
+# unknown/missing key to FENCED, so a registry drift can only fence, never
+# ground. GROUNDABLE here is deliberately NOT WIKI_RETAINING_REASONS:
+# `superseded` drops from the current wiki (the value moved on) yet WAS
+# validly true inside its interval, which is the whole reason 0030 needs its
+# own mapping.
+GROUNDABLE = "groundable"      # was validly true at T
+FENCED = "fenced"              # never groundable as fact; the belief is reported, not asserted
+EXCLUDED = "excluded"          # withdrawn — 0022 non-revival, not even fenced
+
+AS_OF_DISPOSITION: dict = {    # every DISPOSITIONED_REASONS key, explicitly
+    "superseded":         GROUNDABLE,   # was validly true until it changed
+    "lapsed":             GROUNDABLE,   # staleness is not falsity
+    "decayed":            GROUNDABLE,   # low-confidence-now is not was-false
+    "absorbed_duplicate": GROUNDABLE,   # was true; 0028 resolves to the absorber
+    "corrected":          FENCED,       # retroactively false
+    "disputed":           FENCED,       # trust revoked / contested at any T
+    "revoked_source":     EXCLUDED,     # withdrawn — 0022 non-revival
+}
+if set(AS_OF_DISPOSITION) != set(DISPOSITIONED_REASONS):   # the build gate (W5's shape)
+    raise ImportError(
+        "AS_OF_DISPOSITION and DISPOSITIONED_REASONS disagree on the reason set "
+        f"({sorted(set(AS_OF_DISPOSITION) ^ set(DISPOSITIONED_REASONS))}) — a new "
+        "reason must be dispositioned in BOTH registries (specs/0030 §2a, V-FAILCLOSED)")
+if set(AS_OF_DISPOSITION.values()) - {GROUNDABLE, FENCED, EXCLUDED}:
+    raise ImportError("AS_OF_DISPOSITION carries a value outside the three closed dispositions")
 
 
 class Edge(BaseModel):

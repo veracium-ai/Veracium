@@ -53,6 +53,37 @@ journaling code existed; `specs/evidence/0029/pre_feature_oracle/`).
   the already-held write lock. No figure is stated until it is measured under
   the harness's conditions (the 0027 ~6% note is the precedent for how).
 
+**Added (additive, not wired into recall) — specs/0030, time-relative
+classification.** The primitive 0028 v2's `as_of=` recall will call:
+`veracium.asof.classify_as_of(envelope, snapshot_raw, current_state, T, now,
+view=None) -> Result{status, held_at_K, flags}` and its boolean
+`assertable_as_of`, transcribed rule-by-rule from the accepted spec's
+pseudocode. Two verdicts, not one: `held_at_K` ("the store held this belief at
+K", from the snapshot alone) and `status` ("may this be asserted as fact now",
+the current caps applied, which only ever subtract). Seven closed statuses
+(`GROUNDED_AS_OF`, `FENCED_AS_OF`, `EXCLUDED`, `NOT_VALID_AT_T`, `MALFORMED`,
+`SCOPE_HIDDEN`, `IDENTITY_UNBOUND`); one flag, `stale-at-recall`. Nothing on
+the current recall path calls it; `Edge.assertable` is unchanged (caller-grep
+and the post-0027 oracle replay in `tests/test_0030_asof.py`).
+- `veracium.schema.AS_OF_DISPOSITION` — the TOTAL as-of disposition beside
+  `DISPOSITIONED_REASONS` (key-equal or the import fails; unknown key → fenced
+  at lookup). Deliberately not `WIKI_RETAINING_REASONS`: `superseded` drops
+  from the wiki yet was validly true inside its interval.
+- `veracium.schema.as_utc_required` / `as_utc_optional` — the two normalizers
+  (a datetime or a raw payload's ISO text → UTC-aware; `None` refused by the
+  required form, kept by the optional one).
+- `Store.current_state(user_id, edge_id, *, principal=None, policy=None) ->
+  CurrentState` — the current row VERBATIM, the three-valued source-restriction
+  verdict from the STANDING source state (clear / restricted / undeterminable,
+  returned never raised), the read token and, with a principal, the scope
+  decision computed IN the read window — all from ONE window the store owns
+  (one world under both journal modes).
+- `veracium.asof.adapt` — the raw adapter: journal or row TEXT → a validated
+  record with `quarantined`/`use_only` DERIVED (they are never serialized), or
+  `None`; duplicate JSON keys refused at the boundary. Parsing is the
+  consumer's (0029 promises bytes); a payload the current model rejects is
+  CLASSIFIED (`MALFORMED`, or `SCOPE_HIDDEN` under a view), never raised.
+
 ## 0.19.0 — 2026-09-04
 
 **Upgrade recommendation:** every host running `veracium-mcp` should take

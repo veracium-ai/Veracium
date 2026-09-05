@@ -292,6 +292,19 @@ NAMESPACE_CALLS = frozenset({"globals", "locals", "vars"})
 GETATTR_ALLOWANCES = {
     # (file relative to src/veracium, receiver expression, attribute):
     #     (count, receiver category, consumption)
+    # specs/0030 §4a-iii (the raw adapter, lifted from the seam model): the
+    # field-rule derivation reads MinLen/MaxLen off pydantic's FieldInfo
+    # metadata objects — the contract is DERIVED from the shipped model, never
+    # restated (round-5 F4), and a constraint object lacking the bound yields
+    # the running default
+    ("asof/adapter.py", "m", "min_length"):
+        (1, "pydantic FieldInfo.metadata constraint object (annotated_types)",
+         "read as an int lower bound, None-defaulted when the object lacks it; "
+         "compared to len(value)"),
+    ("asof/adapter.py", "m", "max_length"):
+        (1, "pydantic FieldInfo.metadata constraint object (annotated_types)",
+         "read as an int upper bound, None-defaulted when the object lacks it; "
+         "compared to len(value)"),
     ("__init__.py", "llm", "metering_capability"):
         (1, "host-supplied LLM adapter (duck-typed protocol)",
          "compared to the METERING_CAPABILITY constant"),
@@ -438,18 +451,22 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: transaction, the read surface, the event helpers) moved dotted/dataflow
 #: 4,604 -> 4,687, module-plain 251 -> 253, module-protected 35 -> 43 (the
 #: store's own `_txn_alloc`/`_journal_scope`/`_write_txn` uses), data
-#: dunders 96 -> 97 — while a change to the five CLASSES or the completeness
-#: scope reopens design review. Each regeneration is recorded in the
-#: implementing spec's closure/implementation notes (0032 §; 0029 closure).
+#: dunders 96 -> 97; 0030's classifier package + the store's current-state
+#: derivation (2026-09-05) moved dotted/dataflow 4,687 -> 4,776, module-plain
+#: 253 -> 255, module-protected 43 -> 44, getattr/dataflow 21 -> 23 (the
+#: adapter's two inventoried FieldInfo reads), data dunders 97 -> 100 — while
+#: a change to the five CLASSES or the completeness scope reopens design
+#: review. Each regeneration is recorded in the implementing spec's
+#: closure/implementation notes (0032 §; 0029 closure; 0030 closure).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4687,
+    "dotted/dataflow": 4776,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 253,
-    "dotted/module-protected": 43,
-    "getattr/dataflow": 21,
+    "dotted/module-plain": 255,
+    "dotted/module-protected": 44,
+    "getattr/dataflow": 23,
 }
-SRC_ATTRIBUTE_TOTAL = 5023
-SRC_DATA_DUNDERS_IN_DATAFLOW = 97
+SRC_ATTRIBUTE_TOTAL = 5117
+SRC_DATA_DUNDERS_IN_DATAFLOW = 100
 
 
 def _classify_attribute(base, attr, ctx):

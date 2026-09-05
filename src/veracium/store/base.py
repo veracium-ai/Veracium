@@ -282,6 +282,14 @@ class Store(ABC):
         cutoff REFUSES. A single lookup — no delta replay, no fabrication."""
         ...
 
+    @abstractmethod
+    def current_state(self, user_id: str, edge_id: str, *, principal=None, policy=None):
+        """specs/0030 §4a-i: `CurrentState` — the edge's current row VERBATIM,
+        the three-valued source-restriction verdict from the STANDING source
+        state, the per-user read token and (with a principal) the scope cell,
+        ALL from ONE read window the store opens and closes here. No caching:
+        every call recomputes."""
+
     def epoch_txn(self, user_id: str) -> int:
         """§4e — the user's baseline batch `txn` for users predating v13; `0`
         for users whose entire life is journaled. DERIVED from the `baseline`

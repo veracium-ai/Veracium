@@ -288,6 +288,37 @@ class SqliteStore(Store):
             (user_id,)).fetchone()
         return int(row[0]) if row and row[0] is not None else 0
 
+    def current_state(self, user_id: str, edge_id: str, *, principal=None, policy=None):
+        """specs/0030 §4a-i: `CurrentState` — the edge's current row VERBATIM,
+        the three-valued source-restriction verdict from the STANDING source
+        state, the per-user read token and (with a principal) the scope cell,
+        ALL from ONE read window the store opens and closes here. The
+        classifier consumes this; no caching (every call recomputes)."""
+
+
+# ---- src/veracium/store/sqlite.py — beside epoch_txn -------------------------
+    def current_state(self, user_id: str, edge_id: str, *, principal=None, policy=None):
+        """specs/0030 §4a-i — ONE READ WINDOW, ONE WORLD. The store OWNS the
+        window (the co-check's transaction-ownership contract): an explicit
+        `BEGIN` on this connection under the instance lock, the derivation
+        reads inside it and issues no BEGIN of its own, `COMMIT` closes it.
+        The GUARANTEE is mode-neutral and the MECHANISM is not: under
+        rollback-journal the window holds a SHARED lock and a concurrent
+        writer is refused for its duration; under WAL the writer proceeds and
+        this reader keeps its snapshot (V-WINDOW asserts the property in both
+        modes). Joins an already-open transaction rather than nesting."""
+        from .current_state import derive_current_state
+        with self._lock:
+            opened = not self._conn.in_transaction
+            if opened:
+                self._conn.execute("BEGIN")
+            try:
+                return derive_current_state(self, user_id, edge_id,
+                                            principal=principal, policy=policy)
+            finally:
+                if opened and self._conn.in_transaction:
+                    self._conn.execute("COMMIT")
+
     # -- edges -------------------------------------------------------------
     def _upsert_edge_row(self, edge: Edge) -> None:
         """INSERT OR REPLACE one edge with the specs/0008 §6d guards, WITHOUT taking the
