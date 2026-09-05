@@ -202,6 +202,42 @@ def test_edge_state_at_reconstructs_byte_exact(store):
     assert json.loads(_raw(store, e.id))["invalidation_reason"] is None
     # a cutoff before the first event → None, not a fabricated state
     assert store.edge_state_at(U, e.id, k0 - 1) is None or k0 == store.epoch_txn(U)
+    # RECOMPUTE-ERASURE (the second named drive): the recompute verb rewrites
+    # valid_from/observed_at/confidence in place; the journal keeps the old
+    # serialization byte-exact at the earlier cutoff
+    r = _edge("r"); store.add_edge(r); s_r0 = _raw(store, r.id); k_r0 = _events(store, edge_id=r.id)[-1].txn
+    with store._write_txn():
+        store._recompute_edge_row(r.id, {"valid_from": "2026-03-01T00:00:00Z",
+                                          "observed_at": "2026-03-01T00:00:00Z", "confidence": 0.4})
+    assert _raw(store, r.id) != s_r0 and json.loads(_raw(store, r.id))["provenance"]["confidence"] == 0.4
+    assert store.edge_state_at(U, r.id, k_r0).state == s_r0
+    assert store.edge_state_at(U, r.id, k_r0 + 1).state == _raw(store, r.id)
+
+
+def test_edge_state_at_reconstructs_across_the_migrated_span(tmp_path):
+    """V-RECON (the third named drive): a MIGRATED edge reconstructs byte-exact
+    across its baseline→first-mutation span — at the epoch the state AS FOUND,
+    at every cutoff before the first post-upgrade mutation still that state,
+    after it the mutated one. Kept HERE, not only in the §6a corpus (research
+    red-team F1: an invariant whose coverage lives in the other seat's artifact
+    is one amendment away from uncovered)."""
+    pre = _edge("Porto"); p = str(tmp_path / "span.db"); _build_v12(p, [pre])
+    with sqlite3.connect(p) as c:
+        found = c.execute("SELECT json FROM edges WHERE id=?", (pre.id,)).fetchone()[0]
+    migrate_store(p); s = SqliteStore(p)
+    try:
+        epoch = s.epoch_txn(U); assert epoch >= 1
+        s.add_edge(_edge("Braga", relation="visits"))                   # another edge: a cutoff between
+        between = _events(s)[-1].txn
+        mutated = Edge.model_validate_json(found); mutated.note = "moved"; s.add_edge(mutated)
+        t_next = _events(s, edge_id=pre.id)[-1].txn
+        assert s.edge_state_at(U, pre.id, epoch).state == found
+        assert s.edge_state_at(U, pre.id, between).state == found
+        assert s.edge_state_at(U, pre.id, t_next).state == _raw(s, pre.id) != found
+        with pytest.raises(Exception):
+            s.edge_state_at(U, pre.id, epoch - 1)                       # pre-epoch refuses, never fabricates
+    finally:
+        s.close()
 
 
 def test_snapshot_carrier_is_raw_and_verbatim(store):
@@ -301,6 +337,39 @@ def test_migration_baselines_every_existing_edge_exactly_once(tmp_path):
         s.close()
 
 
+def test_migration_crash_retry_mints_exactly_one_baseline(tmp_path, monkeypatch):
+    """V-BASELINE's crash-retry clause, EXERCISED (research red-team F2: the
+    docstring claimed it; the body tested idempotence of a COMPLETED
+    migration). A fault injected AFTER the baselines are written and BEFORE
+    the stamp: the migration's one transaction unwinds — reopen finds
+    user_version 12 and ZERO events — and the retried migration mints exactly
+    one baseline per edge. Negative control: the fault fires (the first
+    attempt does not report `migrated`)."""
+    from veracium.store import edge_events as ee
+    a = _edge("Porto"); b = _edge("Lisbon", relation="visits")
+    p = str(tmp_path / "crash.db"); _build_v12(p, [a, b])
+    real = ee.mint_store_epoch
+    def fault(conn, now_iso, schema_at):
+        assert conn.execute("SELECT COUNT(*) FROM edge_event").fetchone()[0] == 2  # baselines already written
+        raise RuntimeError("injected between the baselines and the stamp")
+    monkeypatch.setattr(ee, "mint_store_epoch", fault)
+    with pytest.raises(Exception):
+        migrate_store(p)
+    monkeypatch.setattr(ee, "mint_store_epoch", real)
+    with sqlite3.connect(p) as c:
+        assert c.execute("PRAGMA user_version").fetchone()[0] == 12
+        has_table = c.execute("SELECT name FROM sqlite_master WHERE name='edge_event'").fetchone()
+        assert has_table is None or c.execute("SELECT COUNT(*) FROM edge_event").fetchone()[0] == 0
+    assert str(migrate_store(p)) == "migrated"
+    s = SqliteStore(p)
+    try:
+        evs = _events(s)
+        assert sorted(ev.edge_id for ev in evs) == sorted([a.id, b.id]) and {ev.kind for ev in evs} == {"baseline"}
+        assert len({ev.txn for ev in evs}) == 1
+    finally:
+        s.close()
+
+
 def test_pre_epoch_queries_fail_closed(tmp_path, store):
     """V-EPOCH: `until_txn < epoch_txn(user)` REFUSES (typed) — a migrated
     store fabricates no pre-epoch knowledge; a fully-journaled user
@@ -351,7 +420,27 @@ def test_concurrent_allocation_across_two_store_instances(tmp_path):
         assert len(seqs) == 40 and len(set(seqs)) == 40 and seqs == sorted(seqs)
         txns = [ev.txn for ev in evs]
         assert len(set(txns)) == 40, "one txn per event-emitting transaction"
-        assert all("BEGIN IMMEDIATE" in src for src in [(SRC / "store" / "sqlite.py").read_text()])
+        # STRUCTURAL, not prose (research red-team F3: a substring check on the
+        # source matched three comments): a sqlite trace callback records the
+        # statements one journaled write actually EXECUTES, and BEGIN IMMEDIATE
+        # must precede the FIRST allocation read (MAX over edge_event).
+        trace = []
+        a._conn.set_trace_callback(trace.append)
+        try:
+            a.add_edge(_edge("traced"))
+        finally:
+            a._conn.set_trace_callback(None)
+        begins = [i for i, s in enumerate(trace) if s.strip().upper().startswith("BEGIN IMMEDIATE")]
+        reads = [i for i, s in enumerate(trace) if "MAX(" in s.upper() and "EDGE_EVENT" in s.upper()]
+        assert begins and reads and begins[0] < reads[0], trace
+        assert not any(s.strip().upper() == "BEGIN" for s in trace), "a DEFERRED begin on the write path"
+        # negative control: the trace discriminates — a deferred schedule on a
+        # scratch connection puts its allocation read BEFORE any immediate begin
+        scratch = sqlite3.connect(p); scratch.execute("PRAGMA busy_timeout=0")
+        seen = []; scratch.set_trace_callback(seen.append)
+        scratch.execute("SELECT COALESCE(MAX(seq), 0) FROM edge_event WHERE user_id=?", (U,)).fetchone()
+        scratch.set_trace_callback(None); scratch.close()
+        assert not any(s.strip().upper().startswith("BEGIN IMMEDIATE") for s in seen)
     finally:
         a.close(); b.close()
 
