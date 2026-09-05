@@ -20,6 +20,18 @@
    "supersedes_sha256": "820cabee48112d8e674bfbff1917a0eca22d58d6b8bfebd7a101ff2a147f6f81",
    "utc": "2026-09-05",
    "what": "Both OPEN questions closed with dev's implementation answers, folded into the scenarios they govern (S06 setup + mechanism, S10 failure surface). NO EXPECTATION CHANGED \u2014 the amendment records mechanisms, which were dev's to declare, not bars, which were mine to set. The open list is emptied rather than deleted so the amendment shows what it closed."
+  },
+  {
+   "n": 2,
+   "supersedes_sha256": "c844523962fecdf8ea369312e86a9756a505001f674bc017e8bf2363a1c6da8b",
+   "utc": "2026-09-05",
+   "what": "THE NINE RETAINED v2 SCENARIOS GAIN THEIR EXPECTATIONS. They were nine bare NAMES \u2014 a bar with no value in it, which is my omission and not dev's; dev found it, refused to guess, and raised it. They ARE scored: pass criterion (1) says 'every scenario' and the v2 text they are retained from required an exact expected event sequence for each. Expectations derived from v2's own words (kind, reason, seq order \u2014 the digest-transitions clause is dead by v3 F5) resolved against \u00a74a's per-write kind rule and \u00a74b's site table. FOUR of the nine expand into CELLS rather than one expectation, because the spec names more than one path and picking would be my choice: confirm (byte-delta present/absent), absorb (survivor restated/created), expiry (lapsed/decayed), import (created/mutated/no-event). Two are asserted as sets within a batch rather than ordered sequences, because the spec demotes intra-batch order to 'the append order the database serialized' and pins the BATCH as the atomic unit. Criterion (5) added so a runner cannot satisfy the gate while skipping them."
+  },
+  {
+   "n": 3,
+   "supersedes_sha256": "c4197b598cecf04f548fe818f6fea6e27ca83a34ab8943a4ef74d924e2eab40c",
+   "utc": "2026-09-05",
+   "what": "V05 (absorb) CORRECTED \u2014 amendment 2 had it wrong, and the error was mine reading the spec, not a gap in the spec. \u00a74b's `mutated` row says 'absorption restate' and its `created` row says 'insert_incoming, absorption survivor'; those name two DIFFERENT EDGES, and I read them as two fates of one. The restate is the ABSORBED PRIOR (note extended with `absorbed_by:<survivor>`), the survivor IS the incoming and is new by construction (graph.py:426, 'The survivor IS the incoming (a NEW row)'). So there is ONE shape, not two cells: three events in one txn \u2014 absorbed mutated, absorbed invalidated/absorbed_duplicate, survivor created. Amendment 2's cell (a) named a path that does not exist and its cell (b) omitted the absorbed edge's restate. The correction REDUCES the bar: an 'exhaust the class' instinct manufactured a second cell for a path there was no evidence for, which is the same over-broad error in a bar that it would be in a claim. Ordering within the batch is still not asserted; instead the PAYLOADS are pinned (\u00a74a's post-mutation-state rule), which constrains the sequence using what the spec does determine. Also records dev's V08 import mechanism, which closes the short-circuit confound research flagged."
   }
  ],
  "classification_cells_owned_by_0030": [
@@ -37,18 +49,180 @@
   "(1) EXACTNESS \u2014 every scenario's event sequence AND every named reconstruction equal the expected values, 100%",
   "(2) scenario 1 shows the invalidation's transaction at the CORRECTION'S WRITE, not its valid-time",
   "(3) V-ATOMIC's injected-fault case leaves NEITHER write",
-  "(4) scenario 5's boundary cutoffs NEVER observe a half-applied supersession"
+  "(4) scenario 5's boundary cutoffs NEVER observe a half-applied supersession",
+  "(5) the NINE retained v2 scenarios are SCORED, not merely present: pass criterion (1)'s 'every scenario' covers them, and v2 \u00a76a required 'each scenario naming its exact expected event sequence'. A runner that executes the ten named scenarios and skips the nine does not meet criterion (1)."
  ],
+ "retained_v2_derivation": "specs/0029 \u00a76a 'Plus the v2 scenarios retained', resolved against the v2 text those names are retained FROM (commit 4698a1c): 'each scenario naming its exact expected event sequence (kind, reason, digest-transitions, seq order)'. The digest-transitions clause is DEAD by v3 F5 \u2014 full snapshots dissolved the old/new-digest question \u2014 so the retained shape is kind, reason, seq order.",
  "retained_v2_scenarios": [
-  "create",
-  "supersede",
-  "confirm",
-  "note-append",
-  "absorb",
-  "dispute",
-  "expiry",
-  "import",
-  "erase"
+  {
+   "expected_events": [
+    {
+     "kind": "created",
+     "reason": null
+    }
+   ],
+   "id": "V01",
+   "name": "create",
+   "note": "one txn; reason NULL because the column is non-NULL iff kind='invalidated' (\u00a74a schema).",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table \u2014 add_edge row"
+  },
+  {
+   "REQUIRED": "both events carry the SAME txn \u2014 a cutoff includes or excludes them only whole",
+   "expected_events_UNORDERED_WITHIN_THE_BATCH": [
+    {
+     "edge": "prior",
+     "kind": "invalidated",
+     "reason": "superseded"
+    },
+    {
+     "edge": "incoming",
+     "kind": "created",
+     "reason": null
+    }
+   ],
+   "id": "V02",
+   "name": "supersede",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table; \u00a74a 'A supersession that invalidates A and creates B is ONE txn'",
+   "why_unordered": "the spec makes `seq` gapless-monotone 'per the append order the database serialized' and does NOT determine which of the two is appended first. Pinning an intra-batch order here would be a bar set by my reading, not by the spec. The atomic unit the spec DOES pin is the batch, and that is what is asserted."
+  },
+  {
+   "cells": [
+    {
+     "cell": "a \u2014 the confirmation CHANGES the serialization",
+     "expected_events": [
+      {
+       "kind": "mutated",
+       "reason": null
+      }
+     ]
+    },
+    {
+     "REQUIRED": "NO EVENT is emitted. \u00a74a's third branch, and the cell that proves the trigger basis is the full-state DELTA rather than the call.",
+     "cell": "b \u2014 the confirmation changes NO byte",
+     "expected_events": []
+    }
+   ],
+   "id": "V03",
+   "name": "confirm \u2014 BOTH cells, because \u00a74a makes it conditional",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table; \u00a74b lists confirm_edge's raw json rewrite (sqlite.py:191) under `mutated`",
+   "why_both": "\u00a74b lists the site under `mutated` and \u00a74a makes emission conditional on the byte delta. Pinning only the first cell would leave the conditional untested; pinning only the second would contradict \u00a74b. Both are spec-determined, so both are cells."
+  },
+  {
+   "REQUIRED": "the PRIOR event's `state` still holds the pre-append note \u2014 \u00a74a's payload rule ('old values are never lost to an overwrite'). This is the retained-v2 scenario that exercises F1 directly.",
+   "expected_events": [
+    {
+     "kind": "mutated",
+     "reason": null
+    }
+   ],
+   "id": "V04",
+   "name": "note-append",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table; \u00a74b lists _upsert_edge_row (note-append) under `mutated`"
+  },
+  {
+   "REQUIRED_F1": "the absorbed edge's PRIOR event still holds the PRE-restate note \u2014 old values are never lost to an overwrite (\u00a74a).",
+   "REQUIRED_ONE_BATCH": "all three carry the SAME txn \u2014 an absorption is one atomic mutation and a cutoff includes or excludes it whole",
+   "REQUIRED_PAYLOADS": "asserted on CONTENT rather than on seq order, which the spec does not set: \u00a74a's payload rule makes each event's `state` the edge's full serialization AFTER that mutation, so the absorbed edge's `mutated` state carries the EXTENDED note (`absorbed_by:<survivor>`) and its `invalidated` state carries that note AND the invalidation fields. Pinning the payloads constrains the sequence without asserting an order the spec leaves to 'the append order the database serialized' \u2014 a stronger assertion made from what the spec does determine.",
+   "expected_events_UNORDERED_WITHIN_THE_BATCH": [
+    {
+     "kind": "mutated",
+     "reason": null,
+     "role": "absorbed"
+    },
+    {
+     "kind": "invalidated",
+     "reason": "absorbed_duplicate",
+     "role": "absorbed"
+    },
+    {
+     "kind": "created",
+     "reason": null,
+     "role": "survivor"
+    }
+   ],
+   "id": "V05",
+   "name": "absorb \u2014 ONE shape, not two",
+   "spec_cite": "specs/0029 \u00a74b table: `mutated` <- `_upsert_edge_row` (note-append, ABSORPTION RESTATE, counter-bearing re-upserts); `created` <- `apply_supersession_plan` (INSERT_INCOMING, ABSORPTION SURVIVOR). The two phrases name DIFFERENT EDGES and the row already says which: the restate is the ABSORBED PRIOR (re-upserted with its note extended by `absorbed_by:<survivor>`), and the survivor IS the insert_incoming. `absorbed_duplicate` is a registered retaining reason (specs/0004 W8/W-Q1). \u00a74a: one event-emitting write transaction = ONE txn.",
+   "why_one_shape": "There is NO survivor-restate path: the survivor is the incoming edge and is new by construction. Amendment 2's two cells were my misreading of the \u00a74b row \u2014 I read 'absorption restate' and 'absorption survivor' as two fates of ONE edge when the row names two DIFFERENT edges. Splitting into cells here would invent a path rather than exhaust a class."
+  },
+  {
+   "REQUIRED": "the event's `reason` COLUMN carries 'disputed' on THIS event and is NULL on every later event for the edge, while the payload keeps carrying it (\u00a74b C-3, the adjacent-name error). Assert both legs \u2014 a check that reads only the column agrees with a wrong implementation on the first event.",
+   "expected_events": [
+    {
+     "kind": "invalidated",
+     "reason": "disputed"
+    }
+   ],
+   "id": "V06",
+   "name": "dispute",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table; \u00a74b lists dispute under `invalidated`; `disputed` is a registered DROP reason (specs/0004 W1)"
+  },
+  {
+   "cells": [
+    {
+     "cell": "a \u2014 lapsed",
+     "expected_events": [
+      {
+       "kind": "invalidated",
+       "reason": "lapsed"
+      }
+     ]
+    },
+    {
+     "cell": "b \u2014 decayed",
+     "expected_events": [
+      {
+       "kind": "invalidated",
+       "reason": "decayed"
+      }
+     ]
+    }
+   ],
+   "id": "V07",
+   "name": "lifecycle expiry \u2014 BOTH registered mechanisms",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table; \u00a74b lists lifecycle expiry under `invalidated`; `lapsed` and `decayed` are the two registered retaining expiry reasons (specs/0004 W3)",
+   "why_both": "the registry disposition two distinct expiry reasons and the spec names the site once. Pinning one and calling it 'expiry' would leave the other unmeasured with no record that it was."
+  },
+  {
+   "REQUIRED_ACROSS_CELLS": "no event from the EXPORTING store is present: the importing store's journal begins at its own import (specs/0005, cited in 0029 \u00a72).",
+   "cells": [
+    {
+     "cell": "a \u2014 no prior row",
+     "expected_events": [
+      {
+       "kind": "created",
+       "reason": null
+      }
+     ]
+    },
+    {
+     "cell": "b \u2014 prior row, serialization CHANGED",
+     "expected_events": [
+      {
+       "kind": "mutated",
+       "reason": null
+      }
+     ]
+    },
+    {
+     "REQUIRED": "NO EVENT. \u00a74a's third branch on the path v4 F-A calls the reachable instance of the per-write rule \u2014 the one that proves no site->kind mapping can be total.",
+     "cell": "c \u2014 prior row, bytes UNCHANGED",
+     "expected_events": []
+    }
+   ],
+   "id": "V08",
+   "mechanism_declared_by_dev_2026_09_05": "Cells (b) and (c) reach the presence-admitting replace through `Store.commit_outcome_import_plan` \u2014 the site \u00a74b actually names \u2014 with `expected_destination_state` declaring the id present, because `portability.import_memory` SKIPS an existing id before the commit ('never overwritten'). Through the public importer both cells would emit no event for the SHORT-CIRCUIT reason rather than the delta reason, and cell (c) would pass while measuring nothing. Cell (a) runs the public importer end-to-end (export from a second store, then import). RESEARCH NOTE: this is the exact confound I flagged, found and closed by dev before it reached the gate; the split is a mechanism, and cell (c)'s no-event now IS the delta check refusing.",
+   "name": "import \u2014 ALL THREE cells (the F-A per-write rule's named reachable instance)",
+   "spec_cite": "specs/0029 \u00a74a per-write kind rule (prior absent -> created; prior present and the full-state serialization changed -> mutated or the site's active-flip hint; bytes unchanged -> NO EVENT) + \u00a74b's site->kind table; \u00a74b's import rows: the import commit's replace is `created` when NO row was present and `mutated` when a row WAS present and the serialization changed (v4 F-A); specs/0005 \u2014 events are NOT exported, and an importing store's knowledge begins at ITS import"
+  },
+  {
+   "ALSO": "a second user's events are untouched \u2014 erasure is scoped, and a check on one user cannot distinguish scoped erasure from a table wipe.",
+   "REQUIRED": "ZERO rows remain in edge_event for that user, and NO tombstone of any kind is written. This is a NEGATIVE expectation and is the one retained scenario whose pass condition is an absence \u2014 state it as a count, because 'no erased kind appears' would pass a store that left the events under a different kind.",
+   "expected_events": [],
+   "id": "V09",
+   "name": "erase",
+   "spec_cite": "specs/0029 \u00a74f \u2014 'erasure deletes the user's events; a tombstone would defeat erasure'; \u00a74b \u2014 `erased` is NOT a kind; specs/0008 \u2014 events are user data and erase with the user"
+  }
  ],
  "scenarios": [
   {

@@ -659,6 +659,12 @@ _CALLSITE_DISPOSITIONS = {
     # surviving portability, and the default path is the one a host actually
     # runs; nothing here touches restore-only semantics
     ("test_0022_revoke_source.py", "test_retired_episode_round_trips"): "default",
+    # specs/0029 §6a (corpus V08 cell a): the acceptance runner imports a
+    # SECOND store's export into a fresh store on the DEFAULT path — the cell's
+    # subject is the journal (one `created` event, none of the exporter's
+    # events crossing), not trust fidelity; the default path is the one a
+    # host runs, and the cap does not change the event kind
+    ("corpus_runner.py", "v08_import"): "default",
     # specs/0019 U7: the forging matrix exercises BOTH paths deliberately
     # (default-path composition immunity; restore-path flag-keyed
     # eligibility grants — the documented §8 limit 6); the strip test is a

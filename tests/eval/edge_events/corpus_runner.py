@@ -40,7 +40,10 @@ ROOT = pathlib.Path(os.environ.get("VERACIUM_ROOT") or HERE.parents[2])   # port
 MANIFEST = HERE / "MANIFEST.json"
 # amendment 1 (2026-09-05): the two OPEN mechanism questions folded in as
 # OPEN_QUESTIONS_CLOSED; no expectation changed. Supersedes 820cabee48112d8e….
-MANIFEST_SHA256 = "c844523962fecdf8ea369312e86a9756a505001f674bc017e8bf2363a1c6da8b"
+# amendment 2 (2026-09-05): the nine retained v2 scenarios given expectations +
+# pass criterion (5) — c4197b598cecf04f…; amendment 3 (same day): V05 corrected to
+# ONE shape, three events, one batch, payloads pinned (the executed absorption).
+MANIFEST_SHA256 = "9974601d85cdcc7f3d459ae6d1a9c3e47206c23e79aa3c485019b9f7bd834867"
 
 sys.path.insert(0, str(ROOT / "src"))
 from veracium import EvidenceAuthor, SqliteStore, graph                # noqa: E402
@@ -367,10 +370,6 @@ def s10():
     }}
 
 
-SCENARIOS = {"S01": s01, "S02": s02, "S03": s03, "S04": s04, "S05": s05,
-             "S06": s06, "S07": s07, "S08": s08, "S09": s09, "S10": s10}
-
-
 def _no_dup_pairs(pairs):
     """0026's evidence-boundary rule: a duplicate-key-REFUSING decoder."""
     d = {}
@@ -389,6 +388,202 @@ def manifest_ok() -> bool:
     return hashlib.sha256(MANIFEST.read_bytes()).hexdigest() == MANIFEST_SHA256
 
 
+SCENARIOS = {"S01": s01, "S02": s02, "S03": s03, "S04": s04, "S05": s05,
+             "S06": s06, "S07": s07, "S08": s08, "S09": s09, "S10": s10}
+
+
+# --------------------------------------------------------------------------- #
+# the nine RETAINED v2 scenarios (amendment 2, criterion 5) — DATA-DRIVEN:
+# each builder performs ONE scored operation and returns the ACTUAL batch it
+# wrote as (role, kind, reason) triples (roles: prior/incoming/absorbed/
+# survivor or None) plus any extra facts the entry's REQUIRED clauses need;
+# the scorer compares against whatever SHAPE the manifest entry carries —
+# `expected_events` (ordered), `expected_events_UNORDERED_WITHIN_THE_BATCH`
+# (a set), or `cells` (any cell matching). An amendment to the expectations
+# changes the pinned digest, never this code.
+# --------------------------------------------------------------------------- #
+
+def _batch_after(store, n_before, roles, user=U):
+    """The events appended after the first n_before, as (role, kind, reason)."""
+    evs = store.edge_events(user)[n_before:]
+    txns = {e.txn for e in evs}
+    return [(roles.get(e.edge_id), e.kind, e.reason) for e in evs], txns
+
+
+def _confirm(store, eid, at, corr="c-1"):
+    import hashlib
+    store.confirm_edge(U, eid, actor="user", call_path="host_api", correlation_id=corr,
+                       request_digest=hashlib.sha256(f"confirm:{eid}".encode()).hexdigest(),
+                       confirmed_at=at)
+
+
+def v01_create():
+    s, _ = _fresh(); s.add_edge(_edge("E1", "Porto"))
+    batch, txns = _batch_after(s, 0, {})
+    return {"batch": batch, "one_txn": len(txns) == 1}
+
+
+def v02_supersede():
+    s, _ = _fresh(); s.add_edge(_edge("A", "Porto")); n = len(s.edge_events(U))
+    _supersede(s, "A", _edge("B", "Lisbon"), "superseded", _at(2))
+    batch, txns = _batch_after(s, n, {"A": "prior", "B": "incoming"})
+    return {"batch": batch, "one_txn": len(txns) == 1}
+
+
+def v03_confirm(cell):
+    s, _ = _fresh()
+    if cell.startswith("a"):
+        e = _edge("E1", "Porto"); e.provenance.confidence = 0.5; s.add_edge(e)   # confirm raises it to 0.9
+    else:
+        e = _edge("E1", "Porto", valid_from=_at(10)); s.add_edge(e)            # observed_at 10d ≥ confirmed_at
+    n = len(s.edge_events(U)); _confirm(s, "E1", _at(5))
+    batch, txns = _batch_after(s, n, {})
+    return {"batch": batch, "one_txn": len(txns) <= 1}
+
+
+def v04_note_append():
+    s, _ = _fresh(); s.add_edge(_edge("E1", "Porto", note="")); n = len(s.edge_events(U))
+    k_prior = s.edge_events(U)[-1].txn
+    s.add_edge(_edge("E1", "Porto", note="appended"))
+    batch, txns = _batch_after(s, n, {})
+    prior_note = _state(s, "E1", k_prior)["note"]
+    return {"batch": batch, "one_txn": len(txns) == 1,
+            "required": prior_note == "" and _state(s, "E1", k_prior + 1)["note"] == "appended"}
+
+
+def v05_absorb():
+    """The library's real absorption (graph.apply_supersession): prior 'vim'
+    absorbed by the more specific 'vim editor' — ONE path (amendment 3): the
+    absorbed prior restated then invalidated, the survivor created, one batch."""
+    from veracium.schema import DEFAULT_RELATIONS
+    s, _ = _fresh(); s.add_edge(_edge("P", "vim", relation="uses_tool")); n = len(s.edge_events(U))
+    graph.apply_supersession(s, _edge("S", "vim editor", relation="uses_tool"), DEFAULT_RELATIONS)
+    batch, txns = _batch_after(s, n, {"P": "absorbed", "S": "survivor"})
+    # REQUIRED_PAYLOADS (amendment 3): content, not seq order — the absorbed edge's
+    # `mutated` state carries the EXTENDED note; its `invalidated` state carries that
+    # note AND the invalidation fields; REQUIRED_F1: its PRIOR event holds the
+    # pre-restate note.
+    evs = {(e.edge_id, e.kind): json.loads(e.state, object_pairs_hook=_no_dup_pairs)
+           for e in s.edge_events(U)}
+    mut, inv, pre = evs.get(("P", "mutated")), evs.get(("P", "invalidated")), evs.get(("P", "created"))
+    payloads = (mut is not None and "absorbed_by:S" in mut["note"] and mut["invalidated_at"] is None
+                and inv is not None and "absorbed_by:S" in inv["note"]
+                and inv["invalidated_at"] is not None and inv["invalidation_reason"] == "absorbed_duplicate"
+                and pre is not None and "absorbed_by" not in pre["note"])
+    return {"batch": batch, "one_txn": len(txns) == 1, "required": payloads}
+
+
+def v06_dispute():
+    s, _ = _fresh(); s.add_edge(_edge("E1", "Porto")); n = len(s.edge_events(U))
+    s.invalidate_edge("E1", _at(3), "disputed")
+    batch, txns = _batch_after(s, n, {})
+    # C-3 both legs: a LATER event for the edge carries reason NULL in the column
+    # while its payload still carries 'disputed'
+    with s._write_txn():
+        s._recompute_edge_row("E1", {"valid_from": _z(_at(1)), "observed_at": _z(_at(1)), "confidence": 0.6})
+    later = s.edge_events(U)[-1]
+    return {"batch": batch, "one_txn": len(txns) == 1,
+            "required": later.kind == "mutated" and later.reason is None
+            and json.loads(later.state, object_pairs_hook=_no_dup_pairs)["invalidation_reason"] == "disputed"}
+
+
+def v07_expiry(cell):
+    reason = "lapsed" if cell.startswith("a") else "decayed"
+    s, _ = _fresh(); s.add_edge(_edge("E1", "Porto")); n = len(s.edge_events(U))
+    s.invalidate_edge("E1", _at(30), reason)
+    batch, txns = _batch_after(s, n, {})
+    return {"batch": batch, "one_txn": len(txns) == 1}
+
+
+def _import_plan(store, edge):
+    """The import commit's presence-admitting replace (§4b; v4 F-A's reachable
+    instance), reached through the importer's own commit primitive with the
+    destination state declared — `portability.import_memory` skips an existing
+    id BEFORE the commit, so cells b/c cannot be reached through it."""
+    present = store._conn.execute("SELECT 1 FROM edges WHERE id=?", (edge.id,)).fetchone() is not None
+    return store.commit_outcome_import_plan(
+        U, {"edges": [edge], "episodes": [], "contributions": []},
+        {"edge_ids": {edge.id: present}, "episode_records": {}, "chain_heads": {},
+         "contribution_state": {}})
+
+
+def v08_import(cell):
+    from veracium.portability import export_memory, import_memory
+    s, d = _fresh()
+    if cell.startswith("a"):
+        src, sd = _fresh(); src.add_edge(_edge("E1", "Porto"))       # a SECOND store exports
+        export_memory(src, U, sd / "x.jsonl"); src.close()
+        n = len(s.edge_events(U)); import_memory(s, sd / "x.jsonl")
+        batch, txns = _batch_after(s, n, {})
+        # REQUIRED_ACROSS_CELLS: nothing of the exporting store's journal crossed
+        return {"batch": batch, "one_txn": len(txns) == 1,
+                "required": all(e.txn == 1 for e in s.edge_events(U))}
+    s.add_edge(_edge("E1", "Porto")); n = len(s.edge_events(U))
+    live = Edge.model_validate_json(s._conn.execute("SELECT json FROM edges WHERE id='E1'").fetchone()[0])
+    if cell.startswith("b"):
+        live.note = "one field edited"                                # serialization CHANGED
+    _import_plan(s, live)                                             # cell c: byte-identical
+    batch, txns = _batch_after(s, n, {})
+    return {"batch": batch, "one_txn": len(txns) <= 1}
+
+
+def v09_erase():
+    s, _ = _fresh()
+    for i in range(3):
+        s.add_edge(_edge(f"E{i}", f"o{i}", relation=f"r{i}"))
+    s.add_edge(_edge("K", "keep", user="other"))
+    s.forget_user(U)
+    rows = s._conn.execute("SELECT COUNT(*) FROM edge_event WHERE user_id=?", (U,)).fetchone()[0]
+    other = s._conn.execute("SELECT COUNT(*) FROM edge_event WHERE user_id='other'").fetchone()[0]
+    kinds = {r[0] for r in s._conn.execute("SELECT DISTINCT kind FROM edge_event")}
+    return {"batch": [], "one_txn": True,
+            "required": rows == 0 and other == 1 and kinds <= set(("created", "mutated", "invalidated", "reinstated", "baseline"))}
+
+
+RETAINED = {"V01": v01_create, "V02": v02_supersede, "V03": v03_confirm, "V04": v04_note_append,
+            "V05": v05_absorb, "V06": v06_dispute, "V07": v07_expiry, "V08": v08_import,
+            "V09": v09_erase}
+CELLED = {"V03", "V07", "V08"}                 # builders taking the manifest's cell label
+
+
+def _triples(expected, roles_present):
+    """Manifest event dicts → (role, kind, reason) triples in the builder's vocabulary."""
+    out = []
+    for e in expected:
+        role = e.get("role", e.get("edge"))          # amendment 3 keys it `role`; V02 `edge`
+        out.append((role if roles_present else None, e["kind"], e.get("reason")))
+    return out
+
+
+def _score_shape(entry, got):
+    """Compare one manifest shape against one actual batch."""
+    if "expected_events_UNORDERED_WITHIN_THE_BATCH" in entry:
+        exp = _triples(entry["expected_events_UNORDERED_WITHIN_THE_BATCH"], True)
+        return set(exp) == set(got["batch"]) and len(exp) == len(got["batch"]) and got["one_txn"]
+    exp = _triples(entry["expected_events"], False)
+    actual = [(None, k, r) for _role, k, r in got["batch"]]
+    return exp == actual and got["one_txn"]
+
+
+def run_retained() -> dict:
+    m = load_manifest(); results = {}
+    for entry in m["retained_v2_scenarios"]:
+        sid = entry["id"]; build = RETAINED[sid]; checks = {}
+        if "cells" in entry:
+            for cell in entry["cells"]:
+                got = build(cell["cell"])
+                checks[f"cell {cell['cell']}"] = _score_shape(cell, got)
+                if "required" in got:
+                    checks[f"cell {cell['cell']} · REQUIRED"] = got["required"]
+        else:
+            got = build()
+            checks["events"] = _score_shape(entry, got)
+            if "required" in got:
+                checks["REQUIRED"] = got["required"]
+        results[sid] = {"pass": all(checks.values()), "checks": checks}
+    return results
+
+
 def run_all() -> dict:
     m = load_manifest()
     ids = [sc["id"] for sc in m["scenarios"]]
@@ -396,20 +591,29 @@ def run_all() -> dict:
     for sid in ids:
         r = SCENARIOS[sid]()
         results[sid] = {"pass": all(r["checks"].values()), **r}
-    return {"manifest_sha256_ok": manifest_ok(), "scenarios": results,
-            "pass": manifest_ok() and all(r["pass"] for r in results.values())}
+    retained = run_retained()
+    # criterion (5): every retained id is SCORED — a runner covering fewer than
+    # the manifest lists fails here, not silently
+    covered = set(retained) == {e["id"] for e in m["retained_v2_scenarios"]} == set(RETAINED)
+    ok = manifest_ok() and covered and all(r["pass"] for r in results.values()) \
+        and all(r["pass"] for r in retained.values())
+    return {"manifest_sha256_ok": manifest_ok(), "scenarios": results, "retained": retained,
+            "retained_all_scored": covered, "pass": ok}
 
 
 def main(argv):
     out = run_all()
-    for sid, r in out["scenarios"].items():
-        flag = "PASS" if r["pass"] else "FAIL"
-        print(f"{sid} {flag}")
-        for name, ok in r["checks"].items():
-            if not ok:
-                print(f"    FAILED: {name}")
+    for group in ("scenarios", "retained"):
+        for sid, r in out[group].items():
+            flag = "PASS" if r["pass"] else "FAIL"
+            print(f"{sid} {flag}")
+            for name, ok in r["checks"].items():
+                if not ok:
+                    print(f"    FAILED: {name}")
     print(f"manifest digest {'ok' if out['manifest_sha256_ok'] else 'MISMATCH'} · "
-          f"{sum(r['pass'] for r in out['scenarios'].values())}/{len(out['scenarios'])} scenarios")
+          f"{sum(r['pass'] for r in out['scenarios'].values())}/{len(out['scenarios'])} scenarios · "
+          f"{sum(r['pass'] for r in out['retained'].values())}/{len(out['retained'])} retained"
+          f"{'' if out['retained_all_scored'] else ' · CRITERION 5 UNMET'}")
     return 0 if out["pass"] else 1
 
 

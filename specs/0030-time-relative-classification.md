@@ -1060,9 +1060,11 @@ now refuses.
 sha256 `820cabee48112d8e674bfbff1917a0eca22d58d6b8bfebd7a101ff2a147f6f81`,
 frozen by research from the specs' text; the five classification cells this
 spec owns are named there and specified in §6a above. Dev owns the builder
-(`tests/eval/edge_events/corpus_runner.py`). Amendment 1 (same day, the two
-OPEN mechanism questions closed, no expectation changed): sha256
-`c844523962fecdf8ea369312e86a9756a505001f674bc017e8bf2363a1c6da8b`.
+(`tests/eval/edge_events/corpus_runner.py`). Amendments the same day:
+1 (`c844523962fecdf8…`, the two OPEN mechanism questions closed, no
+expectation changed); 2 (`c4197b598cecf04f…`, the nine retained v2 scenarios
+scored, criterion (5)); 3 (`9974601d85cdcc7f3d459ae6d1a9c3e47206c23e79aa3c485019b9f7bd834867`,
+V05 corrected to the one executed absorption shape) — the shipped text.
 
 <!-- GENERATED:review-closure -->
 

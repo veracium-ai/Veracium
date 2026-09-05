@@ -646,8 +646,16 @@ beside the manifest (`tests/eval/edge_events/corpus_runner.py`, run on
 every CI run by `test_0029_acceptance_corpus.py`). **Amendment 1** (research,
 same day, after dev's answers): the two questions moved to
 `OPEN_QUESTIONS_CLOSED` with the declared mechanisms; NO expectation
-changed; sha256 `c844523962fecdf8ea369312e86a9756a505001f674bc017e8bf2363a1c6da8b`
-supersedes `820cabee…` as the shipped text, and the runner pins it.
+changed; sha256 `c844523962fecdf8…`. **Amendment 2** (same day): the nine
+retained v2 scenarios given expectations (cells where §4b names two paths;
+supersede/absorb as batch SETS; erase as a zero-row count) and pass
+criterion (5) — a runner that skips them fails; `c4197b598cecf04f…`.
+**Amendment 3** (same day, from dev's EXECUTED absorption): V05 corrected to
+ONE shape — the absorbed edge restated (`mutated`) and invalidated
+(`absorbed_duplicate`) and the survivor created, one batch, payloads pinned
+on content rather than order; sha256
+`9974601d85cdcc7f3d459ae6d1a9c3e47206c23e79aa3c485019b9f7bd834867` is the
+shipped text and the runner pins it. All ten named + nine retained pass.
 *Implementation note (2026-09-05):* the carrier's code moved 0031's LIVE
 attribute-partition row (an implementation consideration under its
 governing rule, not a design change): dotted/dataflow 4,604 → 4,687,

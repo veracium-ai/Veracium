@@ -34,6 +34,10 @@ def test_acceptance_corpus_passes_100_percent():
     S01, S05 and the V-ATOMIC test in tests/test_0029_carrier.py."""
     out = _runner().run_all()
     failed = {sid: [n for n, ok in r["checks"].items() if not ok]
-              for sid, r in out["scenarios"].items() if not r["pass"]}
+              for group in ("scenarios", "retained")
+              for sid, r in out[group].items() if not r["pass"]}
     assert not failed, failed
+    # criterion (5): the nine retained scenarios are SCORED, not merely present —
+    # the runner's coverage equals the manifest's list, or the gate fails here
+    assert out["retained_all_scored"], "a retained scenario is listed but not scored"
     assert out["pass"]
