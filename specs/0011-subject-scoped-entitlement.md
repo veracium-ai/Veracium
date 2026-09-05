@@ -21,7 +21,7 @@ Spec-Requires: 0003, 0005, 0006, 0008, 0012, 0014, 0015, 0016, 0020, 0023, 0024,
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0003`'s deferred scope. **Nothing here blocks `0003`.** |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (3 moderates + 3 minors, both §9 questions answered, E-Q4 ruled), folded in v3; **round 2 PASS 2026-08-23 (diff-verified 83d84c9..36eb177, zero stale refs, no new findings) — READY FOR EXTERNAL, send at Quentin's discretion** |
 | **External review** | required |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-29** — external round 19, package `0011-v19`, no findings of any class; candidate v22 |
 | **Path** | full |
 
 ---

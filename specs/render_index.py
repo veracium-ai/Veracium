@@ -92,6 +92,16 @@ def render() -> str:
     from reviews import REVIEWS
 
     rows, totals = [], dict(internal=0, external=0, open_q=0, blocking=0)
+    # Rounds the ledger does not carry under a spec's own number are STATED,
+    # so a `0` in the ext column cannot read as "never reviewed" (found when
+    # the table was audited, 2026-09-05). 0029's joint rounds are HOUSED IN
+    # 0030's ledger by research's ruling of 2026-09-04 (one ledger for the
+    # joint review stream, each row naming its target) — a structural fact
+    # like TRACKED, not a typed count. A spec accepted before the ledger
+    # existed names its acceptance round only in its own header; the note
+    # reads "round N" back from that cell rather than typing a number.
+    LEDGER_HOUSED_IN = {"0029": "0030"}
+    outside_ledger = []
     for f in sorted(SPECS.glob("[0-9][0-9][0-9][0-9]-*.md")):
         num = f.name[:4]
         body = f.read_text()
@@ -118,6 +128,23 @@ def render() -> str:
         totals["open_q"] += open_q
         totals["blocking"] += blocking
         flag = "🔴 " if st in ("draft", "deferred") and blocking else ""
+        if external == 0 and st == "accepted":
+            if num in LEDGER_HOUSED_IN:
+                outside_ledger.append(
+                    f"**{num}** — its rounds are housed in **{LEDGER_HOUSED_IN[num]}**'s "
+                    f"ledger (one ledger for the joint review stream; each row names its target)")
+            else:
+                dec = re.search(r"^\| \*\*Decision \+ date\*\* \|(.*)\|", body, re.M)
+                m = re.search(r"round (\d+)", dec.group(1)) if dec else None
+                if m:
+                    outside_ledger.append(
+                        f"**{num}** — accepted at external round {m.group(1)} per its own "
+                        f"header; those rounds predate `specs/reviews.py` and are recorded "
+                        f"in the spec")
+                else:
+                    outside_ledger.append(
+                        f"**{num}** — no rounds in `specs/reviews.py` and no round named in "
+                        f"its header (owner-accepted under PROCESS §4a's second path, or a gap)")
         rows.append(f"| **{num}** | {title} | `{st}` | {_updated(f)} | {internal} | "
                     f"{external} | {open_q} | {flag}{blocking} | {len(owned)} | {code} |")
 
@@ -142,6 +169,10 @@ is the number that decides what can be built.
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
+
+**Rounds recorded outside the ledger** — so a `0` in *ext* is not read as
+"never reviewed": {"; ".join(outside_ledger) if outside_ledger else "none"}.
+The header total counts ledger rounds only.
 
 **Columns.** *updated* is `git log -1` on the file — or today, when the file has
 uncommitted changes, since the commit that would carry that date does not exist

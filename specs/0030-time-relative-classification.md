@@ -20,7 +20,7 @@ R1-1), and unknown reasons FAIL CLOSED.*
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research (author) · dev (reviewer, roles inverted from 0027) |
 | **External review** | REQUIRED — new trust surface; touches classification. Entry on Quentin's word |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-09-03** — joint external round 18 (with 0029 v9 and the joint seam), package `99303341…` @ `dc244f0`; eighteen rounds; the arc's ledger is housed here |
 | **Path** | full |
 
 ### Spec-Requires (accepted specs this consumes)

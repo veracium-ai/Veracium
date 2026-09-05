@@ -19,7 +19,7 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
 | **Internal reviewers** | research — **14 internal rounds** (GENERATED from `specs/reviews.py`, the structured ledger — round history, verdicts and closures live there, never in this static row; latest: internal round 14, 2026-08-30). 12 external rounds returned so far, so external-readiness is the ledger's state to derive, not this row's to claim |
 | **External review** | required — adds a disclosure floor on the ingest write path |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-30** — external round 12, APPROVED FOR ACCEPTANCE on package `0026-v12`; implemented the same day (`3b60e65`, on Quentin's word) |
 | **Path** | full |
 
 ---

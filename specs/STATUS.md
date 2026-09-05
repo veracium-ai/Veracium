@@ -13,7 +13,7 @@ is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
-| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-04 | 1 | 18 | 2 | 0 | 0 | — |
+| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-05 | 1 | 18 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-29 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-26 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-08-22 | 1 | 3 | 1 | 0 | 1 | 1/1 |
@@ -23,7 +23,7 @@ is the number that decides what can be built.
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-22 | 0 | 4 | 0 | 0 | 1 | 1/1 |
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-08-16 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
-| **0011** | subject-scoped entitlement | `accepted` | 2026-09-04 | 2 | 19 | 0 | 0 | 1 | 1/1 |
+| **0011** | subject-scoped entitlement | `accepted` | 2026-09-05 | 2 | 19 | 0 | 0 | 1 | 1/1 |
 | **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 1/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-22 | 0 | 16 | 0 | 0 | 0 | — |
@@ -38,16 +38,20 @@ is the number that decides what can be built.
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-09-04 | 3 | 21 | 3 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-04 | 2 | 24 | 3 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-04 | 2 | 24 | 2 | 0 | 0 | — |
-| **0026** | label/value agreement check | `accepted` | 2026-09-04 | 14 | 12 | 2 | 0 | 0 | — |
+| **0026** | label/value agreement check | `accepted` | 2026-09-05 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0028** | as-of / point-in-time query | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
-| **0030** | time-relative trust classification | `accepted` | 2026-09-04 | 0 | 18 | 0 | 0 | 0 | — |
+| **0030** | time-relative trust classification | `accepted` | 2026-09-05 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-04 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
+
+**Rounds recorded outside the ledger** — so a `0` in *ext* is not read as
+"never reviewed": **0027** — accepted at external round 9 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec; **0029** — its rounds are housed in **0030**'s ledger (one ledger for the joint review stream; each row names its target); **0032** — no rounds in `specs/reviews.py` and no round named in its header (owner-accepted under PROCESS §4a's second path, or a gap).
+The header total counts ledger rounds only.
 
 **Columns.** *updated* is `git log -1` on the file — or today, when the file has
 uncommitted changes, since the commit that would carry that date does not exist
