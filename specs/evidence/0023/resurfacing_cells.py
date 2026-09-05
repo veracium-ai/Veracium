@@ -15,6 +15,21 @@ Probe need the cells do not state (found at the first execution): every
 relation a cell writes MUST be in the store's relation vocabulary
 (`DEFAULT_RELATIONS`) — an out-of-vocabulary relation is dropped as `invalid`
 at ingest and the stripped half of R3 silently vanished from the artifact.
+
+WHAT THE EXACT DISCLOSURES HERE DO AND DO NOT MEAN (research's runner,
+2026-09-05): this generator uses a SCRIPTED extractor that always emits an
+ordinary relation (`located_at`, `works_as`), so R2/R3's stripped records read
+`use_only`. Under a LIVE extractor the same text can be routed to the
+`third_party_claim` relation, and the relation leg of `_disclosure_for` then
+returns QUARANTINED before either trust leg is consulted (specs/0001/0019).
+The cells' INVARIANT is therefore not "use_only" but: `assertable == False`
+on every record; disclosure in {use_only, quarantined} — never mentionable,
+the value never reaches GROUNDED; no `birth_revocation_digest` (permanently
+outside revocation's reach, the honest residual); and the completeness
+statement's class-(c) count SEES the stripped records. The pinned JSON
+stays exact for THIS generator; the by-name test asserts the invariant.
+Ingest configuration, for anyone reproducing the cells: author THIRD_PARTY,
+no evidence context (the absent-context floor), `source_id` per cell.
 """
 import json, tempfile
 from veracium import Memory, MemoryConfig, EvidenceAuthor

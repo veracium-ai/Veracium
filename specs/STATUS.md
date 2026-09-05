@@ -40,7 +40,7 @@ is the number that decides what can be built.
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-04 | 2 | 24 | 2 | 0 | 0 | — |
 | **0026** | label/value agreement check | `accepted` | 2026-09-05 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
-| **0028** | as-of / point-in-time query | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
+| **0028** | as-of / point-in-time query | `draft` | 2026-09-05 | 0 | 0 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-09-05 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-04 | 0 | 16 | 0 | 0 | 0 | — |
