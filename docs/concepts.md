@@ -163,3 +163,15 @@ received email is refused. Provenance-by-authorship, doing its job.
   hands you grounded context to drop into your own prompt.
 - It isn't multi-user-leaky: memory is scoped by `user_id`; one user's memory can
   never reach another's.
+- **It labels; it does not enforce.** Veracium is the *store* half of a split
+  reference monitor: it governs retention, retrieval, description and
+  recommendation, and every decision on that half is a conjunction of typed
+  predicates (disclosure, assertability, source restriction, scope) rather than a
+  scalar "trusted" verdict. Instantiating, authorizing and executing anything a
+  memory describes belongs *exclusively* to the host's harness, which Veracium
+  does not own and cannot constrain. Without an exclusive harness path that
+  consumes these labels before acting, they are **advisory labelling rather than
+  enforcement** — a host that reads `use_only` content into an action has made
+  that choice, not Veracium. Execution history, if a host records it, may inform a
+  distinct reliability estimate but never raises a record's authority or widens
+  what it may do.

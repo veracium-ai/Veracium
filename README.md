@@ -39,6 +39,11 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
   edges with the claimant as subject, never as user facts. Content-type quarantine
   catches obligation/debt/renewal claims regardless of how plausible they look.
   *(Held against a full plausibility ladder incl. contact-impersonation.)*
+  **What this is, and is not:** the store governs retention, retrieval,
+  description and recommendation — what it will *say* and how it labels it.
+  It does not instantiate, authorize or execute anything; those belong to the
+  host's harness. Without an exclusive harness path that consumes the labels,
+  Veracium's trust classes are **advisory labelling, not enforcement**.
 - **Bring your own model.** Veracium never owns your API keys or model choice; it
   calls a `Complete` callable you supply. A reference Anthropic provider ships in
   the box.
