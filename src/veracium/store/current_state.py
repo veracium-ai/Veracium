@@ -41,6 +41,29 @@ def _build_projection(store, user_id: str):
         raise ProjectionUnreadable(f"{type(e).__name__}: {str(e)[:200]}") from e
 
 
+def _standing(store, user_id: str) -> frozenset:
+    """The standing set, read under the SAME region argument as the projection
+    (research's post-merge Q1: two adjacent boundaries in one function, one
+    argued and one asserted). `standing_revocations` both PERFORMS the SELECT
+    and interprets the rows, so what a net here catches is operational
+    unreadability (a closed connection, a missing table) as well as
+    uninterpretable persisted values (a BLOB digest that makes `min()` raise).
+    Both are the same epistemic state for THIS derivation — the standing state
+    cannot be established, so neither `clear` nor `restricted` can be honestly
+    computed — and the spec's rule for the path holds for both: refuse to
+    ground, never raise (§4a-i: "a raise in this path is the one indefensible
+    outcome"). An operational failure is therefore NOT surfaced from here; it
+    lands in UNDETERMINABLE → FENCED_AS_OF like the projection's, and a
+    consumer that must distinguish them reads the store directly."""
+    try:
+        standing = standing_revocations(store._conn, user_id)
+        if standing:
+            min(standing)                       # orders persisted digests: mixed types raise
+        return standing
+    except Exception as e:
+        raise ProjectionUnreadable(f"{type(e).__name__}: {str(e)[:200]}") from e
+
+
 def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
     """§4a-i's derivation, EXECUTED: ONE sweep call against the WHOLE standing
     set; membership is `("edge", edge_id)` in `statement["retire"]` — the
@@ -49,12 +72,12 @@ def source_restricted(store, user_id: str, edge_id: str) -> RestrictionVerdict:
     with zero sweep calls. UNDETERMINABLE is RETURNED, never raised, at the
     projection boundary and nowhere wider."""
     try:
-        standing = standing_revocations(store._conn, user_id)
-        d = min(standing) if standing else None   # any standing digest works
-    except Exception:                           # persisted-value interpretation
+        standing = _standing(store, user_id)
+    except ProjectionUnreadable:
         return RestrictionVerdict.UNDETERMINABLE
     if not standing:
         return RestrictionVerdict.CLEAR
+    d = min(standing)                           # any standing digest works
     try:
         statement = sweep(_build_projection(store, user_id), d)
     except (ProjectionUnreadable, RevocationError):

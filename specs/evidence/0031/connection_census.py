@@ -452,21 +452,23 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: 4,604 -> 4,687, module-plain 251 -> 253, module-protected 35 -> 43 (the
 #: store's own `_txn_alloc`/`_journal_scope`/`_write_txn` uses), data
 #: dunders 96 -> 97; 0030's classifier package + the store's current-state
-#: derivation (2026-09-05) moved dotted/dataflow 4,687 -> 4,776, module-plain
+#: derivation (2026-09-05) moved dotted/dataflow 4,687 -> 4,776 (-> 4,781 and
+#: dunders 100 -> 101 with the post-merge follow-up: the argued standing-read
+#: region and the read window's rollback path), module-plain
 #: 253 -> 255, module-protected 43 -> 44, getattr/dataflow 21 -> 23 (the
 #: adapter's two inventoried FieldInfo reads), data dunders 97 -> 100 — while
 #: a change to the five CLASSES or the completeness scope reopens design
 #: review. Each regeneration is recorded in the implementing spec's
 #: closure/implementation notes (0032 §; 0029 closure; 0030 closure).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4776,
+    "dotted/dataflow": 4781,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 255,
     "dotted/module-protected": 44,
     "getattr/dataflow": 23,
 }
-SRC_ATTRIBUTE_TOTAL = 5117
-SRC_DATA_DUNDERS_IN_DATAFLOW = 100
+SRC_ATTRIBUTE_TOTAL = 5122
+SRC_DATA_DUNDERS_IN_DATAFLOW = 101
 
 
 def _classify_attribute(base, attr, ctx):

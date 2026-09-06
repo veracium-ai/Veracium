@@ -313,11 +313,18 @@ class SqliteStore(Store):
             if opened:
                 self._conn.execute("BEGIN")
             try:
-                return derive_current_state(self, user_id, edge_id,
-                                            principal=principal, policy=policy)
-            finally:
+                out = derive_current_state(self, user_id, edge_id,
+                                           principal=principal, policy=policy)
+            except BaseException:
+                # the window is READ-ONLY by contract, so COMMIT and ROLLBACK are
+                # equivalent today — the rollback makes the contract explicit
+                # rather than latent (research, post-merge Q2)
                 if opened and self._conn.in_transaction:
-                    self._conn.execute("COMMIT")
+                    self._conn.execute("ROLLBACK")
+                raise
+            if opened and self._conn.in_transaction:
+                self._conn.execute("COMMIT")
+            return out
 
     # -- edges -------------------------------------------------------------
     def _upsert_edge_row(self, edge: Edge) -> None:

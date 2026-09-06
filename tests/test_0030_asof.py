@@ -338,7 +338,13 @@ def test_as_of_now_diverges_only_on_two_cells(store):
     `valid_now` — so this test asserts that cell AGREES and that the ONE
     remaining divergence (future `invalidated_at`: inactive today, yet validly
     held at T=now) is open. A silently vanished divergence must be
-    indistinguishable from nothing, so the set is asserted exactly."""
+    indistinguishable from nothing, so the set is asserted exactly.
+    LIMIT (recorded): the cells sit ±10 days from the wall clock, so this
+    measures the divergence set IN BULK and does not probe the instant
+    `valid_from` crosses `now` — the crossing 0032 shipped. The wall clock is
+    deliberate: `Edge.valid_now` and the classifier read the clock
+    INDEPENDENTLY in production, and pinning one clock over both would blind
+    the test to a divergence caused by two reads (0028 v2's F2 in miniature)."""
     now = datetime.now(timezone.utc)          # `valid_now` reads the wall clock: one clock for both predicates
     cells = {}
     ordinary = _edge("ordinary", valid_from=now - 10 * D); store.add_edge(ordinary); cells["ordinary"] = ordinary
@@ -534,6 +540,46 @@ def test_transactional_read_is_one_world__both_journal_modes(tmp_path, monkeypat
         assert after.source_restricted is RestrictionVerdict.RESTRICTED and after.current_raw != before
     finally:
         reader.close(); writer.close()
+
+
+def test_operational_unreadability_is_undeterminable_not_raised(store):
+    """Both persisted-state reads in the derivation share ONE argued region:
+    a store whose revocation table is gone cannot establish the standing
+    state, so the verdict is UNDETERMINABLE (→ FENCED_AS_OF), returned not
+    raised — the same bucket as an uninterpretable persisted value. Control:
+    with the table present the verdict is CLEAR."""
+    e = _edge(); store.add_edge(e); k = _k(store, e.id)
+    assert store.current_state(U, e.id).source_restricted is RestrictionVerdict.CLEAR
+    store._conn.execute("ALTER TABLE source_revocations RENAME TO source_revocations_gone"); store._conn.commit()
+    try:
+        cs = store.current_state(U, e.id)
+        assert cs.source_restricted is RestrictionVerdict.UNDETERMINABLE
+        r = _cls(store, e.id, T0 + D, k=k, cs=cs)
+        assert (r.status, r.held_at_K) == (FENCED_AS_OF, True)
+    finally:
+        store._conn.execute("ALTER TABLE source_revocations_gone RENAME TO source_revocations"); store._conn.commit()
+    assert store.current_state(U, e.id).source_restricted is RestrictionVerdict.CLEAR
+
+
+def test_read_window_rolls_back_on_the_error_path(store, monkeypatch):
+    """The window `current_state` opens is READ-ONLY by contract; a raising
+    derivation leaves NO open transaction and the exception propagates (the
+    window is rolled back, not committed). Control: the honest call returns
+    with the transaction closed too."""
+    import veracium.store.current_state as cs_mod
+    e = _edge(); store.add_edge(e)
+    def boom(*a, **k):
+        assert store._conn.in_transaction            # inside the window the store opened
+        raise RuntimeError("injected inside the read window")
+    monkeypatch.setattr(cs_mod, "derive_current_state", boom)
+    with pytest.raises(RuntimeError):
+        store.current_state(U, e.id)
+    assert not store._conn.in_transaction
+    monkeypatch.undo()
+    assert store.current_state(U, e.id).current_raw == _row(store, e.id) and not store._conn.in_transaction
+    # the derivation itself refuses to run outside a window (the ownership contract)
+    with pytest.raises(cs_mod.NoOpenReadWindow):
+        cs_mod.derive_current_state(store, U, e.id)
 
 
 # --------------------------------------------------------------------------- #

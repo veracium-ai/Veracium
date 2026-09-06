@@ -1068,7 +1068,9 @@ V05 corrected to the one executed absorption shape) — the shipped text.
 *Implementation note (2026-09-05):* the classifier package
 (`src/veracium/asof/`) and the store's current-state derivation moved 0031's
 LIVE attribute-partition row (an implementation consideration under its
-governing rule): dotted/dataflow 4,687 → 4,776, module-plain 253 → 255,
+governing rule): dotted/dataflow 4,687 → 4,776 (→ 4,781, data-dunders → 101,
+with the post-merge follow-up on research's read: the argued standing-read
+region and the read window's rollback path), module-plain 253 → 255,
 module-protected 43 → 44, getattr/dataflow 21 → 23 (the adapter's two
 FieldInfo bound reads, inventoried in `GETATTR_ALLOWANCES`), data-dunders
 97 → 100; regenerated from the census walker.
