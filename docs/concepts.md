@@ -174,4 +174,9 @@ received email is refused. Provenance-by-authorship, doing its job.
   enforcement** — a host that reads `use_only` content into an action has made
   that choice, not Veracium. Execution history, if a host records it, may inform a
   distinct reliability estimate but never raises a record's authority or widens
-  what it may do.
+  what it may do. The boundary is content-type-relative: for **declarative
+  facts** the recommend step is shipped and governed (`assertable` is validity
+  plus source policy, with scope applied separately); for **procedural
+  content** there is no governed type today and no recommend step is built —
+  a procedure arrives as free text and is treated as whatever relation the
+  extractor files it under.
