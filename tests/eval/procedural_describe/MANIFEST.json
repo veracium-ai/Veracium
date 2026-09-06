@@ -37,6 +37,12 @@
    "supersedes_sha256": "57668e1f694d05923805bbe2df344f037a5c32f15eb87005c1c6a7be65a474ef",
    "utc": "2026-09-06",
    "what": "EXTERNAL ROUND-3 fold against spec v12. **F1 was research's, and it was REPRESENTATION, not semantics:** the declarative stamp is now JSON `null` (486 cells), never the string \"declarative\", which the field's domain {null, \"procedural\"} cannot hold. Proven to be encoding-only: every expectation was re-derived after the remapping and the generator hard-fails if any cell's list or outcome moves \u2014 none did. Added `kind_state` as a DERIVED column carrying the reviewer's four-state table as data (dev's key name, asserted by test_every_corpus_row_is_in_the_declared_domain), so the states are checkable per row rather than described in prose. Added the row-schema requirement (V-CORPUS-ROWS-IN-DOMAIN): every row must be CONSTRUCTIBLE THROUGH THE ACTUAL FIELD TYPE \u2014 the check whose absence let F1 through two seats, a bidirectional digest binding and a seven-mutation suite, because nothing ever built a `Provenance` from a row. Added F2's six import cells (three-signal refusal naming which signal fired) and the restore cells covering BOTH absence dimensions. The 972 describe-path cells are otherwise untouched."
+  },
+  {
+   "n": 4,
+   "supersedes_sha256": "1bb9c9025fe8fd4a0b3f759f72697fb9a717dff61f0311ad1a31b6a126ba151e",
+   "utc": "2026-09-06",
+   "what": "EXTERNAL ROUND-4 fold against spec v13. ONE blocking finding, and IT LANDED ON RESEARCH'S OWN CELL: amendment 3's single 'format 10 carrying either key -> registry' cell **could not fail**, because it fixed the receiving relation in the one state where the registry refuses independently \u2014 correct and strip-before-inspect implementations both return 'refused'. The reviewer found it by varying the axis research had held fixed. Replaced by the reviewer's 8-cell marker x registry matrix, transcribed VERBATIM from the banked verdict (49e382c07d0d058f), with the TWO discriminating rows annotated: `procedural stamp x unknown relation` and `basis present x declarative relation` are the only rows that can fail under the strip-before-inspect mutant, because they are the only states where the registry signal does not fire. The three-signal rule now states raw-record evaluation BEFORE version normalization, per-record refusal, `raw: true` when the envelope declared a version below the key. Domain-validation wording narrowed to dev's exact form ('domain validation now, real `Provenance` construction after implementation') \u2014 the previous wording overstated what the test does. The 972 describe-path cells are untouched."
   }
  ],
  "candidate_set_verbatim_from_4a_ii": "the VISIBLE edges that are procedural BY THEIR OWN RECORD \u2014 `record_kind == \"procedural\"` OR `basis is not None` \u2014 whatever the active registry says about their relation. A declarative-stamped record without a basis is NEVER a candidate, registered or not: it appears in neither list and never counts.",
@@ -14642,6 +14648,73 @@
    "why_it_matters": "the accounting identity alone would not catch a declarative record leaking into the population; without this control, 'the visible population' is unfalsifiable. v11 adds the second half: the unregistered variant is what makes V-KIND-STAMPED's central claim falsifiable \u2014 a registry change must move NO declarative record's treatment."
   },
   "existence_oracle": "an unauthorised principal's DescribeResult for an existing HIDDEN record must be byte-identical to the result for a nonexistent record",
+  "import_format10_marker_x_registry_matrix": {
+   "cells": [
+    {
+     "raw": true,
+     "raw_new_marker": "procedural stamp",
+     "receiving_relation": "procedural",
+     "required_result": "refused",
+     "signal": "stamp"
+    },
+    {
+     "raw": true,
+     "raw_new_marker": "procedural stamp",
+     "receiving_relation": "declarative",
+     "required_result": "refused",
+     "signal": "stamp"
+    },
+    {
+     "CATCHES_THE_STRIP_BEFORE_INSPECT_MUTANT": true,
+     "raw": true,
+     "raw_new_marker": "procedural stamp",
+     "receiving_relation": "unknown",
+     "required_result": "refused",
+     "signal": "stamp",
+     "why": "The registry signal does NOT fire here, so the RAW marker is the only thing refusing this record. Under the mutant that normalizes before inspecting, the marker is gone before classification and the record imports as declarative. This is one of only TWO rows in the matrix that can fail under that mutant \u2014 the other six are refused by the registry either way, which is exactly why the single v12 cell could not catch it."
+    },
+    {
+     "raw": true,
+     "raw_new_marker": "basis present",
+     "receiving_relation": "procedural",
+     "required_result": "refused",
+     "signal": "basis"
+    },
+    {
+     "CATCHES_THE_STRIP_BEFORE_INSPECT_MUTANT": true,
+     "raw": true,
+     "raw_new_marker": "basis present",
+     "receiving_relation": "declarative",
+     "required_result": "refused",
+     "signal": "basis",
+     "why": "The registry signal does NOT fire here, so the RAW marker is the only thing refusing this record. Under the mutant that normalizes before inspecting, the marker is gone before classification and the record imports as declarative. This is one of only TWO rows in the matrix that can fail under that mutant \u2014 the other six are refused by the registry either way, which is exactly why the single v12 cell could not catch it."
+    },
+    {
+     "raw": true,
+     "raw_new_marker": "basis present",
+     "receiving_relation": "unknown",
+     "required_result": "refused",
+     "signal": "basis"
+    },
+    {
+     "raw_new_marker": "neither marker",
+     "receiving_relation": "procedural",
+     "required_result": "refused by registry",
+     "signal": "registry"
+    },
+    {
+     "raw_new_marker": "neither marker",
+     "receiving_relation": "declarative/unknown",
+     "required_result": "existing declarative behavior"
+    }
+   ],
+   "derives_from": "External round-4 verdict (banked `outbox/0037-round4-verdict-verbatim.md`, sha16 49e382c07d0d058f), transcribed VERBATIM from its table; spec v13 \u00a72c, \u00a74e, \u00a76a, V-IMPORT-REFUSES-PROCEDURAL-UNLESS-RESTORE",
+   "mutant": "normalize (strip the newer-than-declared keys) BEFORE inspecting \u2014 the two rows flagged CATCHES_THE_STRIP_BEFORE_INSPECT_MUTANT must FAIL",
+   "replaces": "the single 'file stamped FORMAT 10 carrying either key -> registry' cell of amendment 3 \u2014 see import_three_signal_refusal.superseded_cell_was_a_tautology",
+   "rule_adopted": "The reviewer's SECOND option: inspect the raw keys before stripping, refuse that record, name the raw signal; then strip only for records that remain admissible.",
+   "setup": "a file DECLARING FORMAT 10 that nonetheless carries a newer key",
+   "the_reviewers_sentence": "Removing a trustworthy field because it is newer than the declared format is reasonable; forgetting that the unexpected field was present is not. Its presence is itself evidence that the envelope is malformed or semantically newer than declared."
+  },
   "import_three_signal_refusal": {
    "cells": [
     {
@@ -14671,16 +14744,22 @@
      "expect": "refused",
      "signal": "stamp",
      "why_it_matters": "the importing host's registry does not get to launder a foreign stamp away; the stamp is an independent signal and fires first"
-    },
-    {
+    }
+   ],
+   "derives_from": "v12 \u00a72 (import row), \u00a72c default-path row, \u00a74e, V-IMPORT-REFUSES-PROCEDURAL-UNLESS-RESTORE; external round 3 F2",
+   "rule": "On the DEFAULT import path the three signals (stamp / basis / receiving registry) are evaluated ON THE RAW RECORD, BEFORE version normalization, for every declared format version. A record is refused as procedural when ANY fires; the refusal NAMES the signal, and carries `raw: true` when the envelope declared a version below the key. Refusal is PER RECORD, never per file \u2014 a mixed file keeps its declarative records. Only records that remain admissible are then normalized.",
+   "superseded_cell_was_a_tautology": {
+    "how_it_was_found": "External round 4, by VARYING THE AXIS research had held fixed. One cell over a 3x3 space, pinned at the value where every implementation agrees.",
+    "the_cell": {
      "case": "file stamped FORMAT 10 carrying either key",
      "expect": "refused",
      "signal": "registry",
      "why_it_matters": "I10 strips the keys, so signals 1 and 2 cannot fire \u2014 signal 3 is the only one left, which is why three signals are needed and not two"
-    }
-   ],
-   "derives_from": "v12 \u00a72 (import row), \u00a72c default-path row, \u00a74e, V-IMPORT-REFUSES-PROCEDURAL-UNLESS-RESTORE; external round 3 F2",
-   "rule": "On the DEFAULT import path a record is refused as procedural (`procedural_import_refused`) if ANY of three independent signals fires, and the refusal NAMES which \u2014 first in the order stamp, basis, registry. Never a bare refusal."
+    },
+    "the_class": "A control pinned at the value where every implementation agrees is the tautology class this arc found from both sides: dev's rebinding control asserted a property of list slicing; research's DISCLOSED audit reported GREEN having never run; M7 exists because a self-consistent wrong rule passed a whole suite. Written by the seat that had already found it three times.",
+    "what_the_matrix_is_for": "Not more coverage \u2014 DISCRIMINATION. Six of the eight rows would pass under the broken implementation too; only `procedural stamp x unknown relation` and `basis present x declarative relation` separate them, because those are the states where the registry signal does NOT fire and the raw marker is the only thing between the record and ordinary recall.",
+    "why_it_could_not_fail": "It fixed the receiving relation as procedurally registered, so signal 3 refuses the record whether or not the raw stamp was inspected. Correct implementation: refused. Strip-before-inspect implementation: refused. Same verdict, so the cell distinguished nothing \u2014 and its `why_it_matters` stated the reasoning that made it useless as though that were the reason it was valuable."
+   }
   },
   "kind_conflict_counted": {
    "derives_from": "\u00a74a-ii conjunct 1 (v11, round-2 F2); V-KIND-STAMPED's third mutant",
@@ -14791,8 +14870,9 @@
   "record_kind": "The declarative value is JSON `null`, NOT the string \"declarative\". The field is `Optional[Literal[\"procedural\"]] = None` and a wrap-mode model_serializer OMITS the key when None, which is what keeps a declarative record's export bytes identical to the pre-feature oracle."
  },
  "row_schema_requirement": {
-  "invariant": "V-CORPUS-ROWS-IN-DOMAIN (spec v12)",
-  "rule": "EVERY corpus row must be constructible through the actual proposed field type: record_kind \u2208 {null, \"procedural\"}, basis \u2208 {null, \"stated\", \"observed\"}, and kind_state must equal the four-state table's value for that (record_kind, basis) pair.",
+  "invariant": "V-CORPUS-ROWS-IN-DOMAIN (spec v13)",
+  "rule": "EVERY corpus row's `record_kind` and `basis` are DOMAIN-VALIDATED against the declared field types (record_kind in {null, \"procedural\"}, basis in {null, \"stated\", \"observed\"}), and `kind_state` must equal the four-state table's value for that pair. Construction through a real `Provenance` follows the implementation \u2014 the earlier wording ('every row validates through the declared field types') overstated what the test does today, and round 4 asked for the narrower, accurate form consistently.",
+  "scope_TODAY": "domain validation now, real `Provenance` construction after implementation",
   "test": "tests/test_0037_corpus_pin.py::test_every_corpus_row_is_in_the_declared_domain",
   "the_sharpest_form_of_the_defect": "The declarative byte-compatibility this corpus exists to protect depends SPECIFICALLY on None, because the wrap serializer pops the key when None. A record carrying the string \"declarative\" would serialize the key and break V-DECLARATIVE-UNCHANGED -- so the corpus described 486 records that, could they exist, would violate the very invariant it was written to defend.",
   "why_this_exists": "External round 3 F1. 486 of 972 cells carried the string \"declarative\", a value `Optional[Literal[\"procedural\"]]` CANNOT HOLD. It survived two seats, a bidirectional digest binding and a seven-mutation suite because NOTHING EVER CONSTRUCTED A `Provenance` FROM A ROW: the generator guaranteed consistency with the PREDICATE, and every pin test compares digests, data to data. Research had argued a generated corpus \"cannot disagree with the predicate it came from\" -- true, and silent about the schema, which is exactly where the disagreement was. A digest binding proves two artifacts match; it cannot prove either one is well formed."
@@ -14806,10 +14886,10 @@
   "rule": "Remove EXACTLY the lines whose text begins with \"corpus sha256: \" at column 0 (the line and its terminator; nothing else), then sha256 the remaining bytes. There MUST be exactly one such line \u2014 assert it and fail otherwise, rather than silently hashing a spec with zero or two.",
   "second_line_hazard_at_acceptance": "\u00a76a says that at acceptance the same digest MOVES INTO `## Review closure`. If that lands as a second column-0 \"corpus sha256: \" line, grep -v removes BOTH while a count=1 regex removes only the FIRST \u2014 the two impls would silently diverge exactly at acceptance. The exactly-one assertion above turns that divergence into a test failure instead of a wrong pin.",
   "spec": "specs/0037-procedural-basis.md",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "08f692a2830d5563a1e007864f337e1da7529082625f57dd6efbaea906035b0a",
-  "spec_version": "v12",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "f707d0fd81379306a66e13f69db170d40ff4b55e75b2d6ed141bf123f9b386eb",
+  "spec_version": "v13",
   "status": "BOUND",
   "why_this_rule_and_not_a_regex": "A regex of the form `^corpus sha256: \\S+\\s*$\\n?` OVER-DELETES: `\\s` matches newline, so `\\s*` greedily consumes the blank line that follows \u00a76a's digest line as well. On the v11 working tree it consumed \"corpus sha256: CORPUS-DIGEST-NOT-YET-BOUND\\n\\n\" and digested to c18c10c07329807d\u2026, which is NOT the digest of the spec-minus-that-line. \u00a76a says the manifest removes THE LINE; a rule that also removes an adjacent blank line makes the pin sensitive to formatting the spec never claimed was load-bearing."
  },
- "spec_version": "v12"
+ "spec_version": "v13"
 }
