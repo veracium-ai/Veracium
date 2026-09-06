@@ -53,6 +53,39 @@ journaling code existed; `specs/evidence/0029/pre_feature_oracle/`).
   the already-held write lock. No figure is stated until it is measured under
   the harness's conditions (the 0027 ~6% note is the precedent for how).
 
+- **Fixed: the two retire writers normalize the instant they are handed.**
+  The revocation path (`revoke_source`, since 0.17.0) hands the operation
+  time as ISO text, and `_invalidate_edge_row` / `_retire_episode_row`
+  assigned it raw into datetime fields (`Edge`/`Episode` have no
+  validate_assignment). The PERSISTED bytes were never wrong — the text
+  serialized identically — but the live object carried a `str` where its
+  journal-reconstructed twin carries a `datetime`, and every
+  revocation-retired record emitted a Pydantic serializer warning (reproduced
+  in shipped 0.19.0 by research's Tier 8 run). Both writers now route through
+  `as_utc_required`: a datetime or ISO text becomes a UTC-aware instant, and
+  anything else REFUSES the write. **Who is affected (these two writers):**
+  operators running revocations see the warning disappear; no stored data
+  changes and no migration is needed. Regression: the real revoke path runs
+  with serializer warnings promoted to errors, and live == reconstructed by
+  attribute.
+- **Changed (write path; dispositioned separately from the fix above): the
+  recompute writer normalizes its instants too.** The class was swept from
+  the models' datetime-typed fields (research): the only other assignment
+  site, `_recompute_edge_row`'s parse, persisted a NAIVE instant for text
+  without a zone, safe only because every comparison takes naive as UTC. It
+  now parses through `as_utc_required`, so a zoneless input would persist an
+  AWARE instant — different bytes (`…T00:00:00` → `…T00:00:00Z`) from the
+  same input before this release. **A checked no-op for every caller in the
+  tree today, not an inherited claim:** the recompute writer's only caller is
+  the revocation sweep's effect applier, and the sweep REFUSES any recompute
+  value that is not the canonical Z-suffixed UTC form
+  (`revocation_sweep.py`, "not the writer's canonical Z-suffixed UTC
+  json_datetime"), so zoneless text cannot reach the writer through any
+  shipped path. A future caller supplying it will persist an aware instant
+  rather than a naive one; journal payloads written after this release by
+  such a caller would differ byte-wise from before, which is the journal
+  recording what was actually written.
+
 **Added (additive, not wired into recall) — specs/0030, time-relative
 classification.** The primitive 0028 v2's `as_of=` recall will call:
 `veracium.asof.classify_as_of(envelope, snapshot_raw, current_state, T, now,

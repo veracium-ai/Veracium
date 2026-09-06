@@ -25,7 +25,7 @@ from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationSt
                       Provenance, RECOVERY_PENDING_STATES,
                       SupersessionPlan, SupersessionRefusal, SupersessionResult,
                       is_historical_id, to_historical_id,
-                      WIKI_RETAINING_REASONS, DISPOSITIONED_REASONS)
+                      WIKI_RETAINING_REASONS, DISPOSITIONED_REASONS, as_utc_required)
 from .base import (CutoffDomainError, EdgeEvent, PreEpochQuery, RawEdgeState,
                    DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
                    PLAN_STALE, ReceiptSchemaBoundaryError, Store,
@@ -483,7 +483,15 @@ class SqliteStore(Store):
         if not row:
             return None
         edge = Edge.model_validate_json(row[0])
-        edge.invalidated_at = at
+        # The instant is NORMALIZED at the sole active=0 writer: the revocation
+        # path hands `at` as the operation's ISO text and `Edge` has no
+        # validate_assignment, so the live object used to carry a str where
+        # the journal-reconstructed twin carried a datetime (bytes equal,
+        # attributes differing; a serializer warning on every revocation-
+        # retired edge, reproduced in shipped 0.19.0). `as_utc_required`
+        # accepts a datetime or ISO text and REFUSES anything else, so garbage
+        # refuses the write (Quentin, 2026-09-06: fixed as a separate item).
+        edge.invalidated_at = as_utc_required(at)
         edge.invalidation_reason = reason
         new_json = edge.model_dump_json()
         self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
@@ -519,7 +527,7 @@ class SqliteStore(Store):
         if not row:
             return None
         ep = Episode.model_validate_json(row[0])
-        ep.retired_at = at
+        ep.retired_at = as_utc_required(at)      # the same normalization as the edge twin
         ep.retired_reason = reason
         self._conn.execute("UPDATE episodes SET json=? WHERE id=?",
                            (ep.model_dump_json(), episode_id))
@@ -561,12 +569,23 @@ class SqliteStore(Store):
         """0022's recompute verb: the three RECOMPUTED_FIELDS, nothing else."""
         from datetime import datetime
 
-        def _parse(ts: str):
-            # the sweep's values carry the corpus's canonical Z suffix, and
-            # fromisoformat only accepts Z from Python 3.11 — this package's
-            # floor is 3.10, which CI's clean-checkout matrix caught while the
-            # authoring venv (3.12) parsed it happily
-            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        def _parse(ts):
+            # The THIRD retire-class writer normalizes like the other two
+            # (research's sweep, 2026-09-06): the sweep's values carry the
+            # corpus's canonical Z suffix, but a value without Z or offset used
+            # to persist NAIVE — safe only because `as_utc` takes naive as UTC
+            # at every comparison. `as_utc_required` makes the parse itself
+            # aware (and refuses garbage), so the safety no longer rests on the
+            # comparison convention. (3.10 floor: Z is replaced before parsing.)
+            # WHAT KEEPS THIS CHANGE A NO-OP for stored bytes (research, before
+            # it landed): a zoneless input WOULD now persist `…Z` where it used
+            # to persist `…` — and this writer's only caller, the revocation
+            # sweep's effect applier, REFUSES any recompute value that is not
+            # the canonical Z-suffixed UTC form (revocation_sweep.py, "not the
+            # writer's canonical Z-suffixed UTC json_datetime"). The guarantee
+            # lives in that caller, not here: a caller added later without that
+            # refusal persists a different byte form than before this change.
+            return as_utc_required(ts)
 
         row = self._conn.execute("SELECT json, user_id FROM edges WHERE id=?",
                                  (edge_id,)).fetchone()

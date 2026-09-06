@@ -164,3 +164,63 @@ def test_retired_episode_round_trips(tmp_path):
     assert got and got[0].retired_reason == "revoked_source", (
         "retired state was dropped in the round trip — the export file is a "
         "revival path (R18)")
+
+
+# --------------------------------------------------------------------------- #
+# the str-in-datetime defect (Quentin, 2026-09-06: fixed as a separate item)
+# --------------------------------------------------------------------------- #
+
+def test_retire_writers_hold_datetimes_not_text(tmp_path):
+    """The revocation path hands `at` as ISO text; the two sole retire writers
+    (`_invalidate_edge_row`, `_retire_episode_row`) used to assign it raw into
+    datetime fields — `Edge`/`Episode` have no validate_assignment — so the
+    live object carried a str where its journal-reconstructed twin carried a
+    datetime (bytes equal, attributes differing), and every revocation-retired
+    record raised a Pydantic serializer warning (reproduced in shipped
+    0.19.0). Serializer warnings are ERRORS here: the real revoke path must run
+    clean; the persisted instant equals the parsed operation time; and garbage
+    text REFUSES the write at the writer, leaving the row untouched."""
+    import warnings
+    from datetime import datetime, timezone
+    from veracium.schema import Edge, Episode
+    from veracium.source_identity import source_identity_digest
+    s = SqliteStore(str(tmp_path / "instants.db"))
+    try:
+        e = Edge(id="E1", user_id="u", subject="user", relation="located_at", object="Porto",
+                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev",
+                                       source_id="src:S"))
+        ep = Episode(id="EP1", user_id="u", date="2026-01-01", summary="from the same source",
+                     provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev2",
+                                           source_id="src:S"))
+        s.add_edge(e); s.add_episode(ep)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)          # a serializer warning FAILS the test
+            rv.revoke_source(s, "u", source_identity_digest(s.local_origin(), "src:S"), "revoke",
+                             "operator", "2026-09-05T00:00:00Z")
+        live = Edge.model_validate_json(s._conn.execute("SELECT json FROM edges WHERE id='E1'").fetchone()[0])
+        assert live.invalidated_at == datetime(2026, 9, 5, tzinfo=timezone.utc) and live.invalidation_reason == "revoked_source"
+        recon = Edge.model_validate_json(s.edge_state_at("u", "E1", s.edge_events("u", edge_id="E1")[-1].txn).state)
+        assert recon == live                                       # attribute equality, not only bytes
+        retired = Episode.model_validate_json(s._conn.execute("SELECT json FROM episodes WHERE id='EP1'").fetchone()[0])
+        assert retired.retired_at == datetime(2026, 9, 5, tzinfo=timezone.utc)
+        # fail-closed: garbage text refuses the WRITE at the writer, row untouched
+        f = Edge(id="F1", user_id="u", subject="user", relation="visits", object="Faro",
+                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev3"))
+        s.add_edge(f); before = s._conn.execute("SELECT json FROM edges WHERE id='F1'").fetchone()[0]
+        with pytest.raises(ValueError):
+            with s._write_txn():
+                s._invalidate_edge_row("F1", "not-an-instant", "disputed")
+        assert s._conn.execute("SELECT json FROM edges WHERE id='F1'").fetchone()[0] == before
+        # the third writer of the class (`_recompute_edge_row`): a value without Z or
+        # offset persists AWARE (UTC), not naive — the parse normalizes, not the comparison
+        with s._write_txn():
+            s._recompute_edge_row("E1", {"valid_from": "2026-02-01T00:00:00", "observed_at": "2026-02-01T00:00:00Z",
+                                         "confidence": 0.5})
+        rc = Edge.model_validate_json(s._conn.execute("SELECT json FROM edges WHERE id='E1'").fetchone()[0])
+        assert rc.valid_from == datetime(2026, 2, 1, tzinfo=timezone.utc) and rc.valid_from.tzinfo is not None
+        # control: a datetime `at` and a naive one (taken as UTC) both persist as aware instants
+        s.invalidate_edge("F1", datetime(2026, 9, 6), "disputed")
+        g = Edge.model_validate_json(s._conn.execute("SELECT json FROM edges WHERE id='F1'").fetchone()[0])
+        assert g.invalidated_at == datetime(2026, 9, 6, tzinfo=timezone.utc)
+    finally:
+        s.close()
