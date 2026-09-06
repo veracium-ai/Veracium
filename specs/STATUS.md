@@ -45,7 +45,7 @@ is the number that decides what can be built.
 | **0030** | time-relative trust classification | `accepted` | 2026-09-06 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-04 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
-| **0033** | procedural records and the `basis` axis (stages 1–3) | `draft` | 2026-09-06 | 0 | 0 | 0 | 0 | 0 | — |
+| **0037** | procedural records and the `basis` axis (stages 1–3) | `draft` | 2026-09-06 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
