@@ -7,26 +7,34 @@ absent from the package. This test is the binding:
   spec → corpus : the spec carries ONE column-0 line ``corpus sha256: <hex>``
                   and the file at the spec's stated path hashes to it.
   corpus → spec : the manifest records
-                  ``spec_text_sha256_excluding_the_corpus_digest_line`` — the
-                  sha256 of the spec text with EXACTLY the lines beginning at
-                  column 0 with ``corpus sha256: `` removed (line + terminator,
+                  ``spec_pin.spec_text_sha256_excluding_the_corpus_digest_line``
+                  — the sha256 of the spec text with EXACTLY the lines beginning
+                  at column 0 with ``corpus sha256: `` removed (line + terminator,
                   nothing else), asserted to be exactly one such line. Binding
-                  the digest into that line therefore does not move the pin;
-                  any other edit to the spec does.
+                  the digest into that line therefore does not move the pin; any
+                  other edit to the spec does.
 
-The exclusion rule is research's, recorded in the manifest with two reference
+WHICH rule binds is enforced by a GOLDEN VECTOR, not by self-consistency:
+research's mutation test showed that installing the REJECTED greedy rule,
+re-pinning the manifest to what it produces, and rebinding the line passed
+every self-consistency check — a wrong rule pinned to itself is consistent.
+The fixture below has an expected digest computed from the rule as written
+(the line removed, the blank line after it KEPT), independent of the spec's
+content, and it exercises the real function. The greedy rule (a regex whose
+``\\s*`` crosses the line boundary and eats the following blank line) fails it.
+
+The rule is research's, recorded in the manifest with two reference
 implementations (python: split on "\\n", assert one hit, drop it, join; shell:
-``grep -c`` == 1 && ``grep -v``), verified to agree byte for byte. This test
-mirrors the python form exactly. A regex with ``\\s*`` was rejected because
-``\\s`` matches a newline and ate the blank line after the digest line — a pin
-sensitive to spacing the spec never claimed was load-bearing.
+``grep -c '^corpus sha256: '`` == 1 && ``grep -v`` | sha256sum), verified to agree
+byte for byte; this file mirrors the python form.
 
 Failure modes this refuses: the unbound placeholder token; a missing corpus
-file; a corpus/spec digest mismatch; zero or two digest lines (the second
-would appear at acceptance if the digest is copied into ``## Review closure``
-as another column-0 line — the two reference impls diverge exactly there, so
-the rule asserts one line and fails loudly instead); a manifest whose
-recorded spec digest does not match the spec it claims to pin.
+file; a corpus/spec digest mismatch; zero or two digest lines (a second would
+appear at acceptance if the digest is copied into ``## Review closure`` as
+another column-0 line — the two reference forms diverge exactly there, so the
+rule asserts one line and fails loudly instead); a manifest whose recorded spec
+digest does not match the spec it claims to pin; and an implementation of the
+exclusion rule that is not the bound one.
 """
 from __future__ import annotations
 
@@ -41,32 +49,33 @@ PREFIX = "corpus sha256: "
 UNBOUND = "CORPUS-DIGEST-NOT-YET-BOUND"
 SPEC_PIN_KEY = "spec_text_sha256_excluding_the_corpus_digest_line"
 
+# The golden vector: expected digest computed from the rule AS WRITTEN, not from
+# the implementation under test. The blank line after the digest line is KEPT.
+GOLDEN_FIXTURE = "alpha\n" + PREFIX + "0" * 64 + "\n\nbeta\n"
+GOLDEN_EXPECTED = hashlib.sha256("alpha\n\nbeta\n".encode("utf-8")).hexdigest()
 
-def _spec_lines() -> list[str]:
-    return SPEC.read_text(encoding="utf-8").split("\n")
+
+def spec_text_sha256_excluding_the_line(text: str) -> str:
+    """Research's python reference form, mirrored exactly: split on "\\n",
+    assert exactly one column-0 hit, drop that line, join, sha256."""
+    lines = text.split("\n")
+    hits = [i for i, l in enumerate(lines) if l.startswith(PREFIX)]
+    assert len(hits) == 1, (
+        f"exactly ONE column-0 `{PREFIX}` line is required, found {len(hits)}; a second one "
+        "(e.g. copied into ## Review closure at acceptance) makes the two reference exclusion "
+        "rules diverge, so this fails loudly instead")
+    kept = lines[: hits[0]] + lines[hits[0] + 1:]
+    return hashlib.sha256("\n".join(kept).encode("utf-8")).hexdigest()
 
 
-def _digest_lines() -> list[str]:
-    return [l for l in _spec_lines() if l.startswith(PREFIX)]
+def _spec_text() -> str:
+    return SPEC.read_text(encoding="utf-8")
 
 
 def _spec_digest_token() -> str:
-    hits = _digest_lines()
-    assert len(hits) == 1, (
-        f"the spec must carry exactly ONE column-0 `{PREFIX}` line, found {len(hits)}; "
-        "a second one (e.g. copied into ## Review closure at acceptance) makes the two "
-        "reference exclusion rules diverge, so this fails loudly instead")
+    hits = [l for l in _spec_text().split("\n") if l.startswith(PREFIX)]
+    assert len(hits) == 1, f"the spec must carry exactly ONE column-0 `{PREFIX}` line, found {len(hits)}"
     return hits[0][len(PREFIX):].strip()
-
-
-def _spec_text_sha256_excluding_the_line() -> str:
-    """Research's python reference form, mirrored exactly: split on "\\n",
-    assert exactly one hit, drop it, join, sha256."""
-    lines = _spec_lines()
-    hits = [i for i, l in enumerate(lines) if l.startswith(PREFIX)]
-    assert len(hits) == 1
-    kept = lines[: hits[0]] + lines[hits[0] + 1:]
-    return hashlib.sha256("\n".join(kept).encode("utf-8")).hexdigest()
 
 
 def test_spec_names_a_bound_corpus_digest():
@@ -92,26 +101,36 @@ def test_manifest_pins_this_spec_text_by_the_exclusion_rule():
     manifest = json.loads(CORPUS.read_text(encoding="utf-8"))
     recorded = (manifest.get("spec_pin") or {}).get(SPEC_PIN_KEY)
     assert isinstance(recorded, str) and len(recorded) == 64, (
-        f"manifest lacks a bound {SPEC_PIN_KEY} (found {recorded!r})")
-    computed = _spec_text_sha256_excluding_the_line()
+        f"manifest lacks a bound spec_pin.{SPEC_PIN_KEY} (found {recorded!r})")
+    computed = spec_text_sha256_excluding_the_line(_spec_text())
     assert computed == recorded, (
         f"the manifest pins a different spec text: recorded {recorded[:16]}… vs computed "
         f"{computed[:16]}… — an edit to the spec beyond the digest line needs research to re-pin")
 
 
-def test_the_exclusion_rule_removes_exactly_the_line_and_nothing_else():
-    """Negative controls on the rule itself: binding the digest line does not
-    move the exclusion hash; eating the following blank line would."""
-    lines = _spec_lines()
-    i = [k for k, l in enumerate(lines) if l.startswith(PREFIX)][0]
-    rebound = lines[:i] + [PREFIX + "0" * 64] + lines[i + 1:]
-    kept_a = "\n".join(lines[:i] + lines[i + 1:])
-    kept_b = "\n".join(rebound[:i] + rebound[i + 1:])
-    assert kept_a == kept_b, "rebinding the digest line must not change the excluded text"
-    # the rejected rule: also removing the blank line that follows (if any) changes the hash
-    if i + 1 < len(lines) and lines[i + 1] == "":
-        greedy = "\n".join(lines[:i] + lines[i + 2:])
-        assert hashlib.sha256(greedy.encode()).hexdigest() != hashlib.sha256(kept_a.encode()).hexdigest()
-    # the column-0 anchor: the prose mention of the line mid-sentence must not count
-    assert sum(1 for l in lines if PREFIX in l) > sum(1 for l in lines if l.startswith(PREFIX)), (
-        "the anchor's control expects the spec to mention the line in prose as well as carry it")
+def test_the_exclusion_rule_is_the_bound_one_golden_vector():
+    """WHICH rule: the real function on a fixture whose expected digest was
+    computed from the rule as written. A self-consistent wrong rule (pinned to
+    itself) passes every other test here; only this one names the rule."""
+    assert spec_text_sha256_excluding_the_line(GOLDEN_FIXTURE) == GOLDEN_EXPECTED
+
+
+def test_the_rejected_greedy_rule_fails_the_golden_vector():
+    """Negative control on the golden vector, always run (never skipped): the
+    rejected rule — remove the line AND the blank line after it — must NOT
+    produce the expected digest, or the vector could not tell the rules apart."""
+    greedy = hashlib.sha256("alpha\nbeta\n".encode("utf-8")).hexdigest()
+    assert greedy != GOLDEN_EXPECTED
+    # and the real function must not be that rule on any input with a following blank line
+    assert spec_text_sha256_excluding_the_line(GOLDEN_FIXTURE) != greedy
+
+
+def test_the_column_zero_anchor_has_a_prose_mention_to_ignore():
+    """The anchor's control: §6a mentions the line's form in prose mid-sentence;
+    the anchored rule must count only the column-0 line. If someone tidies the
+    prose mention away, the anchor becomes untested and this says so."""
+    lines = _spec_text().split("\n")
+    mentions = sum(1 for l in lines if PREFIX in l)
+    anchored = sum(1 for l in lines if l.startswith(PREFIX))
+    assert anchored == 1
+    assert mentions > anchored, "the anchor's control expects a prose mention of the line that must not count"
