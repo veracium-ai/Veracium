@@ -125,6 +125,39 @@ def test_the_rejected_greedy_rule_fails_the_golden_vector():
     assert spec_text_sha256_excluding_the_line(GOLDEN_FIXTURE) != greedy
 
 
+def test_every_corpus_row_is_in_the_declared_domain():
+    """Round 3, finding 1: the first corpus amendment wrote the STRING
+    "declarative" into 486 cells, a value the proposed field
+    `record_kind: Optional[Literal["procedural"]] = None` cannot hold, and the
+    binding tests passed because they compare digests. This validates every row
+    against the declared domain — today by value, at implementation by
+    constructing a `Provenance` from the row — so a string-only generator fails
+    here instead of in front of the reviewer. The four-state table is asserted
+    on the same rows: an unstamped row with a basis is the named conflict, a
+    stamped row without one is `basis_unknown`."""
+    manifest = json.loads(CORPUS.read_text(encoding="utf-8"))
+    cells = manifest.get("cells")
+    assert isinstance(cells, list) and cells, "the manifest carries no cells"
+    bad = []
+    for i, cell in enumerate(cells):
+        rk, basis = cell.get("record_kind"), cell.get("basis")
+        if rk not in (None, "procedural"):
+            bad.append((i, "record_kind", rk))
+        if basis not in (None, "stated", "observed"):
+            bad.append((i, "basis", basis))
+    assert not bad, f"{len(bad)} corpus value(s) outside the declared field domain, e.g. {bad[:3]}"
+    # the four-state table, on the rows that carry an expected outcome for the pair
+    for cell in cells:
+        rk, basis, expected = cell.get("record_kind"), cell.get("basis"), cell.get("kind_state")
+        if expected is None:
+            continue
+        state = ("declarative" if rk is None and basis is None
+                 else "procedural" if rk == "procedural" and basis is not None
+                 else "basis_unknown" if rk == "procedural" and basis is None
+                 else "kind_conflict")
+        assert state == expected, f"cell {cell.get('id')}: rule says {state}, corpus says {expected}"
+
+
 def test_the_column_zero_anchor_has_a_prose_mention_to_ignore():
     """The anchor's control: §6a mentions the line's form in prose mid-sentence;
     the anchored rule must count only the column-0 line. If someone tidies the
