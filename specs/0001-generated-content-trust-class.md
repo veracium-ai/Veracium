@@ -172,7 +172,7 @@ struck where they moved)*
 
 | assertion | command | result |
 |---|---|---|
-| `EvidenceAuthor` has exactly 3 members today | `grep -A6 "class EvidenceAuthor" src/veracium/schema.py` | `USER`, `THIRD_PARTY`, `SYSTEM` |
+| `EvidenceAuthor` has exactly 3 members today *(as of this spec's authoring — a reach assertion about the PRE-change state; this spec's own change added the fourth, `ASSISTANT`, and the pinned source has carried it since; noted 2026-09-06 after the 0037 round-1 reviewer read the row as current)* | `grep -A6 "class EvidenceAuthor" src/veracium/schema.py` | `USER`, `THIRD_PARTY`, `SYSTEM` |
 | a host can set the author via MCP | `grep -n "EvidenceAuthor" src/veracium/mcp_server.py` | ~~`:26`~~ `:38` `_AUTHOR` maps **`user`/`third_party` ONLY** — `system` was deliberately removed and unknown authors now **raise** (fail-closed; the silent-fallback-to-USER path is gone). §2d.6 rules how `assistant` joins. |
 | the CLI `--author` list is hardcoded | `grep -n "choices" src/veracium/cli.py` | ~~`:299`~~ `:410` `["user","third_party","system"]` **and `:414` `--derived-from`, the same list — a second carrier v3 predates** |
 | `import` is a shipped CLI verb with `--user` | `grep -n '"import"' src/veracium/cli.py` | `:367` `import`; `--user` on the recall/import surfaces |
