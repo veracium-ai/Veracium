@@ -54,7 +54,17 @@ def _standing(store, user_id: str) -> frozenset:
     ground, never raise (§4a-i: "a raise in this path is the one indefensible
     outcome"). An operational failure is therefore NOT surfaced from here; it
     lands in UNDETERMINABLE → FENCED_AS_OF like the projection's, and a
-    consumer that must distinguish them reads the store directly."""
+    consumer that must distinguish them reads the store directly.
+
+    WHAT KEEPS THE COLLAPSE HONEST (research, post-merge): the derivation's
+    token and row reads in `derive_current_state` are UNWRAPPED and run
+    BEFORE this — a closed connection, a missing `edges` table, any
+    store-wide failure raises there and propagates. So the net here can only
+    catch failures specific to the revocation tables: LOCAL unreadability
+    fences, SYSTEMIC unreadability surfaces. Wrapping those two reads "to make
+    the derivation total" would silently remove the surfacing path while this
+    docstring still read true; `test_systemic_unreadability_surfaces_not_fences`
+    pins the dependency."""
     try:
         standing = standing_revocations(store._conn, user_id)
         if standing:

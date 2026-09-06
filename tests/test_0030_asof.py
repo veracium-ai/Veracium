@@ -561,6 +561,29 @@ def test_operational_unreadability_is_undeterminable_not_raised(store):
     assert store.current_state(U, e.id).source_restricted is RestrictionVerdict.CLEAR
 
 
+def test_systemic_unreadability_surfaces_not_fences(tmp_path):
+    """The boundary of the collapse, pinned (research, post-merge): a store
+    that is broken as a WHOLE — the edges table gone, or the connection
+    closed — RAISES out of `current_state`, never returns a plausible
+    FENCED_AS_OF. This is the negative control for the renamed-revocation-
+    table test: local unreadability fences, systemic unreadability surfaces.
+    The property rests on the derivation's token and row reads being
+    UNWRAPPED and preceding the restriction derivation; wrapping them would
+    fail here."""
+    s = SqliteStore(str(tmp_path / "broken.db")); e = _edge(); s.add_edge(e)
+    s._conn.execute("ALTER TABLE edges RENAME TO edges_gone"); s._conn.commit()
+    try:
+        with pytest.raises(sqlite3.OperationalError):
+            s.current_state(U, e.id)
+        assert not s._conn.in_transaction                 # the window was rolled back
+    finally:
+        s._conn.execute("ALTER TABLE edges_gone RENAME TO edges"); s._conn.commit()
+    assert s.current_state(U, e.id).source_restricted is RestrictionVerdict.CLEAR   # control
+    s.close()
+    with pytest.raises(sqlite3.ProgrammingError):        # a closed connection surfaces too
+        s.current_state(U, e.id)
+
+
 def test_read_window_rolls_back_on_the_error_path(store, monkeypatch):
     """The window `current_state` opens is READ-ONLY by contract; a raising
     derivation leaves NO open transaction and the exception propagates (the
