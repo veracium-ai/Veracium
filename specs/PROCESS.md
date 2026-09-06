@@ -218,6 +218,28 @@ does not make it.
 
 ---
 
+## A new spec takes the registry's next uncontested number *(Quentin, 2026-09-06)*
+
+> **Before creating `specs/NNNN-*.md`, take NNNN from `python3
+> specs/allocation.py --next` — the registry's `next_uncontested()`.** The
+> registry (`specs/allocation.py` → `specs/ALLOCATION.md`) derives every
+> holder from the tree and carries reservations as data with their
+> provenance and review trigger; a number inside a live reservation is not
+> free even though no file holds it.
+
+*Why a function call and not "check the registry":* a check is a human
+step, skipped by exactly the person who is certain they know the next
+number — which is how, on 2026-09-06, a spec was drafted, reviewed through
+seven versions by two seats, merged, and being sealed for external review
+under a number reserved two days earlier for another arc, whose only record
+was a sentence inside a coordination-file row. *Why the rule is not
+redundant with the gate:* `tests/test_spec_allocation.py` fires at commit,
+and that collision passed drafting, both internal review seats and a package
+seal before any commit existed to judge — the rule covers the one interval
+the gate structurally cannot see, and it is the interval where review
+happens. *(The owner's words: "1. renumber 2. I agree with this process
+rule: a new spec takes the registry's next uncontested number.")*
+
 ## How a commit references its spec
 
 `specs/check_spec_reference.py` runs in CI and requires every commit touching a
