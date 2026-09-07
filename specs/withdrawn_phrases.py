@@ -336,4 +336,16 @@ WITHDRAWN = [
      "'record yields' form so 0016 v18's frozen round-history narrative, which "
      "describes what R13-3 said using an arrow, is not flagged.)",
      "specs/0018 §4 readback interface / I17"),
+    ("0028-state-count-in-prose",
+     r"\b(six|seven|eight|nine|thirteen) states\b",
+     "0028 external round 5 (corrections): README and §9 said 'nine states' while "
+     "the model's EXPECTED executed eight; then 'six states' survived in two model "
+     "headers and a build() docstring after the header sweep. The states are the "
+     "ones EXPECTED names and the program prints their count on every run; no "
+     "carrier states the number. (The version cell's own history of the error is "
+     "in a WITHDRAWN-marked block.) The other 0028 withdrawals — the window-refusal "
+     "trio, 'except the current-truth pointer', V-UNAVAILABLE-NEVER-HEAD — are "
+     "registered with the v13 fold, whose text marks the five paragraphs that "
+     "quote them as errata.",
+     "specs/0028 §6a / §9; specs/evidence/0028/check_successor_lookup.py"),
 ]
