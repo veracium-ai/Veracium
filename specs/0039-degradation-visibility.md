@@ -11,15 +11,15 @@ draft was written against; the reviewer can open each one.*
 | | |
 |---|---|
 | **Author / session** | dev (veracium-69) |
-| **Version** | **v1 — THE DRAFT.** Written from the shipped code, not from a hypothesis: the two ingest paths that record a failure instead of raising it (`ingest.py`'s retry `except Exception` and its unparseable early return), the library's `diagnostics=None` default, the two CLI `Memory(...)` constructions that attach no reporter while the MCP entry point does, and the MCP result's strip of the degradation counters. ONE reader: its author. Research is the first reader (PROCESS §3a). |
+| **Version** | **v2 — RESEARCH'S FIRST READ FOLDED (2026-09-07, same day as v1).** Four changes, each from a check EXECUTED against the shipped code rather than read from v1's description of it. **(1) A THIRD degrade path.** v1 said the two named sites were "the ONLY places ingest continues after a provider failure" and proposed an except-clause census as the proof; the census, run by both seats independently and converging, found FOUR handlers of which THREE continue: the two v1 named and `except ValueError: vol = Volatility.DURABLE` — a model-emitted volatility value outside the enum is silently coerced to DURABLE, per triple, with no counter, no record and no warning. v1's sentence survived on a strict reading ("provider *failure*") and failed the spec's purpose; §1 is widened from provider failure to **provider-originated degradation** and the volatility coercion is ranked WORST of the three, because the other two degrade into a visible absence and this one produces a record that looks correct, on an axis the paper names as a contribution. **(2) The record carries NO message text.** v1's "capped and redacted" was measured: `diagnostics.redact` on a provider error echoing a prompt removes the email and the phone number and keeps "Alice moved to Berlin" — it strips PII-SHAPED TOKENS and preserves the SEMANTIC PAYLOAD, which for a memory product is backwards (the fact IS the payload). The record is now the exception TYPE, the message LENGTH and a digest — never the text (§2a, §2c-i row 7, V-NO-CONTENT-IN-LOG). **(3) The seam is a callback, decided by 0025 X12.** v1 left open whether the degrade fact travels as a private field on the ingest result or as a callback on `ingest_event`'s signature; X12 asserts the result's counter keys are PRECISELY §4c's public set, so a private field survives only by exempting the invariant that makes the set closed. Callback (§2c; old Q2 closed). **(4) §7 answered the wrong question.** "Bounded by rotation" is a SIZE bound; the operator's question is RETENTION — after 0039 how long a real traceback survives depends on DEGRADE volume, and a per-triple record on the volatility path would evict the errors the log exists for. The volatility path is aggregated to ONE record per `ingest_event` call with a count (V-ONE-RECORD-PER-CALL); §7 states the retention consequence with the window re-derived from the handler's parameters. Also added to §8 as the spec's strongest argument, previously implicit: the CLI attaches NO reporter today (`load_reporter`: zero occurrences in `cli.py`, one in `mcp_server.py`), so every degrade — the volatility coercion included, for as long as it has existed — is invisible to a CLI user until this ships. Credits: research (veracium-research-32), first reader under PROCESS §3a: the census run, the redaction inversion framing, the X12 ruling, the retention arithmetic, the §8 limit. *v1 (2026-09-07) — THE DRAFT, written from the shipped code: the two ingest paths that record a failure instead of raising it, the library's `diagnostics=None` default, the two CLI `Memory(...)` constructions that attach no reporter while the MCP entry point does, and the MCP result's strip of the degradation counters. ONE reader: its author.* |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
-| **Internal reviewers** | — (dev only; this text has had ONE reader) |
+| **Internal reviewers** | research (veracium-research-32) — first read folded at v2 |
 | **External review** | REQUIRED — changes what two shipped entry points do on error, and what the diagnostics log contains |
 | **Decision + date** | — |
 | **Path** | full |
 
 ### Spec-Requires (accepted specs this consumes)
-- **0025** — the ingest report's counter inventory (`invalid`, `retried`, `recovered`, `residual`, `redispositioned`), present on every return path, and its rule that a provider failure during the ONE retry is recorded as `retried > 0, recovered = 0` and NEVER re-raised (§4b(1)). This spec keeps that contract unchanged: it adds a second carrier for the same fact, it does not turn a degrade into a raise.
+- **0025** — the ingest report's counter inventory (`invalid`, `retried`, `recovered`, `residual`, `redispositioned`), present on every return path, and its rule that a provider failure during the ONE retry is recorded as `retried > 0, recovered = 0` and NEVER re-raised (§4b(1)). This spec keeps that contract unchanged: it adds a second carrier for the same fact, it does not turn a degrade into a raise. **X12** (the result carries PRECISELY the §4c public counter keys) decides §2c: the degrade fact does not travel on the result.
 - **0031 §4d** — the operator-only counters are STRIPPED from the MCP tool result because a model that learns how often its attempts are refused learns to probe. This spec keeps that strip unchanged and does not add a principal-facing field (§10 Q1 asks whether one is wanted; it is not decided here).
 - **0007 §4c** — the busy-timeout discipline is the precedent for "a failure has defined behaviour and a named form"; this spec applies the same discipline to the degrade paths' record.
 
@@ -27,9 +27,11 @@ draft was written against; the reviewer can open each one.*
 
 ## 1. Problem — measured, not hypothesised
 
-**Veracium degrades in two places instead of failing, and by design.** Both are correct
-contracts (0025 §4b; the BYO-provider clause). Neither leaves a record an operator will
-see.
+**Veracium degrades in three places instead of failing, and by design.** Each is a
+correct contract (0025 §4b; the BYO-provider clause; the extraction schema's tolerance).
+None leaves a record an operator will see. The three are the ONLY exception handlers in
+`ingest.py` that continue after catching; a fourth (the event-date parser) re-raises. The
+census is §6's V-CENSUS node — run, not read.
 
 **1a. The retry that fails silently.** `ingest.py` makes ONE re-extraction call for
 off-vocabulary triples. If the provider raises, times out, or returns malformed output,
@@ -48,65 +50,110 @@ today, from a model that gave a poor second answer. The exception object — its
 message — is discarded at that line.
 
 **1b. The unparseable extraction.** A provider answering in prose, refusing, or returning
-a wrong-typed `instructions` field (0038 §2c row 2) takes the early return: a content-free
-placeholder episode, `unparseable: True`, every counter present at zero. No exception.
+a wrong-typed `instructions` field (0038 §2c row 2) raises `ValueError` from the JSON
+extractor and takes the early return: a content-free placeholder episode,
+`unparseable: True`, every counter present at zero. No exception escapes.
 
-**1c. Where a record could have gone, and did not.** The library has a diagnostics
+**1c. The volatility coercion — the worst of the three, and the one v1 missed.** For each
+triple the extractor emitted, the volatility class is parsed from the model's string:
+
+```
+try:
+    vol = Volatility(str(t.get("volatility", "durable")).strip().lower())
+except ValueError:
+    vol = Volatility.DURABLE
+```
+
+An ABSENT key takes the declared default without entering the handler — that is a
+default, not a degrade. A PRESENT value outside the enum (`"banana"`, `"long-term"`, a
+provider's own vocabulary) is silently coerced to DURABLE, per triple. There is no
+counter for it, no report key, no log line, and the record it produces looks correct.
+Volatility classes are one of the axes the paper names as a contribution; a provider
+that consistently emits an unrecognised class makes every fact durable and nothing
+anywhere says so. The other two degrades are visible as an ABSENCE (no facts, a
+placeholder episode). This one is visible as nothing.
+
+**1d. Where a record could have gone, and did not.** The library has a diagnostics
 reporter (`diagnostics.Reporter`): a local, user-owned rotating log
-(`$XDG_STATE_HOME/veracium/veracium.log`, default `~/.local/state/veracium/`; 1 MB, two
-backups) that records genuine errors with the operation name, a hashed user id and the
-full traceback, and re-raises. Three facts about it, each a line in the tree:
+(`$XDG_STATE_HOME/veracium/veracium.log`, default `~/.local/state/veracium/`; three files
+of 1 MB — the current file and two backups) that records genuine errors with the
+operation name, a hashed user id and the full traceback, and re-raises. Three facts about
+it, each a line in the tree:
 
 | fact | where |
 |---|---|
 | `Memory(...)` takes `diagnostics=None` by default; the library core never creates a reporter implicitly | `__init__.py`, the constructor's signature and `diagnostics.load_reporter`'s docstring |
-| the MCP entry point DOES attach one: `build_memory()` passes `diagnostics=diagnostics.load_reporter()`, a `Reporter` whenever `log_enabled` (the default) | `mcp_server.py`, `build_memory` |
-| the CLI's two `Memory(...)` constructions attach NONE | `cli.py`, both construction sites |
+| the MCP entry point DOES attach one: `build_memory()` passes `diagnostics=diagnostics.load_reporter()`, a `Reporter` whenever `log_enabled` (the default) | `mcp_server.py`, `build_memory` — the one occurrence of `load_reporter` outside `diagnostics.py` |
+| the CLI's two `Memory(...)` constructions attach NONE — `load_reporter` does not occur in `cli.py` | `cli.py`, both construction sites |
 
 And the error hook is called from five operations (`remember`, `recall`, `answer`,
-`maintain`, `introspect`) — only when an exception PROPAGATES. The two degrade paths
-never call it, so even the MCP server's attached reporter records nothing when a
-provider fails during the retry or answers unparseably.
+`maintain`, `introspect`) — only when an exception PROPAGATES. None of the three degrade
+paths calls it, so even the MCP server's attached reporter records nothing when a
+provider fails during the retry, answers unparseably, or emits a volatility class the
+enum does not know.
 
-**1d. What the MCP host sees.** The tool result strips `retried`, `recovered`,
+**1e. What the MCP host sees.** The tool result strips `retried`, `recovered`,
 `residual`, `invalid` and `redispositioned` (0031 §4d, by design); `unparseable`
 survives the strip. So a host embedding the MCP server has exactly one degradation
-signal — `unparseable: True` — and none for the retry failure.
+signal — `unparseable: True` — and none for the retry failure or the coercion.
 
 **The consequence the owner named:** during ordinary use, a run of provider failures
 shows up only as counters in return values nobody reads, in a log that the CLI never
-opens and that the degrade paths never write to.
+opens and that no degrade path writes to; and a provider whose volatility vocabulary has
+drifted shows up nowhere at all.
 
 ## 2. Behaviour
 
-**2a. A degrade is RECORDED through the diagnostics reporter — never raised.** At the two
-degrade sites, when a reporter is attached, one record is written per occurrence:
+**2a. A degrade is RECORDED through the diagnostics reporter — never raised.** When a
+reporter is attached, each degrade path produces a record. The record's fields are
+CLOSED — nothing else may be added without reopening this table:
 
-```
-op=remember degrade=retry_failed   exc=<ExceptionType> user_hash=<12 hex> residual=<n>
-op=remember degrade=unparseable    reason=<not-json | wrong-type-instructions | …> user_hash=<12 hex>
-```
+| field | value | never |
+|---|---|---|
+| `op` | the operation (`remember`) | — |
+| `degrade` | one of `retry_failed`, `unparseable`, `volatility_defaulted` — a closed vocabulary | any other string |
+| `user_hash` | the hashed user id (the existing `_on_error` convention) | the user id |
+| `exc_type` | the exception's class name (`retry_failed`, `unparseable`) | — |
+| `msg_len`, `msg_sha16` | the exception message's length and the first sixteen hex digits of its SHA-256 | **the message text, in any form, at any length, redacted or not** |
+| `count` | for `volatility_defaulted`: how many triples in this `ingest_event` call were coerced | the offending value's text (it is model output) |
 
-The record carries the exception's TYPE and a capped, redacted message; it carries NO
-event text, NO model output, NO prompt. The degrade paths' return values are unchanged:
-`retried/recovered/residual` and `unparseable` mean exactly what 0025 says. The hook
+Why no message text, measured (§2c-i row 7): `diagnostics.redact` removes PII-SHAPED
+tokens — an email, a number shape — and preserves everything else. For a memory product
+"everything else" IS the payload: "Alice moved to Berlin" survives redaction intact. A
+redactor tuned for logs cannot protect a store whose entire content is the thing the
+redactor does not recognise, so the record does not carry the message at all. An operator
+who needs the provider's text has the provider's own logs and the digest to match it by.
+
+The degrade paths' return values are unchanged: `retried/recovered/residual` and
+`unparseable` mean exactly what 0025 says; the coercion still yields DURABLE. The hook
 that writes the record is best-effort (0025's rule that logging never masks or delays the
 real outcome applies to a degrade as it applies to an error).
 
-**2b. The CLI attaches a reporter as the MCP entry point does.** Both CLI `Memory(...)`
+**2b. The volatility path is aggregated, not per-triple.** ONE record per `ingest_event`
+call, carrying `count`. A ten-triple event with a drifted provider emits one record, not
+ten. §7 says why this is a retention rule and not a tidiness one.
+
+**2c. The seam: a callback, not a field.** `ingest_event` gains a keyword-only parameter
+`on_degrade: Optional[Callable[[str, dict], None]] = None`; the three sites call it
+(`on_degrade("retry_failed", {...})`, `on_degrade("unparseable", {...})`, and once after
+the triple loop `on_degrade("volatility_defaulted", {"count": n})` when `n > 0`).
+`Memory.remember` passes `self._on_degrade`, a sibling of `_on_error`, which calls
+`Reporter.record_degrade`. The ingest RESULT does not change: 0025 X12 asserts its counter
+keys are PRECISELY §4c's public set, and a private field on it would survive only by
+exempting the invariant that makes the set closed. A degrade is an event, not a counter;
+it travels on its own channel.
+
+**2d. The CLI attaches a reporter as the MCP entry point does.** Both CLI `Memory(...)`
 constructions pass `diagnostics=diagnostics.load_reporter()` — a `Reporter` iff
 `log_enabled`, the same rule `build_memory()` uses. The library core's default stays
 `None` (embedding hosts pass their own or none — the existing contract).
 
-**2c. What changes, stated exactly.** `ingest.py`: the two degrade sites gain a call to
-a `on_degrade` callback the store passes through (or the report gains a private,
-non-public `_degrade` field consumed by `Memory.remember` before it returns — the
-choice is §10 Q2 and the reviewer's). `__init__.py`: `remember` hands each degrade to a
-new `Memory._on_degrade(where, kind, exc_or_reason, user_id)` beside `_on_error`, which
-calls `Reporter.record_degrade`. `diagnostics.py`: `Reporter.record_degrade` writes the
-record at WARNING level in the same log. `cli.py`: two constructions gain the
-`diagnostics=` argument. **The MCP tool result is unchanged** (§10 Q1). **No stored byte
-changes; no schema, no export, no migration.**
+**2e. What changes, stated exactly.** `ingest.py`: the `on_degrade` parameter and three
+call sites; no other line. `__init__.py`: `Memory._on_degrade`, passed from `remember`.
+`diagnostics.py`: `Reporter.record_degrade` writing the §2a record at WARNING level in
+the same log, best-effort. `cli.py`: two constructions gain the `diagnostics=` argument.
+**The MCP tool result is unchanged** (§10 Q1). **No stored byte changes; no schema, no
+export, no migration.**
 
 ## 2c-i. Untrusted inputs — REQUIRED, blocking
 
@@ -115,19 +162,22 @@ observable outcome and the invariant that enforces it.
 
 | # | case | observable outcome | enforced by |
 |---|---|---|---|
-| 1 | the retry raises (network, provider, SDK) | ONE WARNING record: `degrade=retry_failed`, the exception's type, a message capped at 200 chars and redacted (emails, number shapes — `diagnostics.redact`); the return dict as 0025 specifies | V-DEGRADE-RECORDED, V-NO-CONTENT-IN-LOG |
-| 2 | the retry returns malformed JSON | as row 1 with `exc=ValueError` from `extract_json`; NEVER the raw output in the log | V-NO-CONTENT-IN-LOG |
-| 3 | the first extraction is unparseable (prose, refusal) | ONE record: `degrade=unparseable reason=not-json`; the placeholder episode as today | V-DEGRADE-RECORDED |
-| 4 | `instructions` of the wrong type (0038 §2c row 2) | as row 3 with `reason=wrong-type-instructions` | V-DEGRADE-RECORDED |
-| 5 | no reporter attached (an embedding host passing `None`) | no record, no exception, no change in behaviour — the degrade paths return exactly as today | V-NEVER-RAISED-BY-RECORDING |
-| 6 | the reporter itself fails (disk full, path unwritable) | swallowed inside the reporter (its existing contract: "nothing here re-raises"); the operation's outcome is unchanged | V-NEVER-RAISED-BY-RECORDING |
-| 7 | the exception message carries content (a provider echoing the prompt into an error) | the message is capped and redacted before the write; the record is rejected entirely if, after redaction, it still exceeds the cap | V-NO-CONTENT-IN-LOG |
-| 8 | a degrade loop (every call fails) | one record per occurrence, bounded by the log's rotation (1 MB × 3); no auto-send unless the operator pre-authorized it, throttled by `report_min_interval_s` (existing) | the reporter's existing bounds |
+| 1 | the retry raises (network, provider, SDK) | ONE record `degrade=retry_failed` with the exception's type, message length and digest; the return dict as 0025 specifies | V-DEGRADE-RECORDED, V-NO-CONTENT-IN-LOG |
+| 2 | the retry returns malformed JSON | as row 1 with `exc_type=ValueError` from the extractor; NEVER the raw output | V-NO-CONTENT-IN-LOG |
+| 3 | the first extraction is unparseable (prose, refusal) | ONE record `degrade=unparseable`; the placeholder episode as today | V-DEGRADE-RECORDED |
+| 4 | `instructions` of the wrong type (0038 §2c row 2) | as row 3 — the extractor's `ValueError` is the same exception class; the record does not say which shape failed, by design (the message would) | V-DEGRADE-RECORDED, V-NO-CONTENT-IN-LOG |
+| 5 | a triple carries a volatility value outside the enum | coerced to DURABLE as today; ONE record `degrade=volatility_defaulted count=n` per `ingest_event` call; the VALUE's text appears nowhere | V-DEGRADE-RECORDED, V-ONE-RECORD-PER-CALL, V-NO-CONTENT-IN-LOG |
+| 6 | a triple carries NO volatility key | the declared default; NO record — this is not a degrade | V-DEGRADE-RECORDED's negative arm |
+| 7 | the exception message carries content (a provider echoing the prompt into an error) | the record carries the message's length and digest and NOTHING of its text — redaction is not consulted, because it preserves the semantic payload (measured: "Alice moved to Berlin" survives `redact`) | V-NO-CONTENT-IN-LOG |
+| 8 | no reporter attached (an embedding host passing `None`; the CLI today) | no record, no exception, no change in behaviour — `on_degrade` is `None` and the sites do not call it | V-NEVER-RAISED-BY-RECORDING |
+| 9 | the reporter itself fails (disk full, path unwritable) | swallowed inside the reporter (its existing contract: "nothing here re-raises"); the operation's outcome is unchanged | V-NEVER-RAISED-BY-RECORDING |
+| 10 | a degrade storm (every call fails; every triple drifted) | one record per call per path, bounded by the log's rotation (§7); no auto-send unless the operator pre-authorized it, throttled by `report_min_interval_s` (existing) | V-ONE-RECORD-PER-CALL; the reporter's existing bounds |
 
 ## 3. Trust-class matrix — REQUIRED, blocking
 
 Unchanged. No record's trust class, disclosure or assertability moves. The degrade
-record is operator telemetry about the extractor, not a memory record.
+record is operator telemetry about the extractor, not a memory record. The coerced
+volatility is stored exactly as today.
 
 ## 3b. Authorization — REQUIRED
 
@@ -142,22 +192,23 @@ section is required.
 
 | field / surface | who writes it | who READS it | reachability |
 |---|---|---|---|
-| the degrade record (log line) | `Reporter.record_degrade`, called by `Memory._on_degrade` | the operator, by reading the log; `veracium diagnostics report`'s tail (existing, consented, redacted) | a log line; never persisted in the store; never returned |
-| the degrade signal from ingest to `Memory` | `ingest_event`, at the two sites | `Memory.remember` only, which forwards to the reporter and strips it before returning (if the private-field design is chosen) | not a public counter; the report's public key set is unchanged and `PUBLIC_COUNTERS`' exact-set test (0025 §4c) proves it |
+| the degrade record (log line, §2a's closed fields) | `Reporter.record_degrade`, called by `Memory._on_degrade` | the operator, by reading the log; `veracium diagnostics report`'s tail (existing, consented, redacted) | a log line; never persisted in the store; never returned |
+| `on_degrade` (the callback) | `Memory.remember` supplies it; `ingest_event` calls it at three sites | nothing else — it is not stored, not returned, not exported | the ingest result's key set is unchanged and 0025 X12's exact-set test proves it |
 | `diagnostics=` on the CLI's `Memory(...)` | `cli.py` | `Memory`'s existing attribute | the same object the MCP entry point already attaches |
 
-**Reachability evidence.** The two degrade sites are the ONLY places ingest continues after
-a provider failure (an AST census of `except Exception` in `ingest.py` is the matrix's
-node); every other exception propagates to `_on_error`.
+**Reachability evidence.** The three degrade sites are the ONLY exception handlers in
+`ingest.py` that continue after catching (the census, V-CENSUS: four handlers; three
+continue; one re-raises). Every other exception propagates to `_on_error`.
 
 ## 5. Regime analysis
 
 | regime | behaviour |
 |---|---|
 | provider healthy, schema followed | no degrade record; unchanged |
-| provider fails during the retry | today: counters only; after: counters AND one WARNING record naming the exception type |
-| provider answers unparseably | today: `unparseable: True`; after: the same AND one record naming the reason |
-| CLI use | today: no log at all (no reporter); after: the same log the MCP server writes |
+| provider fails during the retry | today: counters only; after: counters AND one record with the exception type |
+| provider answers unparseably | today: `unparseable: True`; after: the same AND one record |
+| provider's volatility vocabulary has drifted | today: every fact DURABLE, nothing anywhere; after: the same facts AND one record per call with the count |
+| CLI use | today: no log at all (no reporter — every degrade invisible); after: the same log the MCP server writes |
 | embedding host passing `diagnostics=None` | unchanged: no log, no record — the host owns its own error handling |
 | MCP host | unchanged tool result; the operator's log gains the degrade records |
 
@@ -165,55 +216,82 @@ node); every other exception propagates to `_on_error`.
 
 | id | invariant | check | node |
 |---|---|---|---|
-| **V-DEGRADE-RECORDED** | with a reporter attached, each of the two degrade paths writes exactly ONE record per occurrence, naming the path (`retry_failed` / `unparseable`) and the exception type or reason | a scripted provider that raises on the retry; one that returns prose; one that returns a wrong-typed `instructions`; the log read back | OWED at implementation: `tests/test_0039_degradation_visibility.py::test_retry_failure_writes_one_record`, `::test_unparseable_writes_one_record_with_its_reason` |
-| **V-NO-CONTENT-IN-LOG** | no degrade record contains event text, model output or prompt text; the exception message is capped and redacted | a provider whose exception message echoes the event text and an email address; the record carries neither | OWED: `::test_the_record_carries_no_content` |
+| **V-CENSUS** | `ingest.py` has exactly the three continuing exception handlers §1 names (the retry, the unparseable return, the volatility coercion) and every other handler re-raises; a NEW continuing handler fails this node until the spec names it | an AST walk over every `ExceptHandler`: classify by whether its body (transitively) raises; assert the continuing set equals the named three by enclosing function and caught type | OWED at implementation: `tests/test_0039_degradation_visibility.py::test_the_census_names_every_continuing_handler` |
+| **V-DEGRADE-RECORDED** | with a reporter attached, each of the three paths writes exactly ONE record per occurrence (per call for the volatility path), naming the path in §2a's closed vocabulary; an absent volatility key writes NONE | scripted providers: one raising on the retry; one returning prose; one returning a wrong-typed `instructions`; one emitting `"banana"` for every triple; one omitting the key — the log read back | OWED: `::test_retry_failure_writes_one_record`, `::test_unparseable_writes_one_record`, `::test_drifted_volatility_writes_one_record_with_the_count`, `::test_an_absent_volatility_key_writes_nothing` |
+| **V-NO-CONTENT-IN-LOG** | no record contains ANY substring of the event text, of the model's output, or of the provider's exception message beyond its length and digest | a provider whose exception message and whose triple values echo the event text and a sentinel; assert no sentinel, no event-text token and no message substring longer than three characters appears in the log | OWED: `::test_the_record_carries_no_content` |
+| **V-ONE-RECORD-PER-CALL** | the volatility path writes one record per `ingest_event` call regardless of triple count | a ten-triple event, every triple drifted: one record, `count` equal to the number coerced | OWED: `::test_volatility_records_aggregate_per_call` |
 | **V-NEVER-RAISED-BY-RECORDING** | recording never changes the operation's outcome: no reporter → identical return; a failing reporter → identical return | the same scripted providers with `diagnostics=None` and with a reporter whose log path is unwritable; the return dicts equal the recorded ones | OWED: `::test_recording_never_changes_the_outcome` |
 | **V-CLI-ATTACHES** | both CLI `Memory(...)` constructions pass `diagnostics=load_reporter()` | an AST census of `Memory(` calls in `cli.py`: every one carries the argument | OWED: `::test_every_cli_memory_construction_attaches_a_reporter` |
-| **V-PUBLIC-COUNTERS-UNCHANGED** | the ingest report's public key set is exactly 0025 §4c's plus 0038's; the degrade signal is not a public counter | INHERITED from `tests/test_0025_enforcement.py`'s exact-set test (X12) | CHECKED today (the existing node) |
+| **V-RESULT-UNCHANGED** | the ingest result's key set is exactly 0025 §4c's plus 0038's; nothing of the degrade travels on it | INHERITED from `tests/test_0025_enforcement.py`'s X12 exact-set test | CHECKED today (the existing node) |
 | **V-MCP-RESULT-UNCHANGED** | the MCP tool result gains no field | INHERITED from `tests/test_0031_phase_a.py`'s strip test and the result's existing shape tests | CHECKED today |
 
-**Mutants the matrix must kill:** recording via `print`/stderr instead of the reporter (the
-CLI-without-reporter regime would still see nothing persistent); logging the raw exception
-string uncapped (row 7); a degrade that raises when the reporter fails (row 6); the CLI
-attaching a reporter in one construction and not the other (V-CLI-ATTACHES's census).
+**Mutants the matrix must kill:** recording via `print`/stderr instead of the reporter
+(the CLI-without-reporter regime would still see nothing persistent); a record carrying
+the message text, capped or redacted (row 7 — the redaction inversion); a per-triple
+volatility record (V-ONE-RECORD-PER-CALL); a record on an absent volatility key (row 6);
+a degrade that raises when the reporter fails (row 9); the CLI attaching a reporter in one
+construction and not the other; a fourth continuing handler added to `ingest.py` without
+a spec row (V-CENSUS); the degrade fact placed on the ingest result (X12 kills it today).
 
 ### 6a. Acceptance measurement — REQUIRED, FINITE
 
 Every invariant above is either CHECKED today by an existing node or OWED at a named
 node; the table's last column says which, row by row, and no count is stated in prose.
 Acceptance is the OWED nodes existing and passing, plus a manual run: the CLI against a
-scripted provider that fails the retry, then `cat` of the log, showing one record.
+scripted provider that fails the retry and one whose volatility vocabulary has drifted,
+then `cat` of the log, showing one record of each.
 
 ## 7. Failure modes and reversibility
 
-- **Reversible.** Removing the two hook calls and the CLI arguments restores today's
-  behaviour byte-for-byte; no stored state is touched.
-- **The log can grow.** Bounded by the reporter's existing rotation; a degrade loop
-  writes at most 3 MB before the oldest lines are lost.
+- **Reversible.** Removing the three callback sites, the parameter and the CLI arguments
+  restores today's behaviour byte-for-byte; no stored state is touched.
+- **Retention, not size — the question §7 must answer.** The log is three files of
+  1 MB (the handler's `maxBytes=1_000_000, backupCount=2`). Before 0039, how long a real
+  traceback survives in that window depends on ERROR volume. After 0039 it depends on
+  DEGRADE volume too: every degrade record is bytes a traceback will rotate out behind.
+  That is why the volatility path is one record per call and not per triple (§2b) — at
+  per-triple volume a drifted provider would evict the errors the log exists for. The
+  record-per-window figure is measured at implementation (record size × window), stated
+  in the CHANGELOG with its conditions, not estimated here.
 - **The log can be sent.** Only under the existing consent flow, redacted, capped; this
-  spec adds records to that log and therefore to what a consented send may carry — §2c-i
-  row 7 is why the record is content-free by construction, not by redaction alone.
+  spec adds records to that log and therefore to what a consented send may carry — §2a
+  is why the record is content-free by CONSTRUCTION (no message text at all), not by
+  redaction: redaction was measured and preserves the payload.
 
 ## 8. Claims and limits
 
 **This spec does not make a degrade an error.** 0025's contract stands: a provider
-failure during the retry is a no-op with counters. What changes is that the fact is also
-written where an operator looks.
+failure during the retry is a no-op with counters; an unrecognised volatility is DURABLE.
+What changes is that each fact is also written where an operator looks.
 
 **This spec does not tell the MCP host more.** The tool result is unchanged (§10 Q1).
 
 **A host that passes `diagnostics=None` learns nothing new.** That is the existing
 library contract and the right default for an embedding host with its own logging.
 
+**The strongest argument for this spec is a limit of the shipped product, stated
+plainly:** the CLI attaches no reporter today, so EVERY degrade is invisible to a CLI
+user — including the volatility coercion, which has been silently defaulting a flagship
+axis, with no counter, for as long as the handler has existed. Nothing in the tree could
+have told an operator. This spec is the first carrier of that fact.
+
+**What the record cannot tell the operator:** WHICH shape failed (row 4), or WHAT the
+drifted value was (row 5). Both would require carrying model output; both are recoverable
+from the provider's own logs by the digest and the timestamp.
+
 ## 9. Brief for the external reviewer
 
-Attack, in order: **§2c-i row 7**, because a log that can carry content is the one thing
-the diagnostics module was built to avoid, and "capped and redacted" is a claim about a
-regex; **the seam between ingest and Memory** (§10 Q2), because a private report field
-that escapes into a public dict is 0025's X12 mutant, and a callback threaded through
-`ingest_event`'s signature touches a guarded function; and **V-NEVER-RAISED-BY-RECORDING
-under a failing reporter**, because the reporter's "nothing here re-raises" is a docstring
-until a test makes the disk fail.
+Attack, in order: **V-NO-CONTENT-IN-LOG's test**, because "no substring of the event
+text" is a claim about a test's sentinel and the reviewer will look for the token the
+sentinel did not cover (the exception's `repr`, the `args` tuple, a `__notes__`); **the
+callback under a failing provider**, because `on_degrade` runs inside `ingest_event`'s
+own exception paths and a callback that raises there would change a degrade into an
+error (row 9 says the reporter swallows — prove the CALLBACK does, not only the reporter);
+and **V-CENSUS's classifier**, because "the handler's body transitively raises" is a
+static property and a handler that continues on one branch and raises on another is
+neither cell. §1c's ranking — the coercion is worse than the two absences — is an
+argument, not a measurement; disagree with it if the paper's axis claim does not bear
+the weight.
 
 ## 10. Open questions
 
@@ -221,20 +299,22 @@ until a test makes the disk fail.
    counters because refusal counts teach a model to probe; a boolean that says only "this
    write was degraded" is a smaller signal than `unparseable: True`, which is already
    exposed. Not decided here; the default is NO new field.
-2. **How does the degrade signal travel from `ingest_event` to `Memory.remember`?** (a) a
-   private `_degrade` list in the report dict, stripped by `remember` before return — no
-   signature change, but a field that must never escape (X12 guards it); (b) an
-   `on_degrade` callable parameter on `ingest_event` — a guarded signature change, no
-   dict field. The reviewer's call; (a) is the smaller diff.
-3. **Should `residual > 0` alone be recorded?** A residual can arise with a healthy
+2. **Should `residual > 0` alone be recorded?** A residual can arise with a healthy
    provider (a triple no relation fits). This spec records only the FAILED retry (an
    exception or malformed output), not a residual the provider legitimately produced.
+3. **Should the volatility record carry the drifted value's ENUM-DISTANCE or shape class**
+   (a known synonym such as `long-term`, versus noise)? It would help an operator fix a
+   prompt; it would also be the first byte of model output in the log. v2 says no; the
+   reviewer may weigh it.
+
+*Closed at v2: the seam (callback, by 0025 X12 — §2c).*
 
 ## Reviewer checklist
 
-- [ ] every claim in §1 is a line in the tree at the pinned commit
-- [ ] the two degrade paths' RETURN values are unchanged (0025 §4c's exact-set test still passes)
+- [ ] every claim in §1 is a line in the tree at the pinned commit; the census (V-CENSUS) is RUN and names three continuing handlers and one re-raising
+- [ ] the three degrade paths' RETURN values are unchanged (0025 X12's exact-set test still passes; the callback adds no key)
 - [ ] the MCP tool result is unchanged (0031 §4d's strip test still passes)
-- [ ] no degrade record can carry event text, model output or prompt text (row 7's mutant)
-- [ ] recording never changes an outcome, with or without a reporter, with a failing reporter
+- [ ] no degrade record can carry event text, model output or the exception message's text (row 7's mutant — the redaction inversion is measured, not argued)
+- [ ] the volatility path writes one record per call, and none for an absent key
+- [ ] recording never changes an outcome, with or without a reporter, with a failing reporter, with a failing CALLBACK
 - [ ] the CLI attaches a reporter at every `Memory(...)` construction
