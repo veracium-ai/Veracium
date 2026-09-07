@@ -49,6 +49,12 @@
    "supersedes_sha256": "9e67186a81886fe02e75847a0eacc7a0cf6e8d1515cdf52943e95c20744c78c6",
    "utc": "2026-09-07",
    "what": "SPEC PIN ONLY \u2014 re-pinned to the ACCEPTED spec text after the Phase 7 acceptance fold. No cell, no named cell, no requirement, no wording changed: the 972 describe-path cells, the import matrix, the restore cells and the row-schema requirement are byte-identical to amendment 4. `f707d0fd\u2026` -> `8187ff74\u2026`, computed by research on the accepted text with the single column-0 `corpus sha256: ` line removed, independently of dev's figure and matching it. The pin moving here is the binding WORKING: the acceptance fold is an edit to the spec beyond the digest line, which is exactly the case the pin exists to detect."
+  },
+  {
+   "n": 6,
+   "supersedes_sha256": "58c7a50c508be0e680b9a689f5f6b49888a7ab06cdac51fbc14f4e6285a2a159",
+   "utc": "2026-09-07",
+   "what": "SPEC PIN ONLY \u2014 re-pinned to v14, a POST-ACCEPTANCE PROSE CORRECTION on the owner's word (\"go ahead and correct the 0037 \u00a78 reference\"). **The frozen invariant surface is untouched** and no cell, named cell, requirement or wording in this corpus changed: the 972 describe-path cells, the import matrix, the restore cells and the row-schema requirement are byte-identical to amendment 4. `8187ff74\u2026` -> `3237edb4\u2026`, computed by research on the v14 text with the single column-0 `corpus sha256: ` line removed, independently of dev's figure and matching it. WHAT v14 CORRECTS: \u00a78 forward-referenced Q6 as \"the shape refusal applied to free text at the render choke point\" \u2014 a mechanism research's Q6 step 4 measured as EMPTY (the carriers hold reported speech, not imperatives: 0/204 summaries drop the attribution, 66/66 bare imperatives GAIN one, an imperative-shape rule scores 6.4% on real episode summaries against 94% on constructed input text). An accepted spec pointing a reader at a retired mechanism is a defect in the record even when it is not a defect in the behaviour. The paragraph now opens ASSERTION-FIRST and states the residual at its measured size, including that `Edge.note` is not the second carrier \u00a78 assumed (1/204 verbatim). The residual's worst form is named and handed to 0038 by number, with both figures READ BY DEV'S FOLD SCRIPT FROM THIS PROJECT'S 0038 MANIFEST FIELDS (`recorded_as_completed_action` 19/66, `coerced_into_a_disposition_relation.rate` 31/66) rather than transcribed from a message \u2014 research verified both against the manifest and the spec text."
   }
  ],
  "candidate_set_verbatim_from_4a_ii": "the VISIBLE edges that are procedural BY THEIR OWN RECORD \u2014 `record_kind == \"procedural\"` OR `basis is not None` \u2014 whatever the active registry says about their relation. A declarative-stamped record without a basis is NEVER a candidate, registered or not: it appears in neither list and never counts.",
@@ -14892,10 +14898,10 @@
   "rule": "Remove EXACTLY the lines whose text begins with \"corpus sha256: \" at column 0 (the line and its terminator; nothing else), then sha256 the remaining bytes. There MUST be exactly one such line \u2014 assert it and fail otherwise, rather than silently hashing a spec with zero or two.",
   "second_line_hazard_at_acceptance": "\u00a76a says that at acceptance the same digest MOVES INTO `## Review closure`. If that lands as a second column-0 \"corpus sha256: \" line, grep -v removes BOTH while a count=1 regex removes only the FIRST \u2014 the two impls would silently diverge exactly at acceptance. The exactly-one assertion above turns that divergence into a test failure instead of a wrong pin.",
   "spec": "specs/0037-procedural-basis.md",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "8187ff741d34fe26cfbe7e83d86c81edbf755ed0d8425e5b55eb9d548efa5874",
-  "spec_version": "v13 (ACCEPTED)",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "3237edb419d1f757486d7e373025375fa8e0b81328044d2117fdf8e7d69ed56c",
+  "spec_version": "v14 (ACCEPTED at v13; v14 is a post-acceptance prose correction)",
   "status": "BOUND",
   "why_this_rule_and_not_a_regex": "A regex of the form `^corpus sha256: \\S+\\s*$\\n?` OVER-DELETES: `\\s` matches newline, so `\\s*` greedily consumes the blank line that follows \u00a76a's digest line as well. On the v11 working tree it consumed \"corpus sha256: CORPUS-DIGEST-NOT-YET-BOUND\\n\\n\" and digested to c18c10c07329807d\u2026, which is NOT the digest of the spec-minus-that-line. \u00a76a says the manifest removes THE LINE; a rule that also removes an adjacent blank line makes the pin sensitive to formatting the spec never claimed was load-bearing."
  },
- "spec_version": "v13 (ACCEPTED at external round 5, 2026-09-07)"
+ "spec_version": "v14 (post-acceptance prose correction on the owner's word, 2026-09-07)"
 }
