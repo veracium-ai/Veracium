@@ -38,7 +38,7 @@
 | 0030 | `0030-time-relative-classification.md` | `accepted` | time-relative trust classification |  |
 | 0031 | `0031-agent-facing-trust-surface.md` | `accepted` | the agent-facing trust surface |  |
 | 0032 | `0032-valid-from-predicate.md` | `accepted` | the valid-time predicate at the present |  |
-| 0037 | `0037-procedural-basis.md` | `draft` | procedural records and the `basis` axis (stages 1–3) |  |
+| 0037 | `0037-procedural-basis.md` | `accepted` | procedural records and the `basis` axis (stages 1–3) |  |
 
 ## Reservations (claimed, not drafted)
 

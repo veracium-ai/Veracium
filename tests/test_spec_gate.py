@@ -2211,6 +2211,15 @@ def test_new_closure_evidence_is_behavioral():
         # governed and behavioral (the connection-acquisition ladder's
         # permanent batteries). Growing this is a visible diff.
         ("0031", "external"): 4,
+        # 0037 (2026-09-07, the ledger written at acceptance after five
+        # external rounds in one day): a SPEC WITH NO IMPLEMENTATION — every
+        # fold changed spec text and the frozen corpus, never src/. Its
+        # text-only closures cite the fold commit (`git show`); its corpus
+        # closures already cite pytest nodes in tests/test_0037_corpus_pin.py
+        # (the binding, the domain, the golden vector). Implementation is a
+        # separate arc, whose closures will be behavioral. Growing this is a
+        # visible diff.
+        ("0037", "external"): 4,
     }
     # 0030 (2026-09-04, the joint arc's ledger written after acceptance):
     # its text-only closures are NOT prefix-shaped — design/prose findings

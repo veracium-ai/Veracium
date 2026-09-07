@@ -2847,6 +2847,34 @@ REVIEWS = [
          verdict='ACCEPTED — 0029 v9, 0030 v29 and the joint seam all ACCEPTED; design frozen on a seven-point invariant surface (fold 627aea2 = 0030 v30)',
          raised=[]),
 
+    # ---- 0037 procedural records and the basis axis — five external rounds in one day (2026-09-06 → 2026-09-07); the closure ledger written at acceptance ----
+    dict(spec="0037", round=1, kind="external", date="2026-09-06",
+         verdict="SENT (round-1 package 5d9ac24762240c75… @ pin af880b3, CI 34049009899; three seals discarded at this pin pre-dispatch and disclosed; the first stage under 0033 HELD for the number collision)", findings=0),
+    dict(spec="0037", round=1, kind="external", date="2026-09-06",
+         verdict='RETURN for revision — eight blocking (MCP write path vs the sole-producer rule; the describe result contract undefined; the public claim exceeded the guarantee; Q3 unresolved; cross-scope contradictory; relation validation missing; registry totality overstated; the scale requirement without an invariant) and seven corrections; "strong overall architecture"',
+         raised=['0037-R1-1', '0037-R1-2', '0037-R1-3', '0037-R1-4', '0037-R1-5', '0037-R1-6', '0037-R1-7', '0037-R1-8',
+                 '0037-R1-9', '0037-R1-10', '0037-R1-11', '0037-R1-12', '0037-R1-13', '0037-R1-14', '0037-R1-15']),
+    dict(spec="0037", round=2, kind="external", date="2026-09-06",
+         verdict="SENT (round-2 package a51617197536cdfa… @ pin 18d05f7, CI 34054451772 — the RESEAL; the v9 seal 7ca36268… @ 8a18738 was superseded pre-dispatch after research's corpus freeze found three v9 defects incl. a revocation bypass on the new write surface)", findings=0),
+    dict(spec="0037", round=2, kind="external", date="2026-09-06",
+         verdict='RETURN for revision — eleven round-1 items closed; four blocking (authorship conflated with derivation; the unregistered-relation remedy withheld legacy declarative edges; the frozen corpus absent from the package; the CLI a second producer), one package-evidence defect (an unfilled placeholder line in COLLECTED.txt), six gaps; the standing-revocation treatment "strong and necessary"',
+         raised=['0037-R2-1', '0037-R2-2', '0037-R2-3', '0037-R2-4', '0037-R2-5', '0037-R2-6', '0037-R2-7', '0037-R2-8', '0037-R2-9', '0037-R2-10', '0037-R2-11']),
+    dict(spec="0037", round=3, kind="external", date="2026-09-06",
+         verdict="SENT (round-3 package 20f778c7323dd2cd… @ pin 3a19897, CI 34058517574; the corpus IN the tree and bound both directions for the first time; the golden-vector pin test)", findings=0),
+    dict(spec="0037", round=3, kind="external", date="2026-09-06",
+         verdict='RETURN for revision — nine round-2 items closed, "the package evidence is now well formed"; three blocking (the stamp\'s type vs a "declarative" comparison and 486 corpus cells; default import misclassifying with both markers absent; an unchanged export format version unsafe for older readers) and four corrections',
+         raised=['0037-R3-1', '0037-R3-2', '0037-R3-3', '0037-R3-4', '0037-R3-5', '0037-R3-6', '0037-R3-7']),
+    dict(spec="0037", round=4, kind="external", date="2026-09-06",
+         verdict="SENT (round-4 package 35f2f7826a7b4f84… @ pin 07d28a5, CI 34061355491; the reviewer\'s suite-not-run disclosed verbatim in the README)", findings=0),
+    dict(spec="0037", round=4, kind="external", date="2026-09-06",
+         verdict='RETURN for revision — all ten round-3 findings closed; one blocking (the version-key stripping rule disabled two of the three import signals) and five corrections',
+         raised=['0037-R4-1', '0037-R4-2', '0037-R4-3', '0037-R4-4', '0037-R4-5', '0037-R4-6']),
+    dict(spec="0037", round=5, kind="external", date="2026-09-07",
+         verdict="SENT (round-5 package 78a20446b085d799… @ pin ae6be76, CI 34067972232)", findings=0),
+    dict(spec="0037", round=5, kind="external", date="2026-09-07",
+         verdict='ACCEPT — "the sole round-four blocker is resolved… all three classification signals evaluated on the original incoming record before normalization… the eight-case decision matrix is complete and consistent… no remaining 0037 specification blocker"; the reviewer RAN THE SUITE for the first time in the arc (independent offline run, Python 3.12.3 / SQLite 3.45.1: 2,714 passed, 33 skipped); one non-blocking, unrelated portability note on a 0031 test computing "tomorrow" from local civil time',
+         raised=[]),
+
 ]
 
 

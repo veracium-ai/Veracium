@@ -43,6 +43,12 @@
    "supersedes_sha256": "1bb9c9025fe8fd4a0b3f759f72697fb9a717dff61f0311ad1a31b6a126ba151e",
    "utc": "2026-09-06",
    "what": "EXTERNAL ROUND-4 fold against spec v13. ONE blocking finding, and IT LANDED ON RESEARCH'S OWN CELL: amendment 3's single 'format 10 carrying either key -> registry' cell **could not fail**, because it fixed the receiving relation in the one state where the registry refuses independently \u2014 correct and strip-before-inspect implementations both return 'refused'. The reviewer found it by varying the axis research had held fixed. Replaced by the reviewer's 8-cell marker x registry matrix, transcribed VERBATIM from the banked verdict (49e382c07d0d058f), with the TWO discriminating rows annotated: `procedural stamp x unknown relation` and `basis present x declarative relation` are the only rows that can fail under the strip-before-inspect mutant, because they are the only states where the registry signal does not fire. The three-signal rule now states raw-record evaluation BEFORE version normalization, per-record refusal, `raw: true` when the envelope declared a version below the key. Domain-validation wording narrowed to dev's exact form ('domain validation now, real `Provenance` construction after implementation') \u2014 the previous wording overstated what the test does. The 972 describe-path cells are untouched."
+  },
+  {
+   "n": 5,
+   "supersedes_sha256": "9e67186a81886fe02e75847a0eacc7a0cf6e8d1515cdf52943e95c20744c78c6",
+   "utc": "2026-09-07",
+   "what": "SPEC PIN ONLY \u2014 re-pinned to the ACCEPTED spec text after the Phase 7 acceptance fold. No cell, no named cell, no requirement, no wording changed: the 972 describe-path cells, the import matrix, the restore cells and the row-schema requirement are byte-identical to amendment 4. `f707d0fd\u2026` -> `8187ff74\u2026`, computed by research on the accepted text with the single column-0 `corpus sha256: ` line removed, independently of dev's figure and matching it. The pin moving here is the binding WORKING: the acceptance fold is an edit to the spec beyond the digest line, which is exactly the case the pin exists to detect."
   }
  ],
  "candidate_set_verbatim_from_4a_ii": "the VISIBLE edges that are procedural BY THEIR OWN RECORD \u2014 `record_kind == \"procedural\"` OR `basis is not None` \u2014 whatever the active registry says about their relation. A declarative-stamped record without a basis is NEVER a candidate, registered or not: it appears in neither list and never counts.",
@@ -14880,16 +14886,16 @@
  "spec_pin": {
   "anchoring_matters": "The anchor at column 0 is doing real work: \u00a76a's own prose mentions `corpus sha256: \u2026` mid-line when describing the binding. An unanchored match would strip prose.",
   "both_impls_verified_equal": true,
-  "note": "The excluded line is what makes the binding non-circular: dev binds the corpus digest into that line AFTER this pin is computed, and the pin is unaffected by design. Any other edit to the spec MOVES this pin and requires a re-pin. Amendment 3: the pin is over v12 and does NOT depend on the corpus digest line, which still held the SUPERSEDED 57668e1f\u2026 when this pin was computed \u2014 that is the non-circularity working, not an oversight. Dev binds the new digest into that line after this.",
+  "note": "The excluded line is what makes the binding non-circular: dev binds the corpus digest into that line AFTER this pin is computed, and the pin is unaffected by design. Any other edit to the spec MOVES this pin and requires a re-pin. Amendment 3: the pin is over v12 and does NOT depend on the corpus digest line, which still held the SUPERSEDED 57668e1f\u2026 when this pin was computed \u2014 that is the non-circularity working, not an oversight. Dev binds the new digest into that line after this. Amendment 5 re-pins to the ACCEPTED spec text: the Phase 7 acceptance fold (closing version cell, Spec-Status accepted, External-review row, rendered `## Review closure`) moved the spec, so the pin moved with it BY DESIGN \u2014 that is the pin doing its job, not a defect. Line 723 still binds 9e67186a\u2026, which the exclusion rule removes before hashing, so the corpus digest is unchanged and the 972 cells are untouched.",
   "reference_impl_python": "lines = spec_text.split(\"\\n\"); hits = [l for l in lines if l.startswith(\"corpus sha256: \")]; assert len(hits) == 1; sha256(\"\\n\".join(l for l in lines if not l.startswith(\"corpus sha256: \")).encode())",
   "reference_impl_shell": "[ \"$(grep -c '^corpus sha256: ' SPEC)\" = 1 ] && grep -v '^corpus sha256: ' SPEC | sha256sum",
   "rule": "Remove EXACTLY the lines whose text begins with \"corpus sha256: \" at column 0 (the line and its terminator; nothing else), then sha256 the remaining bytes. There MUST be exactly one such line \u2014 assert it and fail otherwise, rather than silently hashing a spec with zero or two.",
   "second_line_hazard_at_acceptance": "\u00a76a says that at acceptance the same digest MOVES INTO `## Review closure`. If that lands as a second column-0 \"corpus sha256: \" line, grep -v removes BOTH while a count=1 regex removes only the FIRST \u2014 the two impls would silently diverge exactly at acceptance. The exactly-one assertion above turns that divergence into a test failure instead of a wrong pin.",
   "spec": "specs/0037-procedural-basis.md",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "f707d0fd81379306a66e13f69db170d40ff4b55e75b2d6ed141bf123f9b386eb",
-  "spec_version": "v13",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "8187ff741d34fe26cfbe7e83d86c81edbf755ed0d8425e5b55eb9d548efa5874",
+  "spec_version": "v13 (ACCEPTED)",
   "status": "BOUND",
   "why_this_rule_and_not_a_regex": "A regex of the form `^corpus sha256: \\S+\\s*$\\n?` OVER-DELETES: `\\s` matches newline, so `\\s*` greedily consumes the blank line that follows \u00a76a's digest line as well. On the v11 working tree it consumed \"corpus sha256: CORPUS-DIGEST-NOT-YET-BOUND\\n\\n\" and digested to c18c10c07329807d\u2026, which is NOT the digest of the spec-minus-that-line. \u00a76a says the manifest removes THE LINE; a rule that also removes an adjacent blank line makes the pin sensitive to formatting the spec never claimed was load-bearing."
  },
- "spec_version": "v13"
+ "spec_version": "v13 (ACCEPTED at external round 5, 2026-09-07)"
 }
