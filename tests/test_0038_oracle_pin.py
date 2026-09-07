@@ -137,6 +137,19 @@ def test_manifest_pins_the_spec_text_excluding_both_pin_lines():
     assert man["spec_pin"][SPEC_PIN_KEY] == spec_text_sha256_excluding_both_pin_lines(_spec_text())
 
 
+def test_the_pin_was_computed_by_the_two_line_rule_and_not_the_one_line_rule():
+    """The anti-check (research, re-verifying the round-2 pin from the committed bytes): the
+    positive check passes under EITHER exclusion rule whenever the corpus line happens not to
+    move, so it cannot say which rule ran. Removing the oracle line ALONE must give a
+    DIFFERENT digest from the manifest's — proving the two-line rule is the one that ran."""
+    man = _manifest()
+    lines = _spec_text().split("\n")
+    hits = [i for i, l in enumerate(lines) if l.startswith(PREFIX)]
+    assert len(hits) == 1
+    oracle_only = hashlib.sha256("\n".join(lines[: hits[0]] + lines[hits[0] + 1:]).encode("utf-8")).hexdigest()
+    assert oracle_only != man["spec_pin"][SPEC_PIN_KEY], "the pin equals the ONE-line exclusion: the stated two-line rule did not run"
+
+
 def test_the_excluded_line_set_is_data_the_manifest_states():
     """The exclusion set is CHECKABLE, not described: the manifest lists the line prefixes it
     removed, and this file's rule removes exactly those. A key or rule text that said "one
