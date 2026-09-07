@@ -70,14 +70,20 @@
     "supersedes_pin": "c50a756c0b5994c1cd1403e28839d8c4502f795a0ff0ee5177554eb4980327b8",
     "utc": "2026-09-07",
     "what": "Re-pinned after removing a backticked PEER-TREE path from the version cell's errata. The path was correct as history and wrong as a reference: a spec that will live in the repo should not carry a live-looking `proposals/\u2026` citation even when quoting what was wrong. 0028 carried the same defect in a worse form \u2014 it cited the generator at its peer-tree path, which is STALE ON PLACEMENT since the file lands at `specs/evidence/0028/`. [n=3 continued] \u00a76a's own errata note carried the same backticked path a second time; the first pass fixed the version cell and MISSED the body \u2014 a one-site fix for a two-site defect, which is this arc's carrier-completeness lesson at the smallest possible scale. Both sites now describe the path instead of reproducing it."
+   },
+   {
+    "n": 4,
+    "supersedes_pin": "3f939f346b3885728c16e86fe6e1996a71daea01dbcb8d268fd8cafa3745bc62",
+    "utc": "2026-09-07",
+    "what": "Re-pinned to the v3 text (the external round-1 fold). **The binding was the carrier the fold did not reach**: the round-1 findings changed the spec in six places and the manifest still pinned v2's text, so adopting v3 would have failed the corpus->spec direction on the first suite. Found by dev's Phase 0b contract-vs-evidence check, not by either seat re-reading the spec \u2014 a fold can be complete in every section and leave the artifact that binds it behind."
    }
   ],
   "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged \u2014 a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "3f939f346b3885728c16e86fe6e1996a71daea01dbcb8d268fd8cafa3745bc62",
-  "spec_version": "v2",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "67861622f09093962965e31225b917c988ff6c85c2a2bb72e676849490cfddd2",
+  "spec_version": "v3",
   "status": "BOUND"
  },
- "spec_version": "v2"
+ "spec_version": "v3"
 }
