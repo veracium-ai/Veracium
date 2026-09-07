@@ -630,9 +630,15 @@ def test_the_s2_interaction_direct_plus_future_date_is_stored_not_assertable(tmp
     `direct` an inside-skew future date is STORED, `valid_from` in the
     future, NOT assertable, and grounds by itself when the clock arrives
     (specs/0032)."""
-    from datetime import date, timedelta
+    from datetime import datetime, timedelta, timezone
     from veracium import schema
-    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    # "tomorrow" is computed from the SAME clock the implementation uses (UTC —
+    # `SqliteStore._clock` defaults to `datetime.now(timezone.utc)`), never from
+    # local civil time: the 0037 round-5 external reviewer found this test
+    # failing in the evening UTC-date overlap of a western time zone, where
+    # `date.today()` was still yesterday while the store's clock had crossed
+    # midnight — so "tomorrow" was already today and the edge was valid_now.
+    tomorrow = (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
     mem = _mem(tmp_path, "s2")
     try:
         remember_report(mem, U, "(scripted)", capability="direct", date=tomorrow)
