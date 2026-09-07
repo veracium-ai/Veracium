@@ -256,7 +256,7 @@ absent.
 The manifest's sha256 is carried on **one** line of this spec:
 
 ```
-corpus sha256: 590f06036c2503b91d1063bb2c36c9c022583b0bcb2a3e607ab232b139156bd2
+corpus sha256: 014da5c724266c13f1388e967189978a6cecfbc44e77eff0846b9d32699ad71f
 ```
 
 and the manifest carries `spec_version` and
@@ -409,7 +409,7 @@ manifest's — and the manifest carries every file's.** Fifteen digests in prose
 would be fifteen things going stale independently, which this document has
 already demonstrated twice today at a smaller scale.
 
-oracle manifest sha256: 540425be4c160f219f4bf9cc99ab9b9ea72ffec61d108aebc8f7441d1f260d2a
+oracle manifest sha256: 3397bece7caf74f7719398ac8afbc645cb3216bf5284fd9faee399f521175e92
 
 **The binding is bidirectional and neither direction depends on the other's
 token** (the corpus pin's protocol): the line above is `sha256(MANIFEST.json)`;

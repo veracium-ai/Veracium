@@ -5,9 +5,11 @@ token into prose rather than fifteen that would go stale independently.
 
   spec → manifest   the spec carries ONE column-0 line ``oracle manifest sha256: <hex>``
                     and ``oracle/MANIFEST.json`` hashes to it.
-  manifest → spec   the manifest's ``spec_pin.spec_text_sha256_excluding_the_oracle_
-                    manifest_line`` equals the sha256 of the spec text with exactly that
-                    one line removed (line + terminator).
+  manifest → spec   the manifest's ``spec_pin.spec_text_sha256_excluding_both_pin_lines``
+                    equals the sha256 of the spec text with exactly the two column-0 pin
+                    lines removed — this one and the corpus pin's — each line + terminator;
+                    the manifest lists the two prefixes as ``excluded_lines`` and this file
+                    asserts that list, so the exclusion set is data, not a description.
   manifest ↔ bytes  every listed file is present with the listed digest, and every
                     present file is listed (a present-but-unlisted file is the failure a
                     listed-only check cannot see).
@@ -37,7 +39,8 @@ ORACLE = ROOT / "tests" / "eval" / "extraction_speech_act" / "oracle"
 MANIFEST = ORACLE / "MANIFEST.json"
 PREFIX = "oracle manifest sha256: "
 CORPUS_PREFIX = "corpus sha256: "   # the OTHER single-line pin on this document
-SPEC_PIN_KEY = "spec_text_sha256_excluding_the_oracle_manifest_line"
+SPEC_PIN_KEY = "spec_text_sha256_excluding_both_pin_lines"   # the KEY says what the VALUE does
+EXCLUDED_LINES = [PREFIX, CORPUS_PREFIX]                        # asserted against the manifest's own list
 # Two single-line pins on one document are mutually dependent unless one of them excludes
 # BOTH lines: the corpus pin (0037's rule, inherited verbatim) excludes only its own line
 # and therefore covers the oracle line, so the oracle pin excludes both. Order at landing:
@@ -54,7 +57,7 @@ GOLDEN_FIXTURE = "alpha\n" + PREFIX + "0" * 64 + "\n\nbeta\n" + CORPUS_PREFIX + 
 GOLDEN_EXPECTED = hashlib.sha256("alpha\n\nbeta\ngamma\n".encode("utf-8")).hexdigest()
 
 
-def spec_text_sha256_excluding_the_line(text: str) -> str:
+def spec_text_sha256_excluding_both_pin_lines(text: str) -> str:
     """Remove exactly one oracle-manifest line and exactly one corpus line (line + terminator)."""
     lines = text.split("\n")
     hits = [i for i, l in enumerate(lines) if l.startswith(PREFIX)]
@@ -114,7 +117,7 @@ def _body() -> str:
 # ---- the golden vector (the rule, before the artifact) --------------------------------
 
 def test_the_exclusion_rule_on_the_golden_vector():
-    assert spec_text_sha256_excluding_the_line(GOLDEN_FIXTURE) == GOLDEN_EXPECTED
+    assert spec_text_sha256_excluding_both_pin_lines(GOLDEN_FIXTURE) == GOLDEN_EXPECTED
 
 
 # ---- spec ↔ manifest, both directions ------------------------------------------------
@@ -129,9 +132,20 @@ def test_manifest_hashes_to_the_spec_digest():
     assert _sha256(MANIFEST) == _digest_token()
 
 
-def test_manifest_pins_the_spec_text_excluding_the_digest_line():
+def test_manifest_pins_the_spec_text_excluding_both_pin_lines():
     man = _manifest()
-    assert man["spec_pin"][SPEC_PIN_KEY] == spec_text_sha256_excluding_the_line(_spec_text())
+    assert man["spec_pin"][SPEC_PIN_KEY] == spec_text_sha256_excluding_both_pin_lines(_spec_text())
+
+
+def test_the_excluded_line_set_is_data_the_manifest_states():
+    """The exclusion set is CHECKABLE, not described: the manifest lists the line prefixes it
+    removed, and this file's rule removes exactly those. A key or rule text that said "one
+    line" over a two-line computation (the first landing's key name) fails here, not in a
+    reader's head."""
+    man = _manifest()
+    assert man["spec_pin"]["excluded_lines"] == EXCLUDED_LINES
+    assert set(man["spec_pin"]) >= {SPEC_PIN_KEY, "excluded_lines", "rule", "spec"}
+    assert "oracle_manifest_line" not in SPEC_PIN_KEY, "a key naming ONE line over a two-line value is the summary losing its bound"
 
 
 # ---- manifest ↔ bytes, both directions -----------------------------------------------
@@ -229,7 +243,7 @@ def test_the_negative_controls_fail():
     man = _manifest()
     # golden vector: a second digest line is refused
     try:
-        spec_text_sha256_excluding_the_line(GOLDEN_FIXTURE + PREFIX + "1" * 64 + "\n")
+        spec_text_sha256_excluding_both_pin_lines(GOLDEN_FIXTURE + PREFIX + "1" * 64 + "\n")
     except AssertionError:
         pass
     else:

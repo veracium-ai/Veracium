@@ -88,12 +88,18 @@
     "supersedes_pin": "1c6ad3adf8564211739860c48e4981fcce5a67b7596f206f35c88ed2bfba62f3",
     "utc": "2026-09-07",
     "what": "Re-pinned to v5.4 (the §6b oracle-freeze fold: registry, gate, deviation named; plus the oracle manifest's single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
+   },
+   {
+    "n": 7,
+    "supersedes_pin": "1ad397f710230e2ff5540ed3c0d9c36badc4cf51547417c7ce8924b268b6d85d",
+    "utc": "2026-09-07",
+    "what": "Re-pinned after the oracle manifest's spec_pin key was renamed to say what its value does (spec_text_sha256_excluding_both_pin_lines) and the excluded line prefixes were added as data the pin test asserts (research's read of the round-2 pin 42e37f5: a key naming ONE line over a two-line value is the summary losing its bound). The oracle manifest's bytes moved, so the oracle line moved, so this pin moved — BY DESIGN, re-derived from the bytes."
    }
   ],
   "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged — a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "1ad397f710230e2ff5540ed3c0d9c36badc4cf51547417c7ce8924b268b6d85d",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "a411a6097a16f2d35aee35ec3bf39fcc64b7022e3f243f94c773e566a3cf48de",
   "spec_version": "v5.4",
   "status": "BOUND"
  },

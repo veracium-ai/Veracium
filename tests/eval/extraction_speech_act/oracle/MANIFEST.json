@@ -85,7 +85,11 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_the_oracle_manifest_line": "0f1509048a1b81fdb5a81ce2ef05be3b716be3bedff9cdc50669ceb48d8f88e2",
+  "spec_text_sha256_excluding_both_pin_lines": "0f1509048a1b81fdb5a81ce2ef05be3b716be3bedff9cdc50669ceb48d8f88e2",
+  "excluded_lines": [
+   "oracle manifest sha256: ",
+   "corpus sha256: "
+  ],
   "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line."
  }
 }
