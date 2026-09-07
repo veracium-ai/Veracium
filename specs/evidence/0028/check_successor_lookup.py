@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""specs/0028 round 5 — THE EXECUTABLE SUCCESSOR-LOOKUP MODEL (R4-1, R4-5, the
-reviewer's round-five request).
+"""specs/0028 round 6 — THE EXECUTABLE SUCCESSOR-LOOKUP MODEL (R4-1, R4-5, R5-1, R5-2;
+the reviewer's round-five request, amended by the round-five verdict).
 
-    python3 specs/evidence/0028/check_successor_lookup.py          # the six states × two principals, the table, the two invariants
+    python3 specs/evidence/0028/check_successor_lookup.py          # every state in EXPECTED × two principals, the table, the invariants
     python3 specs/evidence/0028/check_successor_lookup.py --json OUT
 
 WHAT THIS IS, STATED FIRST. `edges_superseding` is UNWRITTEN (src/veracium ships
 only asof/). This file is the MODEL of the design v11 specifies for it — the
-reference lookup written from the spec, run over six store states built on the
+reference lookup written from the spec, run over the store states EXPECTED names (the
+program prints their count — no count is written here, so none can go stale) built on the
 SHIPPED store through public writes, with the observation table and the two
 invariants asserted. It is the executable form of the expectation (0029's rule:
 research sets the bar, dev runs it); when the accessor is implemented, the
@@ -17,13 +18,19 @@ becomes the oracle. It does not claim the accessor exists.
 THE DESIGN (research, 2026-09-07, folded as 0028 v11 §5.1):
   a successor outside the principal's ScopeView is NOT an omission — it is not
   in the view, indistinguishable in kind from one that does not exist; it
-  produces no count and no cause. The result carries a closed three-value
+  produces no count and no cause. AND (v12, R5-1) THE QUERIED EDGE ITSELF is
+  read through the same view: its assertion is readable only when that edge is
+  visible to the caller, so an invisible queried edge asserts nothing TO THIS
+  CALLER exactly as a nonexistent one does — one code path, no new outcome.
+  `edges_superseding` is not an existence oracle. The result carries a closed three-value
   disposition and the visible successors, and NOTHING ELSE:
     HEAD                   the edge asserts no supersession and none is visible
     SUPERSEDED             >= 1 successor visible IN THIS VIEW
-    SUCCESSOR_UNAVAILABLE  the edge asserts supersession (its own row's
-                           invalidation_reason == "corrected", a fact the
-                           principal already holds); none visible
+    SUCCESSOR_UNAVAILABLE  the edge asserts supersession (its own VISIBLE row's
+                           invalidation_reason is one the NAMES_A_SUCCESSOR
+                           registry marks True — corrected, superseded,
+                           absorbed_duplicate — a fact the principal already
+                           holds because the row is in its view); none visible
   Precedence: visible successors → SUPERSEDED; else the edge's own assertion →
   SUCCESSOR_UNAVAILABLE; else HEAD. Total over every store state.
   Causes (DANGLING / CROSS_SCOPE / MALFORMED) survive as OPERATOR-ONLY
@@ -33,30 +40,48 @@ THE DESIGN (research, 2026-09-07, folded as 0028 v11 §5.1):
 THE TWO INVARIANTS:
   V-NO-EXISTENCE-SIGNAL   for a principal without scope, the result from a
                           HIDDEN successor equals, FIELD BY FIELD (whole-object
-                          equality, never a flag), the result from a MISSING one
-  V-UNAVAILABLE-NEVER-HEAD  SUCCESSOR_UNAVAILABLE is never HEAD: the head
-                          predicate is False for it, for any principal, at any T
+                          equality, never a flag), the result from a MISSING one;
+                          and (R5-1) the result for a HIDDEN QUERIED edge equals
+                          the result for a NONEXISTENT id — the differential the
+                          first test did not have: a fix's own test inherits the
+                          fix's blind spot
+  V-NEVER-HEAD            phrased over STATES, not results: the forward-missing state
+                          and every retired-hidden state are not heads for either
+                          principal, at any T — so a collapse-to-HEAD trips it on its
+                          own (phrased over UNAVAILABLE results it would pass
+                          vacuously, producing none). Renamed from
+                          V-UNAVAILABLE-NEVER-HEAD in v12: the name was narrower than
+                          the check
   (Collapsing the hidden case into HEAD would trade a leak for a lie — B is told
    the chain cannot be closed, never that a superseded edge is current.)
 
-THE STATES — the reviewer's six, plus three the design's own correction added,
-built by public writes on ONE store, both principals observing every one:
-  head, missing, visible, multiple, hidden (retired `corrected`, successor
-  hidden); hidden_superseded and hidden_absorbed (retired `superseded` /
-  `absorbed_duplicate` through the public invalidate_edge, successor hidden —
-  reachable states that must read exactly as the corrected case does); and
-  hidden_unretired — the CONTRAST: an un-retired prior with a hidden successor
-  reads HEAD for the principal without scope, and that is correct, because the
-  edge's own row asserts nothing, so the view is internally consistent. The
-  distinction is whether the edge's own row makes a claim the disposition would
-  contradict.
-  State "missing" (the successor row gone after a real correction) is
-  constructible only by a raw DELETE: no shipped writer produces it — §4b-iii's
-  "store state no shipped writer produces" class, and this file says so rather
-  than implying the fixture is a reachable path. State "multiple" as built has
-  two successor rows naming a prior that was NOT retired (plain add_edge with
-  `supersedes`) — a state the public write surface admits; precedence puts
-  visible successors first, so it is SUPERSEDED for both principals.
+THE STATES, each built by public writes on ONE store and observed by both principals:
+  head; forward_missing (a retired `corrected` prior whose successor ROW is gone —
+  constructible only by a raw DELETE: no shipped writer produces it, §4b-iii's class,
+  stated); visible; multiple (two rows naming an UN-retired prior via plain add_edge,
+  which the public surface admits; precedence puts visible successors first); hidden
+  (retired `corrected`, successor hidden); hidden_superseded / hidden_absorbed (retired
+  via the public invalidate_edge under the other two reasons that name a successor,
+  successor hidden — reachable states that must read as the corrected case does);
+  hidden_unretired (the CONTRAST: an un-retired prior with a hidden successor reads
+  HEAD for the principal without scope, correctly — its own row asserts nothing);
+  dangling_backward (R5-2: a VISIBLE edge S whose own `supersedes` names a nonexistent
+  M — S's disposition is unaffected, the accessor searches forward and never reads
+  S's pointer; querying the nonexistent M finds S and yields SUPERSEDED, which
+  discloses nothing because S and its pointer were already visible); hidden_queried
+  (R5-1: a retired `corrected` edge that is itself OUTSIDE the excluded principal's
+  view, with its successor also foreign — for that principal its result must equal the
+  result for a nonexistent id, whole object; for the holder, who sees both rows, it is
+  SUPERSEDED — never HEAD: the positive control is "not HEAD", not one value);
+  hidden_queried_missing (the holder's OTHER arm: the same foreign corrected edge with its
+  successor row GONE — SUCCESSOR_UNAVAILABLE for the holder, a nonexistent id for the
+  excluded principal; the forward_missing shape on a foreign edge, §4b-iii's class);
+  nonexistent (an id no row carries — HEAD for everyone; the reference point of R5-1).
+  THE POSITIVE CONTROL of V-NO-EXISTENCE-SIGNAL: the same two states that are equal for
+  the excluded principal DIFFER for the holder — the queried edge's result is not HEAD on
+  either arm. Without it, one disposition for everyone satisfies the equality half by
+  doing nothing (the collapse-everything mutant); an assertion without its control is a
+  check that can be satisfied by doing nothing.
 
 # Mutation-Matrix: tests/test_0028_successor_lookup.py::test_v9_typed_result_reintroduces_the_existence_signal
 # (siblings there: a head predicate ignoring the integrity signal; collapsing the hidden
@@ -155,7 +180,10 @@ def successor_lookup(store, user_id, edge_id, principal, policy, *, names_succes
     asserts = ASSERTS_SUPERSESSION if names_successor is None else frozenset(names_successor)
     view = ScopeView(store, user_id, principal, policy)
     rows = store.edges(user_id, active_only=False, include_quarantined=True)
-    me = next((e for e in rows if e.id == edge_id), None)
+    # R5-1: the QUERIED edge is read through the SAME view as the successors. An edge
+    # outside the caller's view asserts nothing TO THIS CALLER, exactly as a nonexistent
+    # id does — one code path; the accessor is not an existence oracle.
+    me = next((e for e in rows if e.id == edge_id and view.visible(e)), None)
     visible = tuple(e for e in rows if e.supersedes == edge_id and view.visible(e))
     if visible:
         return SuccessorLookup(SuccessorDisposition.SUPERSEDED, visible)
@@ -232,21 +260,44 @@ def build(path) -> tuple:
     # its own row asserts nothing, so B's view is internally consistent
     unret_prior = edge("Guarda"); s.add_edge(unret_prior)
     s.add_edge(edge("Guarda (foreign)", source="other-mailbox", supersedes=unret_prior.id, valid_from=T0 + D))
-    return s, {"head": head.id, "missing": gone_prior.id, "visible": vis_prior.id,
+    # R5-2: a VISIBLE edge whose own `supersedes` names a nonexistent id — a dangling
+    # BACKWARD pointer. The accessor searches forward; S's own disposition never reads it.
+    dangling_target = f"e-{uuid.uuid4().hex[:10]}"           # no row ever carries this id
+    dangler = edge("Braganca", supersedes=dangling_target); s.add_edge(dangler)
+    # R5-1: a retired-`corrected` edge that is itself OUTSIDE B's view (foreign source),
+    # with a hidden successor — B querying its id must see what B sees for a nonexistent id.
+    hq_prior = edge("Evora", source="other-mailbox"); s.add_edge(hq_prior)
+    correct(s, hq_prior, edge("Evora (foreign fix)", source="other-mailbox",
+                              supersedes=hq_prior.id, valid_from=T0 + D))
+    # the holder's OTHER arm (v12 §5.1's range): a foreign corrected edge whose successor row is
+    # GONE — for the holder SUCCESSOR_UNAVAILABLE, for the excluded principal a nonexistent id;
+    # the forward_missing shape on a foreign edge, so also §4b-iii's no-shipped-writer class.
+    hqm_prior = edge("Tomar", source="other-mailbox"); s.add_edge(hqm_prior)
+    hqm_succ = correct(s, hqm_prior, edge("Tomar (foreign fix)", source="other-mailbox", supersedes=hqm_prior.id, valid_from=T0 + D))
+    s._conn.execute("DELETE FROM edges WHERE id=?", (hqm_succ.id,)); s._conn.commit()
+    return s, {"head": head.id, "forward_missing": gone_prior.id, "visible": vis_prior.id,
                "multiple": multi_prior.id, "hidden": hid_prior.id,
                "hidden_superseded": sup_prior.id, "hidden_absorbed": abs_prior.id,
-               "hidden_unretired": unret_prior.id}
+               "hidden_unretired": unret_prior.id,
+               "dangling_backward": dangler.id, "dangling_target": dangling_target,
+               "hidden_queried": hq_prior.id, "hidden_queried_missing": hqm_prior.id,
+               "nonexistent": f"e-{uuid.uuid4().hex[:10]}"}
 
 
-EXPECTED = {   # the observation table v11 §5.1 states, (A, B) dispositions and visible counts
+EXPECTED = {   # the observation table v12 §5.1 states, (A, B) dispositions and visible counts
     "head":     (("head", 0), ("head", 0)),
-    "missing":  (("successor_unavailable", 0), ("successor_unavailable", 0)),
+    "forward_missing": (("successor_unavailable", 0), ("successor_unavailable", 0)),
     "visible":  (("superseded", 1), ("superseded", 1)),
     "multiple": (("superseded", 2), ("superseded", 2)),
     "hidden":   (("superseded", 1), ("successor_unavailable", 0)),
     "hidden_superseded": (("superseded", 1), ("successor_unavailable", 0)),
     "hidden_absorbed":   (("superseded", 1), ("successor_unavailable", 0)),
     "hidden_unretired":  (("superseded", 1), ("head", 0)),   # the row asserts nothing: HEAD is consistent
+    "dangling_backward": (("head", 0), ("head", 0)),          # R5-2: S's own pointer is never read by S's lookup
+    "dangling_target":   (("superseded", 1), ("superseded", 1)),  # R5-2: querying the nonexistent M finds visible S
+    "hidden_queried":    (("superseded", 1), ("head", 0)),  # R5-1: A holds the row AND sees its successor; B sees a nonexistent id
+    "hidden_queried_missing": (("successor_unavailable", 0), ("head", 0)),  # R5-1, the holder's other arm: successor gone
+    "nonexistent":       (("head", 0), ("head", 0)),          # R5-1's reference point
 }
 HIDDEN_RETIRED = ("hidden", "hidden_superseded", "hidden_absorbed")   # every retired-with-a-named-successor hidden case
 
@@ -270,18 +321,31 @@ def run(lookup=successor_lookup, head_pred=is_head, workdir=None):
         table_ok = all((obs[n][0].disposition.value, len(obs[n][0].successors)) == EXPECTED[n][0]
                        and (obs[n][1].disposition.value, len(obs[n][1].successors)) == EXPECTED[n][1]
                        for n in EXPECTED)
-        no_signal = all(obs[n][1] == obs["missing"][1] for n in HIDDEN_RETIRED)   # WHOLE-OBJECT equality, every retired hidden case
-        never_head = all(not head_pred(obs[n][1]) for n in ("missing",) + HIDDEN_RETIRED) \
-            and not head_pred(obs["missing"][0])
+        no_signal = all(obs[n][1] == obs["forward_missing"][1] for n in HIDDEN_RETIRED) \
+            and obs["hidden_queried"][1] == obs["nonexistent"][1] \
+            and obs["hidden_queried_missing"][1] == obs["nonexistent"][1]    # R5-1: WHOLE-OBJECT, hidden queried ≡ nonexistent for B, both arms
+        never_head = all(not head_pred(obs[n][1]) for n in ("forward_missing",) + HIDDEN_RETIRED) \
+            and not head_pred(obs["forward_missing"][0]) and not head_pred(obs["hidden_queried"][0]) and not head_pred(obs["hidden_queried_missing"][0])
+        # THE POSITIVE CONTROL (v12, research): the SAME two states that are equal for the
+        # excluded principal DIFFER for the holder — SUCCESSOR_UNAVAILABLE vs HEAD. Without
+        # it, one disposition for everyone satisfies the equality half by doing nothing.
+        holder_control = (obs["hidden_queried"][0] != obs["nonexistent"][0]
+                          and obs["hidden_queried"][0].disposition is not SuccessorDisposition.HEAD   # SUPERSEDED here (A sees the successor) — never HEAD
+                          and obs["hidden_queried_missing"][0] != obs["nonexistent"][0]
+                          and obs["hidden_queried_missing"][0].disposition is SuccessorDisposition.SUCCESSOR_UNAVAILABLE   # the other arm, measured
+                          and obs["nonexistent"][0].disposition is SuccessorDisposition.HEAD
+                          and obs["forward_missing"][0].disposition is SuccessorDisposition.SUCCESSOR_UNAVAILABLE
+                          and obs["head"][0].disposition is SuccessorDisposition.HEAD)
         vocab_closed = all(isinstance(l.disposition, SuccessorDisposition)
                            and set(vars(l)) == {"disposition", "successors"}
                            for pair in obs.values() for l in pair)
         rows = {n: {"A": (obs[n][0].disposition.value, len(obs[n][0].successors)),
                     "B": (obs[n][1].disposition.value, len(obs[n][1].successors))} for n in obs}
-        return (table_ok and no_signal and never_head and vocab_closed,
+        return (table_ok and no_signal and holder_control and never_head and vocab_closed,
                 {"table": rows, "table_matches_spec": table_ok,
-                 "V-NO-EXISTENCE-SIGNAL (B: hidden == missing, whole object)": no_signal,
-                 "V-UNAVAILABLE-NEVER-HEAD": never_head,
+                 "V-NO-EXISTENCE-SIGNAL (B: hidden == missing, whole object; hidden queried == nonexistent)": no_signal,
+                 "V-NO-EXISTENCE-SIGNAL positive control (A: the same two states DIFFER — the queried edge's result is not HEAD)": holder_control,
+                 "V-NEVER-HEAD": never_head,
                  "vocabulary closed and result has exactly two fields": vocab_closed})
     finally:
         s.close()
