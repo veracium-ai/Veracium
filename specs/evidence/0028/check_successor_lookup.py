@@ -6,7 +6,9 @@ the reviewer's round-five request, amended by the round-five verdict).
     python3 specs/evidence/0028/check_successor_lookup.py --json OUT
 
 WHAT THIS IS, STATED FIRST. `edges_superseding` is UNWRITTEN (src/veracium ships
-only asof/). This file is the MODEL of the design v11 specifies for it — the
+only asof/). This file is the MODEL of the design for it — the v11 design as amended
+by v12 (the queried edge read through the caller's view; the two missing-successor
+states named apart; this sentence named only v11 until round-6 correction 2) — the
 reference lookup written from the spec, run over the store states EXPECTED names (the
 program prints their count — no count is written here, so none can go stale) built on the
 SHIPPED store through public writes, with the observation table and the two
@@ -131,7 +133,7 @@ D = timedelta(days=1)
 # resolves to the absorber", the registry's own comment) also name a successor,
 # and an edge retired under either with a hidden successor fell through to HEAD —
 # a lie the principal could catch on the edge's own row. Research's finding,
-# 2026-09-07. v11 specifies this registry in schema.py; the model carries it
+# 2026-09-07. v11 §5.1 introduced this registry, specified for schema.py; the model carries it
 # until the implementation lands.
 NAMES_A_SUCCESSOR: dict = {
     "corrected":          True,    # the host replaced the content — a replacement exists
@@ -173,7 +175,7 @@ class SuccessorLookup:
 
 
 def successor_lookup(store, user_id, edge_id, principal, policy, *, names_successor=None) -> SuccessorLookup:
-    """THE MODEL of v11 §5.1's accessor: one user's edges, filtered by the shared
+    """THE MODEL of §5.1's accessor (the v11 design as amended by v12): one user's edges, filtered by the shared
     ScopeView for the principal, precedence as the design states. `names_successor`
     is the registry-derived reason set; injectable so the matrix can plant the
     under-inclusive hand set against the same fixtures."""

@@ -348,4 +348,40 @@ WITHDRAWN = [
      "registered with the v13 fold, whose text marks the five paragraphs that "
      "quote them as errata.",
      "specs/0028 §6a / §9; specs/evidence/0028/check_successor_lookup.py"),
+    ("0028-window-refuses-writers",
+     r"refused for the whole resolution|refused for the window'?s duration|refuses a concurrent writer",
+     "0028 external rounds 3–4 (correction 7; R4-2..R4-5): v8 said a concurrent writer is "
+     "refused for the whole resolution / the window's duration; the two-connection "
+     "transcript disproved it — the writer waits behind busy_timeout and succeeds, or "
+     "fails at COMMIT and loses the write. A THIRD wording survived two sweeps (R4-3).",
+     "specs/0028 §4b-o / §5; specs/evidence/0028/window_transcript.py"),
+    ("0028-except-current-truth-pointer",
+     r"except (the )?current-truth pointer",
+     "0028 external round 4 (R4-2): v10's 'no step consults wall-clock now except the "
+     "current-truth pointer' named one step that does; no step reads a clock — the one "
+     "injected value captured at step 0 is threaded everywhere, the pointer included. "
+     "Survived as a line-wrapped sentence a flat grep missed.",
+     "specs/0028 §4a"),
+    ("0028-old-invariant-name",
+     r"V-UNAVAILABLE-NEVER-HEAD",
+     "0028 v12: renamed V-NEVER-HEAD and phrased over the STATES it must hold in — "
+     "phrased over UNAVAILABLE results, a collapse-to-HEAD produces none and the "
+     "invariant passes vacuously. A live use of the old name is a stale carrier.",
+     "specs/0028 §6"),
+    ("0028-indeterminate-always-with-cause",
+     r"every instance is disclosed with its cause|never a bare indeterminate",
+     "0028 external rounds 5–6 (R5-3, R6-1): SUCCESSOR_UNAVAILABLE is INDETERMINATE with "
+     "NO principal-facing cause by design (a cause there is the existence signal); §4b "
+     "carries two classes. R5-3 fixed the checklist; R6-1 found the definition it "
+     "summarises still carried the one-rule form.",
+     "specs/0028 §4b; the reviewer checklist"),
+    ("0028-lock-surfaces-bare",
+     r"surfaces? unwrapped|raises SQLite'?s bare|receive the bare|commit failure is bare",
+     "0028 external round 6 (R6-2): 0029 v11 (9202d3d) made _write_txn own every commit "
+     "it opens and refuse a commit-time 'database is locked' in the wrapped BEGIN-time form "
+     "(V-LOCK-REFUSAL-FORM), SQLite's message retained as the cause; three 0028 carriers "
+     "kept describing the bare form while the sealed window test asserted the wrapped one. "
+     "(Pattern deliberately requires the operative claim forms so 'the bare v2 spec', "
+     "'bare — cells' and 'a bare interpreter error' — different bares — are not flagged.)",
+     "specs/0028 §4b-o / §5 / §7; specs/0029 §4a"),
 ]
