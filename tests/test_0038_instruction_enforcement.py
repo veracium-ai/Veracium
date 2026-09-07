@@ -1,65 +1,39 @@
-"""specs/0038 — the reviewer's round-1 regression (R1-1), pinned as unbuilt-by-design.
+"""specs/0038 §2b/§2c — the ingest enforcement: a DECLARED instruction is filed,
+never stored; a triple that restates it is REFUSED and the REFUSAL is counted.
 
-External round 1 (2026-09-07) showed that adding `instructions` to the extraction
-JSON does not prevent an extractor from ALSO emitting a disposition triple for
-the same instruction: a response carrying both carriers is schema-valid, ingest
-counts the field and stores the triple, so the stored set shrinks only if the
-model obeys the prompt. The reviewer asked for "a scripted-provider regression
-that deliberately returns both carriers and proves the disposition is not
-stored." This is that regression.
+External round 1 (2026-09-07, R1-1) showed that adding `instructions` to the
+extraction JSON does not by itself prevent an extractor from ALSO emitting a
+disposition triple for the same instruction, and asked for "a scripted-provider
+regression that deliberately returns both carriers and proves the disposition
+is not stored." This file was landed first as a STRICT-xfail set pinning the
+unbuilt rule (`ce02bd5`); the enforcement then landed under the owner's
+security-hotfix authorization ("I am authorizing the 0038 ingest enforcement
+under the security-hotfix exception by 09/14/2026", ledger, 2026-09-07) and the
+markers came off in the same commit — the defect control that asserted the old
+behaviour is deleted, not inverted.
 
-It is a STRICT XFAIL until the enforcement lands — `specs/REVIEWER_GUIDE.md`'s
-shape for regressions pinning not-yet-implemented behaviour of the spec under
-review. Strict means: the day the ingest rule is implemented and this starts
-passing, the marker must be removed in the same commit, or the suite fails —
-an xfail cannot silently become a decorative pass. The owner decided round 2
-is implementation-first ("Go with option 1", 2026-09-07); the ingest change
-itself waits on the owner's path through the spec-reference gate (only an
-accepted spec, or a declared exception, authorises a guarded-surface commit —
-`ingest.py` is guarded, 0038 is a draft).
+Each test names its §2c row (v3's matrix). The provider is scripted: no model,
+no network. The assertions are the spec's and no wider: a DECLARED instruction
+never becomes a disposition fact; the event IS retained as one episode; the
+report carries `instructions_dropped` as a present key on every return path,
+counting REFUSALS — never declarations, never malformed members. The rule is
+necessary and not sufficient: a provider that emits ONLY the coerced triple,
+declaring nothing (row 1), gives ingest nothing to relate it to and stores as
+today. That silent-coercion residual is research's harness figure
+(V-SILENT-COERCION-MEASURED) and is NOT claimed closed here; deciding that a
+triple's content is an instruction without the model saying so is the
+free-text detection Q6 retired — this file must never grow a test asserting it.
 
-WHOEVER LANDS THE ENFORCEMENT EDITS THIS FILE IN THREE PLACES, IN THE SAME
-COMMIT — a fix that touches only one will be red for a reason that looks like
-a broken fix and is not:
-  1. remove `@pytest.mark.xfail(strict=True, …)` from
-     `test_both_carriers_the_disposition_is_not_stored` — strict means an
-     XPASS FAILS, so it goes red the moment the rule works;
-  2. the same for `test_both_carriers_the_report_counts_the_dropped_instruction`;
-  3. delete `test_today_the_coerced_disposition_is_stored_documenting_the_defect`
-     — it asserts the DEFECT and becomes a false claim the moment the rule
-     works.
-And the counter itself has THREE sites in the product, enforced both ways by
-0025's existing inventory test (`tests/test_0025_enforcement.py`: the
-`PUBLIC_COUNTERS` tuple; every counter present and zero on the unparseable
-path; the report's EXACT key set): `instructions_dropped` goes into the normal
-report dict, into the unparseable early-return dict at `ingest.py:261`, AND
-into `PUBLIC_COUNTERS` — miss one and an existing test names it. 0038 inherits
-V-COUNTER-INVENTORY there rather than inventing its own.
-
-§2c's matrix (v3, 2026-09-07) has eight rows; each row tested here names
-itself, and no test was written before its row existed — a test written before
-the row would be inventing the contract in the assertion. Row 1 (`instructions`
-absent) is a harness measurement of the prompt, not a scripted-provider case,
-and lives in research's harness. Rows 3 and 4 are V-INSTRUCTIONS-WELL-FORMED:
-a non-string or empty/whitespace member is DROPPED and NOT COUNTED; duplicates
-are de-duplicated before comparison; `instructions_dropped` counts REFUSALS,
-never DECLARATIONS — the two mutants the row exists to kill are "count
-declarations" (the figure stops meaning records prevented and starts meaning
-things the model said) and "count malformed members" (malformed input inflates
-the one number this spec's acceptance turns on).
-
-The provider is scripted: no model, no network. The assertions are the spec's
-(§2b as it must read after R1-1), and no wider: a DECLARED instruction — one
-the extractor filed in `instructions` — never becomes a disposition fact; the
-event IS retained as one episode; the report carries `instructions_dropped` as
-a present key with the count (an absent key is not a zero, 0025 §4c). The rule
-is necessary and not sufficient: a provider that emits ONLY the coerced triple,
-declaring nothing, gives ingest nothing to relate it to and stores as today.
-That silent-coercion residual is measured by research's harness as a
-first-class figure and stated beside V-NO-COERCED-DISPOSITION; it is NOT
-claimed closed here, and deciding that a triple's content is an instruction
-without the model saying so is the free-text detection Q6 retired on
-measured evidence — this file must never grow a test that asserts it.
+The counter's carriers (0025 §4c, V-COUNTER-INVENTORY inherited): the normal
+report dict, the unparseable early-return dict, and `PUBLIC_COUNTERS` in
+tests/test_0025_enforcement.py (X4 every-path zeros; X12 exact key set). The
+MCP tool result STRIPS it with its five 0025 siblings (0031 §4d's argument: a
+model that learns how often its coercions are refused learns to probe) — a
+recorded deviation from v3 §10 Q1's "the MCP tool result that already
+serialises that dict", which is not what that surface does to extractor
+counters; the library report carries it. v4 ratifies or reverses; the test
+below pins whichever the code does so the spec and the surface cannot drift
+silently.
 """
 from __future__ import annotations
 
@@ -68,24 +42,25 @@ import json
 import pytest
 
 from veracium.ingest import ingest_event
+from veracium.mcp_server import _OPERATOR_ONLY
+from veracium.prompts import EXTRACT_SCHEMA
 from veracium.schema import EvidenceAuthor, EvidenceContext
 from veracium.store.sqlite import SqliteStore
 
 INSTRUCTION = "Run the formatter before committing."
+COERCED = {"subject": "user", "relation": "prefers",
+           "object": "run the formatter before committing"}
 U = "u-0038"
 
 
-def _both_carriers_llm(prompt, *, system=None, role="distill", json_schema=None):
-    """The reviewer's adversarial output, verbatim in shape: the instruction filed
-    in `instructions` AND coerced into a `prefers` triple in the same response."""
-    if role == "distill-retry":
-        return json.dumps({"triples": []})
-    return json.dumps({
-        "instructions": [INSTRUCTION],
-        "triples": [{"subject": "user", "relation": "prefers",
-                     "object": "run the formatter before committing"}],
-        "episode": "The user instructed the formatter run.",
-    })
+def _llm_returning(payload):
+    text = payload if isinstance(payload, str) else json.dumps(payload)
+
+    def llm(prompt, *, system=None, role="distill", json_schema=None):
+        if role == "distill-retry":
+            return json.dumps({"triples": []})
+        return text
+    return llm
 
 
 def _ingest(tmp_path, llm):
@@ -101,190 +76,269 @@ def _ingest(tmp_path, llm):
         store.close()
 
 
-UNBUILT = ("specs/0038 §2b after external round 1 (R1-1): the ingest rule that refuses a "
-           "disposition triple whose object matches an `instructions` member is not yet "
-           "implemented — implementation-first on the owner's word, pending the gate path")
+def _both_carriers():
+    """The reviewer's adversarial output, verbatim in shape."""
+    return {"instructions": [INSTRUCTION], "triples": [COERCED],
+            "episode": "The user instructed the formatter run."}
 
 
-@pytest.mark.xfail(strict=True, reason=UNBUILT)
+def _coerced(edges):
+    return [e for e in edges if e.relation == "prefers" and "formatter" in (e.object or "").lower()]
+
+
+# ---------------------------------------------------------------------------
+# §2b — the schema carrier
+# ---------------------------------------------------------------------------
+
+def test_schema_requires_instructions_as_a_string_array():
+    """§2b: `required` is `[triples, episode, instructions]`; the field is an
+    array of strings. An empty list is valid, an absent key is not — for a
+    provider that honours the hint."""
+    assert EXTRACT_SCHEMA["required"] == ["triples", "episode", "instructions"]
+    assert EXTRACT_SCHEMA["properties"]["instructions"] == {"type": "array", "items": {"type": "string"}}
+
+
+# ---------------------------------------------------------------------------
+# §2c ROW 5 — the reviewer's JSON: both carriers in one response
+# ---------------------------------------------------------------------------
+
 def test_both_carriers_the_disposition_is_not_stored(tmp_path):
-    """§2c ROW 5. R1-1's exact case: instructions AND a prefers triple in one response. The
-    triple must not become an edge. Today it does — the assertion fails, and the
-    strict marker records that as the spec's unbuilt behaviour, not as a pass."""
-    report, edges, _ = _ingest(tmp_path, _both_carriers_llm)
-    coerced = [e for e in edges if e.relation == "prefers"
-               and "formatter" in (e.object or "").lower()]
-    assert coerced == [], f"the coerced disposition was stored: {[(e.relation, e.object) for e in coerced]}"
+    """§2c ROW 5, R1-1's exact case. The coerced triple never becomes an edge."""
+    _, edges, _ = _ingest(tmp_path, _llm_returning(_both_carriers()))
+    assert _coerced(edges) == [], [(e.relation, e.object) for e in edges]
 
 
-@pytest.mark.xfail(strict=True, reason=UNBUILT)
 def test_both_carriers_the_report_counts_the_dropped_instruction(tmp_path):
-    """§2c ROW 5 (the counter half). The counter counts REFUSALS, never declarations
-    (row 4's discipline): one instruction, one matching triple refused, reads 1. It is a PRESENT key on every return path (0025 §4c's rule — an
-    absent key is not a zero), and here it counts the one instruction."""
-    report, _, _ = _ingest(tmp_path, _both_carriers_llm)
-    assert "instructions_dropped" in report, f"report keys: {sorted(report)}"
+    """§2c ROW 5 (the counter half): one refusal, the counter reads 1, as a
+    PRESENT key (0025 §4c — an absent key is not a zero)."""
+    report, _, _ = _ingest(tmp_path, _llm_returning(_both_carriers()))
+    assert "instructions_dropped" in report, sorted(report)
     assert report["instructions_dropped"] == 1
 
 
 def test_both_carriers_the_event_is_retained_as_one_episode(tmp_path):
-    """V-EVENT-RETAINED's half that holds TODAY: dropping (or not) the triple
-    never drops the event — exactly one episode records that the instruction
-    was given. Not xfail: this is shipped behaviour the spec keeps."""
-    report, _, episodes = _ingest(tmp_path, _both_carriers_llm)
+    """V-EVENT-RETAINED: refusing the triple never drops the event — exactly
+    one episode records that the instruction was given."""
+    report, _, episodes = _ingest(tmp_path, _llm_returning(_both_carriers()))
     assert report.get("unparseable") is not True
     assert len(episodes) == 1, f"{len(episodes)} episodes for one event"
 
 
-def test_today_the_coerced_disposition_is_stored_documenting_the_defect(tmp_path):
-    """The control that makes the xfails mean something: on the shipped code the
-    reviewer's response DOES store the disposition. When the enforcement lands
-    this control must be inverted or removed in the same commit — a control
-    asserting the defect cannot outlive the fix."""
-    _, edges, _ = _ingest(tmp_path, _both_carriers_llm)
-    assert any(e.relation == "prefers" and "formatter" in (e.object or "").lower() for e in edges), (
-        "the shipped code no longer stores the coerced disposition — the enforcement has landed; "
-        "remove this control and the xfail markers above in the same commit")
+def test_the_match_is_equality_under_the_comparison_key_not_containment(tmp_path):
+    """§2b's "carries the same content": the reviewer's pair differs by case
+    and a trailing period and MUST match; a triple whose object merely
+    CONTAINS the instruction must NOT — containment would decide that a
+    triple is an instruction without the model saying so (Q6, retired)."""
+    payload = {"instructions": ["  RUN the formatter   before committing "],
+               "triples": [COERCED,
+                           {"subject": "user", "relation": "prefers",
+                            "object": "to run the formatter before committing, and to lint"}],
+               "episode": "x"}
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert report["instructions_dropped"] == 1
+    assert [e.object for e in edges if e.relation == "prefers"] == ["to run the formatter before committing, and to lint"]
+
+
+def test_the_counter_counts_refusals_two_restating_triples_read_two(tmp_path):
+    """The counter is OF REFUSALS: one declaration, two triples restating it
+    (different relations), both refused, reads 2 — the mirror of row 4."""
+    payload = {"instructions": [INSTRUCTION],
+               "triples": [COERCED, {"subject": "user", "relation": "works_on",
+                                     "object": "Run the formatter before committing"}],
+               "episode": "x"}
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert report["instructions_dropped"] == 2
+    assert edges == []
 
 
 # ---------------------------------------------------------------------------
-# §2c rows that fall out of SHIPPED paths (research's matrix, 2026-09-07: rows
-# 2, 6 and 8 "need no new behaviour"). Each names its row. They pass today
-# except where they assert the not-yet-existing counter, which is strict-xfail
-# until it lands (row 8's key).
+# §2c ROWS 3 and 4 — V-INSTRUCTIONS-WELL-FORMED
 # ---------------------------------------------------------------------------
 
-def _llm_returning(payload_text):
-    def llm(prompt, *, system=None, role="distill", json_schema=None):
-        if role == "distill-retry":
-            return json.dumps({"triples": []})
-        return payload_text
-    return llm
+def test_row3_malformed_members_are_dropped_and_not_counted(tmp_path):
+    """§2c ROW 3: a non-string, an empty string and a whitespace-only string
+    beside one well-formed member, one triple restating that member: the
+    malformed members are DROPPED and NOT COUNTED, the counter reads exactly
+    1. The "count malformed members" mutant reads 4 here; and the well-formed
+    member still refuses its triple, so dropping members is not dropping the
+    field."""
+    payload = {"instructions": [3, "", "   ", INSTRUCTION], "triples": [COERCED],
+               "episode": "The user instructed the formatter run."}
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert report.get("unparseable") is not True, "malformed MEMBERS are not a malformed RESPONSE"
+    assert _coerced(edges) == []
+    assert report["instructions_dropped"] == 1, report
 
 
-@pytest.mark.xfail(strict=True, reason=UNBUILT)
+def test_row3_only_malformed_members_is_an_empty_declaration(tmp_path):
+    """§2c ROW 3's edge: every member malformed → nothing declared, nothing
+    refused, the triple stores as today (row 1's outcome), counter 0."""
+    payload = {"instructions": [None, "", " ", 7], "triples": [COERCED], "episode": "x"}
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert report["instructions_dropped"] == 0
+    assert len(_coerced(edges)) == 1
+
+
+def test_row4_duplicates_count_one_refusal(tmp_path):
+    """§2c ROW 4: three declarations of ONE instruction against one restating
+    triple: de-duplicated before comparison, the counter reads 1, not 3 — the
+    "count declarations" mutant reads 3 here."""
+    payload = {"instructions": [INSTRUCTION, INSTRUCTION, INSTRUCTION], "triples": [COERCED],
+               "episode": "The user instructed the formatter run."}
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert _coerced(edges) == []
+    assert report["instructions_dropped"] == 1, report
+
+
+# ---------------------------------------------------------------------------
+# §2c ROWS 1, 2, 6, 7, 8 — the surrounding matrix
+# ---------------------------------------------------------------------------
+
+def test_row1_absent_instructions_is_processed_as_today_the_residual(tmp_path):
+    """§2c ROW 1: a provider that omits the key entirely is processed as
+    today — the coerced triple STORES, because there is no declaration to
+    relate it to. `instructions_dropped: 0`, present. This is the measured
+    residual, not a refusal, and this test asserts the bound exactly."""
+    payload = {"triples": [COERCED], "episode": "x"}
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert report.get("unparseable") is not True
+    assert report["instructions_dropped"] == 0
+    assert len(_coerced(edges)) == 1
+
+
 @pytest.mark.parametrize("bad", ["a string", {"k": "v"}, None], ids=["str", "dict", "null"])
 def test_row2_wrong_type_instructions_is_the_unparseable_branch(tmp_path, bad):
-    """§2c ROW 2: a VALID JSON response whose `instructions` is the wrong type
-    (string, dict, null) is treated as unparseable: zero edges, the placeholder
-    episode, `unparseable: True`. NEW behaviour — on shipped code the field is
-    not read at all (`data.get("triples")`), so all three are processed today
-    and the triple stores; strict xfail until the type check exists. (An
-    earlier draft of this test fed a non-JSON response, which is ROW 6's prose
-    case wearing row 2's name — the name-is-a-claim defect, caught on the v3
-    read.)"""
-    payload = json.dumps({"instructions": bad,
-                          "triples": [{"subject": "user", "relation": "uses_tool", "object": "ruff"}],
-                          "episode": "x"})
+    """§2c ROW 2: a VALID JSON response whose `instructions` is PRESENT and
+    the wrong type (string, dict, null) is a malformed response: the
+    unparseable branch — zero edges, the placeholder episode, every counter
+    present at zero."""
+    payload = {"instructions": bad, "triples": [{"subject": "user", "relation": "uses_tool", "object": "ruff"}],
+               "episode": "x"}
     report, edges, episodes = _ingest(tmp_path, _llm_returning(payload))
     assert report.get("unparseable") is True, report
     assert edges == []
-    assert len(episodes) == 1
+    assert len(episodes) == 1 and "unprocessed" in (episodes[0].summary or "")
+    assert report["instructions_dropped"] == 0
 
 
 def test_row6_prose_response_is_the_unparseable_branch(tmp_path):
     """§2c ROW 6 (prose): a response that is not JSON takes the unparseable
-    branch today: zero edges, the content-free placeholder episode, the counter
-    inventory present at zero. Shipped behaviour, unchanged by 0038."""
+    branch: zero edges, the content-free placeholder episode, the counter
+    inventory present at zero. Unchanged by 0038."""
     report, edges, episodes = _ingest(tmp_path, _llm_returning("not json at all"))
     assert report.get("unparseable") is True
     assert edges == []
     assert len(episodes) == 1 and "unprocessed" in (episodes[0].summary or "")
-    for k in ("invalid", "retried", "recovered", "residual", "redispositioned"):
+    for k in ("invalid", "retried", "recovered", "residual", "redispositioned", "instructions_dropped"):
         assert report.get(k) == 0, (k, report)
 
 
-def test_row6_extra_keys_are_processed_today_the_schema_is_not_enforced_at_ingest(tmp_path):
-    """§2c ROW 6 (extra keys) — the CONTROL for a v3 sentence: "extra keys are
-    rejected by `additionalProperties: False`". They are not: `EXTRACT_SCHEMA`'s
-    only use is `json_schema=prompts.EXTRACT_SCHEMA` at `ingest.py:236`, a hint
-    handed to the provider; ingest validates nothing against it. An unknown key
-    beside valid triples is processed and the triple stores. If ingest ever
-    starts enforcing the schema this test goes red and the row's text becomes
-    true — change both together."""
-    payload = json.dumps({"triples": [{"subject": "user", "relation": "uses_tool", "object": "ruff"}],
-                          "episode": "x", "unknown_key": {"anything": 1}})
+def test_row6_bare_array_is_normalised_and_declares_nothing(tmp_path):
+    """§2c ROW 6 (bare array): the wrapper-less triples payload is normalised
+    (`ingest.py`'s list branch) — no `instructions` key exists on that shape,
+    so it is row 1's outcome: processed, counter 0."""
+    payload = [{"subject": "user", "relation": "uses_tool", "object": "ruff"}]
+    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
+    assert report.get("unparseable") is not True
+    assert report["instructions_dropped"] == 0
+    assert any(e.relation == "uses_tool" and e.object == "ruff" for e in edges)
+
+
+def test_row6_extra_keys_are_processed_the_schema_is_not_enforced_at_ingest(tmp_path):
+    """§2c ROW 6 (extra keys) — the CONTROL for the row's sentence: extra keys
+    are PROCESSED, not rejected. `EXTRACT_SCHEMA` is a hint handed to the
+    provider; ingest validates nothing against it. If ingest ever starts
+    enforcing the schema this goes red and the row's text changes with it."""
+    payload = {"triples": [{"subject": "user", "relation": "uses_tool", "object": "ruff"}],
+               "episode": "x", "instructions": [], "unknown_key": {"anything": 1}}
     report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
     assert report.get("unparseable") is not True
     assert any(e.relation == "uses_tool" and e.object == "ruff" for e in edges)
 
 
-def test_row6_schema_ignoring_provider_bare_array_is_normalised(tmp_path):
-    """§2c ROW 6: a provider that returns a bare array of triples instead of the
-    object is normalised (`ingest.py:241` wraps it) — unchanged by 0038."""
-    payload = json.dumps([{"subject": "user", "relation": "uses_tool", "object": "ruff"}])
+def test_row7_mixed_event_keeps_its_declarative_facts_and_refuses_only_the_match(tmp_path):
+    """§2c ROW 7: a mixed response — a genuine fact beside the instruction and
+    its restating triple. The fact STORES; only the restating triple is
+    refused; the counter reads 1. A mixed event must not lose its
+    declarative facts."""
+    payload = {"instructions": [INSTRUCTION],
+               "triples": [{"subject": "user", "relation": "located_at", "object": "Lisbon"}, COERCED],
+               "episode": "The user said they live in Lisbon and instructed the formatter run."}
     report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
-    assert report.get("unparseable") is not True
-    assert any(e.relation == "uses_tool" and e.object == "ruff" for e in edges)
+    assert any(e.relation == "located_at" and e.object == "Lisbon" for e in edges), "the declarative fact must survive"
+    assert _coerced(edges) == []
+    assert report["instructions_dropped"] == 1
 
 
-@pytest.mark.xfail(strict=True, reason=UNBUILT)
 def test_row8_unparseable_branch_carries_the_counter_at_zero(tmp_path):
-    """§2c ROW 8: on the path that never parsed a response the counter is PRESENT
-    and zero — 0025 §4c's an-absent-key-is-not-a-zero, enforced for every
-    public counter by tests/test_0025_enforcement.py once the key joins
-    PUBLIC_COUNTERS. Strict xfail until `instructions_dropped` exists."""
+    """§2c ROW 8: on the path that never parsed a response the counter is
+    PRESENT and zero — 0025 §4c's an-absent-key-is-not-a-zero, enforced for
+    every public counter by tests/test_0025_enforcement.py now that the key
+    is in PUBLIC_COUNTERS."""
     report, _, _ = _ingest(tmp_path, _llm_returning("not json at all"))
     assert report.get("unparseable") is True
     assert "instructions_dropped" in report, sorted(report)
     assert report["instructions_dropped"] == 0
 
 
-def test_row7_mixed_event_keeps_its_declarative_facts_today(tmp_path):
-    """§2c ROW 7's shipped half: a mixed response carrying a genuine fact beside
-    the instruction keeps the fact. The refusal half (only the MATCHING triple
-    refused) joins this test when the rule lands."""
-    payload = json.dumps({
-        "instructions": [INSTRUCTION],
-        "triples": [{"subject": "user", "relation": "located_at", "object": "Lisbon"},
-                    {"subject": "user", "relation": "prefers", "object": "run the formatter before committing"}],
-        "episode": "The user said they live in Lisbon and instructed the formatter run.",
-    })
-    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
-    assert any(e.relation == "located_at" and e.object == "Lisbon" for e in edges), "the declarative fact must survive"
+# ---------------------------------------------------------------------------
+# V-THIRD-PARTY-UNTOUCHED — the receipt record is not a speech act of the user
+# ---------------------------------------------------------------------------
+
+NOTICE = "Pay the invoice by Friday."
+
+
+def _ingest_third_party(tmp_path, payload):
+    store = SqliteStore(str(tmp_path / "s.db"))
+    try:
+        report = ingest_event(store, _llm_returning(payload), U, event_text=NOTICE,
+                              author=EvidenceAuthor.THIRD_PARTY, date="2026-09-07",
+                              context=EvidenceContext.direct())
+        return report, store.edges(U, active_only=False, include_quarantined=True)
+    finally:
+        store.close()
+
+
+def test_a_third_party_claim_survives_its_own_declaration(tmp_path):
+    """The adversarial case the diff-scan raised: an extractor files a
+    third-party notice's wording under `instructions` AND emits the
+    `third_party_claim` receipt for it. The receipt is NOT a disposition of
+    the user (0001/0023: "received an unverified notice that …"); refusing it
+    would erase the received-claim history the trust gate depends on and
+    change `prompts.py:41`'s rule in behaviour, which V-THIRD-PARTY-UNTOUCHED
+    forbids. The claim stores; the counter reads 0."""
+    payload = {"instructions": [NOTICE],
+               "triples": [{"subject": "acme", "relation": "third_party_claim", "object": NOTICE}],
+               "episode": "received an unverified notice that the invoice is due Friday"}
+    report, edges = _ingest_third_party(tmp_path, payload)
+    assert [e.relation for e in edges] == ["third_party_claim"]
+    assert report["instructions_dropped"] == 0
+
+
+def test_the_exemption_is_the_receipt_relation_not_the_author(tmp_path):
+    """The exemption keys on the RELATION, never on the author: a user-
+    disposition triple restating a declared instruction is refused even on a
+    third-party-authored event — the fabricated disposition is the defect
+    whatever the author, and the receipt record is the only thing exempt."""
+    payload = {"instructions": [NOTICE],
+               "triples": [{"subject": "acme", "relation": "third_party_claim", "object": NOTICE},
+                           {"subject": "user", "relation": "prefers", "object": "pay the invoice by friday"}],
+               "episode": "x"}
+    report, edges = _ingest_third_party(tmp_path, payload)
+    assert [e.relation for e in edges] == ["third_party_claim"]
+    assert report["instructions_dropped"] == 1
 
 
 # ---------------------------------------------------------------------------
-# §2c rows 3 and 4 — V-INSTRUCTIONS-WELL-FORMED. The counter counts REFUSALS:
-# malformed members move it by 0, repeated declarations of one instruction
-# count once. Both strict-xfail until the counter exists; each is written so
-# that the mutant it names FAILS it the day the rule lands.
+# The surfaces (§4, §10 Q1) — where the counter goes and where it does not
 # ---------------------------------------------------------------------------
 
-@pytest.mark.xfail(strict=True, reason=UNBUILT)
-def test_row3_malformed_members_are_dropped_and_not_counted(tmp_path):
-    """§2c ROW 3: `instructions` carries a non-string, an empty string and a
-    whitespace-only string beside one well-formed member; one coerced triple
-    matches that member. Malformed members are DROPPED and NOT COUNTED, so the
-    counter reads exactly 1 — the one refusal. The "count malformed members"
-    mutant reads 4 here and fails; the well-formed member still refuses its
-    triple, so dropping malformed members cannot be mistaken for dropping the
-    field."""
-    payload = json.dumps({
-        "instructions": [3, "", "   ", INSTRUCTION],
-        "triples": [{"subject": "user", "relation": "prefers",
-                     "object": "run the formatter before committing"}],
-        "episode": "The user instructed the formatter run.",
-    })
-    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
-    assert report.get("unparseable") is not True, "malformed MEMBERS are not a malformed RESPONSE"
-    assert not any(e.relation == "prefers" for e in edges), "the well-formed member must still refuse its triple"
-    assert report.get("instructions_dropped") == 1, report
-
-
-@pytest.mark.xfail(strict=True, reason=UNBUILT)
-def test_row4_duplicates_count_one_refusal(tmp_path):
-    """§2c ROW 4: three declarations of ONE instruction against one coerced
-    triple. Duplicates are de-duplicated before comparison and the counter
-    counts refusals, so it reads 1, not 3. The "count declarations" mutant
-    reads 3 here and fails — the figure would have stopped meaning records
-    prevented and started meaning things the model said."""
-    payload = json.dumps({
-        "instructions": [INSTRUCTION, INSTRUCTION, INSTRUCTION],
-        "triples": [{"subject": "user", "relation": "prefers",
-                     "object": "run the formatter before committing"}],
-        "episode": "The user instructed the formatter run.",
-    })
-    report, edges, _ = _ingest(tmp_path, _llm_returning(payload))
-    assert not any(e.relation == "prefers" for e in edges)
-    assert report.get("instructions_dropped") == 1, report
+def test_the_mcp_tool_result_strips_the_counter_with_its_siblings():
+    """The recorded deviation from v3 §10 Q1, pinned so it cannot drift
+    silently: `instructions_dropped` is in the MCP strip list beside the five
+    0025 counters (0031 §4d: refusal counts teach a model to probe). The
+    library report carries it (every test above reads it from ingest's
+    dict). If v4 rules the other way, this test changes with the tuple."""
+    assert "instructions_dropped" in _OPERATOR_ONLY
+    for sibling in ("invalid", "retried", "recovered", "residual", "redispositioned"):
+        assert sibling in _OPERATOR_ONLY

@@ -458,18 +458,22 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: 255 with the str-in-datetime fix, 2026-09-06: the recompute parse's
 #: two dotted calls replaced by one normalizer call), module-plain
 #: 253 -> 255, module-protected 43 -> 44, getattr/dataflow 21 -> 23 (the
-#: adapter's two inventoried FieldInfo reads), data dunders 97 -> 100 — while
-#: a change to the five CLASSES or the completeness scope reopens design
-#: review. Each regeneration is recorded in the implementing spec's
-#: closure/implementation notes (0032 §; 0029 closure; 0030 closure).
+#: adapter's two inventoried FieldInfo reads), data dunders 97 -> 100; 0038's
+#: ingest enforcement (2026-09-07, security-hotfix: the comparison key, the
+#: declared-instruction set, the refusal at the pass-1 filter) moved
+#: dotted/dataflow 4,779 -> 4,787, the other four classes and the dunders
+#: unchanged — while a change to the five CLASSES or the completeness scope
+#: reopens design review. Each regeneration is recorded in the implementing
+#: spec's closure/implementation notes (0032 §; 0029 closure; 0030 closure;
+#: 0038's enforcement commit).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4779,
+    "dotted/dataflow": 4787,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 255,
     "dotted/module-protected": 44,
     "getattr/dataflow": 23,
 }
-SRC_ATTRIBUTE_TOTAL = 5120
+SRC_ATTRIBUTE_TOTAL = 5128
 SRC_DATA_DUNDERS_IN_DATAFLOW = 101
 
 

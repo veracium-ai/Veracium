@@ -288,7 +288,10 @@ def test_provider_failures_degrade_recorded_never_raised():
 # ---- the counters (X4, X12) ------------------------------------------------
 
 PUBLIC_COUNTERS = ("invalid", "retried", "recovered", "residual",
-                   "redispositioned")
+                   "redispositioned",
+                   # specs/0038 §2b: refusals of triples restating a declared
+                   # instruction — inherits V-COUNTER-INVENTORY here (X4/X12)
+                   "instructions_dropped")
 
 
 def test_offvocab_counts_are_reported_separately():

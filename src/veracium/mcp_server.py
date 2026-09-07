@@ -186,6 +186,15 @@ def remember_report(mem: Memory, user_id: str, text: str,
 _OPERATOR_ONLY = ("supersessions", "reinforcements",
                   "invalid", "retried", "recovered", "residual",
                   "redispositioned",
+                  # specs/0038 §2b: the refusal counter for triples restating a
+                  # declared instruction. STRIPPED with its five 0025 siblings by
+                  # 0031 §4d's argument — a model that learns how often its
+                  # coercions are refused learns to probe. 0038 v3 §10 Q1 says
+                  # "the MCP tool result that already serialises that dict",
+                  # which is not what this surface does to extractor counters;
+                  # the library report carries it, and the deviation is
+                  # recorded for v4 to ratify or reverse.
+                  "instructions_dropped",
                   "quarantined_at_birth", "birth_revocation_digest",
                   "agreement_floored", "agreement_recorded",
                   "provenance_raises_discarded")

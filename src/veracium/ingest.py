@@ -26,6 +26,18 @@ from .schema import (DEFAULT_RELATIONS, Disclosure, Edge,
 from .registry import RegistryError, effective_registry, render_prompt_relations  # noqa: F401 (RegistryError is this boundary's named refusal)
 
 
+def _instruction_key(text: str) -> str:
+    """specs/0038 §2b — the comparison key under which a triple's object
+    "carries the same content" as a declared instruction: casefolded, inner
+    whitespace collapsed, surrounding whitespace and punctuation stripped. The
+    reviewer's own case is the motivating pair ("Run the formatter before
+    committing." ↔ "run the formatter before committing"). EQUALITY under this
+    key, deliberately nothing looser: containment or similarity would decide
+    that a triple IS an instruction without the model saying so — the free-text
+    detection §10 Q6 retired on measured evidence."""
+    return " ".join(str(text).casefold().split()).strip(" \t\r\n.,;:!?\"'`“”‘’()[]{}")
+
+
 def _uid(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:12]}"
 
@@ -239,6 +251,12 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         if isinstance(data, list):
             # a bare array is the triples payload with its wrapper omitted
             data = {"triples": data}
+        # specs/0038 §2c row 2: `instructions` PRESENT but not a list (a string,
+        # a dict, null) is a malformed response, not a malformed member — the
+        # unparseable branch below, with every counter present at zero. Row 1
+        # (absent) is NOT this: an omitting provider is processed as today.
+        if "instructions" in data and not isinstance(data["instructions"], list):
+            raise ValueError("instructions: expected a list")
     except ValueError:
         # The distiller sometimes answers in prose instead of JSON — typically a
         # refusal on jailbreak-shaped or degenerate input. That's an input
@@ -264,6 +282,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 # is not a zero.
                 "invalid": 0, "retried": 0, "recovered": 0, "residual": 0,
                 "redispositioned": 0,
+                # specs/0038 §2c row 8: the refusal counter on the one path
+                # that never parsed a response — present, zero.
+                "instructions_dropped": 0,
                 "quarantined_at_birth": (1 if revoked_at_birth else 0),
                 "birth_revocation_digest": (_birth_digest if revoked_at_birth
                                             else None),
@@ -291,9 +312,33 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # extractor-emitted `unclassified`, which is not selectable (§4b-iv) —
     # queue for one retry; the residual lands on the reserved member with
     # the original in the typed field.
+    # ---- specs/0038 §2b: a DECLARED instruction is filed, never stored ----
+    # The extractor files instructions in `instructions`; a triple whose
+    # object carries the same content is REFUSED here, at the pass-1 filter
+    # and before any Edge exists, and the REFUSAL is counted. Well-formedness
+    # (§2c rows 3–4): non-string and empty/whitespace members are dropped and
+    # never counted; the set de-duplicates declarations, so the count is of
+    # refusals, never of things the model said. The rule reaches only what
+    # the model DECLARED — a provider that coerces without declaring is
+    # today's behaviour, measured by research's harness, not caught here.
+    declared = {_instruction_key(m) for m in (data.get("instructions") or [])
+                if isinstance(m, str) and m.strip()}
+    declared.discard("")
+    n_instructions_dropped = 0
     parsed = []
     for t in data.get("triples", []):
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
+            continue
+        # V-THIRD-PARTY-UNTOUCHED: a `third_party_claim` is a RECEIPT record
+        # (0001/0023 — "received an unverified notice that …"), never a speech
+        # act attributed to the user; refusing one because the extractor also
+        # filed the notice's wording under `instructions` would erase the
+        # received-claim history the trust gate depends on. The refusal
+        # reaches every relation but that one — the mechanism the spec's own
+        # invariant requires, named here because §2b does not name it.
+        if (declared and str(t["relation"]).strip() != QUARANTINE_RELATION
+                and _instruction_key(str(t["object"])) in declared):
+            n_instructions_dropped += 1
             continue
         original = str(t["relation"]).strip()
         # specs/0024 §4a: the canonical subject is computed ONCE and used for
@@ -454,6 +499,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             "invalid": n_invalid, "retried": n_retried,
             "recovered": n_recovered, "residual": n_residual,
             "redispositioned": n_redispositioned,
+            # specs/0038 §2b: REFUSALS of triples that restate a declared
+            # instruction — never declarations, never malformed members.
+            "instructions_dropped": n_instructions_dropped,
             # specs/0023 Q4 (RESOLVED 2026-08-22, per the recorded leaning):
             # the quarantine-at-birth AUDIT facts — the content-free identity
             # digest answers "which source is still writing" from the audit
