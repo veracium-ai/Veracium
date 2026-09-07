@@ -1,3 +1,19 @@
+> ## ⚠ SUPERSEDED CONCLUSION — READ `SUPERSEDED-CONCLUSIONS.md` FIRST
+>
+> **This file is a HISTORICAL RECORD OF A RUN, not current evidence.** It
+> asserts that the `VALIDATION_GATE.md` §8 gate **PASSED** and that the two
+> raters are **independent**. **BOTH CLAIMS ARE WITHDRAWN** — the gate is NOT
+> satisfied (its blindness condition is unmet), and the human leg was
+> rubric-applied, so its agreement with the registry is partially circular.
+> The current disposition is `SUPERSEDED-CONCLUSIONS.md`; the live rule is
+> §6b-A in `specs/0038-extraction-speech-act.md`.
+>
+> **The RUN this file records is unaltered and remains evidence.** What is
+> withdrawn is the CONCLUSION drawn from it. Nothing below has been edited —
+> a record amended to agree with a later conclusion is no longer a record.
+
+---
+
 # 0038 oracle §8 — cross-family model leg, and the §8 verdict
 
 *Scored 2026-09-07T16:48:57Z. Model `gpt-4.1-2025-04-14`, temperature 0.0, 74/74 labelled,

@@ -106,13 +106,19 @@
     "supersedes_pin": "0469c40fbe244ceeca7690cbf67ad240bb25b9cccb324874979403e94852599f",
     "utc": "2026-09-07",
     "what": "Re-pinned to v5.7 (the round-2 fold: the \u00a78 gate NOT satisfied, \u00a76b-A the weaker rule; VALIDATION_GATE-pseudonymised.md joins the set: registry, gate, deviation named; plus the oracle manifest single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
+   },
+   {
+    "n": 10,
+    "supersedes_pin": "ba7eb8aa922880691554109c8bfa1adfd2fbab214a381945d687bb7a84acd625",
+    "utc": "2026-09-07",
+    "what": "Re-pinned to v5.8 (the round-3 fold: the withdrawn gate conclusion dispositioned across the bound evidence set; the fidelity claim narrowed: the \u00a78 gate NOT satisfied, \u00a76b-A the weaker rule; VALIDATION_GATE-pseudonymised.md joins the set: registry, gate, deviation named; plus the oracle manifest single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
    }
   ],
   "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged \u2014 a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "ba7eb8aa922880691554109c8bfa1adfd2fbab214a381945d687bb7a84acd625",
-  "spec_version": "v5.7",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "3c424eab8d9058b9dd04b4b1dadbc0fdf87f0266c9367d897defa55bdd1817ec",
+  "spec_version": "v5.8",
   "status": "BOUND"
  },
  "spec_version": "v4"

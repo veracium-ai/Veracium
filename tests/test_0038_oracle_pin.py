@@ -13,11 +13,13 @@ token into prose rather than fifteen that would go stale independently.
   manifest ↔ bytes  every listed file is present with the listed digest, and every
                     present file is listed (a present-but-unlisted file is the failure a
                     listed-only check cannot see).
-  spec ↔ files      every filename §6b names is a manifest entry (the FILE side: a wrong
-                    or stale digest cannot hide behind "matches nothing"), and every
-                    16-hex token in the body equal to some file's digest is that file's
-                    CURRENT digest — the registry's digest MOVED at publication, so the
-                    landed one is asserted by name.
+  spec ↔ files      every filename §6b names is a manifest entry (the FILE side), and — a
+                    MEMBERSHIP test, not a filename-to-token mapping (R2-2/R3-2) — in every
+                    body paragraph naming an oracle file, every 16-hex token is a current
+                    oracle-set digest or a digest the manifest declares foreign; stale and
+                    fabricated tokens fail, a current digest attributed to the wrong file does
+                    not; one validator serves the real check and its negative control; the
+                    registry, whose digest MOVED at publication, is asserted by name.
   rulings           the registry's rulings digest, recomputed by the manifest's stated
                     method from the module imported in place, equals the manifest's.
   pseudonym         the set is published on the owner's ruling (2026-09-07): the rater is
@@ -210,6 +212,26 @@ def _paragraphs(text: str):
     return re.split(r"\n\s*\n", text)
 
 
+def token_membership_violations(body: str, current: dict, foreign: set) -> list:
+    """THE PRODUCTION VALIDATOR (R3-2: one function, used by the real check AND by its negative
+    control, so the control cannot keep passing while the scanner stops inspecting paragraphs).
+    For each paragraph of `body` that names an oracle file in backticks, every 16-hex token must be
+    a current oracle-set digest (`current`: name -> sha16) or a declared foreign digest. Returns
+    the violations as (token, named_files) pairs, and the number of tokens it checked as the last
+    element — a caller that sees zero checked tokens has a vacuous pass, not a pass."""
+    allowed = set(current.values()) | set(foreign)
+    violations, checked = [], 0
+    for para in _paragraphs(body):
+        named = [n for n in re.findall(r"`([^`\n]+)`", para) if n in current]
+        if not named:
+            continue
+        for tok in set(re.findall(r"\b[0-9a-f]{16}\b", para)):
+            checked += 1
+            if tok not in allowed:
+                violations.append((tok, tuple(named)))
+    return violations + [checked]
+
+
 def test_every_digest_token_beside_a_named_oracle_file_is_a_current_oracle_digest_or_declared_foreign():
     """R2-2 (round 2): a MEMBERSHIP test that rejects stale and fabricated tokens — stated as
     what it is, not as the filename-to-token mapping the finding's wording asked for. The
@@ -229,42 +251,40 @@ def test_every_digest_token_beside_a_named_oracle_file_is_a_current_oracle_diges
     foreign = set(man["known_foreign_digests"])
     assert not (foreign & set(current.values())), "a declared-foreign digest is a current file digest"
     body = _body()
-    checked = 0
     # a paragraph may name one oracle file in backticks and cite another by digest in prose
     # ("verb_registry.py, published sha16 54acc45a…, frozen at `VERB_REGISTRY_FREEZE_v2.md`"),
-    # so the allowed set is every CURRENT oracle digest plus the declared foreign ones; what
+    # so the validator allows every CURRENT oracle digest plus the declared foreign ones; what
     # fails is a token that is neither — a superseded or fabricated digest beside a filename.
-    allowed = set(current.values()) | foreign
-    for para in _paragraphs(body):
-        named = [n for n in re.findall(r"`([^`\n]+)`", para) if n in current]
-        if not named:
-            continue
-        for tok in set(re.findall(r"\b[0-9a-f]{16}\b", para)):
-            assert tok in allowed, (
-                f"stale or wrong digest {tok} beside {named} — current oracle digests: "
-                f"{sorted(current.values())}; declared foreign: {sorted(foreign)}")
-            checked += 1
-    assert checked >= 1, "no paragraph names an oracle file beside a digest — the mapping held nothing"
+    *violations, checked = token_membership_violations(body, current, foreign)
+    assert not violations, (
+        f"stale or wrong digest(s) beside named oracle files: {violations} — current oracle "
+        f"digests: {sorted(current.values())}; declared foreign: {sorted(foreign)}")
+    assert checked >= 1, "no paragraph names an oracle file beside a digest — the check held nothing"
     registry_sha16 = current["verb_registry.py"]
     assert registry_sha16 in set(re.findall(r"\b[0-9a-f]{16}\b", body)), (
         f"the spec body does not cite the landed registry digest {registry_sha16}")
 
 
 def test_the_token_membership_check_rejects_a_planted_fabricated_token():
-    """Rule zero for R2-2: the membership test must FAIL the case the round-2 check let through
-    — a token beside a filename that is neither current nor declared. Built from the real
-    paragraph that names the registry, with a FABRICATED digest planted (never the
-    pre-publication one, which is legitimately declared foreign)."""
+    """Rule zero for R2-2, corrected at R3-2: the negative control runs THE SAME VALIDATOR the
+    real check runs (`token_membership_violations`) over a mutated copy of the real spec body,
+    instead of rebuilding the allowed-set logic on its own — a rebuilt control keeps passing
+    while the production scanner stops inspecting paragraphs. The mutation plants a FABRICATED
+    digest into the paragraph that names the registry (never the pre-publication digest, which
+    is legitimately declared foreign), and the validator must report exactly that token."""
     man = _manifest()
     current = {name: e["sha16"] for name, e in man["files"].items()}
     foreign = set(man["known_foreign_digests"])
-    para = next(p for p in _paragraphs(_body())
-                if "`verb_registry.py`" in p and current["verb_registry.py"] in p)
-    planted = para.replace(current["verb_registry.py"], "0badc0ffee0badc0")
-    allowed = set(current.values()) | foreign
-    tokens = set(re.findall(r"\b[0-9a-f]{16}\b", planted))
-    assert "0badc0ffee0badc0" in tokens and "0badc0ffee0badc0" not in allowed, (
-        "the planted digest was accepted — the mapping does not reject an undeclared token")
+    body = _body()
+    assert current["verb_registry.py"] in body
+    mutated = body.replace(current["verb_registry.py"], "0badc0ffee0badc0", 1)
+    *violations, checked = token_membership_violations(mutated, current, foreign)
+    assert checked >= 1
+    assert any(tok == "0badc0ffee0badc0" for tok, _ in violations), (
+        f"the production validator accepted the planted digest — violations: {violations}")
+    # and the unmutated body is clean under the same validator (the control is a control)
+    *clean, _ = token_membership_violations(body, current, foreign)
+    assert not clean
 
 
 # ---- the rulings ----------------------------------------------------------------------

@@ -64,7 +64,9 @@ import re
 
 REGISTRY_VERSION = 2          # v1 frozen 2026-09-07T15:25:54Z, sha16 7862ab9b1b9f49cb
 # CHANGELOG
-#   v2 (2026-09-07, after the §8 gate PASSED against v1):
+#   v2 (2026-09-07, after the §8 gate was computed against v1 — a claim that the gate PASSED
+#   stood here until round 3 and is WITHDRAWN: the gate's blind-human condition was unmet, so
+#   the gate is NOT satisfied; see SUPERSEDED-CONCLUSIONS.md in this directory and spec §6b):
 #     * `asked for`  REPORTED -> PERFORMED. v1 contradicted itself: `announced`
 #       was PERFORMED because "announcing IS the act when the instruction was to
 #       announce", while `asked for` was REPORTED on reasoning that would have
@@ -72,9 +74,12 @@ REGISTRY_VERSION = 2          # v1 frozen 2026-09-07T15:25:54Z, sha16 7862ab9b1b
 #       PERFORMED; 2-1 against v1.
 #     * `stated a practice` PERFORMED -- UNCHANGED, now marked CONTESTED.
 #   WHAT v2 IS NOT: v2's agreement with either rater is NOT a validation of v2.
-#   The gate was computed against v1 and PASSED (per-class human-vs-model kappa
-#   0.857 / 0.804 / 0.728). Re-scoring v2 against the same labels that motivated
-#   its change is circular and is reported as a recomputation, never as a gate.
+#   The gate's STATISTIC was computed against v1 (per-class human-vs-model kappa
+#   0.857 / 0.804 / 0.728) — the sentence "and PASSED" that stood here is WITHDRAWN at
+#   round 3: the gate is NOT satisfied (its human leg was not blind); the figures now
+#   serve spec §6b-A, an explicitly weaker rule. Re-scoring v2 against the same labels
+#   that motivated its change is circular and is reported as a recomputation, never as
+#   a gate or as §6b-A evidence.
 
 PERFORMED = "performed"
 COMMITTED = "committed"

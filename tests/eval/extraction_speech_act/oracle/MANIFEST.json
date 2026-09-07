@@ -8,9 +8,9 @@
  "rulings_method": "sha256 of json.dumps(VERB_REGISTRY, sort_keys=True, ensure_ascii=False, separators=(',', ':')) with the module imported from this directory — a digest of the RULINGS, unchanged by a path or comment edit to the module (the file digest moved at publication because the corpus path had to resolve in the repo layout; the rulings did not)",
  "files": {
   "0038-oracle-§8-MODEL-LEG-AND-VERDICT.md": {
-   "sha256": "6ad7385b224d9a359b758ff0f6380ccad7f205135136669c4bffb4862a2b1c00",
-   "sha16": "6ad7385b224d9a35",
-   "bytes": 4661
+   "sha256": "4e147dfc056e7950ee3ce5d66c245a8c3bf295a5c375df5ce30fb1fc9b584b72",
+   "sha16": "4e147dfc056e7950",
+   "bytes": 5477
   },
   "0038-oracle-§8-human-leg-RESULT.txt": {
    "sha256": "0724f1792367013e1108c60afb01f07a0e431c32f7a4f8a721daefe86de5c751",
@@ -18,14 +18,19 @@
    "bytes": 3930
   },
   "0038-oracle-§8-human-leg-v2-RESULT.md": {
-   "sha256": "857414c68acd566c5b2a7566cf7361a4b2996d7aa43f84ba95ff613ed4cf2dd3",
-   "sha16": "857414c68acd566c",
-   "bytes": 4761
+   "sha256": "d7738e321c31463ed7fb27e23d712ef4c2c62be66203d7553d7db606d4678548",
+   "sha16": "d7738e321c31463e",
+   "bytes": 5577
   },
   "RUBRIC.md": {
    "sha256": "8e2c307e041f5ad4b56feea87f5f10ea94e36c6d2bb573ecd56e05e66e643bdc",
    "sha16": "8e2c307e041f5ad4",
    "bytes": 2934
+  },
+  "SUPERSEDED-CONCLUSIONS.md": {
+   "sha256": "35d741c790e64f7e47d9949c00e8e12d62eb17bd828a97f2f9a5af6f15a221e7",
+   "sha16": "35d741c790e64f7e",
+   "bytes": 5519
   },
   "VALIDATION_GATE-pseudonymised.md": {
    "sha256": "953e8f14a0f1bc6a12024491047376dc7d142b0c8df1ae1569b8b9af33420975",
@@ -83,14 +88,14 @@
    "bytes": 7212
   },
   "verb_registry.py": {
-   "sha256": "54acc45ad818fa94bf6494305fe06c600aa4dee2eb0adbe970827473634e8523",
-   "sha16": "54acc45ad818fa94",
-   "bytes": 13762
+   "sha256": "5dcd1ee1e7ec2a6d494961c4122afe97acbc83b8af1f7ea4ccc8668f7785eddd",
+   "sha16": "5dcd1ee1e7ec2a6d",
+   "bytes": 14212
   }
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "bb46d005c986bfe1ef19183dec0ff01be6228d4d101a0d019c3af1e4eb9a30c3",
+  "spec_text_sha256_excluding_both_pin_lines": "01fec2bb1a2f3dda827c952f3fd7c04f4c3d52707702c72ef2cd56534f45e858",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
@@ -103,6 +108,7 @@
   "af7823c7ac15152f": "the rulings digest by research's method (ast.unparse of the parsed VERB_REGISTRY tuple)",
   "21289647a85b3b43": "the rulings digest by dev's method (canonical JSON of the parsed tuple) — the same claim, a different number; the tuples were compared directly",
   "a239b296d126ca78": "the corpus bare_procedural_66.jsonl, pinned one level up in tests/eval/extraction_speech_act/ (not an oracle-set file)",
-  "3f5d96e0cd2df90c": "the round-1 verdict, banked verbatim in the outbox (outside the repo)"
+  "3f5d96e0cd2df90c": "the round-1 verdict, banked verbatim in the outbox (outside the repo)",
+  "54acc45ad818fa94": "verb_registry.py at publication (rounds 2-3), superseded at round 3 when its CHANGELOG comment's gate claim was marked WITHDRAWN; the VERB_REGISTRY tuple is unchanged"
  }
 }
