@@ -227,7 +227,31 @@ nested garbage, force the escape, make cleanup raise, exercise the *other* carri
 value moves* and asserts a record still exists.
 
 ### What "green" means, precisely
-- **Since C-plus (2026-08-22), `COLLECTED.txt` is itself machine-verified**:
+- **TWO SEAL PROTOCOLS EXIST, and the archive says which one built it — read
+  `PIN.txt` first (2026-09-07, found by the 0038 round-1 reviewer: this guide
+  promised `collected_header.json` and the archive did not carry it).**
+  (a) **The C-plus protocol** — `specs/seal_package.py`, used by the 0022/0023,
+  0024, 0025 and 0026 lines: the sealer runs the suite in the author's git
+  checkout, builds `COLLECTED.txt` from captured raw outputs and ships
+  `collected_header.json`, `RUNTIME_PROBE.json` and `LAUNCHER_TRANSCRIPT.txt`;
+  `python specs/verify_extracted.py header` applies. The bullet below
+  describes it. (b) **The two-seat hand-assembled protocol** — used by the
+  0029, 0030, 0031, 0037, 0038 and 0028 (round 3 onward) lines: the archive
+  carries `PIN.txt` (commit, CI run id, suite line, every predecessor
+  identifier), `collected/COLLECTED.txt` (the fresh-clone capture's result
+  line, the NAMED skip delta against the tree's standing profile, the
+  disclosure lineage) beside the raw `-rs` transcript, the spec copy, the
+  tracked-only `tree/`, `prior-rounds/`, and `SHA256SUMS`; it is verified by
+  two independent legs — the assembly's receipts and research's
+  fifteen-assertion `seal_check` (digest, sidecar, three-way spec identity,
+  tree == `git archive`, placeholder sweep, predecessor disclosure, an
+  offline run from the archive's own bytes) — and it does NOT carry
+  `collected_header.json`; `verify_extracted.py header` is not applicable to
+  it and reports the file absent, which is expected for (b), not a defect.
+  A package built by (b) says so in `PIN.txt`. Five 0037 packages shipped
+  under (b) with this bullet still describing only (a); the omission is
+  recorded in 0028 round 3's and 0038 round 2's bundle READMEs.
+- **Under protocol (a), since C-plus (2026-08-22), `COLLECTED.txt` is itself machine-verified**:
   the archive carries `collected_header.json` — a structured record derived
   from captured raw outputs (`RUNTIME_PROBE.json`, `LAUNCHER_TRANSCRIPT.txt`,
   the `-rs` capture), validated against a code-owned field-policy registry
