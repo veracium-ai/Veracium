@@ -11,10 +11,10 @@ external round 1 and paused for its substrate; that substrate — 0029, 0030,
 | | |
 |---|---|
 | **Author / session** | research (veracium-research) |
-| **Version** | **DRAFT REVISION v8** — **THE SECOND-READER FOLD** (dev, PROCESS §3a, 2026-09-07, on Quentin's ledger word line 782: *"I approve your recommendation on all three and order you to implement all 3"*). v5's three blocking rewrites had ONE reader, their author; dev read them and **two ran into the code at places neither seat had checked. BOTH ARE THE SAME CLASS AS THE THREE v5 FIXED — a clause asserting an outcome the code does not provide — which makes five across this spec and two more in 0038: the pattern is research's, and it is that a spec describes the behaviour wanted without checking what supplies it.** **F1** V-ONE-CLOCK said the injected clock's value is "threaded to `valid_now`" — but `Edge.valid_now` is a `@property` with NO PARAMETER (`schema.py:568`) reading `utcnow()` (`:25`), the PROCESS WALL CLOCK, unreachable from `SqliteStore(clock=)`. Nothing can be threaded to it and a recording clock counts zero calls from it, so **the check would have PASSED while the two-read sleeper race it forbids was happening** — a check that cannot see the read it forbids, written into the row that was itself the fix for an unimplementable check. v6: the as-of branch never consults `valid_now`/`assertable`; its predicate is the interval test with the threaded `now`, and the recall path's `assertable` drop is replaced on that branch by `assertable_as_of` (`asof/classify.py:161`) — 0032 untouched. **F2** §4b-o required an "outer window" and **named nothing that could open one**: `_journal_scope` and `_write_txn` are private, `epoch_txn` returns an int. v6 specifies **`SqliteStore.read_window(user_id)`**, `current_state`'s open-or-join shape extracted (`sqlite.py:312-330`), with §5 gaining the regime consequence — under rollback-journal a concurrent writer is refused for the whole resolution. **MINORS:** one read + in-memory walk (§5.1 and §4b-i had disagreed, the §5.1-vs-Q3 shape again); V-CROSS now names the generator's `--check` as its evidence — **run 2026-09-07: `V-CROSS OK: 7 rows`, so F8's "inherited, not verified" row order is now VERIFIED and was already right**; the generator's loose table pattern documented as FAILING CLOSED. **SECOND-READ FOLD, same day:** dev's second read found the two carriers the first fold did not reach — **§4c still read "BEFORE the `assertable` drop"**, so an implementer following the behaviour section would have built exactly what V-ONE-CLOCK's second mutant forbids (a fix that leaves a contradicting instruction elsewhere in the same document has NOT landed); and `read_window`, a NEW PUBLIC STORE API, had no §2 field-contract row — §2 exists to enumerate precisely that, with its contract, its other consumers (`current_state` becomes a joiner) and whether it preserves them (opening no window is today's behaviour). Both folded. **THIRD-READ FOLD (dev, by the two questions, same day):** §5.1's complexity row stated TWO cost models at once — it opened with the per-hop scan form and closed with m1's one-read form, the correction appended beside the text it replaced rather than replacing it. Corrected to one model; **and re-running the same question found §10 Q3 still quoting the superseded bound**, so the §5.1/Q3 pair disagreed for a SECOND time with the error on the opposite side — the pair is one carrier and every edit to either must be checked against the other. **v8 — THE LINEAGE FOLD**, on dev's packaging finding: the arc's round numbering did not resolve. **v3–v7 labelled the SECOND round's findings `R1-*`**, which reads as round 1 — round 1 is the 2026-08-31 v1 review (seven blocking, then the owner's pause), and the 2026-09-06 v2 review is round 2 (five blocking). Twelve labels corrected; **the rename was NOT mechanical and a pattern substitution would have corrupted the document — `R1-4` is OVERLOADED, six of its occurrences being 0011's R1-4** (the unconformable-shape rule cited as the authority for the refuse decision and the one-outcome-per-surface rewrite), and four "external round 1" phrases introduce round 2's work while three others correctly name the real round 1. The numbering convention is now stated and **the Phase-0 failure is recorded in the reviews row: neither verdict was banked verbatim, and v3–v7 cite round 2 from this seat's own restatement.** That sentence bounds what every `R2-*` label in this document is worth, which is why it belongs here and not only in a package README. **Still NOT packageable: the new text has ONE reader.** *Prior:* **DRAFT REVISION v5** (of the feature-version-v2 spec; the two axes are different and v4's header confused them — the title says which FEATURE version, this cell says which DRAFT revision) — **THE INTERNAL-REVIEW FOLD (dev, PROCESS §3a, 2026-09-06, on Quentin's word "get dev to review v4", ledger line 780).** v4 had had exactly ONE reader, its author; dev returned EIGHT findings, all verified against shipped code by research before folding. **THREE BLOCKING, and all three are the same class — a clause asserting an outcome the code does not produce:** **F1** §5.1 claimed "one indexed read per hop… the accessor performs no scan" while `supersedes` is a field inside the edge JSON (`schema.py:504`) with NO column and NO index in `store/sqlite.py` (its only `supersedes` hits are `supersedes_episode`) — and §10 Q3 called the same thing "the scan-backed accessor", so the spec CONTRADICTED ITSELF; v5 states the scan-backed truth and its bound, and refuses to spec an index because that is a column, a schema version and a migration in a spec whose §7 says no stored byte differs. **F2** §4b-o required ONE SNAPSHOT with no invariant and no mechanism, though the store SHIPS one: `SqliteStore.current_state` (`sqlite.py:300-312`) opens an explicit BEGIN and **joins an already-open transaction rather than nesting** — which is exactly why the resolution must open an OUTER window every read joins; per-hop `current_state` calls without one get a snapshot PER CALL while looking correct at every call site. New **V-ONE-SNAPSHOT** asserts it in both journal modes. **F3** V-ONE-CLOCK was **unimplementable as written** — it said count `utcnow()` calls, and there is no `utcnow()` on the as-of path at all (`asof/classify.py`, `asof/adapter.py`, `store/current_state.py`: zero clock reads; `classify_as_of` takes `now` as a PARAMETER). **Research's own least-sure item resolves POSITIVELY:** the injected clock EXISTS (`SqliteStore(…, clock=None)`, `sqlite.py:91,96`, `_now()` `:1707`), so §6a's check is real and now counts invocations of the injected callable. **FIVE MORE:** **F4** the prose said "Ten invariants" two paragraphs below a table of thirteen — the miscount round 1 already corrected once — so v5 states NO count anywhere and the reviewer checklist counts the rows; **F5** the withdrawn clamp survived as a USE twice (§2c "With that clamp, the property holds"; V-ONE-CLOCK's row); **F6** §2c declared the refusal "RETURNED-or-RAISED" two sentences after invoking 0011 R1-4 against that exact shape — v5 gives ONE outcome per SURFACE (library RAISES, a tool layer SERIALIZES `{"ok": false, "refusal": "future_as_of", …}`), with the MCP tool-surface question named as **Q5 OPEN** rather than guessed; **F7** the section whose first sentence is "the untrusted input is T itself" never validated T — new **§2c-i** normalizes through `as_utc_required` BEFORE comparing to `now` (a naive T against an aware `now` is a runtime `TypeError`, neither named outcome), with `T == now` PERMITTED and new **V-NORM-FIRST** asserting the ORDER; **F8** "totality asserted at generation" named a generator **that does not exist** — `specs/evidence/` has 0001/0011/0019/0020/0022 and no 0028 — so the caption "generated" was doing the work of a generator, this seat's own derived-basis rule turned on itself; the generator is now required at `specs/evidence/0028/` for acceptance and the row order is marked INHERITED, NOT VERIFIED until it lands. **Still NOT packageable:** F1/F2/F3 changed normative text that no second seat has read, and F8's generator is not written. *Prior:* **v4** — the ROUND-1 FOLD COMPLETE. **R2-3 closed on the owner's ruling, verbatim: "refuse"** (2026-09-06). `T > now` is REFUSED with the typed `FutureAsOfRefused` carrying the requested `T` and the `now` it was compared against; the clamp alternative is WITHDRAWN, not deferred. v2 had declared clamp OR refuse, both conforming — 0011 R1-4's unconformable shape, which research caught in another seat's spec hours before shipping it in this one. Refusal is chosen because a clamp SILENTLY ANSWERS A DIFFERENT QUESTION and needs a whole envelope to disclose it (`effective_as_of`, a `clamped` flag, empty-result behaviour, cache keys, both surfaces) — and round 1 named the hole in the cheap version: a clamp "recorded in each result" discloses NOTHING when there are no results. **ONE CLOCK READ still required** — refusal relocates that seam rather than removing it. **§6a now accounts for ALL THIRTEEN checks** (v3 covered eleven): V-ONE-CLOCK needs an INJECTED clock, since a wall clock cannot make the two-read race deterministic and the read-twice mutant must FAIL; V-BOUNDARY asserts both interval ends as data INCLUDING the null upper bound, the case v2's expression got wrong and a suite over closed intervals only would never reach. **No open findings from round 1 remain; this version is packageable.** *Prior:* **v3** — the EXTERNAL ROUND-1 FOLD, **INCOMPLETE AND SAID SO**. Round 1 returned RETURN FOR REVISION (five blocking, plus corrections). Folded here: **R2-1** §5.1 was CITED FOUR TIMES AND DID NOT EXIST — the accessor contract is now written (direct successors only; scope before the historical filter; inactive and future-valid INCLUDED because the accessor answers *what points at this*, not *what is assertable*; cross-user and dangling references omitted AND COUNTED, reaching §4b as a named INDETERMINATE). **R2-2** the verdict column used `GROUNDED`, a name shipping in NEITHER vocabulary — the table is now GENERATED from `AS_OF_DISPOSITION` in registry order with its totality asserted at generation, and V-CROSS compares it to the enum as DATA. **R2-4** three of §4b-iii's four absorbed-duplicate rows were unreachable (canonical absorption is empty-interval by construction, verified in `graph.py`) — one row marked reachable, three labelled DEFENSIVE corrupted-state, with the §6a consequence that they can only be built by writing the row directly. **R2-5** the inventory said ten checks where §6 has thirteen. Plus: the interval expression was undefined for an open interval; the determinism claim named `(store state, T)` when `now`, principal scope and policy version are all inputs; §4b-o added — ONE SNAPSHOT, since V-ONE-CLOCK is necessary and not sufficient (the walk can otherwise assemble a chain from states that never coexisted); the stale 0030 substrate status marked superseded rather than rewritten. **STILL OPEN, and the reason this is not a package: R2-3 — future-time behaviour.** The spec declares that a future `T` may EITHER clamp OR refuse, both conforming: 0011 R1-4's unconformable shape, which research had caught in another seat's spec hours before shipping it here. It is a product-visible API contract and is with the owner (research recommends REFUSE: it never silently answers a different question, and a clamp needs a response envelope to disclose something a refusal states in one line). §6a's constructibility table also still accounts for eleven of the thirteen checks. **No round-2 package until both close** — sealing with a known blocking finding is the batch-rule violation this programme refuses elsewhere. *Prior:* **v2** — core section (§4b and its supports) internally reviewed by dev 2026-09-05: one BLOCKING finding, two required changes, three confirmations, then a re-read with two residuals; all folded and verified against shipped code |
+| **Version** | **DRAFT REVISION v9 — THE EXTERNAL ROUND-3 FOLD** (verdict RETURN for amendment, 2026-09-07, banked `outbox/0028-round3-verdict-verbatim.md` sha16 `f0cbf1e6b06c9c0f`; package `c9f83b23…` @ `f9379abb`, CI 34088697413). Round 2's five findings called substantively addressed; the generated table **7 rows, registry order, totality passed**; the two-protocol disclosure **resolved the `collected_header.json` concern**. **R3-1 — THE OLD TWO-CLOCK ALGORITHM SURVIVED IN §4a, THE SECTION THAT STATES THE ALGORITHM.** v6 removed it from V-ONE-CLOCK and v7 from §4c's bullet; **§4a still said the captured `now` is used by `valid_now` inside `assertable`, and that `classify_as_of` "has no implementation today"** — contradicting this spec's own Spec-Requires section, which records it shipping at `ccaa9cc`. §4c carried a SECOND survivor 34 lines below the corrected bullet, with research's own erratum about the first fix between them. **An implementer following either would have rebuilt the exact race the fold removed.** v9 re-derived every site that describes the algorithm rather than patching two more. **R3-2** `edges_superseding -> list[Edge]` could not carry the omission counts and causes its own contract promised — an empty list was identical for a head, a dangling reference, a cross-scope omission and a malformed one, so §4b's four-way distinction was unreachable through the interface meant to feed it; now a typed **`SuccessorLookup`** with **V-OMISSION-NOT-HEAD** planting each case. **R3-3** `facts_valid_at` promised recall's `ScopeView` while carrying neither `principal` nor `policy`; both added keyword-only, with **V-SCOPE-DIFFERENTIAL** — two principals, one store, one record. **R3-4** Q5 **CLOSED: MCP is UNCHANGED in v2**, on 0031 §4d's argument applied to a time axis (a model that can ask *what did you believe at T* can reach by history what the present gate denies it) — consistent with 0038's same-day decision to strip its counter from the MCP result. **CORRECTIONS: 5** the generator's standalone block inserted a hardcoded dev-machine path — it now walks up to find `src/veracium`, **verified by IMPORT ORIGIN from a copy of the tree at a scratch location**: v9's generator imports `veracium` from the copy's own `src/`, where the HEAD generator imports it from `/home/ubuntu/Dev/veracium/src/`. **Exit code does not discriminate on a machine where the hardcoded path resolves; the origin does.** *Research's first two proofs both passed for the wrong reason — a venv with `veracium` installed never ran the derivation, and a pydantic-only scratch tree still let the old absolute path resolve. The second was announced as the corrected test. Dev's import-origin control is what separates them (2026-09-07);* **6** the stale numeral is **REMOVED, not corrected to eight**, as the reviewer endorsed from the package's own errors ledger — a count about the document's own contents goes stale on the next edit; **7** §5's concurrency rows are written **from a two-connection transcript**, and the run disproved v8 in the harder direction: *"refused for the whole resolution"* names an outcome that **does not occur** — the writer waits and succeeds, or fails with a bare `database is locked` and **LOSES THE WRITE**. That disproved claim was in THREE sites. **§9 states what this spec cannot yet evidence**: the resolution is unwritten, so its absence proof is owed at implementation and is not offered here. **Still NOT packageable: ONE reader.** *Prior:* **DRAFT REVISION v8** — **THE SECOND-READER FOLD** (dev, PROCESS §3a, 2026-09-07, on Quentin's ledger word line 782: *"I approve your recommendation on all three and order you to implement all 3"*). v5's three blocking rewrites had ONE reader, their author; dev read them and **two ran into the code at places neither seat had checked. BOTH ARE THE SAME CLASS AS THE THREE v5 FIXED — a clause asserting an outcome the code does not provide — which makes five across this spec and two more in 0038: the pattern is research's, and it is that a spec describes the behaviour wanted without checking what supplies it.** **F1** V-ONE-CLOCK said the injected clock's value is "threaded to `valid_now`" — but `Edge.valid_now` is a `@property` with NO PARAMETER (`schema.py:568`) reading `utcnow()` (`:25`), the PROCESS WALL CLOCK, unreachable from `SqliteStore(clock=)`. Nothing can be threaded to it and a recording clock counts zero calls from it, so **the check would have PASSED while the two-read sleeper race it forbids was happening** — a check that cannot see the read it forbids, written into the row that was itself the fix for an unimplementable check. v6: the as-of branch never consults `valid_now`/`assertable`; its predicate is the interval test with the threaded `now`, and the recall path's `assertable` drop is replaced on that branch by `assertable_as_of` (`asof/classify.py:161`) — 0032 untouched. **F2** §4b-o required an "outer window" and **named nothing that could open one**: `_journal_scope` and `_write_txn` are private, `epoch_txn` returns an int. v6 specifies **`SqliteStore.read_window(user_id)`**, `current_state`'s open-or-join shape extracted (`sqlite.py:312-330`), with §5 gaining the regime consequence — **stated then as "a concurrent writer is refused for the whole resolution", which round 3 corrected and a two-connection run disproved: the writer waits and succeeds, or fails and LOSES THE WRITE (v9 §5).** **MINORS:** one read + in-memory walk (§5.1 and §4b-i had disagreed, the §5.1-vs-Q3 shape again); V-CROSS now names the generator's `--check` as its evidence — **run 2026-09-07: `V-CROSS OK: 7 rows`, so F8's "inherited, not verified" row order is now VERIFIED and was already right**; the generator's loose table pattern documented as FAILING CLOSED. **SECOND-READ FOLD, same day:** dev's second read found the two carriers the first fold did not reach — **§4c still read "BEFORE the `assertable` drop"**, so an implementer following the behaviour section would have built exactly what V-ONE-CLOCK's second mutant forbids (a fix that leaves a contradicting instruction elsewhere in the same document has NOT landed); and `read_window`, a NEW PUBLIC STORE API, had no §2 field-contract row — §2 exists to enumerate precisely that, with its contract, its other consumers (`current_state` becomes a joiner) and whether it preserves them (opening no window is today's behaviour). Both folded. **THIRD-READ FOLD (dev, by the two questions, same day):** §5.1's complexity row stated TWO cost models at once — it opened with the per-hop scan form and closed with m1's one-read form, the correction appended beside the text it replaced rather than replacing it. Corrected to one model; **and re-running the same question found §10 Q3 still quoting the superseded bound**, so the §5.1/Q3 pair disagreed for a SECOND time with the error on the opposite side — the pair is one carrier and every edit to either must be checked against the other. **v8 — THE LINEAGE FOLD**, on dev's packaging finding: the arc's round numbering did not resolve. **v3–v7 labelled the SECOND round's findings `R1-*`**, which reads as round 1 — round 1 is the 2026-08-31 v1 review (seven blocking, then the owner's pause), and the 2026-09-06 v2 review is round 2 (five blocking). Twelve labels corrected; **the rename was NOT mechanical and a pattern substitution would have corrupted the document — `R1-4` is OVERLOADED, most of its occurrences being 0011's R1-4** (the unconformable-shape rule cited as the authority for the refuse decision and the one-outcome-per-surface rewrite), and four "external round 1" phrases introduce round 2's work while three others correctly name the real round 1. The numbering convention is now stated and **the Phase-0 failure is recorded in the reviews row: neither verdict was banked verbatim, and v3–v7 cite round 2 from this seat's own restatement.** That sentence bounds what every `R2-*` label in this document is worth, which is why it belongs here and not only in a package README. **Still NOT packageable: the new text has ONE reader.** *Prior:* **DRAFT REVISION v5** (of the feature-version-v2 spec; the two axes are different and v4's header confused them — the title says which FEATURE version, this cell says which DRAFT revision) — **THE INTERNAL-REVIEW FOLD (dev, PROCESS §3a, 2026-09-06, on Quentin's word "get dev to review v4", ledger line 780).** v4 had had exactly ONE reader, its author; dev returned EIGHT findings, all verified against shipped code by research before folding. **THREE BLOCKING, and all three are the same class — a clause asserting an outcome the code does not produce:** **F1** §5.1 claimed "one indexed read per hop… the accessor performs no scan" while `supersedes` is a field inside the edge JSON (`schema.py:504`) with NO column and NO index in `store/sqlite.py` (its only `supersedes` hits are `supersedes_episode`) — and §10 Q3 called the same thing "the scan-backed accessor", so the spec CONTRADICTED ITSELF; v5 states the scan-backed truth and its bound, and refuses to spec an index because that is a column, a schema version and a migration in a spec whose §7 says no stored byte differs. **F2** §4b-o required ONE SNAPSHOT with no invariant and no mechanism, though the store SHIPS one: `SqliteStore.current_state` (`sqlite.py:300-312`) opens an explicit BEGIN and **joins an already-open transaction rather than nesting** — which is exactly why the resolution must open an OUTER window every read joins; per-hop `current_state` calls without one get a snapshot PER CALL while looking correct at every call site. New **V-ONE-SNAPSHOT** asserts it in both journal modes. **F3** V-ONE-CLOCK was **unimplementable as written** — it said count `utcnow()` calls, and there is no `utcnow()` on the as-of path at all (`asof/classify.py`, `asof/adapter.py`, `store/current_state.py`: zero clock reads; `classify_as_of` takes `now` as a PARAMETER). **Research's own least-sure item resolves POSITIVELY:** the injected clock EXISTS (`SqliteStore(…, clock=None)`, `sqlite.py:91,96`, `_now()` `:1707`), so §6a's check is real and now counts invocations of the injected callable. **FIVE MORE:** **F4** the prose said "Ten invariants" two paragraphs below a table of thirteen — the miscount round 1 already corrected once — so v5 states NO count anywhere and the reviewer checklist counts the rows; **F5** the withdrawn clamp survived as a USE twice (§2c "With that clamp, the property holds"; V-ONE-CLOCK's row); **F6** §2c declared the refusal "RETURNED-or-RAISED" two sentences after invoking 0011 R1-4 against that exact shape — v5 gives ONE outcome per SURFACE (library RAISES, a tool layer SERIALIZES `{"ok": false, "refusal": "future_as_of", …}`), with the MCP tool-surface question named as **Q5 OPEN** rather than guessed; **F7** the section whose first sentence is "the untrusted input is T itself" never validated T — new **§2c-i** normalizes through `as_utc_required` BEFORE comparing to `now` (a naive T against an aware `now` is a runtime `TypeError`, neither named outcome), with `T == now` PERMITTED and new **V-NORM-FIRST** asserting the ORDER; **F8** "totality asserted at generation" named a generator **that does not exist** — `specs/evidence/` has 0001/0011/0019/0020/0022 and no 0028 — so the caption "generated" was doing the work of a generator, this seat's own derived-basis rule turned on itself; the generator is now required at `specs/evidence/0028/` for acceptance and the row order is marked INHERITED, NOT VERIFIED until it lands. **Still NOT packageable:** F1/F2/F3 changed normative text that no second seat has read, and F8's generator is not written. *Prior:* **v4** — the ROUND-1 FOLD COMPLETE. **R2-3 closed on the owner's ruling, verbatim: "refuse"** (2026-09-06). `T > now` is REFUSED with the typed `FutureAsOfRefused` carrying the requested `T` and the `now` it was compared against; the clamp alternative is WITHDRAWN, not deferred. v2 had declared clamp OR refuse, both conforming — 0011 R1-4's unconformable shape, which research caught in another seat's spec hours before shipping it in this one. Refusal is chosen because a clamp SILENTLY ANSWERS A DIFFERENT QUESTION and needs a whole envelope to disclose it (`effective_as_of`, a `clamped` flag, empty-result behaviour, cache keys, both surfaces) — and round 1 named the hole in the cheap version: a clamp "recorded in each result" discloses NOTHING when there are no results. **ONE CLOCK READ still required** — refusal relocates that seam rather than removing it. **§6a now accounts for ALL THIRTEEN checks** (v3 covered eleven): V-ONE-CLOCK needs an INJECTED clock, since a wall clock cannot make the two-read race deterministic and the read-twice mutant must FAIL; V-BOUNDARY asserts both interval ends as data INCLUDING the null upper bound, the case v2's expression got wrong and a suite over closed intervals only would never reach. **No open findings from round 1 remain; this version is packageable.** *Prior:* **v3** — the EXTERNAL ROUND-1 FOLD, **INCOMPLETE AND SAID SO**. Round 1 returned RETURN FOR REVISION (five blocking, plus corrections). Folded here: **R2-1** §5.1 was CITED FOUR TIMES AND DID NOT EXIST — the accessor contract is now written (direct successors only; scope before the historical filter; inactive and future-valid INCLUDED because the accessor answers *what points at this*, not *what is assertable*; cross-user and dangling references omitted AND COUNTED, reaching §4b as a named INDETERMINATE). **R2-2** the verdict column used `GROUNDED`, a name shipping in NEITHER vocabulary — the table is now GENERATED from `AS_OF_DISPOSITION` in registry order with its totality asserted at generation, and V-CROSS compares it to the enum as DATA. **R2-4** three of §4b-iii's four absorbed-duplicate rows were unreachable (canonical absorption is empty-interval by construction, verified in `graph.py`) — one row marked reachable, three labelled DEFENSIVE corrupted-state, with the §6a consequence that they can only be built by writing the row directly. **R2-5** the inventory said ten checks where §6 has thirteen. Plus: the interval expression was undefined for an open interval; the determinism claim named `(store state, T)` when `now`, principal scope and policy version are all inputs; §4b-o added — ONE SNAPSHOT, since V-ONE-CLOCK is necessary and not sufficient (the walk can otherwise assemble a chain from states that never coexisted); the stale 0030 substrate status marked superseded rather than rewritten. **STILL OPEN, and the reason this is not a package: R2-3 — future-time behaviour.** The spec declares that a future `T` may EITHER clamp OR refuse, both conforming: 0011 R1-4's unconformable shape, which research had caught in another seat's spec hours before shipping it here. It is a product-visible API contract and is with the owner (research recommends REFUSE: it never silently answers a different question, and a clamp needs a response envelope to disclose something a refusal states in one line). §6a's constructibility table also still accounts for eleven of the thirteen checks. **No round-2 package until both close** — sealing with a known blocking finding is the batch-rule violation this programme refuses elsewhere. *Prior:* **v2** — core section (§4b and its supports) internally reviewed by dev 2026-09-05: one BLOCKING finding, two required changes, three confirmations, then a re-read with two residuals; all folded and verified against shipped code |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
-| **External review** | REQUIRED — touches `graph` / recall. **ROUNDS COUNT FROM THE ARC'S FIRST DISPATCH; the owner's pause did not restart them.** **Round 1** — 2026-08-31, v1, package sha256 `481db5ab650891f681648eaecf81cf815e8e01a69f2d334b3d98da1689f5b82c`: RETURN, seven blocking; the owner then ruled HOLD FOR THE BIGGER SHAPE and the arc paused while 0029/0030/0032 were specced. **Round 2** — 2026-09-06, the bare v2 spec sent as a file, sha256 `21ffcf001d8e63717c26da7885465e3d1d87745c5f419fa835c9995d8268ba40`: RETURN, five blocking, cited throughout as `R2-1`…`R2-5`. **PHASE-0 FAILURE, RECORDED HERE BECAUSE IT BOUNDS WHAT THOSE LABELS ARE WORTH: round 2's verdict text was not banked verbatim by either seat, and the folds v3–v7 cite it from the folder's own restatement.** Round 1's verdict is likewise unbanked and survives only as a ledger entry with quoted fragments. Neither can be placed in a package's `prior-rounds/` as the reviewer's words, and no reconstruction from this document may be substituted for them. *(v8 corrected the labels: v3–v7 called round 2's findings `R1-*`, which read as round 1 — a label the author knew to be false. The rename was NOT mechanical: `R1-4` is overloaded, six occurrences being 0011's R1-4, the unconformable-shape rule cited as authority for the refuse decision; those are untouched, and round 1 of 2026-08-31 keeps its name.)* |
+| **External review** | REQUIRED — touches `graph` / recall. **ROUNDS COUNT FROM THE ARC'S FIRST DISPATCH; the owner's pause did not restart them.** **Round 1** — 2026-08-31, v1, package sha256 `481db5ab650891f681648eaecf81cf815e8e01a69f2d334b3d98da1689f5b82c`: RETURN, seven blocking; the owner then ruled HOLD FOR THE BIGGER SHAPE and the arc paused while 0029/0030/0032 were specced. **Round 2** — 2026-09-06, the bare v2 spec sent as a file, sha256 `21ffcf001d8e63717c26da7885465e3d1d87745c5f419fa835c9995d8268ba40`: RETURN, five blocking, cited throughout as `R2-1`…`R2-5`. **PHASE-0 FAILURE, RECORDED HERE BECAUSE IT BOUNDS WHAT THOSE LABELS ARE WORTH: round 2's verdict text was not banked verbatim by either seat, and the folds v3–v7 cite it from the folder's own restatement.** Round 1's verdict is likewise unbanked and survives only as a ledger entry with quoted fragments. Neither can be placed in a package's `prior-rounds/` as the reviewer's words, and no reconstruction from this document may be substituted for them. *(v8 corrected the labels: v3–v7 called round 2's findings `R1-*`, which read as round 1 — a label the author knew to be false. The rename was NOT mechanical: `R1-4` is overloaded, most occurrences being 0011's R1-4, the unconformable-shape rule cited as authority for the refuse decision; those are untouched, and round 1 of 2026-08-31 keeps its name.)* |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -244,24 +244,43 @@ For a query at T over the principal's candidate edges:
    clamping, no partial answer, no empty result. **As-of never answers about
    the future** — see §2c and V-NO-FUTURE.
 
-   **ONE CLOCK READ PER QUERY — required, and the seam is microseconds wide.
-   Refusal does not remove this requirement, it relocates it.** The `now` used
-   by this refusal test and the `now` used by 0032's `valid_now`
-   (inside `assertable`, and inside 0030's classifier once it exists) **must be
-   the same snapshot**, taken once at entry and threaded down. If step 0 reads
-   the clock and the classifier reads it again, a sleeper whose `valid_from`
-   falls between the two reads **passes the refusal test at the first and is
-   `valid_now` at the second** — and the direction of that race is the unsafe
-   one. *0032 §10 deferred "per-request clock snapshot" because no consumer
-   then compared two reads; as-of is the first consumer that does, so v2 owns
-   it.* (Internal review, dev, 2026-09-05.)
+   **ONE CLOCK READ PER RESOLUTION — required, and the seam is microseconds
+   wide. Refusal does not remove this requirement, it relocates it.** The store's
+   INJECTED clock (`SqliteStore(…, clock=None)`, `sqlite.py:91`, read through
+   `_now()`, `:1707`) is invoked **exactly once**, at entry, and that value is
+   threaded to the `T > now` test of this step and to `classify_as_of`'s `now`
+   parameter. **The as-of branch consults neither `Edge.valid_now` nor
+   `Edge.assertable`** — see step 2 and §4c. If step 0 read the clock and any
+   later predicate read it again, a sleeper whose `valid_from` falls between the
+   two reads would pass the refusal test at the first and be valid at the second,
+   and the direction of that race is the unsafe one. *0032 §10 deferred
+   "per-request clock snapshot" because no consumer then compared two reads;
+   as-of is the first consumer that does, so v2 owns it.* (Internal review, dev,
+   2026-09-05.)
+
+   *v9 REWROTE THIS PARAGRAPH. v8 said the captured value is used by 0032's
+   `valid_now` "inside `assertable`", which is the TWO-CLOCK design the v6 fold
+   removed from V-ONE-CLOCK and from §4c — and left here, in the section that
+   states the algorithm. `Edge.valid_now` is a `@property` with no parameter
+   (`schema.py:568`) reading the process wall clock (`utcnow()`, `:25`): nothing
+   can be threaded to it and a recording clock counts zero calls from it, so an
+   implementer following v8's §4a would have rebuilt the exact race V-ONE-CLOCK
+   forbids. External round 3, R3-1.*
 1. **Time-validity.** Keep edges whose held interval contains T:
    `valid_from ≤ T AND (invalidated_at IS NULL OR T < invalidated_at)` (open interval at the upper bound —
    `invalidated_at` is the instant the successor takes over). An edge with
    `invalidated_at ≤ valid_from` has an **empty interval** and is held at no T.
-2. **Classification.** Ask 0030's `classify_as_of` for the verdict at T (§3).
-   **This call has no implementation today** (Spec-Requires); v2 cannot ship
-   before it exists.
+2. **Classification and validity.** Ask 0030's `classify_as_of(envelope,
+   snapshot_raw, current_state, T, now, view)` for the verdict at T (§3),
+   passing the threaded `now`. **The branch's validity predicate is
+   `assertable_as_of(…, T, now, view)` (`asof/classify.py:161`) — the recall
+   path's `assertable` drop DOES NOT RUN on this branch** (§4c, V-ONE-CLOCK).
+   **`classify_as_of` SHIPPED 2026-09-06 at `ccaa9cc`**, as this spec's own
+   Spec-Requires section records.
+
+   *v8 said "this call has no implementation today … v2 cannot ship before it
+   exists", contradicting Spec-Requires four pages above it in the same
+   document. R3-1.*
 3. **Resolution.** Apply §4b, keyed by `invalidation_reason`.
 4. **Render.** Attach the resolution tag and the interval to each result.
 
@@ -424,9 +443,13 @@ mechanism that yields it is the defect class both 0037 rounds found.)*:
 `SqliteStore.current_state` (`store/sqlite.py:300-312`) opens an explicit
 `BEGIN` under the instance lock, derives inside it, commits, and **joins an
 already-open transaction rather than nesting**. 0030's V-WINDOW asserts the
-snapshot property in both journal modes — under rollback-journal the SHARED
-lock refuses a concurrent writer; under WAL the writer proceeds and the reader
-keeps its snapshot.
+snapshot property in both journal modes. **What a concurrent WRITER sees is
+measured in §5 and is not "refused"**: under the default journal mode it waits
+and succeeds if the window closes within its `busy_timeout`, or fails with a bare
+`database is locked` and **loses the write**; under WAL it proceeds at once and
+the reader's snapshot still holds. *v8 said the SHARED lock "refuses a
+concurrent writer" here and in §5 and in the version cell — three sites for one
+claim, and round-3 correction 7 was right that it names neither outcome.*
 
 That "joins rather than nests" is what makes the requirement satisfiable, and
 also what makes the failure easy: **the resolution must open ONE outer window
@@ -514,10 +537,19 @@ at this layer** — both were held. De-duplication is the render layer's
   today's behaviour unchanged (V-COMPAT). `as_of=T` → the §4a resolution
   produces the candidate set, then normal recall (lexical / 0027 semantic +
   gate + budget) runs over it. **As-of is a pre-filter; ranking is unchanged.**
-- **Direct lookup:** `facts_valid_at(user, subject, relation, T)` — **runs
-  through the same `ScopeView` as recall** (internal review F7; as first
-  written it read as unscoped). Backed by
-  `store.edges(user_id, subject=, relation=, active_only=False)`.
+- **Direct lookup:** `facts_valid_at(user_id, subject, relation, T, *,
+  principal=None, policy=None)` — **carries the scope inputs it needs, because
+  it promises recall's decision** (round-3 R3-3). v8 declared it without
+  `principal` or `policy` while stating it uses the same `ScopeView` as recall:
+  it could not have reproduced a principal-dependent visibility decision, and
+  the same store and T would have answered every caller identically — the
+  opposite of §3b, which this spec says applies scope BEFORE historical
+  eligibility. The parameters are keyword-only and default to `None`, matching
+  `edges_superseding`; a caller passing neither gets the unscoped view exactly
+  as `recall` does. **V-SCOPE-DIFFERENTIAL** (§6): two principals against one
+  store, a record visible to only one, the same `(subject, relation, T)` —
+  each sees their own answer, and the record's holder sees it at every T its
+  interval covers while the other sees it at none.
 - **Filter position, specified because it is load-bearing:** the as-of filter
   sits **AFTER per-record visibility** (`view.visible(e)`, which is
   record-level and keys on neither T nor `active`), and **the branch's own
@@ -555,8 +587,10 @@ today and are dropped later by `assertable`.
 
 **The true statement:** both lanes reach retired edges — lexical via
 `store.edges(user_id, active_only=False)`, semantic via the unfiltered join —
-and the as-of pre-filter sits **after visibility and before the `assertable`
-drop**. There is no lane asymmetry to disclose, and v1's re-embed question is
+and the as-of pre-filter sits **after visibility**, with the branch's own
+predicate `assertable_as_of` in place of the recall path's `assertable` drop,
+which does not run here (V-ONE-CLOCK; R3-1 found this sentence still stating the
+old order 34 lines below the bullet that had been corrected).
 moot.
 
 ### 4d. Transaction-time — OUT OF SCOPE, v3
@@ -573,8 +607,25 @@ meant the walk had no defined behaviour. Written here rather than deferred.
 
 ```
 Store.edges_superseding(user_id: str, edge_id: str, *, principal=None, policy=None)
-    -> list[Edge]
+    -> SuccessorLookup
+
+SuccessorLookup:                      # NEW typed result (round-3 R3-2)
+    successors:  list[Edge]           # visible, ordered: valid_from asc, then id asc
+    omitted:     int                  # how many references were dropped
+    causes:      frozenset[str]       # {} | {"cross_user"} | {"dangling"} | both
 ```
+
+*v8 declared `-> list[Edge]` while the contract below promised that dangling and
+cross-user references are omitted, COUNTED, and reach §4b as distinct
+`INDETERMINATE` causes. **A list cannot carry a count or a cause**, so an empty
+list was observationally identical for a genuine chain head, a corrected edge
+whose successor is missing, a successor in another scope, and a malformed
+reference — and §4b's four-way distinction was unreachable through the very
+interface that was supposed to feed it. R3-2. The type is the mechanism: an
+empty `successors` with `omitted == 0` is a HEAD; an empty `successors` with
+`omitted > 0` is an INDETERMINATE whose `causes` name which. **V-OMISSION-NOT-HEAD**
+(§6) plants each: a dangling reference, a cross-scope successor, and both at once
+must each yield `INDETERMINATE` with the right cause and never "head".*
 
 | clause | contract |
 |---|---|
@@ -616,27 +667,31 @@ policy.
 | empty-interval edges | never returned at any T (§4b-ii) |
 | corrupted chain (cycle) | `INDETERMINATE`, cause `cycle` — never a hang |
 | pre-v8 legacy rows | `INDETERMINATE` where the absorber is unreachable, never silence |
-| **concurrent writer, rollback-journal** | REFUSED for the whole resolution — `read_window` holds a SHARED lock across the scan and all N hops, bounded by (the user's edge count x N). A regime consequence of §4b-o, not a footnote: the snapshot guarantee is bought with writer latency, and a caller should know which |
+| **concurrent writer — DEFAULT journal mode (`delete`)** | **THE RULE, from a two-connection run (dev, 2026-09-07, `asof-window-transcript.log`; Python 3.12.3 / SQLite 3.45.1): a concurrent writer succeeds IFF the window closes within the writer's `busy_timeout`.** Window 1s: the writer WAITED and committed after 0.74s, *after* the window closed. Window 7s against the 5000ms default: the writer raised `OperationalError` after 5.02s, text exactly **`database is locked`**, and **THE WRITE IS LOST** — rolled back, store unchanged, the caller must retry. **The store sets no `journal_mode` (`sqlite.py` sets only `busy_timeout`, `:108`), so this is what an ordinary caller gets**; `busy_timeout` is a constructor parameter (`:91`, default 5000ms), so the boundary is the caller's own configuration against the resolution's length |
+| **concurrent writer — WAL (opt-in by the host)** | writer committed after 0.01s at both window lengths, *before* the window closed, and **the reader's second read inside the window still saw the old state** — the snapshot held. WAL buys the writer through at no cost to the guarantee |
+| **writer first, reader second (the mirror)** | **the reader is NEVER the one refused.** With the writer holding `BEGIN IMMEDIATE` and an uncommitted write, the reader's window opened immediately in both modes and read the prior state — RESERVED does not block a SHARED reader. The writer then waits (delete, committed after 1.54s) or proceeds (WAL, 0.00s). Same rule, not a second one |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
-| id | invariant | check |
-|---|---|---|
-| **V-COMPAT** | `as_of=None` is byte-identical to today's recall | differential test over the existing recall suite |
-| **V-NO-UPGRADE** | no §4b row returns an outcome stronger than 0030's verdict allows | per-row assertion against 0030's classification |
-| **V-NEVER-BYPASS** | for every edge with reason ∈ {corrected, disputed, revoked_source}, no T yields an assertable value — sampled inside the interval and at both boundaries | sampled-T test, mirrors 0030's V-NEVER |
-| **V-TOTAL** | `set(RESOLUTION) == set(DISPOSITIONED_REASONS)` | registry equality test — an eighth reason fails BOTH this and the registry's own totality test, and must be dispositioned **twice** |
-| **V-MUTANT** | an edge whose `invalidation_reason` is outside the registry resolves `NOT_RETURNABLE` | **planted mutant**, asserted — a fail-closed that is narrated rather than asserted is how one silently stops holding |
-| **V-NONE** | `invalidation_reason is None` on an invalidated edge resolves `NOT_RETURNABLE` | typed-None test; the table is total over the TYPE, not over today's writers |
-| **V-CROSS** | 0030's as-of column and §4b agree on every fenced/never row | `specs/evidence/0028/reason_resolution_table.py --check <this spec>`, which parses §4b's table AS DATA and compares it to `AS_OF_DISPOSITION` in registry order. Run 2026-09-07: `V-CROSS OK: 7 rows, registry order, totality asserted`. Mutants the accompanying test plants: an eighth reason; a shuffled row; an unmapped disposition |
-| **V-HEAD** | the current-truth pointer resolves to the head **classified at T=now**; a fenced/excluded head never renders as truth | chain test terminating on a disputed head |
-| **V-BOUND** | a chain longer than N, and a cycle, both yield `INDETERMINATE` with the stated cause | constructed-chain tests |
-| **V-EMPTY** | an edge with `invalidated_at ≤ valid_from` is returned at no T | constructed empty-interval test |
-| **V-NO-FUTURE** | a constructed sleeper (`valid_from` in the future) is returned at NO permitted T, including T = its own `valid_from` **and T = the query's clock snapshot instant** | sleeper test — 0032's V-SLEEPER meeting this axis (F2), with the sleeper planted at exactly the snapshot instant to catch a two-read race |
-| **V-ONE-CLOCK** | the refusal test and every downstream validity predicate use ONE `now` per resolution, and **the as-of branch never consults `valid_now` or `assertable`** | **counted on a RECORDING CLOCK**: the store's INJECTED clock (`SqliteStore(…, clock=None)`, `sqlite.py:91`, read through `_now()`, `:1707`) is invoked EXACTLY ONCE per resolution, and that value is threaded to the `T > now` test and to `classify_as_of`'s `now`. The as-of branch's validity predicate is the interval test with that threaded `now`; the recall path's later `assertable` drop is REPLACED on this branch by `assertable_as_of(envelope, snapshot_raw, current_state, T, now, view)` (`asof/classify.py:161`). **Mutants: (1) a second invocation anywhere on the path; (2) ANY `valid_now`/`assertable` call on the as-of branch — grep-detectable AND behaviourally testable with a clock whose successive reads straddle a sleeper's `valid_from`.** |
-| **V-ONE-SNAPSHOT** | all store reads in one resolution come from ONE window (§4b-o) | under **WAL**: a write committed between two reads of one resolution is INVISIBLE to the second read — **mutant: no outer window, so the second read sees it**. Under **rollback-journal**: the concurrent writer is refused for the window's duration. Mirrors 0030's V-WINDOW, which asserts the property in both modes |
-| **V-NORM-FIRST** | `T` is normalized before it is compared to `now` (§2c-i) | a **naive** `T` in the future raises `ValueError` (from `as_utc_required`, `schema.py:41`), **NOT `FutureAsOfRefused`** — the mutant compares first and returns the wrong one of two real outcomes, which a test asserting only "it failed" cannot catch |
-| **V-BOUNDARY** | at `T = c` (the corrected/corrector adjacency) exactly ONE edge returns — the corrector | boundary test; both interval ends normalised through the SAME helper (0032 `as_utc`), per 0030 V-NORM-TOTAL (F5) |
+| id | invariant | check | test node |
+|---|---|---|---|
+| **V-COMPAT** | `as_of=None` is byte-identical to today's recall | differential test over the existing recall suite | — |
+| **V-NO-UPGRADE** | no §4b row returns an outcome stronger than 0030's verdict allows | per-row assertion against 0030's classification | — |
+| **V-NEVER-BYPASS** | for every edge with reason ∈ {corrected, disputed, revoked_source}, no T yields an assertable value — sampled inside the interval and at both boundaries | sampled-T test, mirrors 0030's V-NEVER | — |
+| **V-TOTAL** | `set(RESOLUTION) == set(DISPOSITIONED_REASONS)` | registry equality test — an eighth reason fails BOTH this and the registry's own totality test, and must be dispositioned **twice** | — |
+| **V-MUTANT** | an edge whose `invalidation_reason` is outside the registry resolves `NOT_RETURNABLE` | **planted mutant**, asserted — a fail-closed that is narrated rather than asserted is how one silently stops holding | — |
+| **V-NONE** | `invalidation_reason is None` on an invalidated edge resolves `NOT_RETURNABLE` | typed-None test; the table is total over the TYPE, not over today's writers | — |
+| **V-CROSS** | 0030's as-of column and §4b agree on every fenced/never row | `specs/evidence/0028/reason_resolution_table.py --check <this spec>`, which parses §4b's table AS DATA and compares it to `AS_OF_DISPOSITION` in registry order. Run 2026-09-07: `V-CROSS OK: 7 rows, registry order, totality asserted`. Mutants the accompanying test plants: an eighth reason; a shuffled row; an unmapped disposition | — |
+| **V-HEAD** | the current-truth pointer resolves to the head **classified at T=now**; a fenced/excluded head never renders as truth | chain test terminating on a disputed head | — |
+| **V-BOUND** | a chain longer than N, and a cycle, both yield `INDETERMINATE` with the stated cause | constructed-chain tests | — |
+| **V-EMPTY** | an edge with `invalidated_at ≤ valid_from` is returned at no T | constructed empty-interval test | — |
+| **V-NO-FUTURE** | a constructed sleeper (`valid_from` in the future) is returned at NO permitted T, including T = its own `valid_from` **and T = the query's clock snapshot instant** | sleeper test — 0032's V-SLEEPER meeting this axis (F2), with the sleeper planted at exactly the snapshot instant to catch a two-read race | — |
+| **V-ONE-CLOCK** | the refusal test and every downstream validity predicate use ONE `now` per resolution, and **the as-of branch never consults `valid_now` or `assertable`** | **counted on a RECORDING CLOCK**: the store's INJECTED clock (`SqliteStore(…, clock=None)`, `sqlite.py:91`, read through `_now()`, `:1707`) is invoked EXACTLY ONCE per resolution, and that value is threaded to the `T > now` test and to `classify_as_of`'s `now`. The as-of branch's validity predicate is the interval test with that threaded `now`; the recall path's later `assertable` drop is REPLACED on this branch by `assertable_as_of(envelope, snapshot_raw, current_state, T, now, view)` (`asof/classify.py:161`). **Mutants: (1) a second invocation anywhere on the path; (2) ANY `valid_now`/`assertable` call on the as-of branch — grep-detectable AND behaviourally testable with a clock whose successive reads straddle a sleeper's `valid_from`.** | — |
+| **V-ONE-SNAPSHOT** | all store reads in one resolution come from ONE window (§4b-o) | under **WAL**: a write committed between two reads of one resolution is INVISIBLE to the second read — **mutant: no outer window, so the second read sees it**. Under **rollback-journal**: the concurrent writer is refused for the window's duration. Mirrors 0030's V-WINDOW, which asserts the property in both modes | — |
+| **V-NORM-FIRST** | `T` is normalized before it is compared to `now` (§2c-i) | a **naive** `T` in the future raises `ValueError` (from `as_utc_required`, `schema.py:41`), **NOT `FutureAsOfRefused`** — the mutant compares first and returns the wrong one of two real outcomes, which a test asserting only "it failed" cannot catch | — |
+| **V-BOUNDARY** | at `T = c` (the corrected/corrector adjacency) exactly ONE edge returns — the corrector | boundary test; both interval ends normalised through the SAME helper (0032 `as_utc`), per 0030 V-NORM-TOTAL (F5) | — |
+| **V-OMISSION-NOT-HEAD** (R3-2) | an omitted successor never reads as a chain head | plant each: a DANGLING `supersedes`, a CROSS-SCOPE successor, and both at once. Each must yield `INDETERMINATE` with its cause in `SuccessorLookup.causes` and `omitted > 0`. **Mutant: return `list[Edge]`** — all three collapse to an empty list and become "head", which is the defect R3-2 found | `test_0028_successor_lookup.py::test_omission_never_reads_as_head` |
+| **V-SCOPE-DIFFERENTIAL** (R3-3) | `facts_valid_at` reproduces recall's principal-dependent decision | two principals, ONE store, a record visible to only one, the same `(subject, relation, T)`: the holder sees it at every T its interval covers, the other at none. **Mutant: drop `principal`/`policy` from the signature** — both principals get one answer, which is v8's declared shape | `test_0028_scope_differential.py::test_two_principals_one_store_one_record` |
 
 ### 6a. Acceptance measurement — REQUIRED, FINITE
 
@@ -653,6 +708,12 @@ count is a property of the table, not of this sentence — the reviewer checklis
 counts the rows, which is the derived-basis rule this programme applies
 everywhere else: a hand-maintained figure standing in for a derivable one fails
 silently and reads as rigour.*
+
+*(v9 added the `node` column: R3-2 and R3-3's new rows carry test node ids as a
+fourth cell, and under the old three-column header GitHub markdown would have
+DROPPED them — the identical defect dev's B3 found in 0038 four hours earlier,
+reproduced by the same author in a different spec. The existing rows carry an em
+dash rather than a fabricated node.)*
 
 **FINITE-TODAY is not true of every row, and saying so is part of the
 measurement** (internal review F1/F6):
@@ -672,6 +733,18 @@ stated here rather than discovered at acceptance, and **now satisfied**
 (`ccaa9cc`, 2026-09-06). All of §6 is finite.
 
 ## 7. Failure modes and reversibility
+
+**THE OUTER WINDOW CAN COST A CONCURRENT WRITE, and v9 states it because the
+window is this spec's own introduction.** Under the default journal mode a
+resolution longer than a writer's `busy_timeout` makes that writer's commit fail
+with a bare `database is locked` **and lose its write** (§5, measured). The
+snapshot guarantee §4b-o requires is therefore bought with a real, caller-visible
+cost, and the honest statement is that a host running long resolutions against a
+write-heavy store should either raise `busy_timeout`, enable WAL, or bound N. *v8
+said only that a writer is "refused for the whole resolution" — round-3
+correction 7 called that a determinism SQLite does not provide, and the run shows
+it is neither outcome's name: the writer waits and succeeds, or it fails and
+loses the write.*
 
 - **Reversible.** Read-only, additive API. Removing `as_of` restores today's
   behaviour exactly; no stored byte differs.
@@ -695,20 +768,26 @@ duplicates (§4b-iv).
 
 ## 9. Brief for the external reviewer
 
-The two seams v1's own §9 flagged are **resolved rather than open**, and both
-resolutions came from reading the constructor rather than reasoning about the
-design — attack them there first:
+**What this spec CANNOT yet evidence.** `facts_valid_at`, `read_window` and
+`edges_superseding` are specified and **unwritten** — `src/veracium` ships only
+`asof/` (`classify.py`, `adapter.py`, `carrier.py`). The absence proof R3-1's
+fix implies — that no as-of path reaches `Edge.valid_now` or `Edge.assertable` —
+is therefore **owed at implementation, not offered here.** Round 4 carries what
+is executable today: the behavioural form over `classify_as_of` as shipped
+(a recording clock, zero `valid_now`/`assertable` reached from it), and the
+static tree from it and from the store reads §5.1 names, **with the method
+stated** — what was followed and what was not. *A proof of absence over
+unwritten code is exactly the claim R3-1 caught, and this spec will not make a
+second one.*
 
-1. **§4b-i's construction argument.** The whole hard-case design rests on
-   `corrected.invalidated_at == corrector.valid_from`. If that identity can be
-   violated by any shipped path we have not read, the section is wrong.
-2. **§4b-ii's unreachability claims.** Two rows are specified as structurally
-   unreachable. If either is reachable, the table has a live branch with no
-   specified behaviour.
-3. **V-TOTAL's double disposition.** Does anything let a new reason reach the
-   query without passing §4b?
-4. **The pointer's head classification (V-HEAD).** Is there a path by which a
-   current-truth pointer renders content that T=now would fence?
+**The seams to attack hardest**, in order: **§4a's algorithm**, because R3-1
+found the old two-clock design surviving there after two folds had removed it
+elsewhere, and one reader agreeing with it is not evidence; **`SuccessorLookup`**
+(§5.1), because it is new in v9 and a type introduced to carry a distinction is
+worth checking against the distinction it was introduced for; and **§5's
+concurrency rows**, which are written from a two-connection run rather than from
+the locking model — if the run's rule does not generalise beyond the two window
+lengths measured, we would rather hear it than infer it.
 
 ## 10. Open questions
 
@@ -736,13 +815,22 @@ design — attack them there first:
    `specs/evidence/0028/` for acceptance (F8). Confirm that is where it
    belongs, versus a test fixture — the difference matters because only a tree
    artifact makes "generated" checkable by someone who is not its author.
-5. **Does MCP's `recall` tool gain `as_of` in v2?** *(F6, OPEN — named rather
-   than guessed.)* §2c specifies one outcome per surface: RAISED at the
-   library, SERIALIZED as a refusal result at any tool layer carrying the
-   argument. If the tool surface stays out of v2, the second clause binds
-   nothing now and still binds the first tool layer that ever exposes `as_of`.
-   The refusal decision is settled; **its blast radius is every layer that can
-   carry the argument**, and v4 named only the library.
+5. ~~Does MCP's `recall` tool gain `as_of` in v2?~~ — **CLOSED: NO. MCP is
+   UNCHANGED in v2, stated explicitly** (round-3 R3-4: this could not remain
+   open in an implementable API spec — it decides the callable surface, the
+   serialization contract, and how far `FutureAsOfRefused` reaches).
+   **As-of is a library surface in v2.** The reason is 0031 §4d's, applied to a
+   time axis: a model that can ask *what did you believe at T* can walk T
+   backwards over content the present withholds — corrected values, disputed
+   claims, retired records — and reach by history what the current gate denies
+   it now. That is a **larger** model-reachable surface than the counters 0031
+   strips, not a smaller one, and v2 does not open it on a spec that has had no
+   external round on the question. A host wanting as-of through a tool builds
+   it deliberately, against its own harness, with `FutureAsOfRefused`
+   serialized per §2c's tool-layer clause — which is written and waiting.
+   *Consistent with 0038's decision the same day to strip `instructions_dropped`
+   from the MCP result: the tool surface is decided explicitly and narrowly,
+   both times, rather than inherited from what the library happens to return.*
 
 ## Reviewer checklist
 

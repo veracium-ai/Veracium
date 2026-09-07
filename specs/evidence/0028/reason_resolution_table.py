@@ -36,6 +36,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import pathlib
 import re
 import sys
 
@@ -141,6 +142,27 @@ def main():
     return 0
 
 
+def _add_src_to_path():
+    """Find `src/veracium` by walking UP from this file, never a fixed path.
+
+    Round-3 correction 5: this block used to `sys.path.insert` a hardcoded
+    development-machine path, so the documented standalone usage worked on
+    exactly one machine and silently did nothing on the reviewer's extracted
+    tree (it passed only when invoked with `PYTHONPATH=src`). Deriving the root
+    means the command in the docstring is the command that works — anywhere the
+    file sits relative to the tree, at `specs/evidence/0028/` or in a research
+    checkout. If no `src/veracium` is found the import fails with its own
+    message rather than this function inventing a path that does not exist.
+    """
+    here = pathlib.Path(__file__).resolve()
+    for d in (here, *here.parents):
+        cand = d / "src" / "veracium"
+        if cand.is_dir():
+            sys.path.insert(0, str(d / "src"))
+            return str(d / "src")
+    return None
+
+
 if __name__ == "__main__":
-    sys.path.insert(0, "/home/ubuntu/Dev/veracium/src")
+    _add_src_to_path()
     raise SystemExit(main())
