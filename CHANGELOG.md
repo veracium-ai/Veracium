@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+**Trust-surface fix (specs/0038, landed under a security-hotfix exception
+with a retrospective due 2026-09-14): the reference extraction no longer
+turns a user's INSTRUCTION into a stored DISPOSITION.** Measured over the
+412-text ingestion capture through the shipped prompt (gpt-4.1, temperature
+0): 31/66 bare procedural inputs ("Reuse the same password across service
+accounts") were stored as `prefers` / `works_on` / `uses_tool` facts asserting
+the user holds the practice, and 19/66 as episodes asserting the user
+performed it — fabricated speech acts under intact provenance, rendered into
+model context exactly as any true record would be. **Who should take this
+build:** every consumer running the reference prompt on user-authored
+text; a host running its own prompt inherits nothing but the schema change.
+The fix is prospective — records already stored are untouched (a migration
+would have to classify stored text, the inference that produced the defect);
+a host that wants them out re-ingests or revokes the source.
+
+- **Changed: `EXTRACT_SCHEMA.required` is `[triples, episode, instructions]`**
+  — the extraction JSON gains an `instructions` array (may be empty, never
+  absent) and the reference prompt directs each instruction, directive or
+  stated practice the user states there, verbatim, and never into `triples`.
+  The schema is a hint handed to the provider; it binds a compliant provider
+  and nothing else.
+- **Changed: ingest REFUSES a triple whose object equals a declared
+  instruction** (casefolded, whitespace-collapsed, surrounding punctuation
+  stripped — equality, never containment: no triple is decided to be an
+  instruction without the model saying so), at the pass-1 filter before any
+  edge exists. A `third_party_claim` is exempt: it is the receipt record of a
+  notice, not a speech act of the user, and refusing it would erase
+  received-claim history. Mixed events keep their declarative facts.
+- **Added: `instructions_dropped` in the ingest report** — the count of
+  REFUSALS (never of declarations, never of malformed members: a non-string
+  or blank member is dropped uncounted; duplicates de-duplicate), present
+  on every return path including the unparseable early return, at zero when
+  nothing was refused. An `instructions` value of the wrong type (a string,
+  an object, null) makes the response unparseable. The counter is an
+  operator counter: the library report carries it; the MCP tool result
+  strips it with the other extractor counters (a model that learns how often
+  its coercions are refused learns to shape them); telemetry is untouched.
+- **Not closed by this build, and measured rather than claimed:** a provider
+  that coerces an instruction into a triple WITHOUT declaring it is not
+  reached — that is the shipped behaviour, and the rate is reported by the
+  0038 harness as a figure with no pass condition.
+
 **BREAKING for existing stores — schema 12 → 13 (specs/0029, the
 transaction-time carrier).** Two additive tables (`edge_event`, `store_epoch`)
 and ONE data step: the migration journals every existing edge exactly once as
