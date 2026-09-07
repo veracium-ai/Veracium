@@ -231,7 +231,7 @@ def principals(store):
 
 
 def build(path) -> tuple:
-    """The six states on ONE store. Returns (store, {state: queried edge id})."""
+    """The states on ONE store — the ones EXPECTED names; the program prints their count. Returns (store, {state: queried edge id})."""
     s = SqliteStore(str(path))
     head = edge("Porto"); s.add_edge(head)
     gone_prior = edge("Braga"); s.add_edge(gone_prior)
