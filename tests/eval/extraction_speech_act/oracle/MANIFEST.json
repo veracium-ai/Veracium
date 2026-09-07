@@ -90,7 +90,7 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "04c3411c680c9a90337857865ba71d59ba809c014ad56594fe7842733cdbdcf4",
+  "spec_text_sha256_excluding_both_pin_lines": "bb46d005c986bfe1ef19183dec0ff01be6228d4d101a0d019c3af1e4eb9a30c3",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
