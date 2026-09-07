@@ -4,7 +4,8 @@
 
 **Trust-surface fix (specs/0038, landed under a security-hotfix exception
 with a retrospective due 2026-09-14): the reference extraction no longer
-turns a user's INSTRUCTION into a stored DISPOSITION.** Measured over the
+turns a user's DECLARED instruction into a stored disposition — and reports
+the rate at which an undeclared one still slips through.** Measured over the
 412-text ingestion capture through the shipped prompt (gpt-4.1, temperature
 0): 31/66 bare procedural inputs ("Reuse the same password across service
 accounts") were stored as `prefers` / `works_on` / `uses_tool` facts asserting
