@@ -720,7 +720,7 @@ bar) and BEFORE any implementation line.
   corpus edited without its spec line cannot either. At acceptance the
   same digest moves into `## Review closure`.
 
-corpus sha256: 28a941be2dbf79917ecba2c1602eab068fffa29fa96328887d72850318760089
+corpus sha256: 039a4839fa036ffd42c8b2a1f74422220455e8d860ceab4ce7946e7010603fb4
 
 - **Cells — GENERATED, not enumerated here (round-2 fold, research's
   finding on v11's first draft):** the corpus generates its product cells
