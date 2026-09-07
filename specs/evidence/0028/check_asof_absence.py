@@ -37,14 +37,29 @@ FORM 2 — BEHAVIOURAL, the recording clock, the stronger of the two. The
 pytest plugin `asof_recording_clock.py` wraps the four predicates to count
 every access and flag any access made while a `classify_as_of` /
 `assertable_as_of` frame (or any frame from `asof/`) is on the stack, then
-runs `tests/test_0030_asof.py` — the shipped as-of test surface, one test per
-classifier rule — under it. Expected: violations 0, classify calls > 0 (a
-run that never classified proves nothing and FAILS here), accesses > 0
-outside the branch (the clock was live). It fails whether or not the static
-tree found the path, which is why it is the stronger form; the static form is
-what makes the result legible.
+runs the DERIVED exercised surface under it — every `tests/test_*.py` that
+reaches the classifier (imports from `veracium.asof` or names either
+function), minus this checker's own matrix, listed as excluded because it
+runs this checker. That the derived set is the REACHABLE set is itself
+measured: a census of every call to either function in `src/` outside
+`asof/classify.py` reads zero, so no shipped path reaches the classifier and
+naming it is the only way a test can. The bound is printed: the proof covers
+the classifier paths those files exercise; a path exercised nowhere is
+outside it. Expected: violations 0, classify calls > 0 (a run that never
+classified proves nothing and FAILS here), accesses > 0 outside the branch
+(the clock was live — those accesses are the exercised files' own tests of
+the wall-clock predicates, not near-violations). It fails whether or not the
+static tree found the path, which is why it is the stronger form; the static
+form is what makes the result legible.
 
 Exit 0 iff both forms hold. Every number printed is measured in this run.
+
+THE PROOF'S OWN EVIDENCE HANDLING IS GUARDED: the behavioural form reads its
+clock's JSON report across a process boundary through a duplicate-refusing
+decoder (0026's evidence-boundary rule — a repeated key is refused, never
+last-wins), so the proof is not taken on trust at its own seam. The suite's
+first run on this file caught a plain json.loads there.
+
 
 # Mutation-Matrix: tests/test_0028_asof_absence.py::test_static_form_detects_an_injected_predicate_access
 # (and its siblings there: a hit reached only THROUGH the tree; a behavioural
