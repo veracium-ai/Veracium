@@ -39,6 +39,7 @@
 | 0031 | `0031-agent-facing-trust-surface.md` | `accepted` | the agent-facing trust surface |  |
 | 0032 | `0032-valid-from-predicate.md` | `accepted` | the valid-time predicate at the present |  |
 | 0037 | `0037-procedural-basis.md` | `accepted` | procedural records and the `basis` axis (stages 1–3) |  |
+| 0038 | `0038-extraction-speech-act.md` | `draft` | the extraction's speech-act discipline |  |
 
 ## Reservations (claimed, not drafted)
 
@@ -46,7 +47,7 @@
 |---|---|---|---|---|---|---|---|
 | 0033–0036 | the self-learning concept review's decomposition (0033 receipts / 0034 origin / 0035 admission / 0036) — LIVE, not dormant: the concept note reached a second external review 2026-09-04 ('ready for owner adjudication, not yet for normative drafting'); the owner approved its modifications and workflow, fixing the sequence procedural memory → harness → self-learning; and `0035 Requires: 0033 AND 0034` is an externally reviewed dependency stated BY NUMBER — the numbers are load-bearing | research | 2026-09-04 | COORDINATION.md — a note inside the 0031 dev-queue row (the reason this registry exists) | ten owner decisions gate any drafting there (one partly taken: procedure-shaped records categorically outside 0035 v1's effect vocabulary) | 2027-01-04 / self-learning is THIRD in the owner-approved sequence procedural → harness → self-learning; review when the HARNESS stage begins (the arc becomes next and its numbers are wanted), or if the owner abandons or reorders the sequence, or by review_by — whichever is first | — |
 
-**Next uncontested number for a new spec:** `0038`
+**Next uncontested number for a new spec:** `0039`
 
 ## Registry state
 
