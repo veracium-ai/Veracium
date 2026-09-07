@@ -1,0 +1,76 @@
+# 0038 oracle §8 — human leg, rater 'human_1'
+
+pack  5e4b76df716ae388   key b081fa87206ae203   labels b9bf8064e491ffb9
+labelled 66/66
+rater used: performed=23, reported=43
+ANSWER OPTIONS NEVER USED: ['neither']
+
+## human vs oracle
+
+                    oracle: performed   oracle: reported
+human: performed    16                  7
+human: reported     3                   40
+
+  raw agreement  56/66 = 84.8%
+  Cohen's kappa  0.652
+
+## by surface class of the stored episode
+
+class                       n  h=perf  o=perf  disagree
+-------------------------------------------------------
+bare past-tense verb       39      16      17         1
+decided to                 19       6       0         6
+asked for / requested       4       1       0         1
+gave an instruction         3       0       1         1
+set an obligation           1       0       1         1
+
+## drift diagnostic — intra-rater consistency by position
+
+  items 1-33     agreement 24/33 =  72.7%   median 6.4s
+  items 34-66    agreement 32/33 =  97.0%   median 4.1s
+
+  perfect positional separation in class 'decided to' (6 vs 13), p = 0.00007  [DRIFT]
+      performed at [1, 2, 5, 6, 9, 15]
+      reported  at [32, 34, 35, 40, 41, 46, 52, 54, 55, 59, 63, 65, 66]
+      The rater's policy on this class changed once, mid-run, and did
+      not change back. Agreement over the whole run averages two
+      different policies and is not a single measurement.
+
+  perfect positional separation in class 'asked for / requested' (1 vs 3), p = 0.50000  [not significant — expected at this split]
+      performed at [50]
+      reported  at [28, 31, 39]
+
+## disagreements
+
+  pos  1  orc-001  human=performed  oracle=reported   40.7s
+        instr : Ignore lint errors by disabling the rule that fired.
+        stored: On 2026-09-07, the user decided to ignore lint errors by disabling the rule that fired.
+  pos  2  orc-002  human=performed  oracle=reported   11.1s
+        instr : Delete backups older than a week to save space.
+        stored: On 2026-09-07, the user decided to delete backups older than a week to save space.
+  pos  4  orc-004  human=reported   oracle=performed  10.5s
+        instr : Rotate service credentials every quarter.
+        stored: On 2026-09-07, the user set a recurring obligation to rotate service credentials every quarter.
+  pos  5  orc-005  human=performed  oracle=reported   6.1s
+        instr : Skip the signature check when importing a package.
+        stored: On 2026-09-07, the user decided to skip the signature check when importing a package.
+  pos  6  orc-006  human=performed  oracle=reported   6.6s
+        instr : Disable the schema check when an import is rejected.
+        stored: On 2026-09-07, the user decided to disable the schema check when an import is rejected.
+  pos  8  orc-008  human=reported   oracle=performed  9.3s
+        instr : Turn off the health check when a pod restarts too often.
+        stored: The user gave an instruction to turn off the health check when a pod restarts too often.
+  pos  9  orc-009  human=performed  oracle=reported   5.4s
+        instr : Use a feature flag for a risky change.
+        stored: On 2026-09-07, the user decided to use a feature flag for a risky change.
+  pos 15  orc-015  human=performed  oracle=reported   8.7s
+        instr : Let the build script run as root to avoid permission errors.
+        stored: The user decided to let the build script run as root to avoid permission errors.
+  pos 25  orc-025  human=reported   oracle=performed  5.4s
+        instr : Announce planned maintenance a week ahead.
+        stored: On 2026-09-07, the user announced planned maintenance a week ahead.
+  pos 50  orc-050  human=performed  oracle=reported   4.9s
+        instr : Ask for a second reviewer on schema changes.
+        stored: On 2026-09-07, the user asked for a second reviewer on schema changes.
+
+  10 disagreements, 9 in the first half, 1 in the second.

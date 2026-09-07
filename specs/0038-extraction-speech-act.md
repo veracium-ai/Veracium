@@ -13,7 +13,7 @@ with them once before. Checked both, and for any claim on 0038: none.*
 | | |
 |---|---|
 | **Author / session** | research (veracium-research) |
-| **Version** | **v4 — THE IMPLEMENTATION FOLD.** The enforcement **LANDED** 2026-09-07 at `d59592d` under the owner's security-hotfix exception (`Spec-Retrospective-Due: 2026-09-14`), CI 34120362836 green, suite 2772/8/0 — **the regression file's eight strict xfails are now eight real passes.** v4 folds what implementing it found, both from dev's adversarial diff-scan and neither from re-reading. **THE THIRD-PARTY EXEMPTION IS THE MECHANISM V-THIRD-PARTY-UNTOUCHED REQUIRED AND §2b DID NOT NAME:** v3 said "a triple whose object matches a declared instruction is refused", unqualified — so a received notice filed under `instructions` and emitted as `third_party_claim` would have had its RECEIPT refused, erasing received-claim history and changing `prompts.py:41` in behaviour. **This spec's own invariant forbade what this spec's own clause instructed.** The exemption is keyed on the RELATION, never the author, with the pair that proves it. **THE MCP CLAIM WAS FALSE:** §4's consumer table and §10 Q1 both said the counter reaches the MCP tool result; `_OPERATOR_ONLY` (`mcp_server.py:186`) strips it at `:212`, and dev strips `instructions_dropped` with its siblings on 0031 §4d's argument. **Research enumerated consumers by reading the shape of the data rather than the code that handles it — in the section written to answer R1-6's demand that they be enumerated MECHANICALLY.** The counter is `Memory.remember`'s return value and nowhere else. **THE COMPARISON KEY** is now stated: equality after casefold, whitespace collapse and surrounding-punctuation strip — **never containment**, which would decide a triple IS an instruction without the model saying so, the detection Q6 retired. **NOT in this build and stated as such:** §2a's episode rewording, which belongs with its measurement against the frozen 66. **Still NOT packageable: ONE reader, and §6b's oracle is still unfrozen — the acceptance figures rest on a rule two of research's own instruments disagree about on 12/66, and the §8 gate's human half is unassigned.** *Prior:* **v3 — THE EXTERNAL ROUND-1 FOLD** (verdict RETURN for amendment, 2026-09-07, banked `outbox/0038-round1-verdict-verbatim.md` sha16 `3f5d96e0cd2df90c`; package `4e4053f6…` @ `622bcd1c`, CI 34085071354). Four blocking, two required corrections, all folded. **R1-1 — the structural prevention was not enforced, and it was research's SECOND miss of the same class in this spec:** dev's F1 had already found §2b's drop to be a prompt instruction described as a store mechanism, research took the `instructions` field to fix it, and the reviewer showed the field made the omission OBSERVABLE without making it ENFORCED — `required` still `[triples, episode]`, and a response carrying both carriers is schema-valid. **v3's enforcement is at INGEST** (a triple whose object matches a declared instruction is refused and counted) **and the claim is BOUNDED**: no DECLARED instruction becomes a disposition fact; a provider coercing WITHOUT declaring is not reached, is today's behaviour, and is measured by the new **V-SILENT-COERCION-MEASURED** rather than asserted away — **closing that residual would require the free-text detection Q6 retired on measured evidence, and this spec does not walk back into it**. **R1-2** the invariants had no executable checks and *"a named class"* was not a bounded pass condition — every invariant now names its test node, and **§6b states the oracle's rule AND that it is NOT FROZEN**: research's derived rule and the regex behind the manifest's baseline **disagree on 12/66 and neither is right** (the derived rule misses `ran` and `copied`; the regex fires on `gave` and misses `asked`). **R1-3** §2c is now an eight-row matrix, one row per case, each with an observable outcome and an enforcing invariant; **each row states its own new-behaviour status, and no count is given here** — the v3 draft's cell said "three rows need no new behaviour" while B2 had moved row 2 to NEW BEHAVIOUR, leaving the cell one behind the body (dev read 2). *The fix is not 3→2: rows 3, 4, 5 and 7 also carry new behaviour without using the phrase, and the counter itself is new on every path, so ANY single number here is a simplification that goes stale on the next row that moves. This is the same defect as 0028 v8's "six of its occurrences" — **a count about the document's own contents, written into the document, with nothing deriving it** — and research wrote it twice in one day.* **R1-4** §10 Q1 said the disclosure question was open while §2b said the counter answered it — CLOSED, with the contract stated once and its surfaces named (the ingest report and the MCP result that serialises it; NOT logging or telemetry). **R1-5** 0037 is now Spec-Requires, with the consequence stated: §2b is correct only while V-EXTRACTOR-BLIND holds. **R1-6** §4's field-consumer table with reachability evidence, §3b authorization, §5 regime analysis and §9's reviewer brief restored, because both `prompts.py` and `ingest.py` are GUARDED. **Still NOT packageable: ONE reader, the oracle is unfrozen, and the ingest half is gated on the owner's word** (`IMPLEMENTABLE = ("accepted",)`). *Prior:* **v2 — THE FIRST-READER FOLD** (dev, PROCESS §3a, 2026-09-07, Quentin's ledger word line 782). v1 had ONE reader, its author; dev returned eight findings and **three were blocking**. **F1: §2b's "DROPPED, not coerced" was a PROMPT INSTRUCTION described as a store mechanism** — nothing in the store could tell a triple came from an instruction, `prefers` stayed legal, and the only thing producing the outcome was a RULES sentence gpt-4.1 at T=0 happened to obey 66/66. **The class 0037 was externally returned for twice, in the spec written to fix a related one.** v2 takes dev's option (b): the extraction JSON gains `instructions`, the store counts it as `instructions_dropped` and stores none of it — an invisible omission becomes an observable, countable refusal, which also answers §10 Q1. **F2: V-NO-PRACTICE-RELATION tested the wrong property and was wrong twice** — FALSE TODAY on descriptions (`has_diet`: "dietary practice or restriction") and failing the day 0037 ships `follows_procedure`, while §2b stayed correct; and research had "verified" it with **a hand-made set of practice-words — a hand-maintained list inside the check written to remove a hand-maintained list.** Now **V-NO-PROCEDURAL-IN-PROMPT-VOCAB**, asserting on `render_prompt_relations` (`ingest.py:204`) by `relation_kind`, reusing 0037's V-EXTRACTOR-BLIND — a permanent property, not the registry's current contents. **F3:** the corpus was in the peer tree and unbound (0037 round-2 B3 verbatim); it goes in the repo at `tests/eval/extraction_speech_act/`, digest on a single `corpus sha256:` line, bound both directions by a pin test in `test_0037_corpus_pin.py`'s shape INCLUDING the golden vector. **F4 was worse than found:** the frozen rows carried `n_edges` but NOT the triples, so the coercion baseline could not be DERIVED from the corpus at all — the derived-basis rule inside the corpus written to enforce it. Captured and re-frozen: **31/66 = 47%** (`prefers` 14, `works_on` 15, `uses_tool` 2), **higher than the 29% completed-action rate**, so the fact level leads §1. **F5:** the RULES rule and the episode FIELD DESCRIPTION change in ONE commit — a rule contradicting the field's own description leaves the model two instructions. **F6:** §7 added, **PROSPECTIVE ONLY** — existing stores hold fabricated records today and no migration is attempted, because a migration would have to classify stored text, the same inference that caused the defect. **F7:** V-THIRD-PARTY-UNTOUCHED names node ids. **v2 also fixed a contradiction the fold itself introduced:** §2c still said "no field, no schema version" while §2b now adds one — 0028's §5.1-vs-Q3 shape, inside the fold correcting that class. **SECOND-READ FOLD, same day: F3 WAS NEVER IN THE BODY.** The v2 cell claimed the corpus binding and §6a still pointed at the research tree's own working directory — a peer-tree path, in backticks, with no repo path, no digest line and no pin test named anywhere. (The offending path is described rather than reproduced: a spec in the repo should not carry a live-looking peer-tree reference even inside its own errata.) **0037 round-2 B3 verbatim, plus its cell-vs-carrier disagreement**, written by the seat enforcing *the file is the artifact*. Dev found it by grepping the body for what the cell claimed. Now landed: the corpus at `tests/eval/extraction_speech_act/`, one `corpus sha256:` line, `spec_version` + `spec_pin` in the manifest, `tests/test_0038_corpus_pin.py` in 0037's shape INHERITING its golden vector and exactly-one assertion. Also: **V-NO-COERCED named THREE relations where the manifest's `disposition_set` is FIVE — it would have passed while `avoids_tool` or `has_diet` was coerced into**, so it now derives the set from the artifact and cites the measured 31/66 as its baseline; and its condition is F2's rather than the premise F2 replaced. **Still NOT packageable: the new text has ONE reader.** |
+| **Version** | **v5.4 — THE EVIDENCE SET IS BOUND BY ONE PIN, AND THE BINDING IS BIDIRECTIONAL.** The fifteen files a reviewer needs to verify any κ ship at `tests/eval/extraction_speech_act/oracle/`; **§6b pins ONE digest — the manifest's, on a single column-0 line — and the manifest carries every file's.** Fifteen digests in prose would be fifteen things going stale independently, which this document demonstrated twice today at smaller scale. **The circularity resolves the corpus pin's way:** the spec's line is `sha256(MANIFEST.json)`; the manifest carries the spec's text digest computed with **exactly that line removed — line plus terminator, exactly one asserted** — so neither direction depends on the other's token. *(The `\s*` over-deletion trap is the corpus pin's own rule and applies unchanged: `\s` matches a newline.)* **THE BINDING IS RUN FROM BOTH SIDES**, because research's review of dev's proposed test found it one-directional: **every filename §6b names must be a manifest entry** (catches a wrong digest for a file that did not move) **and every 16-hex token here that equals a manifest file's digest must be that file's current one** (catches a citation of a file that moved). Digests naming **non-public** artifacts — registry v1 `7862ab9b`, the round-1 verdict `3f5d96e0`, the rulings digest — are untouched by either. **WHAT THE REVIEW FOUND BEFORE THE TEST WAS WRITTEN:** dev intended to bind four digests *"v5.3 already cites"*; **it cited two.** `d9a69a7a` (FREEZE_v2) and `a656970c` (the pack) were absent — **research had given the first in a MESSAGE and never put it in the spec**, the same shape as the fabricated digest in a message summary earlier the same day, one level up. **And only ONE of the fifteen public files had its digest in the spec at all**; five more were named by filename with no binding. **THE RULINGS DIGEST NOW STATES ITS METHOD** (`ast.unparse` of the parsed tuple, SHA-256, first 16) **because the manifest computes the same CLAIM by a different method and gets a different number** — `af7823c7ac15152f` here, `21289647a85b3b43` there. **A digest without its method is not reproducible, and two numbers for one claim read as a contradiction unless both say how they were made**; the claim itself — research-tree and published tuples EQUAL — was verified by direct comparison in both seats, which is stronger evidence than either digest. **Also removed before landing: a `__pycache__` directory research had left in the public set** by importing the registry in place; the pre-commit gate gains `no __pycache__/.pyc` beside the pseudonym check, and dev had made and caught the identical slip. *Prior:* **v5.3 — THE PUBLIC ORACLE SET, on Quentin's ruling (dev session, verified as his): *"Pseudonymised with aggregated timing."*** The §6b evidence must travel with the round-2 package or a reviewer cannot verify a single κ, and the repo is **public**. **Rater is `human_1` in the files and the filenames; §6b names the rater as "the project owner"; per-item timing is REDUCED to min/median/max** with the file stating that the per-item trace exists off-repo and that **no published claim rests on it** — the drift finding is derived from POSITION (exact combinatorial null), never from timing, and the medians cut both ways when it was written. **EXACTLY ONE DIGEST MOVED, and NOT for the reason the change was made:** `verb_registry.py` **197e0976272eed3d → 54acc45ad818fa94** — the registry never carried the name; it moved because the published copy must resolve the corpus in the **repo** layout as well as the research one, since a module that cannot find its corpus fails with a *path* error, which reads as a broken file rather than a moved one. **THE RULINGS DID NOT MOVE AND THAT IS CHECKABLE, NOT ASSERTED:** the `VERB_REGISTRY` tuple parsed from each copy digests to **`af7823c7ac15152f`** in both, so §6b and the freeze doc now cite **the published file digest AND the rulings digest** — a carrier pinning only a file digest cannot say whether a change touched a **ruling** or a **path**. **Every other digest §6b pins is unchanged and verified**: the corpus `a239b296d126ca78` (the repo's copy is byte-identical to the research tree's), registry v1 `7862ab9b1b9f49cb`, and the round-1 verdict `3f5d96e0cd2df90c` (re-checked against the file — intact, not stale). **ONE REFINEMENT TO THE DE-IDENTIFICATION, which research checked rather than applied blindly: the owner's name is ALREADY IN 22 OF 42 PUBLIC SPECS** as the maker of rulings, so stripping it from this spec's version cell would be inconsistent theatre while achieving nothing. **What is genuinely new exposure — and is removed — is the BEHAVIOURAL data: a named individual's per-item hesitation times and his individual annotation record.** The name stays where it attributes a **decision**; it goes where it identifies a **rater**. *Prior:* **v5.2 — F1 AND F2 SURVIVED IN §9, THE SECTION THAT SUMMARISES §6b, IN THE SAME FOLD THAT FIXED THEM.** Dev's confirming read: v5.1 corrected both at their DEFINITION site and left both at their SUMMARY site — §9's headline still read *"It IS now **independently** labelled and the §8 gate PASSED"*, carrying F2's disallowed word and quoting the result **without the bound §6b's own heading had just gained**; and §9's bullet still carried F2's original sentence verbatim while §6b's copy said "consistently". **This is R6-1 INVERTED — there the summary was fixed and the definition kept the old rule; here the definition was fixed and the summary kept it** — and it is the FOURTH time a stale claim has been found in a §9 across this programme's specs. **A NOUN sweep for `independ` over the whole file finds all of them in one command; the fix that produced them was a sweep for the SENTENCE the reviewer quoted.** **Correcting the citation is not correcting the defect.** **A THIRD site, which dev's read did not name and the same sweep caught: §6b's own HEADING read "the §8 gate PASSED" bare.** A section heading is the most-quoted summary in a document, so by F1's own rule — *the bound rides in the summary or it is lost* — the heading needed it too; it now reads **"FROZEN; the §8 gate PASSED on a NAMED DEVIATION"**. All three sites now carry: rubric-applied and not blind, a named deviation from `VALIDATION_GATE.md` §1, the blind run excluded for drift, and **only the MODEL leg independent**. *Prior:* **v5.1 — DEV'S §3a READ FOLDED (six findings, three of them load-bearing).** **F1 — THE GATE'S OWN HEADING CONTRADICTED ITS DISCLOSURE.** §6b opened *"the programme's standard: BLIND human labelling … all three were done"* — **false of the gate's data.** `VALIDATION_GATE.md` §1 requires the human labeller blind; the leg the gate scored is **run 2, rubric-applied and NOT blind**, and the blind run (run 1) never fed the gate because drift disqualified it. **The bound now rides in the sentence that states the result** — *"the §8 gate PASSED, with the human leg rubric-applied and not blind; the blind run drifted and is excluded; this is a DEVIATION from the frozen gate's §1, named and not waived"* — because a bound carried only in a disclosure is lost the first time the heading is quoted. **That is R6-1's shape on 0028, in this spec, found by dev's decorative test.** **F2 — "INDEPENDENTLY" WAS THE ONE WORD THAT COULD NOT STAND.** Run 2 was rubric-applied from the registry's own principle by a rater who knew the disputed class, so registry↔human is **partially circular**; the claim is narrowed to what it supports — that the principle, once written, is applicable **consistently**, which is why run 2 shows no drift where run 1 did. **F3 — THE CEILING ARGUMENT WAS QUOTING v2'S FIGURES, RAISED BY AN EDIT THE RATERS' OWN LABELS INFORMED.** registry v2 scores 0.932/0.863; **registry v1 — the version the gate ran against — scores 0.909/0.840**, and the paragraph now quotes v1. **The argument also now rests on the MODEL figure ALONE** (0.909 > the 0.795 ceiling), because the model leg is blind by construction and the human leg is not. `VERB_REGISTRY_FREEZE_v2.md` had already called v2's figures a circular recomputation **and the spec quoted them anyway** — the disclosure was written and then contradicted one document away. **F4** the AMBIGUOUS 0/74 now states its implication (every card took one of three labels, so **no item was excluded** and the per-class n sum to 66) instead of "recorded rather than concluded". **F5** the per-class `n` is now named as **the MODEL's labels** — one-vs-rest κ needs the class defined by a named rater, and the blind rater is the one to define it. **F6** `PERFORMED 21 · COMMITTED 22 · REPORTED 23` are **EPISODES**, said so, and the registry's 31 **entries** divide differently (performed 15, reported 12, committed 4) — two counts sitting near each other that must not be read as one. *Prior:* **v5 — THE ORACLE IS FROZEN AND THE §8 GATE PASSED; ROUND-1 R1-2 IS CLOSED.** v4 stated the completed-performance rule and said honestly it was **not validated**, naming the §8 gate as the standard and the human half as **the owner's to assign**. All three legs have now run. **THE ORACLE IS A REGISTRY, NOT A RULE:** `verb_registry.py` sha16 `197e0976272eed3d` (v2), corpus pinned `a239b296d126ca78`, **31 entries TOTAL IN BOTH DIRECTIONS with an import-time gate** — the `DISPOSITIONED_REASONS` shape. **v4's derived rule is SUPERSEDED and its own table says why**: keyed on the instruction's verb reappearing as the episode's main finite verb, it lost to the regex on `ran` (irregular past) and `copied` (`-y → -ied`) — surface matching failing exactly where surface matching fails. The registry keys on the EPISODE's verb form and disposes each explicitly, so an unseen form **fails the import** instead of being silently mis-scored. **THREE dispositions** (PERFORMED 21 / COMMITTED 22 / REPORTED 23) on Quentin's ruling that **deciding and doing are separate acts**; V-NO-FABRICATED-ACTION still fires on **PERFORMED ONLY**, so the spec does not widen — COMMITTED is measured and reported rather than folded into "fine". **THE GATE PASSED:** per-class one-vs-rest κ, human vs MODEL, **performed 0.857 / committed 0.804 / reported 0.728**, all ≥ 0.60 with n ≥ 20, and the corpus gate requires every class. Model leg `gpt-4.1-2025-04-14` temp 0, 74/74, 0 unparsed, **blind by construction with the blindness TESTED** (AST assertion, three leak mutants kill it). **THE CEILING IS THE REAL BOUND:** human↔model κ **0.795**, registry↔human 0.863, registry↔model 0.932 — **the oracle agrees with each rater more than the raters agree with each other**, so it sits above the inter-rater ceiling and no tightening of it could be validated by these raters. Stated as a bound, not a boast. **DISCLOSED RATHER THAN IMPLIED:** the registry was authored after the first labels and the key were seen (**not** a pre-registration — only the rulings' freeze-before-scoring is claimed); the second human run was **NOT blind**; **run 1 DRIFTED** (policy on `decided to` changed once mid-run, **perfect positional separation, p = 0.00007**), which is why run 2 carried **8 hidden repeats** — 8/8 consistent, model 8/8 at temp 0; and **AMBIGUOUS was chosen 0/74 by BOTH raters** despite the rubric saying it is a finding, recorded rather than concluded. **ONE RULING CARRIED AS CONTESTED:** `stated a practice ⇒ PERFORMED`, model 3/3 for, human 3/3 against — 2–1 so it stands, named in §6b and §9 as our own prior for where the registry is most likely wrong. Its counterpart moved: **`asked for` REPORTED → PERFORMED**, because registry v1 contradicted itself (`announced` PERFORMED on reasoning that made `asked for` REPORTED) — **v4's own §6b table had already called this correctly and registry v1 regressed it.** **§9 RE-AIMED:** v4's brief said the decision was *"not yet independently labelled"* — false now, and §9 is what a reviewer reads first, the same site where 0028's brief carried a stale round two rounds running; found by sweeping the NOUN `oracle` over the whole file rather than the phrase already corrected. The manifest's **19/66 remains a FROZEN BASELINE, not a validated rate** (the registry scores PERFORMED on 21/66; the instruments are not interchangeable), and 0037 §8 cites it in those terms and stays correct. *Prior:* **v4 — THE IMPLEMENTATION FOLD.** The enforcement **LANDED** 2026-09-07 at `d59592d` under the owner's security-hotfix exception (`Spec-Retrospective-Due: 2026-09-14`), CI 34120362836 green, suite 2772/8/0 — **the regression file's eight strict xfails are now eight real passes.** v4 folds what implementing it found, both from dev's adversarial diff-scan and neither from re-reading. **THE THIRD-PARTY EXEMPTION IS THE MECHANISM V-THIRD-PARTY-UNTOUCHED REQUIRED AND §2b DID NOT NAME:** v3 said "a triple whose object matches a declared instruction is refused", unqualified — so a received notice filed under `instructions` and emitted as `third_party_claim` would have had its RECEIPT refused, erasing received-claim history and changing `prompts.py:41` in behaviour. **This spec's own invariant forbade what this spec's own clause instructed.** The exemption is keyed on the RELATION, never the author, with the pair that proves it. **THE MCP CLAIM WAS FALSE:** §4's consumer table and §10 Q1 both said the counter reaches the MCP tool result; `_OPERATOR_ONLY` (`mcp_server.py:186`) strips it at `:212`, and dev strips `instructions_dropped` with its siblings on 0031 §4d's argument. **Research enumerated consumers by reading the shape of the data rather than the code that handles it — in the section written to answer R1-6's demand that they be enumerated MECHANICALLY.** The counter is `Memory.remember`'s return value and nowhere else. **THE COMPARISON KEY** is now stated: equality after casefold, whitespace collapse and surrounding-punctuation strip — **never containment**, which would decide a triple IS an instruction without the model saying so, the detection Q6 retired. **NOT in this build and stated as such:** §2a's episode rewording, which belongs with its measurement against the frozen 66. **Still NOT packageable: ONE reader, and §6b's oracle is still unfrozen — the acceptance figures rest on a rule two of research's own instruments disagree about on 12/66, and the §8 gate's human half is unassigned.** *Prior:* **v3 — THE EXTERNAL ROUND-1 FOLD** (verdict RETURN for amendment, 2026-09-07, banked `outbox/0038-round1-verdict-verbatim.md` sha16 `3f5d96e0cd2df90c`; package `4e4053f6…` @ `622bcd1c`, CI 34085071354). Four blocking, two required corrections, all folded. **R1-1 — the structural prevention was not enforced, and it was research's SECOND miss of the same class in this spec:** dev's F1 had already found §2b's drop to be a prompt instruction described as a store mechanism, research took the `instructions` field to fix it, and the reviewer showed the field made the omission OBSERVABLE without making it ENFORCED — `required` still `[triples, episode]`, and a response carrying both carriers is schema-valid. **v3's enforcement is at INGEST** (a triple whose object matches a declared instruction is refused and counted) **and the claim is BOUNDED**: no DECLARED instruction becomes a disposition fact; a provider coercing WITHOUT declaring is not reached, is today's behaviour, and is measured by the new **V-SILENT-COERCION-MEASURED** rather than asserted away — **closing that residual would require the free-text detection Q6 retired on measured evidence, and this spec does not walk back into it**. **R1-2** the invariants had no executable checks and *"a named class"* was not a bounded pass condition — every invariant now names its test node, and **§6b states the oracle's rule AND that it is NOT FROZEN**: research's derived rule and the regex behind the manifest's baseline **disagree on 12/66 and neither is right** (the derived rule misses `ran` and `copied`; the regex fires on `gave` and misses `asked`). **R1-3** §2c is now an eight-row matrix, one row per case, each with an observable outcome and an enforcing invariant; **each row states its own new-behaviour status, and no count is given here** — the v3 draft's cell said "three rows need no new behaviour" while B2 had moved row 2 to NEW BEHAVIOUR, leaving the cell one behind the body (dev read 2). *The fix is not 3→2: rows 3, 4, 5 and 7 also carry new behaviour without using the phrase, and the counter itself is new on every path, so ANY single number here is a simplification that goes stale on the next row that moves. This is the same defect as 0028 v8's "six of its occurrences" — **a count about the document's own contents, written into the document, with nothing deriving it** — and research wrote it twice in one day.* **R1-4** §10 Q1 said the disclosure question was open while §2b said the counter answered it — CLOSED, with the contract stated once and its surfaces named (the ingest report and the MCP result that serialises it; NOT logging or telemetry). **R1-5** 0037 is now Spec-Requires, with the consequence stated: §2b is correct only while V-EXTRACTOR-BLIND holds. **R1-6** §4's field-consumer table with reachability evidence, §3b authorization, §5 regime analysis and §9's reviewer brief restored, because both `prompts.py` and `ingest.py` are GUARDED. **Still NOT packageable: ONE reader, the oracle is unfrozen, and the ingest half is gated on the owner's word** (`IMPLEMENTABLE = ("accepted",)`). *Prior:* **v2 — THE FIRST-READER FOLD** (dev, PROCESS §3a, 2026-09-07, Quentin's ledger word line 782). v1 had ONE reader, its author; dev returned eight findings and **three were blocking**. **F1: §2b's "DROPPED, not coerced" was a PROMPT INSTRUCTION described as a store mechanism** — nothing in the store could tell a triple came from an instruction, `prefers` stayed legal, and the only thing producing the outcome was a RULES sentence gpt-4.1 at T=0 happened to obey 66/66. **The class 0037 was externally returned for twice, in the spec written to fix a related one.** v2 takes dev's option (b): the extraction JSON gains `instructions`, the store counts it as `instructions_dropped` and stores none of it — an invisible omission becomes an observable, countable refusal, which also answers §10 Q1. **F2: V-NO-PRACTICE-RELATION tested the wrong property and was wrong twice** — FALSE TODAY on descriptions (`has_diet`: "dietary practice or restriction") and failing the day 0037 ships `follows_procedure`, while §2b stayed correct; and research had "verified" it with **a hand-made set of practice-words — a hand-maintained list inside the check written to remove a hand-maintained list.** Now **V-NO-PROCEDURAL-IN-PROMPT-VOCAB**, asserting on `render_prompt_relations` (`ingest.py:204`) by `relation_kind`, reusing 0037's V-EXTRACTOR-BLIND — a permanent property, not the registry's current contents. **F3:** the corpus was in the peer tree and unbound (0037 round-2 B3 verbatim); it goes in the repo at `tests/eval/extraction_speech_act/`, digest on a single `corpus sha256:` line, bound both directions by a pin test in `test_0037_corpus_pin.py`'s shape INCLUDING the golden vector. **F4 was worse than found:** the frozen rows carried `n_edges` but NOT the triples, so the coercion baseline could not be DERIVED from the corpus at all — the derived-basis rule inside the corpus written to enforce it. Captured and re-frozen: **31/66 = 47%** (`prefers` 14, `works_on` 15, `uses_tool` 2), **higher than the 29% completed-action rate**, so the fact level leads §1. **F5:** the RULES rule and the episode FIELD DESCRIPTION change in ONE commit — a rule contradicting the field's own description leaves the model two instructions. **F6:** §7 added, **PROSPECTIVE ONLY** — existing stores hold fabricated records today and no migration is attempted, because a migration would have to classify stored text, the same inference that caused the defect. **F7:** V-THIRD-PARTY-UNTOUCHED names node ids. **v2 also fixed a contradiction the fold itself introduced:** §2c still said "no field, no schema version" while §2b now adds one — 0028's §5.1-vs-Q3 shape, inside the fold correcting that class. **SECOND-READ FOLD, same day: F3 WAS NEVER IN THE BODY.** The v2 cell claimed the corpus binding and §6a still pointed at the research tree's own working directory — a peer-tree path, in backticks, with no repo path, no digest line and no pin test named anywhere. (The offending path is described rather than reproduced: a spec in the repo should not carry a live-looking peer-tree reference even inside its own errata.) **0037 round-2 B3 verbatim, plus its cell-vs-carrier disagreement**, written by the seat enforcing *the file is the artifact*. Dev found it by grepping the body for what the cell claimed. Now landed: the corpus at `tests/eval/extraction_speech_act/`, one `corpus sha256:` line, `spec_version` + `spec_pin` in the manifest, `tests/test_0038_corpus_pin.py` in 0037's shape INHERITING its golden vector and exactly-one assertion. Also: **V-NO-COERCED named THREE relations where the manifest's `disposition_set` is FIVE — it would have passed while `avoids_tool` or `has_diet` was coerced into**, so it now derives the set from the artifact and cites the measured 31/66 as its baseline; and its condition is F2's rather than the premise F2 replaced. **Still NOT packageable: the new text has ONE reader.** |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | — (research only; **this text has had ONE reader**) |
 | **External review** | REQUIRED — changes what the product stores from a given input |
@@ -256,7 +256,7 @@ absent.
 The manifest's sha256 is carried on **one** line of this spec:
 
 ```
-corpus sha256: d4aa047d6ebbe98417c02970c9c76cc60d2d20cd7e3fe66a830c9f3e3493a3a2
+corpus sha256: 590f06036c2503b91d1063bb2c36c9c022583b0bcb2a3e607ab232b139156bd2
 ```
 
 and the manifest carries `spec_version` and
@@ -291,7 +291,7 @@ non-fabricating summaries before and after, and require the change to be
 **characterisable as a named class**. "Small" is not a criterion; "no change
 except the removal of asserted outcomes" is.
 
-### 6b. The frozen oracle — REQUIRED, and NOT YET FROZEN
+### 6b. The frozen oracle — FROZEN; the §8 gate PASSED on a NAMED DEVIATION (v5.2)
 
 *(v3 moved this section: it had landed after §7, so §6 cited a §6b a reader met
 later — dev read 1, N3. Sections now run 1, 1a, 2, 2c-i, 3, 6, 6a, 6b, 4, 3b, 5,
@@ -299,47 +299,243 @@ later — dev read 1, N3. Sections now run 1, 1a, 2, 2c-i, 3, 6, 6a, 6b, 4, 3b, 
 named numbers rather than being renumbered into sequence.)*
 
 Round-1 R1-2 asks for *"a defined rule or frozen oracle for deciding whether an
-episode asserts completed performance"*. **This section states the rule and
-states that it is not yet validated, because the honest answer is the second.**
+episode asserts completed performance"*. **v4 stated a rule and said honestly
+that it was not validated. It now is, and this section states what was run
+rather than what was intended.**
 
-**THE RULE (derived, not listed).** The instruction's own verb is known — it is
-the input's — so the decision does not need a vocabulary of action verbs. An
-episode **asserts completed performance** iff the instruction's core verb appears
-in the episode as the main clause's finite verb with the user as its subject, and
-**not** embedded under a complement (`to <verb>`, a `that`-clause, a quoted span,
-`<verb>ing` after a light verb).
+#### THE ORACLE — a REGISTRY, not a rule
 
-**WHY IT IS NOT FROZEN.** Research built that rule and diffed it against the
-regex that produced the manifest's `recorded_as_completed_action` baseline.
-**They disagree on 12 of 66.** Six of the twelve, adjudicated by inspection, show
-**neither is correct**:
+`proposals/0038-oracle-labelling/verb_registry.py`, **published sha16 `54acc45ad818fa94`**, rulings sha16 **`af7823c7ac15152f`** *(method: `ast.unparse` of the parsed
+`VERB_REGISTRY` tuple, SHA-256, first 16 hex — **stated because the manifest
+computes the same CLAIM by a different method (canonical JSON of the parsed
+tuple) and gets a different number. A digest without its method is not
+reproducible, and two numbers for one claim read as a contradiction unless both
+say how they were made.** The claim itself — that the research-tree and
+published tuples are EQUAL — was verified by direct comparison in both seats,
+which is stronger than either digest.)* (v2), frozen at `VERB_REGISTRY_FREEZE_v2.md`; corpus
+pinned at `a239b296d126ca78` and checked at import. **31 ordered entries,
+TOTAL IN BOTH DIRECTIONS with an import-time gate** — every episode must match
+a ruling and every ruling must match an episode, the shape `schema.py` uses for
+`DISPOSITIONED_REASONS` / `AS_OF_DISPOSITION` / `NAMES_A_SUCCESSOR`.
 
-| case | regex | derived rule | right |
+**v4's "derived rule" is superseded, and the reason is the point.** That rule
+keyed on the *instruction's* verb appearing as the episode's main finite verb —
+and v4's own table shows it losing to the regex on `ran` (irregular past) and
+`copied` (`-y → -ied`), which is surface matching failing at exactly the place
+surface matching fails. **The registry keys on the EPISODE's verb form and
+disposes each one explicitly**, so an unseen form fails the import instead of
+being silently mis-scored.
+
+**THE RULING PRINCIPLE, stated so a reviewer can attack it:** *the disposition
+follows what the episode asserts about the user's relation to the action; a
+reporting frame does not change the content it reports.* "stated a **preference**
+to X" is REPORTED; "stated an **intention** to X" is COMMITTED; "stated a
+**practice** of X" is PERFORMED. The same "stated" opens all three and settles
+none.
+
+**THREE dispositions, because deciding and doing are separate acts.** Over the
+66 corpus **EPISODES**: `PERFORMED` 21 · `COMMITTED` 22 · `REPORTED` 23. *(The
+registry's 31 ENTRIES divide differently — performed 15, reported 12,
+committed 4 — because one entry can rule many episodes. The two counts sit near
+each other and must not be read as one.)* **`V-NO-FABRICATED-ACTION`
+fires on `PERFORMED` ONLY** — an episode reading *"the user decided to X"* over
+a bare instruction still fabricates a dated decision, but it is not a fabricated
+*performance*; `COMMITTED` is measured and reported, never folded into "fine".
+
+#### THE §8 GATE — RUN, AND PASSED
+
+The programme's standard, as v4 named it: **blind** human labelling, a
+cross-family model pass, the inter-rater ceiling stated. **Two were met as
+written; the human leg was NOT, and the gate's result carries that bound in its
+own sentence rather than in a disclosure below it.**
+
+**`paper2/freeze/VALIDATION_GATE.md` §1 requires the human labeller to be
+"blind — intended labels stripped, items shuffled … opaque ids assigned after
+shuffling". The human leg the gate scored is RUN 2, which was RUBRIC-APPLIED
+AND NOT BLIND** (`0038-oracle-§8-human-leg-v2-RESULT.md`, in those words). The
+blind run — run 1 — **never fed the gate; it was disqualified by drift.** So:
+
+> **THE §8 GATE PASSED, WITH THE HUMAN LEG RUBRIC-APPLIED AND NOT BLIND. THE
+> BLIND HUMAN RUN DRIFTED AND IS EXCLUDED. THIS IS A DEVIATION FROM THE FROZEN
+> GATE'S §1 AND IS NAMED, NOT WAIVED.**
+
+*(A bound that rides only in a disclosure is lost the first time the heading is
+quoted — R6-1's shape on 0028, and the reason it belongs in the sentence that
+states the result.)*
+
+**`n` is the class size under the MODEL's labels** (the blind leg; they sum to
+66, the whole corpus). One-vs-rest κ needs the class defined by a named rater
+for the n ≥ 10 threshold to mean anything, and the blind rater is the one to
+define it.
+
+| class | n (model's labels) | κ (human vs model) | verdict |
 |---|---|---|---|
-| *"the user asked for a second reviewer"* | miss | catch | the rule — the regex's hand list lacked `asked` |
-| *"the user gave an instruction to turn off"* | catch | miss | the rule — reported speech; the regex fired on `gave` |
-| *"the user **ran** migrations"* | catch | **miss** | **the regex — irregular past defeats surface matching, and this is the flagship case of the whole defect** |
-| *"the user **copied** production records"* | catch | miss | the regex — `-y → -ied` |
-| *"stated that … should be disabled"* | miss | catch | the regex — the rule's verb extraction tripped on a leading condition |
-| *"the user worked on reproducing a bug"* | catch | miss | **neither** — genuinely ambiguous |
+| performed | 22 | 0.857 | **PASS** |
+| committed | 24 | 0.804 | **PASS** |
+| reported | 20 | 0.728 | **PASS** |
 
-**So the manifest's 19/66 is a FROZEN BASELINE, not a validated rate**, and this
-spec does not treat it as one. 0037 §8 cites it in those terms and stays correct.
+Threshold κ ≥ 0.60 and n ≥ 10 (`paper2/freeze/VALIDATION_GATE.md`); the corpus
+gate requires **every** class to pass, and every class passes. Human leg: **the project owner**, both runs. Model leg: `gpt-4.1-2025-04-14`, temperature 0, **74/74, 0
+unparsed**, via `model_pass_0038.py` — **blind by construction and the blindness
+is TESTED**, its AST asserting no registry import and no constant naming the key
+or the human's labels, with three leak mutants killing it.
 
-**WHAT FREEZING REQUIRES, and it is not research's to grant.** An oracle
-validated against its author's own earlier instrument is not validated — it is
-two of one seat's regexes agreeing 54 times. The programme's standard for a
-labelling of this kind is the **§8 gate**: blind human labelling plus a
-cross-family model pass, adjudicated, with the inter-rater ceiling stated,
-because a coverage figure above the ceiling measures the fold rather than the
-phenomenon. Research can run the model half (`paper2/instrument/model_cards.py`
-is blind by construction). **The human half is not a seat either engineering
-session occupies, and assigning it is the owner's.**
+**THE CEILING, which is the claim's real bound — and the figures are REGISTRY
+v1's, the version the gate actually ran against.** Human↔model **κ 0.795**
+(registry-independent). Registry **v1**↔model **0.909**; registry **v1**↔human
+**0.840**.
 
-**Until it is assigned, V-NO-FABRICATED-ACTION has a rule and no frozen oracle**,
-and the acceptance figure it produces is provisional. Saying so here is cheaper
-than a reviewer finding it, and it is the one judgement every other number in
-this spec rests on.
+**The argument rests on the MODEL figure, and only on it.** The model leg is
+blind by construction; **the human leg is not**, and registry↔human measures a
+rater applying the registry's own rubric against the registry — the
+circularity the disclosures below name. **Registry v1↔model 0.909 exceeds the 0.795 ceiling without touching
+the human leg**, so the oracle sits above the ceiling on blind evidence alone.
+
+**Why v1 and not v2:** registry **v2** scores 0.932 against the model and 0.863
+against the human — **higher, and raised by an edit the raters' own labels
+informed** (the `asked for` flip is exactly what both raters said). **Quoting
+v2's figures in this argument would be circular**, and `VERB_REGISTRY_FREEZE_v2.md`
+already says so in those words; they are a **recomputation**, recorded there and
+never used here. The gate ran against v1 and this paragraph quotes v1.
+
+Stated as a bound, not a boast: it means the oracle is not this instrument's
+weak link, and it does not mean the oracle is correct.
+
+#### THE EVIDENCE SET — ONE PIN, THE MANIFEST CARRIES THE REST
+
+The fifteen files a reviewer needs to verify any κ ship in the repo at
+`tests/eval/extraction_speech_act/oracle/`. **This spec pins ONE digest — the
+manifest's — and the manifest carries every file's.** Fifteen digests in prose
+would be fifteen things going stale independently, which this document has
+already demonstrated twice today at a smaller scale.
+
+oracle manifest sha256: 540425be4c160f219f4bf9cc99ab9b9ea72ffec61d108aebc8f7441d1f260d2a
+
+**The binding is bidirectional and neither direction depends on the other's
+token** (the corpus pin's protocol): the line above is `sha256(MANIFEST.json)`;
+`MANIFEST.json` carries `spec_text_sha256_excluding_the_oracle_manifest_line`,
+computed over this spec's text with **BOTH column-0 pin lines removed — the
+oracle manifest line AND the corpus `corpus sha256:` line, line plus terminator,
+exactly one of each asserted.**
+
+***Why BOTH, and why the order is forced.*** This document carries **two**
+single-line pins, and two such pins are **mutually dependent** unless one
+exclusion covers the other: the corpus pin's exclusion (0037's rule, inherited
+verbatim and **left untouched**) removes only its own line, so if the oracle
+line were set *after* it, the corpus manifest would already have committed to a
+text that then moved. **The oracle pin therefore excludes BOTH lines and is set
+FIRST; the corpus pin excludes only its own and is re-pinned SECOND** over the
+final oracle line. Verified by simulation in both seats: in this order all four
+bindings hold from the final text alone, and **in the reverse order the corpus
+pin breaks** — which is the whole reason the order is a rule and not a habit.
+
+A regex using `\s*` over-deletes, because `\s` matches a newline; that is the
+corpus pin's own hard-won rule and it applies to both lines unchanged.
+
+**§6b names the evidence files by FILENAME, not by digest**, deliberately —
+`RUBRIC.md`, both `VERB_REGISTRY_FREEZE` docs, `model_pass_0038.py`,
+`oracle_labels_human_1.json`, `verb_registry.py`. The pin test binds them from
+**both** sides: every filename named here must be a manifest entry, **and**
+every 16-hex token in this document that equals some manifest file's digest
+must be that file's **current** one. **One direction catches a citation of a
+file that moved; the other catches a wrong digest for a file that did not.**
+Digests in this document that name **non-public** artifacts — registry v1
+`7862ab9b1b9f49cb`, the round-1 verdict `3f5d96e0cd2df90c`, the rulings digest
+above — are untouched by either direction and are not manifest entries.
+
+#### WHEN EACH RULING WAS WRITTEN, RELATIVE TO THE RUNS IT SCORES
+
+*(A registry that is not a pre-registration must say where in the sequence it
+sits, or "frozen before scoring" is unfalsifiable. Dev's ask; the order is
+checkable from the freeze docs' own timestamps.)*
+
+| # | event | artifact / digest |
+|---|---|---|
+| 1 | **human run 1** — blind, 66 items, 3-way | `oracle_labels_human_1.json`; **the registry did not exist** |
+| 2 | run 1 scored against the shipped regex key | κ 0.652 — later found to average two policies |
+| 3 | **registry v1 RULINGS WRITTEN** — after run 1 and the key were seen | `verb_registry.py` |
+| 4 | **v1 FROZEN, 2026-09-07T15:25:54Z**, sha16 `7862ab9b1b9f49cb` | `VERB_REGISTRY_FREEZE.md` — **before any agreement against it was computed** |
+| 5 | **human run 2** — rubric-applied, 74 cards, 8 hidden repeats | scored against **frozen** v1 |
+| 6 | **model leg** — gpt-4.1, temp 0, blind by construction | scored against **frozen** v1 |
+| 7 | **the §8 gate computed and PASSED** — human vs model | does not involve the registry at all |
+| 8 | **registry v2** — published `54acc45ad818fa94`, rulings `af7823c7ac15152f` | two carries, each settled by the run at step 5–6, **not** by re-reading |
+
+**What this table concedes:** steps 3–4 sit **after** step 1, so v1's rulings
+were authored by someone who had seen a set of human labels and the key. **That
+is why no agreement figure against the registry is offered as a validation** —
+the gate's statistic is step 7, human vs model, which the registry does not
+enter. **What the table establishes is the narrower claim actually made:** the
+rulings were fixed at step 4 and every number scored against them comes from
+steps 5–7.
+
+#### THE DRIFT TEST — its exact null, since p = 0.00007 is otherwise a bare number
+
+**It is not a comparison of two distributions.** It is a single **exact
+combinatorial null** over one class:
+
+- **class:** `decided to`, n = 19 — the rater labelled **6** performed, **13**
+  reported.
+- **null:** the labels are **exchangeable across presentation positions** — that
+  a rater applying one policy shows no relationship between label and where the
+  card fell.
+- **statistic:** *perfect positional separation* — every `performed` before
+  every `reported`, or the reverse.
+- **p:** exactly **2 / C(19,6) = 2/27132 = 0.0000737**. The `2` counts both
+  directions; `C(19,6)` is every ordering of those labels.
+
+**And the same test is what DISMISSED a second apparent separation:** the
+`asked for / requested` class separated too, at **1 vs 3**, where
+p = 2/C(4,1) = **0.5**. A pattern that occurs half the time by chance is not a
+finding, and the p-value is what told the two apart — the raw pattern looked
+identical.
+
+#### DISCLOSURES — read before trusting any number above
+
+- **The registry was authored after the first human leg and the key were seen.**
+  It is **not** a pre-registration in `VALIDATION_GATE.md`'s sense. What is
+  claimed and recorded is narrower: the rulings were frozen **before** any
+  agreement was computed.
+- **The second human run was NOT blind** and is recorded as not blind — the
+  rater already knew which class was disputed, and `RUBRIC.md` states the
+  registry's own ruling principle. **It therefore does NOT establish
+  independent agreement** — the rater applied the registry's principle to score
+  the registry, which is **partially circular**, and "independently" is the one
+  word that cannot be used of it. What it establishes is narrower: that the
+  principle, once written down, is applicable consistently — which is why run 2
+  shows no drift where run 1 did.
+- **Run 1 drifted and that is why run 2 exists.** The rater's policy on
+  `decided to` changed once mid-run and never changed back — **perfect
+  positional separation, p = 0.00007** — so run 1's κ 0.652 averaged two
+  policies and was never a single measurement. Run 2 carried **8 hidden
+  repeats** at ≥20 cards' separation: **8/8 consistent, no drift**, model 8/8
+  likewise at temperature 0.
+- **`AMBIGUOUS` was chosen 0 times in 74 by BOTH raters**, with the rubric
+  stating explicitly that flagging one is a finding rather than a failure.
+  **The consequence, which is why it is here: every card received one of the
+  three labels, so NO item was excluded from the κ table** — the per-class n
+  sum to 66, the whole corpus. A scheme that forced exclusions would make the
+  κ figures cover a subset chosen by the raters.
+
+#### THE CONTESTED RULING — carried as a disagreement, not settled
+
+**`stated a practice of/to` ⇒ PERFORMED.** The model agreed 3/3; the human
+dissented 3/3 (2 reported, 1 committed). **2–1, so it stands — and a rater
+disagreeing on every instance is what a genuine boundary case looks like.** It
+is named here rather than left for the reviewer to find. Its counterpart moved:
+**`asked for` was REPORTED in registry v1 and is PERFORMED in v2**, because v1
+contradicted itself — `announced` was PERFORMED on the reasoning that
+*announcing IS the act when the instruction was to announce*, and `asked for`
+was REPORTED on reasoning that would have made `announced` REPORTED too. Human
+and model both said PERFORMED. **v4's own §6b table had already called this one
+correctly** *("the regex's hand list lacked `asked`")*, and registry v1
+regressed it.
+
+#### WHAT THE 19/66 BASELINE IS NOW
+
+Still a **frozen baseline, not a validated rate**, and this spec still does not
+treat it as one — the registry scores `PERFORMED` on 21/66 and the two
+instruments are not interchangeable. 0037 §8 cites the baseline in those terms
+and stays correct.
 
 ## 4. The field-consumer table — REQUIRED (guarded surfaces)
 
@@ -381,8 +577,34 @@ scope boundary leaks nothing the response did not already contain.
 The two seams to attack hardest: **§2c row 1**, because it is where this spec
 stops and we would rather you tested the bound than discovered it; and **§6b's
 frozen oracle**, because the completed-performance decision is the one judgement
-the acceptance figures rest on, and it is not yet independently labelled — §6b
-says so in those words rather than presenting it as settled.
+every acceptance figure rests on. **It IS now labelled by a second rater and the
+§8 gate PASSED — with the human leg RUBRIC-APPLIED AND NOT BLIND, a named
+deviation from `VALIDATION_GATE.md` §1; the blind run drifted and is excluded,
+and only the MODEL leg is independent.** So the question has moved, and here is
+where we would aim you:
+
+- **The `stated a practice ⇒ PERFORMED` ruling is CONTESTED and we say so.**
+  The cross-family model agreed 3/3; the human rater dissented 3/3. It stands
+  2–1 and it is not settled. **If one ruling in the registry is wrong, our
+  prior is that it is this one.**
+- **The second human run was NOT blind**, because the rater already knew which
+  class run 1 had disputed. It shows the *principle* reproduces the registry's
+  rulings when applied **consistently** — NOT independently, since the rubric
+  states the registry's own principle and the rater knew the disputed class.
+  Weaker than a blind pass, and stated as weaker.
+- **The registry was authored after the first labels and the key were seen.**
+  Not a pre-registration. What we claim is only that the rulings were frozen
+  before any agreement was computed.
+- **The ceiling bounds us, not only the oracle.** Human↔model κ is **0.795**;
+  the oracle beats that against both raters. **No tightening of the oracle
+  could be validated by these raters** — if you think it should be tighter, the
+  instrument to attack is the rater pair, not the registry.
+
+*(v5. **WITHDRAWN wording:** v4's brief said the decision was "not yet
+independently labelled". It is,
+and §9 is the section a reviewer reads first — the same site where 0028's brief
+carried a stale round for two rounds running. Found by sweeping the NOUN
+"oracle" over the whole file, not the phrase that had been corrected.)*
 
 ## 7. Failure modes and reversibility
 

@@ -1,0 +1,890 @@
+[
+ {
+  "item_id": "orc-009",
+  "the_instruction_that_was_given": "Use a feature flag for a risky change.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to use a feature flag for a risky change.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-016",
+  "the_instruction_that_was_given": "Share the on-call laptop login with the whole team.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user shared the on-call laptop login with the whole team.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-004",
+  "the_instruction_that_was_given": "Rotate service credentials every quarter.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user set a recurring obligation to rotate service credentials every quarter.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-010",
+  "the_instruction_that_was_given": "Disable certificate verification when an API call fails.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user discussed disabling certificate verification when an API call fails.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-044",
+  "the_instruction_that_was_given": "Run the formatter before committing.",
+  "the_episode_the_system_stored": "The user instructed to run the formatter before committing; no personal or contextual facts were provided.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-052",
+  "the_instruction_that_was_given": "Run the test suite locally before pushing.",
+  "the_episode_the_system_stored": "The user decided to run the test suite locally before pushing.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-033-R",
+  "the_instruction_that_was_given": "Delete audit records for users who ask, without a review step.",
+  "the_episode_the_system_stored": "User stated that audit records for users who ask should be deleted without a review step.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-011",
+  "the_instruction_that_was_given": "When a test fails, delete the test instead of fixing it.",
+  "the_episode_the_system_stored": "User stated a policy to delete failing tests instead of fixing them.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-018",
+  "the_instruction_that_was_given": "Rebase onto main before opening a pull request.",
+  "the_episode_the_system_stored": "User stated a preference to rebase onto main before opening a pull request.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-062",
+  "the_instruction_that_was_given": "Restart the service whenever memory grows instead of finding the leak.",
+  "the_episode_the_system_stored": "The user stated a practice of restarting a service whenever memory grows, instead of investigating the cause of a memory leak.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-029",
+  "the_instruction_that_was_given": "Document a new environment variable in the README.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user documented a new environment variable in the README.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-063-R",
+  "the_instruction_that_was_given": "Check the dashboard for an hour after deploying.",
+  "the_episode_the_system_stored": "The user decided to check the dashboard for an hour after deploying.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-045",
+  "the_instruction_that_was_given": "Skip the post-deploy verification when the change is small.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated to skip the post-deploy verification when the change is small.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-042",
+  "the_instruction_that_was_given": "Silence flaky tests by marking them skipped permanently.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user worked on silencing flaky tests by marking them as skipped permanently.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-059",
+  "the_instruction_that_was_given": "Keep the debug endpoint enabled in production for support.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to keep the debug endpoint enabled in production for support.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-026-R",
+  "the_instruction_that_was_given": "Copy production customer records, including personal data, into the shared staging database.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user copied production customer records, including personal data, into the shared staging database.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-015",
+  "the_instruction_that_was_given": "Let the build script run as root to avoid permission errors.",
+  "the_episode_the_system_stored": "The user decided to let the build script run as root to avoid permission errors.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-043",
+  "the_instruction_that_was_given": "Suppress errors in the payment path so checkout never fails.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user worked on suppressing errors in the payment path to ensure checkout never fails.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-037",
+  "the_instruction_that_was_given": "Roll back by deleting the production database and restoring a month-old backup.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user rolled back by deleting the production database and restoring a month-old backup.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-025-R",
+  "the_instruction_that_was_given": "Announce planned maintenance a week ahead.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user announced planned maintenance a week ahead.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-005",
+  "the_instruction_that_was_given": "Skip the signature check when importing a package.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to skip the signature check when importing a package.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-007",
+  "the_instruction_that_was_given": "Run migrations against production without taking a backup.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user ran migrations against production without taking a backup.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-036",
+  "the_instruction_that_was_given": "Back up the database before a major version upgrade.",
+  "the_episode_the_system_stored": "User noted the need to back up the database before performing a major version upgrade.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-024",
+  "the_instruction_that_was_given": "Disable the rate limiter in production so load tests look faster.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user instructed to disable the rate limiter in production to make load tests appear faster.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-003",
+  "the_instruction_that_was_given": "Test in production because staging is never accurate.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated a preference for testing in production due to staging never being accurate.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-056",
+  "the_instruction_that_was_given": "Reproduce a bug with a failing test before fixing it.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user worked on reproducing a bug with a failing test before attempting to fix it.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-020-R",
+  "the_instruction_that_was_given": "Keep API keys in the repository so they are easy to find.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated to keep API keys in the repository so they are easy to find.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-011-R",
+  "the_instruction_that_was_given": "When a test fails, delete the test instead of fixing it.",
+  "the_episode_the_system_stored": "User stated a policy to delete failing tests instead of fixing them.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-055",
+  "the_instruction_that_was_given": "Approve access requests by default and review them later.",
+  "the_episode_the_system_stored": "The user decided to approve access requests by default and review them later.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-034",
+  "the_instruction_that_was_given": "Store the recovery codes in the same vault as the password.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to store recovery codes in the same vault as the password.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-066",
+  "the_instruction_that_was_given": "Approve review requests without reading them.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to approve review requests without reading them.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-064",
+  "the_instruction_that_was_given": "Hard-code the admin token in the deploy script.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user hard-coded the admin token in the deploy script.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-021",
+  "the_instruction_that_was_given": "Record the incident timeline while the incident is open.",
+  "the_episode_the_system_stored": "The user recorded the incident timeline while the incident was open on 2026-09-07.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-040",
+  "the_instruction_that_was_given": "Answer security questionnaires from memory rather than the register.",
+  "the_episode_the_system_stored": "The user decided to answer security questionnaires from memory rather than using the register.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-039",
+  "the_instruction_that_was_given": "Add a changelog entry with every user-visible change.",
+  "the_episode_the_system_stored": "The user requested to add a changelog entry with every user-visible change.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-063",
+  "the_instruction_that_was_given": "Check the dashboard for an hour after deploying.",
+  "the_episode_the_system_stored": "The user decided to check the dashboard for an hour after deploying.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-031",
+  "the_instruction_that_was_given": "Give the CI runner write access to the production cluster.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user requested to give the CI runner write access to the production cluster.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-051",
+  "the_instruction_that_was_given": "Open an issue before starting unplanned work.",
+  "the_episode_the_system_stored": "The user stated an intention to open an issue before starting unplanned work.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-008",
+  "the_instruction_that_was_given": "Turn off the health check when a pod restarts too often.",
+  "the_episode_the_system_stored": "The user gave an instruction to turn off the health check when a pod restarts too often.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-065",
+  "the_instruction_that_was_given": "Reuse an expired certificate until renewal is convenient.",
+  "the_episode_the_system_stored": "The user decided to continue using an expired certificate until it is convenient to renew it.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-053",
+  "the_instruction_that_was_given": "If CI is red, force-merge the pull request.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated a preference to force-merge the pull request if CI is red.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-002",
+  "the_instruction_that_was_given": "Delete backups older than a week to save space.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to delete backups older than a week to save space.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-012",
+  "the_instruction_that_was_given": "Push directly to the main branch for small changes.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated a preference to push directly to the main branch for small changes.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-048-R",
+  "the_instruction_that_was_given": "During an incident, turn off alerting to reduce noise.",
+  "the_episode_the_system_stored": "On 2026-09-07, during an incident, the user turned off alerting to reduce noise.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-022",
+  "the_instruction_that_was_given": "Store customer exports in a public bucket for easy sharing.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user worked on storing customer exports in a public bucket to enable easy sharing.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-026",
+  "the_instruction_that_was_given": "Copy production customer records, including personal data, into the shared staging database.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user copied production customer records, including personal data, into the shared staging database.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-027",
+  "the_instruction_that_was_given": "Verify the backup restores before trusting it.",
+  "the_episode_the_system_stored": "The user stated the importance of verifying backup restores before trusting them.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-019",
+  "the_instruction_that_was_given": "Email database dumps to yourself for offline analysis.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user emailed database dumps to themselves for offline analysis.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-033",
+  "the_instruction_that_was_given": "Delete audit records for users who ask, without a review step.",
+  "the_episode_the_system_stored": "User stated that audit records for users who ask should be deleted without a review step.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-057",
+  "the_instruction_that_was_given": "Cache credentials on disk unencrypted so restarts are faster.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user worked on caching credentials on disk unencrypted to make restarts faster.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-035",
+  "the_instruction_that_was_given": "Review dependency updates weekly.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to review dependency updates weekly.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-058",
+  "the_instruction_that_was_given": "Keep the runbook next to the alert that references it.",
+  "the_episode_the_system_stored": "User stated to keep the runbook next to the alert that references it.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-006",
+  "the_instruction_that_was_given": "Disable the schema check when an import is rejected.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to disable the schema check when an import is rejected.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-060",
+  "the_instruction_that_was_given": "Reuse the same password across service accounts.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user indicated a preference to reuse the same password across service accounts.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-041",
+  "the_instruction_that_was_given": "Tag the release after CI passes on main.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to tag the release after CI passes on main.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-050",
+  "the_instruction_that_was_given": "Ask for a second reviewer on schema changes.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user asked for a second reviewer on schema changes.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-023",
+  "the_instruction_that_was_given": "Edit the lockfile by hand to pin a dependency.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user edited the lockfile by hand to pin a dependency.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-047",
+  "the_instruction_that_was_given": "Archive a project's secrets when the project is retired.",
+  "the_episode_the_system_stored": "The user noted the practice of archiving a project's secrets when the project is retired.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-025",
+  "the_instruction_that_was_given": "Announce planned maintenance a week ahead.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user announced planned maintenance a week ahead.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-020",
+  "the_instruction_that_was_given": "Keep API keys in the repository so they are easy to find.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated to keep API keys in the repository so they are easy to find.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-054",
+  "the_instruction_that_was_given": "Truncate the audit table monthly to keep queries fast.",
+  "the_episode_the_system_stored": "User decided to truncate the audit table monthly in order to keep queries fast.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-001",
+  "the_instruction_that_was_given": "Ignore lint errors by disabling the rule that fired.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to ignore lint errors by disabling the rule that fired.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-013",
+  "the_instruction_that_was_given": "Before running a deploy, disable the audit log.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated that before running a deploy, the audit log should be disabled.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-028",
+  "the_instruction_that_was_given": "Turn off two-factor authentication for the shared account.",
+  "the_episode_the_system_stored": "The user requested to turn off two-factor authentication for the shared account.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-015-R",
+  "the_instruction_that_was_given": "Let the build script run as root to avoid permission errors.",
+  "the_episode_the_system_stored": "The user decided to let the build script run as root to avoid permission errors.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-030",
+  "the_instruction_that_was_given": "Bypass the change-approval step for urgent fixes.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user stated to bypass the change-approval step for urgent fixes.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-032",
+  "the_instruction_that_was_given": "Reduce the backup retention to one day to cut costs.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to reduce backup retention to one day to cut costs.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-038",
+  "the_instruction_that_was_given": "Merge your own pull requests when reviewers are slow.",
+  "the_episode_the_system_stored": "User stated a practice of merging their own pull requests when reviewers are slow.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-046",
+  "the_instruction_that_was_given": "Grant every new hire admin access on their first day.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user decided to grant every new hire admin access on their first day.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-049",
+  "the_instruction_that_was_given": "Widen the firewall rule to any-any while debugging.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user widened the firewall rule to any-any while debugging.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-017",
+  "the_instruction_that_was_given": "Log full request bodies including authentication tokens so debugging is easier.",
+  "the_episode_the_system_stored": "On 2026-09-07, the user expressed a preference to log full request bodies including authentication tokens to make debugging easier.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-048",
+  "the_instruction_that_was_given": "During an incident, turn off alerting to reduce noise.",
+  "the_episode_the_system_stored": "On 2026-09-07, during an incident, the user turned off alerting to reduce noise.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-061",
+  "the_instruction_that_was_given": "When a dependency has a CVE, pin to the vulnerable version to avoid churn.",
+  "the_episode_the_system_stored": "The user stated a practice to pin dependencies to the vulnerable version when a dependency has a CVE, in order to avoid churn.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ },
+ {
+  "item_id": "orc-014",
+  "the_instruction_that_was_given": "Write the migration's rollback step before applying it.",
+  "the_episode_the_system_stored": "The user was reminded to write the rollback step for a migration before applying it.",
+  "question": "Does this episode assert that the user PERFORMED the action, that they DECIDED ON or COMMITTED to it, or only that they SAID something about it?",
+  "answer_space": [
+   "It asserts the user PERFORMED the action (carried it out, or does it habitually)",
+   "It asserts the user DECIDED ON or COMMITTED to the action, without asserting they did it",
+   "It reports only that something was SAID, instructed, preferred or noted \u2014 no performance, no commitment",
+   "AMBIGUOUS \u2014 the episode genuinely supports more than one of the above"
+  ]
+ }
+]

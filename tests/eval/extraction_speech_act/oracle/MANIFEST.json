@@ -1,0 +1,91 @@
+{
+ "set": "0038 §6b oracle evidence — the frozen verb registry, its two freeze records, the rubric, both human label runs, the model labels, the card packs, and the scoring and blind-model scripts",
+ "provenance": "prepared by research (veracium-research-32) from its working tree on the owner's ruling of 2026-09-07 (\"Pseudonymised with aggregated timing\"): the human rater is `human_1` in files and filenames; per-item timing is reduced to min/median/max; no personal name appears in any file. The per-item record exists off-repo and no published claim rests on it.",
+ "landed_by": "dev (veracium-69), 2026-09-07; digests derived from the bytes at landing, not copied from a message",
+ "corpus_sha16": "a239b296d126ca78",
+ "registry_entries": 31,
+ "rulings_sha256": "21289647a85b3b43884394d3dfb7d7280201fe9a732a194930ad9106a2e85c26",
+ "rulings_method": "sha256 of json.dumps(VERB_REGISTRY, sort_keys=True, ensure_ascii=False, separators=(',', ':')) with the module imported from this directory — a digest of the RULINGS, unchanged by a path or comment edit to the module (the file digest moved at publication because the corpus path had to resolve in the repo layout; the rulings did not)",
+ "files": {
+  "0038-oracle-§8-MODEL-LEG-AND-VERDICT.md": {
+   "sha256": "6ad7385b224d9a359b758ff0f6380ccad7f205135136669c4bffb4862a2b1c00",
+   "sha16": "6ad7385b224d9a35",
+   "bytes": 4661
+  },
+  "0038-oracle-§8-human-leg-RESULT.txt": {
+   "sha256": "0724f1792367013e1108c60afb01f07a0e431c32f7a4f8a721daefe86de5c751",
+   "sha16": "0724f1792367013e",
+   "bytes": 3930
+  },
+  "0038-oracle-§8-human-leg-v2-RESULT.md": {
+   "sha256": "857414c68acd566c5b2a7566cf7361a4b2996d7aa43f84ba95ff613ed4cf2dd3",
+   "sha16": "857414c68acd566c",
+   "bytes": 4761
+  },
+  "RUBRIC.md": {
+   "sha256": "8e2c307e041f5ad4b56feea87f5f10ea94e36c6d2bb573ecd56e05e66e643bdc",
+   "sha16": "8e2c307e041f5ad4",
+   "bytes": 2934
+  },
+  "VERB_REGISTRY_FREEZE.md": {
+   "sha256": "ff28eb896dacb1113548097dd7175b8c6c240119b30b7a204f5b75633df40d64",
+   "sha16": "ff28eb896dacb111",
+   "bytes": 2020
+  },
+  "VERB_REGISTRY_FREEZE_v2.md": {
+   "sha256": "d9a69a7a87b20c1785523b972a62f19915fecce88ce1c42a61e41026f38cf276",
+   "sha16": "d9a69a7a87b20c17",
+   "bytes": 3156
+  },
+  "label_oracle.py": {
+   "sha256": "2b1075c7007eed74cfeb06de10c6f2749bd5d3814f4e9234619a6b105b10e1ba",
+   "sha16": "2b1075c7007eed74",
+   "bytes": 5104
+  },
+  "model_pass_0038.py": {
+   "sha256": "6843e20a1e3c893962659d5e98fa17a1630d6d6b38a0212d4b76cf4304fd105e",
+   "sha16": "6843e20a1e3c8939",
+   "bytes": 8774
+  },
+  "oracle_labels_human_1.json": {
+   "sha256": "d3c440333e92ef126365f41414f1626cc84abf977a337471a370bb4debdb65e1",
+   "sha16": "d3c440333e92ef12",
+   "bytes": 2431
+  },
+  "oracle_labels_v2_human_1.json": {
+   "sha256": "3c1a193780e412d8087ca885610da99cdf4c82c1aa9e763f80fdcd3ad4b945c0",
+   "sha16": "3c1a193780e412d8",
+   "bytes": 8087
+  },
+  "oracle_model_labels_v2.json": {
+   "sha256": "8eb4e534d6ee2696995313ed91f865548895b17a008b567c2f47f83a1ee91ff0",
+   "sha16": "8eb4e534d6ee2696",
+   "bytes": 2108
+  },
+  "oracle_pack_v2_74.json": {
+   "sha256": "a656970c90b14ded5b2105a5eccfeb1c40177945d16364045abbfe58c69a6a36",
+   "sha16": "a656970c90b14ded",
+   "bytes": 60286
+  },
+  "oracle_pack_v2_REPEATS.json": {
+   "sha256": "663928318b595897ab352db2014f6bb4f73bb842c7f1bc8fa23950605c0a6533",
+   "sha16": "663928318b595897",
+   "bytes": 202
+  },
+  "score_oracle.py": {
+   "sha256": "5887bf2631f5d40be484ba28b8a20d53dab5d3fff98e66c38fc1f7347a072a34",
+   "sha16": "5887bf2631f5d40b",
+   "bytes": 7212
+  },
+  "verb_registry.py": {
+   "sha256": "54acc45ad818fa94bf6494305fe06c600aa4dee2eb0adbe970827473634e8523",
+   "sha16": "54acc45ad818fa94",
+   "bytes": 13762
+  }
+ },
+ "spec_pin": {
+  "spec": "specs/0038-extraction-speech-act.md",
+  "spec_text_sha256_excluding_the_oracle_manifest_line": "0f1509048a1b81fdb5a81ce2ef05be3b716be3bedff9cdc50669ceb48d8f88e2",
+  "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line."
+ }
+}
