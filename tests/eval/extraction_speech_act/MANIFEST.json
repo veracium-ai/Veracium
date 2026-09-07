@@ -10,14 +10,14 @@
  "frozen_by": "research (veracium-research)",
  "frozen_utc": "2026-09-07",
  "limits": {
-  "not_a_production_rate": "The corpus is adversarial and constructed — bare imperatives about unsafe practices. 29% is the rate ON THIS CORPUS and must not be quoted as a production rate.",
+  "not_a_production_rate": "The corpus is adversarial and constructed \u2014 bare imperatives about unsafe practices. 29% is the rate ON THIS CORPUS and must not be quoted as a production rate.",
   "one_distiller": "gpt-4.1 at temperature 0. BYO is the contract; this governs the REFERENCE prompt veracium ships, not what any host's distiller does.",
   "one_reader": "This corpus and its spec have had ONE reader, their author."
  },
  "measured_baselines": {
   "ab_episode_clause": {
    "narrowed": "0/20 = 0%",
-   "note": "n=20 — offered as MECHANISM, not effect size; consistent with the 29% at n=66",
+   "note": "n=20 \u2014 offered as MECHANISM, not effect size; consistent with the 29% at n=66",
    "shipped": "4/20 = 20%"
   },
   "coerced_into_a_disposition_relation": {
@@ -28,21 +28,21 @@
     "uses_tool",
     "works_on"
    ],
-   "note": "This rate (47%) EXCEEDS the completed-action rate (29%): the fact-level defect is the more common one, which is why §1 leads with it.",
+   "note": "This rate (47%) EXCEEDS the completed-action rate (29%): the fact-level defect is the more common one, which is why \u00a71 leads with it.",
    "rate": "31/66 = 47%",
    "relations_used": {
     "prefers": 14,
     "uses_tool": 2,
     "works_on": 15
    },
-   "why_it_was_missing": "Dev's F4 found the manifest carried no coercion baseline while §6a called it measured. The ARTIFACT gap was worse: the frozen rows carried `n_edges` but not the triples, so the baseline could not be DERIVED from the corpus it was frozen in — the derived-basis rule, in the corpus written to enforce it. Triples captured 2026-09-07 and the rows re-frozen with `baseline_triples`."
+   "why_it_was_missing": "Dev's F4 found the manifest carried no coercion baseline while \u00a76a called it measured. The ARTIFACT gap was worse: the frozen rows carried `n_edges` but not the triples, so the baseline could not be DERIVED from the corpus it was frozen in \u2014 the derived-basis rule, in the corpus written to enforce it. Triples captured 2026-09-07 and the rows re-frozen with `baseline_triples`."
   },
   "episodes_per_text": "exactly 1 (V-EVENT-RETAINED's floor)",
   "recorded_as_completed_action": "19/66 = 29%"
  },
  "provenance": {
-  "ab_test": "render-exposure-eval/ab_episode_prompt.py — the episode clause A/B, 20 bare inputs",
-  "capture": "render-exposure-eval/capture_notes.py — 412 ingestion-only calls, gpt-4.1 temp 0, the case-study arm's own distiller configuration, fresh store per text, zero errors",
+  "ab_test": "render-exposure-eval/ab_episode_prompt.py \u2014 the episode clause A/B, 20 bare inputs",
+  "capture": "render-exposure-eval/capture_notes.py \u2014 412 ingestion-only calls, gpt-4.1 temp 0, the case-study arm's own distiller configuration, fresh store per text, zero errors",
   "cost_measured": "~$0.84 for the capture, ~$0.04 for the A/B"
  },
  "sets": {
@@ -53,7 +53,7 @@
   },
   "capture_412.jsonl": {
    "n": 412,
-   "role": "THE NON-REGRESSION SET, scored on WHAT CHANGED (§6a).",
+   "role": "THE NON-REGRESSION SET, scored on WHAT CHANGED (\u00a76a).",
    "sha256": "4c4791f7e5726f48d3327a9ba36ce72b5caba1e3d69302b4da48091bb8d8f778"
   }
  },
@@ -63,44 +63,50 @@
     "n": 2,
     "supersedes_pin": "2c323f3c0494f5f93e268d11c8738fa3d345a831a88db8529f7911fc4492fd22",
     "utc": "2026-09-07",
-    "what": "Re-pinned after the second-read fold named itself in the version cell — an edit beyond the digest line, so the pin moved BY DESIGN. 0037's lesson applies unchanged: a red pin test on a real edit is the binding working, answered by a deliberate re-pin and never by widening the exclusion rule."
+    "what": "Re-pinned after the second-read fold named itself in the version cell \u2014 an edit beyond the digest line, so the pin moved BY DESIGN. 0037's lesson applies unchanged: a red pin test on a real edit is the binding working, answered by a deliberate re-pin and never by widening the exclusion rule."
    },
    {
     "n": 3,
     "supersedes_pin": "c50a756c0b5994c1cd1403e28839d8c4502f795a0ff0ee5177554eb4980327b8",
     "utc": "2026-09-07",
-    "what": "Re-pinned after removing a backticked PEER-TREE path from the version cell's errata. The path was correct as history and wrong as a reference: a spec that will live in the repo should not carry a live-looking `proposals/…` citation even when quoting what was wrong. 0028 carried the same defect in a worse form — it cited the generator at its peer-tree path, which is STALE ON PLACEMENT since the file lands at `specs/evidence/0028/`. [n=3 continued] §6a's own errata note carried the same backticked path a second time; the first pass fixed the version cell and MISSED the body — a one-site fix for a two-site defect, which is this arc's carrier-completeness lesson at the smallest possible scale. Both sites now describe the path instead of reproducing it."
+    "what": "Re-pinned after removing a backticked PEER-TREE path from the version cell's errata. The path was correct as history and wrong as a reference: a spec that will live in the repo should not carry a live-looking `proposals/\u2026` citation even when quoting what was wrong. 0028 carried the same defect in a worse form \u2014 it cited the generator at its peer-tree path, which is STALE ON PLACEMENT since the file lands at `specs/evidence/0028/`. [n=3 continued] \u00a76a's own errata note carried the same backticked path a second time; the first pass fixed the version cell and MISSED the body \u2014 a one-site fix for a two-site defect, which is this arc's carrier-completeness lesson at the smallest possible scale. Both sites now describe the path instead of reproducing it."
    },
    {
     "n": 4,
     "supersedes_pin": "3f939f346b3885728c16e86fe6e1996a71daea01dbcb8d268fd8cafa3745bc62",
     "utc": "2026-09-07",
-    "what": "Re-pinned to the v3 text (the external round-1 fold). **The binding was the carrier the fold did not reach**: the round-1 findings changed the spec in six places and the manifest still pinned v2's text, so adopting v3 would have failed the corpus->spec direction on the first suite. Found by dev's Phase 0b contract-vs-evidence check, not by either seat re-reading the spec — a fold can be complete in every section and leave the artifact that binds it behind."
+    "what": "Re-pinned to the v3 text (the external round-1 fold). **The binding was the carrier the fold did not reach**: the round-1 findings changed the spec in six places and the manifest still pinned v2's text, so adopting v3 would have failed the corpus->spec direction on the first suite. Found by dev's Phase 0b contract-vs-evidence check, not by either seat re-reading the spec \u2014 a fold can be complete in every section and leave the artifact that binds it behind."
    },
    {
     "n": 5,
     "supersedes_pin": "67861622f09093962965e31225b917c988ff6c85c2a2bb72e676849490cfddd2",
     "utc": "2026-09-07",
-    "what": "Re-pinned to v4 (the implementation fold). Re-derived BEFORE announcing the fold complete, not after — 0038's own round-1 adoption was caught by dev's Phase 0b check with the manifest still pinning the previous version, and the lesson recorded then was that a fold is not complete until every artifact pinning the folded text has been re-derived."
+    "what": "Re-pinned to v4 (the implementation fold). Re-derived BEFORE announcing the fold complete, not after \u2014 0038's own round-1 adoption was caught by dev's Phase 0b check with the manifest still pinning the previous version, and the lesson recorded then was that a fold is not complete until every artifact pinning the folded text has been re-derived."
    },
    {
     "n": 6,
     "supersedes_pin": "1c6ad3adf8564211739860c48e4981fcce5a67b7596f206f35c88ed2bfba62f3",
     "utc": "2026-09-07",
-    "what": "Re-pinned to v5.4 (the §6b oracle-freeze fold: registry, gate, deviation named; plus the oracle manifest's single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
+    "what": "Re-pinned to v5.4 (the \u00a76b oracle-freeze fold: registry, gate, deviation named; plus the oracle manifest's single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
    },
    {
     "n": 7,
     "supersedes_pin": "1ad397f710230e2ff5540ed3c0d9c36badc4cf51547417c7ce8924b268b6d85d",
     "utc": "2026-09-07",
-    "what": "Re-pinned after the oracle manifest's spec_pin key was renamed to say what its value does (spec_text_sha256_excluding_both_pin_lines) and the excluded line prefixes were added as data the pin test asserts (research's read of the round-2 pin 42e37f5: a key naming ONE line over a two-line value is the summary losing its bound). The oracle manifest's bytes moved, so the oracle line moved, so this pin moved — BY DESIGN, re-derived from the bytes."
+    "what": "Re-pinned after the oracle manifest's spec_pin key was renamed to say what its value does (spec_text_sha256_excluding_both_pin_lines) and the excluded line prefixes were added as data the pin test asserts (research's read of the round-2 pin 42e37f5: a key naming ONE line over a two-line value is the summary losing its bound). The oracle manifest's bytes moved, so the oracle line moved, so this pin moved \u2014 BY DESIGN, re-derived from the bytes."
+   },
+   {
+    "n": 8,
+    "supersedes_pin": "a411a6097a16f2d35aee35ec3bf39fcc64b7022e3f243f94c773e566a3cf48de",
+    "utc": "2026-09-07",
+    "what": "Re-pinned to v5.6 (the round-2 fold: the \u00a78 gate NOT satisfied, \u00a76b-A the weaker rule; VALIDATION_GATE-pseudonymised.md joins the set: registry, gate, deviation named; plus the oracle manifest single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
    }
   ],
-  "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged — a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
+  "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged \u2014 a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "a411a6097a16f2d35aee35ec3bf39fcc64b7022e3f243f94c773e566a3cf48de",
-  "spec_version": "v5.4",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "0469c40fbe244ceeca7690cbf67ad240bb25b9cccb324874979403e94852599f",
+  "spec_version": "v5.6",
   "status": "BOUND"
  },
  "spec_version": "v4"

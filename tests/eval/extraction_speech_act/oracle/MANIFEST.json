@@ -27,6 +27,11 @@
    "sha16": "8e2c307e041f5ad4",
    "bytes": 2934
   },
+  "VALIDATION_GATE-pseudonymised.md": {
+   "sha256": "953e8f14a0f1bc6a12024491047376dc7d142b0c8df1ae1569b8b9af33420975",
+   "sha16": "953e8f14a0f1bc6a",
+   "bytes": 4417
+  },
   "VERB_REGISTRY_FREEZE.md": {
    "sha256": "ff28eb896dacb1113548097dd7175b8c6c240119b30b7a204f5b75633df40d64",
    "sha16": "ff28eb896dacb111",
@@ -85,11 +90,19 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "0f1509048a1b81fdb5a81ce2ef05be3b716be3bedff9cdc50669ceb48d8f88e2",
+  "spec_text_sha256_excluding_both_pin_lines": "04c3411c680c9a90337857865ba71d59ba809c014ad56594fe7842733cdbdcf4",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
   ],
   "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line."
+ },
+ "known_foreign_digests": {
+  "7862ab9b1b9f49cb": "registry v1 (VERB_REGISTRY_FREEZE.md), the version the gate ran against; superseded by v2",
+  "197e0976272eed3d": "registry v2 in the research tree, PRE-publication; the published copy differs only by its corpus path",
+  "af7823c7ac15152f": "the rulings digest by research's method (ast.unparse of the parsed VERB_REGISTRY tuple)",
+  "21289647a85b3b43": "the rulings digest by dev's method (canonical JSON of the parsed tuple) — the same claim, a different number; the tuples were compared directly",
+  "a239b296d126ca78": "the corpus bare_procedural_66.jsonl, pinned one level up in tests/eval/extraction_speech_act/ (not an oracle-set file)",
+  "3f5d96e0cd2df90c": "the round-1 verdict, banked verbatim in the outbox (outside the repo)"
  }
 }

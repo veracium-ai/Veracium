@@ -110,6 +110,12 @@ def _import_registry(alias: str):
 
 
 def _body() -> str:
+    """The spec BODY: everything after `## 1.`. The version cell before it is a HISTORY OF
+    DIGESTS THAT MOVED BY DESIGN — the registry's pre-publication digest beside its published
+    one, both rulings methods' numbers — and a currency rule applied to a lineage is a category
+    error: it would demand the history be false. Whoever widens this scope (a stale-lineage
+    check, say) inherits two version-cell paragraphs that legitimately carry non-current digests
+    beside filenames (0038 round 2, both seats)."""
     text = _spec_text()
     return text.split("## 1.", 1)[1] if "## 1." in text else text
 
@@ -200,16 +206,65 @@ def test_every_filename_the_spec_names_is_a_manifest_entry():
     assert not missing, f"the spec names oracle files that are not in the landed set: {missing}"
 
 
-def test_every_digest_token_naming_a_landed_file_is_its_current_digest():
+def _paragraphs(text: str):
+    return re.split(r"\n\s*\n", text)
+
+
+def test_every_digest_token_beside_a_named_oracle_file_is_a_current_oracle_digest_or_declared_foreign():
+    """R2-2 (round 2): a MEMBERSHIP test that rejects stale and fabricated tokens — stated as
+    what it is, not as the filename-to-token mapping the finding's wording asked for. The
+    round-2 form recognised only tokens that already equalled a current digest, so a stale
+    token matched nothing and was ignored while the docstring claimed it was caught. Now: for
+    each paragraph of the spec body that names an oracle file in backticks, every 16-hex token
+    in that paragraph must be EITHER a current oracle-set digest (any of the set's files — a
+    paragraph may name one file in backticks and cite another by digest in prose) OR a digest
+    the manifest declares as foreign (`known_foreign_digests`, each with its nature). A stale
+    or fabricated token beside a filename FAILS. What this does NOT do: bind a token to the
+    file it is written beside, so a current digest attributed to the wrong oracle file passes
+    here; the one file the spec asserts by digest — the registry, whose digest moved at
+    publication — is held by name below, and the others are never cited by digest at all
+    (measured at round 3: the body names six oracle files and cites one by digest)."""
     man = _manifest()
-    current = {e["sha16"]: name for name, e in man["files"].items()}
-    tokens = set(re.findall(r"\b[0-9a-f]{16}\b", _body()))
-    resolved = {t: current[t] for t in tokens if t in current}
-    assert resolved, "the spec body cites no landed file by digest"
-    registry_sha16 = man["files"]["verb_registry.py"]["sha16"]
-    assert registry_sha16 in tokens, (
-        f"the spec body does not cite the landed registry by its digest {registry_sha16} — "
-        "the one file whose digest MOVED at publication must be cited by the landed bytes")
+    current = {name: e["sha16"] for name, e in man["files"].items()}
+    foreign = set(man["known_foreign_digests"])
+    assert not (foreign & set(current.values())), "a declared-foreign digest is a current file digest"
+    body = _body()
+    checked = 0
+    # a paragraph may name one oracle file in backticks and cite another by digest in prose
+    # ("verb_registry.py, published sha16 54acc45a…, frozen at `VERB_REGISTRY_FREEZE_v2.md`"),
+    # so the allowed set is every CURRENT oracle digest plus the declared foreign ones; what
+    # fails is a token that is neither — a superseded or fabricated digest beside a filename.
+    allowed = set(current.values()) | foreign
+    for para in _paragraphs(body):
+        named = [n for n in re.findall(r"`([^`\n]+)`", para) if n in current]
+        if not named:
+            continue
+        for tok in set(re.findall(r"\b[0-9a-f]{16}\b", para)):
+            assert tok in allowed, (
+                f"stale or wrong digest {tok} beside {named} — current oracle digests: "
+                f"{sorted(current.values())}; declared foreign: {sorted(foreign)}")
+            checked += 1
+    assert checked >= 1, "no paragraph names an oracle file beside a digest — the mapping held nothing"
+    registry_sha16 = current["verb_registry.py"]
+    assert registry_sha16 in set(re.findall(r"\b[0-9a-f]{16}\b", body)), (
+        f"the spec body does not cite the landed registry digest {registry_sha16}")
+
+
+def test_the_token_membership_check_rejects_a_planted_fabricated_token():
+    """Rule zero for R2-2: the membership test must FAIL the case the round-2 check let through
+    — a token beside a filename that is neither current nor declared. Built from the real
+    paragraph that names the registry, with a FABRICATED digest planted (never the
+    pre-publication one, which is legitimately declared foreign)."""
+    man = _manifest()
+    current = {name: e["sha16"] for name, e in man["files"].items()}
+    foreign = set(man["known_foreign_digests"])
+    para = next(p for p in _paragraphs(_body())
+                if "`verb_registry.py`" in p and current["verb_registry.py"] in p)
+    planted = para.replace(current["verb_registry.py"], "0badc0ffee0badc0")
+    allowed = set(current.values()) | foreign
+    tokens = set(re.findall(r"\b[0-9a-f]{16}\b", planted))
+    assert "0badc0ffee0badc0" in tokens and "0badc0ffee0badc0" not in allowed, (
+        "the planted digest was accepted — the mapping does not reject an undeclared token")
 
 
 # ---- the rulings ----------------------------------------------------------------------

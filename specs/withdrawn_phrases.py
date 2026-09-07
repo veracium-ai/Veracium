@@ -384,4 +384,18 @@ WITHDRAWN = [
      "(Pattern deliberately requires the operative claim forms so 'the bare v2 spec', "
      "'bare — cells' and 'a bare interpreter error' — different bares — are not flagged.)",
      "specs/0028 §4b-o / §5 / §7; specs/0029 §4a"),
+    ("0038-gate-passed",
+     r"the §8 gate PASSED|§8 gate — RUN, AND PASSED|gate PASSED on a NAMED DEVIATION",
+     "0038 external round 2 (R2-1): v5.x said the §8 validation gate PASSED while its "
+     "mandatory blind-human condition was unmet — 'a named deviation, not waived' documents "
+     "the hole and then claims what the hole disproves; disclosure is not compliance. The "
+     "owner ruled option 3: the gate is NOT SATISFIED, its human condition UNMET, nothing "
+     "substitutes for it; §6b-A is an explicitly weaker rule that borrows the gate's "
+     "statistic and none of its authority.",
+     "specs/0038 §6b, §6b-A, §9"),
+    ("0038-named-deviation-not-waived",
+     r"named deviation,? (and )?not waived|deviation from the frozen gate'?s §1, named and not waived",
+     "0038 external round 2 (R2-1): naming a deviation from a mandatory condition does not "
+     "satisfy it; the phrase is withdrawn with the claim it qualified.",
+     "specs/0038 §6b, §9"),
 ]
