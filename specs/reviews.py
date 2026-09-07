@@ -2846,6 +2846,9 @@ REVIEWS = [
     dict(spec="0030", round=18, kind="external", date="2026-09-03",
          verdict='ACCEPTED — 0029 v9, 0030 v29 and the joint seam all ACCEPTED; design frozen on a seven-point invariant surface (fold 627aea2 = 0030 v30)',
          raised=[]),
+    dict(spec="0029", round=0, kind="internal", date="2026-09-07",
+         verdict='POST-ACCEPTANCE REVISION v11 — THE LOCK-REFUSAL FORM, on the owner\'s placement ("fold it into a 0029 revision"). The 0028 two-connection transcript (reproduced by the external reviewer) showed the COMMIT-time `database is locked` surfacing as bare SQLite text with the write rolled back, while 0029 §4a had NARROWED 0007 §4c\'s site-independent discipline to BEGIN; the code was faithful to the narrowing. Implementing the first revision (v10) surfaced a second finding one level down: ALL SIX `_write_txn` bodies committed themselves, so the context manager\'s commit — the mechanism v10\'s covered set was scoped to — had NEVER RUN on a shipped path. v11: `_write_txn` OWNS the commit of every transaction it opens; no body issues its own (census node, mutant = the shipping code); the commit-time lock refused in the BEGIN-time form naming the site (V-LOCK-REFUSAL-FORM); residue censused; 0007\'s obligation open in §10. Method rule recorded: for a clause naming a mechanism, RUN the mechanism.',
+         raised=['0029-PA1']),
 
     # ---- 0037 procedural records and the basis axis — five external rounds in one day (2026-09-06 → 2026-09-07); the closure ledger written at acceptance ----
     dict(spec="0037", round=1, kind="external", date="2026-09-06",

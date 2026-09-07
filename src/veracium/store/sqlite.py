@@ -165,7 +165,11 @@ class SqliteStore(Store):
         seam model keeps that reproduction as the negative control) and
         commits or rolls back the WHOLE batch. JOINS an already-open
         transaction (the caller owns commit) instead of nesting. The 0007
-        §4c discipline: `busy_timeout` waits, then this refuses loudly."""
+        §4c discipline at BOTH lock sites of the transaction this opened —
+        its START (BEGIN IMMEDIATE) and its COMMIT: `busy_timeout` waits,
+        then this refuses loudly in one form naming the site (specs/0029 v10
+        §4a, V-LOCK-REFUSAL-FORM). The joined case commits elsewhere and is
+        outside that guarantee (§4a-i)."""
         with self._journal_scope():
             if self._conn.in_transaction:
                 yield
@@ -185,7 +189,23 @@ class SqliteStore(Store):
                 raise
             else:
                 if self._conn.in_transaction:
-                    self._conn.commit()
+                    try:
+                        self._conn.commit()
+                    except sqlite3.OperationalError as e:
+                        # specs/0029 v10 §4a, V-LOCK-REFUSAL-FORM: the COMMIT-time lock — a
+                        # reader's SHARED lock outliving our busy_timeout under the default
+                        # journal (0028 §5, measured 2026-09-07). SQLite has already rolled
+                        # the batch back; refuse in the SAME form as the BEGIN, naming the
+                        # site, same exception type (callers catching OperationalError are
+                        # unchanged), the bare text kept as the cause. The explicit rollback
+                        # is belt and braces for a state probed and not found.
+                        if self._conn.in_transaction:
+                            self._conn.rollback()
+                        raise sqlite3.OperationalError(
+                            f"could not COMMIT a journaled edge write ({e}) — the write lock "
+                            f"was lost at COMMIT after busy_timeout; no part of the batch is "
+                            f"applied and the connection is reusable (specs/0029 §4a "
+                            f"V-LOCK-REFUSAL-FORM; 0007 §4c)") from e
 
     _SITE_KINDS = frozenset({"invalidated", "reinstated"})
 
@@ -375,7 +395,6 @@ class SqliteStore(Store):
         with self._lock, self._write_txn():
             self._upsert_edge_row(edge)
             self._bump(edge.user_id)
-            self._conn.commit()
 
     @staticmethod
     def _confirmation_from_row(row) -> Confirmation:
@@ -444,7 +463,6 @@ class SqliteStore(Store):
                     (cid, user_id, edge_id, confirmed_at.isoformat(), actor_v,
                      call_v, correlation_id, request_digest))
                 self._bump(user_id)
-                self._conn.commit()
             except sqlite3.IntegrityError:
                 # C8: a concurrent duplicate won the UNIQUE(user_id, correlation_id)
                 # race. Roll back ours and return the committed original / conflict.
@@ -623,7 +641,6 @@ class SqliteStore(Store):
             # invalidation rule is symmetric (formation AND resolution both recompile).
             if self._edge_in_refusal(uid, edge_id):
                 self._conn.execute("DELETE FROM wiki WHERE user_id=?", (uid,))
-            self._conn.commit()
 
     def edges(self, user_id, *, active_only=True, subject=None, relation=None,
               include_quarantined=True) -> list[Edge]:
@@ -866,174 +883,169 @@ class SqliteStore(Store):
             # 4. apply all-or-nothing (one transaction). ANY failure mid-apply rolls the
             #    WHOLE plan back — no incoming edge, no prior mutations, no refusal rows,
             #    no receipt — so there is never a durable partial state (§4f failure rule).
-            try:
-                # specs/0011 §4e (E5): in-transaction verification of the
-                # correction binding — the 0014 snapshot-verification shape,
-                # FAIL CLOSED in both directions. Every `corrected` retirement
-                # requires an authorisation whose five bound elements match
-                # what THIS plan actually does; a dangling authorisation (no
-                # corrected retirement to bind) is refused too. The replay
-                # branch above returns earlier by design: a receipt exists
-                # only for a commit that already passed this check.
-                _corrected = [eid for eid, _at, r in plan.prior_invalidations
-                              if r == "corrected"]
-                if _corrected and authorisation is None:
+            # specs/0011 §4e (E5): in-transaction verification of the
+            # correction binding — the 0014 snapshot-verification shape,
+            # FAIL CLOSED in both directions. Every `corrected` retirement
+            # requires an authorisation whose five bound elements match
+            # what THIS plan actually does; a dangling authorisation (no
+            # corrected retirement to bind) is refused too. The replay
+            # branch above returns earlier by design: a receipt exists
+            # only for a commit that already passed this check.
+            _corrected = [eid for eid, _at, r in plan.prior_invalidations
+                          if r == "corrected"]
+            if _corrected and authorisation is None:
+                raise CorrectionAuthorisationError(
+                    f"plan {plan.operation_id!r} retires "
+                    f"{sorted(_corrected)} as 'corrected' with no "
+                    f"CorrectionAuthorisation — corrections reach storage "
+                    f"only through the verified binding (specs/0011 §4e)")
+            if authorisation is not None:
+                if type(authorisation) is not CorrectionAuthorisation:
                     raise CorrectionAuthorisationError(
-                        f"plan {plan.operation_id!r} retires "
-                        f"{sorted(_corrected)} as 'corrected' with no "
-                        f"CorrectionAuthorisation — corrections reach storage "
-                        f"only through the verified binding (specs/0011 §4e)")
-                if authorisation is not None:
-                    if type(authorisation) is not CorrectionAuthorisation:
-                        raise CorrectionAuthorisationError(
-                            f"authorisation must be a CorrectionAuthorisation; "
-                            f"got {type(authorisation).__name__}")
-                    if len(_corrected) != 1:
-                        raise CorrectionAuthorisationError(
-                            f"an authorisation binds exactly ONE 'corrected' "
-                            f"retirement; this plan carries {len(_corrected)}")
-                    if authorisation.kind != "corrected":
-                        raise CorrectionAuthorisationError(
-                            f"authorisation.kind={authorisation.kind!r} does "
-                            f"not authorise a 'corrected' retirement")
-                    if authorisation.prior_edge_id != _corrected[0]:
-                        raise CorrectionAuthorisationError(
-                            f"authorisation is bound to prior "
-                            f"{authorisation.prior_edge_id!r} but the plan "
-                            f"retires {_corrected[0]!r} — replay against a "
-                            f"different prior refused")
-                    if authorisation.origin != self.local_origin():
-                        raise CorrectionAuthorisationError(
-                            "authorisation was minted for a different store "
-                            "origin — foreign or stale mint refused")
-                    if (authorisation.replacement_digest
-                            != correction_digest(inc.object)):
-                        raise CorrectionAuthorisationError(
-                            "authorisation is bound to a different replacement "
-                            "value — rebinding refused")
-                    if authorisation.principal != acting_principal:
-                        raise CorrectionAuthorisationError(
-                            f"authorisation was minted under principal "
-                            f"{authorisation.principal!r} but is being applied "
-                            f"as {acting_principal!r} — cross-principal replay "
-                            f"refused")
-                # specs/0014 §4b: EXACT SET EQUALITY between the plan's absorption
-                # drafts and its absorbed_duplicate invalidations (R5-1) — one draft
-                # per absorbed prior, no omissions, no duplicates, no extras. Checked
-                # and written BEFORE the contributor rows are invalidated, inside this
-                # same transaction (A7: rows atomic with the op).
-                absorbed_ids = [eid for eid, _at, r in plan.prior_invalidations
-                                if r == "absorbed_duplicate"]
-                draft_ids = [d.contributor_id for d in plan.contribution_drafts
-                             if d.site == "absorption"]
-                if (sorted(absorbed_ids) != sorted(set(absorbed_ids))
-                        or sorted(draft_ids) != sorted(set(draft_ids))
-                        or set(absorbed_ids) != set(draft_ids)):
+                        f"authorisation must be a CorrectionAuthorisation; "
+                        f"got {type(authorisation).__name__}")
+                if len(_corrected) != 1:
+                    raise CorrectionAuthorisationError(
+                        f"an authorisation binds exactly ONE 'corrected' "
+                        f"retirement; this plan carries {len(_corrected)}")
+                if authorisation.kind != "corrected":
+                    raise CorrectionAuthorisationError(
+                        f"authorisation.kind={authorisation.kind!r} does "
+                        f"not authorise a 'corrected' retirement")
+                if authorisation.prior_edge_id != _corrected[0]:
+                    raise CorrectionAuthorisationError(
+                        f"authorisation is bound to prior "
+                        f"{authorisation.prior_edge_id!r} but the plan "
+                        f"retires {_corrected[0]!r} — replay against a "
+                        f"different prior refused")
+                if authorisation.origin != self.local_origin():
+                    raise CorrectionAuthorisationError(
+                        "authorisation was minted for a different store "
+                        "origin — foreign or stale mint refused")
+                if (authorisation.replacement_digest
+                        != correction_digest(inc.object)):
+                    raise CorrectionAuthorisationError(
+                        "authorisation is bound to a different replacement "
+                        "value — rebinding refused")
+                if authorisation.principal != acting_principal:
+                    raise CorrectionAuthorisationError(
+                        f"authorisation was minted under principal "
+                        f"{authorisation.principal!r} but is being applied "
+                        f"as {acting_principal!r} — cross-principal replay "
+                        f"refused")
+            # specs/0014 §4b: EXACT SET EQUALITY between the plan's absorption
+            # drafts and its absorbed_duplicate invalidations (R5-1) — one draft
+            # per absorbed prior, no omissions, no duplicates, no extras. Checked
+            # and written BEFORE the contributor rows are invalidated, inside this
+            # same transaction (A7: rows atomic with the op).
+            absorbed_ids = [eid for eid, _at, r in plan.prior_invalidations
+                            if r == "absorbed_duplicate"]
+            draft_ids = [d.contributor_id for d in plan.contribution_drafts
+                         if d.site == "absorption"]
+            if (sorted(absorbed_ids) != sorted(set(absorbed_ids))
+                    or sorted(draft_ids) != sorted(set(draft_ids))
+                    or set(absorbed_ids) != set(draft_ids)):
+                raise SupersessionIntegrityError(
+                    f"absorption drafts {sorted(draft_ids)} != absorbed priors "
+                    f"{sorted(absorbed_ids)} — the draft set must equal the "
+                    f"absorbed_duplicate set exactly (specs/0014 §4b, R5-1)")
+            contributor_flags = [self._write_contribution(user_id, d, plan)
+                                 for d in plan.contribution_drafts]
+            # specs/0021 §4c — WRITE-TIME FLATTENING, in THIS transaction:
+            # the survivor's rows gain copies of every absorbed prior's
+            # TRANSITIVELY CLOSED set, so a post-0021 survivor's row set is
+            # its whole ancestry BY CONSTRUCTION (the A→B→C chain that
+            # defeated the single-level read cannot recur on rows we write).
+            self._write_absorption_flattening(user_id, plan)
+            # specs/0019 §4d / 0014 §2c as amended (U2b): the committed
+            # survivor's `ungrounded` must be EXACTLY the N-ary OR over
+            # {the raw incoming} ∪ {every absorbed contributor} —
+            # recomputed here from the plan's full contributor set against
+            # the AUTHORITATIVE rows just read. Any other flag difference
+            # aborts. Without a snapshot (phase-2 semantics) the raw
+            # incoming flag is unknowable; the laundering direction is
+            # still fully checkable: a flagged contributor forces a
+            # flagged survivor.
+            if any(contributor_flags) and inc.ungrounded is not True:
+                raise SupersessionIntegrityError(
+                    "a flagged contributor was absorbed but the survivor "
+                    "is unflagged — the N-ary OR never launders the "
+                    "signal (specs/0019 §4d; 0014 §2c as amended)")
+            if plan.raw_request is not None:
+                expected = (bool(plan.raw_request.get("ungrounded"))
+                            or any(contributor_flags))
+                if inc.ungrounded is not expected:
                     raise SupersessionIntegrityError(
-                        f"absorption drafts {sorted(draft_ids)} != absorbed priors "
-                        f"{sorted(absorbed_ids)} — the draft set must equal the "
-                        f"absorbed_duplicate set exactly (specs/0014 §4b, R5-1)")
-                contributor_flags = [self._write_contribution(user_id, d, plan)
-                                     for d in plan.contribution_drafts]
-                # specs/0021 §4c — WRITE-TIME FLATTENING, in THIS transaction:
-                # the survivor's rows gain copies of every absorbed prior's
-                # TRANSITIVELY CLOSED set, so a post-0021 survivor's row set is
-                # its whole ancestry BY CONSTRUCTION (the A→B→C chain that
-                # defeated the single-level read cannot recur on rows we write).
-                self._write_absorption_flattening(user_id, plan)
-                # specs/0019 §4d / 0014 §2c as amended (U2b): the committed
-                # survivor's `ungrounded` must be EXACTLY the N-ary OR over
-                # {the raw incoming} ∪ {every absorbed contributor} —
-                # recomputed here from the plan's full contributor set against
-                # the AUTHORITATIVE rows just read. Any other flag difference
-                # aborts. Without a snapshot (phase-2 semantics) the raw
-                # incoming flag is unknowable; the laundering direction is
-                # still fully checkable: a flagged contributor forces a
-                # flagged survivor.
-                if any(contributor_flags) and inc.ungrounded is not True:
-                    raise SupersessionIntegrityError(
-                        "a flagged contributor was absorbed but the survivor "
-                        "is unflagged — the N-ary OR never launders the "
-                        "signal (specs/0019 §4d; 0014 §2c as amended)")
-                if plan.raw_request is not None:
-                    expected = (bool(plan.raw_request.get("ungrounded"))
-                                or any(contributor_flags))
-                    if inc.ungrounded is not expected:
-                        raise SupersessionIntegrityError(
-                            f"survivor ungrounded={inc.ungrounded!r} is not "
-                            f"the N-ary OR of the raw submission and its "
-                            f"absorbed contributors (={expected!r}) — the "
-                            f"verifier accepts exactly that transform "
-                            f"(specs/0019; 0014 §2c as amended)")
-                for e in plan.prior_upserts:
-                    self._upsert_edge_row(e)
-                for eid, at, reason in plan.prior_invalidations:
-                    self._invalidate_edge_row(eid, at, reason)
-                if plan.insert_incoming:
-                    self._upsert_edge_row(inc)
-                now = self._now().isoformat()
-                for d in plan.refusals:
-                    # BIND the refusal: it may only reference the plan's incoming edge and
-                    # an existing edge of THIS user (round-6 correction C) — a caller cannot
-                    # forge a refusal against an edge this commit does not write or another
-                    # tenant's.
-                    if d.incoming_edge_id != inc.id:
-                        raise ValueError(
-                            "refusal.incoming_edge_id must equal the plan's incoming edge id")
-                    prow = self._conn.execute(
-                        "SELECT user_id FROM edges WHERE id=?", (d.prior_edge_id,)).fetchone()
-                    if prow is None or prow[0] != user_id:
-                        raise ValueError(
-                            "refusal.prior_edge_id must be an existing edge of this user")
-                    self._conn.execute(
-                        "INSERT INTO supersession_refusals(refusal_id,user_id,prior_edge_id,"
-                        "incoming_edge_id,relation,prior_effective,incoming_effective,"
-                        "rule_version,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
-                        (f"ref-{uuid.uuid4().hex[:12]}", user_id, d.prior_edge_id, inc.id,
-                         d.relation, d.prior_effective, d.incoming_effective, RULE_VERSION, now))
-                # the durable receipt commits atomically with the effects (§4f
-                # idempotency; 0014 R9-1/R9-2/R10-1): the persisted EFFECT payload
-                # (result minus the runtime replayed flag), the store-computed
-                # request digest (NULL when no snapshot), and the projection
-                # version stamped EXPLICITLY — never relying on the DEFAULT.
-                result = SupersessionResult(
-                    inserted_incoming=plan.insert_incoming,
-                    invalidated=len(plan.prior_invalidations),
-                    refused=len(plan.refusals))
-                resp_json = effect_payload(result)
-                # specs/0016 D2 (0019 rider A1): post-D2 writers stamp version
-                # 4 — the source_type-less snapshot era
-                self.validate_receipt_state(plan_rd, 4, resp_json)  # refused at write
+                        f"survivor ungrounded={inc.ungrounded!r} is not "
+                        f"the N-ary OR of the raw submission and its "
+                        f"absorbed contributors (={expected!r}) — the "
+                        f"verifier accepts exactly that transform "
+                        f"(specs/0019; 0014 §2c as amended)")
+            for e in plan.prior_upserts:
+                self._upsert_edge_row(e)
+            for eid, at, reason in plan.prior_invalidations:
+                self._invalidate_edge_row(eid, at, reason)
+            if plan.insert_incoming:
+                self._upsert_edge_row(inc)
+            now = self._now().isoformat()
+            for d in plan.refusals:
+                # BIND the refusal: it may only reference the plan's incoming edge and
+                # an existing edge of THIS user (round-6 correction C) — a caller cannot
+                # forge a refusal against an edge this commit does not write or another
+                # tenant's.
+                if d.incoming_edge_id != inc.id:
+                    raise ValueError(
+                        "refusal.incoming_edge_id must equal the plan's incoming edge id")
+                prow = self._conn.execute(
+                    "SELECT user_id FROM edges WHERE id=?", (d.prior_edge_id,)).fetchone()
+                if prow is None or prow[0] != user_id:
+                    raise ValueError(
+                        "refusal.prior_edge_id must be an existing edge of this user")
                 self._conn.execute(
-                    "INSERT INTO supersession_operations(user_id,operation_id,"
-                    "logical_request_digest,status,request_digest,response,"
-                    "outcome_digest_version,request_digest_domain) "
-                    "VALUES(?,?,?,?,?,?,?,?)",
-                    (user_id, plan.operation_id, digest, "applied",
-                     plan_rd, resp_json, 4,
-                     # specs/0025 §4b-v, the write rule: the domain is
-                     # stamped iff the receipt carries a digest — a NEW
-                     # digest-less receipt stores NULL/NULL (the writer
-                     # invariant, NEW WRITES ONLY).
-                     CURRENT_DIGEST_DOMAIN.decode() if plan_rd is not None
-                     else None))
-                self._bump(user_id)                   # a recall-bearing edge changed
-                # A live_refusal_contention transition — INTO it (this plan records a
-                # refusal) OR OUT of it (this plan retires an edge that a refusal row
-                # references) — is a derived-view invalidation event, symmetric per
-                # round-10 blocker 1. Drop the wiki cache in the SAME commit (§4c-ii,
-                # immediate not batched). The refusal rows still reference a retired
-                # member (retention is "while either edge exists"), so the resolution
-                # check reads them post-invalidation.
-                touches_contention = bool(plan.refusals) or any(
-                    self._edge_in_refusal(user_id, eid)
-                    for eid, _at, _reason in plan.prior_invalidations)
-                if touches_contention:
-                    self._conn.execute("DELETE FROM wiki WHERE user_id=?", (user_id,))
-                self._conn.commit()
-            except Exception:
-                self._conn.rollback()
-                raise
+                    "INSERT INTO supersession_refusals(refusal_id,user_id,prior_edge_id,"
+                    "incoming_edge_id,relation,prior_effective,incoming_effective,"
+                    "rule_version,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                    (f"ref-{uuid.uuid4().hex[:12]}", user_id, d.prior_edge_id, inc.id,
+                     d.relation, d.prior_effective, d.incoming_effective, RULE_VERSION, now))
+            # the durable receipt commits atomically with the effects (§4f
+            # idempotency; 0014 R9-1/R9-2/R10-1): the persisted EFFECT payload
+            # (result minus the runtime replayed flag), the store-computed
+            # request digest (NULL when no snapshot), and the projection
+            # version stamped EXPLICITLY — never relying on the DEFAULT.
+            result = SupersessionResult(
+                inserted_incoming=plan.insert_incoming,
+                invalidated=len(plan.prior_invalidations),
+                refused=len(plan.refusals))
+            resp_json = effect_payload(result)
+            # specs/0016 D2 (0019 rider A1): post-D2 writers stamp version
+            # 4 — the source_type-less snapshot era
+            self.validate_receipt_state(plan_rd, 4, resp_json)  # refused at write
+            self._conn.execute(
+                "INSERT INTO supersession_operations(user_id,operation_id,"
+                "logical_request_digest,status,request_digest,response,"
+                "outcome_digest_version,request_digest_domain) "
+                "VALUES(?,?,?,?,?,?,?,?)",
+                (user_id, plan.operation_id, digest, "applied",
+                 plan_rd, resp_json, 4,
+                 # specs/0025 §4b-v, the write rule: the domain is
+                 # stamped iff the receipt carries a digest — a NEW
+                 # digest-less receipt stores NULL/NULL (the writer
+                 # invariant, NEW WRITES ONLY).
+                 CURRENT_DIGEST_DOMAIN.decode() if plan_rd is not None
+                 else None))
+            self._bump(user_id)                   # a recall-bearing edge changed
+            # A live_refusal_contention transition — INTO it (this plan records a
+            # refusal) OR OUT of it (this plan retires an edge that a refusal row
+            # references) — is a derived-view invalidation event, symmetric per
+            # round-10 blocker 1. Drop the wiki cache in the SAME commit (§4c-ii,
+            # immediate not batched). The refusal rows still reference a retired
+            # member (retention is "while either edge exists"), so the resolution
+            # check reads them post-invalidation.
+            touches_contention = bool(plan.refusals) or any(
+                self._edge_in_refusal(user_id, eid)
+                for eid, _at, _reason in plan.prior_invalidations)
+            if touches_contention:
+                self._conn.execute("DELETE FROM wiki WHERE user_id=?", (user_id,))
             return result
 
     def refusals(self, user_id: str) -> list[SupersessionRefusal]:
@@ -1695,10 +1707,9 @@ class SqliteStore(Store):
             except BaseException:
                 self._conn.rollback()                # ONE atomic commit —
                 raise                                # nothing after a prefix
-            self._conn.commit()
-            return {"edges": len(edges), "episodes": len(episodes),
-                    "contributions": len(contrib_writes),
-                    "contributions_existing": contrib_existing}
+        return {"edges": len(edges), "episodes": len(episodes),
+                "contributions": len(contrib_writes),
+                "contributions_existing": contrib_existing}
 
     # -- crash-safe consolidation (specs/0010) --------------------------------
     _OP_COLS = ("operation_id", "user_id", "fence", "state", "owner",
@@ -2048,7 +2059,6 @@ class SqliteStore(Store):
                 if table == "edge_event":
                     continue                      # deleted above, by name
                 self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
-            self._conn.commit()
         return {"edges": n_edges, "episodes": n_eps, "confirmations": n_conf}
 
     # -- semantic lane (specs/0027 §4f) -------------------------------------

@@ -41,7 +41,7 @@ is the number that decides what can be built.
 | **0026** | label/value agreement check | `accepted` | 2026-09-07 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `draft` | 2026-09-07 | 0 | 0 | 0 | 0 | 0 | — |
-| **0029** | transaction-time carrier | `accepted` | 2026-09-05 | 0 | 0 | 0 | 0 | 0 | — |
+| **0029** | transaction-time carrier | `accepted` | 2026-09-07 | 1 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-09-07 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-07 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |

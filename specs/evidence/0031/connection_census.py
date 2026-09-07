@@ -462,18 +462,22 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: ingest enforcement (2026-09-07, security-hotfix: the comparison key, the
 #: declared-instruction set, the refusal at the pass-1 filter) moved
 #: dotted/dataflow 4,779 -> 4,787, the other four classes and the dunders
-#: unchanged — while a change to the five CLASSES or the completeness scope
+#: unchanged; 0029 v11's lock-refusal form (2026-09-07: the commit wrapper in
+#: `_write_txn`, six in-body commits removed, two duplicate handlers folded)
+#: moved dotted/dataflow 4,787 -> 4,777 and module-protected 44 -> 46 (the
+#: `sqlite3.OperationalError` references), dunders unchanged — while a change
+#: to the five CLASSES or the completeness scope
 #: reopens design review. Each regeneration is recorded in the implementing
 #: spec's closure/implementation notes (0032 §; 0029 closure; 0030 closure;
 #: 0038's enforcement commit).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4787,
+    "dotted/dataflow": 4777,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 255,
-    "dotted/module-protected": 44,
+    "dotted/module-protected": 46,
     "getattr/dataflow": 23,
 }
-SRC_ATTRIBUTE_TOTAL = 5128
+SRC_ATTRIBUTE_TOTAL = 5120
 SRC_DATA_DUNDERS_IN_DATAFLOW = 101
 
 

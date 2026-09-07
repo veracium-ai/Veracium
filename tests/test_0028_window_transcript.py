@@ -106,16 +106,18 @@ def test_default_mode_writer_waits_and_commits_after_a_window_shorter_than_its_t
 
 
 def test_default_mode_writer_fails_and_loses_the_write_when_the_window_outlasts_its_timeout(tmp_path):
-    """DELETE journal, window > busy_timeout: the writer raises SQLite's
-    `database is locked` from its COMMIT (the bare error, not the store's
-    wrapped locked-write refusal, which covers the transaction's start only —
-    a recorded product defect), BEFORE the window closes; the write is LOST;
-    the reader saw one snapshot."""
+    """DELETE journal, window > busy_timeout: the writer's COMMIT fails after
+    its busy_timeout, BEFORE the window closes; the write is LOST; the reader
+    saw one snapshot. Since 0029 v10 (V-LOCK-REFUSAL-FORM) the refusal is the
+    store's wrapped form naming the COMMIT site, with SQLite's bare
+    `database is locked` kept as the cause — the 0028 §5 parenthetical that
+    called the bare form a recorded product defect now reads as history."""
     reader, writer = _stores(tmp_path, "delete", writer_timeout_ms=500)
     writer.add_edge(_edge("seed"))
     res, started, finished, err = _write_during_window(reader, writer, window_s=2.0)
     assert isinstance(err, sqlite3.OperationalError), err
-    assert "database is locked" in str(err)
+    assert "COMMIT" in str(err) and "V-LOCK-REFUSAL-FORM" in str(err), str(err)
+    assert isinstance(err.__cause__, sqlite3.OperationalError) and "database is locked" in str(err.__cause__)
     assert finished < res["closed"], "the failure came while the window was still open"
     assert res["count_at_open"] == res["count_before_commit"] == 1
     assert _count(writer) == 1, "the write is lost — rolled back, not deferred"

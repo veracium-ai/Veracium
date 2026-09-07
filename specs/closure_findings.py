@@ -3475,6 +3475,11 @@ CLOSURES = [
      'V-CORPUS-ROWS-IN-DOMAIN, §6a, the manifest (v13)',
      'git show ae6be76 -- specs/0037-procedural-basis.md'),
 
+    # ---- 0029 post-acceptance revision v11 (2026-09-07) — the lock-refusal form; owner-placed, no external round ----
+    ("0029", "internal", 0, '0029-PA1',
+     'The COMMIT-time `database is locked` surfaced as bare SQLite text with the write rolled back (0028 two-connection transcript, reproduced by the external reviewer); 0029 §4a had narrowed 0007 §4c to the BEGIN, and v10\'s first revision scoped its guarantee to a `_write_txn` commit that never ran — all six bodies committed themselves',
+     'v11 §4a/§4a-i: `_write_txn` OWNS the commit of every transaction it opens (six in-body commits removed; two duplicate handlers folded; the C8 race raises at the INSERT — measured); the commit-time lock refused in the BEGIN-time form naming the site, batch not applied, connection reusable (V-LOCK-REFUSAL-FORM); the census node asserts zero in-body commits, its mutant the shipping code; residue censused, 0007 open in §10',
+     '$PY -m pytest tests/test_0029_lock_refusal_form.py::test_commit_time_lock_refusal_has_the_begin_time_form tests/test_0029_lock_refusal_form.py::test_no_write_txn_body_issues_its_own_commit tests/test_0029_lock_refusal_form.py::test_the_store_is_unchanged_and_the_next_write_lands -q -p no:randomly'),
 ]
 
 
