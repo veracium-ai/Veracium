@@ -33,7 +33,7 @@
 | 0025 | `0025-relation-vocabulary-enforcement.md` | `accepted` | the relation vocabulary is closed, or it is not a vocabulary (L2) |  |
 | 0026 | `0026-label-value-agreement.md` | `accepted` | label/value agreement check |  |
 | 0027 | `0027-semantic-hybrid-recall.md` | `accepted` | semantic hybrid recall |  |
-| 0028 | `0028-as-of-query.md` | `draft` | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) |  |
+| 0028 | `0028-as-of-query.md` | `accepted` | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) |  |
 | 0029 | `0029-transaction-time-carrier.md` | `accepted` | transaction-time carrier |  |
 | 0030 | `0030-time-relative-classification.md` | `accepted` | time-relative trust classification |  |
 | 0031 | `0031-agent-facing-trust-surface.md` | `accepted` | the agent-facing trust surface |  |

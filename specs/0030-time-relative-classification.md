@@ -1118,7 +1118,7 @@ FieldInfo bound reads, inventoried in `GETATTR_ALLOWANCES`), data-dunders
 | external 18 (SENT) | 2026-09-03 | — | SENT (round-18 joint package `9930334127f782a2…` @ pin dc244f0, CI 33804235511 — the package the arc was ACCEPTED on; sealed AFTER this row; sha pinned on return) |
 | external 18 (verdict) | 2026-09-03 | 0 | ACCEPTED — 0029 v9, 0030 v29 and the joint seam all ACCEPTED; design frozen on a seven-point invariant surface (fold 627aea2 = 0030 v30) |
 
-**Per-finding closure ledger — PROCESS §4a.** **57 finding(s) for `0030`; 316 across the 8 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **57 finding(s) for `0030`; 354 across the 9 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

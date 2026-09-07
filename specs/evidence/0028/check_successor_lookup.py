@@ -135,6 +135,14 @@ D = timedelta(days=1)
 # a lie the principal could catch on the edge's own row. Research's finding,
 # 2026-09-07. v11 §5.1 introduced this registry, specified for schema.py; the model carries it
 # until the implementation lands.
+#: FROZEN at round 7 (2026-09-07): the reviewer ACCEPTED 0028 v13 and froze its invariant
+#: surface — every §6 row, V-SUCCESSOR-REGISTRY-TOTAL and V-NO-EXISTENCE-SIGNAL among them —
+#: and this registry is the data those invariants are total over. The governing rule, in the
+#: reviewer's words: "Items marked OWED remain implementation obligations; acceptance does not
+#: assert that the unwritten facts_valid_at, read_window, or edges_superseding APIs already
+#: exist." Editing a ruling here is NOT a constant change: it reopens design review of an
+#: accepted spec (a post-acceptance revision, 0029 v11's path), and the implementation that
+#: lands these APIs is run against THIS registry and the EXPECTED table below as its oracle.
 NAMES_A_SUCCESSOR: dict = {
     "corrected":          True,    # the host replaced the content — a replacement exists
     "superseded":         True,    # W2 — the supersession path
@@ -161,6 +169,10 @@ ASSERTS_SUPERSESSION = frozenset(r for r, names in NAMES_A_SUCCESSOR.items() if 
 
 
 # ------------------------------------------------------------------ the design
+#: FROZEN at round 7 (2026-09-07) with the spec's acceptance: the three-value vocabulary and the
+#: two-field result below are the cause-free contract V-NO-EXISTENCE-SIGNAL and V-NEVER-HEAD
+#: hold over (a field added later fails the whole-object equality rather than passes). A fourth
+#: value or a third field reopens design review; it is not an extension.
 class SuccessorDisposition(str, Enum):
     HEAD = "head"
     SUPERSEDED = "superseded"
@@ -286,6 +298,10 @@ def build(path) -> tuple:
                "nonexistent": f"e-{uuid.uuid4().hex[:10]}"}
 
 
+#: FROZEN at round 7 (2026-09-07): the observation table the reviewer accepted — the states the
+#: program prints the count of, built on the shipped store through public writes. When
+#: edges_superseding is implemented (OWED), the implementation is run against THIS table; a
+#: state added here after acceptance is a spec change, recorded as such.
 EXPECTED = {   # the observation table v12 §5.1 states, (A, B) dispositions and visible counts
     "head":     (("head", 0), ("head", 0)),
     "forward_missing": (("successor_unavailable", 0), ("successor_unavailable", 0)),

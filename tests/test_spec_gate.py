@@ -2246,6 +2246,39 @@ def test_new_closure_evidence_is_behavioral():
         '0030-R2-7': '0030: [F7] datetime normalization is not total (`as_utc(None) -> None` lets ',
         '0030-R2-8': 'both: [F8] 0029 \'digest-only\'/\'one digest\'/data-handling residue; 0030 unkno',
         '0030-R3-5': '0030: [F5] 0030 — the reason×cutoff matrix contradicts rule 8 and V-SUBTRACT',
+        # 0028 (2026-09-07, the ledger written at acceptance after seven external
+        # rounds, the owner's pause between rounds 1 and 2): a SPEC WHOSE APIs ARE
+        # UNWRITTEN — facts_valid_at, read_window and edges_superseding are OWED at
+        # implementation, and the reviewer's acceptance says so in those words.
+        # Its text-only closures interleave with mechanism closures in the same
+        # rounds (the generated §4b table from round 2, the absence proof from
+        # round 3, the window transcript from round 3's supplemental, the successor
+        # model from rounds 4-6 all cite pytest nodes), so a round cutoff would
+        # exempt mechanism rows too; the per-finding form keeps the property at
+        # finding grain. Every entry cites the fold commit that landed the text.
+        '0028-R1-2': 'known_as_of is unimplementable from the stated fields: invalidated_at is a valid-t',
+        '0028-R1-4': 'Chain/arity mechanics undefined: backward supersedes, note-carried absorption links',
+        '0028-R1-6': 'The recall baseline is misstated (active_only=False history already flows) and V-D',
+        '0028-R1-7': 'The result/gap carriers and the acceptance corpus are not finite',
+        '0028-R2-3': 'T > now was declared clamp OR refuse, both conforming — 0011 R1-4\'s unconformable ',
+        '0028-R2-4': 'Three of §4b-iii\'s four absorbed-duplicate rows were unreachable (canonical absorp',
+        '0028-R2-5': 'The inventory said ten checks where §6 has thirteen',
+        '0028-R3-3': 'facts_valid_at promises scoped behaviour without carrying scope',
+        '0028-R3-4': 'MCP exposure remained an unresolved product-interface decision',
+        '0028-R3-C6': 'Remove the disclosed stale numeral in the v8 history rather than changing it from ',
+        '0028-R4-2': 'A second wall-clock exception remained (the current-truth pointer named as the one exempt step)',
+        '0028-R4-4': 'MCP remained simultaneously closed and open',
+        '0028-R4-5': 'Pointer-walk text still consumed the old list return',
+        '0028-R4-M1': 'The orphaned "moot." after the corrected lane statement',
+        '0028-R4-M2': 'Several §6 rows described future checks while §6a said every invariant already c',
+        '0028-R5-3': 'The reviewer checklist contradicted the cause-free result contract',
+        '0028-R5-C1': 'README and §9 claimed a state count (nine) while EXPECTED executed a different one (eight)',
+        '0028-R5-C2': 'The model header said supersession is asserted when the reason equals only correc',
+        '0028-R5-C3': 'The test and model headers still described a fixed state count (six) for a builder of more',
+        '0028-R5-C4': '§6a said nineteen invariants and then "no count is stated here, deliberately"',
+        '0028-R6-1': '§4b\'s outcome definition still required a cause for every INDETERMINATE, contradi',
+        '0028-R6-C1': '§9 carried a malformed duplicated phrase (the round-5 "no count" replacement fused',
+        '0028-R6-C2': 'The model\'s introduction called itself "the design v11 specifies" while its querie',
     }
     offenders = []
     for row in closure_findings.CLOSURES:

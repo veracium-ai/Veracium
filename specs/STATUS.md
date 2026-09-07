@@ -4,11 +4,11 @@
 
 # Spec status
 
-**35 specs · 31 accepted · 372 external review
+**35 specs · 32 accepted · 379 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **31 of 35 are accepted**, which
+review is required to reach it. **32 of 35 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -40,7 +40,7 @@ is the number that decides what can be built.
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-07 | 2 | 24 | 2 | 0 | 0 | — |
 | **0026** | label/value agreement check | `accepted` | 2026-09-07 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
-| **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `draft` | 2026-09-07 | 0 | 0 | 0 | 0 | 0 | — |
+| **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-07 | 0 | 7 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-09-07 | 1 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-09-07 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-07 | 0 | 16 | 0 | 0 | 0 | — |
