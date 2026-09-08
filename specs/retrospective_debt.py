@@ -132,15 +132,14 @@ SUPERSEDED: dict[str, dict] = {
     "88d909c": {"covered_by": ["0014", "0031"], "reason": _SUPERSEDED_REASON,
                 "limit": _SUPERSEDED_LIMIT, "authorized_by": _SUPERSEDED_AUTH},
 }
-# NOT disposed, deliberately: `b8a4489` (0.18.1, the designated compat release
-# for 0031 Phase A rollback) is due 2026-09-11. It shipped the day 0031 was
-# accepted, as "the designated rollback target under ACCEPTED specs/0031", so
-# 0031's round cannot have covered it. The gate goes red ON 2026-09-11 — the
-# due date itself; the predicate is `effective_due <= today`, because a
-# deadline that only bites the day after is a deadline plus a day (research
-# measured HEAD: 09-10 green, 09-11 red) — asking for its retrospective ON
-# TIME, the first time this mechanism names an obligation before the date
-# rather than a month after. Write it; do not defer.
+# `b8a4489` (0.18.1, the designated compat release for 0031 Phase A rollback,
+# on release/0.18 — never in main's history) was the one of nine left
+# deliberately UNDISPOSED when this gate landed: due 2026-09-11, it shipped the
+# day 0031 was accepted, so 0031's round could not have covered it. Its
+# retrospective was WRITTEN into specs/0031 on 2026-09-08, three days early
+# (`Discharges: b8a4489`) — the first obligation this mechanism named before
+# its date rather than a month after. The section records the split judgement:
+# the rule (punch-list I4) externally reviewed, the branch implementation not.
 
 _SPEC_STATUS = re.compile(r"^Spec-Status:\s*(\S+)", re.M)
 
@@ -181,6 +180,14 @@ def obligations(repo: Path) -> list[dict]:
             "reporting fewer problems. Refuse rather than under-report "
             "(CI must check out with fetch-depth 0).")
     out = []
+    # `--all` IS LOAD-BEARING, not completeness for its own sake: a hotfix on
+    # a RELEASE BRANCH never reaches main's history — b8a4489 (0.18.1, the
+    # designated Phase A rollback target on release/0.18) is invisible to
+    # every gate that runs on main, and this derivation named its obligation
+    # ONLY because it walks every ref. Narrowing this to `git log` (HEAD) would
+    # silently blind the gate to exactly the class of release that most needs
+    # it; the rule-zero battery asserts an unreachable-branch hotfix is derived.
+    # (Research, 2026-09-08, on the 0.18.1 retrospective.)
     # ONE git call over the whole history (the per-commit form took 5.5 s
     # over 1,266 commits; this runs in well under a second). A literal NUL
     # cannot travel in an argv string, so the field separator is a token git

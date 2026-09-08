@@ -3241,6 +3241,19 @@ def test_the_retrospective_derivation_owes_past_dates_closes_declared_ones_and_r
     finally:
         mod.DEFERRED.clear(); mod.DEFERRED.update(saved)
         mod.SUPERSEDED.clear(); mod.SUPERSEDED.update(saved_s)
+    # a hotfix on a branch NOT reachable from HEAD is still derived: `--all`
+    # is load-bearing (b8a4489 on release/0.18 was named only because of it)
+    import subprocess as _sp
+    repo, sha = _hotfix_repo(tmp_path / "br", "2026-08-07")
+    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"]}
+    g = lambda *a: _sp.run(("git", "-C", str(repo), *a), check=True, env=env, capture_output=True, text=True).stdout
+    g("branch", "release-x")                      # the hotfix lives on the branch
+    # an orphan main with no common history, so the hotfix is unreachable from HEAD
+    g("checkout", "-q", "--orphan", "main2"); (repo / "m").write_text("m"); g("add", "-A"); g("commit", "-q", "-m", "main without the hotfix")
+    assert sha not in g("rev-list", "HEAD").split(), "fixture: the hotfix must be unreachable from HEAD"
+    assert [o["sha"] for o in mod.obligations(repo)] == [sha[:7]], "an unreachable-branch hotfix must still be derived"
+    assert [p for p in mod.problems(repo, today) if sha[:7] in p]
     # vacuity: a history with no obligation is a refusal, not a pass
     import subprocess
     empty = tmp_path / "f" / "repo"; (empty / "specs").mkdir(parents=True)
