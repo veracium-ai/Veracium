@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.20.1 — 2026-09-08
+
+**Upgrade recommendation:** every host wiring a non-Anthropic provider should take this release; a host on the reference provider sees no behaviour change. No schema, export-format or API change; rollback to 0.20.0 is safe (a store written by 0.20.1 differs only in the facts it refused to write).
 
 **Fix: the extraction prompt's subject grammar is enforced, and the
 selfcheck's supersession pair is mandatory (specs/0025 as amended
