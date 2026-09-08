@@ -118,6 +118,10 @@ class SqliteStore(Store):
             self._conn.close()
             raise
         self._lock = threading.Lock()
+        # specs/0028 §4b-o: the thread holding an open `read_window` — a
+        # nested window on that thread JOINS instead of re-taking the
+        # (non-reentrant) instance lock; any other thread waits on the lock.
+        self._window_owner = None
         # specs/0029 §4a: the per-transaction allocation scope (txn per user,
         # one clock read per batch). None outside a journaled write.
         self._txn_alloc = None
@@ -326,15 +330,51 @@ class SqliteStore(Store):
         rollback-journal the window holds a SHARED lock and a concurrent
         writer is refused for its duration; under WAL the writer proceeds and
         this reader keeps its snapshot (V-WINDOW asserts the property in both
-        modes). Joins an already-open transaction rather than nesting."""
+        modes). Joins an already-open transaction rather than nesting.
+
+        specs/0028 §4b-o: the window shape is EXTRACTED to `read_window`;
+        this call joins a resolution's window when one is open on this
+        thread and opens its own otherwise — exactly the pre-0028 shape."""
         from .current_state import derive_current_state
+        with self.read_window(user_id):
+            return derive_current_state(self, user_id, edge_id,
+                                        principal=principal, policy=policy)
+
+    @contextlib.contextmanager
+    def read_window(self, user_id: Optional[str] = None):
+        """specs/0028 §4b-o — THE public read-only window: `BEGIN` under the
+        instance lock, or JOIN an already-open transaction; `ROLLBACK` on
+        error, `COMMIT` on exit. `current_state`'s shape (specs/0030 §4a-i),
+        extracted so a resolution can open ONE outer window that every read
+        joins — `edges(active_only=False)`, each `edges_superseding` hop and
+        each `current_state` — and read one snapshot (V-ONE-SNAPSHOT). The
+        instance lock is a plain `threading.Lock`, so the join is keyed on
+        the OWNER THREAD: a nested window on the holding thread yields at
+        once; a window on another thread waits on the lock as any store
+        operation does. What a concurrent WRITER sees is measured in
+        specs/0028 §5 (never "refused for the duration"): under the default
+        journal it waits, and commits or loses the write at its
+        `busy_timeout`; under WAL it commits and this reader keeps its
+        snapshot. `user_id` names the scope for the caller's record; the
+        window itself is connection-wide."""
+        # ASSUMPTION, stated for the next person adding an executor: a
+        # resolution runs on ONE thread from BEGIN to COMMIT. The window's
+        # identity is the owning thread, so a path that hops threads
+        # mid-resolution (a pool, `to_thread`, `run_in_executor`) would open
+        # a SECOND window on the other thread and V-ONE-SNAPSHOT would fail
+        # looking like a data bug. No shipped path hops threads today
+        # (measured 2026-09-08: no executor in mcp_server.py or the package).
+        me = threading.get_ident()
+        if self._window_owner == me:
+            yield self                        # JOIN the window this thread holds
+            return
         with self._lock:
             opened = not self._conn.in_transaction
             if opened:
                 self._conn.execute("BEGIN")
+            self._window_owner = me
             try:
-                out = derive_current_state(self, user_id, edge_id,
-                                           principal=principal, policy=policy)
+                yield self
             except BaseException:
                 # the window is READ-ONLY by contract, so COMMIT and ROLLBACK are
                 # equivalent today — the rollback makes the contract explicit
@@ -342,9 +382,29 @@ class SqliteStore(Store):
                 if opened and self._conn.in_transaction:
                     self._conn.execute("ROLLBACK")
                 raise
+            finally:
+                self._window_owner = None
             if opened and self._conn.in_transaction:
                 self._conn.execute("COMMIT")
-            return out
+
+    def edges_superseding(self, user_id: str, edge_id: str, *, principal=None,
+                          policy=None):
+        """specs/0028 §5.1 — the DIRECT-successor accessor, SCAN-BACKED and
+        stated as such: `supersedes` is a field inside the edge JSON with no
+        column and no index, so it is scanned for, ONE read of the user's
+        edges inside the window (a resolution's, joined, or this call's own).
+        The queried edge is read through the SAME view as its successors
+        (R5-1): an edge outside the caller's view asserts nothing TO THIS
+        CALLER, exactly as a nonexistent id does — one code path. Every
+        visibility decision runs INSIDE the window, because the shared
+        `ScopeView` fires lazy contribution-ledger reads."""
+        from ..asof.resolve import lookup_successors
+        from ..scope_read import view_for
+        with self.read_window(user_id):
+            view = view_for(self, user_id, principal, policy)
+            rows = self.edges(user_id, active_only=False, include_quarantined=True)
+            visible = (lambda e: True) if view is None else view.visible
+            return lookup_successors(rows, edge_id, visible)
 
     # -- edges -------------------------------------------------------------
     def _upsert_edge_row(self, edge: Edge) -> None:

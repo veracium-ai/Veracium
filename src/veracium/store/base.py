@@ -290,6 +290,29 @@ class Store(ABC):
         ALL from ONE read window the store opens and closes here. No caching:
         every call recomputes."""
 
+    @abstractmethod
+    def read_window(self, user_id: Optional[str] = None):
+        """specs/0028 §4b-o: THE public read-only window — a context manager.
+        BEGIN under the instance lock, or JOIN an already-open window; ROLLBACK
+        on error, COMMIT on exit. Every store read a resolution makes
+        (`edges(active_only=False)`, each `edges_superseding` hop, each
+        `current_state`) joins it, so one resolution reads ONE snapshot
+        (V-ONE-SNAPSHOT). Read-only by contract: nothing inside it writes."""
+
+    @abstractmethod
+    def edges_superseding(self, user_id: str, edge_id: str, *, principal=None,
+                          policy=None):
+        """specs/0028 §5.1: the DIRECT successors of `edge_id` — rows whose
+        `supersedes == edge_id`, visible in the caller's view, ordered
+        `valid_from` asc then `id` asc — as a `SuccessorLookup` whose
+        `disposition` decides (never an empty container): SUPERSEDED when any
+        successor is visible; else SUCCESSOR_UNAVAILABLE when the queried
+        edge is itself visible AND its `invalidation_reason` is in
+        `NAMES_A_SUCCESSOR`; else HEAD. Inactive and future-valid successors
+        are INCLUDED (the accessor answers "what points at this", not "what
+        is assertable"). Called inside `read_window` it joins it; outside one
+        it opens its own. NOT an existence oracle (R4-1, R5-1)."""
+
     def epoch_txn(self, user_id: str) -> int:
         """§4e — the user's baseline batch `txn` for users predating v13; `0`
         for users whose entire life is journaled. DERIVED from the `baseline`

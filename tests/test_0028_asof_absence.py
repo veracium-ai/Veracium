@@ -42,7 +42,10 @@ def test_the_static_form_reaches_the_roots_and_finds_no_predicate_access():
     mod = _load()
     w = mod.static_form(ROOT / "src")
     reached = {q for _, q in w.reached}
-    assert {"classify_as_of", "assertable_as_of", "SqliteStore.current_state", "SqliteStore.edges"} <= reached
+    assert {"classify_as_of", "assertable_as_of", "SqliteStore.current_state", "SqliteStore.edges",
+            "resolve_as_of", "lookup_successors", "recall_at", "Memory.facts_valid_at",
+            "SqliteStore.read_window", "SqliteStore.edges_superseding",
+            "_resolve_edge", "_walk", "_absorber", "held_at"} <= reached, sorted(reached)
     assert "adapt" in reached, "the adapter is reached from classify_as_of through the tree"
     assert w.hits == [], w.hits
     assert w.not_followed, "the boundary must be visible: some receivers are not followable statically"
@@ -66,7 +69,11 @@ def test_the_behavioural_form_runs_the_shipped_asof_tests_under_the_clock():
         # test file except this matrix, which is listed as excluded with its reason
         b = rep["behavioural"]
         assert b["exercised_set_derived"] is True
-        assert set(b["exercised_files"]) == {"tests/test_0030_asof.py", "tests/test_s2_valid_from_predicate.py"}, b["exercised_files"]
+        # DERIVED, compared to the derivation run here (a hand list went stale
+        # the day the resolution's own test file joined the surface)
+        assert set(b["exercised_files"]) == set(_load().exercised_test_files(ROOT)[0]), b["exercised_files"]
+        assert {"tests/test_0030_asof.py", "tests/test_s2_valid_from_predicate.py",
+                "tests/test_0028_resolution.py"} <= set(b["exercised_files"]), b["exercised_files"]
         assert "tests/test_0028_asof_absence.py" in b["excluded_files"]
     finally:
         if out.exists():
@@ -75,9 +82,11 @@ def test_the_behavioural_form_runs_the_shipped_asof_tests_under_the_clock():
 
 def test_no_shipped_path_reaches_the_classifier_so_the_derived_set_is_the_reachable_set():
     """The completeness argument for the DERIVED exercised set, measured: the
-    only call of classify_as_of/assertable_as_of in src/ is inside
-    asof/classify.py itself, so a test can reach the classifier only by
-    naming it, and files-that-name-it IS files-that-reach-it."""
+    only calls of classify_as_of/assertable_as_of in src/ are inside the
+    `asof/` package (the classifier itself and, since 2026-09-08, the
+    resolution — whose entry points are in REACHES_CLASSIFIER), so a test
+    reaches the classifier only by naming one of those tokens, and
+    files-that-name-them IS files-that-reach-it."""
     assert _load().src_call_sites(ROOT / "src") == []
 
 

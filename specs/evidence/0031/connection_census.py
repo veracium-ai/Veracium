@@ -465,20 +465,26 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: unchanged; 0029 v11's lock-refusal form (2026-09-07: the commit wrapper in
 #: `_write_txn`, six in-body commits removed, two duplicate handlers folded)
 #: moved dotted/dataflow 4,787 -> 4,777 and module-protected 44 -> 46 (the
-#: `sqlite3.OperationalError` references), dunders unchanged — while a change
+#: `sqlite3.OperationalError` references), dunders unchanged; 0028's
+#: implementation (2026-09-08: `asof/resolve.py`, `asof/recall.py`, the
+#: store's `read_window`/`edges_superseding`, the schema's successor
+#: registry and vocabulary, the predicate hooks in graph/scope_read/__init__)
+#: moved dotted/dataflow 4,777 -> 4,950, module-plain 255 -> 257 (the
+#: `SuccessorDisposition` members) and the dunders 101 -> 105, the other
+#: three classes unchanged — while a change
 #: to the five CLASSES or the completeness scope
 #: reopens design review. Each regeneration is recorded in the implementing
 #: spec's closure/implementation notes (0032 §; 0029 closure; 0030 closure;
-#: 0038's enforcement commit).
+#: 0038's enforcement commit; 0028's implementation commit).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4777,
+    "dotted/dataflow": 4950,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 255,
+    "dotted/module-plain": 257,
     "dotted/module-protected": 46,
     "getattr/dataflow": 23,
 }
-SRC_ATTRIBUTE_TOTAL = 5120
-SRC_DATA_DUNDERS_IN_DATAFLOW = 101
+SRC_ATTRIBUTE_TOTAL = 5295
+SRC_DATA_DUNDERS_IN_DATAFLOW = 105
 
 
 def _classify_attribute(base, attr, ctx):

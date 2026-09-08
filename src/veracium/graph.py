@@ -618,7 +618,15 @@ def _permute_contention_groups(edges: list[Edge],
     return out
 
 
-def _lexical_scored(store, user_id: str, query: str, view=None):
+def _asserted_today(record) -> bool:
+    """The ranking's default assertability predicate — `Edge.assertable`,
+    today's verdict. specs/0028 §4c: the as-of branch passes its own
+    T-predicate to `fused_subgraph` instead, so the I6 reserve never reads
+    the wall-clock predicate there (V-ONE-CLOCK); unsupplied, this."""
+    return record.assertable
+
+
+def _lexical_scored(store, user_id: str, query: str, view=None, *, candidates=None):
     """specs/0027 §2 — the extracted per-edge lexical scan (the shipped
     `subgraph_for_query` loop, byte-identical for `view=None`; the frozen V10
     oracle pins that). Returns `(scored, relevant_ids, by_id)`:
@@ -639,8 +647,12 @@ def _lexical_scored(store, user_id: str, query: str, view=None):
     scored: list[tuple[int, int, Edge]] = []
     relevant_ids: set[str] = set()
     by_id: dict[str, Edge] = {}
-    for e in store.edges(user_id, active_only=False):
-        if view is not None:
+    # specs/0028 §4c: under `as_of` the candidate set is the RESOLUTION's —
+    # already visible and shaped, read inside its window — and the scan is
+    # not repeated; `candidates=None` is today's scan, byte-identical.
+    source = store.edges(user_id, active_only=False) if candidates is None else candidates
+    for e in source:
+        if view is not None and candidates is None:
             if not view.visible(e):
                 continue
             e = view.shape(e)
@@ -774,7 +786,8 @@ def semantic_duplicate_of(m: Edge, survivor: Edge) -> bool:
 
 def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
                    coverage_share: float = 0.25,
-                   relations: Optional[dict[str, Relation]] = None):
+                   relations: Optional[dict[str, Relation]] = None,
+                   assertable=None):
     """specs/0027 §4a Stages 2-5 — the one total ordered retrieval-and-budget
     construction, over prepared inputs: `scored`/`relevant_ids`/`by_id` from
     `_lexical_scored` (Stage 0-1, already scoped/shaped), `sm` the semantic
@@ -834,10 +847,11 @@ def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
 
     # Stage 4 — the SINGLE I6 reserve, byte-for-byte today's construction over
     # the fused order and the extended relevance set.
+    is_assertable = assertable if assertable is not None else _asserted_today
     if len(stage3) <= max_edges:
         ordered = stage3
     else:
-        assertable = [e for e in stage3 if e.assertable and e.id in rel_ext]
+        assertable = [e for e in stage3 if is_assertable(e) and e.id in rel_ext]
         reserve_n = min(len(assertable), -(-max_edges // 4))
         reserved = assertable[:reserve_n]
         rid = {e.id for e in reserved}

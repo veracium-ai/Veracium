@@ -55,6 +55,21 @@ DISPOSITIONS: dict[str, dict] = {
                     "semantic_candidates filters to the lens's visible-id "
                     "set at recall (§4a Stage 1)."),
 
+    "Memory.facts_valid_at": dict(
+        returns_records=True, principal="threaded",
+        carriers="`list[AsOfFact]` — the (scope-shaped) edge and its "
+                 "`Resolution` per returned record",
+        disposition="SCOPED, on recall's own relation (specs/0028 §4c, "
+                    "V-SCOPE-DIFFERENTIAL, R3-3). The direct as-of lookup "
+                    "carries `principal`/`policy` keyword-only because it "
+                    "promises recall's decision: the §4a resolution builds the "
+                    "same `ScopeView` and applies visibility BEFORE historical "
+                    "eligibility (§3b), so the candidate set is the principal's "
+                    "visible set at every T and T is never a capability; "
+                    "returned edges are shaped through `ScopeView.shape`. "
+                    "Unscoped (no principal) exactly as `recall` is. "
+                    "Read-only: one clock read, one read window, no write."),
+
     "Memory.answer": dict(
         returns_records=False, principal="threaded",
         carriers="the answer string, built from an internal `recall`",

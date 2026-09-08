@@ -347,7 +347,7 @@ class ScopeView:
         return _gate.scoped_assertable(_asserted_today(record),
                                        self.decision(record))
 
-    def shape(self, record):
+    def shape(self, record, *, asserted=None):
         """Apply the RESTRICT-ONLY consequence of the decision to a VISIBLE
         record.
 
@@ -377,8 +377,11 @@ class ScopeView:
         `test_same_scope_grants_nothing` enumerates the temptations."""
         if not self.visible(record):
             return record                     # never reaches a carrier anyway
-        today = _asserted_today(record)
-        if not today or self.assertable(record):
+        # specs/0028 §4c: the as-of branch supplies `asserted` (its own
+        # T-verdict) so shaping never consults `Edge.assertable` there
+        # (V-ONE-CLOCK); unsupplied, today's verdict, byte-identical.
+        today = _asserted_today(record) if asserted is None else bool(asserted)
+        if not today or _gate.scoped_assertable(today, self.decision(record)):
             return record                     # scope subtracted nothing
         p = record.provenance
         update = {}

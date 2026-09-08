@@ -2,6 +2,82 @@
 
 ## Unreleased
 
+**As-of queries (specs/0028, accepted 2026-09-07 at external round 7;
+implemented 2026-09-08): *what did we hold to be true at T*.** A
+read-only, additive surface; `as_of=None` is today's recall, byte-identical
+(the resolution is never invoked), and no stored byte differs.
+
+- **Added: `Memory.recall(…, as_of=T)`.** The §4a resolution runs as a
+  PRE-FILTER — one read of the store's injected clock, one read window,
+  scope applied before historical eligibility — and normal ranking and
+  budgeting run over the candidates it yields with the branch's own
+  T-predicate; `Recall.as_of` carries a `Resolution` per returned edge
+  (interval, reason, tag, 0030 status, a disclosed cause, the pointer).
+  Under `as_of` the wiki, the episodes and the contested block are
+  omitted: each is a statement about now. `T` in the future raises the
+  typed `FutureAsOfRefused` (carrying `T` and the `now` compared against);
+  a naive or non-datetime `T` raises `ValueError` before any comparison;
+  `T == now` is permitted; the proactive path (`query=None`) refuses the
+  axis. MCP is UNCHANGED (0028 §10 Q5: a library surface in v2).
+- **Added: `Memory.facts_valid_at(user_id, subject, relation, T, *,
+  principal=None, policy=None) -> list[AsOfFact]`** — the direct lookup,
+  carrying the scope inputs recall carries: two principals against one
+  store get their own answers, and no choice of `T` grants a principal a
+  record its scope excludes (V-SCOPE-DIFFERENTIAL, research's round-4
+  design executed as written).
+- **Added: `SqliteStore.read_window(user_id)`** — the public read-only
+  window (BEGIN under the instance lock or JOIN on the owning thread;
+  ROLLBACK on error, COMMIT on exit), extracted from `current_state`,
+  which now joins it. A resolution's every read joins ONE window: a
+  correction committed by another connection during a resolution is
+  invisible to its later reads (V-ONE-SNAPSHOT). **Measured cost, stated:**
+  under the default rollback journal a resolution longer than a writer's
+  `busy_timeout` makes that writer's commit fail with the store's wrapped
+  refusal and lose its write (0028 §5, §7); under WAL the writer commits
+  and the reader keeps its snapshot. Hosts running long resolutions
+  against a write-heavy store raise `busy_timeout`, enable WAL, or accept
+  the bound.
+- **Added: `SqliteStore.edges_superseding(user_id, edge_id, *, principal,
+  policy) -> SuccessorLookup`** — the direct-successor accessor, scan-backed
+  and stated as such; the closed three-value `SuccessorDisposition`
+  (`head` / `superseded` / `successor_unavailable`) with successors ordered
+  `valid_from` asc then `id` asc. NOT an existence oracle: the queried
+  edge is read through the caller's view like its successors, so a hidden
+  queried id and a nonexistent one give equal whole objects, and a
+  hidden successor and a missing one are one outcome with no cause. Run
+  against the accepted model's frozen `EXPECTED` table on all thirteen
+  states for both principals (file sha16 `aa3c5c33af0a1ad9`, block sha16
+  `7c49dfe9a9504ec4`, pinned by research at `1f1cf53` before the code).
+- **Added: `schema.NAMES_A_SUCCESSOR`** — the third registry total over
+  `DISPOSITIONED_REASONS`, refusing at import in both directions; an
+  eighth reason must now be dispositioned THREE times (`AS_OF_DISPOSITION`,
+  `NAMES_A_SUCCESSOR`, and the resolution's own `RESOLUTION` table).
+- **Behaviour, per 0028 §4b:** `superseded` returns the value held;
+  `lapsed`/`decayed` return it flagged; `corrected` and `disputed` return
+  a FENCED claim about what was believed, `corrected` with a pointer to
+  where truth became (the chain head classified at T=now; at most 3 hops;
+  a longer chain or a cycle is INDETERMINATE with its cause);
+  `revoked_source`, an unregistered reason and a `None` reason on a
+  retired row are NOT_RETURNABLE (fail closed); `absorbed_duplicate` is
+  INDETERMINATE (the store cannot name a reachable absorber). No row
+  upgrades 0030's verdict; INDETERMINATE is never silent about itself.
+- **Internal, no behaviour change with `as_of=None`:** `ScopeView.shape`,
+  `graph.fused_subgraph` and `Memory._fit_to_budget` gain keyword-only
+  predicate/renderer hooks defaulting to today's `Edge.assertable` and
+  `render_edges`, so the as-of branch never consults the wall-clock
+  predicates (V-ONE-CLOCK; the absence proof's roots now include the
+  resolution: static hits 0, behavioural violations 0).
+- **Found at implementation, recorded for the spec:** 0028 §2c-i
+  attributes the naive-datetime and non-datetime `ValueError` to
+  `as_utc_required`, which takes a naive value as UTC and parses ISO text;
+  the resolution enforces the table itself. Four post-acceptance
+  amendments, written by research and folded into the spec at v15 (that
+  row and V-NORM-FIRST's check; the contested omission; the "no reachable
+  absorber" condition with its cause string deliberately unchanged; and
+  V-HEAD's example state — a disputed head is retired, so 0030 classifies
+  it `NOT_VALID_AT_T` at now, not fenced), each stating why the old text
+  passed seven external rounds.
+
 **Trust-surface fix (specs/0038, landed under a security-hotfix exception
 with a retrospective due 2026-09-14): the reference extraction no longer
 turns a user's DECLARED instruction into a stored disposition — and reports

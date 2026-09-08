@@ -11,14 +11,20 @@ CLAIM PROVED: no path from the shipped as-of entry points reaches
 
 COVERED FRACTION — STATED FIRST, because an artifact titled "no as-of path
 reaches valid_now" that silently covered a fraction of the as-of surface
-would be R3-1's defect in evidence rather than in prose. `src/veracium`
-ships ONLY `asof/` (`classify.py`, `adapter.py`, `carrier.py`). The
-resolution 0028 specifies — `facts_valid_at`, `read_window`,
-`edges_superseding`, the pointer walk — is UNWRITTEN. This proof covers
-`classify_as_of`, `assertable_as_of`, everything they reach, and the two
-store reads §5.1 names that exist today (`SqliteStore.current_state`,
-`SqliteStore.edges`). It covers nothing of the resolution, and it cannot;
-the resolution's own absence proof is owed at implementation (spec §9).
+would be R3-1's defect in evidence rather than in prose. Until 2026-09-08
+`src/veracium` shipped ONLY `asof/classify.py`, `adapter.py`, `carrier.py`
+and the resolution was UNWRITTEN; this proof then covered the classifier
+paths alone and said so. THE RESOLUTION NOW SHIPS (specs/0028 §9's owed
+proof, delivered with it): `asof/resolve.py` (`resolve_as_of`, the pointer
+walk, `lookup_successors`), `asof/recall.py` (`recall_at`, recall's as-of
+branch), `Memory.facts_valid_at`, `SqliteStore.read_window` and
+`SqliteStore.edges_superseding`. The ROOTS below name every one of them.
+The static tree follows what it can resolve (see FORM 1); the ranking and
+budget helpers the branch reaches through `mem.`/`store.` receivers
+(`_fit_to_budget`, `_semantic_lane`, `fused_subgraph` via `recall_at`) are
+LISTED as not-followed and are covered by the BEHAVIOURAL form, which
+attributes every predicate access made under any `asof/` frame — the
+whole as-of branch of recall runs under `recall_at`'s frame by design.
 
 FORM 1 — STATIC, the call tree, method stated. An AST walk over
 `src/veracium` from the four roots. FOLLOWED: a call to a bare name bound in
@@ -92,7 +98,14 @@ def _no_dup_pairs(pairs):
 ROOTS = (("veracium/asof/classify.py", None, "classify_as_of"),
          ("veracium/asof/classify.py", None, "assertable_as_of"),
          ("veracium/store/sqlite.py", "SqliteStore", "current_state"),
-         ("veracium/store/sqlite.py", "SqliteStore", "edges"))
+         ("veracium/store/sqlite.py", "SqliteStore", "edges"),
+         # the resolution, shipped 2026-09-08 (specs/0028 §9's owed proof)
+         ("veracium/asof/resolve.py", None, "resolve_as_of"),
+         ("veracium/asof/resolve.py", None, "lookup_successors"),
+         ("veracium/asof/recall.py", None, "recall_at"),
+         ("veracium/__init__.py", "Memory", "facts_valid_at"),
+         ("veracium/store/sqlite.py", "SqliteStore", "read_window"),
+         ("veracium/store/sqlite.py", "SqliteStore", "edges_superseding"))
 
 
 def repo_root(start=HERE):
@@ -283,7 +296,14 @@ DESELECTED_UNDER_CLOCK = ("test_current_path_oracle_identical_post0027",)
 # a path through classify_as_of exercised only elsewhere is outside the proof"
 # — the static form listed what it did not follow, so this form lists what it
 # did not exercise, and derives what it did.
-REACHES_CLASSIFIER = ("classify_as_of", "assertable_as_of", "veracium.asof", "from veracium.asof")
+REACHES_CLASSIFIER = ("classify_as_of", "assertable_as_of", "veracium.asof", "from veracium.asof",
+                      # the shipped as-of surfaces (2026-09-08) reach the classifier
+                      # WITHOUT a test naming it — every one of them runs under an
+                      # asof/ frame, so a file exercising them belongs under the clock
+                      # CALL forms, so a file that only MENTIONS a surface in prose
+                      # (a ledger table, a docstring) is not pulled under the clock
+                      "as_of=", ".facts_valid_at(", ".edges_superseding(", ".read_window(",
+                      "resolve_as_of(")
 EXCLUDED_FROM_CLOCK = {"tests/test_0028_asof_absence.py": "this checker's own matrix — it runs this checker; recursion"}
 
 
@@ -297,18 +317,22 @@ def exercised_test_files(root):
 
 
 def src_call_sites(src_dir):
-    """Every CALL of classify_as_of / assertable_as_of in src/veracium outside
-    asof/classify.py itself, by AST (a Name or Attribute callee so spelled).
-    Why it is measured here: the derived exercised set is files that MENTION
-    the classifier, and the residual hole in that derivation would be a test
-    reaching the classifier INDIRECTLY through a shipped API that calls it
-    without the test naming it. If this census is ZERO, no shipped path
-    reaches the classifier, naming it is the only way a test can, and the
-    derived set is the REACHABLE set — complete, not merely careful."""
+    """Every CALL of classify_as_of / assertable_as_of in src/veracium OUTSIDE
+    the `asof/` package, by AST (a Name or Attribute callee so spelled).
+    Why it is measured here: the derived exercised set is files that mention
+    the classifier OR a shipped as-of surface, and the residual hole in that
+    derivation would be a test reaching the classifier INDIRECTLY through a
+    shipped API outside `asof/` that calls it without the test naming
+    anything in REACHES_CLASSIFIER. Inside `asof/` the resolution calls the
+    classifier BY DESIGN (2026-09-08); every such call runs under an `asof/`
+    frame the recording clock attributes, and its entry points are the
+    tokens REACHES_CLASSIFIER derives the exercised set from. If this census
+    is ZERO, the only shipped paths to the classifier are the as-of surfaces
+    themselves, and the derived set is the REACHABLE set."""
     sites = []
     for py in sorted((src_dir / "veracium").rglob("*.py")):
         rel = str(py.relative_to(src_dir))
-        if rel.endswith("asof/classify.py"):
+        if rel.startswith("veracium/asof/"):
             continue
         for node in ast.walk(ast.parse(py.read_text())):
             if isinstance(node, ast.Call):
@@ -402,7 +426,7 @@ def main(argv=None):
         print(f"\nBEHAVIOURAL — exercised test files ({'DERIVED: every tests/test_*.py that reaches the classifier' if derived else 'OVERRIDDEN on the command line'}): {', '.join(test_paths)}")
         for f, why in excluded.items():
             print(f"BEHAVIOURAL — excluded from the clock: {f} — {why}")
-        print(f"BEHAVIOURAL — src call sites of the classifier outside asof/classify.py: {len(sites)}"
+        print(f"BEHAVIOURAL — src call sites of the classifier outside asof/: {len(sites)}"
               + (f" {sites}" if sites else "")
               + (" — no shipped path reaches the classifier, so naming it is the only way a test can: the derived set is the REACHABLE set"
                  if not sites else " — a shipped path reaches the classifier; a test could exercise it WITHOUT naming it, so the derived set is NOT the reachable set"))

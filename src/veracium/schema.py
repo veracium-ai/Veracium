@@ -486,6 +486,81 @@ if set(AS_OF_DISPOSITION.values()) - {GROUNDABLE, FENCED, EXCLUDED}:
     raise ImportError("AS_OF_DISPOSITION carries a value outside the three closed dispositions")
 
 
+# specs/0028 §5.1 — "asserts supersession" is defined by a REGISTRY, never by
+# a listed reason: the THIRD registry total over DISPOSITIONED_REASONS, under
+# the same build-time equality gate as AS_OF_DISPOSITION, refusing at import
+# in BOTH directions (V-SUCCESSOR-REGISTRY-TOTAL). A hand-written set beside
+# it went stale silently: the design as first sent named only `corrected`,
+# and an edge retired `superseded` with a cross-scope successor then fell
+# through to HEAD while the principal could read `invalidation_reason ==
+# "superseded"` on the row in front of them — not a leak but a lie the
+# principal can catch. The values are booleans and nothing else.
+NAMES_A_SUCCESSOR: dict = {    # every DISPOSITIONED_REASONS key, explicitly
+    "corrected":          True,    # the host replaced the content
+    "superseded":         True,    # W2 — the supersession path
+    "absorbed_duplicate": True,    # AS_OF_DISPOSITION's own note: 0028 resolves to the absorber
+    "lapsed":             False,   # staleness is not a successor
+    "decayed":            False,   # low confidence now is not a successor
+    "disputed":           False,   # trust revoked; nothing replaces it
+    "revoked_source":     False,   # 0022 withdrawal, non-revival
+}
+if set(NAMES_A_SUCCESSOR) != set(DISPOSITIONED_REASONS):
+    raise ImportError(
+        "NAMES_A_SUCCESSOR and DISPOSITIONED_REASONS disagree on the reason set "
+        f"({sorted(set(NAMES_A_SUCCESSOR) ^ set(DISPOSITIONED_REASONS))}) — a new "
+        "reason must be ruled in every registry (specs/0028 §5.1, V-SUCCESSOR-REGISTRY-TOTAL)")
+if any(type(v) is not bool for v in NAMES_A_SUCCESSOR.values()):
+    raise ImportError("NAMES_A_SUCCESSOR carries a value that is not a boolean")
+#: the reasons whose row ASSERTS a successor — derived, never hand-listed
+ASSERTS_SUPERSESSION: frozenset = frozenset(
+    r for r, names in NAMES_A_SUCCESSOR.items() if names)
+
+
+class SuccessorDisposition(str, Enum):
+    """specs/0028 §5.1 — the CLOSED three-value vocabulary of
+    `Store.edges_superseding` (R4-1). Precedence: visible successors →
+    SUPERSEDED; else the queried edge's own assertion, read only if that edge
+    is itself visible in the caller's view → SUCCESSOR_UNAVAILABLE; else
+    HEAD. Total over every store state. NOT an existence oracle: the answers
+    are a function of what the caller may see, never of what the store
+    holds, and SUCCESSOR_UNAVAILABLE carries NO cause by design — a hidden
+    successor and a missing one are one outcome."""
+    HEAD = "head"                                    # the edge asserts no supersession
+    SUPERSEDED = "superseded"                        # >= 1 successor visible IN THIS VIEW
+    SUCCESSOR_UNAVAILABLE = "successor_unavailable"  # the edge asserts supersession; none visible
+
+
+class SuccessorLookup:
+    """specs/0028 §5.1 — EXACTLY two fields, immutable, compared as a WHOLE
+    OBJECT (V-NO-EXISTENCE-SIGNAL asserts whole-object equality of the
+    hidden and the missing results, so a field added later fails that test
+    rather than passing it). `successors` is empty unless SUPERSEDED, and
+    ordered `valid_from` ascending then `id` ascending — a graph read, never
+    a relevance order."""
+    __slots__ = ("disposition", "successors")
+
+    def __init__(self, disposition: SuccessorDisposition, successors: tuple = ()):
+        if not isinstance(disposition, SuccessorDisposition):
+            raise TypeError(f"disposition must be a SuccessorDisposition, got {disposition!r}")
+        object.__setattr__(self, "disposition", disposition)
+        object.__setattr__(self, "successors", tuple(successors))
+
+    def __setattr__(self, name, value):
+        raise AttributeError("SuccessorLookup is immutable")
+
+    def __eq__(self, other):
+        if not isinstance(other, SuccessorLookup):
+            return NotImplemented
+        return (self.disposition, self.successors) == (other.disposition, other.successors)
+
+    def __hash__(self):
+        return hash((self.disposition, tuple(e.id for e in self.successors)))
+
+    def __repr__(self):
+        return (f"SuccessorLookup(disposition={self.disposition!r}, "
+                f"successors=({', '.join(e.id for e in self.successors)}))")
+
+
 class Edge(BaseModel):
     """A typed relational fact. `subject`/`object` are entity refs (e.g. 'user',
     'person:tansy', 'org:thornbury'). Bi-temporal: superseded/invalidated edges

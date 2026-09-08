@@ -37,6 +37,8 @@ from .config import MemoryConfig
 from .gate import ABSTAINED as _ABSTAINED  # noqa: E402
 from .graph import subgraph_for_query, render_edges
 from .graph import _lexical_scored, fused_subgraph
+from .graph import _asserted_today
+from .asof.resolve import AsOfAnswer, AsOfFact, FutureAsOfRefused
 from . import semantic as _semantic_mod
 from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
@@ -56,7 +58,8 @@ from .usage import (ATTRIBUTED_PAIRS, ROLE_FIELDS, ArmingComplete,
                     active_call as _active_call,
                     routing_frame as _routing_frame)
 
-__all__ = ["Memory", "MemoryConfig", "Recall", "Store", "SqliteStore",
+__all__ = ["Memory", "MemoryConfig", "Recall", "FutureAsOfRefused", "AsOfAnswer",
+           "AsOfFact", "Store", "SqliteStore",
            "Complete", "Embed", "EvidenceAuthor", "EvidenceContext"]
 
 
@@ -98,6 +101,11 @@ class Recall:
     # unaffected and a semantic-less caller sees {} and "disabled".
     recalled_edges: dict[str, "RecalledEdge"] = field(default_factory=dict)
     semantic_status: str = "disabled"
+    # specs/0028 §4c — the as-of provenance: None unless the call passed
+    # `as_of=T`; then the normalised T, the ONE `now` the resolution read,
+    # and a resolution per returned edge (interval, reason, tag, 0030 status,
+    # disclosed cause, pointer). APPENDED WITH A DEFAULT (V-COMPAT).
+    as_of: Optional["AsOfAnswer"] = None
 
 
 @dataclass(frozen=True)
@@ -515,7 +523,7 @@ class Memory:
 
     def recall(self, user_id: str, query: Optional[str] = None, *,
                token_budget: Optional[int] = None,
-               principal=None, semantic="auto", **filters) -> Recall:
+               principal=None, semantic="auto", as_of=None, **filters) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
         Combines the LLM-curated wiki (the grounded, verified working view,
@@ -572,11 +580,26 @@ class Memory:
         unknown field raises. Filters SELECT, never STRIP: the narrowest
         result still renders full disclosure, and the contested surface's
         preservation guarantee is never filtered away.
+
+        **`as_of` (specs/0028 §4c) — what did we hold to be true at T.**
+        `None` (default) is today's behaviour, byte-identical (V-COMPAT: the
+        as-of filter is never invoked). An aware `datetime` T runs the §4a
+        resolution as a PRE-FILTER — one injected-clock read, one store
+        snapshot, scope before historical eligibility — and normal ranking
+        and budgeting run over the candidates it yields; `Recall.as_of`
+        carries a resolution per returned edge. T in the future RAISES the
+        typed `FutureAsOfRefused`; a naive or non-datetime T raises
+        `ValueError` first (V-NORM-FIRST). Under `as_of` the wiki, the
+        episodes and the contested block are OMITTED (they are statements
+        about now). The proactive path (`query=None`) refuses `as_of`.
         """
         if token_budget is not None and token_budget <= 0:
             raise ValueError("token_budget must be a positive number of tokens")
         from .scope import validate_filters
         filters = validate_filters(filters or None)   # the CLOSED §4e grammar
+        if query is None and as_of is not None:
+            raise ValueError("as_of is refused on the proactive path: a briefing is a "
+                             "statement about now (specs/0028 §4c)")
         try:
             if query is None:
                 # proactive is LLM-free; the frame is pushed for uniformity
@@ -588,10 +611,31 @@ class Memory:
                 return self._recall(user_id, query, token_budget,
                                     op_llm, usage_finish,
                                     principal=principal, filters=filters,
-                                    semantic=semantic)
+                                    semantic=semantic, as_of=as_of)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
+
+    def facts_valid_at(self, user_id: str, subject: str, relation: str, T, *,
+                       principal=None, policy=None) -> list:
+        """specs/0028 §4c — the DIRECT lookup: every record of `(subject,
+        relation)` held valid at T, each as an `AsOfFact` (the edge and its
+        resolution: interval, reason, tag, 0030 status, disclosed cause,
+        pointer). It carries the scope inputs it needs because it promises
+        recall's decision (R3-3): `principal`/`policy` keyword-only, default
+        None — a caller passing neither gets the unscoped view exactly as
+        `recall` does; `policy=None` with a principal uses this Memory's
+        configured policy, as recall does (V-SCOPE-DIFFERENTIAL). `T` is
+        required (`None` is a TypeError); naive → `ValueError`; in the
+        future → `FutureAsOfRefused`. Read-only: one clock read, one
+        snapshot, no write."""
+        if T is None:
+            raise TypeError("facts_valid_at requires T (specs/0028 §2c-i)")
+        from .asof.resolve import resolve_as_of
+        pol = self.scope_policy if policy is None else policy
+        answer = resolve_as_of(self.store, user_id, T, principal=principal, policy=pol,
+                               subject=subject, relation=relation)
+        return list(answer.facts)
 
     def _proactive(self, user_id: str, token_budget: Optional[int],
                    *, principal=None, filters: Optional[dict] = None) -> Recall:
@@ -626,7 +670,7 @@ class Memory:
                 token_budget: Optional[int] = None,
                 op_llm=None, usage_finish=dict,
                 *, principal=None, filters: Optional[dict] = None,
-                semantic="auto") -> Recall:
+                semantic="auto", as_of=None) -> Recall:
         # specs/0017: op_llm is the operation's arming provider proxy (or the
         # raw llm when unmetered); usage_finish merges the token buffer into
         # the terminal _record exactly once.
@@ -668,6 +712,16 @@ class Memory:
         # specs/0020 §4f — THE PRINCIPAL BOUNDARY. Built once per call; None
         # when unscoped, and then not one line of scope code runs (V1).
         view = self._scope_view(user_id, principal, filters)
+        if as_of is not None:
+            # specs/0028 §4c — the as-of branch: the §4a resolution is the
+            # pre-filter; ranking and budget run over its candidates with the
+            # branch's own T-predicate. Taken BEFORE the wiki compile (a
+            # write; §2c-ii says as-of cannot cause one). `as_of=None` never
+            # reaches this line (V-COMPAT).
+            from .asof.recall import recall_at
+            return recall_at(self, user_id, query, token_budget, as_of=as_of,
+                             view=view, principal=principal, filters=filters,
+                             semantic=semantic, usage_finish=usage_finish)
         # specs/0020 §4d (V5) — THE WIKI IS EXCLUDED from a principal-bearing
         # response: it is a store-wide LLM re-rendering, i.e. a synthesis path
         # the scope machinery does not control, and every such path is a
@@ -1019,7 +1073,9 @@ class Memory:
         return result, exposed_all
 
     def _fit_to_budget(self, wiki: Optional[str], edges, episodes,
-                       budget: int, query: str = "") -> tuple[Optional[str], str, str, bool]:
+                       budget: int, query: str = "", *,
+                       assertable=None, claims=None,
+                       render=None) -> tuple[Optional[str], str, str, bool]:
         """Greedy selection under the token budget in the specs/0012 I10f precedence
         (mirroring the surface order; the contested block was already charged upstream):
 
@@ -1040,13 +1096,19 @@ class Memory:
         est = self._est_tokens
         cap = self.config.item_cap_tokens
         qtok = set(re.findall(r"[a-z0-9]+", (query or "").lower()))
+        # specs/0028 §4c — the as-of branch supplies its own assertability
+        # and claim predicates (its T-verdict) and its own line renderer, so
+        # the budget partition never reads `Edge.assertable` there
+        # (V-ONE-CLOCK). Unsupplied: today's predicate and renderer, verbatim.
+        is_assertable = assertable if assertable is not None else _asserted_today
+        render_fn = render if render is not None else render_edges
 
         def _rel(e) -> bool:
             etok = set(re.findall(r"[a-z0-9]+",
                                    f"{e.subject} {e.relation} {e.object} {e.note}".lower()))
             return bool(qtok & etok)
 
-        assertable = [e for e in edges if e.assertable]
+        assertable = [e for e in edges if is_assertable(e)]
         flagged_rel = [e for e in assertable if e.needs_confirmation and _rel(e)]
         flagged_rel.sort(key=lambda e: (e.provenance.observed_at, e.id))   # most overdue
         flagged_unrel = [e for e in assertable if e.needs_confirmation and not _rel(e)]
@@ -1071,7 +1133,8 @@ class Memory:
 
         from .budgets import clamp_edge_line
 
-        claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]
+        claim_edges = ([e for e in edges if e.quarantined or (e.active and e.use_only)]
+                       if claims is None else [e for e in edges if claims(e)])
         # I10h protects the QUERY-MATCHED claim flag above the wiki; an unmatched claim
         # renders fenced but admits after the wiki (it outranks only variants).
         claims_matched = [e for e in claim_edges if _rel(e)]
@@ -1080,14 +1143,14 @@ class Memory:
         # clamps first so the label+content pair stays within the cap (I10c)
         def _claim_lines(es):
             return [ln for ln in
-                    (clamp_edge_line(e, cap, render_edges) for e in es) if ln]
+                    (clamp_edge_line(e, cap, render_fn) for e in es) if ln]
         # 0023 §4a-iv / N14: the render split runs on the SHARED predicate —
         # assertable to ordinary detail, everything else to the fenced section
         # (fenced, not suppressed: Q5)
         ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
-                    if e.assertable]
+                    if is_assertable(e)]
         tp_ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
-                       if not e.assertable]
+                       if not is_assertable(e)]
 
         headers = est("## RELEVANT DETAIL\n") \
             + est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
@@ -1103,8 +1166,8 @@ class Memory:
             dropped = 0
             nonlocal remaining, n_clamped
             for k, e in enumerate(es):
-                raw = render_edges([e])
-                line = clamp_edge_line(e, cap, render_edges)
+                raw = render_fn([e])
+                line = clamp_edge_line(e, cap, render_fn)
                 if not line:
                     continue
                 if est(raw) > cap:
@@ -1112,7 +1175,7 @@ class Memory:
                 cost = est(line) + 1                       # +1: the join newline
                 if cost > remaining:
                     if best_effort_first and k == 0 and not sel and remaining >= 16:
-                        line = clamp_edge_line(e, remaining - 1, render_edges)
+                        line = clamp_edge_line(e, remaining - 1, render_fn)
                         cost = est(line) + 1
                         if cost <= remaining:
                             n_clamped += 1                 # clamp-to-fit SIGNALS (I10a)
