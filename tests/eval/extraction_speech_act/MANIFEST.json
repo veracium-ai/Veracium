@@ -124,6 +124,12 @@
     "supersedes_pin": "7bbf75a73c69c216a094afbea6a560544b8fafc20d271a86e0b95ee919d381bc",
     "utc": "2026-09-07",
     "what": "Re-pinned to the ACCEPTANCE fold (external round 4, 2026-09-08): the closing version cell, the Review closure block rendered from the ledger, Spec-Status accepted. Two intermediate pins computed during the fold (one over a candidate that never landed, one before the render) were RESTORED over, not recorded \u2014 an amendment history records every state main was in and none it was not."
+   },
+   {
+    "n": 13,
+    "supersedes_pin": "d7b9582256c5c2139fafd743c7caa4733612b8bbfbf9f9fb9457a8fd18c0af8f",
+    "utc": "2026-09-08",
+    "what": "Re-pinned after the machine-readable `Discharges: d59592d` line (and its explanatory paragraph) was added at the end of the `## Retrospective` section, the day specs/retrospective_debt.py landed as a CI gate (research's check, on the owner's word \"Fix the deadline check first, then name the variant\"); a process record, no design content moved; oracle pin FIRST (both lines excluded), corpus pin SECOND."
    }
   ],
   "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged \u2014 a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
@@ -145,7 +151,7 @@
   ],
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "d7b9582256c5c2139fafd743c7caa4733612b8bbfbf9f9fb9457a8fd18c0af8f",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "b8a4c22799a9114a4670ddf0c08d083dee1311a2ab022b871b983dd36f13ebdf",
   "spec_version": "accepted (closing cell)",
   "status": "BOUND"
  },

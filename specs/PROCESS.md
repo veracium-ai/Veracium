@@ -125,8 +125,44 @@ user-affecting defect is not held for review; it ships, and the spec goes
 for **retrospective** external review, with that fact recorded in the spec.
 The 0.4.1 advisory fix went out ~35 minutes after escalation, and delaying
 it would have been the wrong call. **The carve-out carries a deadline** —
-`Spec-Retrospective-Due` below is mandatory and machine-checked, because a
-deadline is what keeps this a carve-out rather than a door.
+`Spec-Retrospective-Due` is mandatory, checked at commit time for presence
+and form, and checked **on every CI run** against the date: an obligation
+past its date with no discharge recorded **fails the build**. A
+retrospective is discharged by a `## Retrospective` section in the spec
+carrying an explicit **`Discharges: <sha>`** line. An owner may re-date an
+obligation by recording the new date, the reason, and the authorisation in
+`specs/retrospective_debt.py`, or close it as **superseded** there when the
+code it touched has since been externally reviewed under a later *accepted*
+spec — naming those specs (the check verifies each is accepted in the tree),
+stating the limit (the area was reviewed, not this defect line by line), a
+reason and an authoriser; **an obligation may not pass its date in silence,
+and a deferral without a future date is refused.** A deadline checked only
+at the moment it is set is checked before it can be missed.
+*(Research, 2026-09-08, on Quentin's word "Fix the deadline check first,
+then name the variant": the previous sentence said "machine-checked", and
+the machine checked the trailer's presence and form at commit time — before
+the deadline could possibly have passed — and nothing ever read the date
+again. Measured at the tree that day: nine commits carried the trailer, one
+spec carried a `## Retrospective` section, seven dates were past with no
+discharge recorded anywhere, the oldest a month over.)*
+
+**If the tree moves under a round in flight.** A hotfix may land while an
+external round is out — the exposure window is hours, not the weeks a fresh
+review would take, and holding the fix would be the wrong call for the same
+reason the carve-out exists. **What is owed is disclosure: the next package
+in that round states that the tree moved, names the commit, and says whether
+the code the round is reviewing changed** — `git log <hotfix>..<pin>` over
+the paths the round covers, with the empty result shown when it is empty.
+**A verdict is a statement about a specific artifact; if the artifact moved
+mid-round, the package says so, and says whether the movement reached the
+reviewed surface.** *(0038 is the instance. The check was run — `git log
+d59592d..1f1cf53` over the three files is empty, so rounds 2–4 reviewed the
+shipped code unchanged — but it was run afterwards, by the second seat,
+because someone asked. Nothing required it, and the next occurrence may not
+align so kindly. This is a disclosure duty, not a second carve-out: the
+licence to ship already exists above, and written as a permission it would
+read as "there is a procedure for shipping mid-round", which softens the bar
+the carve-out depends on being rare.)*
 
 **If the reviewer is unavailable:** for a *lightweight* change, record the
 unavailability and proceed. For a full spec touching stored state, trust

@@ -256,7 +256,7 @@ absent.
 The manifest's sha256 is carried on **one** line of this spec:
 
 ```
-corpus sha256: 5d0533375b0328317860840ec35fccab1d7ea88e5310de07c0daf70e6169f445
+corpus sha256: ff8abc907eb48a6332bd690a516ae513f1deea5644025c6e2addfe7871a879b2
 ```
 
 and the manifest carries `spec_version` and
@@ -473,7 +473,7 @@ manifest's — and the manifest carries every file's.** Fifteen digests in prose
 would be fifteen things going stale independently, which this document has
 already demonstrated twice today at a smaller scale.
 
-oracle manifest sha256: 33ecc3f2149d6f58031b22546e56655b8af02332c9a019cc39df2e13af344019
+oracle manifest sha256: 03064046d3e26d4df9c6aa1d09182043182fa4a988a4d9aa0787a459a51d654d
 
 **The binding is bidirectional and neither direction depends on the other's
 token** (the corpus pin's protocol): the line above is `sha256(MANIFEST.json)`;
@@ -786,6 +786,14 @@ call for this defect; the record should say it was that variant.
 **Judgement.** The carve-out was warranted, its precondition was met, the
 retrospective review happened and accepted the shipped code unchanged, and
 the deadline was met with six days to spare. Discharged.
+
+Discharges: d59592d
+
+*(The line above is the machine-readable form: `specs/retrospective_debt.py`
+closes an obligation only on an explicit `Discharges: <sha>` line inside a
+`## Retrospective` section — never on a sha this section happens to mention,
+and this one mentions three. Added 2026-09-08 when that check landed; the
+observation (1) two paragraphs up is the check it asked for.)*
 
 ## Review closure
 

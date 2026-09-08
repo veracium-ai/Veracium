@@ -3068,3 +3068,206 @@ def test_the_citation_derivation_detects_a_planted_name_and_resolves_a_real_one(
     (root / "specs" / "0900-a.md").write_text("Spec-Status: accepted\n\ncites `test_real_node` and `test_planted_zzz` and `tests/test_x.py::test_real_node`\n")
     (root / "specs" / "0901-b.md").write_text("Spec-Status: draft\n\ncites `test_planned_node`\n")
     assert mod.unresolved_by_spec(root) == {"0900": ["test_planted_zzz"]}
+
+
+# --- the retrospective deadline (PROCESS §3b's carve-out; research's check,
+# landed 2026-09-08 on Quentin's word "Fix the deadline check first, then
+# name the variant"). check_spec_reference.py verifies at COMMIT TIME that a
+# security-hotfix commit carries a Spec-Retrospective-Due that parses; nothing
+# read the date again, and seven obligations passed their dates in silence.
+# Obligations are DERIVED from the commit trailers; a discharge is DECLARED by
+# a `Discharges: <sha>` line inside a `## Retrospective` section; a deferral
+# needs a future date, a reason and an authoriser; zero obligations is not a
+# pass.
+def _retrospective_debt(*, bare=False):
+    """A fresh module instance per call. `bare=True` empties the live
+    disposition tables: they describe THIS tree's obligations and covering
+    specs, and the check rightly refuses them against a throwaway tree where
+    those specs do not exist — which is the property, not noise."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("retrospective_debt", _CIT_ROOT / "specs" / "retrospective_debt.py")
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    if bare:
+        mod.DEFERRED.clear(); mod.SUPERSEDED.clear()
+    return mod
+
+
+def _hotfix_repo(tmp_path, due, *, discharges=None, subject="hotfix"):
+    """A one-commit git repo whose commit carries the carve-out trailers, and
+    a specs/ dir with an optional `## Retrospective` section."""
+    import subprocess
+    repo = tmp_path / "repo"
+    (repo / "specs").mkdir(parents=True)
+    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"]}
+    g = lambda *a: subprocess.run(("git", "-C", str(repo), *a), check=True, env=env,
+                                  capture_output=True, text=True).stdout
+    g("init", "-q", "-b", "main")
+    (repo / "specs" / "0900-a.md").write_text("Spec-Status: accepted\n\n## Body\n\ntext\n")
+    g("add", "-A")
+    g("commit", "-q", "-m", f"{subject}\n\nSpec-Exception: security-hotfix\n"
+      f"Spec-Exception-Reason: a live defect, twelve+ chars\nSpec-Retrospective-Due: {due}\n")
+    sha = g("rev-parse", "HEAD").strip()
+    if discharges is not None:
+        (repo / "specs" / "0900-a.md").write_text(
+            "Spec-Status: accepted\n\n## Body\n\ntext\n\n## Retrospective\n\nprose mentioning "
+            f"{sha[:7]} in passing\n{discharges}\n\n## Review closure\n\nafter\n")
+    return repo, sha
+
+
+def test_no_security_hotfix_obligation_is_past_its_date_without_a_declared_discharge_or_deferral():
+    """The live gate: every `Spec-Retrospective-Due` in this repo's history is
+    either not yet due, discharged by an explicit `Discharges:` line in a
+    `## Retrospective` section, or deferred in specs/retrospective_debt.py
+    with a future date, a reason and an authoriser. A deferral is refused on
+    each missing part, and the check refuses to pass on a tree with no
+    obligation at all."""
+    mod = _retrospective_debt()
+    probs = mod.problems(_CIT_ROOT)
+    assert probs == [], "\n".join(probs)
+    obs = mod.obligations(_CIT_ROOT)
+    assert obs, "the derivation found no obligation — the trailer name or the tree is wrong"
+    # every declared discharge names an obligation that exists in history
+    known = {o["sha"] for o in obs}
+    for spec, shas in mod.discharges(_CIT_ROOT).items():
+        for s in shas:
+            assert s in known, (spec, s, "discharges a sha that carries no obligation")
+    # every deferral and every superseded closure names an obligation that
+    # exists in history, and no sha is disposed twice
+    for key in mod.DEFERRED:
+        assert key in known, (key, "deferral for a sha that carries no obligation")
+    for key in mod.SUPERSEDED:
+        assert key in known, (key, "superseded closure for a sha that carries no obligation")
+    assert not set(mod.DEFERRED) & set(mod.SUPERSEDED)
+    # every obligation is accounted for by exactly one kind or is not yet due:
+    # the derivation's nine at landing were 6 superseded, 1 deferred, 1
+    # discharged, 1 pending (b8a4489, due 2026-09-11) — nothing dropped out
+    discharged = {s for shas in mod.discharges(_CIT_ROOT).values() for s in shas}
+    for o in obs:
+        kinds = [o["sha"] in discharged, o["sha"] in mod.DEFERRED, o["sha"] in mod.SUPERSEDED]
+        assert sum(kinds) <= 1, (o["sha"], "disposed more than one way")
+    # the deferral-hygiene mutants, injected into the live table and withdrawn
+    saved = dict(mod.DEFERRED)
+    try:
+        mod.DEFERRED["0000000"] = {"new_due": "someday", "reason": "", "authorized_by": ""}
+        out = "\n".join(mod.problems(_CIT_ROOT))
+        assert "must be YYYY-MM-DD" in out and "needs a reason" in out and "needs who authorised" in out
+    finally:
+        mod.DEFERRED.clear(); mod.DEFERRED.update(saved)
+    # the superseded-hygiene mutants: a missing field, a covering spec that is
+    # deferred (0002), and one that does not exist — each refused by name
+    saved_s = {k: dict(v) for k, v in mod.SUPERSEDED.items()}
+    try:
+        key = next(iter(mod.SUPERSEDED))
+        mod.SUPERSEDED[key]["limit"] = ""
+        assert any(f"superseded closure for {key}: needs `limit`" in p for p in mod.problems(_CIT_ROOT))
+        mod.SUPERSEDED[key]["limit"] = saved_s[key]["limit"]
+        mod.SUPERSEDED[key]["covered_by"] = ["0002", "9999"]
+        out = "\n".join(mod.problems(_CIT_ROOT))
+        assert "spec 0002, whose Spec-Status is 'deferred', not accepted" in out
+        assert "spec 9999, which does not exist" in out
+    finally:
+        mod.SUPERSEDED.clear(); mod.SUPERSEDED.update(saved_s)
+    assert mod.problems(_CIT_ROOT) == []
+
+
+def test_the_retrospective_derivation_owes_past_dates_closes_declared_ones_and_refuses_vacuity(tmp_path):
+    """RULE ZERO: the negative controls, on a throwaway git repo. A past date
+    with no section is owed; a section that merely MENTIONS the sha does not
+    close it; an explicit `Discharges:` line does; a future date is not yet
+    owed and becomes owed the day after; a deferral to a future date parks it
+    and a deferral in the past does not; a tree with no obligation is refused
+    rather than passed."""
+    mod = _retrospective_debt(bare=True)
+    # the live tables against a throwaway tree: every superseded closure is
+    # refused because its covering specs are not there — the escape hatch is
+    # checked against the tree it runs in, never taken on faith
+    live = _retrospective_debt()
+    repo0, _ = _hotfix_repo(tmp_path / "live", "2026-08-07")
+    refusals = [p for p in live.problems(repo0, "2026-09-08") if "does not exist in specs/" in p]
+    assert len(refusals) >= len(live.SUPERSEDED) > 0
+    today = "2026-09-08"
+    # owed: past date, no section at all
+    repo, sha = _hotfix_repo(tmp_path / "a", "2026-08-07")
+    probs = mod.problems(repo, today)
+    assert len(probs) == 1 and sha[:7] in probs[0] and "no `## Retrospective`" in probs[0]
+    # a mention is not a discharge
+    repo, sha = _hotfix_repo(tmp_path / "b", "2026-08-07", discharges="no declaration here")
+    assert mod.discharges(repo) == {}
+    assert [p for p in mod.problems(repo, today) if sha[:7] in p]
+    # a declared discharge closes it — and the key is the sha, not the date
+    repo, sha = _hotfix_repo(tmp_path / "c", "2026-08-07", discharges=f"Discharges: {sha[:7]}")
+    assert mod.discharges(repo) == {"0900-a.md": [sha[:7]]}
+    assert mod.problems(repo, today) == []
+    repo, sha = _hotfix_repo(tmp_path / "c2", "2026-08-07", discharges="Discharges: 0000000")
+    assert [p for p in mod.problems(repo, today) if sha[:7] in p], "a discharge of a different sha on the same date must not close this one"
+    # not yet owed today; owed the day after its date
+    repo, sha = _hotfix_repo(tmp_path / "d", "2026-09-14")
+    assert mod.problems(repo, today) == []
+    assert [p for p in mod.problems(repo, "2026-09-15") if sha[:7] in p]
+    # a deferral parks it only while its new date is in the future
+    repo, sha = _hotfix_repo(tmp_path / "e", "2026-08-07")
+    saved = dict(mod.DEFERRED); saved_s = dict(mod.SUPERSEDED)
+    try:
+        mod.DEFERRED.clear(); mod.SUPERSEDED.clear()
+        mod.DEFERRED[sha[:7]] = {"new_due": "2026-12-01", "reason": "r", "authorized_by": "owner"}
+        assert mod.problems(repo, today) == []
+        mod.DEFERRED[sha[:7]]["new_due"] = "2026-09-01"
+        assert any("deferred to 2026-09-01" in p for p in mod.problems(repo, today))
+        # a superseded closure closes it only when every covering spec is
+        # ACCEPTED in the tree: 0900 is; a draft 0901 and a missing 0999 refuse
+        mod.DEFERRED.clear()
+        (repo / "specs" / "0901-b.md").write_text("Spec-Status: draft\n")
+        entry = {"covered_by": ["0900"], "reason": "r", "limit": "l", "authorized_by": "owner"}
+        mod.SUPERSEDED[sha[:7]] = dict(entry)
+        assert mod.problems(repo, today) == []
+        mod.SUPERSEDED[sha[:7]]["covered_by"] = ["0900", "0901", "0999"]
+        out = "\n".join(mod.problems(repo, today))
+        assert "0901, whose Spec-Status is 'draft'" in out and "0999, which does not exist" in out
+        for field in ("reason", "covered_by", "limit", "authorized_by"):
+            mod.SUPERSEDED[sha[:7]] = dict(entry); mod.SUPERSEDED[sha[:7]][field] = ""
+            assert any(f"needs `{field}`" in p for p in mod.problems(repo, today)), field
+    finally:
+        mod.DEFERRED.clear(); mod.DEFERRED.update(saved)
+        mod.SUPERSEDED.clear(); mod.SUPERSEDED.update(saved_s)
+    # vacuity: a history with no obligation is a refusal, not a pass
+    import subprocess
+    empty = tmp_path / "f" / "repo"; (empty / "specs").mkdir(parents=True)
+    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"]}
+    subprocess.run(("git", "-C", str(empty), "init", "-q", "-b", "main"), check=True, env=env)
+    (empty / "x").write_text("x")
+    subprocess.run(("git", "-C", str(empty), "add", "-A"), check=True, env=env)
+    subprocess.run(("git", "-C", str(empty), "commit", "-q", "-m", "plain commit"), check=True, env=env)
+    probs = mod.problems(empty, today)
+    assert len(probs) == 1 and "not a pass" in probs[0]
+
+
+def test_the_retrospective_derivation_refuses_a_shallow_clone_rather_than_under_reporting(tmp_path):
+    """RULE ZERO for the hole research measured after the check was written:
+    a shallow clone deep enough to hold ONE obligation and shallow enough to
+    miss the rest reports one problem and goes GREEN once it is disposed —
+    green because the history is absent, not because the debt is paid. The
+    derivation must RAISE on a shallow repository, and the same repository
+    cloned in full must answer."""
+    import subprocess
+    mod = _retrospective_debt(bare=True)
+    src, sha = _hotfix_repo(tmp_path / "src", "2026-08-07")
+    env = {"HOME": str(tmp_path), "PATH": os.environ["PATH"],
+           "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x"}
+    # a second commit so a depth-1 clone genuinely lacks the hotfix commit
+    (src / "later").write_text("x")
+    subprocess.run(("git", "-C", str(src), "add", "-A"), check=True, env=env)
+    subprocess.run(("git", "-C", str(src), "commit", "-q", "-m", "later plain commit"), check=True, env=env)
+    shallow = tmp_path / "shallow"
+    subprocess.run(("git", "clone", "-q", "--depth", "1", f"file://{src}", str(shallow)), check=True, env=env, capture_output=True)
+    assert subprocess.run(("git", "-C", str(shallow), "rev-parse", "--is-shallow-repository"),
+                          capture_output=True, text=True).stdout.strip() == "true"
+    with pytest.raises(RuntimeError, match="shallow repository"):
+        mod.obligations(shallow)
+    with pytest.raises(RuntimeError, match="shallow repository"):
+        mod.problems(shallow, "2026-09-08")
+    full = tmp_path / "full"
+    subprocess.run(("git", "clone", "-q", f"file://{src}", str(full)), check=True, env=env, capture_output=True)
+    assert [o["sha"] for o in mod.obligations(full)] == [sha[:7]]
+    assert len(mod.problems(full, "2026-09-08")) == 1

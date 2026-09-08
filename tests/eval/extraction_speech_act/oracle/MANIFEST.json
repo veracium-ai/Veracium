@@ -95,12 +95,11 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "b582a752cedce9f7acfbfcb2329448cec39f502fb7397e3c385c877eb3616bfa",
+  "spec_text_sha256_excluding_both_pin_lines": "4192cefbb2942a5b723a06d91f10f4e0b30fea5a5ca596cdb2ac62f4ab05a69b",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
   ],
-  "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line.",
   "repins": [
    {
     "by": "dev (veracium-69)",
@@ -115,8 +114,16 @@
     "supersedes_pin": "c0174520ec6a0243763ef91d601006db108266cda3e944d4eb9f2b79eab1ac39",
     "what": "Re-pinned after the security-hotfix RETROSPECTIVE was recorded in the spec (a `## Retrospective` section and the External-review header row; the obligation Spec-Retrospective-Due 2026-09-14 discharged 2026-09-08). Process record, no design content. Oracle pin first (both lines excluded), its line, then the corpus pin and its line.",
     "method": "SHA-256 over the spec's UTF-8 bytes with exactly one `oracle manifest sha256: ` line and one `corpus sha256: ` line removed (spec_pin.rule)"
+   },
+   {
+    "by": "dev (veracium-69)",
+    "utc": "2026-09-08",
+    "supersedes_pin": "b582a752cedce9f7acfbfcb2329448cec39f502fb7397e3c385c877eb3616bfa",
+    "what": "Re-pinned after the machine-readable `Discharges: d59592d` line (and its explanatory paragraph) was added at the end of the `## Retrospective` section, the day specs/retrospective_debt.py landed as a CI gate (research's check, on the owner's word \"Fix the deadline check first, then name the variant\"); a process record, no design content moved; oracle pin FIRST (both lines excluded), corpus pin SECOND.",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly one `oracle manifest sha256: ` line and one `corpus sha256: ` line removed (spec_pin.rule)"
    }
-  ]
+  ],
+  "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line."
  },
  "known_foreign_digests": {
   "7862ab9b1b9f49cb": "registry v1 (VERB_REGISTRY_FREEZE.md), the version the gate ran against; superseded by v2",
