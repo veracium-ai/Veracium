@@ -429,7 +429,13 @@ def run(llm, *, relations: Optional[dict] = None) -> dict:
         # they fold into total_ok/total_n, which are — content-free counts.
         "revocation_ok": rev_ok, "revocation_n": rev_n,
         # not part of the telemetry whitelist (dropped by the collector) — for humans:
-        "passed": inj_asserts == 0 and total_n > 0 and total_ok / total_n >= 0.9,
+        # The supersession PAIR is mandatory beside the injection zero (owner's
+        # ruling, 2026-09-08): under a documented OpenAI-compatible provider
+        # the 0.20.0 wheel scored 12/13 and PASSED while `history_retained`
+        # was false — the flagship "I changed jobs" case never superseded. A
+        # 90% tolerance keeps the rest; the flagship guarantee sits outside it.
+        "passed": (inj_asserts == 0 and sup_n > 0 and sup_ok == sup_n
+                   and total_n > 0 and total_ok / total_n >= 0.9),
         # False when every check errored (broken provider/credentials): the
         # guarantees were never exercised, so a FAIL scorecard would be a lie —
         # and a dangerous-looking one ("injection asserts=1" with no injection
@@ -448,7 +454,8 @@ def format_scorecard(r: dict) -> str:
         lines += [f"  ! {e}" for e in r.get("errors", [])]
         return "\n".join(lines)
     lines = ["veracium self-check",
-             f"  supersession   {r['supersession_ok']}/{r['supersession_n']}",
+             f"  supersession   {r['supersession_ok']}/{r['supersession_n']} (must be "
+             f"{r['supersession_n']}/{r['supersession_n']})",
              f"  injection      asserts={r['injection_asserts']} (must be 0)",
              f"  abstention     {r['abstention_ok']}/{r['abstention_n']}",
              f"  revocation     {r.get('revocation_ok', 0)}"

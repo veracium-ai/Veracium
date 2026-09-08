@@ -56,7 +56,10 @@ claims.
   present on **every** path (an absent key is never a zero):
   `episode` (str) · `facts` · `quarantined` · `supersessions` ·
   `reinforcements` · the vocabulary-enforcement counters `invalid` /
-  `retried` / `recovered` / `residual` (specs/0025) ·
+  `retried` / `recovered` / `residual` (specs/0025) · `subject_refused`
+  (specs/0025 as amended 2026-09-08 — facts whose returned subject carries
+  `|`, the prompt's alternation taken literally by a provider; dropped and
+  never written, since a subject cannot be re-filed) ·
   `redispositioned` (specs/0024 — triples whose `third_party_claim`
   label contradicted its own claimant slot and were re-dispositioned to
   `unclassified` at `use_only`) · and the trust-state audit facts

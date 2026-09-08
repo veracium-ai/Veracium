@@ -21,7 +21,7 @@ EVENT (author of this content: {author}):
 {event_text}
 
 Extract memory as JSON:
-{{"triples": [{{"subject": "user|person:<name>|org:<name>",
+{{"triples": [{{"subject": "user, or person:<name>, or org:<name>",
               "relation": "<one of the relations below>",
               "object": "<value/entity, names & numbers exact>",
               "note": "<short qualifier or empty>",

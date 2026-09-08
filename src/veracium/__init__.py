@@ -405,6 +405,7 @@ class Memory:
                       "invalid": r["invalid"], "retried": r["retried"],
                       "recovered": r["recovered"], "residual": r["residual"],
                       "redispositioned": r["redispositioned"],
+                      "subject_refused": r["subject_refused"],
                       # specs/0023 Q4: audit-only facts — the AuditLog
                       # records them; telemetry's whitelist drops them.
                       "quarantined_at_birth": r["quarantined_at_birth"],

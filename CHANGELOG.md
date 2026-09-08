@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased
+
+**Fix: the extraction prompt's subject grammar is enforced, and the
+selfcheck's supersession pair is mandatory (specs/0025 as amended
+2026-09-08; found by the 0.20.0 release's provider-backed selfcheck).** Under
+an OpenAI-compatible provider (the shipped `examples/openai_provider.py`,
+gpt-4o-mini) the prompt's placeholder `user|person:<name>|org:<name>` was read
+as a literal separator, so "I work at Acme" and "I switched to Globex" were
+stored under two different subjects, supersession was never invoked, and the
+store accumulated never-superseded facts — while the selfcheck scored 12/13
+and reported PASS under its 90% tolerance. Claude reads the pipes as
+alternation, which is why five releases never showed it. **Who should take
+this release:** every host wiring a non-Anthropic provider; a host on the
+reference provider sees no behaviour change.
+
+- **Changed: the prompt's subject placeholder** is spelled out
+  (`user, or person:<name>, or org:<name>`) — no `|` a provider can
+  concatenate.
+- **Added: the subject refusal at ingest — exactly the defect and no wider.**
+  A fact whose returned subject carries `|` (the alternation separator taken
+  literally) is DROPPED, never written under any subject, and counted in the
+  new operator counter **`subject_refused`** (present on every ingest return
+  path; stripped from the MCP result like the others): there is no truthful
+  placeholder for WHO a fact is about, so it cannot be re-filed the way an
+  off-vocabulary relation is re-dispositioned, and the retry re-emits the same
+  subject. Everything the suite already stores keeps storing — `user` in any
+  case, `person:`/`org:`, a host's `task:` forms, and bare entity names such
+  as `Rex` (the relay shape 0026 governs). `third_party_claim`'s claimant slot
+  is exempt: free text by the prompt's own rule, and a receipt supersedes
+  nothing.
+- **Changed: `selfcheck` requires `supersession` 2/2** beside
+  `injection_asserts == 0`; the 90% tolerance keeps the remaining checks. The
+  scores 0.20.0 produced under that provider (12/13, history not retained)
+  now FAIL, and the scorecard line reads `supersession 1/2 (must be 2/2)`.
+
 ## 0.20.0 — 2026-09-08
 
 **Upgrade recommendation.** This release lands four accepted specs — the

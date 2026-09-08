@@ -9,6 +9,7 @@ third-party-authored content is the attack surface.
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -45,6 +46,30 @@ def _uid(prefix: str) -> str:
 # A host clock may be a little ahead of ours; a host clock is never a year
 # ahead. One day absorbs timezone slop and NTP drift without absorbing a typo.
 MAX_FUTURE_SKEW = timedelta(days=1)
+
+#: specs/0025 (amended 2026-09-08): the subject REFUSAL for a FACT — exactly
+#: the defect and no wider. A subject carrying `|` is the prompt's former
+#: alternation separator taken literally (`user|person:X|org:Acme Corp`,
+#: measured under gpt-4o-mini): it absorbs the attribute being asserted, so
+#: the fact files under a subject nothing else shares and supersession is
+#: never invoked. Everything the shipped suite already stores keeps
+#: storing: `user` in any case (0024 §4a canonicalises by casefold), the
+#: `<kind>:<name>` forms the prompt names, a host's `task:` forms, and a
+#: BARE entity name (`Rex` under `has_diet`, the B07 relay shape 0026
+#: governs) — a `kind:name`-only grammar would have dropped that last class
+#: silently, which is a wider change than the finding. NOT applied to
+#: `third_party_claim`, for the reason the rule exists: a receipt record
+#: supersedes nothing, so a pipe in its CLAIMANT slot cannot cause the harm
+#: this refusal prevents (a fact hidden from supersession under a subject
+#: nothing else shares); the claimant stays free text and quarantined, as
+#: 0024's coherence step already governs it. The exemption is by RELATION,
+#: checked before the rule; no other relation gets a pass.
+_SUBJECT_OFF_GRAMMAR = re.compile(r"\|")
+
+
+def subject_off_grammar(subject) -> bool:
+    """True iff the extractor-returned subject is refused (dropped, counted)."""
+    return bool(_SUBJECT_OFF_GRAMMAR.search(str(subject)))
 
 
 def _event_dt(date_str: str) -> datetime:
@@ -294,6 +319,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 # specs/0038 §2c row 8: the refusal counter on the one path
                 # that never parsed a response — present, zero.
                 "instructions_dropped": 0,
+                "subject_refused": 0,          # specs/0025 (amended 2026-09-08): present, zero
                 "quarantined_at_birth": (1 if revoked_at_birth else 0),
                 "birth_revocation_digest": (_birth_digest if revoked_at_birth
                                             else None),
@@ -334,9 +360,24 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 if isinstance(m, str) and m.strip()}
     declared.discard("")
     n_instructions_dropped = 0
+    n_subject_refused = 0
     parsed = []
     for t in data.get("triples", []):
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
+            continue
+        # specs/0025 (amended 2026-09-08 on the 0.20.0 selfcheck finding): the
+        # SUBJECT GRAMMAR is enforced here, not only stated in the prompt. The
+        # prompt's placeholder read `user|person:<name>|org:<name>` and one
+        # documented provider took the pipes literally, storing
+        # `user|person:X|org:Acme` as a subject — so "I changed jobs" filed
+        # under two subjects and supersession was never invoked while the
+        # selfcheck said PASS. A pipe-carrying subject cannot be re-filed the
+        # way a relation is re-dispositioned (there is no truthful placeholder
+        # for WHO a fact is about), and the retry re-emits the same subject,
+        # so the triple is DROPPED and counted (`subject_refused`).
+        if (str(t["relation"]).strip() != QUARANTINE_RELATION
+                and subject_off_grammar(t["subject"])):
+            n_subject_refused += 1
             continue
         # V-THIRD-PARTY-UNTOUCHED: a `third_party_claim` is a RECEIPT record
         # (0001/0023 — "received an unverified notice that …"), never a speech
@@ -521,6 +562,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # specs/0038 §2b: REFUSALS of triples that restate a declared
             # instruction — never declarations, never malformed members.
             "instructions_dropped": n_instructions_dropped,
+            # specs/0025 (amended 2026-09-08): triples whose SUBJECT is off the
+            # closed grammar — dropped, never written under any subject.
+            "subject_refused": n_subject_refused,
             # specs/0023 Q4 (RESOLVED 2026-08-22, per the recorded leaning):
             # the quarantine-at-birth AUDIT facts — the content-free identity
             # digest answers "which source is still writing" from the audit

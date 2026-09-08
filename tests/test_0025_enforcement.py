@@ -292,6 +292,10 @@ def test_provider_failures_degrade_recorded_never_raised():
 
 PUBLIC_COUNTERS = ("invalid", "retried", "recovered", "residual",
                    "redispositioned",
+                   # specs/0025 as amended 2026-09-08: triples whose SUBJECT is
+                   # off the closed grammar — dropped, counted, present on
+                   # every path (V-COUNTER-INVENTORY)
+                   "subject_refused",
                    # specs/0038 §2b: refusals of triples restating a declared
                    # instruction — inherits V-COUNTER-INVENTORY here (X4/X12)
                    "instructions_dropped")

@@ -513,20 +513,23 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: unchanged; its first measurement had FOUR refused forms (a variable-named
 #: getattr in the store guard, `__dict__` reads in a serializer) — rewritten
 #: to literal forms rather than tabled, because a refused form is the
-#: completeness claim's own boundary — while a change
-#: to the five CLASSES or the completeness scope
+#: completeness claim's own boundary; the 0025 subject-refusal amendment
+#: (2026-09-08: `subject_off_grammar` and the `subject_refused` counter in
+#: ingest, the selfcheck's mandatory supersession pair) moved dotted/dataflow
+#: 5,143 -> 5,145 and module-plain 265 -> 266, the rest unchanged — while a
+#: change to the five CLASSES or the completeness scope
 #: reopens design review. Each regeneration is recorded in the implementing
 #: spec's closure/implementation notes (0032 §; 0029 closure; 0030 closure;
 #: 0038's enforcement commit; 0028's implementation commit; 0037's
-#: implementation commit).
+#: implementation commit; the 0025 amendment commit).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5143,
+    "dotted/dataflow": 5145,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 265,
+    "dotted/module-plain": 266,
     "dotted/module-protected": 46,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5507
+SRC_ATTRIBUTE_TOTAL = 5510
 SRC_DATA_DUNDERS_IN_DATAFLOW = 117
 
 

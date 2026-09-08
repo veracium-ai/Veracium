@@ -195,6 +195,7 @@ _OPERATOR_ONLY = ("supersessions", "reinforcements",
                   # the library report carries it, and the deviation is
                   # recorded for v4 to ratify or reverse.
                   "instructions_dropped",
+                  "subject_refused",
                   "quarantined_at_birth", "birth_revocation_digest",
                   "agreement_floored", "agreement_recorded",
                   "provenance_raises_discarded")
