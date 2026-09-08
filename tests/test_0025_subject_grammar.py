@@ -120,11 +120,51 @@ def test_the_job_change_supersedes_under_a_provider_that_returns_the_admitted_fo
     assert len(edges) == 2 and sorted(e.active for e in edges) == [False, True]
 
 
+def test_the_telemetry_whitelist_and_the_result_inventory_disagree_by_declaration(tmp_path):
+    """§4c (v14): the ingest RESULT's counter inventory and 0017's consented
+    telemetry whitelist are different sets by consent — a counter enters the
+    telemetry event only by a SCHEMA_VERSION bump. The difference is DERIVED
+    from a live ingest and must equal the declared set below, each member
+    with its reason; a new result-only counter must be declared here (or
+    bumped into the whitelist), never left to a list that reads as complete."""
+    from veracium.telemetry import EVENT_FIELDS
+    mem = _mem(tmp_path, _scripted([]))
+    r = mem.remember(U, "hi", context=EvidenceContext.direct())
+    # TWO CLASSES, so the derived difference is a detector and never a
+    # backlog: a member is either AWAITING CONSENT (a counter that may enter
+    # the whitelist by a SCHEMA_VERSION bump) or NEVER ELIGIBLE (content or
+    # identity — admitting it would break 0017's content-free guarantee, not
+    # merely need a bump). Resolving a disagreement by ADDING a never-eligible
+    # member is the wrong direction, and this declaration says so per key.
+    AWAITING, NEVER = "awaiting_consent", "never_eligible_content_free_event"
+    declared = {
+        "episode": (NEVER, "the episode TEXT — content"),
+        "quarantined_at_birth": (NEVER, "0023 Q4 audit fact — the audit sink's, whitelist-dropped by design"),
+        "birth_revocation_digest": (NEVER, "0023 Q4 audit fact — an identity digest"),
+        "agreement_floored": (AWAITING, "0026 §3d counter — public, outside the consented schema (v4 is 0025's counters)"),
+        "agreement_recorded": (AWAITING, "0026 §3d counter — public, outside the consented schema"),
+        "instructions_dropped": (AWAITING, "0038 §2b refusal counter — public, outside the consented schema"),
+        "subject_refused": (AWAITING, "0025 v14 §4b-vi refusal counter — public, outside the consented schema"),
+    }
+    assert all(cls in (AWAITING, NEVER) for cls, _why in declared.values())
+    assert set(r) - EVENT_FIELDS["ingest"] == set(declared), \
+        sorted((set(r) - EVENT_FIELDS["ingest"]) ^ set(declared))
+
+
 def test_the_selfcheck_requires_the_supersession_pair_outside_the_tolerance(monkeypatch):
     """12/13 with `history_retained` false is what 0.20.0 scored under a
     documented provider — it PASSED the 90% tolerance. The pair is now
     mandatory: the same scores must FAIL, and the scorecard says why."""
-    from tests.test_selfcheck import Provider
+    # the sibling file is loaded by PATH: `tests/` is not an importable
+    # package on CI (no __init__.py), and the rootdir import that works
+    # locally is exactly the difference the first CI run found
+    import importlib.util
+    import pathlib
+    here = pathlib.Path(__file__).resolve().parent
+    spec = importlib.util.spec_from_file_location("_sc_provider", here / "test_selfcheck.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    Provider = mod.Provider
     monkeypatch.setattr(selfcheck, "_check_supersession",
                         lambda llm, tmp, relations: (1, 2, {"current_value": True, "history_retained": False}))
     r = selfcheck.run(Provider())
