@@ -720,7 +720,7 @@ bar) and BEFORE any implementation line.
   corpus edited without its spec line cannot either. At acceptance the
   same digest moves into `## Review closure`.
 
-corpus sha256: 039a4839fa036ffd42c8b2a1f74422220455e8d860ceab4ce7946e7010603fb4
+corpus sha256: b59f2033b97e926465d37b26b525af8470c9c1ace8aafd26c3710b70382d3635
 
 - **Cells — GENERATED, not enumerated here (round-2 fold, research's
   finding on v11's first draft):** the corpus generates its product cells
@@ -1006,7 +1006,7 @@ format version's job, not this invariant's.
 | external 5 (SENT) | 2026-09-07 | — | SENT (round-5 package 78a20446b085d799… @ pin ae6be76, CI 34067972232) |
 | external 5 (verdict) | 2026-09-07 | 0 | ACCEPT — "the sole round-four blocker is resolved… all three classification signals evaluated on the original incoming record before normalization… the eight-case decision matrix is complete and consistent… no remaining 0037 specification blocker"; the reviewer RAN THE SUITE for the first time in th… |
 
-**Per-finding closure ledger — PROCESS §4a.** **39 finding(s) for `0037`; 354 across the 9 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **39 finding(s) for `0037`; 368 across the 10 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

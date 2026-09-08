@@ -2279,6 +2279,18 @@ def test_new_closure_evidence_is_behavioral():
         '0028-R6-1': '§4b\'s outcome definition still required a cause for every INDETERMINATE, contradi',
         '0028-R6-C1': '§9 carried a malformed duplicated phrase (the round-5 "no count" replacement fused',
         '0028-R6-C2': 'The model\'s introduction called itself "the design v11 specifies" while its querie',
+        # 0038 (2026-09-08, the ledger written at acceptance after four external rounds in
+        # two days): the mechanism closures cite the enforcement tests, the two pin tests
+        # and the disposition test by node; the text-only closures below cite the fold
+        # commit that landed them — a dependency declaration, restored sections, the
+        # protocol note in the reviewer guide, the owner's option-3 ruling, a retracted
+        # editorial item, and a claim closed by NARROWING it. Per-finding, as 0030 and 0028.
+        '0038-R1-5': '0037 not declared as a dependency',
+        '0038-R1-6': 'The full-spec sections omitted for guarded surfaces (§4 field-consumer table, §3b',
+        '0038-P1': 'collected_header.json promised by the reviewer guide, absent from the package',
+        '0038-R2-1': 'The document says the validation gate passed even though a mandatory condition (bli',
+        '0038-R2-4': 'Editorial duplication: the §4 heading appears twice consecutively',
+        '0038-R3-3': 'Fidelity of the pseudonymised validation-gate copy to the absent original is not in',
     }
     offenders = []
     for row in closure_findings.CLOSURES:

@@ -118,13 +118,19 @@
     "supersedes_pin": "3c424eab8d9058b9dd04b4b1dadbc0fdf87f0266c9367d897defa55bdd1817ec",
     "utc": "2026-09-07",
     "what": "Re-pinned to v5.9 (the round-3 fold, resealed: the disposition artifact rewritten as states, its check landed: the withdrawn gate conclusion dispositioned across the bound evidence set; the fidelity claim narrowed: the \u00a78 gate NOT satisfied, \u00a76b-A the weaker rule; VALIDATION_GATE-pseudonymised.md joins the set: registry, gate, deviation named; plus the oracle manifest single-pin line, a second column-0 digest line on this document). Edits beyond the digest line, so the pin moved BY DESIGN; re-derived from the bytes at landing by the adopt script, never typed."
+   },
+   {
+    "n": 12,
+    "supersedes_pin": "7bbf75a73c69c216a094afbea6a560544b8fafc20d271a86e0b95ee919d381bc",
+    "utc": "2026-09-07",
+    "what": "Re-pinned to the ACCEPTANCE fold (external round 4, 2026-09-08): the closing version cell, the Review closure block rendered from the ledger, Spec-Status accepted. Two intermediate pins computed during the fold (one over a candidate that never landed, one before the render) were RESTORED over, not recorded \u2014 an amendment history records every state main was in and none it was not."
    }
   ],
   "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged \u2014 a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "7bbf75a73c69c216a094afbea6a560544b8fafc20d271a86e0b95ee919d381bc",
-  "spec_version": "v5.9",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "940df16a7702382cd55c9b63fd668de26887a3f833037832a94106cea829544c",
+  "spec_version": "accepted (closing cell)",
   "status": "BOUND"
  },
  "spec_version": "v4"

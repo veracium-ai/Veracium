@@ -64,6 +64,13 @@ import re
 
 REGISTRY_VERSION = 2          # v1 frozen 2026-09-07T15:25:54Z, sha16 7862ab9b1b9f49cb
 # CHANGELOG
+#   FROZEN at external round 4 (2026-09-08): the reviewer ACCEPTED 0038 v5.9 with this registry
+#   as the oracle's rulings and restated the evidence limits in their own words — "the original
+#   validation gate is not met; the weaker §6b-A rule is met but is not a substitute; the human
+#   leg was rubric-applied and not blind; the strongest independent evidence comes from the blind
+#   model leg; a new blind human evaluation by a different person would be required to close that
+#   remaining methodological gap." Editing a ruling here is NOT a constant change: it reopens
+#   design review of an accepted spec, and every κ in §6b was computed against these rulings.
 #   v2 (2026-09-07, after the §8 gate was computed against v1 — a claim that the gate PASSED
 #   stood here until round 3 and is WITHDRAWN: the gate's blind-human condition was unmet, so
 #   the gate is NOT satisfied; see SUPERSEDED-CONCLUSIONS.md in this directory and spec §6b):

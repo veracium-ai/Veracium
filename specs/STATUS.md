@@ -4,16 +4,16 @@
 
 # Spec status
 
-**35 specs · 32 accepted · 379 external review
+**35 specs · 33 accepted · 383 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **32 of 35 are accepted**, which
+review is required to reach it. **33 of 35 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
-| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-07 | 1 | 18 | 2 | 0 | 0 | — |
+| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-08 | 1 | 18 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-29 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-26 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-08-22 | 1 | 3 | 1 | 0 | 1 | 1/1 |
@@ -23,7 +23,7 @@ is the number that decides what can be built.
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-22 | 0 | 4 | 0 | 0 | 1 | 1/1 |
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-08-16 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
-| **0011** | subject-scoped entitlement | `accepted` | 2026-09-07 | 2 | 19 | 0 | 0 | 1 | 1/1 |
+| **0011** | subject-scoped entitlement | `accepted` | 2026-09-08 | 2 | 19 | 0 | 0 | 1 | 1/1 |
 | **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 1/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-22 | 0 | 16 | 0 | 0 | 0 | — |
@@ -34,19 +34,19 @@ is the number that decides what can be built.
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-20 | 1 | 14 | 0 | 0 | 0 | — |
-| **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-09-07 | 4 | 21 | 5 | 0 | 0 | — |
-| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-09-07 | 3 | 21 | 3 | 0 | 0 | — |
-| **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-07 | 2 | 24 | 3 | 0 | 0 | — |
-| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-07 | 2 | 24 | 2 | 0 | 0 | — |
-| **0026** | label/value agreement check | `accepted` | 2026-09-07 | 14 | 12 | 2 | 0 | 0 | — |
+| **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-09-08 | 4 | 21 | 5 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-09-08 | 3 | 21 | 3 | 0 | 0 | — |
+| **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-08 | 2 | 24 | 3 | 0 | 0 | — |
+| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-08 | 2 | 24 | 2 | 0 | 0 | — |
+| **0026** | label/value agreement check | `accepted` | 2026-09-08 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
-| **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-07 | 0 | 7 | 0 | 0 | 0 | — |
+| **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-08 | 0 | 7 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-09-07 | 1 | 0 | 0 | 0 | 0 | — |
-| **0030** | time-relative trust classification | `accepted` | 2026-09-07 | 0 | 18 | 0 | 0 | 0 | — |
-| **0031** | the agent-facing trust surface | `accepted` | 2026-09-07 | 0 | 16 | 0 | 0 | 0 | — |
+| **0030** | time-relative trust classification | `accepted` | 2026-09-08 | 0 | 18 | 0 | 0 | 0 | — |
+| **0031** | the agent-facing trust surface | `accepted` | 2026-09-08 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
-| **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-07 | 0 | 5 | 0 | 0 | 0 | — |
-| **0038** | the extraction's speech-act discipline | `draft` | 2026-09-08 | 0 | 0 | 0 | 0 | 0 | — |
+| **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-08 | 0 | 5 | 0 | 0 | 0 | — |
+| **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-08 | 0 | 4 | 0 | 0 | 0 | — |
 | **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `draft` | 2026-09-07 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per

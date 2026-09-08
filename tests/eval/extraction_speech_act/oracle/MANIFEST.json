@@ -88,14 +88,14 @@
    "bytes": 7212
   },
   "verb_registry.py": {
-   "sha256": "5dcd1ee1e7ec2a6d494961c4122afe97acbc83b8af1f7ea4ccc8668f7785eddd",
-   "sha16": "5dcd1ee1e7ec2a6d",
-   "bytes": 14212
+   "sha256": "5c37d57159ffa624e1766c29db395f18e66a7990b1b42175fa8b45954d11a171",
+   "sha16": "5c37d57159ffa624",
+   "bytes": 14889
   }
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "d139b019ee44a36dfb5ccf8e9b10c662ead24b5eb51fdef5139d66e06913e0d5",
+  "spec_text_sha256_excluding_both_pin_lines": "71ed8b569c2baf1106a366813d0db91226d8e3976ff2e6e0878cc1aed7e024a0",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
@@ -109,6 +109,7 @@
   "21289647a85b3b43": "the rulings digest by dev's method (canonical JSON of the parsed tuple) — the same claim, a different number; the tuples were compared directly",
   "a239b296d126ca78": "the corpus bare_procedural_66.jsonl, pinned one level up in tests/eval/extraction_speech_act/ (not an oracle-set file)",
   "3f5d96e0cd2df90c": "the round-1 verdict, banked verbatim in the outbox (outside the repo)",
-  "54acc45ad818fa94": "verb_registry.py at publication (rounds 2-3), superseded at round 3 when its CHANGELOG comment's gate claim was marked WITHDRAWN; the VERB_REGISTRY tuple is unchanged"
+  "54acc45ad818fa94": "verb_registry.py at publication (rounds 2-3), superseded at round 3 when its CHANGELOG comment's gate claim was marked WITHDRAWN; the VERB_REGISTRY tuple is unchanged",
+  "5dcd1ee1e7ec2a6d": "verb_registry.py at rounds 3-4 (its CHANGELOG gate claim marked WITHDRAWN), superseded at acceptance when the FROZEN-at-round-4 marker was added above the CHANGELOG; the VERB_REGISTRY tuple is unchanged"
  }
 }

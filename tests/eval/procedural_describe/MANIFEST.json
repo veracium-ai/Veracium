@@ -14901,12 +14901,18 @@
     "supersedes_pin": "3237edb419d1f757486d7e373025375fa8e0b81328044d2117fdf8e7d69ed56c",
     "utc": "2026-09-07",
     "what": "Re-pinned after a GENERATED edit to the spec text: specs/render_closure.py's tracked set gained 0028 at its acceptance, and every tracked spec's '## Review closure' block restates the total across the tracked specs, so 0037's block changed by one sentence ('\u2026 across the 9 tracked specs'). No 0037 content changed; the pin moved BY DESIGN and was re-derived from the bytes. A corpus pin over a document that carries a generated block moves whenever the generator's inputs move \u2014 recorded here so the next such move is recognised. (Serialisation note: the first re-pin commit, 16cd05b, wrote this manifest with non-ASCII characters literal where the frozen file escapes them as \\uXXXX, rewriting ~2,000 lines for a one-field change; restored to the original serialisation here \u2014 same indent, sorted keys, ASCII escapes \u2014 so the diff is the pin and this record.)"
+   },
+   {
+    "by": "dev (veracium-69)",
+    "supersedes_pin": "ecc582dcc8708d4a2552626e92f06882c7e8c8e46251efe985075680ab277c6c",
+    "utc": "2026-09-08",
+    "what": "Re-pinned after a GENERATED edit: specs/render_closure.py's tracked set gained 0038 at its acceptance, and every tracked spec's '## Review closure' block restates the total across the tracked specs, so 0037's block changed by one sentence. No 0037 content changed; the pin moved BY DESIGN and was re-derived from the bytes, serialised in the frozen file's own form (indent 1, sorted keys, ASCII escapes). The same move as 16cd05b/6efcf51 (0028's acceptance); the render_closure change that would end this coupling is put to the owner."
    }
   ],
   "rule": "Remove EXACTLY the lines whose text begins with \"corpus sha256: \" at column 0 (the line and its terminator; nothing else), then sha256 the remaining bytes. There MUST be exactly one such line \u2014 assert it and fail otherwise, rather than silently hashing a spec with zero or two.",
   "second_line_hazard_at_acceptance": "\u00a76a says that at acceptance the same digest MOVES INTO `## Review closure`. If that lands as a second column-0 \"corpus sha256: \" line, grep -v removes BOTH while a count=1 regex removes only the FIRST \u2014 the two impls would silently diverge exactly at acceptance. The exactly-one assertion above turns that divergence into a test failure instead of a wrong pin.",
   "spec": "specs/0037-procedural-basis.md",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "ecc582dcc8708d4a2552626e92f06882c7e8c8e46251efe985075680ab277c6c",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "fc8de45f0461dcbbdd079485bf5de9cae2984fa50a4628045cbcd89b6d1570e7",
   "spec_version": "v14 (ACCEPTED at v13; v14 is a post-acceptance prose correction)",
   "status": "BOUND",
   "why_this_rule_and_not_a_regex": "A regex of the form `^corpus sha256: \\S+\\s*$\\n?` OVER-DELETES: `\\s` matches newline, so `\\s*` greedily consumes the blank line that follows \u00a76a's digest line as well. On the v11 working tree it consumed \"corpus sha256: CORPUS-DIGEST-NOT-YET-BOUND\\n\\n\" and digested to c18c10c07329807d\u2026, which is NOT the digest of the spec-minus-that-line. \u00a76a says the manifest removes THE LINE; a rule that also removes an adjacent blank line makes the pin sensitive to formatting the spec never claimed was load-bearing."
