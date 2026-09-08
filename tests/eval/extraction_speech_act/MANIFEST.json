@@ -134,11 +134,18 @@
     "supersedes_pin": "940df16a7702382cd55c9b63fd668de26887a3f833037832a94106cea829544c",
     "utc": "2026-09-08",
     "what": "Re-pinned after the owner's ruling \"Drop the cross-spec total from the per-spec block\" (one generated sentence in `## Review closure`; no 0038 content moved), SECOND after the oracle pin, over the text carrying the new oracle-manifest line. The last re-pin of this kind."
+   },
+   {
+    "by": "dev (veracium-69)",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly the one column-0 `corpus sha256: ` line removed (spec_pin.rule)",
+    "supersedes_pin": "62c0a13d41c33751759b05e1e1b045d5c88c48e96ddfcf4ad9daee3e67518e59",
+    "utc": "2026-09-08",
+    "what": "Re-pinned after the security-hotfix RETROSPECTIVE was recorded in the spec (process record, no design content), SECOND after the oracle pin, over the text carrying the new oracle-manifest line."
    }
   ],
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "62c0a13d41c33751759b05e1e1b045d5c88c48e96ddfcf4ad9daee3e67518e59",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "d7b9582256c5c2139fafd743c7caa4733612b8bbfbf9f9fb9457a8fd18c0af8f",
   "spec_version": "accepted (closing cell)",
   "status": "BOUND"
  },

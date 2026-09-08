@@ -3010,3 +3010,61 @@ def test_citation_version_matches_the_released_version():
     assert cited == released, (
         f"CITATION.cff says {cited}, pyproject says {released} — the "
         f"citation is rendered by GitHub and must move with the release")
+
+
+# ---------------------------------------------------------------------------
+# CITED TEST NODES RESOLVE — the ratchet (2026-09-08; 0025 v14's X14 cited
+# four nodes that did not exist, in the fold closing a finding about a cited
+# artifact that did not exist: "a spec is not verified until its citations
+# are resolved against the thing built").
+_CIT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _citation_debt():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("citation_debt", _CIT_ROOT / "specs" / "citation_debt.py")
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    return mod
+
+
+def test_accepted_specs_cite_only_test_nodes_that_exist_or_recorded_debt():
+    """Every backticked `test_*` name an ACCEPTED spec cites resolves to a
+    `def` in tests/ or specs/evidence/, or is in `specs/citation_debt.py` —
+    which the live derivation must EQUAL: a new unresolved citation fails
+    (fix the spec or declare it), and a citation that starts resolving must be
+    removed (the list only shrinks). Drafts are exempt; acceptance is where a
+    planned node becomes a claim."""
+    mod = _citation_debt()
+    assert mod.problems(_CIT_ROOT) == [], "\n".join(mod.problems(_CIT_ROOT))
+    # every entry carries a reason from the closed vocabulary, and the
+    # generation-time reason is confined to the pairs frozen at generation
+    for spec, entries in mod.CITATION_DEBT.items():
+        for name, reason in entries.items():
+            assert reason.split(":", 1)[0] in mod.REASONS, (spec, name, reason)
+    # the mutants: a new key with no reason, a wrong reason, and the frozen
+    # reason on an unfrozen pair are each refused by the derivation
+    import copy
+    saved = copy.deepcopy(mod.CITATION_DEBT)
+    try:
+        mod.CITATION_DEBT.setdefault("0001", {})["test_planted_zzz"] = "never_written"
+        assert any("test_planted_zzz" in p and "now resolves" in p for p in mod.problems(_CIT_ROOT))
+        del mod.CITATION_DEBT["0001"]["test_planted_zzz"]
+        spec, name = next((s, n) for s, e in saved.items() for n in e)
+        mod.CITATION_DEBT[spec][name] = "guessed"
+        assert any("outside" in p for p in mod.problems(_CIT_ROOT))
+    finally:
+        mod.CITATION_DEBT.clear(); mod.CITATION_DEBT.update(saved)
+
+
+def test_the_citation_derivation_detects_a_planted_name_and_resolves_a_real_one(tmp_path):
+    """RULE ZERO: the negative control. A planted nonexistent name in an
+    accepted spec is reported; a real def resolves; a draft's planned node
+    is not reported."""
+    import shutil
+    mod = _citation_debt()
+    root = tmp_path / "tree"
+    (root / "specs").mkdir(parents=True); (root / "tests").mkdir()
+    (root / "tests" / "test_x.py").write_text("def test_real_node():\n    pass\n")
+    (root / "specs" / "0900-a.md").write_text("Spec-Status: accepted\n\ncites `test_real_node` and `test_planted_zzz` and `tests/test_x.py::test_real_node`\n")
+    (root / "specs" / "0901-b.md").write_text("Spec-Status: draft\n\ncites `test_planned_node`\n")
+    assert mod.unresolved_by_spec(root) == {"0900": ["test_planted_zzz"]}
