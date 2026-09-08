@@ -38,7 +38,32 @@ set rather than the files quoted in the finding.
 | `0038-oracle-§8-MODEL-LEG-AND-VERDICT.md` | "THE §8 GATE — PASSES"; "two independent raters"; "§8 PASSES"; "Nothing to pass" | **SUPERSESSION HEADER added.** Research's own write-up; a header marks it without altering the run it records |
 | `0038-oracle-§8-human-leg-v2-RESULT.md` | "applied independently"; "Every class passes" | **SUPERSESSION HEADER added**, same reason |
 | `RUBRIC.md` | tells the rater the pass establishes whether the principle "applied **independently**" reproduces the rulings | **NOT AMENDED, DELIBERATELY — see below** |
-| `verb_registry.py` | its v2 CHANGELOG says *"after the §8 gate PASSED against v1"* | **owner is the dev seat** (its digest is pinned); flagged for the same treatment in the same commit |
+| `verb_registry.py` | its v2 CHANGELOG *did* say *"after the §8 gate PASSED against v1"* | **MARKED — `WITHDRAWN` at lines 68 and 78**, in the round-4 pinning commit. It is **in this set and covered by the rule below**, not deferred to another seat |
+
+### This table's registry row was itself stale for one assembly — the finding, one level down
+
+**Round 4's first assembly (`18ad6b69…`, discarded before dispatch) shipped this
+row saying the registry *"needs the same treatment"* — after the treatment had
+been applied, in the same package.** The registry was marked before the pin; the
+disposition file that exists to say what is current went on describing it as
+outstanding. **A reviewer following this table would have found a registry
+already marked and a disposition file saying it was not.**
+
+**Both seal-check legs were green**, because nothing reads this file against the
+files it describes. That is R3-1 exactly, one level down: round 3 found the
+**spec** current and the **evidence** stale; round 4 found the **evidence**
+current and the **disposition of the evidence** stale.
+
+**The cause is a sentence shape, and it is the rule worth carrying: an entry
+phrased as a TO-DO (*"needs the same treatment"*) goes stale the moment it is
+done, and nothing can tell. An entry phrased as a STATE (*"carries `WITHDRAWN`
+at lines 68 and 78"*) can be compared against the file.** Every entry below is
+now phrased as a state.
+
+**The `owned_elsewhere` key is deleted, not corrected.** It meant *"true, but
+checked somewhere else"* — and *somewhere else* was no one. A category whose
+members are exempt from the local rule and named in no other rule is where
+staleness lives. The registry is in `must_carry_a_marker` with every other file.
 
 ### Why `RUBRIC.md` is NOT amended
 
@@ -65,16 +90,52 @@ reason**. Nothing may carry a withdrawn phrase silently.
     "two independent raters", "applied independently",
     "Nothing to pass", "named deviation, not waived"
   ],
-  "marker": "SUPERSEDED CONCLUSION",
+  "markers_from": "specs/lint_withdrawn.py :: MARKERS — IMPORTED, never retyped here",
+  "markers_extra": ["SUPERSEDED CONCLUSION"],
+  "must_carry_a_marker": {
+    "0038-oracle-§8-MODEL-LEG-AND-VERDICT.md": "carries a SUPERSEDED CONCLUSION header",
+    "0038-oracle-§8-human-leg-v2-RESULT.md": "carries a SUPERSEDED CONCLUSION header",
+    "verb_registry.py": "carries WITHDRAWN in the v2 CHANGELOG, at the two lines that stated the gate result"
+  },
+  "header_marker_governs_record": {
+    "0038-oracle-§8-MODEL-LEG-AND-VERDICT.md": "a historical record of a run: its supersession header governs the whole document, because a record's body is not amended",
+    "0038-oracle-§8-human-leg-v2-RESULT.md": "same — a record of a run, marked at its head and unaltered below"
+  },
   "declared_exempt": {
     "RUBRIC.md": "the instrument the rater was SHOWN; amending it would make the record of the run false, and its claim is evidence FOR the circularity",
     "SUPERSEDED-CONCLUSIONS.md": "this file — it quotes the withdrawn phrases in order to withdraw them"
-  },
-  "owned_elsewhere": {
-    "verb_registry.py": "dev seat: its digest is pinned by the oracle manifest; the v2 CHANGELOG's 'after the §8 gate PASSED against v1' needs the same treatment in the pinning commit"
   }
 }
 ```
+
+**`header_marker_governs_record` is declared data for the same reason
+`declared_exempt` is.** The marker rule is otherwise paragraph-granular, matching
+`lint_withdrawn`'s exemption: a paragraph carrying a withdrawn phrase must carry
+a marker itself. **These two files legitimately break that rule** — they are
+records of runs, marked at the head and deliberately unaltered below, so a strict
+same-paragraph rule would demand the amendment the round forbids.
+
+**But "any file whose first paragraph happens to contain a marker is exempt
+everywhere" is an exemption nobody declared**, and it would silently swallow the
+next file that gains a header. **So the widening is listed, per file, with its
+reason** — which is the argument this file already makes about exemptions in
+prose, applied to itself.
+
+**Measured, so the widening's cost is on the record rather than assumed:** the
+two records carry withdrawn phrases in **7 and 2 paragraphs** respectively, of
+which **1 each** carries a marker of its own. The blanket covers 7 paragraphs
+that the strict rule would flag.
+
+**No digests are repeated here.** The manifest already records a sha256 for every
+file in this set and is the authority for them; a second carrier of the same
+digest is a second thing to keep in step, which is the defect this round is
+about. **What this file records is marker STATE, which a check establishes by
+reading the file — a claim that cannot go stale behind your back, because
+verifying it means opening the artifact.**
+
+**`markers_from` is a pointer, not a copy,** for the same reason: `WITHDRAWN` and
+`OBSOLETE` live in `lint_withdrawn.MARKERS`, and a JSON file that retyped them
+would be a second definition free to drift from the enforced one.
 
 **Why `declared_exempt` is data and not a sentence:** an exemption in prose is
 an exemption nobody can check. **This is the shape `known_foreign_digests`
@@ -86,6 +147,45 @@ a test enforces.
 use-versus-mention distinction `lint_withdrawn.py` already solves for specs
 (a paragraph containing the marker is exempt), applied to a directory of
 evidence rather than to a document.
+
+## WHAT THE CHECK OVER THIS FILE DOES AND DOES NOT REACH
+
+**`tests/test_oracle_set_disposition.py` reads the JSON above and holds the
+marker-or-exemption rule over every file in this set.** It lives under
+`tests/test_*.py` so the house gate reads *it*.
+
+**Two limits, measured and stated rather than left to be discovered:**
+
+**The rule has no live input in the present set.** Every file here that carries a
+withdrawn phrase is either in `declared_exempt` (`RUBRIC.md`) or in
+`header_marker_governs_record` (both run records). **Nothing currently reaches
+the paragraph rule**, so the check's central property is exercised by its
+negative controls and not by the real set. That is a check standing guard over a
+future edit, which is a legitimate thing for a check to be — but *"it holds over
+the set"* and *"it fired on the set"* are different claims and only the first is
+true.
+
+**And `verb_registry.py` contains no withdrawn phrase at all.** Its two gate
+sentences were **rewritten and marked**, not left standing under a marker, so the
+coverage rule finds nothing in it to cover; it is listed in
+`must_carry_a_marker` by hand, as belt-and-braces, not because the rule derives
+it.
+
+## `lint_withdrawn` ITSELF STILL READS NONE OF THIS SET
+
+**`lint_withdrawn.py` selects `specs/*.md` and `tests/test_*.py`. This set lives
+at `tests/eval/extraction_speech_act/oracle/`. The overlap is ZERO of 18 files
+— measured, not assumed.** So the house withdrawn-phrase gate does not read one
+byte of this evidence set, and nothing else reads the JSON above.
+
+**That gap is exactly what let the registry row above stand stale through a full
+two-seat green**, and it is why the fix is a test rather than a better sentence.
+
+**What changed is reach, not coverage.** `test_oracle_set_disposition.py` sits
+inside the house gate's selection and reaches these 18 files **by reading the
+JSON**; the gate's own file list is unchanged and still contains none of them.
+Saying the gate now covers the evidence set would replace a stale claim with a
+flattering one.
 
 ## WHAT THIS SET DOES AND DOES NOT SUPPORT
 

@@ -28,9 +28,9 @@
    "bytes": 2934
   },
   "SUPERSEDED-CONCLUSIONS.md": {
-   "sha256": "35d741c790e64f7e47d9949c00e8e12d62eb17bd828a97f2f9a5af6f15a221e7",
-   "sha16": "35d741c790e64f7e",
-   "bytes": 5519
+   "sha256": "7091a1172c57fb9d34e9834b64f57d5c32f261566eda8c0b490a73614e86f86c",
+   "sha16": "7091a1172c57fb9d",
+   "bytes": 11391
   },
   "VALIDATION_GATE-pseudonymised.md": {
    "sha256": "953e8f14a0f1bc6a12024491047376dc7d142b0c8df1ae1569b8b9af33420975",
@@ -95,7 +95,7 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "01fec2bb1a2f3dda827c952f3fd7c04f4c3d52707702c72ef2cd56534f45e858",
+  "spec_text_sha256_excluding_both_pin_lines": "d139b019ee44a36dfb5ccf8e9b10c662ead24b5eb51fdef5139d66e06913e0d5",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
