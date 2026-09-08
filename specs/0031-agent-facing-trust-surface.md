@@ -1702,10 +1702,14 @@ this spec's own subject.
 
 **The second-seat read (research, 2026-09-08 22:45 UTC, ledger; findings,
 not an approval).** Research read `b8a4489`'s diff to `mcp_server.py` and the
-seven tests against punch-list I4 and the two questions dev asked, and
-answered both BY EXECUTION rather than by reading. (a) *Does the refusal
-cover every entry point that can carry the MCP host-attestation capability?*
-Yes, with a qualifier: `build_server(capability=)` refuses on its first line,
+seven tests against punch-list I4 and the two questions dev asked — (a)
+answered BY ENUMERATION over a small surface (call sites, environment reads,
+console scripts, and `cli.py` read far enough to classify its attestation);
+(b) answered by reading AND BY EXECUTION. The two are different kinds of
+evidence, and F5 below is the reminder that enumeration over "the surfaces
+that carry a capability" is the step where one can be missed. (a) *Does the
+refusal cover every entry point that can carry the MCP host-attestation
+capability?* Yes, with a qualifier: `build_server(capability=)` refuses on its first line,
 before the server class is built and before any tool is registered; `main()`
 reads `VERACIUM_MCP_CAPABILITY` in the one place the package reads it and
 passes it there; the two console scripts are the only process entry points
