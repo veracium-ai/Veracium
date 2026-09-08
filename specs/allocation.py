@@ -80,6 +80,46 @@ RESERVATIONS: list[dict] = [
 CONTESTED: dict[str, dict] = {}   # 0033's collision CLEARED by the owner's renumber ruling (2026-09-06 → 0037);
                                   # the history lives in the commit that moved the file and in COORDINATION
 
+#: SPENT — numbers consumed by a proposal that never entered this tree (a
+#: withdrawn or rejected candidate whose record lives in the research tree).
+#: Neither a holder (no file here) nor a reservation (no future claim), yet
+#: `next_uncontested()` must never hand the number out again: a later spec
+#: under a withdrawn number would collide with the record that explains why
+#: the idea was not taken. Each entry carries the ruling, its date and where
+#: the record lives (in prose — the file is not in this tree); a SPENT number
+#: that a tree file also holds is a duplicate and the gate refuses it.
+SPENT: dict[str, dict] = {
+    "0040": {
+        "what": "procedural text at the choke point — the store inferring "
+                "content kind from text shape (research's proposal)",
+        "ruling": "Quentin, 2026-09-08, \"Withdraw 0040 with the reasoning "
+                  "recorded\" (ledger [Quentin, research session] 19:40Z): Q1 "
+                  "answered NO — the store does not infer kind from text shape",
+        "record": "the withdrawn proposal in the research tree, Spec-Status: "
+                  "withdrawn, kept as a record so the next person with the idea "
+                  "finds the argument rather than making it again",
+        # every carrier of the reasoning is OUTSIDE this tree (the proposal in
+        # the research tree, the ruling in COORDINATION), so `record` is a
+        # pointer this gate cannot verify. A pointer that can dangle carries
+        # its own GIST: if the record moves, a reader loses the argument's
+        # detail, not its conclusion (research, 2026-09-08).
+        "gist": "Q1: may the store infer content kind from text shape? NO. "
+                "0037's recognition rule (`matches_executable_detail`) is safe "
+                "because §4a-ii runs it as the LAST conjunct behind `stamp "
+                "consistent`, inside the set a host already declared "
+                "procedural — a false positive there withholds one description. "
+                "The same function outside the declared set suppresses "
+                "something a user asserted: identical code, categorically "
+                "different blast radius, and the difference is in what the rule "
+                "is allowed to decide, not in the rule. The §1 hazard stands "
+                "(procedural text under an ordinary relation still renders as "
+                "fact): the guarantee is about DECLARED provenance, not content "
+                "safety. The real lever is adoption of `record_procedure`, not "
+                "inference.",
+        "spent_on": "2026-09-08",
+    },
+}
+
 
 def holders() -> list[dict]:
     """Every number the TREE holds — derived, never hand-listed."""
@@ -139,6 +179,13 @@ def allocation_problems() -> list[str]:
                     f"{r['file']} takes number {r['number']} inside the live reservation "
                     f"{x['range'][0]}–{x['range'][1]} ({x['holder']}) and is NOT recorded as "
                     f"contested — record it or renumber")
+    for n, s in SPENT.items():
+        for key in ("what", "ruling", "record", "gist", "spent_on"):
+            if not s.get(key):
+                problems.append(f"SPENT {n}: missing {key} — a spent number must carry the ruling that spent it "
+                                f"and the gist of its reasoning (its record lives outside this tree)")
+        if n in seen:
+            problems.append(f"SPENT {n} is also held by {seen[n]} in the tree — a withdrawn number was reused")
     for n, c in CONTESTED.items():
         if n not in seen:
             problems.append(f"CONTESTED {n} names no file in the tree ({c['file']}) — stale entry")
@@ -151,11 +198,12 @@ def allocation_problems() -> list[str]:
 
 def next_uncontested(after: str | None = None) -> str:
     """The first number above the tree's highest (or `after`) that no live
-    reservation covers — the answer to "what number may a new spec take?"."""
-    rows = holders(); top = max([r["number"] for r in rows] + [after or "0000"])
+    reservation covers and no SPENT entry consumed — the answer to "what
+    number may a new spec take?"."""
+    rows = holders(); top = max([r["number"] for r in rows] + list(SPENT) + [after or "0000"])
     n = int(top) + 1
     live = [x for x in RESERVATIONS if x.get("released") is None]
-    while any(_in_range(f"{n:04d}", x["range"]) for x in live):
+    while any(_in_range(f"{n:04d}", x["range"]) for x in live) or f"{n:04d}" in SPENT:
         n += 1
     return f"{n:04d}"
 
@@ -183,6 +231,10 @@ def render() -> str:
     for x in RESERVATIONS:
         out.append(f"| {x['range'][0]}–{x['range'][1]} | {x['holder']} | {x['banked_by']} | {x['banked_on']} | "
                    f"{x['carrier']} | {x['gate']} | {x.get('review_by', '—')} / {x.get('review_when', '—')} | {x['released'] or '—'} |")
+    out += ["", "## Spent outside the tree (withdrawn or rejected before entering it)", "",
+            "| number | what | ruling | where the record lives | gist of the reasoning | spent on |", "|---|---|---|---|---|---|"]
+    for n, s in SPENT.items():
+        out.append(f"| {n} | {s['what']} | {s['ruling']} | {s['record']} | {s['gist']} | {s['spent_on']} |")
     out += ["", f"**Next uncontested number for a new spec:** `{next_uncontested()}`", ""]
     problems = allocation_problems()
     out += ["## Registry state", "", "no problems" if not problems else "\n".join(f"- {p}" for p in problems), ""]

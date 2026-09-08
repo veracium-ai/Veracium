@@ -48,7 +48,13 @@
 |---|---|---|---|---|---|---|---|
 | 0033–0036 | the self-learning concept review's decomposition (0033 receipts / 0034 origin / 0035 admission / 0036) — LIVE, not dormant: the concept note reached a second external review 2026-09-04 ('ready for owner adjudication, not yet for normative drafting'); the owner approved its modifications and workflow, fixing the sequence procedural memory → harness → self-learning; and `0035 Requires: 0033 AND 0034` is an externally reviewed dependency stated BY NUMBER — the numbers are load-bearing | research | 2026-09-04 | COORDINATION.md — a note inside the 0031 dev-queue row (the reason this registry exists) | ten owner decisions gate any drafting there (one partly taken: procedure-shaped records categorically outside 0035 v1's effect vocabulary) | 2027-01-04 / self-learning is THIRD in the owner-approved sequence procedural → harness → self-learning; review when the HARNESS stage begins (the arc becomes next and its numbers are wanted), or if the owner abandons or reorders the sequence, or by review_by — whichever is first | — |
 
-**Next uncontested number for a new spec:** `0040`
+## Spent outside the tree (withdrawn or rejected before entering it)
+
+| number | what | ruling | where the record lives | gist of the reasoning | spent on |
+|---|---|---|---|---|---|
+| 0040 | procedural text at the choke point — the store inferring content kind from text shape (research's proposal) | Quentin, 2026-09-08, "Withdraw 0040 with the reasoning recorded" (ledger [Quentin, research session] 19:40Z): Q1 answered NO — the store does not infer kind from text shape | the withdrawn proposal in the research tree, Spec-Status: withdrawn, kept as a record so the next person with the idea finds the argument rather than making it again | Q1: may the store infer content kind from text shape? NO. 0037's recognition rule (`matches_executable_detail`) is safe because §4a-ii runs it as the LAST conjunct behind `stamp consistent`, inside the set a host already declared procedural — a false positive there withholds one description. The same function outside the declared set suppresses something a user asserted: identical code, categorically different blast radius, and the difference is in what the rule is allowed to decide, not in the rule. The §1 hazard stands (procedural text under an ordinary relation still renders as fact): the guarantee is about DECLARED provenance, not content safety. The real lever is adoption of `record_procedure`, not inference. | 2026-09-08 |
+
+**Next uncontested number for a new spec:** `0041`
 
 ## Registry state
 

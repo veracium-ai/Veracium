@@ -94,15 +94,47 @@ def test_a_reservation_past_review_is_named_for_the_owner(monkeypatch):
 
 
 def test_next_uncontested_skips_live_reservations():
-    """The next number a new spec may take is one above the tree's highest,
-    stepped past every live reservation — DERIVED here the same way, so the
-    expectation is not a hand number that goes stale at the next allocation."""
-    top = max(r["number"] for r in allocation.holders())
+    """The next number a new spec may take is one above the tree's highest
+    (or the highest SPENT number, whichever is higher), stepped past every
+    live reservation and every SPENT number — DERIVED here the same way, so
+    the expectation is not a hand number that goes stale at the next
+    allocation."""
+    top = max([r["number"] for r in allocation.holders()] + list(allocation.SPENT))
     n = int(top) + 1
-    while any(x["range"][0] <= f"{n:04d}" <= x["range"][1] for x in allocation.RESERVATIONS if x.get("released") is None):
+    while (any(x["range"][0] <= f"{n:04d}" <= x["range"][1] for x in allocation.RESERVATIONS if x.get("released") is None)
+           or f"{n:04d}" in allocation.SPENT):
         n += 1
     nxt = allocation.next_uncontested()
     assert nxt == f"{n:04d}", nxt
     for x in allocation.RESERVATIONS:
         if x.get("released") is None:
             assert not (x["range"][0] <= nxt <= x["range"][1])
+
+
+def test_a_spent_number_is_never_handed_out_again__with_its_controls(monkeypatch):
+    """A number consumed by a proposal that never entered the tree (0040,
+    withdrawn in the research tree on the owner's ruling, 2026-09-08) is
+    SPENT: `next_uncontested()` skips it, a tree file taking it is refused as
+    a reuse, and an entry without its ruling is refused. Rule zero: with the
+    table emptied the same number is handed out — the table is doing the work."""
+    top = max(r["number"] for r in allocation.holders())
+    nxt = allocation.next_uncontested()
+    assert nxt not in allocation.SPENT and nxt > top
+    for n in allocation.SPENT:
+        assert n not in {r["number"] for r in allocation.holders()}
+    assert allocation.allocation_problems() == []
+    # the control: without the table, the first free number above the tree is
+    # handed out even if it was spent
+    monkeypatch.setattr(allocation, "SPENT", {})
+    bare = allocation.next_uncontested()
+    monkeypatch.undo()
+    assert bare <= nxt and (bare in allocation.SPENT or bare == nxt)
+    assert "0040" in allocation.SPENT and bare == "0040"
+    # a tree file holding a SPENT number is a reuse, refused by name
+    monkeypatch.setattr(allocation, "SPENT", {top: dict(next(iter(allocation.SPENT.values())))})
+    assert any(f"SPENT {top} is also held by" in p for p in allocation.allocation_problems())
+    monkeypatch.undo()
+    # an entry without its ruling is refused
+    monkeypatch.setattr(allocation, "SPENT", {"0998": {"what": "x", "ruling": "", "record": "r", "spent_on": "2026-09-08"}})
+    assert any("SPENT 0998: missing ruling" in p for p in allocation.allocation_problems())
+    monkeypatch.undo()
