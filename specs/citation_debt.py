@@ -55,14 +55,12 @@ CITATION_DEBT: dict = {
         "test_assistant_cannot_touch_user_edge": "unclassified_at_generation",
         "test_assistant_derived_from_third_party_is_capped": "unclassified_at_generation",
         "test_assistant_dominant_store_does_not_crowd_out_user": "unclassified_at_generation",
-        "test_assistant_is_use_only_for_every_subject": "unclassified_at_generation",
         "test_assistant_never_yields_mentionable": "unclassified_at_generation",
         "test_assistant_restatement_does_not_refresh_currency": "unclassified_at_generation",
         "test_ladder_diagnostics_generate_from_the_registry": "unclassified_at_generation",
         "test_mixed_batch_with_assistant_declares_influence": "unclassified_at_generation",
         "test_old_reader_refuses_v11_at_open": "unclassified_at_generation",
         "test_release_migration_derives_from_the_bumped_head": "unclassified_at_generation",
-        "test_schema_v11_is_byte_identical_to_v10": "unclassified_at_generation",
         "test_the_measure_producer_derives_the_record_from_real_commands": "unclassified_at_generation",
         "test_the_production_measure_delegates_to_the_implementation": "unclassified_at_generation",
         "test_the_sealer_enforces_the_candidate_replay": "unclassified_at_generation",
@@ -75,8 +73,8 @@ CITATION_DEBT: dict = {
         "test_cross_partition_contention_keeps_the_fenced_member_unverified": "unclassified_at_generation",
         "test_legacy_null_receipt_with_conflicting_plan_conflicts": "unclassified_at_generation",
         "test_n_way_contention_renders_every_distinct_value": "unclassified_at_generation",
-        "test_new_snapshot_less_receipt_verifies_at_v2": "unclassified_at_generation",
-        "test_public_retry_against_a_legacy_null_receipt_reaches_phase_2": "unclassified_at_generation",
+        "test_new_snapshot_less_receipt_verifies_at_v2": "stale_version: reshaped by 0016 D2 at a5c6d82 into test_new_snapshot_less_receipt_verifies_at_v4 (receipt version 2 -> 4); the I9 row cites the R9-2/R10-2 shape as it stood at acceptance",
+        "test_public_retry_against_a_legacy_null_receipt_reaches_phase_2": "stale_version: reshaped by 0016 D2 at a5c6d82 into test_public_retry_against_a_legacy_null_receipt_refuses_on_sight \u2014 the continuation branch it named was CLOSED for pre-D2 receipts; repointing would make the I9 row claim a different behaviour",
         "test_refusal_does_not_evict_the_prior": "unclassified_at_generation",
         "test_replaying_an_operation_id_is_a_no_op": "unclassified_at_generation",
         "test_resolving_a_refusal_contention_invalidates_the_wiki_immediately": "unclassified_at_generation",
@@ -87,27 +85,19 @@ CITATION_DEBT: dict = {
         "test_capped_projection_identity_matrix": "unclassified_at_generation"
     },
     "0006": {
-        "test_imported_origin_is_preserved_not_localised": "unclassified_at_generation",
         "test_local_caller_cannot_supply_origin": "unclassified_at_generation",
         "test_local_source_survives_a_round_trip": "unclassified_at_generation",
         "test_missing_source_id_keeps_the_flag": "unclassified_at_generation",
-        "test_source_id_affects_no_decision": "unclassified_at_generation",
         "test_source_id_in_a_pre_v4_envelope_is_ignored": "unclassified_at_generation",
         "test_source_id_is_not_reachable_from_the_extractor": "unclassified_at_generation",
         "test_staleness_clearing_matrix": "unclassified_at_generation",
         "test_two_honest_origins_do_not_collide": "unclassified_at_generation",
         "test_v4_export_roundtrip": "unclassified_at_generation",
-        "test_v4_file_into_v3_build_is_rejected": "unclassified_at_generation",
-        "test_v4_import_missing_origin_is_rejected": "unclassified_at_generation"
+        "test_v4_file_into_v3_build_is_rejected": "unclassified_at_generation"
     },
     "0007": {
-        "test_a_database_with_only_an_unrelated_table_is_refused": "unclassified_at_generation",
-        "test_a_foreign_store_at_version_zero_is_refused": "unclassified_at_generation",
         "test_a_hostile_table_name_is_passed_as_a_value": "unclassified_at_generation",
-        "test_a_negative_user_version_is_refused": "unclassified_at_generation",
         "test_a_non_identical_schema_is_refused": "unclassified_at_generation",
-        "test_a_stamped_store_with_the_wrong_shape_is_refused": "unclassified_at_generation",
-        "test_a_store_with_extra_tables_is_refused": "unclassified_at_generation",
         "test_adoption_audit_sink_failure_aborts": "unclassified_at_generation",
         "test_adoption_event_payload_is_typed": "unclassified_at_generation",
         "test_committed_sink_failure_leaves_the_store_adopted": "unclassified_at_generation",
@@ -115,17 +105,14 @@ CITATION_DEBT: dict = {
         "test_creation_validates_before_stamping": "unclassified_at_generation",
         "test_drifted_acceleration_index_is_rebuilt": "unclassified_at_generation",
         "test_every_statement_names_its_columns": "unclassified_at_generation",
-        "test_export_format_version_is_independent": "unclassified_at_generation",
         "test_first_open_locks_before_reading": "unclassified_at_generation",
         "test_in_memory_store_is_versioned": "unclassified_at_generation",
-        "test_legacy_store_is_adopted_losslessly": "unclassified_at_generation",
+        "test_legacy_store_is_adopted_losslessly": "stale_version: 0013 \u00a75b replaced adoption-on-open with refuse-then-offline-migrate; the live node is test_s6_a_legacy_store_is_migrated_losslessly, and the S6 row's 'adopted' wording is the superseded contract",
         "test_new_store_is_stamped": "unclassified_at_generation",
-        "test_repair_revalidates_before_stamping": "unclassified_at_generation",
-        "test_user_version_rolls_back": "unclassified_at_generation"
+        "test_repair_revalidates_before_stamping": "unclassified_at_generation"
     },
     "0008": {
         "test_add_edge_transition_guard": "unclassified_at_generation",
-        "test_invalid_call_path_or_correlation_id_rejects_before_mutation": "unclassified_at_generation",
         "test_no_direct_writer_outside_confirm_edge": "unclassified_at_generation",
         "test_no_maintenance_op_clears_staleness": "unclassified_at_generation",
         "test_older_build_cannot_open_a_confirmations_store": "unclassified_at_generation"
@@ -135,7 +122,7 @@ CITATION_DEBT: dict = {
     },
     "0012": {
         "test_reinforcement_plan_inserts_no_duplicate": "unclassified_at_generation",
-        "test_reinforcement_still_advances_observed_at": "unclassified_at_generation"
+        "test_reinforcement_still_advances_observed_at": "renamed: a HISTORY mention \u2014 the \u00a77b row records that this test was inverted AND renamed at implementation to test_reinforcement_no_longer_advances_observed_at; the old name is the row's subject, not a live claim"
     },
     "0014": {
         "test_0010_consolidation_primitives": "unclassified_at_generation",
@@ -155,42 +142,41 @@ CITATION_DEBT: dict = {
     "0015": {
         "test_absent_or_invalid_epoch_aba_discards": "unclassified_at_generation",
         "test_legacy_enabled_config_epoch_is_normalized_before_collection": "unclassified_at_generation",
-        "test_same_epoch_repair_never_sends_post_erasure_records": "unclassified_at_generation",
-        "test_tombstone_after_malformed_drops_records_pre_and_post_post": "unclassified_at_generation",
-        "test_windows_death_releases_lock_across_processes": "unclassified_at_generation",
-        "test_windows_live_holder_exclusion_across_processes": "unclassified_at_generation"
+        "test_same_epoch_repair_never_sends_post_erasure_records": "never_written: the I17 list cites it beside the existing test_same_epoch_recreation_never_sends_post_erasure_records as a distinct planned case (a repair path); never written",
+        "test_tombstone_after_malformed_drops_records_pre_and_post_post": "never_written: the I17 list cites it beside the existing test_tombstone_after_deletion_drops_records_pre_and_post_post as a distinct planned case (a malformed tombstone); never written",
+        "test_windows_death_releases_lock_across_processes": "never_written: the spec marks it '(platform-gated, future)'; only the POSIX twin exists",
+        "test_windows_live_holder_exclusion_across_processes": "never_written: the spec marks it '(platform-gated, future)'; only the POSIX twin exists"
     },
     "0016": {
-        "test_below_v6_base_refuses_with_the_ladder_message": "unclassified_at_generation",
-        "test_below_v6_open_unchanged": "unclassified_at_generation",
-        "test_deletion_is_decision_invisible": "unclassified_at_generation",
-        "test_dir_surfaces_include_sourcetype": "unclassified_at_generation",
+        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_base_refuses_with_the_ladder_message over bases 1\u20136, and the row's 'below-v6 (bases 1\u20135)' is the number at acceptance",
+        "test_below_v6_open_unchanged": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_open_unchanged",
+        "test_deletion_is_decision_invisible": "never_written: the I1 projection-compare test was never written under any name (the near match test_metering_is_decision_invisible is 0017's, a different subject)",
+        "test_dir_surfaces_include_sourcetype": "stale_version: the I2 row is the D1 deprecation surface (dir INCLUDES SourceType); the same spec's D2 deleted the class and the test became test_dir_surfaces_exclude_sourcetype at a5c6d82 \u2014 the row describes the superseded D1 era",
         "test_field_access_warns_at_pinned_floor": "unclassified_at_generation",
         "test_format_6_refused_by_version_gate": "unclassified_at_generation",
         "test_idempotency_discrimination_post_collapse": "unclassified_at_generation",
         "test_no_receipt_straddles_the_v7_boundary": "unclassified_at_generation",
         "test_old_export_source_type_is_dropped": "unclassified_at_generation",
         "test_pickle_roundtrip_emits_exactly_two_warnings": "unclassified_at_generation",
-        "test_pre_v3_receipt_refuses_on_sight": "unclassified_at_generation",
         "test_sourcetype_import_warns_at_d1": "unclassified_at_generation",
         "test_star_import_namespace_is_byte_identical": "unclassified_at_generation",
-        "test_v3_receipts_follow_the_ordinary_contract": "unclassified_at_generation",
+        "test_v3_receipts_follow_the_ordinary_contract": "stale_version: receipt version 3 was itself superseded (the live node is test_v4_receipts_follow_the_ordinary_contract); the row's 'version-3 receipt follows the ordinary contract' is the closed set at acceptance",
         "test_v7_step_changes_no_objects": "unclassified_at_generation",
         "test_v7_step_declaration_matches_pin": "unclassified_at_generation"
     },
     "0017": {
         "test_consent_text_does_not_promise_token_totals": "unclassified_at_generation",
-        "test_v2_consent_strips_token_fields": "unclassified_at_generation",
-        "test_v2_to_v3_transition_through_a_live_memory_carrier": "unclassified_at_generation"
+        "test_v2_consent_strips_token_fields": "owed_at_implementation: the I4 row itself says 'stage-5 obligation \u2014 none of the three exists yet'; the near match test_v1_consent_strips_new_fields is 0015's v1 test, not this",
+        "test_v2_to_v3_transition_through_a_live_memory_carrier": "owed_at_implementation: the I4 row itself says 'stage-5 obligation \u2014 none of the three exists yet'; the near match is 0015's v1->v2 test, not this"
     },
     "0018": {
-        "test_base_6_proceeds_through_the_audited_operation": "unclassified_at_generation",
-        "test_below_v6_base_refuses_with_the_ladder_message": "unclassified_at_generation",
-        "test_below_v6_open_unchanged": "unclassified_at_generation"
+        "test_base_6_proceeds_through_the_audited_operation": "stale_version: the head moved past v7 after acceptance; the live node is test_base_7_proceeds_through_the_audited_operation",
+        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_base_refuses_with_the_ladder_message over bases 1\u20136",
+        "test_below_v6_open_unchanged": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_open_unchanged"
     },
     "0019": {
-        "test_below_v6_base_refuses_with_the_ladder_message": "unclassified_at_generation",
-        "test_below_v6_open_unchanged": "unclassified_at_generation"
+        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: quoted from 0018's final-form amendment; the head moved past v7 after acceptance (live node test_below_v7_base_refuses_with_the_ladder_message)",
+        "test_below_v6_open_unchanged": "stale_version: quoted from 0018's final-form amendment; the head moved past v7 after acceptance (live node test_below_v7_open_unchanged)"
     },
     "0020": {
         "test_import_reconstruction_precommit": "unclassified_at_generation"
@@ -219,7 +205,6 @@ CITATION_DEBT: dict = {
         "test_revoked_source_retires_direct_records": "unclassified_at_generation",
         "test_second_revoke_is_a_no_op": "unclassified_at_generation",
         "test_sole_basis_requires_a_different_identity": "unclassified_at_generation",
-        "test_source_id_affects_no_decision": "unclassified_at_generation",
         "test_source_revocations_is_append_only": "unclassified_at_generation",
         "test_the_evidence_transcript_validates_against_the_ledger": "unclassified_at_generation",
         "test_the_sweep_retires_through_the_sole_writer": "unclassified_at_generation",
@@ -261,9 +246,6 @@ CITATION_DEBT: dict = {
         "test_undo_is_forward_only": "unclassified_at_generation",
         "test_undo_is_scoped_to_its_txn": "unclassified_at_generation",
         "test_undo_refuses_on_intervening_state": "unclassified_at_generation"
-    },
-    "0037": {
-        "test_default_import_refuses_procedural_records": "unclassified_at_generation"
     },
     "0038": {
         "test_every_frozen_text_yields_exactly_one_episode": "unclassified_at_generation",

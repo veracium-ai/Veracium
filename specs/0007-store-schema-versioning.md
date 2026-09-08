@@ -850,19 +850,19 @@ retired stay with `specs/0013`.
 |---|---|
 | **S1** a fresh store is stamped | `test_new_store_is_stamped` |
 | **S2** a newer store is refused | `test_a_newer_store_is_refused` — write `SCHEMA_VERSION + 1` directly |
-| **S3** adoption verifies signature, not counter | `test_a_foreign_store_at_version_zero_is_refused` |
+| **S3** adoption verifies signature, not counter | `test_s3_a_foreign_store_at_version_zero_is_refused` |
 | **S5** the decision is made under the write lock | `test_first_open_locks_before_reading` — assert `BEGIN IMMEDIATE` precedes the version read |
 | **S6** an existing store keeps working, no data change | `test_legacy_store_is_adopted_losslessly` — every edge/episode byte-identical after adoption |
-| **S7** `FORMAT_VERSION` is untouched | `test_export_format_version_is_independent` |
-| **S8** exact set equality (falls out of the digest) | `test_a_store_with_extra_tables_is_refused` |
+| **S7** `FORMAT_VERSION` is untouched | `test_s7_export_format_version_is_independent` |
+| **S8** exact set equality (falls out of the digest) | `test_s8_a_store_with_extra_tables_is_refused` |
 | **S9** adoption is recorded, and a failing sink aborts it | `test_adoption_audit_sink_failure_aborts` — sink raises, assert **not** stamped |
 | **S10** the **production** internal-exclusion query excludes `sqlite_stat1` | `test_analyze_does_not_change_the_digest` — `ANALYZE`, reopen, assert adopted. **Must call the shipped query** |
 | **S11** no code depends on column order | `test_every_statement_names_its_columns` — no `SELECT *` (except aggregates), **every `INSERT` names its destination columns**. *(Round 4: this is now a **general quality lint**, not a justification. v5 still described it as licensing an "unordered column comparison"; the manifest stores ordered `table_xinfo` rows and byte-for-byte DDL, so nothing about acceptance rests on it.)* |
 | **S12** index drift is repaired on **every** path | `test_drifted_acceleration_index_is_rebuilt` — replace with a UNIQUE index on an already-**stamped** store, reopen, assert the canonical definition |
-| **S13** the stamp is transactional in the installed sqlite | `test_user_version_rolls_back` |
-| **S14** a negative version refuses; `SCHEMA_VERSION` is in range | `test_a_negative_user_version_is_refused` |
-| **S16** a stamped store validates its manifest | `test_a_stamped_store_with_the_wrong_shape_is_refused` |
-| **S17** an unstamped file with any foreign object is not "new" | `test_a_database_with_only_an_unrelated_table_is_refused` |
+| **S13** the stamp is transactional in the installed sqlite | `test_s13_user_version_rolls_back` |
+| **S14** a negative version refuses; `SCHEMA_VERSION` is in range | `test_s14_a_negative_user_version_is_refused` |
+| **S16** a stamped store validates its manifest | `test_s16_a_stamped_store_with_the_wrong_shape_is_refused` |
+| **S17** an unstamped file with any foreign object is not "new" | `test_s17_a_database_with_only_an_unrelated_table_is_refused` |
 | **S18** foreign table names are never interpolated | `test_a_hostile_table_name_is_passed_as_a_value` — a name containing a quote and a semicolon |
 | **S19** generated columns are seen | `test_a_non_identical_schema_is_refused` |
 | **S23** the constructor's output **is** `MANIFESTS[SCHEMA_VERSION]` | `test_the_registry_reproduces_the_product_schema` — edit `_SCHEMA` without regenerating and the build fails |

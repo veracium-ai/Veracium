@@ -206,7 +206,7 @@ ships today.
 | **C6** the 0.4.5 reproducer stays fixed | `test_cross_author_restatement_does_not_clear` — regression, cross-class was the half 0.4.5 got right | CI |
 | **C7** confirmation is **all-or-nothing** | `test_confirmation_is_atomic` — a store wrapper that fails the record write; **every edge field unchanged**, no episode | CI |
 | **C8** replay and collision | `test_replay_returns_the_original_success` · `test_same_id_different_request_conflicts` · `test_concurrent_duplicates_commit_once` — one mutation, one episode, one record | CI |
-| **C9** audit metadata is validated **before** any mutation | `test_invalid_call_path_or_correlation_id_rejects_before_mutation` — closed enums, length and charset | CI |
+| **C9** audit metadata is validated **before** any mutation | `test_invalid_call_path_rejects` + `test_invalid_correlation_id_rejects_before_mutation` — closed enums, length and charset | CI |
 | **C10** **every** `Store` backend refuses the transition through `add_edge()` | `test_add_edge_transition_guard` — a **backend conformance test** run against each implementation, not a SQLite detail | CI |
 | **C11** retention, erasure and export | `test_forget_user_deletes_and_counts_confirmations` · `test_export_excludes_confirmations` · `test_invalidated_edge_keeps_its_confirmations` | CI |
 | **C12** schema-version compatibility gate | `test_older_build_cannot_open_a_confirmations_store` — **`0007`**; without it an older build ignores the table and clears unaudited | CI |

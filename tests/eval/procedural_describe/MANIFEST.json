@@ -14959,12 +14959,19 @@
     "supersedes_pin": "900d863813323e8d2bab5aa4656f57d32a693e990f2ffedd1b6ac02bb7cdb307",
     "utc": "2026-09-08",
     "what": "Re-pinned after the owner's ruling \"Drop the cross-spec total from the per-spec block\": specs/render_closure.py no longer restates the total across the tracked specs inside this spec's generated `## Review closure` block (the per-spec count and rows stay; the total renders once in STATUS.md). One generated sentence changed; no 0037 content moved. This is the LAST re-pin of this kind by construction \u2014 a spec joining the tracked set now rewrites no other spec's text."
+   },
+   {
+    "by": "dev (veracium-69)",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly the one column-0 `corpus sha256: ` line and its terminator removed (spec_pin.rule)",
+    "supersedes_pin": "cdce184a7cddded6e2275b940c1719008cfde552f807df90cb6aa6a0f6aaef35",
+    "utc": "2026-09-08",
+    "what": "Re-pinned after ONE citation was repointed in the V-IMPORT-REFUSES-PROCEDURAL-UNLESS-RESTORE row: `test_default_import_refuses_procedural_records` (a name that never existed as a def) -> `test_default_import_refuses_procedural_records_on_any_signal` (the node that exists), on Quentin's word \"do the 36 citation renames\" (dev session, 2026-09-08). A citation edit, no design content moved; the corpus and its 972 cells are untouched."
    }
   ],
   "rule": "Remove EXACTLY the lines whose text begins with \"corpus sha256: \" at column 0 (the line and its terminator; nothing else), then sha256 the remaining bytes. There MUST be exactly one such line \u2014 assert it and fail otherwise, rather than silently hashing a spec with zero or two.",
   "second_line_hazard_at_acceptance": "\u00a76a says that at acceptance the same digest MOVES INTO `## Review closure`. If that lands as a second column-0 \"corpus sha256: \" line, grep -v removes BOTH while a count=1 regex removes only the FIRST \u2014 the two impls would silently diverge exactly at acceptance. The exactly-one assertion above turns that divergence into a test failure instead of a wrong pin.",
   "spec": "specs/0037-procedural-basis.md",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "cdce184a7cddded6e2275b940c1719008cfde552f807df90cb6aa6a0f6aaef35",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "0e3ffb6f35c16b5c870a4b1321ae78b429d06f9acc86705962d44d91f0cc6908",
   "spec_version": "v15 (IMPLEMENTED 2026-09-08; the four post-acceptance amendments and the v15 version sentence folded)",
   "status": "BOUND",
   "why_this_rule_and_not_a_regex": "A regex of the form `^corpus sha256: \\S+\\s*$\\n?` OVER-DELETES: `\\s` matches newline, so `\\s*` greedily consumes the blank line that follows \u00a76a's digest line as well. On the v11 working tree it consumed \"corpus sha256: CORPUS-DIGEST-NOT-YET-BOUND\\n\\n\" and digested to c18c10c07329807d\u2026, which is NOT the digest of the spec-minus-that-line. \u00a76a says the manifest removes THE LINE; a rule that also removes an adjacent blank line makes the pin sensitive to formatting the spec never claimed was load-bearing."
