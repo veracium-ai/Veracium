@@ -135,9 +135,12 @@ SUPERSEDED: dict[str, dict] = {
 # NOT disposed, deliberately: `b8a4489` (0.18.1, the designated compat release
 # for 0031 Phase A rollback) is due 2026-09-11. It shipped the day 0031 was
 # accepted, as "the designated rollback target under ACCEPTED specs/0031", so
-# 0031's round cannot have covered it. The gate goes red on 2026-09-12 asking
-# for its retrospective ON TIME — the first time this mechanism names an
-# obligation before the date rather than a month after. Write it; do not defer.
+# 0031's round cannot have covered it. The gate goes red ON 2026-09-11 — the
+# due date itself; the predicate is `effective_due <= today`, because a
+# deadline that only bites the day after is a deadline plus a day (research
+# measured HEAD: 09-10 green, 09-11 red) — asking for its retrospective ON
+# TIME, the first time this mechanism names an obligation before the date
+# rather than a month after. Write it; do not defer.
 
 _SPEC_STATUS = re.compile(r"^Spec-Status:\s*(\S+)", re.M)
 

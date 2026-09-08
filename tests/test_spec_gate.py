@@ -3094,7 +3094,12 @@ def _retrospective_debt(*, bare=False):
 
 def _hotfix_repo(tmp_path, due, *, discharges=None, subject="hotfix"):
     """A one-commit git repo whose commit carries the carve-out trailers, and
-    a specs/ dir with an optional `## Retrospective` section."""
+    a specs/ dir with an optional `## Retrospective` section. `discharges` may
+    carry a `{sha}` placeholder, filled with THIS repo's commit AFTER it
+    exists: the first version of the closing control interpolated the caller's
+    previous repo's sha, and passed locally only because throwaway repos built
+    in the same second with identical content get identical shas — CI py3.13
+    at aea8168 straddled a second and refused it."""
     import subprocess
     repo = tmp_path / "repo"
     (repo / "specs").mkdir(parents=True)
@@ -3105,13 +3110,16 @@ def _hotfix_repo(tmp_path, due, *, discharges=None, subject="hotfix"):
     g("init", "-q", "-b", "main")
     (repo / "specs" / "0900-a.md").write_text("Spec-Status: accepted\n\n## Body\n\ntext\n")
     g("add", "-A")
-    g("commit", "-q", "-m", f"{subject}\n\nSpec-Exception: security-hotfix\n"
+    # the repo's own directory name in the subject: two throwaway repos must
+    # never share a sha, so a control that names the wrong repo's sha fails
+    # deterministically instead of by the second boundary
+    g("commit", "-q", "-m", f"{subject} ({repo.parent.name})\n\nSpec-Exception: security-hotfix\n"
       f"Spec-Exception-Reason: a live defect, twelve+ chars\nSpec-Retrospective-Due: {due}\n")
     sha = g("rev-parse", "HEAD").strip()
     if discharges is not None:
         (repo / "specs" / "0900-a.md").write_text(
             "Spec-Status: accepted\n\n## Body\n\ntext\n\n## Retrospective\n\nprose mentioning "
-            f"{sha[:7]} in passing\n{discharges}\n\n## Review closure\n\nafter\n")
+            f"{sha[:7]} in passing\n{discharges.format(sha=sha[:7])}\n\n## Review closure\n\nafter\n")
     return repo, sha
 
 
@@ -3196,14 +3204,17 @@ def test_the_retrospective_derivation_owes_past_dates_closes_declared_ones_and_r
     assert mod.discharges(repo) == {}
     assert [p for p in mod.problems(repo, today) if sha[:7] in p]
     # a declared discharge closes it — and the key is the sha, not the date
-    repo, sha = _hotfix_repo(tmp_path / "c", "2026-08-07", discharges=f"Discharges: {sha[:7]}")
+    repo, sha = _hotfix_repo(tmp_path / "c", "2026-08-07", discharges="Discharges: {sha}")
     assert mod.discharges(repo) == {"0900-a.md": [sha[:7]]}
     assert mod.problems(repo, today) == []
     repo, sha = _hotfix_repo(tmp_path / "c2", "2026-08-07", discharges="Discharges: 0000000")
     assert [p for p in mod.problems(repo, today) if sha[:7] in p], "a discharge of a different sha on the same date must not close this one"
-    # not yet owed today; owed the day after its date
+    # not yet owed today, not owed the day before its date, owed ON its date
+    # (a deadline that only bites the day after is a deadline plus a day)
     repo, sha = _hotfix_repo(tmp_path / "d", "2026-09-14")
     assert mod.problems(repo, today) == []
+    assert mod.problems(repo, "2026-09-13") == []
+    assert [p for p in mod.problems(repo, "2026-09-14") if sha[:7] in p]
     assert [p for p in mod.problems(repo, "2026-09-15") if sha[:7] in p]
     # a deferral parks it only while its new date is in the future
     repo, sha = _hotfix_repo(tmp_path / "e", "2026-08-07")
