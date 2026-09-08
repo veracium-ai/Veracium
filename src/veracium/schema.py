@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import (BaseModel, Field, field_validator,
                       model_serializer, StrictBool)
@@ -171,6 +171,45 @@ class Provenance(BaseModel):
     # bounded (§4 rule 5 — an empty string is not a valid opaque id).
     source_id: Optional[str] = Field(default=None, min_length=1, max_length=512)
     origin: Optional[str] = Field(default=None, min_length=1, max_length=512)
+    # specs/0037 §2/§4a — the record's KIND, stamped AT WRITE from the
+    # registry's declaration for its relation and read from the STAMP ever
+    # after (a registry change moves no stored record). ABSENCE IS
+    # DECLARATIVE: the domain is {None, "procedural"} — there is no
+    # "declarative" value anywhere in the store — and the key is OMITTED when
+    # None by the wrap serializer below, so a declarative record's bytes are
+    # exactly the pre-feature 8 keys (V-DECLARATIVE-UNCHANGED, V-KIND-STAMPED).
+    record_kind: Optional[Literal["procedural"]] = None
+    # specs/0037 §2 — how the author came by a PROCEDURAL record: `stated`
+    # (they said they follow it) or `observed` (a pattern they reported
+    # observing), declared by the host on the EvidenceContext at write and
+    # never applicable to a declarative record (None there, key omitted).
+    # Cap-only under the declared order observed ≤ stated: the whole-set
+    # MINIMUM on absorption, immutable on same-id replace (V-BASIS-CAP-ONLY,
+    # V-BASIS-IMMUTABLE).
+    basis: Optional[Literal["stated", "observed"]] = None
+
+    @model_serializer(mode="wrap")
+    def _omit_absent_procedural_markers(self, handler):
+        # specs/0037 §2 (round-2 F2, round-3 F1): the two procedural markers
+        # are ABSENT, not null, on every declarative record — the form Edge
+        # uses for `original_relation`; never a global exclude_none, which
+        # would drop the three deliberate nulls (derived_from, source_id,
+        # origin) the byte contracts depend on.
+        d = handler(self)
+        if d.get("record_kind") is None:
+            d.pop("record_kind", None)
+        if d.get("basis") is None:
+            d.pop("basis", None)
+        return d
+
+    @property
+    def procedural(self) -> bool:
+        """specs/0037 §4a — the STORED rule, total over records: procedural
+        iff `record_kind == "procedural"` OR `basis is not None`. Two
+        independent write-time facts; destroying one cannot launder a
+        procedure into recall (the disagreeing state is procedural BY FLOOR
+        and the named outcome `kind_conflict` at the describe surface)."""
+        return self.record_kind == "procedural" or self.basis is not None
 
     @property
     def third_party_influenced(self) -> bool:
@@ -203,13 +242,28 @@ class EvidenceContext:
     """
 
     _KINDS = ("direct", "derived")
-    __slots__ = ("kind", "derived_from")
+    #: specs/0037 §4b — the CLOSED basis domain for a PROCEDURAL event
+    BASES = ("stated", "observed")
+    __slots__ = ("kind", "derived_from", "basis")
 
-    def __init__(self, kind: str, derived_from: Optional[EvidenceAuthor]):
+    def __init__(self, kind: str, derived_from: Optional[EvidenceAuthor],
+                 basis: Optional[str] = None):
         if kind not in self._KINDS:
             raise ValueError(
                 f"EvidenceContext kind must be one of {self._KINDS}, "
                 f"got {kind!r}")
+        # specs/0037 §4b (V-BASIS-CLOSED): `basis` is None (a declarative
+        # event) or exactly one of BASES; anything else RAISES at
+        # construction — no coercion, no truthiness, nothing written.
+        if basis is not None:
+            if isinstance(basis, bool) or not isinstance(basis, str):
+                raise TypeError(
+                    f"basis must be a str in {self.BASES}, got "
+                    f"{type(basis).__name__} (specs/0037 §4b, V-BASIS-CLOSED)")
+            if basis not in self.BASES:
+                raise ValueError(
+                    f"basis must be one of {self.BASES}, got {basis!r} "
+                    f"(specs/0037 §4b, V-BASIS-CLOSED)")
         if kind == "direct":
             if derived_from is not None:
                 raise ValueError(
@@ -228,32 +282,44 @@ class EvidenceContext:
                     "no coercion, no str() (specs/0011 §4d)")
         object.__setattr__(self, "kind", kind)
         object.__setattr__(self, "derived_from", derived_from)
+        object.__setattr__(self, "basis", basis)
 
     def __setattr__(self, name, value):
         raise AttributeError("EvidenceContext is immutable")
 
     def __repr__(self):
+        # a forged subclass may bypass __init__ (0011's refusal tests build
+        # one); repr must still work so the refusal can NAME it
+        basis = getattr(self, "basis", None)
+        b = f"basis={basis!r}" if basis is not None else ""
         if self.kind == "direct":
-            return "EvidenceContext.direct()"
-        return f"EvidenceContext.derived({self.derived_from!r})"
+            return f"EvidenceContext.direct({b})"
+        sep = ", " if b else ""
+        return f"EvidenceContext.derived({self.derived_from!r}{sep}{b})"
 
     def __eq__(self, other):
         return (isinstance(other, EvidenceContext)
                 and self.kind == other.kind
-                and self.derived_from == other.derived_from)
+                and self.derived_from == other.derived_from
+                and getattr(self, "basis", None) == getattr(other, "basis", None))
 
     def __hash__(self):
-        return hash((self.kind, self.derived_from))
+        return hash((self.kind, self.derived_from, getattr(self, "basis", None)))
 
     @classmethod
-    def direct(cls) -> "EvidenceContext":
-        """The host attests first-party capture of this event."""
-        return cls("direct", None)
+    def direct(cls, *, basis: Optional[str] = None) -> "EvidenceContext":
+        """The host attests first-party capture of this event. `basis`
+        (specs/0037 §4b) is declared ONLY for a procedural event recorded
+        through `Memory.record_procedure` — `"stated"` or `"observed"`; the
+        extractor path refuses a context carrying one (V-BASIS-SCOPE)."""
+        return cls("direct", None, basis)
 
     @classmethod
-    def derived(cls, from_class: EvidenceAuthor) -> "EvidenceContext":
-        """The host declares the event's content derives from `from_class`."""
-        return cls("derived", from_class)
+    def derived(cls, from_class: EvidenceAuthor, *,
+                basis: Optional[str] = None) -> "EvidenceContext":
+        """The host declares the event's content derives from `from_class`;
+        `basis` as for `direct()` (specs/0037 §4b)."""
+        return cls("derived", from_class, basis)
 
 
 # --------------------------------------------------------------------------- #
@@ -348,9 +414,19 @@ DEFAULT_EXPIRY = {
 # --------------------------------------------------------------------------- #
 
 class Relation(BaseModel):
+    """A registry entry. `relation_kind` (specs/0037 §4a) is the REGISTRY's
+    declaration of the relation's content kind — `declarative` (every
+    relation before 0037; the default) or `procedural` (a procedure the user
+    follows). It is consulted AT WRITE and stamped on the record as
+    `Provenance.record_kind`; the extractor never sees a procedural relation
+    (its vocabulary is filtered by kind, V-EXTRACTOR-BLIND), and the sole
+    producer of a procedural record is `Memory.record_procedure`. Do not
+    confuse this registry field (domain {declarative, procedural}) with the
+    record's stamp (domain {None, "procedural"})."""
     name: str
     functional: bool = False  # one current value per subject → supersede on change
     desc: str = ""  # one-clause gloss rendered into the distill prompt
+    relation_kind: Literal["declarative", "procedural"] = "declarative"
 
 
 # A small, extensible default registry. Hosts can add their own via config.
@@ -393,10 +469,36 @@ DEFAULT_RELATIONS: dict[str, Relation] = {
         # the quarantine channel — third-party claims never become direct facts
         Relation(name="third_party_claim",
                  desc="an unverified claim by a third party; subject is the claimant"),
+        # specs/0037 — the ONE default procedural relation: a procedure the
+        # user follows, written only by Memory.record_procedure with a
+        # host-declared basis; never rendered into model context; described
+        # through Memory.describe_procedures. Filtered out of the extractor's
+        # vocabulary (V-EXTRACTOR-BLIND), so its position here does not
+        # touch the prompt bytes. Non-functional: procedures accumulate.
+        Relation(name="follows_procedure", relation_kind="procedural",
+                 desc="a procedure the user follows — the host's gloss-level name of it"),
     ]
 }
 
 QUARANTINE_RELATION = "third_party_claim"
+PROCEDURAL_RELATION = "follows_procedure"   # specs/0037: the default procedural relation
+
+
+def is_procedural_relation(reg, name: str) -> bool:
+    """specs/0037 §4a — the REGISTRY's declaration for a relation name at
+    WRITE time (a name absent from `reg` is not procedural — an unknown
+    relation is declarative to the extractor's vocabulary rule and refused
+    by `record_procedure`). Never consulted for a STORED record's kind."""
+    r = reg.get(name) if reg is not None else None
+    return r is not None and getattr(r, "relation_kind", "declarative") == "procedural"
+
+
+def is_procedural(record) -> bool:
+    """specs/0037 §4a — a STORED record's kind, read from the record's OWN
+    provenance stamp/basis (`Provenance.procedural`), never the registry.
+    Total over Edges and Episodes (an episode's stamp is always absent)."""
+    prov = getattr(record, "provenance", None)
+    return bool(prov is not None and prov.procedural)
 
 # specs/0025 (accepted v13) — the reserved registry members, module constants
 # on the QUARANTINE_RELATION pattern. `unclassified` is the NON-FUNCTIONAL

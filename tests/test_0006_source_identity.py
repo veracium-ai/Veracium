@@ -271,9 +271,10 @@ def test_export_materialises_and_import_roundtrips_source_id_and_origin(tmp_path
     for rec in _lines(exp)[1:]:
         assert rec["provenance"]["origin"] == src_origin
     # 0014 4->5; 0019 5->6; 0016 D2 6->7; 0025 7->8; 0001 8->9;
-    # 0026 9->10 with a CONDITIONAL stamp: this marker-free store
-    # exports at the pre-agreement 9 while the reader knows 10
-    assert FORMAT_VERSION == 10
+    # 0026 9->10 with a CONDITIONAL stamp, 0037 10->11 the same way: this
+    # marker-free, procedural-free store exports at the pre-agreement 9
+    # while the reader knows 11
+    assert FORMAT_VERSION == 11
     assert _lines(exp)[0]["version"] == 9
     dst = SqliteStore(str(tmp_path / "dst.db"))
     import_memory(dst, exp)

@@ -230,7 +230,9 @@ def test_export_omits_the_deleted_key(tmp_path):
     lines = [json.loads(ln) for ln in p.read_text().splitlines()]
     # de-pinned; >=7 since 0016. 0026's stamp is CONDITIONAL: this
     # marker-free store exports at the pre-agreement version
-    assert lines[0]["version"] in (FORMAT_VERSION, FORMAT_VERSION - 1)
+    # three conditional eras since 0037 (11 procedural / 10 agreement / 9 before)
+    from veracium.portability import _PRE_AGREEMENT_VERSION, _PRE_PROCEDURAL_VERSION
+    assert lines[0]["version"] in (FORMAT_VERSION, _PRE_PROCEDURAL_VERSION, _PRE_AGREEMENT_VERSION)
     assert lines[0]["version"] >= 7
     assert "source_type" not in p.read_text()     # no residual key anywhere
     store.close()

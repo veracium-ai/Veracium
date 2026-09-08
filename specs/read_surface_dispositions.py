@@ -70,6 +70,27 @@ DISPOSITIONS: dict[str, dict] = {
                     "Unscoped (no principal) exactly as `recall` is. "
                     "Read-only: one clock read, one read window, no write."),
 
+    "Memory.record_procedure": dict(
+        returns_records=False, principal="none",
+        carriers="the new edge id",
+        disposition="WRITE path (specs/0037 §4b) — the sole producer of a "
+                    "procedural record; returns an id, renders nothing. "
+                    "Disclosure is derived (quarantine-at-birth, then the "
+                    "three-axis rule), never host-supplied."),
+
+    "Memory.describe_procedures": dict(
+        returns_records=True, principal="threaded",
+        carriers="`DescribeResult` — `descriptions` (summary, basis, "
+                 "attribution, author, dates) and `withheld` (id + named "
+                 "outcome); never the note",
+        disposition="SCOPED on recall's own relation (specs/0037 §3b, "
+                    "V-SCOPE-OUTERMOST): the same `ScopeView` composition as "
+                    "recall — a record HIDDEN from the principal is in "
+                    "NEITHER list, indistinguishable from no match; a "
+                    "cross-scope-VISIBLE record is `use_only` under 0020's "
+                    "shaping and yields the named non-description `use_only`, "
+                    "never a description. Shows less than recall would have."),
+
     "Memory.answer": dict(
         returns_records=False, principal="threaded",
         carriers="the answer string, built from an internal `recall`",
@@ -211,6 +232,18 @@ DISPOSITIONS: dict[str, dict] = {
         returns_records=False, principal="none",
         carriers="ingest counters",
         disposition="WRITE path over MCP."),
+    "mcp_server.record_procedure_impl": dict(
+        returns_records=False, principal="none",
+        carriers="`{ok, edge_id}` or the serialized refusal `{ok: false, refusal}`",
+        disposition="WRITE path over MCP (specs/0037 §4b): the capability-gated "
+                    "adapter to `Memory.record_procedure`; refuses under "
+                    "`none` as an attempted elevation; renders nothing."),
+    "mcp_server.describe_procedures_impl": dict(
+        returns_records=True, principal="threaded",
+        carriers="`DescribeResult` as JSON",
+        disposition="Passes `principal` through to `Memory.describe_procedures` "
+                    "(the served tool binds the deployment's user and no "
+                    "principal, as `recall` does); no new MCP field."),
     "mcp_server.maintain_impl": dict(
         returns_records=False, principal="none",
         carriers="the maintenance report",

@@ -37,8 +37,9 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from .schema import (Disclosure, Edge, Episode, EvidenceAuthor, Provenance,
-                     is_historical_id, to_historical_id)
+from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
+                     Provenance, is_historical_id, is_procedural,
+                     is_procedural_relation, to_historical_id)
 from .scope_linkage import (derive_absorbed_by, plan_row_id,
                             reconstruct_absorption_rows)
 from .source_identity import resolve_origin
@@ -48,7 +49,14 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
 # specs/0019: v6 added the `ungrounded` flag (same refuse-don't-drop rule).
-FORMAT_VERSION = 10  # specs/0026 §3d: the Edge.agreement era. The bump is
+FORMAT_VERSION = 11  # specs/0037 §4e: the PROCEDURAL era — `Provenance.record_kind` /
+# `Provenance.basis`. Stamped CONDITIONALLY at write exactly as 0026 stamps 10:
+# an export from a store holding ANY procedural record (stamp or basis) is 11,
+# which every older reader REFUSES ("newer than this Veracium understands" —
+# the refuse-don't-drop rule of 0010/0019/0026, V-OLD-READER-REFUSES); a
+# procedural-free export stamps 10 (or 9 without agreements) and is
+# byte-identical to the pre-feature file (V-DECLARATIVE-UNCHANGED).
+_PRE_PROCEDURAL_VERSION = 10  # specs/0026 §3d: the Edge.agreement era. The bump is
                      # CONDITIONAL at write: an export from a store holding
                      # ANY agreement-bearing record stamps 10 so an old
                      # reader REFUSES rather than silently dropping the
@@ -136,8 +144,11 @@ def export_memory(store, user_id: str, path) -> dict:
 
     path = Path(path)
     with path.open("w") as f:
-        # specs/0026 §3d: the conditional stamp (see FORMAT_VERSION)
+        # specs/0026 §3d / specs/0037 §4e: the conditional stamp (see
+        # FORMAT_VERSION) — the highest era any record in the file needs
         _version = (FORMAT_VERSION
+                    if any(is_procedural(e) for e in edges)
+                    else _PRE_PROCEDURAL_VERSION
                     if any(e.agreement is not None for e in edges)
                     else _PRE_AGREEMENT_VERSION)
         f.write(json.dumps({"kind": "veracium-export", "version": _version,
@@ -243,7 +254,7 @@ def _validate_incoming_chain(members: list, key, path) -> tuple:
 
 
 def import_memory(store, path, *, user_id: Optional[str] = None,
-                  restore: bool = False) -> dict:
+                  restore: bool = False, relations=None) -> dict:
     """Load a Veracium export into `store`. Idempotent (an existing, record-equal
     record is skipped); `user_id` remaps every record into that user.
 
@@ -305,6 +316,61 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             raise ValueError(f"{path}: unknown record kind {marker!r}")
         rec["user_id"] = target_uid
         (edge_recs if marker == "edge" else ep_recs).append(rec)
+
+    # (1a) specs/0037 §4e / §2c (round-3 F2, round-4 F1): THE PROCEDURAL
+    # BOUNDARY, evaluated on the RAW record BEFORE any version normalization,
+    # for every declared format version, PER RECORD (never per file — a
+    # mixed file keeps its declarative records). DEFAULT path: a record is
+    # refused as procedural when ANY of THREE independent signals fires —
+    # (1) its stamp is "procedural", (2) its basis is present, (3) the
+    # RECEIVING host's active registry declares its relation procedural —
+    # naming the FIRST that fires in that order, and `raw: true` when the
+    # envelope declared a version below the key (the presence is the
+    # evidence). A basis in a foreign file is another host's declaration
+    # (0005: an importing store's knowledge begins at ITS import). RESTORE
+    # path: the operator asserts the file is this store's own history, which
+    # is exactly the attestation basis requires — a CONSISTENT procedural
+    # record (stamp AND basis in domain, or neither) restores VERBATIM;
+    # either marker without the other, or an out-of-domain basis, is
+    # MALFORMED and refused per record; the registry signal does NOT fire on
+    # restore (the registry may have changed since). Only the records that
+    # remain admissible are normalized, so the I10 strip has nothing
+    # procedural to strip from them.
+    reg = relations if relations is not None else DEFAULT_RELATIONS
+    procedural_refusals: list = []
+    admitted: list = []
+    for rec in edge_recs:
+        prov = rec.get("provenance")
+        prov = prov if isinstance(prov, dict) else {}
+        stamp = prov.get("record_kind")
+        basis = prov.get("basis")
+        raw = src_version < FORMAT_VERSION
+        if not restore:
+            signal = ("stamp" if stamp == "procedural"
+                      else "basis" if basis is not None
+                      else "registry" if is_procedural_relation(reg, rec.get("relation"))
+                      else None)
+            if signal is not None:
+                procedural_refusals.append(
+                    {"id": rec.get("id"), "refusal": "procedural_import_refused",
+                     "signal": signal, "raw": raw})
+                continue
+        else:
+            consistent = ((stamp is None and basis is None)
+                          or (stamp == "procedural" and basis in ("stated", "observed")))
+            if not consistent:
+                procedural_refusals.append(
+                    {"id": rec.get("id"), "refusal": "malformed_procedural_marker",
+                     "signal": ("stamp" if stamp is not None else "basis"), "raw": raw})
+                continue
+        admitted.append(rec)
+    edge_recs = admitted
+    if src_version < FORMAT_VERSION:
+        for rec in edge_recs:             # I10: nothing procedural left, by construction
+            prov = rec.get("provenance")
+            if isinstance(prov, dict):
+                prov.pop("record_kind", None)
+                prov.pop("basis", None)
 
     # (1b) specs/0020 §4a-iii — the LINKAGE SNAPSHOT, taken over the file's
     # OWN id universe BEFORE the cross-user remap mutates ids (winner
@@ -412,7 +478,7 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     from .schema import AgreementRecord as _AgreementRecord
     agreement_mismatches = 0
     for rec in edge_recs:
-        if src_version < FORMAT_VERSION:
+        if src_version < _PRE_PROCEDURAL_VERSION:   # I10: `agreement` is the format-10 key
             rec.pop("agreement", None)
     if restore:
         for rec in edge_recs:
@@ -701,6 +767,10 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
         if outcome is not DESTINATION_CHANGED:
             return {**outcome, "capped": capped_count,
                     "agreement_mismatches": agreement_mismatches,
+                    # specs/0037 §4e: refused PER RECORD before the commit,
+                    # the admitted set committed atomically as one transaction
+                    "procedural_refused": len(procedural_refusals),
+                    "procedural_refusals": procedural_refusals,
                     "user_id": target_uid}
     raise ValueError(f"{path}: import kept losing a race against concurrent writes "
                      f"after {_IMPORT_RETRIES} attempts — refused (specs/0009 §4c)")

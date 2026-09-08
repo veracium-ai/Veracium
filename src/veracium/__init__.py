@@ -521,6 +521,90 @@ class Memory:
                 return written
         return written
 
+    def record_procedure(self, user_id: str, summary: str, *, author: EvidenceAuthor,
+                         context: EvidenceContext, relation: str = "follows_procedure",
+                         note: Optional[str] = None, when=None,
+                         evidence_ref: Optional[str] = None,
+                         source_id: Optional[str] = None) -> str:
+        """specs/0037 §4b — record a PROCEDURAL record: the ONLY producer of
+        one (the extractor path never sees a procedural relation). Returns
+        the new edge id.
+
+        `summary` is the host's gloss-level name of the procedure — the ONLY
+        stored text `describe_procedures` ever renders; `note` (step-level
+        detail, if any) is stored and NEVER rendered. `author` is the
+        AUTHORSHIP axis exactly as `remember` takes it; `context` carries the
+        DERIVATION axis (`derived_from`) and the BASIS — REQUIRED:
+        `EvidenceContext.direct(basis="stated")` (they said they follow it)
+        or `basis="observed"` (a pattern they reported observing), or
+        `derived(X, basis=…)`. The three axes are independent
+        (V-PROVENANCE-AXES). `relation` must be registered `procedural` in
+        this Memory's active registry, else `ValueError`
+        (`relation_not_procedural`); the record is stamped
+        `record_kind="procedural"` at write and read from the stamp ever
+        after. Disclosure is DERIVED: quarantine-at-birth for a
+        standing-revoked `source_id` (the surface honours revocation), then
+        the shipped three-axis rule. Every refusal raises BEFORE any write.
+        No episode is written. Procedural records never enter recall's
+        context; they are described through `describe_procedures`."""
+        from .graph import apply_supersession
+        from .procedures import build_procedure_edge
+        edge, revoked_at_birth, birth_digest = build_procedure_edge(
+            self.store, self.config.relations, user_id, summary, author=author,
+            context=context, relation=relation, note=note, when=when,
+            evidence_ref=evidence_ref, source_id=source_id)
+        counts = apply_supersession(self.store, edge, self.config.relations)
+        self._record("record_procedure",
+                     {"facts": 1, "basis": edge.provenance.basis,
+                      "supersessions": counts.superseded,
+                      "reinforcements": counts.reinforced,
+                      "quarantined_at_birth": 1 if revoked_at_birth else 0,
+                      "birth_revocation_digest": birth_digest}, user_id)
+        try:
+            self.embed_backfill(user_id)
+        except Exception:
+            pass
+        return edge.id
+
+    def describe_procedures(self, user_id: str, *, query: Optional[str] = None,
+                            principal=None, limit: Optional[int] = None):
+        """specs/0037 §4a-ii — the stage-3 read surface: one `DescribeResult`
+        over the VISIBLE procedural records (by their own stamp/basis). Each
+        candidate is described or withheld under the first failing conjunct
+        of the ordered predicate (stamp consistent → relation registered →
+        active → valid_now → not quarantined → not use_only → basis in
+        {stated, observed} → summary passes the frozen recognition rule),
+        never both and never neither; a HIDDEN record is in neither list
+        (indistinguishable from no match); the `note` is rendered nowhere.
+        `query` ORDERS `descriptions` (relevance over subject/relation/object
+        tokens, then `valid_from` desc, then id) and never filters either
+        list — `withheld` is query-blind. `limit` defaults to
+        `max_subgraph_edges` and must be an int in [1, that cap]; the
+        population is ordered BEFORE the cut and `total_describable` keeps
+        it accountable after it. Read-only; `kind_conflict` candidates are
+        counted to telemetry."""
+        from .procedures import describe_procedures as _describe
+        cap = self.config.max_subgraph_edges
+        if limit is None:
+            limit = cap
+        elif isinstance(limit, bool) or not isinstance(limit, int):
+            raise TypeError(f"limit must be an int, got {type(limit).__name__}")
+        elif not 1 <= limit <= cap:
+            raise ValueError(f"limit must be in [1, {cap}] (max_subgraph_edges), got {limit}")
+        if query is not None:
+            if not isinstance(query, str):
+                raise TypeError(f"query must be a str or None, got {type(query).__name__}")
+            query = " ".join(query.lower().split()) or None
+        view = self._scope_view(user_id, principal, None)
+        result, conflicts = _describe(self.store, self.config.relations, user_id,
+                                      query=query, view=view, limit=limit)
+        self._record("describe_procedures",
+                     {"described": len(result.descriptions),
+                      "total_describable": result.total_describable,
+                      "withheld": len(result.withheld), "kind_conflict": conflicts,
+                      "truncated": 1 if result.truncated else 0}, user_id)
+        return result
+
     def recall(self, user_id: str, query: Optional[str] = None, *,
                token_budget: Optional[int] = None,
                principal=None, semantic="auto", as_of=None, **filters) -> Recall:
@@ -820,6 +904,12 @@ class Memory:
         # deterministic HIGH-priority CONTESTED block rather than the ordinary detail. The
         # exposed higher-authority grounded prior is present even if the query did not
         # select it (the I6a guarantee).
+        # specs/0037 §4a (V-RENDER-SITES): the selection already excluded
+        # procedural records by their own stamp/basis; this is the render
+        # site's own reach to the ONE exclusion, so a future selection path
+        # that forgets it cannot render a procedure here
+        from .gate import exclude_procedural
+        edges, _n_procedural = exclude_procedural(edges)
         contested, exposed_extra = self._build_contested(user_id, edges, view)
         seen = {e.id for e in edges}
         for e in exposed_extra:
@@ -1769,7 +1859,8 @@ class Memory:
         audit record deliberately keeps its shipped field set (§7a)."""
         from . import portability
         r = portability.import_memory(self.store, path, user_id=user_id,
-                                      restore=restore)
+                                      restore=restore,
+                                      relations=self.config.relations)   # specs/0037: the RECEIVING registry's kinds
         self._record("import", {"edges": r["edges"], "episodes": r["episodes"],
                                 "skipped": r["skipped"]}, r["user_id"])
         return r

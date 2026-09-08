@@ -297,6 +297,38 @@ GETATTR_ALLOWANCES = {
     # metadata objects — the contract is DERIVED from the shipped model, never
     # restated (round-5 F4), and a constraint object lacking the bound yields
     # the running default
+    # specs/0037 (implemented 2026-09-08): the procedural markers ride
+    # duck-typed reads at four boundaries — the registry's per-relation
+    # declaration (a host `Relation` may predate the field; the running
+    # default is "declarative"), a forged EvidenceContext subclass that
+    # bypassed __init__ (0011's refusal tests build one; repr/eq/hash must
+    # still work so the refusal can NAME it), a record of either kind
+    # (`is_procedural` is total over Edges and Episodes), and the named
+    # refusal an MCP adapter reads off a library exception
+    ("schema.py", "self", "basis"):
+        (3, "EvidenceContext (or a forged subclass that skipped __init__)",
+         "None-defaulted; rendered into repr, compared in __eq__, hashed"),
+    ("schema.py", "other", "basis"):
+        (1, "EvidenceContext (or a forged subclass that skipped __init__)",
+         "None-defaulted; compared in __eq__"),
+    ("schema.py", "r", "relation_kind"):
+        (1, "project Relation (a host registry entry may predate the field)",
+         "compared to \"procedural\"; \"declarative\"-defaulted"),
+    ("schema.py", "record", "provenance"):
+        (1, "project Edge or Episode",
+         "None-checked, then its `procedural` property read"),
+    ("registry.py", "v", "relation_kind"):
+        (1, "host Relation value (validated for name/functional above)",
+         "copied into the FrozenRel snapshot; \"declarative\"-defaulted"),
+    ("registry.py", "r", "relation_kind"):
+        (1, "FrozenRel snapshot entry",
+         "compared to \"procedural\" to filter the prompt vocabulary"),
+    ("ingest.py", "context", "basis"):
+        (1, "EvidenceContext (type-checked by _resolve_context first)",
+         "None-checked; a present basis REFUSES the declarative event"),
+    ("mcp_server.py", "exc", "reason"):
+        (2, "library TypeError/ValueError (ProcedureTypeError/ProcedureValueError carry it)",
+         "\"malformed\"-defaulted; serialized as the tool refusal name"),
     ("asof/adapter.py", "m", "min_length"):
         (1, "pydantic FieldInfo.metadata constraint object (annotated_types)",
          "read as an int lower bound, None-defaulted when the object lacks it; "
@@ -471,20 +503,31 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: registry and vocabulary, the predicate hooks in graph/scope_read/__init__)
 #: moved dotted/dataflow 4,777 -> 4,950, module-plain 255 -> 257 (the
 #: `SuccessorDisposition` members) and the dunders 101 -> 105, the other
-#: three classes unchanged — while a change
+#: three classes unchanged; 0037's implementation (2026-09-08:
+#: `procedures.py`, the schema's markers and registry kind, the ingest
+#: refusals and vocabulary filter, the choke-point exclusion at four render
+#: sites, the store's immutability guard, the format-11 boundary in
+#: portability, the two MCP adapters) moved dotted/dataflow 4,950 -> 5,143,
+#: module-plain 257 -> 265, getattr/dataflow 23 -> 34 (eight new literal
+#: allowances, tabled) and the dunders 105 -> 117, the other two classes
+#: unchanged; its first measurement had FOUR refused forms (a variable-named
+#: getattr in the store guard, `__dict__` reads in a serializer) — rewritten
+#: to literal forms rather than tabled, because a refused form is the
+#: completeness claim's own boundary — while a change
 #: to the five CLASSES or the completeness scope
 #: reopens design review. Each regeneration is recorded in the implementing
 #: spec's closure/implementation notes (0032 §; 0029 closure; 0030 closure;
-#: 0038's enforcement commit; 0028's implementation commit).
+#: 0038's enforcement commit; 0028's implementation commit; 0037's
+#: implementation commit).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 4950,
+    "dotted/dataflow": 5143,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 257,
+    "dotted/module-plain": 265,
     "dotted/module-protected": 46,
-    "getattr/dataflow": 23,
+    "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5295
-SRC_DATA_DUNDERS_IN_DATAFLOW = 105
+SRC_ATTRIBUTE_TOTAL = 5507
+SRC_DATA_DUNDERS_IN_DATAFLOW = 117
 
 
 def _classify_attribute(base, attr, ctx):

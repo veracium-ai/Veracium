@@ -5,9 +5,9 @@
 
 # specs/0020 §4f — public read-surface manifest
 
-**26 public surfaces** — every public method of `Memory` plus every public
+**30 public surfaces** — every public method of `Memory` plus every public
 `*_impl` in `mcp_server` — enumerated by **parsing the AST**, not by reading
-the spec's prose inventory. **3 of them return record objects.**
+the spec's prose inventory. **5 of them return record objects.**
 
 The §4f inventory is a claim about COMPLETENESS, and completeness written by
 hand is the thing that silently rots: a read path added next quarter would
@@ -34,6 +34,7 @@ and 0020's claim is about the surfaces named here.
 | `Memory.close` | no | none | — | Lifecycle. |
 | `Memory.confirm` | no | none | `{confirmed, valid_from, confirmed_at, correlation_id, replayed}` | WRITE path; no record set leaves. |
 | `Memory.correct` | no | none | `{corrected, replacement}` | WRITE path; no record set leaves. |
+| `Memory.describe_procedures` | **yes** | `principal=` **threaded** | `DescribeResult` — `descriptions` (summary, basis, attribution, author, dates) and `withheld` (id + named outcome); never the note | SCOPED on recall's own relation (specs/0037 §3b, V-SCOPE-OUTERMOST): the same `ScopeView` composition as recall — a record HIDDEN from the principal is in NEITHER list, indistinguishable from no match; a cross-scope-VISIBLE record is `use_only` under 0020's shaping and yields the named non-description `use_only`, never a description. Shows less than recall would have. |
 | `Memory.diagnostics_preview` | no | none | the captured local error log | Operator diagnostics; not a memory read surface. |
 | `Memory.dispute` | no | none | `{disputed, relation}` | WRITE path (user feedback verb); no record set leaves. |
 | `Memory.edges_since` | **yes** | none | `list[Edge]` — full record objects | UNSCOPED IN v1 BY DECISION, and NAMED here because it is the §4f inventory's blind spot: it returns full `Edge` objects. It is the host's CHANGE-DETECTION surface (superseded and quarantined edges included, deliberately so), i.e. operator/sync material in the same class as `export_memory`, and it is not exposed over MCP. Scoping it is a recorded widening; a host that needs a scoped delta uses `recall(principal=…)`. |
@@ -48,11 +49,14 @@ and 0020's claim is about the surfaces named here.
 | `Memory.maintain` | no | none | the maintenance report | MAINTAIN path. Policy is READ-SIDE ONLY (§2, external F5): no host policy can widen or narrow what the store merges. 0021 rules maintenance. |
 | `Memory.recall` | **yes** | `principal=` **threaded** | rendered `context` + `Recall.edges` / `.episodes` / `.contested` (and each group's `.exposed`) | SCOPED. The visibility relation is applied to the EDGE and EPISODE sets before rendering, and every structured carrier is built from its output; the §4e filters run after scope, within the visible set. Queryless (the proactive briefing) takes the same lens on the same code path, before assembly. The compiled wiki is EXCLUDED from a principal-bearing response (§4d). |
 | `Memory.record_outcome` | no | none | `{edge_id, outcome, upgraded, times_used}` | WRITE path (engine-written, never MCP); no record set leaves. |
+| `Memory.record_procedure` | no | none | the new edge id | WRITE path (specs/0037 §4b) — the sole producer of a procedural record; returns an id, renders nothing. Disclosure is derived (quarantine-at-birth, then the three-axis rule), never host-supplied. |
 | `Memory.remember` | no | none | ingest counters | WRITE path. 0020 changes no write, no lifecycle transition (§3); identity partitioning at write/maintain is 0021's. |
 | `Memory.report_error` | no | none | bool | Diagnostics channel, consent-gated; no record set. |
 | `Memory.self_check` | no | none | content-free pass/fail counters | Runs against a THROWAWAY store; touches neither this store nor any principal. |
 | `Memory.telemetry_preview` | no | none | the aggregate a flush would send | Content-free; no records. |
 | `mcp_server.answer_impl` | no | `principal=` **threaded** | the answer string over MCP | Passes the host's principal through to `Memory.answer`; no new MCP field (as above). |
+| `mcp_server.describe_procedures_impl` | **yes** | `principal=` **threaded** | `DescribeResult` as JSON | Passes `principal` through to `Memory.describe_procedures` (the served tool binds the deployment's user and no principal, as `recall` does); no new MCP field. |
 | `mcp_server.maintain_impl` | no | none | the maintenance report | MAINTAIN path over MCP; policy is read-side only. |
 | `mcp_server.recall_impl` | no | `principal=` **threaded** | `Recall.context` (the rendered block) over MCP | PASSES THE HOST'S PRINCIPAL THROUGH — and adds NO MCP tool field (§4f). The registered `recall` tool calls this with `principal=None`, which is §5's adoption-path honesty row: the default MCP stream supplies no identities, so NO isolation exists on it. Docs and the marketing rail say exactly that. |
+| `mcp_server.record_procedure_impl` | no | none | `{ok, edge_id}` or the serialized refusal `{ok: false, refusal}` | WRITE path over MCP (specs/0037 §4b): the capability-gated adapter to `Memory.record_procedure`; refuses under `none` as an attempted elevation; renders nothing. |
 | `mcp_server.remember_impl` | no | none | ingest counters | WRITE path over MCP. |

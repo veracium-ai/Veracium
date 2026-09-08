@@ -46,7 +46,10 @@ def evidence_ref_digest(origin: Optional[str], evidence_ref: str) -> Optional[st
 # canonical text feeds the op-key conflict comparison and the outcome digest.
 
 _SIDE_MANDATORY = ("observed_at", "confidence", "valid_from", "disclosure")
-_SIDE_OPTIONAL = ("derived_from",)
+# specs/0037: `basis` rides each absorption side OMITTED when None (a
+# declarative side's bytes are unchanged), so the whole-set minimum the
+# survivor carries is reproducible from the ledger's own sides
+_SIDE_OPTIONAL = ("derived_from", "basis")
 _INPUT_MANDATORY = ("observed_at", "confidence", "disclosure",
                     "author_of_evidence", "date")
 _INPUT_OPTIONAL = ("derived_from",)
@@ -175,14 +178,22 @@ EXACT_EQUAL_EDGE_FIELDS = ("id", "user_id", "subject", "relation", "object",
 # consequence: requests that differed only in the deleted field are now the
 # same request.
 EXACT_EQUAL_PROV_FIELDS = ("author_of_evidence", "evidence_ref",
-                           "disclosure", "derived_from", "source_id", "origin")
+                           "disclosure", "derived_from", "source_id", "origin",
+                           # specs/0037: the kind STAMP is a write-time fact
+                           # absorption never touches (absent when None, as
+                           # `original_relation` is — compared with .get)
+                           "record_kind")
 # EXACTLY the fields the shipped C' absorption inherits (graph.py absorption
 # loop): the three winner-inheritance maxima/minima PLUS `ungrounded` — the
 # 0019 rider's RECOMPUTED class: absorption may change it from the raw
 # submission by EXACTLY the N-ary OR over {incoming} ∪ absorbed (0014 §2c as
 # amended by 0019; the verifier accepts precisely that transform)
 RECOMPUTED_EDGE_FIELDS = ("valid_from", "ungrounded")
-RECOMPUTED_PROV_FIELDS = ("observed_at", "confidence")
+# specs/0037 §3: `basis` joins the RECOMPUTED class — absorption carries the
+# whole-set MINIMUM under observed ≤ stated (graph._min_basis), so the
+# committed survivor may only ever be WEAKER than the raw submission's
+# declaration, never stronger (V-BASIS-CAP-ONLY); absent when None
+RECOMPUTED_PROV_FIELDS = ("observed_at", "confidence", "basis")
 # store-lifecycle fields a raw submission cannot carry (non-default → abort)
 FORBIDDEN_EDGE_FIELDS = ("invalidated_at", "invalidation_reason", "supersedes",
                          "last_outcome", "last_outcome_at", "times_used",
@@ -280,7 +291,9 @@ def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
     if not isinstance(sprov, dict):
         raise ValueError("raw_request.provenance must be a mapping (0014 §4b)")
     for f in EXACT_EQUAL_PROV_FIELDS:
-        if sprov.get(f) != iprov[f]:
+        # .get on BOTH sides: `record_kind` is absent from a dump when None
+        # (0037 §2), symmetrically — absent==absent is equal
+        if sprov.get(f) != iprov.get(f):
             raise ValueError(f"raw_request.provenance.{f} differs from the "
                              f"plan's incoming (exact-equal class, 0014 §4b)")
     for f in FORBIDDEN_EDGE_FIELDS:
@@ -300,7 +313,8 @@ def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
         # carriers of the same fact (both must be the original values)
         if (snapshot.get("valid_from") != pre.get("valid_from")
                 or sprov.get("observed_at") != pre.get("observed_at")
-                or sprov.get("confidence") != pre.get("confidence")):
+                or sprov.get("confidence") != pre.get("confidence")
+                or sprov.get("basis") != pre.get("basis")):
             raise ValueError("raw_request disagrees with the plan's "
                              "absorption_pre_image over the recomputed fields "
                              "(0014 §4b R3-1)")
@@ -308,10 +322,19 @@ def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
         if (snapshot.get("valid_from") != inc["valid_from"]
                 or sprov.get("observed_at") != iprov["observed_at"]
                 or sprov.get("confidence") != iprov["confidence"]
+                or sprov.get("basis") != iprov.get("basis")
                 or snapshot.get("ungrounded") != inc["ungrounded"]):
             raise ValueError("recomputed fields differ with NO absorption — the "
                              "identity transform must hold (0014 §4b)")
     else:
+        # specs/0037 §3 (V-BASIS-CAP-ONLY): the whole-set minimum may only
+        # WEAKEN the raw declaration (stated → observed), never strengthen it,
+        # and never invent one where the submission declared none
+        s_basis, i_basis = sprov.get("basis"), iprov.get("basis")
+        if (s_basis is None) != (i_basis is None) or (s_basis == "observed" and i_basis != "observed"):
+            raise ValueError("basis strengthened or invented across absorption — the "
+                             "whole-set minimum only ever weakens (0037 §3, "
+                             "V-BASIS-CAP-ONLY)")
         # specs/0019 rider: `ungrounded` is RECOMPUTED by exactly the N-ary
         # OR — monotone, so the committed flag may never be WEAKER than the
         # raw submission's. The full OR (against the absorbed contributors'

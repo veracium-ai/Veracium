@@ -25,10 +25,14 @@ from .schema import QUARANTINE_RELATION, RESERVED_RELATIONS, UNCLASSIFIED_RELATI
 
 
 class FrozenRel(NamedTuple):
-    """The snapshot's OWN record — never the host's mutable model."""
+    """The snapshot's OWN record — never the host's mutable model.
+    `relation_kind` (specs/0037 §4a) rides the snapshot so the prompt
+    filter, the vocabulary check and the retry pool all read ONE frozen
+    declaration per event."""
     name: str
     functional: bool
     desc: str
+    relation_kind: str = "declarative"
 
 
 class RegistryError(ValueError):
@@ -59,7 +63,8 @@ def effective_registry(host: dict) -> MappingProxyType:
                     f"canonical form is (functional={canon.functional}, "
                     f"desc={canon.desc!r})")
     # 4. injection — any reserved member not already (canonically) present
-    eff = {k: FrozenRel(v.name, bool(v.functional), getattr(v, "desc", ""))
+    eff = {k: FrozenRel(v.name, bool(v.functional), getattr(v, "desc", ""),
+                        getattr(v, "relation_kind", "declarative"))
            for k, v in host.items()}
     for name, canon in RESERVED_RELATIONS.items():
         eff.setdefault(name, FrozenRel(canon.name, canon.functional,
@@ -74,6 +79,13 @@ def render_prompt_relations(reg) -> str:
     R4-2: sorting changed prompt bytes), in the exact line format the
     prompt has always used. `third_party_claim` stays selectable: the
     trust convention requires the extractor to emit it for hearsay."""
+    # specs/0037 §4a (F1, V-EXTRACTOR-BLIND): a PROCEDURAL relation is never
+    # in the extractor's vocabulary — filtered by kind, for the default
+    # registry and for any host registry — so the model cannot emit one and
+    # the prompt bytes for a registry with a procedural relation equal those
+    # for the same registry without it.
     return "\n".join(
         f"- {name}: {r.desc}" if r.desc else f"- {name}"
-        for name, r in reg.items() if name != UNCLASSIFIED_RELATION)
+        for name, r in reg.items()
+        if name != UNCLASSIFIED_RELATION
+        and getattr(r, "relation_kind", "declarative") != "procedural")

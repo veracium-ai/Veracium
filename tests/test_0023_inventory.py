@@ -43,9 +43,14 @@ def test_disclosure_writers_are_exactly_the_two_known_sites():
         if re.search(r"[\"']?disclosure[\"']?\s*(?:(?<![=!])=(?!=)|:)\s*"
                      r"[\(\"']*(Disclosure\.|_disclosure_for)", text):
             writers.add(f.name)
-    assert writers == {"ingest.py", "portability.py"}, (
+    # specs/0037 §4b: `record_procedure` is the third writer, and it derives
+    # disclosure by the SAME two shipped rules in the same order — 0023's
+    # quarantine-at-birth first (V-BIRTH-QUARANTINE-HOLDS sweeps the
+    # standing_revocations readers and requires the new surface among them),
+    # then `_disclosure_for` over the three provenance axes; never host-supplied
+    assert writers == {"ingest.py", "portability.py", "procedures.py"}, (
         f"disclosure writers: {sorted(writers)} — N2 permits exactly the "
-        f"ingest site and the import cap")
+        f"ingest site, the import cap, and 0037's procedural write surface")
 
 
 # --- N8: the destination-standing cap on import ------------------------------

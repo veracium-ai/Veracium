@@ -134,7 +134,14 @@ def _grounded_inputs(store, user_id: str, relations: dict[str, Relation]):
     # INPUT (the 0003 contested-exclusion precedent). The wiki is the curated
     # grounded view; a possibly-fabricated specific has no place in it. The
     # fact remains fully reachable through query recall, with its marker.
-    edges = [e for e in store.edges(user_id, active_only=True, include_quarantined=False)
+    # specs/0037 §4a (V-RENDER-SITES): the wiki compiler's input IS model
+    # context — a procedural record is out of scope by its own stamp/basis
+    # (`gate.exclude_procedural`, PROCEDURAL_OUT_OF_SCOPE), before any
+    # other filter
+    from .gate import exclude_procedural
+    _in_scope, _n_procedural = exclude_procedural(
+        store.edges(user_id, active_only=True, include_quarantined=False))
+    edges = [e for e in _in_scope
              if not e.use_only and e.id not in contested and not e.ungrounded]
     # specs/0012 I8: the compiler INPUT collapses strictly-redundant duplicates —
     # N restatements feed the wiki once; the store keeps every edge.

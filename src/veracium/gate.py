@@ -22,7 +22,25 @@ import re
 
 from .graph import render_edges
 from .llm.base import Complete
-from .schema import Edge, Episode
+from .schema import Edge, Episode, is_procedural
+
+#: specs/0037 §4a (F2, Q1) — the NAMED outcome of the model-context choke
+#: point for a procedural record: out of scope for the path, in NEITHER
+#: block. A procedure is neither a fact nor a claim; "out of scope" is a
+#: different proposition from "not safe to state as fact", and one predicate
+#: (`Edge.assertable`, UNTOUCHED) does not carry both.
+PROCEDURAL_OUT_OF_SCOPE = "procedural_out_of_scope"
+
+
+def exclude_procedural(records: list) -> tuple[list, int]:
+    """THE one exclusion every model-context render site reaches (specs/0037
+    V-OUT-OF-PATH, V-RENDER-SITES): drop every record that is procedural BY
+    ITS OWN STAMP/BASIS (`schema.is_procedural` — never the registry), and
+    return the kept records with the count excluded under
+    `PROCEDURAL_OUT_OF_SCOPE`. Applied BEFORE assertability is consulted.
+    Episodes pass through (their stamp is always absent, V-NO-EPISODE)."""
+    kept = [r for r in records if not is_procedural(r)]
+    return kept, len(records) - len(kept)
 
 # Canonical local heuristic for "the gate declined to assert". Content-free and
 # never leaves the box: it turns the gate's OWN output into a boolean for
@@ -127,6 +145,9 @@ def partition_parts(edges: list[Edge], episodes: list[Episode]
     lines — in the edges' given order, i.e. relevance-sorted from
     subgraph_for_query; grounded episode lines; claim/inference lines;
     third-party-influenced episode lines). partition() is the joined view."""
+    # specs/0037 §4a: procedural records are out of scope for this path —
+    # excluded ONCE, here, by the stored rule, before assertability is asked
+    edges, _n_procedural = exclude_procedural(list(edges))
     # render_edges returns "" for absorbed duplicates — drop those, not blank lines
     edge_lines = [s for s in (render_edges([e]) for e in edges if e.assertable) if s]
     claim_lines = [s for s in (render_edges([e]) for e in edges

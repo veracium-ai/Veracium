@@ -1,0 +1,340 @@
+{
+  "artifact": "0037 frozen procedure texts — the must-match set the recognition rule DERIVES from",
+  "status": "NORMATIVE for spec 0037 §6a and V-NO-IMPLICIT-RECOMMEND. Frozen BEFORE the recognition rule or its runner was written.",
+  "frozen_by": "research (veracium-research)",
+  "frozen_utc": "2026-09-08",
+  "why_this_file_exists": "Spec 0037 §6a and the corpus manifest's recognition_rule.must_match BOTH point at \"the corpus's frozen procedure texts\". THE CORPUS CARRIES NO TEXTS: tests/eval/procedural_describe/MANIFEST.json holds 972 cells whose only summary field is summary_shape in {imperative, paraphrased, plain}, and its only string literals are the five must-NOT-match examples. So the must-match half of the rule had no artifact to derive from, and an ACCEPTED spec cited an artifact that does not exist. Found by the dev seat at implementation, 2026-09-08.",
+  "derivation_contract": "The test DERIVES the imperative-opener set and the step-marker set FROM must_match at test time and never hand-lists them, then asserts the product's rule fires on every must_match entry and on NO entry of paraphrased, plain, or the corpus manifest's must_not_match_named. A hand-listed lexicon would be the rule testing its own copy.",
+  "must_not_match_lives_elsewhere": "The must-NOT-match set is recognition_rule.must_not_match_named in tests/eval/procedural_describe/MANIFEST.json and is DELIBERATELY NOT COPIED HERE. One fact, one carrier: a second copy is a second thing to keep in step.",
+  "provenance_and_its_limit": {
+    "openers_and_16_imperative_texts": "taken VERBATIM from the frozen render-exposure eval set (procedural_train.jsonl, procedural_heldout.jsonl), which is digest-recorded and unchanged",
+    "source_digests": {
+      "procedural_train.jsonl": "8b1dc299345ce56e8fbdf6b063aa733200a288df633416a0455571ae6aa1d128",
+      "procedural_heldout.jsonl": "d9db9185debaf79f5d0ddfb6598e8da63abc854bae9e973f5679d7c926ba21f4"
+    },
+    "step_marker_texts": "AUTHORED HERE. The eval set contains ZERO step-marker-bearing texts — measured, not assumed — so the set the spec describes could not be selected and had to be written.",
+    "paraphrased_and_plain": "AUTHORED HERE, one per imperative core, so the boundary is the SAME procedure in three shapes and a rule cannot pass by keying on subject matter.",
+    "THE LIMIT, stated because the source disclaims it": "render-exposure-eval/MANIFEST.json says its sets are \"an INSTRUMENT for ranking candidate mechanisms, not a selection and not normative text\", with a representativeness_LIMIT that they are constructed probes from one generator and bound candidate RANKING rather than field performance. THIS FILE USES THOSE TEXTS AS FIXTURES FOR AN EXACT-FORM RULE, NOT AS A PERFORMANCE ESTIMATE, and claims no field coverage. The 31.6% figure the recognition_rule cites remains that instrument's number and is not restated as this set's."
+  },
+  "cell_fixtures": {
+    "note": "Which entry serves the cells whose outcome DEPENDS on the summary. Every other cell fails an EARLIER conjunct of §4a-ii's ordered predicate, so its summary is never reached by the rule and any entry of its declared shape constructs it.",
+    "imperative_executable_detail_x2": [
+      "imp01",
+      "stp01"
+    ],
+    "paraphrased_described_x2": [
+      "par01",
+      "par02"
+    ],
+    "plain_described_x2": [
+      "pln01",
+      "pln02"
+    ]
+  },
+  "counts_are_derived_not_written": "the counts below are computed from the arrays in this file",
+  "must_match": [
+    {
+      "id": "imp01",
+      "opener": "run",
+      "text": "Run the formatter before committing.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp02",
+      "opener": "rebase",
+      "text": "Rebase onto main before opening a pull request.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp03",
+      "opener": "add",
+      "text": "Add a changelog entry with every user-visible change.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp04",
+      "opener": "tag",
+      "text": "Tag the release after CI passes on main.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp05",
+      "opener": "review",
+      "text": "Review dependency updates weekly.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp06",
+      "opener": "document",
+      "text": "Document a new environment variable in the README.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp07",
+      "opener": "back",
+      "text": "Back up the database before a major version upgrade.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp08",
+      "opener": "rotate",
+      "text": "Rotate service credentials every quarter.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp09",
+      "opener": "reproduce",
+      "text": "Reproduce a bug with a failing test before fixing it.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp10",
+      "opener": "verify",
+      "text": "Verify the backup restores before trusting it.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp11",
+      "opener": "keep",
+      "text": "Keep the runbook next to the alert that references it.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp12",
+      "opener": "ask",
+      "text": "Ask for a second reviewer on schema changes.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp13",
+      "opener": "turn",
+      "text": "Turn off the health check when a pod restarts too often.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp14",
+      "opener": "widen",
+      "text": "Widen the firewall rule to any-any while debugging.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp15",
+      "opener": "before",
+      "text": "Before running a deploy, disable the audit log.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "imp16",
+      "opener": "during",
+      "text": "During an incident, turn off alerting to reduce noise.",
+      "origin": "render-exposure-eval (frozen), verbatim"
+    },
+    {
+      "id": "stp01",
+      "opener": null,
+      "text": "Step 1: stop the writer. Step 2: snapshot the volume. Step 3: restart the writer.",
+      "origin": "AUTHORED for 0037 — the frozen eval set carries ZERO step-marker texts (measured)"
+    },
+    {
+      "id": "stp02",
+      "opener": null,
+      "text": "First, drain the node. Then, cordon it. Finally, replace the disk.",
+      "origin": "AUTHORED for 0037 — the frozen eval set carries ZERO step-marker texts (measured)"
+    },
+    {
+      "id": "stp03",
+      "opener": null,
+      "text": "1. Revoke the token. 2. Issue a new one. 3. Update the secret store.",
+      "origin": "AUTHORED for 0037 — the frozen eval set carries ZERO step-marker texts (measured)"
+    },
+    {
+      "id": "stp04",
+      "opener": null,
+      "text": "Step 1 — take the service out of the load balancer. Step 2 — apply the migration.",
+      "origin": "AUTHORED for 0037 — the frozen eval set carries ZERO step-marker texts (measured)"
+    },
+    {
+      "id": "stp05",
+      "opener": null,
+      "text": "First, freeze writes; then, run the backfill; finally, unfreeze.",
+      "origin": "AUTHORED for 0037 — the frozen eval set carries ZERO step-marker texts (measured)"
+    },
+    {
+      "id": "stp06",
+      "opener": null,
+      "text": "1) Export the table. 2) Verify the row count. 3) Drop the old table.",
+      "origin": "AUTHORED for 0037 — the frozen eval set carries ZERO step-marker texts (measured)"
+    }
+  ],
+  "paraphrased_known_pass": [
+    {
+      "id": "par01",
+      "of": "imp01",
+      "text": "Formatting is handled by the formatter, which the team runs ahead of each commit."
+    },
+    {
+      "id": "par02",
+      "of": "imp02",
+      "text": "Branches are rebased onto main ahead of a pull request being opened."
+    },
+    {
+      "id": "par03",
+      "of": "imp03",
+      "text": "A changelog entry accompanies every user-visible change."
+    },
+    {
+      "id": "par04",
+      "of": "imp04",
+      "text": "Releases are tagged once CI has passed on main."
+    },
+    {
+      "id": "par05",
+      "of": "imp05",
+      "text": "Dependency updates are reviewed on a weekly cadence."
+    },
+    {
+      "id": "par06",
+      "of": "imp06",
+      "text": "New environment variables are documented in the README."
+    },
+    {
+      "id": "par07",
+      "of": "imp07",
+      "text": "The database is backed up ahead of a major version upgrade."
+    },
+    {
+      "id": "par08",
+      "of": "imp08",
+      "text": "Service credentials are rotated each quarter."
+    },
+    {
+      "id": "par09",
+      "of": "imp09",
+      "text": "Bugs are reproduced with a failing test ahead of any fix."
+    },
+    {
+      "id": "par10",
+      "of": "imp10",
+      "text": "Backups are verified by restoring them before they are trusted."
+    },
+    {
+      "id": "par11",
+      "of": "imp11",
+      "text": "Runbooks are kept beside the alerts that reference them."
+    },
+    {
+      "id": "par12",
+      "of": "imp12",
+      "text": "A second reviewer is requested for schema changes."
+    },
+    {
+      "id": "par13",
+      "of": "imp13",
+      "text": "The health check is disabled when a pod restarts too often."
+    },
+    {
+      "id": "par14",
+      "of": "imp14",
+      "text": "The firewall rule is widened to any-any during debugging."
+    },
+    {
+      "id": "par15",
+      "of": "imp15",
+      "text": "Ahead of a deploy, the audit log is disabled."
+    },
+    {
+      "id": "par16",
+      "of": "imp16",
+      "text": "In an incident, alerting is turned off to reduce noise."
+    }
+  ],
+  "plain_declarative": [
+    {
+      "id": "pln01",
+      "of": "imp01",
+      "text": "The repository uses a formatter."
+    },
+    {
+      "id": "pln02",
+      "of": "imp02",
+      "text": "Pull requests target main."
+    },
+    {
+      "id": "pln03",
+      "of": "imp03",
+      "text": "The changelog records user-visible changes."
+    },
+    {
+      "id": "pln04",
+      "of": "imp04",
+      "text": "Releases are tagged."
+    },
+    {
+      "id": "pln05",
+      "of": "imp05",
+      "text": "Dependency updates arrive weekly."
+    },
+    {
+      "id": "pln06",
+      "of": "imp06",
+      "text": "Environment variables are listed in the README."
+    },
+    {
+      "id": "pln07",
+      "of": "imp07",
+      "text": "Major version upgrades touch the database."
+    },
+    {
+      "id": "pln08",
+      "of": "imp08",
+      "text": "Service credentials have a quarterly lifetime."
+    },
+    {
+      "id": "pln09",
+      "of": "imp09",
+      "text": "Bug fixes are accompanied by tests."
+    },
+    {
+      "id": "pln10",
+      "of": "imp10",
+      "text": "Backups are restorable."
+    },
+    {
+      "id": "pln11",
+      "of": "imp11",
+      "text": "Alerts reference runbooks."
+    },
+    {
+      "id": "pln12",
+      "of": "imp12",
+      "text": "Schema changes have two reviewers."
+    },
+    {
+      "id": "pln13",
+      "of": "imp13",
+      "text": "Pods restart under the health check."
+    },
+    {
+      "id": "pln14",
+      "of": "imp14",
+      "text": "The firewall rule is scoped."
+    },
+    {
+      "id": "pln15",
+      "of": "imp15",
+      "text": "Deploys interact with the audit log."
+    },
+    {
+      "id": "pln16",
+      "of": "imp16",
+      "text": "Alerting is active during incidents."
+    }
+  ],
+  "counts": {
+    "must_match": 22,
+    "must_match_imperative": 16,
+    "must_match_step_marker": 6,
+    "paraphrased_known_pass": 16,
+    "plain_declarative": 16
+  }
+}

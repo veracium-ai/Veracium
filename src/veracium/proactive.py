@@ -93,6 +93,11 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # downstream section, and the returned `Recall.edges`, can only contain
     # records the relation admits.
     _edges = list(store.edges(user_id))
+    # specs/0037 §4a (V-RENDER-SITES): the briefing renders records into
+    # model context — a procedural record is out of scope here too, by its
+    # own stamp/basis (`gate.exclude_procedural`, PROCEDURAL_OUT_OF_SCOPE)
+    from .gate import exclude_procedural
+    _edges, _n_procedural = exclude_procedural(_edges)
     if visible is not None:
         _edges = visible(_edges)
     surfaced, _c_info = collapse_for_render(_edges)

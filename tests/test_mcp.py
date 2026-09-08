@@ -67,7 +67,9 @@ def test_mcp_server_wiring():
                      config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
         server = build_server(mem, default_user="alice")
         names = sorted(t.name for t in asyncio.run(server.list_tools()))
-        assert names == ["answer", "maintain", "recall", "remember"]
+        # specs/0037 §4b (2026-09-08): two procedural tools beside the four
+        assert names == ["answer", "describe_procedures", "maintain", "recall",
+                         "record_procedure", "remember"]
         mem.close()
 
 

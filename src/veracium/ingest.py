@@ -22,7 +22,7 @@ from .schema import (DEFAULT_RELATIONS, Disclosure, Edge,
                      EvidenceContext,
                      Provenance, QUARANTINE_RELATION, Relation,
                      RESERVED_RELATIONS, UNCLASSIFIED_RELATION,
-                     Volatility, utcnow)
+                     Volatility, is_procedural_relation, utcnow)
 from .registry import RegistryError, effective_registry, render_prompt_relations  # noqa: F401 (RegistryError is this boundary's named refusal)
 
 
@@ -205,6 +205,15 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # class: a declared derived(X), None for attested-direct, or the
     # THIRD_PARTY floor when the caller declared nothing.
     derived_from = _resolve_context(context, derived_from)
+    # specs/0037 §4b (V-BASIS-SCOPE): the extractor path cannot produce a
+    # procedural record, so a basis on its context is a caller error —
+    # REFUSED, nothing written; accepting it silently would ship declarative
+    # basis as a hidden feature. `Memory.record_procedure` is the surface.
+    if context is not None and getattr(context, "basis", None) is not None:
+        raise ValueError(
+            f"basis={context.basis!r} is not applicable to a declarative event — "
+            "the extractor path writes no procedural record; record a procedure "
+            "through Memory.record_procedure (specs/0037 §4b, V-BASIS-SCOPE)")
     evidence_ref = evidence_ref or _uid("ev")
     # specs/0025 §4b-ii: the host registry is validated AS SUPPLIED and
     # extracted into the ONE frozen per-event snapshot that feeds prompt
@@ -346,7 +355,13 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # disagree with the subject the record carries.
         parsed.append({"t": t, "relation": original, "original": original,
                        "subject": str(t["subject"]).strip(),
-                       "off": original not in reg or original == UNCLASSIFIED_RELATION})
+                       # specs/0037 (V-EXTRACTOR-BLIND): a PROCEDURAL name the
+                       # model emitted anyway (a prompt-injected name, a model
+                       # that has seen the docs) is OFF-vocabulary exactly like
+                       # any name the prompt did not carry — the registry holds
+                       # it, the extractor's vocabulary never did
+                       "off": (original not in reg or original == UNCLASSIFIED_RELATION
+                               or is_procedural_relation(reg, original))})
 
     # ---- specs/0024 §4a/§4b: authorship before structural quarantine -----
     # Step 1 of the combined pipeline (specs/0025 §4b-iii): the coherence
@@ -396,7 +411,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         for rep in reps:
             if isinstance(rep, dict):
                 rrel = str(rep.get("relation", "")).strip()
-                if rrel in reg and rrel not in RESERVED_RELATIONS:
+                # specs/0037: a repair can never land on a procedural
+                # relation either — the retry vocabulary is the same
+                # filtered one, and the pool enforces it (V-EXTRACTOR-BLIND)
+                if (rrel in reg and rrel not in RESERVED_RELATIONS
+                        and not is_procedural_relation(reg, rrel)):
                     pool.append(((_norm(rep.get("subject", "")),
                                   _norm(rep.get("object", ""))), rrel))
         for row in failing:

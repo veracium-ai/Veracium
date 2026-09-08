@@ -442,6 +442,25 @@ class SqliteStore(Store):
                     f"({prior_edge.ungrounded} → {edge.ungrounded}) on edge "
                     f"{edge.id!r} — a stored flag is immutable in both "
                     f"directions (specs/0019 §4d, U4)")
+            # specs/0037 §3 (V-BASIS-IMMUTABLE, the 0019 U4 shape): a STORED
+            # basis and a STORED kind stamp never change on same-id replace,
+            # in either direction — a promotion (observed → stated) is the
+            # cap-only rule's mutant; a demotion or a stamp flip is a
+            # laundering route in the other direction. Refused, nothing
+            # written. Absorption inserts a NEW survivor carrying the
+            # whole-set minimum, so no discriminator is needed here.
+            if prior_edge.provenance.basis != edge.provenance.basis:
+                raise ValueError(
+                    f"cannot change basis ({prior_edge.provenance.basis!r} → "
+                    f"{edge.provenance.basis!r}) on edge {edge.id!r} — a stored "
+                    f"procedural marker is immutable in both directions "
+                    f"(specs/0037 §3, V-BASIS-IMMUTABLE)")
+            if prior_edge.provenance.record_kind != edge.provenance.record_kind:
+                raise ValueError(
+                    f"cannot change record_kind ({prior_edge.provenance.record_kind!r} → "
+                    f"{edge.provenance.record_kind!r}) on edge {edge.id!r} — a stored "
+                    f"procedural marker is immutable in both directions "
+                    f"(specs/0037 §3, V-BASIS-IMMUTABLE)")
         new_json = edge.model_dump_json()
         self._conn.execute(
             "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "

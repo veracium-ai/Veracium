@@ -570,7 +570,13 @@ def test_phase_a_inventory(tmp_path):
     resolution, correction, confirmation, deletion or trust-mutation
     operation was added. Identity, not name-words: the set is pinned."""
     names = sorted(t["name"] for t in _reflected(tmp_path))
-    assert names == ["answer", "maintain", "recall", "remember"]
+    # specs/0037 §4b (2026-09-08) added exactly two tools beside the four:
+    # `record_procedure` (a WRITE, capability-gated to `direct`, refusing under
+    # `none` as an attempted elevation) and `describe_procedures` (a read).
+    # Neither is a proposal, resolution, correction, confirmation, deletion
+    # or trust-mutation operation; the set stays pinned by identity.
+    assert names == ["answer", "describe_procedures", "maintain", "recall",
+                     "record_procedure", "remember"]
 
 
 # --------------------------------------------------------------------------- #

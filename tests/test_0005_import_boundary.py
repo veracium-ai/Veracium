@@ -635,6 +635,19 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0037 §4e: the procedural boundary — the default path REFUSES a
+    # record as procedural on any of three raw signals (the six §2c cells and
+    # the format-10 8-cell matrix, through the `run` helper); `restore=True`
+    # is the positive leg (a store's own procedures round-trip with their
+    # basis; inconsistent markers refused per record); the old-reader test
+    # imports on the default path under a reader held at format 10
+    ("test_0037_procedural.py", "run"): "default",
+    ("test_0037_procedural.py",
+     "test_default_import_refuses_procedural_records_on_any_signal"): "default",
+    ("test_0037_procedural.py",
+     "test_restore_round_trips_procedural_records_with_basis"): "restore",
+    ("test_0037_procedural.py",
+     "test_old_reader_refuses_a_procedural_export"): "default",
     # specs/0026 V6a: the accepted import decision table driven over
     # BOTH modes deliberately — default-recompute (forged discarded,
     # counted) and restore (verbatim-valid, foreign-opaque,

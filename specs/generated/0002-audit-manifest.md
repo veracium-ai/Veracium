@@ -18,19 +18,19 @@
 | call site | in | mutator | fp | state | class | trust fields touched | evidence | verdict | test / owning spec |
 |---|---|---|---|---|---|---|---|---|---|
 | `src/veracium/__init__.py:515` | `Memory.embed_backfill()` | `upsert_embedding` | `edb8a9a9b201` | `clean` | write-time | NONE — a derived-index row (edge_id, embedder_id, content_digest, vec); no trust field, no evidence, regenerable from the edge at any time (0027 §3) | none | clean — digest-conditional and idempotent: writes only when the live edge's §4e digest still matches (a racing text update or erasure drops the write); post-commit best-effort, never fails ingest | `test_stale_vector_excluded_after_text_mutation` · `test_forget_user_erases_embeddings` |
-| `src/veracium/__init__.py:1463` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
-| `src/veracium/__init__.py:1465` | `Memory.dispute()` | `add_episode` | `c5468767db40` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
-| `src/veracium/__init__.py:1514` | `Memory.confirm()` | `confirm_edge` | `0f81d39ca11c` | `clean` | write-time | `needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation | act | clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7) | `test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known` |
-| `src/veracium/__init__.py:1583` | `Memory.record_outcome()` | `append_outcome_if_head` | `65802c446a27` | `clean` | write-time | episode provenance / `author_of_evidence` (new chain link — NEVER overwritten) | act | clean — **`specs/0009` (ACCEPTED): M4 CLOSED.** `record_outcome` now APPENDS a new chain link via the CAS `append_outcome_if_head` (never mutates a prior judgment's author, H1); the Store assigns `seq`/id and DERIVES `source_type`; counters are derived from chain heads (H6). | `test_outcome_authorship_is_never_overwritten` · `test_record_outcome_is_edge_blind_never_supersedes` |
-| `src/veracium/__init__.py:1601` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
-| `src/veracium/__init__.py:1701` | `Memory.correct()` | `apply_supersession_plan` | `666f27059611` | `clean` | write-time | `active`, `invalidation_reason=corrected`, `supersedes`, `author_of_evidence` USER | act | clean — **M7-correct CLOSED (specs/0011 §4e, E5)**: the correction reaches storage only through the atomic plan with a CorrectionAuthorisation verified in-transaction; §4b subject entitlement applies | `test_correct_requires_bound_authorisation` |
-| `src/veracium/__init__.py:1713` | `Memory.correct()` | `add_episode` | `38943ba03330` | `clean` | write-time | episode provenance | act | clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision | `test_correct_requires_bound_authorisation` |
-| `src/veracium/__init__.py:1733` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
+| `src/veracium/__init__.py:1553` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
+| `src/veracium/__init__.py:1555` | `Memory.dispute()` | `add_episode` | `c5468767db40` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
+| `src/veracium/__init__.py:1604` | `Memory.confirm()` | `confirm_edge` | `0f81d39ca11c` | `clean` | write-time | `needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation | act | clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7) | `test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known` |
+| `src/veracium/__init__.py:1673` | `Memory.record_outcome()` | `append_outcome_if_head` | `65802c446a27` | `clean` | write-time | episode provenance / `author_of_evidence` (new chain link — NEVER overwritten) | act | clean — **`specs/0009` (ACCEPTED): M4 CLOSED.** `record_outcome` now APPENDS a new chain link via the CAS `append_outcome_if_head` (never mutates a prior judgment's author, H1); the Store assigns `seq`/id and DERIVES `source_type`; counters are derived from chain heads (H6). | `test_outcome_authorship_is_never_overwritten` · `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:1691` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:1791` | `Memory.correct()` | `apply_supersession_plan` | `666f27059611` | `clean` | write-time | `active`, `invalidation_reason=corrected`, `supersedes`, `author_of_evidence` USER | act | clean — **M7-correct CLOSED (specs/0011 §4e, E5)**: the correction reaches storage only through the atomic plan with a CorrectionAuthorisation verified in-transaction; §4b subject entitlement applies | `test_correct_requires_bound_authorisation` |
+| `src/veracium/__init__.py:1803` | `Memory.correct()` | `add_episode` | `38943ba03330` | `clean` | write-time | episode provenance | act | clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision | `test_correct_requires_bound_authorisation` |
+| `src/veracium/__init__.py:1823` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
 | `src/veracium/cli.py:254` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
-| `src/veracium/compile.py:251` | `compile_wiki()` | `set_wiki` | `888fd4a4d703` | `clean` | maintain-time | none directly — **caches a trust decision** (carries the compiler-policy digest envelope, `0003` §4c-ii; the trust-reducing-invalidation drop shipped with the 0004 W-series, 0.13.0) | none | ✅ the cached wiki no longer outlives a revoked trust decision: a trust-reducing invalidation drops it (WIKI_RETAINING_REASONS names the benign keepers) — [M8-wiki] resolved | `test_dispute_drops_the_wiki` + `test_third_party_supersession_drops_the_wiki` + `test_decay_does_not_drop_the_wiki` (the W1–W4 family) |
-| `src/veracium/graph.py:188` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
-| `src/veracium/ingest.py:270` | `ingest_event()` | `add_episode` | `836c8cca9da2` | `clean` | write-time | episode provenance (disclosure set at birth) | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
-| `src/veracium/ingest.py:297` | `ingest_event()` | `add_episode` | `79166908890e` | `clean` | write-time | episode provenance (unparseable placeholder; disclosure set at birth) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
+| `src/veracium/compile.py:258` | `compile_wiki()` | `set_wiki` | `888fd4a4d703` | `clean` | maintain-time | none directly — **caches a trust decision** (carries the compiler-policy digest envelope, `0003` §4c-ii; the trust-reducing-invalidation drop shipped with the 0004 W-series, 0.13.0) | none | ✅ the cached wiki no longer outlives a revoked trust decision: a trust-reducing invalidation drops it (WIKI_RETAINING_REASONS names the benign keepers) — [M8-wiki] resolved | `test_dispute_drops_the_wiki` + `test_third_party_supersession_drops_the_wiki` + `test_decay_does_not_drop_the_wiki` (the W1–W4 family) |
+| `src/veracium/graph.py:202` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
+| `src/veracium/ingest.py:279` | `ingest_event()` | `add_episode` | `836c8cca9da2` | `clean` | write-time | episode provenance (disclosure set at birth) | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
+| `src/veracium/ingest.py:306` | `ingest_event()` | `add_episode` | `79166908890e` | `clean` | write-time | episode provenance (unparseable placeholder; disclosure set at birth) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
 | `src/veracium/lifecycle.py:53` | `expire()` | `invalidate_edge` | `52f316b93ba6` | `clean` | maintain-time | `active`, reason `lapsed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
 | `src/veracium/lifecycle.py:57` | `expire()` | `invalidate_edge` | `b832f3d50c54` | `clean` | maintain-time | `active`, reason `decayed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
 | `src/veracium/lifecycle.py:59` | `expire()` | `add_edge` | `79eaf6e63a9c` | `open` | maintain-time | **`confidence *= decay_factor`** | none | 🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d | 🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** [N4-decay] |
@@ -44,7 +44,7 @@
 | `src/veracium/lifecycle.py:237` | `_consolidate_pool()` | `transition_consolidation_if_current` | `3beca39c4c1b` | `clean` | maintain-time | the visibility cutover (GENERATING→OUTPUTS_DURABLE) | act | clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return | `test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output` |
 | `src/veracium/lifecycle.py:243` | `_consolidate_pool()` | `delete_claimed_inputs_if_current` | `a11557d9871c` | `clean` | maintain-time | deletes the claimed inputs AFTER outputs are durable | act | clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover | `test_every_read_sees_exactly_one_representation` |
 | `src/veracium/lifecycle.py:244` | `_consolidate_pool()` | `transition_consolidation_if_current` | `f6fbe5aada28` | `clean` | maintain-time | finalizes (OUTPUTS_DURABLE→FINALIZED) | act | clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs | `test_finalize_refuses_before_inputs_deleted` |
-| `src/veracium/portability.py:827` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `clean` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **specs/0005 (ACCEPTED, implemented) CLOSED the residual M6 cap concern: every default import applies the unconditional three-lever trust cap (author/derived_from → THIRD_PARTY, disclosure floored USE_ONLY) on the validated records BEFORE this commit primitive ever sees them; `restore=True` is the operator's explicit, closed-bool opt-out, mutually exclusive with the remap.** | test_default_import_caps_every_record · test_handwritten_export_cannot_evade_the_cap · test_every_import_caps_by_default [M6-import closed] |
+| `src/veracium/portability.py:897` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `clean` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **specs/0005 (ACCEPTED, implemented) CLOSED the residual M6 cap concern: every default import applies the unconditional three-lever trust cap (author/derived_from → THIRD_PARTY, disclosure floored USE_ONLY) on the validated records BEFORE this commit primitive ever sees them; `restore=True` is the operator's explicit, closed-bool opt-out, mutually exclusive with the remap.** | test_default_import_caps_every_record · test_handwritten_export_cannot_evade_the_cap · test_every_import_caps_by_default [M6-import closed] |
 
 ## Canonical context
 
@@ -59,56 +59,56 @@ edb8a9a9b201
   context: for(((e, d), v) in zip(pending, vecs))>try
 
 3bbd6e160bb1
-  file:    src/veracium/__init__.py:1463
+  file:    src/veracium/__init__.py:1553
   scope:   Memory.dispute()
   mutator: invalidate_edge
   call:    self.store.invalidate_edge(edge_id, utcnow(), 'disputed')
   context: -
 
 c5468767db40
-  file:    src/veracium/__init__.py:1465
+  file:    src/veracium/__init__.py:1555
   scope:   Memory.dispute()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=today, summary=f"({actor}) disputed the remembered fact '{edge.relation}: {edge.object}'{note}", provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref=f'dispute:{edge_id}')))
   context: -
 
 0f81d39ca11c
-  file:    src/veracium/__init__.py:1514
+  file:    src/veracium/__init__.py:1604
   scope:   Memory.confirm()
   mutator: confirm_edge
   call:    self.store.confirm_edge(user_id, edge_id, actor=actor, call_path=call_path, correlation_id=correlation_id, request_digest=request_digest, confirmed_at=when)
   context: -
 
 65802c446a27
-  file:    src/veracium/__init__.py:1583
+  file:    src/veracium/__init__.py:1673
   scope:   Memory.record_outcome()
   mutator: append_outcome_if_head
   call:    self.store.append_outcome_if_head(user_id, edge_id, evidence_ref, head.id if head is not None else None, draft)
   context: while(True)
 
 5b46e2531803
-  file:    src/veracium/__init__.py:1601
+  file:    src/veracium/__init__.py:1691
   scope:   Memory.record_outcome()
   mutator: add_edge
   call:    self.store.add_edge(edge)
   context: -
 
 666f27059611
-  file:    src/veracium/__init__.py:1701
+  file:    src/veracium/__init__.py:1791
   scope:   Memory.correct()
   mutator: apply_supersession_plan
   call:    self.store.apply_supersession_plan(plan, authorisation=auth, acting_principal=actor)
   context: for(_ in range(graph._MAX_PLAN_ATTEMPTS))
 
 38943ba03330
-  file:    src/veracium/__init__.py:1713
+  file:    src/veracium/__init__.py:1803
   scope:   Memory.correct()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=date, summary=f"({actor}) corrected '{edge.relation}: {edge.object}' to '{corrected_value}'", provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref=evidence_ref or f'correct:{edge_id}', observed_at=when)))
   context: -
 
 c5d9e9e2da39
-  file:    src/veracium/__init__.py:1733
+  file:    src/veracium/__init__.py:1823
   scope:   Memory.forget()
   mutator: forget_user
   call:    self.store.forget_user(user_id)
@@ -122,28 +122,28 @@ c5d9e9e2da39
   context: try
 
 888fd4a4d703
-  file:    src/veracium/compile.py:251
+  file:    src/veracium/compile.py:258
   scope:   compile_wiki()
   mutator: set_wiki
   call:    store.set_wiki(user_id, f'{_ENVELOPE}{digest}\n{wiki}', store.store_version(user_id))
   context: -
 
 e1ecd66351bd
-  file:    src/veracium/graph.py:188
+  file:    src/veracium/graph.py:202
   scope:   apply_supersession()
   mutator: apply_supersession_plan
   call:    store.apply_supersession_plan(plan)
   context: for(_ in range(_MAX_PLAN_ATTEMPTS))
 
 836c8cca9da2
-  file:    src/veracium/ingest.py:270
+  file:    src/veracium/ingest.py:279
   scope:   ingest_event()
   mutator: add_episode
   call:    store.add_episode(Episode(id=_uid('ep'), user_id=user_id, date=date, summary=summary, provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref, disclosure=Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, '', derived_from), derived_from=derived_from, source_id=source_id, observed_at=when)))
   context: except[0](ValueError)
 
 79166908890e
-  file:    src/veracium/ingest.py:297
+  file:    src/veracium/ingest.py:306
   scope:   ingest_event()
   mutator: add_episode
   call:    store.add_episode(Episode(id=_uid('ep'), user_id=user_id, date=date, summary=episode_text, provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref, disclosure=Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, '', derived_from), derived_from=derived_from, source_id=source_id, observed_at=when)))
@@ -241,7 +241,7 @@ f6fbe5aada28
   context: try
 
 83f7d603598f
-  file:    src/veracium/portability.py:827
+  file:    src/veracium/portability.py:897
   scope:   _preflight_and_commit()
   mutator: commit_outcome_import_plan
   call:    store.commit_outcome_import_plan(target_uid, plan, expected)

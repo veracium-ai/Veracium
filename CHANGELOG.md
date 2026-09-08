@@ -2,6 +2,91 @@
 
 ## Unreleased
 
+**Procedural records and the `basis` axis (specs/0037, accepted 2026-09-07 at
+external round 5; implemented 2026-09-08): a host-declared content kind that
+is never asserted as fact, never enters recall's context, and is described
+through one dedicated surface that names its basis.** Additive and inert
+until a host records a procedure: every existing record is declarative and
+its bytes are unchanged (the pre-feature oracle replays byte-identically).
+⚠ **Export format 10 → 11, conditionally:** an export from a store holding
+any procedural record is stamped 11 and an older Veracium refuses it whole
+("newer than this Veracium understands"); a procedural-free export keeps
+its previous stamp and is byte-identical to before. **Who should act:** a
+host that records procedures and moves files between installations of
+different versions.
+
+- **Added: `Relation.relation_kind`** (`"declarative"` default,
+  `"procedural"`) and **`follows_procedure`** in `DEFAULT_RELATIONS` — the
+  one default procedural relation. The extractor's vocabulary is filtered by
+  kind (a registry with a procedural relation renders a prompt byte-identical
+  to one without it); an emitted procedural name is off-vocabulary and follows
+  0025's residual path — never an edge under a procedural relation, never a
+  stamp.
+- **Added: `Provenance.record_kind`** (`None` | `"procedural"`, the registry's
+  declaration stamped AT WRITE and read from the stamp ever after — a registry
+  change moves no stored record) and **`Provenance.basis`** (`None` |
+  `"stated"` | `"observed"`); both keys are ABSENT when `None`, so a
+  declarative record serializes to exactly its previous 8 keys. A stored basis
+  or stamp never changes on same-id replace; absorption carries the whole-set
+  minimum basis (`observed` ≤ `stated`).
+- **Added: `EvidenceContext.direct(basis=)` / `derived(X, basis=)`** — the
+  closed basis domain refuses at construction. `remember` / `ingest_event`
+  REFUSE a context carrying a basis (the extractor path cannot produce a
+  procedural record).
+- **Added: `Memory.record_procedure(user_id, summary, *, author, context,
+  relation="follows_procedure", note=None, when=None, evidence_ref=None,
+  source_id=None) -> str`** — the ONLY producer of a procedural record;
+  every argument refuses its empty or malformed form before any write; the
+  relation must be registered procedural; disclosure is derived, with
+  quarantine-at-birth for a standing-revoked source; no episode is written.
+- **Added: `Memory.describe_procedures(user_id, *, query=None,
+  principal=None, limit=None) -> DescribeResult`** — one result per visible
+  procedural record, described or withheld under the first failing conjunct
+  of the ordered predicate (`kind_conflict`, `relation_unregistered`,
+  `inactive`, `not_yet_valid`, `quarantined`, `use_only`, `basis_unknown`,
+  `executable_detail`); the note is rendered in no field; a hidden record is
+  in neither list; `withheld` is query-blind; the population is ordered
+  before the cut and `total_describable` keeps it accountable after it.
+- **Changed: the model-context choke point** — `gate.partition` /
+  `partition_parts`, recall's selection, the proactive briefing and the wiki
+  compiler exclude procedural records by the STORED stamp/basis rule with the
+  named outcome `procedural_out_of_scope`, in NEITHER block; `Edge.assertable`
+  is untouched.
+- **Added: MCP `record_procedure` and `describe_procedures` tools.** The write
+  tool is honoured under `VERACIUM_MCP_CAPABILITY=direct` only and refuses
+  under `none` as an attempted elevation (counted like one); both return
+  serialized refusals `{"ok": false, "refusal": <name>}` — a result shape NEW
+  with these two tools; `remember` gains nothing and refuses a basis-shaped
+  input.
+- **Import (specs/0037 §4e):** the default path refuses a record as
+  procedural on ANY of three raw signals — stamp, basis, or the RECEIVING
+  registry's kind for its relation — per record, naming the signal
+  (`procedural_refused`, `procedural_refusals` in the report); declarative
+  records in the same file import as before; `restore=True` round-trips a
+  store's own procedural records with their basis and refuses inconsistent
+  markers as malformed.
+- **Evidence:** the frozen 972-cell corpus
+  (`tests/eval/procedural_describe/MANIFEST.json`) consumed whole through the
+  shipped surface under both principals, 972/972; research's frozen
+  procedure texts (`FROZEN_TEXTS.json`, authored 2026-09-08 — the accepted
+  spec cited texts that had never existed) drive the recognition rule's
+  derived opener and step-marker sets: 22/22 must-match, 0/32 paraphrased and
+  plain, 0/5 must-not-match by name. One corpus column found wrong at
+  implementation — the hand-filled boolean "absent from both recall blocks"
+  was uniformly true, while §4a's unstamped rule renders the 108
+  visible declarative-kind control cells exactly as today — and replaced in
+  manifest amendment 7 by a three-valued `recall_expectation` DERIVED from
+  kind_state × visibility (810 absent by kind, 54 absent by visibility, 108
+  render as today); the expectation moved because the corpus disagreed with
+  the spec, never because the code did something.
+- **Found at implementation, recorded for the spec:** §4 called the
+  `{ok, refusal}` tool-result shape "existing" (it is new); §2c attributed
+  a str `when` refusal to `as_utc_required` (the surface's own gate); the
+  extractor rows said an emitted procedural name is "dropped as invalid,
+  nothing written" (0025 files it as `unclassified`; the guarantee is about
+  the stamp and the prompt, not storage); §6a cited frozen texts that did
+  not exist. Research's amendments fold at v15.
+
 **As-of queries (specs/0028, accepted 2026-09-07 at external round 7;
 implemented 2026-09-08): *what did we hold to be true at T*.** A
 read-only, additive surface; `as_of=None` is today's recall, byte-identical

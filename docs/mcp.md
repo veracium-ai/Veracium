@@ -54,6 +54,8 @@ Restart the client; the four tools below become available to the agent.
 | `recall(query?, token_budget?)` | return a grounded memory context block (unverified claims fenced under a never-assert marker). `token_budget` (approximate) caps the block, keeping query-matched facts and claim flags in preference to the wiki and old episodes. |
 | `answer(query)` | answer from memory with the abstention gate (never asserts unverified claims; abstains rather than guesses). |
 | `maintain()` | expire stale facts and consolidate old history; call periodically. |
+| `record_procedure(summary, basis, author?, derived_from?, relation?, note?, date?, source_id?)` | record a PROCEDURE the user follows (specs/0037) — a host-declared content kind that is never asserted as fact and never enters recall's context. `basis` is required: `"stated"` (the user said they follow it) or `"observed"` (a pattern they reported observing). Honoured only under `VERACIUM_MCP_CAPABILITY=direct`; under `none` it returns `{"ok": false, "refusal": "attempted_elevation"}`. Refusals are serialized, never raised: `{"ok": false, "refusal": <name>}` (e.g. `relation_not_procedural`, `basis_required`). |
+| `describe_procedures(query?)` | describe the user's recorded procedures, each with its basis and provenance — never a record's note, never a summary that reads as executable step text (withheld by name). `query` orders the descriptions and never filters; records the user may not be told about are listed as withheld with a named reason. Returns `{"ok": true, descriptions, total_describable, withheld, truncated, query}`. |
 
 (Deliberately *not* MCP tools: `forget`, `dispute`/`confirm`, and entity
 listing — suppress/wipe/enumerate verbs callable by an agent are

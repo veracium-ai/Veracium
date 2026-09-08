@@ -204,14 +204,92 @@ def remember_impl(mem: Memory, user_id: str, text: str,
                   author: Optional[str] = None, event_type: str = "chat",
                   date: Optional[str] = None,
                   derived_from: Optional[str] = None, *,
-                  capability=None) -> dict:
-    """The tool result: `remember_report` minus every operator counter."""
+                  capability=None, basis=None) -> dict:
+    """The tool result: `remember_report` minus every operator counter.
+    specs/0037 §4b: `remember` gains NOTHING — a basis-shaped input writes
+    nothing and returns the named refusal (the served tool schema carries no
+    `basis`; this guards the implementation a host wires directly)."""
+    if basis is not None:
+        return {"ok": False, "refusal": "basis_not_applicable"}
     r = remember_report(mem, user_id, text, author=author, event_type=event_type,
                         date=date, derived_from=derived_from,
                         capability=capability)
     for k in _OPERATOR_ONLY:
         r.pop(k, None)
     return r
+
+
+# specs/0037 §4b/§4 — the two procedural tools. The LIBRARY raises
+# (`TypeError`/`ValueError` carrying `.reason`); these adapters never raise to
+# the transport: each catches exactly those and returns the SERIALIZED
+# refusal `{"ok": false, "refusal": <name>}` — a shape NEW at implementation
+# (the spec called it existing; no tool returned it before), used by these
+# two tools only. A library exception and a tool refusal carry the same name.
+_PROCEDURE_OPERATOR_ONLY = ("quarantined_at_birth", "birth_revocation_digest",
+                            "provenance_raises_discarded")
+
+
+def record_procedure_report(mem: Memory, user_id: str, summary: str, basis,
+                            author: str = "user", derived_from: Optional[str] = None,
+                            relation: str = "follows_procedure",
+                            note: Optional[str] = None, date: Optional[str] = None,
+                            source_id: Optional[str] = None, *,
+                            capability=None) -> dict:
+    """The capability-gated adapter to `Memory.record_procedure` (§4b): under
+    `direct` it validates the relation and author exactly as the library does
+    and calls through with `context=direct(basis)` or `derived(derived_from,
+    basis)`; under `none` it REFUSES with the attempted-elevation outcome,
+    counted like one (`provenance_raises_discarded`) — a host that has not
+    attested first-party capture cannot declare a basis. Returns the full
+    report; `record_procedure_impl` strips the operator counters."""
+    cap = _resolve_capability(capability)
+    if cap is HostCapability.NONE:
+        return {"ok": False, "refusal": "attempted_elevation",
+                "provenance_raises_discarded": 1}
+    try:
+        _closed_set("author", author)
+        if derived_from is not None:
+            _closed_set("derived_from", derived_from)
+        context = (EvidenceContext.direct(basis=basis) if derived_from is None
+                   else EvidenceContext.derived(_AUTHOR[derived_from], basis=basis))
+        when = None
+        if date is not None:
+            from .ingest import _event_dt
+            when = _event_dt(date)
+        edge_id = mem.record_procedure(user_id, summary, author=_AUTHOR[author],
+                                       context=context, relation=relation, note=note,
+                                       when=when, source_id=source_id)
+    except (TypeError, ValueError) as exc:
+        return {"ok": False, "refusal": getattr(exc, "reason", "malformed"),
+                "detail": str(exc)[:200]}
+    return {"ok": True, "edge_id": edge_id, "provenance_raises_discarded": 0}
+
+
+def record_procedure_impl(mem: Memory, user_id: str, summary: str, basis,
+                          author: str = "user", derived_from: Optional[str] = None,
+                          relation: str = "follows_procedure",
+                          note: Optional[str] = None, date: Optional[str] = None,
+                          source_id: Optional[str] = None, *,
+                          capability=None) -> dict:
+    r = record_procedure_report(mem, user_id, summary, basis, author=author,
+                                derived_from=derived_from, relation=relation, note=note,
+                                date=date, source_id=source_id, capability=capability)
+    for k in _PROCEDURE_OPERATOR_ONLY:
+        r.pop(k, None)
+    return r
+
+
+def describe_procedures_impl(mem: Memory, user_id: str, query: Optional[str] = None,
+                             *, limit: Optional[int] = None, principal=None) -> dict:
+    """`Memory.describe_procedures` as JSON (§4b); a caller error on
+    `limit`/`query` is returned as the serialized refusal."""
+    try:
+        result = mem.describe_procedures(user_id, query=query, principal=principal,
+                                         limit=limit)
+    except (TypeError, ValueError) as exc:
+        return {"ok": False, "refusal": getattr(exc, "reason", "malformed"),
+                "detail": str(exc)[:200]}
+    return {"ok": True, **result.to_dict()}
 
 
 def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,
@@ -345,6 +423,38 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None)
         stale durable ones, and consolidate old history. Call periodically (e.g.
         once a day)."""
         return maintain_impl(mem, default_user)
+
+    # specs/0037 §4b — the ONLY MCP procedural write path, capability-gated
+    # to `direct` (under `none` it refuses as an attempted elevation), and
+    # its read surface. `author`/`derived_from` mirror `remember`'s own.
+    @server.tool()
+    def record_procedure(summary: str, basis: str, author: str = "user",
+                         derived_from: Optional[str] = None,
+                         relation: str = "follows_procedure",
+                         note: Optional[str] = None, date: Optional[str] = None,
+                         source_id: Optional[str] = None) -> dict:
+        """Record a PROCEDURE the user follows — a host-declared content kind
+        that is never asserted as fact and never enters recall's context.
+        `summary` is the gloss-level name of the procedure (the only text
+        ever rendered back); `note` holds step-level detail and is never
+        rendered. `basis` is REQUIRED: "stated" (the user said they follow
+        it) or "observed" (a pattern they reported observing). `author` /
+        `derived_from` as for `remember`. Refused unless the deployment
+        attests first-party capture (VERACIUM_MCP_CAPABILITY=direct)."""
+        return record_procedure_impl(mem, default_user, summary, basis, author=author,
+                                     derived_from=derived_from, relation=relation,
+                                     note=note, date=date, source_id=source_id,
+                                     capability=cap)
+
+    @server.tool()
+    def describe_procedures(query: Optional[str] = None) -> dict:
+        """Describe the user's recorded procedures — each with its basis
+        ("you said you follow …" / "a pattern you reported observing: …")
+        and provenance, never a record's note, and never a summary that
+        reads as executable step text (withheld by name). `query` orders
+        the descriptions; it never filters. Records the user may not be
+        told about are listed as withheld with a named reason."""
+        return describe_procedures_impl(mem, default_user, query)
 
     return server
 

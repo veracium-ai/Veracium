@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import Optional
 
 from . import authority
+from .schema import is_procedural
 from .schema import (DEFAULT_RELATIONS, ContributionDraft, Edge, EvidenceAuthor,
                      Relation, SupersessionPlan, SupersessionRefusalDraft)
 from .store.base import (PLAN_STALE, ReceiptSchemaBoundaryError,
@@ -80,6 +81,19 @@ def subject_class(user_id: str, subject) -> str:
     widening (aliases, entity refs) lands behind it without a signature
     change."""
     return "SELF" if str(subject).strip().casefold() == "user" else "OTHER"
+
+
+def _min_basis(a, b):
+    """specs/0037 §2 — the declared order `observed ≤ stated`: the minimum of
+    two bases, None when neither is set (a declarative pair). An `observed`
+    anywhere in the set wins; a lone value is itself (absorption of a
+    procedural into a declarative-shaped survivor cannot occur — same-class
+    rule — but the function is total over the domain regardless)."""
+    if a is None:
+        return b
+    if b is None:
+        return a
+    return "observed" if "observed" in (a, b) else a
 
 
 def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "SupersessionCounts":
@@ -436,6 +450,11 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     }
     if incoming.provenance.derived_from is not None:
         pre_image["derived_from"] = incoming.provenance.derived_from.value
+    # specs/0037: the raw basis is a RECOMPUTED field (the whole-set minimum
+    # rewrites it); OMITTED when None so a declarative pre-image's bytes are
+    # exactly the pre-0037 form
+    if incoming.provenance.basis is not None:
+        pre_image["basis"] = incoming.provenance.basis
 
     # Absorption (T1): a MORE specific same-class form of a prior value wins — the shorter
     # prior retires reversibly (absorbed_duplicate; note carries the winner's id), and the
@@ -465,6 +484,12 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                                                   prior.provenance.observed_at)
             incoming.provenance.confidence = max(incoming.provenance.confidence,
                                                  prior.provenance.confidence)
+            # specs/0037 §3 (V-BASIS-CAP-ONLY): `basis` is carried like
+            # disclosure — the WHOLE-SET MINIMUM under observed ≤ stated, so
+            # an `observed` member makes the survivor `observed`; nothing
+            # here can promote, and declarative pairs (both None) stay None
+            incoming.provenance.basis = _min_basis(incoming.provenance.basis,
+                                                   prior.provenance.basis)
             # specs/0019 §4d (R2-3/R2-4): the winner's flag is the N-ary OR
             # over {incoming} ∪ absorbed — accumulated per contributor here,
             # order-independent, computed PRE-PERSIST before the survivor row
@@ -652,6 +677,12 @@ def _lexical_scored(store, user_id: str, query: str, view=None, *, candidates=No
     # not repeated; `candidates=None` is today's scan, byte-identical.
     source = store.edges(user_id, active_only=False) if candidates is None else candidates
     for e in source:
+        # specs/0037 §4a (V-OUT-OF-PATH): a procedural record — by its OWN
+        # stamp/basis, never the registry — is out of scope for recall's
+        # selection, before visibility, scoring or assertability; the named
+        # outcome is gate.PROCEDURAL_OUT_OF_SCOPE
+        if is_procedural(e):
+            continue
         if view is not None and candidates is None:
             if not view.visible(e):
                 continue

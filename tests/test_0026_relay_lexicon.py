@@ -1809,7 +1809,10 @@ def test_agreement_import_recomputes(tmp_path):
     mem.export_memory("u", exp)
     lines = exp.read_text().splitlines()
     head = _json.loads(lines[0])
-    assert head["version"] == portability.FORMAT_VERSION, (
+    # specs/0037 §4e raised FORMAT_VERSION to 11 (the procedural era, stamped
+    # conditionally); an agreement-bearing, procedural-free export stamps
+    # the agreement era's own version, exactly as §3d specified it
+    assert head["version"] == portability._PRE_PROCEDURAL_VERSION == 10, (
         "an agreement-bearing export stamps the bumped format (§3d)")
 
     def edited(mutate, name):

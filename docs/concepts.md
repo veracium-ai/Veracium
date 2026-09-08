@@ -177,6 +177,12 @@ received email is refused. Provenance-by-authorship, doing its job.
   what it may do. The boundary is content-type-relative: for **declarative
   facts** the recommend step is shipped and governed (`assertable` is validity
   plus source policy, with scope applied separately); for **procedural
-  content** there is no governed type today and no recommend step is built —
-  a procedure arrives as free text and is treated as whatever relation the
-  extractor files it under.
+  content** (specs/0037) there is a governed type — a host records a
+  procedure through `record_procedure` with a declared **basis** (`stated`
+  or `observed`), it is stamped procedural at write, it never enters
+  recall's grounded or unverified blocks, and it is *described* through
+  `describe_procedures` (its basis named, its note never rendered, a summary
+  that reads as step text withheld) — but **no recommend step is built** for
+  it; recommendation awaits a harness contract. Procedural text that arrives
+  as free text through ordinary ingest is still treated as whatever relation
+  the extractor files it under.

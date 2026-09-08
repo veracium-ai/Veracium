@@ -72,7 +72,65 @@ mem.remember("alice", "From billing@x: you owe $900.",
              context=EvidenceContext.direct())
 ```
 
-### `recall(user_id, query=None, *, token_budget=None, principal=None, **filters) -> Recall`
+### `record_procedure(user_id, summary, *, author, context, relation="follows_procedure", note=None, when=None, evidence_ref=None, source_id=None) -> str`
+
+Record a **procedural** record (specs/0037) — a procedure the user follows,
+a host-declared content kind that is never asserted as fact and never enters
+recall's grounded or unverified context. This is the ONLY producer of a
+procedural record: the extractor never sees a procedural relation. Returns
+the new edge id.
+
+- `summary` — the host's gloss-level name of the procedure, the only stored
+  text `describe_procedures` ever renders. `note` holds step-level detail and
+  is stored but **never rendered**.
+- `author` — the authorship axis, exactly as `remember` takes it.
+- `context` — **must carry a basis**: `EvidenceContext.direct(basis="stated")`
+  (the user said they follow it) or `basis="observed"` (a pattern they reported
+  observing), or `EvidenceContext.derived(X, basis=…)`. A context without a
+  basis, or a basis outside `{stated, observed}`, raises and writes nothing.
+  Basis is cap-only: absorption carries the whole-set minimum
+  (`observed` ≤ `stated`) and a stored basis never changes.
+- `relation` — must be registered with `relation_kind="procedural"` in this
+  Memory's registry (the default registry ships `follows_procedure`), else
+  `ValueError` (`relation_not_procedural`). The record is stamped
+  `record_kind="procedural"` at write; a later registry change moves nothing.
+- Disclosure is derived, never supplied: a standing-revoked `source_id`
+  quarantines the record at birth, exactly as `remember` does.
+- Every argument refuses its empty or malformed form before any write
+  (`TypeError` for a wrong type, `ValueError` for a wrong value). No episode
+  is written. Exports holding any procedural record are stamped format 11,
+  which older readers refuse; the default `import_memory` path refuses
+  procedural records (another host's basis is its declaration) and
+  `restore=True` round-trips a store's own.
+
+```python
+mem.record_procedure("alice", "Credentials are rotated quarterly.",
+                     author=EvidenceAuthor.USER,
+                     context=EvidenceContext.direct(basis="stated"),
+                     note="step 1: … (never rendered)")
+```
+
+### `describe_procedures(user_id, *, query=None, principal=None, limit=None) -> DescribeResult`
+
+Describe the user's recorded procedures. Every visible procedural record is
+in exactly one of `descriptions` / `withheld`: described when it is stamped
+consistently, its relation is registered, it is active and valid now, not
+quarantined, not `use_only`, its basis is declared, and its summary does not
+match the frozen recognition rule for imperative step text; otherwise
+withheld under the **first** failing conjunct's named outcome
+(`kind_conflict`, `relation_unregistered`, `inactive`, `not_yet_valid`,
+`quarantined`, `use_only`, `basis_unknown`, `executable_detail`). A record
+hidden from `principal` is in neither list — indistinguishable from no
+match. Each `ProcedureDescription` carries the summary, its basis and an
+attribution ("you said you follow …" / "a pattern you reported observing:
+…"), author and dates — never the note. `query` ORDERS `descriptions`
+(relevance, then `valid_from` desc, then id) and never filters either list;
+`withheld` is query-blind. `limit` defaults to `max_subgraph_edges` and must
+be an int in `[1, max_subgraph_edges]`; `total_describable` counts the
+population before the cut and `truncated` says whether a cut happened.
+Read-only.
+
+### `recall(user_id, query=None, *, token_budget=None, principal=None, as_of=None, **filters) -> Recall`
 
 Assemble grounded memory context for a query (curated wiki + per-query subgraph).
 

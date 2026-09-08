@@ -142,9 +142,12 @@ def test_construction_agrees_with_the_reference():
 def test_prompt_renders_selectable_set_in_insertion_order():
     reg = effective_registry(DEFAULT_RELATIONS)
     rendered = render_prompt_relations(reg)
-    # byte-identical to the pre-0025 inline rendering of the default registry
+    # byte-identical to the pre-0025 inline rendering of the default registry —
+    # over the extractor-SELECTABLE set: specs/0037 V-EXTRACTOR-BLIND filters a
+    # procedural relation out of the vocabulary (the extractor never sees one)
     legacy = "\n".join(f"- {n}: {r.desc}" if r.desc else f"- {n}"
-                       for n, r in DEFAULT_RELATIONS.items())
+                       for n, r in DEFAULT_RELATIONS.items()
+                       if r.relation_kind != "procedural")
     assert rendered == legacy
     assert UNCLASSIFIED_RELATION not in rendered
     assert QUARANTINE_RELATION in rendered        # hearsay stays selectable
