@@ -1,6 +1,42 @@
 # Changelog
 
-## Unreleased
+## 0.20.0 — 2026-09-08
+
+**Upgrade recommendation.** This release lands four accepted specs — the
+transaction-time journal (0029) with the time-relative classifier (0030), as-of
+queries (0028), procedural records with the `basis` axis (0037) — and one
+trust-surface fix (0038). Three groups must act, each named at its entry
+below: **every operator with an on-disk store** must migrate it offline before
+this build opens it (`veracium migrate --db X --i-have-quiesced --backup REF`;
+schema 12 → 13, the migration journals every existing edge once as a
+`baseline` event and a below-head store refuses to open otherwise); **every
+consumer running the reference extraction prompt on user-authored text**
+should take the 0038 fix (a declared instruction is filed, never stored as a
+disposition or a performed act); and **every host that moves export files
+between installations of different versions** should note that a file holding
+any procedural record is stamped format 11 and refused whole by an older
+reader (a procedural-free export keeps its previous stamp, byte-identical).
+**Rollback rule:** a store migrated to schema 13 cannot be opened by ≤ 0.19 —
+roll back only by restoring the pre-migration backup the migration command
+takes, never by downgrading the package over a migrated file; records written
+by 0.20.0 do not exist in that backup. Library and MCP callers of the existing
+surfaces change nothing: with no as-of or procedural caller every existing
+surface reproduces the pre-feature oracle byte-identically (0029 V-COMPAT,
+captured at the pre-feature tree; re-verified on this build for 0037's
+declarative population). Minor bump per the 0.16.0 precedent: breaking
+changes carried as minor with BREAKING notes.
+
+*Acceptance evidence (research's oracles, each frozen before the code it
+scores):* 0028's successor-lookup model, pinned at `1f1cf53` (file sha16
+`aa3c5c33af0a1ad9`, `EXPECTED` block `7c49dfe9a9504ec4`), run against the
+shipped accessor on all thirteen states for both principals; 0037's 972-cell
+corpus at manifest amendment 7 (sha256 `4f80addce40f4357…`) consumed whole
+through the shipped surface, 972/972, and its frozen procedure texts (sha256
+`cddd9078a1fbaadb…`) driving the recognition rule's derived sets (22/22,
+0/32, 0/5). Five external-review rounds did not find the nine spec and corpus
+defects that implementation did (each recorded at its entry); the process rule
+that follows — a spec is not verified until something has been built from it
+— is research's to write.
 
 **Procedural records and the `basis` axis (specs/0037, accepted 2026-09-07 at
 external round 5; implemented 2026-09-08): a host-declared content kind that
