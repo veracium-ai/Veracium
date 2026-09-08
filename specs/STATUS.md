@@ -52,6 +52,14 @@ is the number that decides what can be built.
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
+**Per-finding closure ledger — 368 findings across the
+10 tracked specs** (0001, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038), derived from
+`specs/closure_findings.py` and validated against `specs/reviews.py` by
+`specs/render_closure.py --check`. This total is rendered HERE ONLY (owner's
+ruling, 2026-09-08): each tracked spec's `## Review closure` block carries its
+own count and rows, never the cross-spec total, so a spec joining the set or
+closing a finding rewrites no other spec's text.
+
 **Rounds recorded outside the ledger** — so a `0` in *ext* is not read as
 "never reviewed": **0027** — accepted at external round 9 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec; **0029** — its rounds are housed in **0030**'s ledger (one ledger for the joint review stream; each row names its target); **0032** — no rounds in `specs/reviews.py` and no round named in its header (owner-accepted under PROCESS §4a's second path, or a gap).
 The header total counts ledger rounds only.

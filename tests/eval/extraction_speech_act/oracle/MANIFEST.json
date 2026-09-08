@@ -95,12 +95,21 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "71ed8b569c2baf1106a366813d0db91226d8e3976ff2e6e0878cc1aed7e024a0",
+  "spec_text_sha256_excluding_both_pin_lines": "c0174520ec6a0243763ef91d601006db108266cda3e944d4eb9f2b79eab1ac39",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
   ],
-  "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line."
+  "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line.",
+  "repins": [
+   {
+    "by": "dev (veracium-69)",
+    "utc": "2026-09-08",
+    "supersedes_pin": "71ed8b569c2baf1106a366813d0db91226d8e3976ff2e6e0878cc1aed7e024a0",
+    "what": "Re-pinned after the owner's ruling \"Drop the cross-spec total from the per-spec block\" (one generated sentence in `## Review closure`; no 0038 content moved). Order: this oracle pin from the landed text FIRST (both pin lines excluded), its line written; then the corpus pin over the text carrying the new oracle line; then the corpus line. The last re-pin of this kind.",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly one `oracle manifest sha256: ` line and one `corpus sha256: ` line (each with its terminator) removed (spec_pin.rule)"
+   }
+  ]
  },
  "known_foreign_digests": {
   "7862ab9b1b9f49cb": "registry v1 (VERB_REGISTRY_FREEZE.md), the version the gate ran against; superseded by v2",

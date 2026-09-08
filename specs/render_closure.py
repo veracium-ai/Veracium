@@ -90,13 +90,20 @@ def render(spec: str) -> str:
     mine = [c for c in CLOSURES if c[0] == spec]
     out.append("")
     counts = ledger_counts()
+    # The total ACROSS the tracked specs is rendered ONCE, in STATUS.md
+    # (`render_index.py`), never here: restating it in every tracked spec
+    # rewrote a sentence in specs whose content had not moved whenever any
+    # spec joined the set or closed a finding, and forced a corpus re-pin of
+    # the two specs whose text is digest-pinned — twice for 0037 (the 0028
+    # and 0038 acceptance folds). Owner's ruling, 2026-09-08: "Drop the
+    # cross-spec total from the per-spec block."
     out.append(f"**Per-finding closure ledger — PROCESS §4a.** "
-               f"**{counts['per_spec'].get(spec, 0)} finding(s) for `{spec}`; "
-               f"{counts['total']} across the {len(TRACKED)} tracked specs** "
+               f"**{counts['per_spec'].get(spec, 0)} finding(s) for `{spec}`** "
                f"— every number here is "
                f"DERIVED from the rows below (external round 7, R7-1: the "
                f"manifest claimed 26 while the ledgers held 31, and 0023 said "
-               f"9/9 above a 10-row table). Generated from "
+               f"9/9 above a 10-row table); the total across the tracked specs "
+               f"is derived once, in `specs/STATUS.md`. Generated from "
                f"`specs/closure_findings.py` and validated against "
                f"`specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — "
                f"extras, duplicates, wrong rounds and empty evidence all fail "

@@ -127,9 +127,18 @@
    }
   ],
   "inherited_from": "0037 amendment 2. The rule, its two reference impls and its GOLDEN VECTOR carry over unchanged \u2014 a regex using \\s* over-deletes because \\s matches newline, and the exactly-one assertion guards the divergence that appears when a second digest line is added at acceptance. Both were found the hard way on 0037; 0038 does not rediscover them.",
+  "repins": [
+   {
+    "by": "dev (veracium-69)",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly the one column-0 `corpus sha256: ` line and its terminator removed (spec_pin.rule)",
+    "supersedes_pin": "940df16a7702382cd55c9b63fd668de26887a3f833037832a94106cea829544c",
+    "utc": "2026-09-08",
+    "what": "Re-pinned after the owner's ruling \"Drop the cross-spec total from the per-spec block\" (one generated sentence in `## Review closure`; no 0038 content moved), SECOND after the oracle pin, over the text carrying the new oracle-manifest line. The last re-pin of this kind."
+   }
+  ],
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "940df16a7702382cd55c9b63fd668de26887a3f833037832a94106cea829544c",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "62c0a13d41c33751759b05e1e1b045d5c88c48e96ddfcf4ad9daee3e67518e59",
   "spec_version": "accepted (closing cell)",
   "status": "BOUND"
  },

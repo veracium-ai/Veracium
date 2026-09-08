@@ -256,7 +256,7 @@ absent.
 The manifest's sha256 is carried on **one** line of this spec:
 
 ```
-corpus sha256: 4f7f63e2a68861a5a6747e637be5b9bb1fabc9c2aeb187773a7d1f418cb686f8
+corpus sha256: bc121a02bfcc8524b8aea91e8095b7d969a74ca0d20c31fa21086bb2dece6259
 ```
 
 and the manifest carries `spec_version` and
@@ -473,7 +473,7 @@ manifest's — and the manifest carries every file's.** Fifteen digests in prose
 would be fifteen things going stale independently, which this document has
 already demonstrated twice today at a smaller scale.
 
-oracle manifest sha256: 77b0283b16d444c15403bd4684d31ff687667be6431b482c5f0f2d908ec99b3a
+oracle manifest sha256: 1a6a18bef7d49ecf297cdf28df9121fc7fc6c0c666945d7c4d8237d2f526d49d
 
 **The binding is bidirectional and neither direction depends on the other's
 token** (the corpus pin's protocol): the line above is `sha256(MANIFEST.json)`;
@@ -737,7 +737,7 @@ A host running its own prompt inherits its own speech-act discipline.
 | external 4 (SENT) | 2026-09-08 | — | SENT (round-4 package eccfada2950b3ec33dcc137fa3c0751f323556fc359f41a70ee54ae071edd8e9 @ pin 8588e558ede0ce1989aec2ab421274187c690914, CI 34173288704; v5.9 — the SECOND assembly: the first, 18ad6b69ebc0e4d9ddbb5a13399f0d57fb94463c48d82c95dccfad8183882df4 @ 20a7103325f32bcb5b80fc2b9ef2b8afb5ca5ab6 CI… |
 | external 4 (verdict) | 2026-09-08 | 0 | ACCEPTED — "Round 4 closes all outstanding findings. I found no new blocking or required amendments." R3-1 closed (supersession headers; the manifest-bound current disposition; a shared checker rejecting silent or unmarked recurrence), R3-2 closed (one token_membership_violations validator for the s… |
 
-**Per-finding closure ledger — PROCESS §4a.** **14 finding(s) for `0038`; 368 across the 10 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **14 finding(s) for `0038`** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table); the total across the tracked specs is derived once, in `specs/STATUS.md`. Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
