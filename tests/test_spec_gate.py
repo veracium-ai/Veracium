@@ -3130,6 +3130,12 @@ def test_no_security_hotfix_obligation_is_past_its_date_without_a_declared_disch
     with a future date, a reason and an authoriser. A deferral is refused on
     each missing part, and the check refuses to pass on a tree with no
     obligation at all."""
+    if not (_CIT_ROOT / ".git").exists():
+        # 0039 round-1 package finding: the obligation set is DERIVED from git
+        # history, and a `git archive` tree has none — the reviewer's suite
+        # went red on this node for a reason that is not a 0039 regression.
+        # The throwaway battery below builds its own repos and still runs.
+        pytest.skip("no repository here (a git archive or a bare tree): the retrospective obligation set derives from git history, and a tree with none is SKIPPED visibly, never passed — a zero is not a pass")
     mod = _retrospective_debt()
     probs = mod.problems(_CIT_ROOT)
     assert probs == [], "\n".join(probs)

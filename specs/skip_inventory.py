@@ -152,6 +152,12 @@ INVENTORY = [
     ("tests/test_spec_gate.py", "skip", "no archives present",
      "git-checkout", "archives are gitignored; a clone has none"),
     ("tests/test_spec_gate.py", "skip",
+     "the retrospective obligation set derives from git history",
+     "git-checkout", "0039 round-1 package finding: the security-hotfix "
+     "retrospective deadline gate derives its obligations from `git log "
+     "--all`; a `git archive` tree has no history, so the live node skips "
+     "there (the throwaway battery still runs)"),
+    ("tests/test_spec_gate.py", "skip",
      "the newest archive predates the identity record's domain",
      "package-artifact",
      "1 test. External round 20 asked for a FULL-REPACK regression, so the "
