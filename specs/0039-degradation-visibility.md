@@ -11,9 +11,9 @@ draft was written against; the reviewer can open each one.*
 | | |
 |---|---|
 | **Author / session** | dev (veracium-69) |
-| **Version** | **v3 — RESEARCH'S v2 READ FOLDED (2026-09-07, same day).** Read against the shipped paths at the v2 commit, not against v2's prose: the volatility handler sits inside the per-triple loop (so §2b's per-call count is derivable); `_on_error` exists with three call sites; X12's test says PRECISELY; `cli.py` has exactly two `Memory(...)` constructions. ONE finding, taken whole: **§2a's field table was CLOSED IN ONE DIRECTION ONLY.** "Nothing else may be added" and a mutant list that killed additions — and NOTHING forbade an OMISSION: a `volatility_defaulted` record with no `count`, a `retry_failed` record with no `exc_type`, satisfied every §6 invariant, because V-DEGRADE-RECORDED asserts existence and cardinality, V-NO-CONTENT-IN-LOG asserts absence, and none asserted the field SET. 0025 §4c had already named why it matters — *an absent key is not a zero* — for counters; a degrade record is where it applies next. **V-RECORD-FIELDS-TOTAL** (§6): for each `degrade` value the record carries EXACTLY its declared field set, asserted as exact set equality per degrade type, never a subset check; mutants: a record missing `count`; one missing `exc_type`; one carrying another type's field. The fourth invariant of the day found constraining one direction only (V-NEVER-HEAD over results; V-NO-EXISTENCE-SIGNAL by hiding everything; the withdrawn register catching uses not mentions; this) — the tell is a rule that names what must NOT happen without naming what MUST. Also §7: the window stated with its FILE COUNT beside the size — **3 MB (1 MB × 3 files: the active file and `backupCount=2`)** — because "backupCount=2 means three files" is the off-by-one that produced a wrong headline in the read that got the retention arithmetic right; and §7 now says the derived retention figure (records per window; events to evict a traceback) is the number to quote, since the retention claim is the section's subject and does not depend on getting a unit right. Credits: research (veracium-research-32), second read. *v2 — RESEARCH'S FIRST READ FOLDED (2026-09-07, same day as v1).* Four changes, each from a check EXECUTED against the shipped code rather than read from v1's description of it. **(1) A THIRD degrade path.** v1 said the two named sites were "the ONLY places ingest continues after a provider failure" and proposed an except-clause census as the proof; the census, run by both seats independently and converging, found FOUR handlers of which THREE continue: the two v1 named and `except ValueError: vol = Volatility.DURABLE` — a model-emitted volatility value outside the enum is silently coerced to DURABLE, per triple, with no counter, no record and no warning. v1's sentence survived on a strict reading ("provider *failure*") and failed the spec's purpose; §1 is widened from provider failure to **provider-originated degradation** and the volatility coercion is ranked WORST of the three, because the other two degrade into a visible absence and this one produces a record that looks correct, on an axis the paper names as a contribution. **(2) The record carries NO message text.** v1's "capped and redacted" was measured: `diagnostics.redact` on a provider error echoing a prompt removes the email and the phone number and keeps "Alice moved to Berlin" — it strips PII-SHAPED TOKENS and preserves the SEMANTIC PAYLOAD, which for a memory product is backwards (the fact IS the payload). The record is now the exception TYPE, the message LENGTH and a digest — never the text (§2a, §2c-i row 7, V-NO-CONTENT-IN-LOG). **(3) The seam is a callback, decided by 0025 X12.** v1 left open whether the degrade fact travels as a private field on the ingest result or as a callback on `ingest_event`'s signature; X12 asserts the result's counter keys are PRECISELY §4c's public set, so a private field survives only by exempting the invariant that makes the set closed. Callback (§2c; old Q2 closed). **(4) §7 answered the wrong question.** "Bounded by rotation" is a SIZE bound; the operator's question is RETENTION — after 0039 how long a real traceback survives depends on DEGRADE volume, and a per-triple record on the volatility path would evict the errors the log exists for. The volatility path is aggregated to ONE record per `ingest_event` call with a count (V-ONE-RECORD-PER-CALL); §7 states the retention consequence with the window re-derived from the handler's parameters. Also added to §8 as the spec's strongest argument, previously implicit: the CLI attaches NO reporter today (`load_reporter`: zero occurrences in `cli.py`, one in `mcp_server.py`), so every degrade — the volatility coercion included, for as long as it has existed — is invisible to a CLI user until this ships. Credits: research (veracium-research-32), first reader under PROCESS §3a: the census run, the redaction inversion framing, the X12 ruling, the retention arithmetic, the §8 limit. *v1 (2026-09-07) — THE DRAFT, written from the shipped code: the two ingest paths that record a failure instead of raising it, the library's `diagnostics=None` default, the two CLI `Memory(...)` constructions that attach no reporter while the MCP entry point does, and the MCP result's strip of the degradation counters. ONE reader: its author.* |
+| **Version** | **v4 — DEV'S §3a CODE-REALITY READ FOLDED (2026-09-09, on Quentin's word "let's do spec 0039 for an internal read").** Every §1 claim re-verified at HEAD `b3c67d2` after 0037, 0025 v14 and 0038 landed on `ingest.py`: the census still returns four handlers (L114 re-raises; L294, L443, L503 continue); `Memory(diagnostics=None)`; `_on_error` at five sites, the CALLER re-raising; `load_reporter` in `build_memory` only; two CLI constructions, neither attaching; `RotatingFileHandler(maxBytes=1_000_000, backupCount=2)`; `redact` measured. ONE SUBSTANTIVE FINDING (D1): the retry site reaches `reps = []` FOUR ways and only two of them are exceptions — a well-formed answer whose `triples` is not a list is a shape branch that raises nothing, so a record emitted from the `except` would miss it; and the retry path lacks the bare-array wrap the first extraction has, so a bare JSON array answer is `AttributeError`, not recovery (§10 Q4, not changed here). §2a/§2c/§2c-i rows 2–3 restated for it; the retry record is emitted ONCE after the block on a failure flag, never on a legitimately empty recovery. Eight smaller corrections: a present `null` volatility is a drift (row 5); a wrong-typed first-extraction `triples` is an ERROR, not a degrade (row 3); the extractor's own message embeds `text[:200]` of provider output (row 7's measured instance); `redact`'s four patterns named; `user_hash` is sha256's first 12 hex; only the CLI's `remember` construction can emit a degrade record; V-RESULT-UNCHANGED phrased as the set X12 pins at HEAD. *(was v3 — RESEARCH'S v2 READ FOLDED (2026-09-07, same day).)** Read against the shipped paths at the v2 commit, not against v2's prose: the volatility handler sits inside the per-triple loop (so §2b's per-call count is derivable); `_on_error` exists with three call sites; X12's test says PRECISELY; `cli.py` has exactly two `Memory(...)` constructions. ONE finding, taken whole: **§2a's field table was CLOSED IN ONE DIRECTION ONLY.** "Nothing else may be added" and a mutant list that killed additions — and NOTHING forbade an OMISSION: a `volatility_defaulted` record with no `count`, a `retry_failed` record with no `exc_type`, satisfied every §6 invariant, because V-DEGRADE-RECORDED asserts existence and cardinality, V-NO-CONTENT-IN-LOG asserts absence, and none asserted the field SET. 0025 §4c had already named why it matters — *an absent key is not a zero* — for counters; a degrade record is where it applies next. **V-RECORD-FIELDS-TOTAL** (§6): for each `degrade` value the record carries EXACTLY its declared field set, asserted as exact set equality per degrade type, never a subset check; mutants: a record missing `count`; one missing `exc_type`; one carrying another type's field. The fourth invariant of the day found constraining one direction only (V-NEVER-HEAD over results; V-NO-EXISTENCE-SIGNAL by hiding everything; the withdrawn register catching uses not mentions; this) — the tell is a rule that names what must NOT happen without naming what MUST. Also §7: the window stated with its FILE COUNT beside the size — **3 MB (1 MB × 3 files: the active file and `backupCount=2`)** — because "backupCount=2 means three files" is the off-by-one that produced a wrong headline in the read that got the retention arithmetic right; and §7 now says the derived retention figure (records per window; events to evict a traceback) is the number to quote, since the retention claim is the section's subject and does not depend on getting a unit right. Credits: research (veracium-research-32), second read. *v2 — RESEARCH'S FIRST READ FOLDED (2026-09-07, same day as v1).* Four changes, each from a check EXECUTED against the shipped code rather than read from v1's description of it. **(1) A THIRD degrade path.** v1 said the two named sites were "the ONLY places ingest continues after a provider failure" and proposed an except-clause census as the proof; the census, run by both seats independently and converging, found FOUR handlers of which THREE continue: the two v1 named and `except ValueError: vol = Volatility.DURABLE` — a model-emitted volatility value outside the enum is silently coerced to DURABLE, per triple, with no counter, no record and no warning. v1's sentence survived on a strict reading ("provider *failure*") and failed the spec's purpose; §1 is widened from provider failure to **provider-originated degradation** and the volatility coercion is ranked WORST of the three, because the other two degrade into a visible absence and this one produces a record that looks correct, on an axis the paper names as a contribution. **(2) The record carries NO message text.** v1's "capped and redacted" was measured: `diagnostics.redact` on a provider error echoing a prompt removes the email and the phone number and keeps "Alice moved to Berlin" — it strips PII-SHAPED TOKENS and preserves the SEMANTIC PAYLOAD, which for a memory product is backwards (the fact IS the payload). The record is now the exception TYPE, the message LENGTH and a digest — never the text (§2a, §2c-i row 7, V-NO-CONTENT-IN-LOG). **(3) The seam is a callback, decided by 0025 X12.** v1 left open whether the degrade fact travels as a private field on the ingest result or as a callback on `ingest_event`'s signature; X12 asserts the result's counter keys are PRECISELY §4c's public set, so a private field survives only by exempting the invariant that makes the set closed. Callback (§2c; old Q2 closed). **(4) §7 answered the wrong question.** "Bounded by rotation" is a SIZE bound; the operator's question is RETENTION — after 0039 how long a real traceback survives depends on DEGRADE volume, and a per-triple record on the volatility path would evict the errors the log exists for. The volatility path is aggregated to ONE record per `ingest_event` call with a count (V-ONE-RECORD-PER-CALL); §7 states the retention consequence with the window re-derived from the handler's parameters. Also added to §8 as the spec's strongest argument, previously implicit: the CLI attaches NO reporter today (`load_reporter`: zero occurrences in `cli.py`, one in `mcp_server.py`), so every degrade — the volatility coercion included, for as long as it has existed — is invisible to a CLI user until this ships. Credits: research (veracium-research-32), first reader under PROCESS §3a: the census run, the redaction inversion framing, the X12 ruling, the retention arithmetic, the §8 limit. *v1 (2026-09-07) — THE DRAFT, written from the shipped code: the two ingest paths that record a failure instead of raising it, the library's `diagnostics=None` default, the two CLI `Memory(...)` constructions that attach no reporter while the MCP entry point does, and the MCP result's strip of the degradation counters. ONE reader: its author.* |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
-| **Internal reviewers** | research (veracium-research-32) — first read folded at v2 |
+| **Internal reviewers** | research (veracium-research-32) — first read folded at v2, second at v3; dev (veracium-90) — §3a code-reality read folded at v4 |
 | **External review** | REQUIRED — changes what two shipped entry points do on error, and what the diagnostics log contains |
 | **Decision + date** | — |
 | **Path** | full |
@@ -49,6 +49,18 @@ provider outage during that call is indistinguishable, in every carrier that exi
 today, from a model that gave a poor second answer. The exception object — its type and
 message — is discarded at that line.
 
+**Four ways to the same empty list (v4, read at HEAD).** `reps = []` is reached by (i) the
+provider call raising; (ii) `extract_json` raising `ValueError` — no JSON in the answer;
+(iii) a well-formed answer whose `triples` is NOT a list — the line
+`if not isinstance(reps, list): reps = []` just above the handler, which raises NOTHING;
+and (iv) a bare JSON array — `extract_json` returns the list as a fallback and `.get`
+raises `AttributeError` inside the `try`. The first extraction wraps a bare array into
+`{"triples": [...]}`; the retry path does not, so the same provider answer is a
+recovery attempt on the first call and a failure on the second (§10 Q4 — named, not
+changed here). Path (iii) matters for this spec's shape: a record emitted from inside the
+`except` would miss it. A legitimately empty recovery — `{"triples": []}` — is none of
+the four and is NOT a degrade.
+
 **1b. The unparseable extraction.** A provider answering in prose, refusing, or returning
 a wrong-typed `instructions` field (0038 §2c row 2) raises `ValueError` from the JSON
 extractor and takes the early return: a content-free placeholder episode,
@@ -77,7 +89,8 @@ placeholder episode). This one is visible as nothing.
 reporter (`diagnostics.Reporter`): a local, user-owned rotating log
 (`$XDG_STATE_HOME/veracium/veracium.log`, default `~/.local/state/veracium/`; three files
 of 1 MB — the current file and two backups) that records genuine errors with the
-operation name, a hashed user id and the full traceback, and re-raises. Three facts about
+operation name, a hashed user id and the full traceback; the caller then re-raises
+(`_on_error` itself never does). Three facts about
 it, each a line in the tree:
 
 | fact | where |
@@ -114,13 +127,14 @@ a zero, 0025 §4c; V-RECORD-FIELDS-TOTAL asserts the exact set per type):
 |---|---|---|
 | `op` | the operation (`remember`) | — |
 | `degrade` | one of `retry_failed`, `unparseable`, `volatility_defaulted` — a closed vocabulary | any other string |
-| `user_hash` | the hashed user id (the existing `_on_error` convention) | the user id |
-| `exc_type` | the exception's class name (`retry_failed`, `unparseable`) | — |
+| `user_hash` | the hashed user id — the existing `_on_error` convention: the first 12 hex digits of the user id's SHA-256 | the user id |
+| `exc_type` | the exception's class name (`retry_failed`, `unparseable`); for `retry_failed` reached by the shape branch (§1a path iii, no exception raised) the fixed token `shape` | any other token; the exception's message |
 | `msg_len`, `msg_sha16` | the exception message's length and the first sixteen hex digits of its SHA-256 | **the message text, in any form, at any length, redacted or not** |
 | `count` | for `volatility_defaulted`: how many triples in this `ingest_event` call were coerced | the offending value's text (it is model output) |
 
-Why no message text, measured (§2c-i row 7): `diagnostics.redact` removes PII-SHAPED
-tokens — an email, a number shape — and preserves everything else. For a memory product
+Why no message text, measured (§2c-i row 7): `diagnostics.redact` removes exactly four
+shapes — an email, a US phone `ddd-ddd-dddd`, a run of seven or more digits, a dollar
+amount — and preserves everything else (`555-0100` survives; so does every word). For a memory product
 "everything else" IS the payload: "Alice moved to Berlin" survives redaction intact. A
 redactor tuned for logs cannot protect a store whose entire content is the thing the
 redactor does not recognise, so the record does not carry the message at all. An operator
@@ -136,9 +150,13 @@ call, carrying `count`. A ten-triple event with a drifted provider emits one rec
 ten. §7 says why this is a retention rule and not a tidiness one.
 
 **2c. The seam: a callback, not a field.** `ingest_event` gains a keyword-only parameter
-`on_degrade: Optional[Callable[[str, dict], None]] = None`; the three sites call it
-(`on_degrade("retry_failed", {...})`, `on_degrade("unparseable", {...})`, and once after
-the triple loop `on_degrade("volatility_defaulted", {"count": n})` when `n > 0`).
+`on_degrade: Optional[Callable[[str, dict], None]] = None`; the three sites call it.
+The retry site calls it ONCE, after the `try`/`except` block, on a failure flag set by
+any of §1a's four paths — the `except` sets the flag with the exception, the shape
+branch sets it with `shape` — and never when the recovery was legitimately empty
+(`on_degrade("retry_failed", {...})`); the unparseable path calls it from its handler
+(`on_degrade("unparseable", {...})`); and once after the triple loop
+`on_degrade("volatility_defaulted", {"count": n})` when `n > 0`.
 `Memory.remember` passes `self._on_degrade`, a sibling of `_on_error`, which calls
 `Reporter.record_degrade`. The ingest RESULT does not change: 0025 X12 asserts its counter
 keys are PRECISELY §4c's public set, and a private field on it would survive only by
@@ -147,7 +165,9 @@ it travels on its own channel.
 
 **2d. The CLI attaches a reporter as the MCP entry point does.** Both CLI `Memory(...)`
 constructions pass `diagnostics=diagnostics.load_reporter()` — a `Reporter` iff
-`log_enabled`, the same rule `build_memory()` uses. The library core's default stays
+`log_enabled`, the same rule `build_memory()` uses. Only the `remember` construction can
+emit a degrade record (the other runs with a stub provider that never extracts); it
+attaches the reporter for `_on_error`, so the two constructions stay one rule. The library core's default stays
 `None` (embedding hosts pass their own or none — the existing contract).
 
 **2e. What changes, stated exactly.** `ingest.py`: the `on_degrade` parameter and three
@@ -165,11 +185,14 @@ observable outcome and the invariant that enforces it.
 | # | case | observable outcome | enforced by |
 |---|---|---|---|
 | 1 | the retry raises (network, provider, SDK) | ONE record `degrade=retry_failed` with the exception's type, message length and digest; the return dict as 0025 specifies | V-DEGRADE-RECORDED, V-NO-CONTENT-IN-LOG |
-| 2 | the retry returns malformed JSON | as row 1 with `exc_type=ValueError` from the extractor; NEVER the raw output | V-NO-CONTENT-IN-LOG |
-| 3 | the first extraction is unparseable (prose, refusal) | ONE record `degrade=unparseable`; the placeholder episode as today | V-DEGRADE-RECORDED |
+| 2 | the retry returns no JSON (prose, a refusal) | as row 1 with `exc_type=ValueError` from the extractor; NEVER the raw output — the extractor's own message embeds the first 200 characters of the answer, which is why the record carries length and digest only | V-NO-CONTENT-IN-LOG |
+| 2b | the retry returns well-formed JSON whose `triples` is not a list | ONE record `degrade=retry_failed exc_type=shape` from the shape branch (§1a path iii — no exception is raised there); `retried > 0, recovered = 0` as today | V-DEGRADE-RECORDED |
+| 2c | the retry returns a bare JSON array | today: `AttributeError` inside the `try`, `reps = []`; ONE record with `exc_type=AttributeError` — the record makes the first-call/second-call asymmetry visible; the asymmetry itself is §10 Q4 | V-DEGRADE-RECORDED |
+| 2d | the retry legitimately recovers nothing (`{"triples": []}`) | NO record — an empty list is an answer, not a failure; `recovered = 0` as today | V-DEGRADE-RECORDED's negative arm |
+| 3 | the first extraction is unparseable (prose, refusal) | ONE record `degrade=unparseable`; the placeholder episode as today. NOT this row: a well-formed object whose `triples` is not a list — iterating it raises `AttributeError` outside the handler, which PROPAGATES to `_on_error` and is re-raised: an ERROR, not a degrade (the census's "every other handler re-raises") | V-DEGRADE-RECORDED, V-CENSUS |
 | 4 | `instructions` of the wrong type (0038 §2c row 2) | as row 3 — the extractor's `ValueError` is the same exception class; the record does not say which shape failed, by design (the message would) | V-DEGRADE-RECORDED, V-NO-CONTENT-IN-LOG |
-| 5 | a triple carries a volatility value outside the enum | coerced to DURABLE as today; ONE record `degrade=volatility_defaulted count=n` per `ingest_event` call; the VALUE's text appears nowhere | V-DEGRADE-RECORDED, V-ONE-RECORD-PER-CALL, V-NO-CONTENT-IN-LOG |
-| 6 | a triple carries NO volatility key | the declared default; NO record — this is not a degrade | V-DEGRADE-RECORDED's negative arm |
+| 5 | a triple carries a volatility value outside the enum — a PRESENT `null` included (`str(None)` is `"none"`, outside the enum) | coerced to DURABLE as today; ONE record `degrade=volatility_defaulted count=n` per `ingest_event` call; the VALUE's text appears nowhere | V-DEGRADE-RECORDED, V-ONE-RECORD-PER-CALL, V-NO-CONTENT-IN-LOG |
+| 6 | a triple carries NO volatility key | the declared default; NO record — this is not a degrade (absence; row 5's `null` is presence) | V-DEGRADE-RECORDED's negative arm |
 | 7 | the exception message carries content (a provider echoing the prompt into an error) | the record carries the message's length and digest and NOTHING of its text — redaction is not consulted, because it preserves the semantic payload (measured: "Alice moved to Berlin" survives `redact`) | V-NO-CONTENT-IN-LOG |
 | 8 | no reporter attached (an embedding host passing `None`; the CLI today) | no record, no exception, no change in behaviour — `on_degrade` is `None` and the sites do not call it | V-NEVER-RAISED-BY-RECORDING |
 | 9 | the reporter itself fails (disk full, path unwritable) | swallowed inside the reporter (its existing contract: "nothing here re-raises"); the operation's outcome is unchanged | V-NEVER-RAISED-BY-RECORDING |
@@ -225,7 +248,7 @@ continue; one re-raises). Every other exception propagates to `_on_error`.
 | **V-RECORD-FIELDS-TOTAL** | for each `degrade` value, the record carries EXACTLY its declared field set (§2a): `retry_failed` and `unparseable` → `op, degrade, user_hash, exc_type, msg_len, msg_sha16`; `volatility_defaulted` → `op, degrade, user_hash, count`; asserted as exact set equality per type, never a subset check | each scripted provider's record read back; the key set compared for equality against the declared set for its type | OWED: `::test_each_record_carries_exactly_its_declared_fields` |
 | **V-NEVER-RAISED-BY-RECORDING** | recording never changes the operation's outcome: no reporter → identical return; a failing reporter → identical return | the same scripted providers with `diagnostics=None` and with a reporter whose log path is unwritable; the return dicts equal the recorded ones | OWED: `::test_recording_never_changes_the_outcome` |
 | **V-CLI-ATTACHES** | both CLI `Memory(...)` constructions pass `diagnostics=load_reporter()` | an AST census of `Memory(` calls in `cli.py`: every one carries the argument | OWED: `::test_every_cli_memory_construction_attaches_a_reporter` |
-| **V-RESULT-UNCHANGED** | the ingest result's key set is exactly 0025 §4c's plus 0038's; nothing of the degrade travels on it | INHERITED from `tests/test_0025_enforcement.py`'s X12 exact-set test | CHECKED today (the existing node) |
+| **V-RESULT-UNCHANGED** | the ingest result's key set is exactly the set X12 pins at HEAD (0025 §4c's counters as amended 2026-09-08, 0038's `instructions_dropped`, 0023 Q4's two audit facts, 0026's two agreement counters); nothing of the degrade travels on it | INHERITED from `tests/test_0025_enforcement.py`'s X12 exact-set test | CHECKED today (the existing node) |
 | **V-MCP-RESULT-UNCHANGED** | the MCP tool result gains no field | INHERITED from `tests/test_0031_phase_a.py`'s strip test and the result's existing shape tests | CHECKED today |
 
 **Mutants the matrix must kill:** recording via `print`/stderr instead of the reporter
@@ -315,6 +338,13 @@ the weight.
    (a known synonym such as `long-term`, versus noise)? It would help an operator fix a
    prompt; it would also be the first byte of model output in the log. v2 says no; the
    reviewer may weigh it.
+
+4. **(v4, D1) Should the retry path wrap a bare JSON array as the first extraction
+   does?** Today the same provider answer is a recovery attempt on the first call and an
+   `AttributeError`-shaped failure on the retry (§1a path iv). Wrapping it is a one-line
+   change to a guarded file under accepted 0025's retry clause, so it is an amendment to
+   0025, not a line of this spec; this spec records the asymmetry (row 2c) and leaves the
+   behaviour as shipped.
 
 *Closed at v2: the seam (callback, by 0025 X12 — §2c).*
 
