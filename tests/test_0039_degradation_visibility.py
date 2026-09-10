@@ -331,7 +331,9 @@ def test_cause_is_a_closed_vocabulary_and_a_provider_exception_name_never_reache
     Boom.__name__ = f"Provider{sentinel}Error"
     exc = Boom(f"message {sentinel}")
     exc.detail = sentinel
-    exc.add_note(sentinel)
+    exc.__cause__ = RuntimeError(sentinel)   # a carrier on every interpreter we support
+    if hasattr(exc, "add_note"):             # notes are 3.11+; CI's floor is 3.10
+        exc.add_note(sentinel)
     rep = _reporter(tmp_path)
     mem = _mem(tmp_path, Stub(_main([OFF]), retry_raises=exc), rep)
     _remember(mem)
@@ -562,6 +564,15 @@ def test_the_retention_figures_are_measured_not_recalled():
     assert mod.render(m) == transcript.read_text(), (
         "the measurement no longer reproduces its committed transcript:\n" + mod.render(m))
     assert len(m["rows"]) == 10 and m["smallest"] < m["largest"]
+    # The error record is asserted by PROPERTY, never by byte count: its traceback's
+    # size is the interpreter's format and the checkout's path lengths (measured across
+    # CI at 7, 8, 9 and 12 lines on 3.10-3.13), so a pinned number would bind this
+    # evidence to one machine. What IS ours: an error record is a multi-line traceback
+    # several times a degrade record, which is why degrade VOLUME is the retention
+    # question (§7) and the counted kinds are one record per call.
+    assert m["error_record_smallest"] >= 3 * m["largest"], (
+        m["error_record_smallest"], m["largest"])
+    assert m["error_record_lines"] >= 5, m["error_record_lines"]
     changelog = (ROOT / "CHANGELOG.md").read_text()
     head = changelog.split("\n## ", 2)
     assert head[1].startswith("Unreleased"), "no Unreleased section to check"
@@ -572,6 +583,5 @@ def test_the_retention_figures_are_measured_not_recalled():
     for figure in (f"{m['smallest']}-{m['largest']} bytes",
                    f"{m['window_bytes']:,} bytes",
                    f"{m['records_at_largest']:,} records",
-                   f"{m['records_at_smallest']:,}",
-                   f"{m['error_record_smallest']}-{m['error_record_largest']} bytes"):
+                   f"{m['records_at_smallest']:,}"):
         assert figure in text, f"the CHANGELOG's retention bullet does not state {figure!r}"

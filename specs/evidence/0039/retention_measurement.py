@@ -75,36 +75,46 @@ def measure() -> dict:
                          "error_lines": elines, "raised": raised})
     sizes = [r["degrade_bytes"] for r in rows]
     errors = [r["error_bytes"] for r in rows if r["error_bytes"]]
+    error_lines = [r["error_lines"] for r in rows if r["error_bytes"]]
     return {
         "rows": rows,
         "smallest": min(sizes), "largest": max(sizes),
         "records_at_largest": WINDOW_BYTES // max(sizes),
         "records_at_smallest": WINDOW_BYTES // min(sizes),
+        # environment-dependent, deliberately NOT rendered into the transcript
         "error_record_smallest": min(errors), "error_record_largest": max(errors),
+        "error_record_lines": min(error_lines),
         "window_bytes": WINDOW_BYTES,
     }
 
 
 def render(m: dict) -> str:
+    """The STABLE section, and only it. A degrade record's size is fixed by the
+    record's own grammar, so it reproduces anywhere. An ERROR record's size is not
+    ours: it carries a traceback, whose length depends on the interpreter's format
+    and on the absolute source paths of the checkout it was taken in (measured
+    across CI: 7 lines on 3.10, 8 on 3.11, 9 and 12 on longer-path 3.12/3.13 jobs).
+    Pinning it would bind this evidence to one machine, so the error record is
+    asserted by PROPERTY in the matrix test instead of by byte count here."""
     out = ["# specs/0039 §7 — the retention measurement, run against the shipped path.",
            "# Regenerate with: python specs/evidence/0039/retention_measurement.py",
            "# Bound by tests/test_0039_degradation_visibility.py::"
            "test_the_retention_figures_are_measured_not_recalled, which re-runs this",
            "# measurement and refuses a CHANGELOG figure that is not the measured one.",
+           "# Degrade-record sizes only: an error record's size is the interpreter's",
+           "# traceback format and the checkout's path lengths, not a fact about",
+           "# veracium, so it is asserted as a property (>= 3x a degrade record, a",
+           "# multi-line traceback) rather than pinned here.",
            "#"]
     for r in m["rows"]:
-        tail = ("" if not r["error_bytes"] else
-                f"   + error record {r['error_bytes']} bytes over {r['error_lines']} "
-                f"lines ({r['raised']})")
-        out.append(f"{r['degrade_bytes']:5d} bytes  {r['case']}{tail}")
+        raised = "" if not r["raised"] else f"   (the operation then raised {r['raised']})"
+        out.append(f"{r['degrade_bytes']:5d} bytes  {r['case']}{raised}")
     out += [
         "",
         f"degrade record: {m['smallest']}-{m['largest']} bytes over "
         f"{len(m['rows'])} records spanning all five degrade kinds",
         f"window: {m['window_bytes']:,} bytes -> {m['records_at_largest']:,} records at "
         f"the largest size, {m['records_at_smallest']:,} at the smallest",
-        f"error record with traceback: {m['error_record_smallest']}-"
-        f"{m['error_record_largest']} bytes",
     ]
     return "\n".join(out) + "\n"
 
