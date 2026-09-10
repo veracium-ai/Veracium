@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-**Upgrade recommendation:** operators who run `veracium remember` from the CLI, or embed
-Veracium with a diagnostics reporter attached, should take this release: a provider
-that fails silently now leaves a record. Hosts that pass `diagnostics=None` see no
-change.
+**Upgrade recommendation: every host should read this section, and hosts that catch
+`TypeError` around `remember` must act.** Two things happened here. A provider that
+degrades now leaves a record, which needs a diagnostics reporter to be visible. And one
+BEHAVIOUR changed for everyone, reporter or not: three provider answers that used to
+raise `TypeError` out of `remember` now return zero facts instead. The second item is
+below under its own heading; do not read the first as the whole release.
 
 **Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10).**
 Veracium degrades in five places instead of failing, by design, and until now none of
@@ -46,10 +48,33 @@ for byte by the suite.
 - **Manual exercise (specs/0039 §6a):** `specs/evidence/0039/manual-cli-transcript.txt`
   — the shipped CLI against a provider that fails the retry and one whose vocabulary
   drifted, then the log; the provider was scripted at the CLI's own seam.
-- **Not changed, by the accepted spec's own limit:** the three primary-answer shapes
-  that raise `TypeError` still raise. The spec records the inconsistency with the
-  silent string and dict shapes as an ingest-amendment question, which nobody has
-  ruled on.
+**BEHAVIOUR CHANGE — `remember` no longer raises `TypeError` when a provider answers
+with a `null`, numeric or boolean `triples` (specs/0025 §4b(1), amended; the wider rule
+of specs/0039 §10).** Those three answers returned an exception to the caller while a
+string or a dict in the same position returned zero facts silently. The difference was
+iterability, not a property anyone chose, and the re-extraction retry had always
+treated every non-list value as one recorded shape. Now both call sites apply that one
+rule: every non-list `triples` is one `primary_failed` / `shape` record and zero facts.
+Nothing in the extraction path raises on a provider ANSWER any more.
+
+- **Who should act:** any host that was catching `TypeError` around `remember` to
+  detect a broken provider must now read the result or the diagnostics log instead.
+  That call returns normally with `facts=0`.
+- **Attach a diagnostics reporter if you have not.** This removes the last loud signal
+  on the extraction path: without a reporter, a provider answering `{"triples": null}`
+  is now indistinguishable from one that legitimately found nothing. That was already
+  true of the four other degrade paths, and it is the reason the degrade records above
+  exist. The CLI attaches a reporter by default.
+- **Unchanged:** the string and dict shapes (same zero-fact result, same record), the
+  per-member skipping of a well-formed list, every counter, every stored byte, and a
+  provider EXCEPTION, which still propagates as before. Measured across both
+  independent instruments in `specs/evidence/0039/`, exactly three transcript rows
+  moved in each: `RAISES TypeError` became `RESULT facts=0`.
+- **It moved part of an externally frozen surface, disclosed rather than absorbed:**
+  specs/0039 was accepted the same day with its answer matrix frozen, and this changes
+  the accepted cell for those three shapes, re-instances one invariant whose only
+  instance they were, and adds a second normalization site to another. specs/0039 v14
+  records all three for the next external round.
 
 **A re-extraction retry that answers with a bare JSON array now repairs, where before
 it was discarded (specs/0025 §4b(1), amended; drafted as specs/0039 §2e).** When a

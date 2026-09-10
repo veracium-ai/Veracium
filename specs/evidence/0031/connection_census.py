@@ -527,15 +527,19 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: the `remember` callback, the CLI's two reporter attachments) moved
 #: dotted/dataflow 5,145 -> 5,161 and module-plain 266 -> 268 (the two `hashlib`
 #: module references the digest helpers add), the other three classes and the
-#: dunders unchanged.
+#: dunders unchanged; the 0025 §4b(1) normalization amendments (2026-09-10) moved
+#: dotted/dataflow 5,161 -> 5,160 — the wider rule replaced the loop's
+#: `data.get("triples", [])` and the member counter's `isinstance(data.get(...))`
+#: with one `.get` bound to a name — the other four classes and the dunders
+#: unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5161,
+    "dotted/dataflow": 5160,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 268,
     "dotted/module-protected": 46,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5528
+SRC_ATTRIBUTE_TOTAL = 5527
 SRC_DATA_DUNDERS_IN_DATAFLOW = 117
 
 

@@ -43,6 +43,34 @@ CASES = [
 ]
 
 
+def _error_record(tmp) -> tuple:
+    """An ERROR record, for the comparison §7's retention question needs. Until the
+    2026-09-10 amendment this came free with three of the rows below: a `null`,
+    numeric or boolean `triples` wrote its degrade record and then raised `TypeError`
+    from the loop. The wider normalization rule removed that raise, so the error
+    record is now produced the way an error record is normally produced -- a provider
+    that fails on the FIRST call, which `remember` records with its traceback and
+    re-raises."""
+    class _Boom(Exception):
+        pass
+    log = pathlib.Path(tmp) / "err.log"
+    rep = Reporter(DiagnosticsConfig(log_path=str(log), report_enabled=False))
+    def raiser(*a, **k):
+        raise _Boom("provider unavailable")
+    mem = Memory(llm=raiser,
+                 config=MemoryConfig(db_path=str(pathlib.Path(tmp) / "err.db"),
+                                     wiki_recompile_after_writes=0),
+                 diagnostics=rep)
+    try:
+        mem.remember("alice", "I use Vim for editing.")
+    except Exception:                                         # noqa: BLE001
+        pass
+    lines = [l for l in log.read_text().splitlines() if l.strip()]
+    assert lines and " degrade=" not in lines[0], lines[:1]
+    whole = "\n".join(lines) + "\n"
+    return len(whole.encode()), len(lines)
+
+
 def _one(tmp, name, raw, retry_raw, retry_raises):
     log = pathlib.Path(tmp) / f"{name}.log"
     rep = Reporter(DiagnosticsConfig(log_path=str(log), report_enabled=False))
@@ -73,17 +101,15 @@ def measure() -> dict:
             d, e, elines, raised = _one(tmp, f"c{i}", raw, retry_raw, retry_raises)
             rows.append({"case": name, "degrade_bytes": d, "error_bytes": e,
                          "error_lines": elines, "raised": raised})
+        err_bytes, err_lines = _error_record(tmp)
     sizes = [r["degrade_bytes"] for r in rows]
-    errors = [r["error_bytes"] for r in rows if r["error_bytes"]]
-    error_lines = [r["error_lines"] for r in rows if r["error_bytes"]]
     return {
         "rows": rows,
         "smallest": min(sizes), "largest": max(sizes),
         "records_at_largest": WINDOW_BYTES // max(sizes),
         "records_at_smallest": WINDOW_BYTES // min(sizes),
         # environment-dependent, deliberately NOT rendered into the transcript
-        "error_record_smallest": min(errors), "error_record_largest": max(errors),
-        "error_record_lines": min(error_lines),
+        "error_record_bytes": err_bytes, "error_record_lines": err_lines,
         "window_bytes": WINDOW_BYTES,
     }
 
@@ -109,6 +135,9 @@ def render(m: dict) -> str:
     for r in m["rows"]:
         raised = "" if not r["raised"] else f"   (the operation then raised {r['raised']})"
         out.append(f"{r['degrade_bytes']:5d} bytes  {r['case']}{raised}")
+    assert not any(r["raised"] for r in m["rows"]), (
+        "a row raised: since the 2026-09-10 normalization amendment no provider ANSWER "
+        "shape raises out of ingest, and a row that does is a finding, not a render")
     out += [
         "",
         f"degrade record: {m['smallest']}-{m['largest']} bytes over "

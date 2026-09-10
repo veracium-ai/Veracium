@@ -414,14 +414,24 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         _emit_degrade(on_degrade, "primary_failed",
                       {"cause": "shape", **_answer_fields(raw)})
     n_members_skipped = 0        # specs/0039 §2a `member_skipped`: SHAPE-GUARD failures only
-    # ... and only MEMBERS OF A LIST: a string or dict `triples` iterates too, but its
-    # "members" are the shape record's fact already told (matrix row 4/5: one record)
-    _triples_is_list = isinstance(data.get("triples"), list)
+    # specs/0025 §4b(1), AMENDED 2026-09-10 (the WIDER normalization rule of `0039`
+    # §10's fourth and sixth questions, on the owner's word): EVERY non-list `triples`
+    # is the `shape` record written above and yields NO triples. One rule, both
+    # callers, no exception — the retry has always applied it to `reps`. Before the
+    # amendment a string or a dict was ITERATED here (every member skipped, zero facts,
+    # silently) while `null`, a number or a boolean raised `TypeError` out of the loop:
+    # a difference in iterability, not a property anyone chose. The outcome for a
+    # string or a dict is unchanged; the three raising shapes now return zero facts
+    # with their record, as their siblings always did.
+    triples_in = data.get("triples")
+    if not isinstance(triples_in, list):
+        triples_in = []
     parsed = []
-    for t in data.get("triples", []):
+    for t in triples_in:
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
-            if _triples_is_list:
-                n_members_skipped += 1
+            # every value reaching here IS a list member now (the normalization above),
+            # so the list-ness guard this counter carried is gone with the amendment
+            n_members_skipped += 1
             continue
         # specs/0025 (amended 2026-09-08 on the 0.20.0 selfcheck finding): the
         # SUBJECT GRAMMAR is enforced here, not only stated in the prompt. The

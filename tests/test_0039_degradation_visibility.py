@@ -137,7 +137,12 @@ def test_the_census_names_every_continuing_handler():
                     (isinstance(v, ast.Constant) and v.value in (None, "", 0))
             if isinstance(b, ast.Assign) and empty and any(isinstance(t, ast.Name) and t.id in bound for t in b.targets):
                 resets.append(b.lineno)
-    assert len(resets) == 1, f"guarded literal-reset branches over parsed provider output: {resets} (the spec names ONE, §1a path iii)"
+    # TWO since specs/0025 §4b(1)'s wider normalization (2026-09-10): §1a path iii's
+    # retry reset (`reps = []` on a non-list) and the primary site's twin, which is
+    # the amendment itself — every non-list `triples` normalized to no triples rather
+    # than iterated or raised. specs/0039 v14 names the second site; the census's own
+    # rule is that a new site of this shape fails until the spec names it.
+    assert len(resets) == 2, f"guarded literal-reset branches over parsed provider output: {resets} (the spec names TWO)"
 
 
 # ------------------------------------------------------- V-ANSWER-MATRIX -----
@@ -148,9 +153,13 @@ _PRIMARY_ROWS = [
     (3, json.dumps({"note": "none"}), [("primary_failed", "no_triples_key")], None),
     (4, _main("user uses Vim"), [("primary_failed", "shape")], None),
     (5, _main({"triples": [GOOD]}), [("primary_failed", "shape")], None),
-    (6, _main(None), [("primary_failed", "shape")], TypeError),
-    (7, _main(3), [("primary_failed", "shape")], TypeError),
-    (7, _main(True), [("primary_failed", "shape")], TypeError),
+    # rows 6 and 7 FLIPPED by the WIDER normalization rule (specs/0025 §4b(1) amended
+    # 2026-09-10): every non-list `triples` is one recorded `shape` and yields no
+    # triples, so these three now return zero facts exactly as rows 4 and 5 always did
+    # instead of raising `TypeError` out of the loop.
+    (6, _main(None), [("primary_failed", "shape")], None),
+    (7, _main(3), [("primary_failed", "shape")], None),
+    (7, _main(True), [("primary_failed", "shape")], None),
     (8, json.dumps([GOOD]), [], None),
     (9, json.dumps(["triples", 1]), [("member_skipped", "2")], None),
     (10, _main([GOOD, "junk", 7, None]), [("member_skipped", "3")], None),
@@ -389,21 +398,44 @@ def test_an_absent_volatility_key_writes_nothing(tmp_path):
 
 
 # ------------------------------------------------ V-RECORD-ORDER-ON-ERROR ----
-def test_the_raising_primary_shapes_log_the_degrade_then_the_error(tmp_path):
+def test_a_degrade_record_written_before_an_error_stays_before_it(tmp_path):
+    """V-RECORD-ORDER-ON-ERROR (frozen at acceptance) — RE-INSTANCED, and that is the
+    disclosure. The invariant was written for the three primary shapes that wrote a
+    record and then raised `TypeError` from the loop; the WIDER normalization rule
+    (specs/0025 §4b(1), amended 2026-09-10) removed that raise, so NO provider answer
+    reaches this ordering any more. The property is not gone with its instance: any
+    error after a degrade record in the same call must still find that record already
+    in the log, ahead of it. Instanced here by failing the STORE after the record is
+    written, which is a genuine error rather than a shape the amendment settled."""
+    # half one: the shapes that used to raise now return, with exactly ONE record
     for i, raw in enumerate([_main(None), _main(3), _main(True)]):
-        rep = _reporter(tmp_path, f"o{i}.log")
-        mem = _mem(tmp_path, Stub(raw, retry_raw=_main([])), rep, f"o{i}")
-        with pytest.raises(TypeError):
-            _remember(mem)
+        rep = _reporter(tmp_path, f"n{i}.log")
+        r = _remember(_mem(tmp_path, Stub(raw, retry_raw=_main([])), rep, f"n{i}"))
+        assert r["facts"] == 0, raw
         recs = _records(rep)
-        assert len(recs) == 2, recs
-        assert recs[0][0] == "WARNING" and recs[0][1]["degrade"] == "primary_failed" and recs[0][1]["cause"] == "shape"
-        assert recs[1][0] == "ERROR" and recs[1][1]["op"] == "remember"
-        assert "TypeError" in rep.config.resolved_log_path().read_text()
-    # with no reporter the TypeError propagates identically and nothing is written
-    mem = _mem(tmp_path, Stub(_main(None), retry_raw=_main([])), None, "none")
-    with pytest.raises(TypeError):
-        _remember(mem)
+        assert len(recs) == 1 and recs[0][0] == "WARNING", recs
+        assert recs[0][1]["degrade"] == "primary_failed" and recs[0][1]["cause"] == "shape"
+        assert "TypeError" not in rep.config.resolved_log_path().read_text()
+    # half two: the ordering itself, on a call that records and THEN fails. The retry
+    # writes its record before the parse loop reaches the store, so failing the edge
+    # write puts a genuine error after a genuine degrade record in one call.
+    def _ordered(reporter, name):
+        mem = _mem(tmp_path, Stub(_main([OFF]), retry_raw="cannot"), reporter, name)
+        with pytest.MonkeyPatch.context() as mp:
+            def fail(*a, **k):
+                raise RuntimeError("store failure after the record")
+            mp.setattr(ingest_mod, "apply_supersession", fail)
+            with pytest.raises(RuntimeError):
+                _remember(mem)
+    rep = _reporter(tmp_path, "order.log")
+    _ordered(rep, "order")
+    recs = _records(rep)
+    assert len(recs) == 2, recs
+    assert recs[0][0] == "WARNING" and recs[0][1]["degrade"] == "retry_failed"
+    assert recs[1][0] == "ERROR" and recs[1][1]["op"] == "remember"
+    assert "RuntimeError" in rep.config.resolved_log_path().read_text()
+    # and with no reporter the error propagates identically, nothing written
+    _ordered(None, "none")
 
 
 # ------------------------------------------------- V-NO-CONTENT-IN-LOG -------
@@ -580,13 +612,16 @@ def test_the_retention_figures_are_measured_not_recalled():
     # evidence to one machine. What IS ours: an error record is a multi-line traceback
     # several times a degrade record, which is why degrade VOLUME is the retention
     # question (§7) and the counted kinds are one record per call.
-    # The bound is derived from the CI MATRIX, not from this machine: the smallest
-    # error record measured anywhere was 439 bytes over 7 lines (CPython 3.10, short
-    # runner paths) against a 155-byte largest degrade record, a factor of 2.8; the
-    # largest was 714 over 12 lines (3.13), a factor of 4.6. A bound read off one
-    # interpreter is how this assertion was wrong the first time.
-    assert m["error_record_smallest"] >= 2 * m["largest"], (
-        m["error_record_smallest"], m["largest"])
+    # The bound is derived from the CI MATRIX, not from this machine: across 3.10-3.13
+    # the smallest error record measured anywhere was 439 bytes over 7 lines against a
+    # 155-byte largest degrade record, a factor of 2.8; the largest was 714 over 12
+    # lines. A bound read off one interpreter is how this assertion was wrong the first
+    # time. (The instance moved on 2026-09-10 — the amendment removed the raise those
+    # measurements came from, so the error record now comes from a provider exception,
+    # a deeper traceback still — and the bound is deliberately left at the older,
+    # tighter figure rather than re-tightened to today's machine.)
+    assert m["error_record_bytes"] >= 2 * m["largest"], (
+        m["error_record_bytes"], m["largest"])
     assert m["error_record_lines"] >= 5, m["error_record_lines"]
     changelog = (ROOT / "CHANGELOG.md").read_text()
     head = changelog.split("\n## ", 2)

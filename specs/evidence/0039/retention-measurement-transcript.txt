@@ -13,9 +13,9 @@
   146 bytes  retry_failed/no_json
   147 bytes  retry_failed/provider_error
   146 bytes  primary_failed/shape (string)
-  146 bytes  primary_failed/shape (null)   (the operation then raised TypeError)
-  146 bytes  primary_failed/shape (number)   (the operation then raised TypeError)
-  146 bytes  primary_failed/shape (boolean)   (the operation then raised TypeError)
+  146 bytes  primary_failed/shape (null)
+  146 bytes  primary_failed/shape (number)
+  146 bytes  primary_failed/shape (boolean)
   155 bytes  primary_failed/no_triples_key
 
 degrade record: 98-155 bytes over 10 records spanning all five degrade kinds
