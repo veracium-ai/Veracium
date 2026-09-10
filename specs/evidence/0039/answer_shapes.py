@@ -1,4 +1,13 @@
-"""specs/0039 §2c-ii — the answer matrix's "today" column, MEASURED, not read.
+"""FROZEN at external round 4 (2026-09-10): the reviewer ACCEPTED 0039 v12 with this
+script's transcript as the answer matrix's "today" column and froze the surface in
+their own words — "the thirteen-row two-call-site answer matrix … [is] part of that
+freeze." A row added here is a new matrix row and therefore a change to an accepted
+spec's frozen surface: it reopens design review, it is not a data edit. The transcript
+beside this file is the execution the freeze was granted on; regenerate it only when
+src/ changes, and then re-read §2c-ii against it (tests/test_0039_answer_shapes.py
+binds both).
+
+specs/0039 §2c-ii — the answer matrix's "today" column, MEASURED, not read.
 
 Drives every provider answer shape the matrix names through the real
 `ingest_event` with a scripted provider and prints the observable outcome:

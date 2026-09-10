@@ -29,7 +29,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SPECS = ROOT / "specs"
-TRACKED = ("0001", "0022", "0023", "0024", "0025", "0028", "0030", "0031", "0037", "0038")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3)
+TRACKED = ("0001", "0022", "0023", "0024", "0025", "0028", "0030", "0031", "0037", "0038", "0039")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3)
 
 
 def _is_sent(row) -> bool:

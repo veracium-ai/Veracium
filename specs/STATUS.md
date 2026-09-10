@@ -4,11 +4,11 @@
 
 # Spec status
 
-**35 specs · 33 accepted · 383 external review
+**35 specs · 34 accepted · 387 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **33 of 35 are accepted**, which
+review is required to reach it. **34 of 35 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -47,13 +47,13 @@ is the number that decides what can be built.
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 | **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-08 | 0 | 5 | 0 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-08 | 0 | 4 | 0 | 0 | 0 | — |
-| **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `draft` | 2026-09-10 | 0 | 0 | 0 | 0 | 0 | — |
+| **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-10 | 0 | 4 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
-**Per-finding closure ledger — 368 findings across the
-10 tracked specs** (0001, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038), derived from
+**Per-finding closure ledger — 379 findings across the
+11 tracked specs** (0001, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038, 0039), derived from
 `specs/closure_findings.py` and validated against `specs/reviews.py` by
 `specs/render_closure.py --check`. This total is rendered HERE ONLY (owner's
 ruling, 2026-09-08): each tracked spec's `## Review closure` block carries its

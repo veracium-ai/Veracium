@@ -17,7 +17,24 @@ SCRIPT = ROOT / "specs" / "evidence" / "0039" / "answer_shapes.py"
 TRANSCRIPT = ROOT / "specs" / "evidence" / "0039" / "answer_shapes_transcript.txt"
 
 
+def _assert_the_interpreter_resolves_this_tree() -> None:
+    """The instruments import whatever `veracium` the interpreter resolves
+    (research, 2026-09-10: the subject is environment-resolved). A transcript
+    describes THIS tree's product; a run against another — a stale offline
+    venv's wheel, a released install — would describe a different product and
+    must fail by name, not by a puzzling diff. Inside an extracted archive the
+    reviewer runs with PYTHONPATH=src, which resolves the archive's own copy."""
+    resolved = subprocess.run([sys.executable, "-c", "import veracium, pathlib; print(pathlib.Path(veracium.__file__).resolve())"],
+                              capture_output=True, text=True, check=True).stdout.strip()
+    expected = (ROOT / "src" / "veracium" / "__init__.py").resolve()
+    assert pathlib.Path(resolved) == expected, (
+        f"this interpreter resolves veracium from {resolved}, not this tree's {expected} — "
+        "the transcript would describe a different product; run with PYTHONPATH=src or an "
+        "editable install of this tree")
+
+
 def _run() -> str:
+    _assert_the_interpreter_resolves_this_tree()
     return subprocess.run([sys.executable, str(SCRIPT)], capture_output=True, text=True, check=True).stdout
 
 
@@ -99,6 +116,7 @@ def test_researchs_independent_instrument_still_prints_its_transcript():
     transcript carries a header naming the pin it was generated against;
     the script's output is the body below that header, byte for byte."""
     assert RESEARCH_SCRIPT.name == "answer_shapes_research_instrument.py"
+    _assert_the_interpreter_resolves_this_tree()
     out = subprocess.run([sys.executable, str(RESEARCH_SCRIPT)], capture_output=True, text=True, check=True).stdout
     body = _body(RESEARCH_TRANSCRIPT)
     assert out == body, "research's instrument no longer prints its transcript: the shipped outcomes moved"

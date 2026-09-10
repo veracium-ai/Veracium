@@ -2296,6 +2296,19 @@ def test_new_closure_evidence_is_behavioral():
         '0038-R2-1': 'The document says the validation gate passed even though a mandatory condition (bli',
         '0038-R2-4': 'Editorial duplication: the §4 heading appears twice consecutively',
         '0038-R3-3': 'Fidelity of the pseudonymised validation-gate copy to the absent original is not in',
+        # 0039 (2026-09-10, the ledger written at acceptance after four external rounds in
+        # two days): the mechanism closures cite the answer-shape transcript tests, the §6
+        # table gate and the separated pin bindings by node; the text-only closures below
+        # cite the fold commit that landed the text — the guarded callback helper, the
+        # no-inline-send rule, the digest contract, the record-plus-error choice, the
+        # equivalence fixture, the carrier re-derivation and the fixture's API names.
+        '0039-R1-2': 'A failing callback can change the operation outcome; the invariant only covered a mi',
+        '0039-R1-3': '"Never delays" conflicts with synchronous pre-authorised automatic reporting (a 15-se',
+        '0039-R1-4': 'The metadata disclosure contract needs tightening: length + unkeyed digest is not cont',
+        '0039-R2-1': 'The primary null/numeric/boolean outcome contradicts itself across §2a, §2c, row P6 an',
+        '0039-R2-2': 'The byte-identical callback test is not executable as written — independent ingestion',
+        '0039-R2-3': 'Carrier-completeness drift: five passages still describe the superseded three-site / e',
+        '0039-R3-3': 'The deterministic fixture pseudocode does not match the shipped API (store.conn, "prim',
     }
     offenders = []
     for row in closure_findings.CLOSURES:
