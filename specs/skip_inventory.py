@@ -151,6 +151,17 @@ INVENTORY = [
      "git-checkout", "STATUS.md `updated` derives from git log"),
     ("tests/test_spec_gate.py", "skip", "no archives present",
      "git-checkout", "archives are gitignored; a clone has none"),
+    ("tests/test_0039_answer_shapes.py", "skip",
+     "not enough history to check the transcript's pin",
+     "git-checkout", "specs/0039: a SHALLOW checkout cannot answer whether the "
+     "transcript's pin is an ancestor of HEAD — git's exit 128 there is a fact "
+     "about the checkout, not a transcript finding; CI's pytest jobs check out "
+     "with fetch-depth 0, so this skip is a last resort there"),
+    ("tests/test_0039_answer_shapes.py", "skip",
+     "the transcript's pin cannot be checked against history",
+     "git-checkout", "specs/0039: each answer-shape transcript's header pins the "
+     "commit its outcomes describe; the binding needs git history (ancestor + "
+     "src/ unchanged since the pin) and cannot run in an extracted archive"),
     ("tests/test_spec_gate.py", "skip",
      "the retrospective obligation set derives from git history",
      "git-checkout", "0039 round-1 package finding: the security-hotfix "

@@ -2110,6 +2110,11 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
     # this list grows.
     EXPLICIT_ARTIFACTS = [
         root / "specs" / "evidence" / "0011" / "subject_census.py",
+        # specs/0039: a measurement transcript generator, not a checker by
+        # name — it produced findings in two external rounds, which is R6-1's
+        # test for belonging here
+        root / "specs" / "evidence" / "0039" / "answer_shapes.py",
+        root / "specs" / "evidence" / "0039" / "answer_shapes_research_instrument.py",
     ]
     for f in EXPLICIT_ARTIFACTS:
         assert f.exists(), f"EXPLICIT_ARTIFACTS names a missing file: {f}"

@@ -1,0 +1,36 @@
+# 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
+# generated 2026-09-10T00:19Z  against veracium @ 749e122
+# script: proposals/0039-answer-shapes-research-instrument.py
+# Real ingest_event with a scripted provider. Not a simulation of the loop.
+
+  primary answer shape     outcome                                             
+  ------------------------ ----------------------------------------------------
+  P valid non-empty        RETURNS {"facts": 1, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P valid empty            RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P missing key            RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P triples string         RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P triples dict           RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P triples null           RAISES  TypeError: 'NoneType' object is not iterable
+  P triples number         RAISES  TypeError: 'int' object is not iterable
+  P triples bool           RAISES  TypeError: 'bool' object is not iterable
+  P bare array of dicts    RETURNS {"facts": 1, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P bare array scalars     RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P top-level number       RETURNS {"facts": 0, "unparseable": true, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P top-level string       RETURNS {"facts": 0, "unparseable": true, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P prose, no JSON         RETURNS {"facts": 0, "unparseable": true, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P instructions string    RETURNS {"facts": 0, "unparseable": true, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P mixed member types     RETURNS {"facts": 1, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P empty dict members     RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+  P nested triples         RETURNS {"facts": 0, "unparseable": null, "invalid": 0, "retried": 0, "recovered": 0, "resi
+
+  retry answer shape       outcome                                             
+  ------------------------ ----------------------------------------------------
+  R valid repair           RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 1, "resi
+  R valid empty            RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R missing key            RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R triples string         RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R triples null           RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R bare array of dicts    RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R bare array scalars     RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R prose, no JSON         RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
+  R top-level number       RETURNS {"facts": 1, "unparseable": null, "invalid": 1, "retried": 1, "recovered": 0, "resi
