@@ -24,6 +24,37 @@ message). So error reporting is local-first and never sends without consent.
 5. **No endpoint shipped.** Veracium bundles no URL, so even "enabled" sends nothing
    until an endpoint is configured.
 
+## Degrade records (specs/0039)
+
+Veracium degrades in a few places instead of failing, by design: the one
+re-extraction retry that a provider fails, an extraction the provider answers in
+prose, a volatility class outside the enum, a first answer with no usable
+`triples`, a list member that is not a well-formed triple. None of those raises,
+so none reached the error hook — until 0039. When a reporter is attached, each such
+path now writes ONE `WARNING` line to the same local log, for example:
+
+```
+2026-09-10 10:46:03,125 WARNING op=remember degrade=retry_failed user_hash=0bfe935e70c3 cause=provider_error msg_len=11 msg_sha16=78b6a1c2d3e4f5a6
+2026-09-10 10:46:04,010 WARNING op=remember degrade=volatility_defaulted user_hash=0bfe935e70c3 count=3
+```
+
+The record is content-free by construction, not by redaction: `degrade` and
+`cause` are closed vocabularies (`retry_failed`, `primary_failed`, `unparseable`,
+`volatility_defaulted`, `member_skipped`; `provider_error`, `no_json`,
+`instructions_type`, `shape`, `no_triples_key`, `bare_array`), the provider's
+exception class name is never recorded, and the only trace of a message or an
+answer is its UTF-8 byte length and the first sixteen hex digits of its SHA-256 —
+enough to match the provider's own log, not enough to read. A degrade record never
+changes the operation's outcome and is never sent inline: it is left pending for
+the next consented send. On the one path where the operation still raises (a
+`triples` value that is `null`, a number or a boolean) the log carries the degrade
+record and then the error record — two lines for one call; the error record is the
+one that says the call failed.
+
+**The CLI attaches a reporter by default** (as the MCP entry point always did), so
+`veracium remember` leaves these records in `$XDG_STATE_HOME/veracium/veracium.log`
+when local logging is enabled. `veracium diagnostics path` prints the location.
+
 ## What a report contains
 
 ```json

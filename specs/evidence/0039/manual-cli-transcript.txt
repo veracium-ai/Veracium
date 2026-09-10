@@ -1,0 +1,22 @@
+# specs/0039 §6a — the manual CLI exercise (acceptance measurement), 2026-09-10
+#
+# What ran: the shipped `veracium remember` verb through the real CLI entry point
+# (`veracium.cli.main`) twice — once against a provider that FAILS the retry, once
+# against a provider whose volatility vocabulary has DRIFTED — then `cat` of the log
+# the CLI wrote. The reference provider was replaced at the CLI's own seam
+# (`cli._build_llm`, the only way the CLI takes a provider) by the evidence script's
+# scripted provider; XDG_STATE_HOME/XDG_CONFIG_HOME pointed at a scratch directory so
+# the log below is the one this run created. Nothing else was patched: the
+# `Memory(...)` construction, its `diagnostics=load_reporter()` argument, the ingest
+# path and the reporter are the shipped code. Driver: specs/evidence/0039/manual_cli_driver.py.
+# The transcript is verbatim; the scratch paths are the run's.
+#
+$ veracium remember --db /tmp/claude-1000/-home-ubuntu-Dev-veracium/5eb87875-1be0-4a35-a5df-812ce4c2dee5/scratchpad/cli-manual/cli.db --user alice 'I use Vim for editing.'     # provider: fails the retry (raises)
+remembered: 1 facts, 0 quarantined claims for 'alice'
+  (exit 0)
+$ veracium remember --db /tmp/claude-1000/-home-ubuntu-Dev-veracium/5eb87875-1be0-4a35-a5df-812ce4c2dee5/scratchpad/cli-manual/cli.db --user alice 'I use Vim for editing.'     # provider: volatility vocabulary drifted
+remembered: 2 facts, 0 quarantined claims for 'alice'
+  (exit 0)
+$ cat /tmp/claude-1000/-home-ubuntu-Dev-veracium/5eb87875-1be0-4a35-a5df-812ce4c2dee5/scratchpad/cli-manual/state/veracium/veracium.log
+  2026-09-10 10:47:30,677 WARNING op=remember degrade=retry_failed user_hash=2bd806c97f0e cause=provider_error msg_len=20 msg_sha16=9b24e6d217a0930d
+  2026-09-10 10:47:30,759 WARNING op=remember degrade=volatility_defaulted user_hash=2bd806c97f0e count=2

@@ -335,6 +335,21 @@ class Memory:
             except Exception:
                 pass  # auditing must never break memory, even a broken sink
 
+    def _on_degrade(self, where: str, user_id: Optional[str], kind: str, payload: dict) -> None:
+        """specs/0039 §2c: hand a DEGRADE record to the diagnostics reporter — the
+        sibling of `_on_error` for the paths that continue instead of raising.
+        The record is `op`, `degrade`, `user_hash` (the `_on_error` convention:
+        sha256 of the user id, first 12 hex) plus the site's content-free fields.
+        Best-effort; never raises (the site invokes this only through
+        `_emit_degrade`, which contains it a second time)."""
+        if self.diagnostics is None:
+            return
+        try:
+            uh = hashlib.sha256(user_id.encode()).hexdigest()[:12] if user_id else None
+            self.diagnostics.record_degrade(where, kind, {"user_hash": uh, **payload})
+        except Exception:
+            pass
+
     def _on_error(self, where: str, exc: BaseException, user_id: Optional[str] = None) -> None:
         """Hand a genuine error to the diagnostics reporter (log locally; send only
         with consent). Best-effort — never masks or delays the real exception, which
@@ -391,7 +406,11 @@ class Memory:
                                  author=author, date=date, event_type=event_type,
                                  evidence_ref=evidence_ref, derived_from=derived_from,
                                  context=context,
-                                 source_id=source_id, relations=self.config.relations)
+                                 source_id=source_id, relations=self.config.relations,
+                                 # specs/0039 §2c: the degrade channel — an event, not
+                                 # a counter; the result's key set does not change
+                                 on_degrade=(lambda kind, payload:
+                                             self._on_degrade("remember", user_id, kind, payload)))
             except Exception as e:
                 self._on_error("remember", e, user_id)
                 raise

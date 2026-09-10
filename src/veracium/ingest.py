@@ -8,6 +8,7 @@ third-party-authored content is the attack surface.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import uuid
@@ -197,13 +198,42 @@ def _disclosure_for(author: EvidenceAuthor, relation: str,
     return Disclosure.MENTIONABLE
 
 
+def _emit_degrade(on_degrade, kind: str, payload: dict) -> None:
+    """specs/0039 §2c — the ONE guarded way a degrade site invokes the host's
+    callback. Returns at once when there is no callback; otherwise invokes it
+    inside `try/except Exception: pass` — never re-raises, never logs, never
+    retries. A `BaseException` (KeyboardInterrupt, SystemExit) is deliberately
+    NOT caught. No site calls `on_degrade` directly (V-CALLBACK-CONTAINED)."""
+    if on_degrade is None:
+        return
+    try:
+        on_degrade(kind, payload)
+    except Exception:
+        pass
+
+
+def _len_sha16(text: str) -> tuple[int, str]:
+    """specs/0039 §2a: the UTF-8 BYTE length of `text` and the first sixteen hex
+    digits of SHA-256 over exactly those bytes — never the text."""
+    b = text.encode("utf-8")
+    return len(b), hashlib.sha256(b).hexdigest()[:16]
+
+
+def _answer_fields(raw) -> dict:
+    """§2a `answer_len`/`answer_sha16` over the provider's raw answer exactly as the
+    `Complete` callable returned it (a non-str return is measured as its str form)."""
+    n, h = _len_sha16(raw if isinstance(raw, str) else str(raw))
+    return {"answer_len": n, "answer_sha16": h}
+
+
 def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                  author: EvidenceAuthor, date: str, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
                  derived_from: Optional[EvidenceAuthor] = None,
                  context: Optional[EvidenceContext] = None,
                  source_id: Optional[str] = None,
-                 relations: dict[str, Relation] = DEFAULT_RELATIONS) -> dict:
+                 relations: dict[str, Relation] = DEFAULT_RELATIONS,
+                 on_degrade=None) -> dict:
     """Extract and persist memory from one event. Returns a small summary dict
     (counts + the episode) for logging/telemetry.
 
@@ -280,6 +310,10 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         event_text=event_text, relations=rel_names)
     raw = llm(prompt, system=prompts.EXTRACT_SYSTEM, role="distill",
               json_schema=prompts.EXTRACT_SCHEMA)
+    # specs/0039 §2a: which check the unparseable branch was reached from —
+    # the extractor finding no JSON (`no_json`) or 0038's instructions-type
+    # rule (`instructions_type`); the record carries the cause, never the text.
+    unparseable_cause = "no_json"
     try:
         data = extract_json(raw)
         if isinstance(data, list):
@@ -290,8 +324,14 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # unparseable branch below, with every counter present at zero. Row 1
         # (absent) is NOT this: an omitting provider is processed as today.
         if "instructions" in data and not isinstance(data["instructions"], list):
+            unparseable_cause = "instructions_type"
             raise ValueError("instructions: expected a list")
     except ValueError:
+        # specs/0039 §2c: the unparseable site — ONE record from the handler,
+        # content-free (the extractor's own message embeds text[:200] of the
+        # answer, which is exactly why only length and digest travel).
+        _emit_degrade(on_degrade, "unparseable",
+                      {"cause": unparseable_cause, **_answer_fields(raw)})
         # The distiller sometimes answers in prose instead of JSON — typically a
         # refusal on jailbreak-shaped or degenerate input. That's an input
         # condition (the BYO contract tolerates schema-ignoring providers), not
@@ -361,9 +401,27 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     declared.discard("")
     n_instructions_dropped = 0
     n_subject_refused = 0
+    # specs/0039 §2c, the PRIMARY site (matrix rows 3–7, 10): once the answer is a
+    # dict (a bare array having been wrapped above), a missing `triples` key or a
+    # non-list value is RECORDED — and only recorded. The loop below then does
+    # exactly what it did: a string or dict is iterated and every member skipped;
+    # `null`, a number or a boolean raise TypeError in the loop AFTER this record
+    # (record plus error, §2a; V-RECORD-ORDER-ON-ERROR). Outcomes unchanged.
+    if "triples" not in data:
+        _emit_degrade(on_degrade, "primary_failed",
+                      {"cause": "no_triples_key", **_answer_fields(raw)})
+    elif not isinstance(data["triples"], list):
+        _emit_degrade(on_degrade, "primary_failed",
+                      {"cause": "shape", **_answer_fields(raw)})
+    n_members_skipped = 0        # specs/0039 §2a `member_skipped`: SHAPE-GUARD failures only
+    # ... and only MEMBERS OF A LIST: a string or dict `triples` iterates too, but its
+    # "members" are the shape record's fact already told (matrix row 4/5: one record)
+    _triples_is_list = isinstance(data.get("triples"), list)
     parsed = []
     for t in data.get("triples", []):
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
+            if _triples_is_list:
+                n_members_skipped += 1
             continue
         # specs/0025 (amended 2026-09-08 on the 0.20.0 selfcheck finding): the
         # SUBJECT GRAMMAR is enforced here, not only stated in the prompt. The
@@ -427,29 +485,57 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     failing = [row for row in parsed if row["off"]]
     n_invalid = len(failing)
     n_retried = n_recovered = 0
+    retry_degrade = None          # specs/0039 §2c: (cause, fields) or None — emitted ONCE below
     if failing and llm is not None:
         n_retried = len(failing)
+        retry_raw = None
         try:
-            raw = llm(prompts.RETRY_PROMPT.format(
+            retry_raw = raw = llm(prompts.RETRY_PROMPT.format(
                 relations=rel_names,
                 failing=json.dumps([{"subject": str(r["t"]["subject"]).strip(),
                                      "relation": r["original"],
                                      "object": str(r["t"]["object"]).strip()}
                                     for r in failing], ensure_ascii=False)),
                       system=prompts.EXTRACT_SYSTEM, role="distill-retry")
-            reps = extract_json(raw).get("triples", [])
+            retry_data = extract_json(raw)
+            # §2c: the key test runs STRICTLY AFTER dict-ness is established — on
+            # a list `in` is a membership test, and a bare array must reach the
+            # `.get` below and stay matrix row 8/9 (`bare_array`), never row 3.
+            if isinstance(retry_data, dict) and "triples" not in retry_data:
+                retry_degrade = ("no_triples_key", _answer_fields(raw))
+            reps = retry_data.get("triples", [])
             if not isinstance(reps, list):
+                # the shape branch: raises nothing (matrix rows 4–7 on the retry)
+                if retry_degrade is None:
+                    retry_degrade = ("shape", _answer_fields(raw))
                 reps = []
-        except Exception:
+        except Exception as e:
             reps = []          # malformed output / provider failure: a no-op,
                                # visible as retried > 0, recovered = 0 — never
                                # re-raised, never a second call (§4b(1))
+            # specs/0039 §2c: which line raised decides the cause — the provider
+            # call (`provider_error`, the message's length and digest only, the
+            # class name never read), the extractor (`no_json`), or `.get` on a
+            # bare array (`bare_array`, the CURRENT state the matrix asserts
+            # until §2e's 0025 amendment lands)
+            if retry_raw is None:
+                n, h = _len_sha16(str(e))
+                retry_degrade = ("provider_error", {"msg_len": n, "msg_sha16": h})
+            elif isinstance(e, ValueError):
+                retry_degrade = ("no_json", _answer_fields(retry_raw))
+            else:
+                retry_degrade = ("bare_array", _answer_fields(retry_raw))
+        if retry_degrade is not None:
+            cause, fields = retry_degrade
+            _emit_degrade(on_degrade, "retry_failed", {"cause": cause, **fields})
         def _norm(x):
             return str(x).strip().casefold()
         # one-to-one multiset consumption in occurrence order; a repair must
         # be an ORDINARY member (reserved answers are not recoveries)
         pool = []
         for rep in reps:
+            if not isinstance(rep, dict):
+                n_members_skipped += 1       # specs/0039 §2a: the retry's shape guard
             if isinstance(rep, dict):
                 rrel = str(rep.get("relation", "")).strip()
                 # specs/0037: a repair can never land on a procedural
@@ -475,6 +561,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             n_residual += 1
 
     n_agreement_floored = n_agreement_recorded = 0
+    n_volatility_defaulted = 0
     for row in parsed:
         t = row["t"]
         relation = row["relation"]
@@ -502,6 +589,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             vol = Volatility(str(t.get("volatility", "durable")).strip().lower())
         except ValueError:
             vol = Volatility.DURABLE
+            n_volatility_defaulted += 1      # specs/0039 §2b: counted per call, one record
         obj = str(t["object"]).strip()
         # specs/0019 §4a: between extraction and storage, the object's
         # specifics are checked against the event text (the §4b predicate;
@@ -551,6 +639,12 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             n_quarantined += 1
         else:
             n_facts += 1
+    # specs/0039 §2b/§2c: the two COUNTED kinds, one record per call each, only when
+    # non-zero; the counters never reach the result (0025 X12 keeps the set closed)
+    if n_volatility_defaulted:
+        _emit_degrade(on_degrade, "volatility_defaulted", {"count": n_volatility_defaulted})
+    if n_members_skipped:
+        _emit_degrade(on_degrade, "member_skipped", {"count": n_members_skipped})
     return {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
             "supersessions": n_supersessions, "reinforcements": n_reinforcements,
             # specs/0025 §4c — THE counter inventory, present on every path;

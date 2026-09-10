@@ -2115,6 +2115,11 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
         # test for belonging here
         root / "specs" / "evidence" / "0039" / "answer_shapes.py",
         root / "specs" / "evidence" / "0039" / "answer_shapes_research_instrument.py",
+        # the §6a manual-CLI driver: an instrument whose OUTPUT is committed
+        # evidence, so it carries a matrix like the other two — its pointer
+        # binds the test that re-runs it against the committed transcript
+        root / "specs" / "evidence" / "0039" / "manual_cli_driver.py",
+        root / "specs" / "evidence" / "0039" / "retention_measurement.py",
     ]
     for f in EXPLICIT_ARTIFACTS:
         assert f.exists(), f"EXPLICIT_ARTIFACTS names a missing file: {f}"

@@ -521,15 +521,21 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: reopens design review. Each regeneration is recorded in the implementing
 #: spec's closure/implementation notes (0032 §; 0029 closure; 0030 closure;
 #: 0038's enforcement commit; 0028's implementation commit; 0037's
-#: implementation commit; the 0025 amendment commit).
+#: implementation commit; the 0025 amendment commit); 0039's degradation
+#: visibility (2026-09-10: the `_emit_degrade`/`_answer_fields` helpers and the
+#: five call sites in ingest, `Reporter.record_degrade`, `Memory._on_degrade` and
+#: the `remember` callback, the CLI's two reporter attachments) moved
+#: dotted/dataflow 5,145 -> 5,161 and module-plain 266 -> 268 (the two `hashlib`
+#: module references the digest helpers add), the other three classes and the
+#: dunders unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5145,
+    "dotted/dataflow": 5161,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 266,
+    "dotted/module-plain": 268,
     "dotted/module-protected": 46,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5510
+SRC_ATTRIBUTE_TOTAL = 5528
 SRC_DATA_DUNDERS_IN_DATAFLOW = 117
 
 

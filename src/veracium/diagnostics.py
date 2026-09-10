@@ -189,6 +189,23 @@ class Reporter:
         except Exception:
             pass
 
+    def record_degrade(self, where: str, degrade: str, fields: dict) -> None:
+        """specs/0039 §2a/§2e: record a DEGRADE — a path that continued instead of
+        failing — as one WARNING line in the same local log. Content-free by
+        construction: `fields` carries only the closed vocabulary (`cause`), byte
+        lengths and sixteen-hex digests, or a `count`; never text. Increments the
+        pending count and NEVER calls send(): no network I/O, no prompt, no
+        throttle check — the record waits for the next send() the host or
+        record_error's path performs (V-NO-INLINE-SEND). Never raises."""
+        try:
+            logger = self._get_logger()
+            if logger is not None:
+                kv = " ".join(f"{k}={v}" for k, v in fields.items())
+                logger.warning("op=%s degrade=%s %s", where, degrade, kv)
+            self._pending += 1
+        except Exception:
+            pass
+
     def _auto_send_due(self) -> bool:
         last = self.config.last_report
         return last is None or (time.time() - last) >= self.config.report_min_interval_s

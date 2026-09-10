@@ -15,7 +15,9 @@ Memory(*, llm, store=None, embed=None, config=None,
 - `store` — a `Store`; defaults to `SqliteStore(config.db_path)`.
 - `embed` — an optional `Embed` callable (reserved for episode semantic fallback).
 - `config` — a `MemoryConfig`; defaults to `MemoryConfig()`.
-- `telemetry` / `diagnostics` / `audit` — optional sinks, all off by default:
+- `telemetry` / `diagnostics` / `audit` — optional sinks, all off by default (with a
+  `diagnostics` reporter attached, `remember` also records the provider degrades it
+  survives — see docs/diagnostics.md, "Degrade records"):
   a consented content-free stats collector (`veracium.telemetry`), a local
   error-log reporter (`veracium.diagnostics`), and an **operation audit log**
   (`veracium.audit.AuditLog(path)`): one append-only JSONL line per operation —

@@ -184,7 +184,10 @@ def _memory_verbs(args) -> int:
         from .schema import EvidenceAuthor
         llm = _build_llm(_provider_help(
             "remember", "use Memory.remember() with your own Complete callable"))
-        mem = Memory(llm=llm, config=MemoryConfig(db_path=args.db))
+        # specs/0039 §2d: the CLI attaches a reporter as the MCP entry point does —
+        # a Reporter iff log_enabled, so a degrade during `remember` leaves a record
+        mem = Memory(llm=llm, config=MemoryConfig(db_path=args.db),
+                     diagnostics=diagnostics.load_reporter())
         try:
             r = mem.remember(args.user, text, author=EvidenceAuthor(args.author),
                              event_type=args.event_type, date=args.date,
@@ -204,7 +207,11 @@ def _memory_verbs(args) -> int:
     has_wiki = store.get_wiki(args.user) is not None
     mem = Memory(llm=_no_llm, store=store,
                  config=MemoryConfig(db_path=args.db,
-                                     wiki_recompile_after_writes=10**9 if has_wiki else 0))
+                                     wiki_recompile_after_writes=10**9 if has_wiki else 0),
+                 # specs/0039 §2d: one rule for both constructions (this one can
+                 # emit no degrade record — its provider never extracts — but
+                 # its errors reach the same log)
+                 diagnostics=diagnostics.load_reporter())
     try:
         if args.cmd == "recall":
             r = mem.recall(args.user, args.query, token_budget=args.budget)

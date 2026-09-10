@@ -1,5 +1,53 @@
 # Changelog
 
+## Unreleased
+
+**Upgrade recommendation:** operators who run `veracium remember` from the CLI, or embed
+Veracium with a diagnostics reporter attached, should take this release: a provider
+that fails silently now leaves a record. Hosts that pass `diagnostics=None` see no
+change.
+
+**Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10).**
+Veracium degrades in five places instead of failing, by design, and until now none of
+them left a record an operator could see: the ONE re-extraction retry that a provider
+fails, an extraction answered in prose, a volatility class outside the enum (silently
+DURABLE), a first answer with no usable `triples`, and a list member that is not a
+well-formed triple. Each now writes ONE content-free `WARNING` line to the local
+diagnostics log when a reporter is attached — `op`, `degrade`, a hashed user id, a
+closed-vocabulary `cause`, and only the byte length and a sixteen-hex SHA-256 of the
+provider's message or raw answer (never text; never the exception's class name), or a
+per-call `count`. Every degrade path's return value is unchanged; the ingest result
+and the MCP tool result gain no field; no stored byte changes. A record never changes
+an outcome and is never sent inline — it waits for the next consented send. On the one
+path where the operation still raises (a `triples` value that is `null`, a number or a
+boolean) the log carries the degrade record and then the error record, in that order.
+Every provider answer shape was RUN through the real ingest path on two independent
+instruments and the transcripts are committed (`specs/evidence/0039/`), asserted byte
+for byte by the suite.
+
+- **The CLI attaches a diagnostics reporter by default** (as the MCP entry point always
+  did): `veracium remember` writes to `$XDG_STATE_HOME/veracium/veracium.log` when local
+  logging is enabled (the default). `veracium diagnostics disable` and the config file's
+  `log_enabled` turn it off; `veracium diagnostics path` prints the location.
+- **Log retention, measured (specs/0039 §7):** a degrade record is 98–155 bytes,
+  measured at this commit over ten records spanning all five degrade kinds — the
+  shortest is `member_skipped` (a count), the longest `primary_failed`/`no_triples_key`.
+  The rotation window is 3,000,000 bytes (1 MB × 3 files), so it holds 19,354 records
+  at the largest size and 30,612 at the smallest. A `TypeError` error record with its
+  traceback measured 492–497 bytes over the three primary shapes that raise, so a
+  traceback written now rotates out of the window after roughly 19,300 further degraded
+  events at the largest record size. Because the volatility path writes one record per
+  CALL, not per triple, a drifted provider with ten triples per event still costs one
+  record.
+- **Manual exercise (specs/0039 §6a):** `specs/evidence/0039/manual-cli-transcript.txt`
+  — the shipped CLI against a provider that fails the retry and one whose vocabulary
+  drifted, then the log; the provider was scripted at the CLI's own seam.
+- **Not changed, by the accepted spec's own limit:** the three primary-answer shapes
+  that raise `TypeError` still raise (the spec records the inconsistency with the
+  silent string/dict shapes as an ingest-amendment question); the retry still treats a
+  bare JSON array as a failure (`cause=bare_array`) until the 0025 amendment the spec
+  drafts lands in its own commit.
+
 ## 0.20.1 — 2026-09-08
 
 **Upgrade recommendation:** every host wiring a non-Anthropic provider should take this release; a host on the reference provider sees no behaviour change. No schema, export-format or API change; rollback to 0.20.0 is safe (a store written by 0.20.1 differs only in the facts it refused to write).

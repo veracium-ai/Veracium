@@ -1,0 +1,19 @@
+# specs/0039 §7 — the retention measurement, run against the shipped path.
+# Regenerate with: python specs/evidence/0039/retention_measurement.py
+# Bound by tests/test_0039_degradation_visibility.py::test_the_retention_figures_are_measured_not_recalled, which re-runs this
+# measurement and refuses a CHANGELOG figure that is not the measured one.
+#
+   98 bytes  member_skipped
+  104 bytes  volatility_defaulted
+  145 bytes  unparseable/no_json
+  146 bytes  retry_failed/no_json
+  147 bytes  retry_failed/provider_error
+  146 bytes  primary_failed/shape (string)
+  146 bytes  primary_failed/shape (null)   + error record 497 bytes over 8 lines (TypeError)
+  146 bytes  primary_failed/shape (number)   + error record 492 bytes over 8 lines (TypeError)
+  146 bytes  primary_failed/shape (boolean)   + error record 493 bytes over 8 lines (TypeError)
+  155 bytes  primary_failed/no_triples_key
+
+degrade record: 98-155 bytes over 10 records spanning all five degrade kinds
+window: 3,000,000 bytes -> 19,354 records at the largest size, 30,612 at the smallest
+error record with traceback: 492-497 bytes
