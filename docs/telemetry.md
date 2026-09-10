@@ -9,7 +9,7 @@ Veracium can send anonymous usage statistics to help improve the library. It is
 
 | event | fields |
 |---|---|
-| ingest | facts, quarantined, episodes, unparseable, latency (ms) |
+| ingest | facts, quarantined, episodes, unparseable (1 when the provider's answer yielded no usable triples — no JSON at all, or a well-formed answer whose `triples` is missing or not a list), latency (ms) |
 | recall | wiki_used, subgraph_edges, grounded_items, unverified_items, trimmed, latency (ms) |
 | answer | abstained (bool), latency (ms) |
 | maintain | lapsed, decayed, flagged, consolidated_in/out |

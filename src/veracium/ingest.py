@@ -407,12 +407,24 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # exactly what it did: a string or dict is iterated and every member skipped;
     # `null`, a number or a boolean raise TypeError in the loop AFTER this record
     # (record plus error, §2a; V-RECORD-ORDER-ON-ERROR). Outcomes unchanged.
+    # specs/0025 §4c, AMENDED 2026-09-10 (the narrow fix, on the owner's word after
+    # research's finding): a primary answer that yielded NO USABLE `triples` list is
+    # marked in the RESULT, the one carrier every host has. Without it, a host passing
+    # `diagnostics=None` — the documented default — got a dict byte-identical to a
+    # legitimately empty extraction, so a broken provider was indistinguishable from a
+    # model that found nothing. That is `0039` §1a's founding complaint, on the primary
+    # path, and after the wider normalization rule it covered `null`, a number and a
+    # boolean too. The two branches below are the whole class; a good or empty LIST is
+    # a legitimate answer and is not marked.
+    primary_unusable = False
     if "triples" not in data:
         _emit_degrade(on_degrade, "primary_failed",
                       {"cause": "no_triples_key", **_answer_fields(raw)})
+        primary_unusable = True
     elif not isinstance(data["triples"], list):
         _emit_degrade(on_degrade, "primary_failed",
                       {"cause": "shape", **_answer_fields(raw)})
+        primary_unusable = True
     n_members_skipped = 0        # specs/0039 §2a `member_skipped`: SHAPE-GUARD failures only
     # specs/0025 §4b(1), AMENDED 2026-09-10 (the WIDER normalization rule of `0039`
     # §10's fourth and sixth questions, on the owner's word): EVERY non-list `triples`
@@ -664,7 +676,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         _emit_degrade(on_degrade, "volatility_defaulted", {"count": n_volatility_defaulted})
     if n_members_skipped:
         _emit_degrade(on_degrade, "member_skipped", {"count": n_members_skipped})
-    return {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
+    result = {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
             "supersessions": n_supersessions, "reinforcements": n_reinforcements,
             # specs/0025 §4c — THE counter inventory, present on every path;
             # `redispositioned` is 0024's counter (U7): live on this path,
@@ -692,3 +704,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # operator counters; telemetry consumption DEFERRED (R1-3)
             "agreement_floored": n_agreement_floored,
             "agreement_recorded": n_agreement_recorded}
+    # specs/0025 §4c as amended: the key is ADDED, never a new one — `unparseable`
+    # already rides the no-JSON path with this exact meaning ("the extraction yielded
+    # no usable `triples`"), so the pinned key set of a SUCCESSFUL ingest (X12) is
+    # untouched and no host learns a new name. It appears only on the paths that
+    # produced nothing usable, exactly as it does on the no-JSON path today.
+    if primary_unusable:
+        result["unparseable"] = True
+    return result

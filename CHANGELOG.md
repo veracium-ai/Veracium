@@ -6,8 +6,9 @@
 `TypeError` around `remember` must act.** Two things happened here. A provider that
 degrades now leaves a record, which needs a diagnostics reporter to be visible. And one
 BEHAVIOUR changed for everyone, reporter or not: three provider answers that used to
-raise `TypeError` out of `remember` now return zero facts instead. The second item is
-below under its own heading; do not read the first as the whole release.
+raise `TypeError` out of `remember` now return zero facts and an `unparseable: True` in
+the result instead, and two more answers that were silently empty carry that flag now
+too. Each is below under its own heading; do not read the first as the whole release.
 
 **Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10).**
 Veracium degrades in five places instead of failing, by design, and until now none of
@@ -99,11 +100,26 @@ one of that function's two callers was not honouring it. It now does.
 - **Consequently `cause=bare_array` can no longer occur.** It stays in the log
   vocabulary that specs/0039 froze, and the suite asserts it is unproducible against a
   forced list return rather than merely absent from a few fixtures.
-- **Still asymmetric, and named as such:** the two callers continue to disagree when
-  `triples` is `null`, a number or a boolean — the first extraction raises
-  `TypeError`, the retry records a `shape` degrade. One shared normalization rule
-  would settle that too; it is an open question in specs/0039 §10 and no one has
-  ruled on it.
+**A malformed extraction is now visible in the result, with no reporter and no opt-in
+(specs/0025 §4c, amended).** `remember` sets `unparseable: True` whenever the provider's
+first answer yielded no usable `triples` — a missing key, or a value that is a string, a
+dict, `null`, a number or a boolean. A legitimately empty extraction and a good one are
+unchanged and carry no such key, so a successful ingest's result is exactly what it was.
+
+- **Why it is here:** the change above removes an exception, and without this a host
+  passing `diagnostics=None` — the documented default — got a result byte-identical to
+  a successful extraction that found nothing. Measured on the shipped path by two
+  people independently before the fix: `{"triples": null}` and `{"triples": []}`
+  returned the same dict, key for key.
+- **It also closes a hole that predates this release.** A string or dict `triples` was
+  already indistinguishable from an empty one, in every version of Veracium that has
+  shipped. Those two are marked now as well.
+- **The one consumer:** the opt-in telemetry ingest event's `unparseable` field counts
+  0 or 1 from this flag, so it now counts the wider class. Nothing else reads it.
+- **Not covered, deliberately:** a failed RETRY is still visible as `retried > 0,
+  recovered = 0` rather than through this field, and the field says an answer was
+  unusable, never which shape it was. That distinction is in the diagnostics log and
+  needs a reporter.
 
 ## 0.20.1 — 2026-09-08
 

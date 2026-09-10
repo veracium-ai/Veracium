@@ -709,3 +709,76 @@ def test_the_retry_normalizes_a_bare_array_as_the_first_extraction_does(tmp_path
             _remember(mem)
             assert calls["n"] == 2, "the retry did not reach the extractor"
         assert not any(c == "bare_array" for _, c in _kinds(_degrades(rep))), forced
+
+
+# ------------------- specs/0025 §4c as amended: the DEFAULT host's carrier ----
+def _default_host(tmp_path, primary, name):
+    """A host exactly as the library documents its default: no diagnostics reporter,
+    no callback. This is what an embedding host gets unless it opts in."""
+    mem = _mem(tmp_path, Stub(primary, retry_raw=_main([])), None, name)
+    return _remember(mem)
+
+
+def test_a_default_host_can_tell_a_malformed_answer_from_an_empty_one(tmp_path):
+    """specs/0025 §4c, AMENDED 2026-09-10 on the owner's word, after research read the
+    wider normalization rule against 0039's ACCEPTED §8 ("a host that passes
+    `diagnostics=None` learns nothing new") and found it no longer true: with no
+    reporter, `{"triples": null}` returned a dict BYTE-IDENTICAL to a legitimately
+    empty extraction. That is 0039 §1a's founding complaint — a failure
+    indistinguishable in every carrier the host has — reproduced on the primary path
+    by the spec written to end it.
+
+    The result now marks a primary answer that yielded no usable `triples`. Both
+    directions are asserted, because a rule that says only what must NOT happen is
+    satisfiable by marking everything: the five malformed shapes carry the key, and a
+    legitimately empty answer and a good one do not. It closes the two shapes that
+    were ALREADY silent before the wider rule (a string and a dict, silent since
+    before 0039 was written) as well as the three the rule moved."""
+    empty = _default_host(tmp_path, _main([]), "empty")
+    good = _default_host(tmp_path, _main([GOOD]), "good")
+    assert "unparseable" not in empty and "unparseable" not in good
+    assert empty["facts"] == 0 and good["facts"] == 1
+
+    malformed = {"null": None, "number": 5, "boolean": True,
+                 "string": "user uses Vim", "dict": {"a": 1}}
+    for name, value in malformed.items():
+        r = _default_host(tmp_path, _main(value), f"m-{name}")
+        assert r["facts"] == 0, name
+        assert r.get("unparseable") is True, f"{name}: still indistinguishable from empty"
+        assert {k: v for k, v in r.items() if k not in ("episode", "unparseable")} == \
+               {k: v for k, v in empty.items() if k != "episode"}, name
+    # the no-JSON path is unchanged: it carried this key with this meaning already
+    prose = _default_host(tmp_path, "I refuse.", "prose")
+    assert prose.get("unparseable") is True
+
+    # V-RESULT-UNCHANGED where it is asserted: a SUCCESSFUL ingest's key set is
+    # exactly X12's pinned set, so no host that was reading a good result sees a
+    # new name. The key appears only where the extraction produced nothing usable.
+    assert set(good) == set(empty)
+    assert "unparseable" not in set(good)
+
+
+def test_the_telemetry_counter_now_counts_the_wider_class(tmp_path):
+    """The one CONSUMER of the flag (`Memory.remember` projects it into the opt-in
+    telemetry ingest event as 0/1). Widening the flag widens that counter, which is
+    the change's only outward effect beyond the result dict — asserted here rather
+    than left to be discovered, and measured through the shipped projection."""
+    import veracium as v
+    seen = []
+
+    class _Collector:
+        def record(self, event, fields, **kw):
+            seen.append((event, fields))
+        def __getattr__(self, name):            # tolerate the wider collector surface
+            return lambda *a, **k: None
+
+    for i, (name, raw) in enumerate([("malformed", _main(None)), ("empty", _main([]))]):
+        mem = v.Memory(llm=Stub(raw, retry_raw=_main([])),
+                       config=MemoryConfig(db_path=str(tmp_path / f"t{i}.db"),
+                                           wiki_recompile_after_writes=0),
+                       telemetry=_Collector())
+        _remember(mem)
+    ingest_events = [f for e, f in seen if e == "ingest"]
+    assert len(ingest_events) == 2, seen
+    assert ingest_events[0]["unparseable"] == 1, "a malformed answer counts"
+    assert ingest_events[1]["unparseable"] == 0, "a legitimately empty one does not"
