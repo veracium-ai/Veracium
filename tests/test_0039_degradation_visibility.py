@@ -163,8 +163,13 @@ _RETRY_ROWS = [
     # (row, retry raw / raise, expected degrade kinds)
     (13, RuntimeError("boom"), [("retry_failed", "provider_error")]),
     (11, "cannot", [("retry_failed", "no_json")]),
-    (8, json.dumps([GOOD]), [("retry_failed", "bare_array")]),            # the CURRENT state; §2e's amendment flips this row
-    (9, json.dumps(["triples"]), [("retry_failed", "bare_array")]),
+    # rows 8 and 9 FLIPPED by §2e's 0025 amendment (2026-09-10): the retry now wraps a
+    # bare array as the first extraction does, so these mirror primary rows 8 and 9 —
+    # a bare array of dicts is a recovery attempt (measured: recovered 0 -> 1, residual
+    # 1 -> 0, no record), and a bare array of scalars skips its members exactly as the
+    # primary path does. Before the amendment both were ONE `retry_failed/bare_array`.
+    (8, json.dumps([GOOD]), []),
+    (9, json.dumps(["triples"]), [("member_skipped", "1")]),
     (4, _main("x"), [("retry_failed", "shape")]),
     (5, _main({}), [("retry_failed", "shape")]),
     (6, _main(None), [("retry_failed", "shape")]),
@@ -185,9 +190,10 @@ def _kinds(degrades):
 def test_the_answer_matrix_holds_on_both_call_sites(tmp_path):
     """V-ANSWER-MATRIX (frozen): §2c-ii — every row's first-extraction cell and
     retry cell hold by exact equality on the records written (or not), the
-    result dict and the raised class. Asymmetric rows are asserted AS
-    asymmetric: the retry's bare-array cell is `bare_array` today, and §2e's
-    0025 amendment must flip that assertion in its own commit."""
+    result dict and the raised class. The one asymmetric pair the matrix carried
+    — rows 8 and 9, where the retry recorded `bare_array` while the first
+    extraction normalized — was SETTLED by §2e's 0025 amendment (2026-09-10):
+    both cells now read the same, which is the amendment's proof."""
     for i, (row, raw, expected, raises) in enumerate(_PRIMARY_ROWS):
         rep = _reporter(tmp_path, f"p{i}.log")
         mem = _mem(tmp_path, Stub(raw, retry_raw=_main([])), rep, f"p{i}")
@@ -435,7 +441,6 @@ _FIELDS = {
     ("retry_failed", "no_json"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
     ("retry_failed", "shape"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
     ("retry_failed", "no_triples_key"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
-    ("retry_failed", "bare_array"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
     ("primary_failed", "shape"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
     ("primary_failed", "no_triples_key"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
     ("unparseable", "no_json"): {"op", "degrade", "user_hash", "cause", "answer_len", "answer_sha16"},
@@ -468,6 +473,11 @@ def test_each_record_carries_exactly_its_declared_fields(tmp_path):
             assert set(d) == _FIELDS[cls], (cls, set(d) ^ _FIELDS[cls])
             seen.add(cls)
     assert seen == set(_FIELDS), set(_FIELDS) - seen
+    # `bare_array` stays in §2a's CLOSED vocabulary (the spec is accepted and frozen)
+    # but §2e's 0025 amendment made it unproducible: it was the label for an
+    # `AttributeError` from `.get` on a list, and no list now reaches that call.
+    # Asserted, not assumed — see test_the_retry_normalizes_a_bare_array_as_the_first_extraction_does.
+    assert ("retry_failed", "bare_array") not in seen
 
 
 # --------------------------------------------- V-NEVER-RAISED-BY-RECORDING ---
@@ -590,3 +600,77 @@ def test_the_retention_figures_are_measured_not_recalled():
                    f"{m['records_at_largest']:,} records",
                    f"{m['records_at_smallest']:,}"):
         assert figure in text, f"the CHANGELOG's retention bullet does not state {figure!r}"
+
+
+# ------------------------------- specs/0025 §4b(1) as amended (0039 §2e) -----
+_BARE_ARRAYS = {
+    "empty": [],
+    "of repairs": [GOOD],
+    "of scalars": ["triples"],
+    "of several scalars": [1, 2],
+    "of empty dicts": [{}],
+}
+
+
+def test_the_retry_normalizes_a_bare_array_as_the_first_extraction_does(tmp_path):
+    """specs/0025 §4b(1), AMENDED 2026-09-10 (drafted as specs/0039 §2e, on the owner's
+    word). `extract_json` returns a bare JSON array "as a fallback for the caller to
+    normalize"; the first extraction normalized it and the retry did not, so one of the
+    function's two callers did not honour the documented obligation of the function it
+    calls. Three things are asserted here, all measured:
+
+    (a) THE REPAIR NOW LANDS. A retry answering with a bare array of repairs recovers
+        the failing triple and the STORED relation is the registry member the retry
+        named, where before the amendment it was `unclassified` with `recovered=0`.
+        This is the outcome the amendment exists for -- 0025 §4b(1) is "where the 35%
+        is actually recovered" -- and it is a stored-state change, not a log change.
+    (b) THE TWO CALLERS AGREE on the wrapping and on what follows from it, for every
+        bare-array shape but one, and that one is a DESIGNED difference rather than a
+        surviving asymmetry: a dict member matching no failing occurrence is a DISCARD
+        under 0025's discard rule ("the retry may repair relations, never add facts"),
+        so `[{}]` skips a member on the first extraction and discards on the retry.
+    (c) `cause=bare_array` IS NOW UNPRODUCIBLE. It labelled an `AttributeError` from
+        `.get` on a list; no list reaches that call. Asserted against a forced list
+        return, not only against answers that happen to parse as one."""
+    def _run(primary, retry, name):
+        rep = _reporter(tmp_path, f"{name}.log")
+        mem = _mem(tmp_path, Stub(primary, retry_raw=retry), rep, name)
+        r = _remember(mem)
+        rels = sorted(x[0] for x in mem.store._conn.execute("SELECT relation FROM edges"))
+        return r, rels, _kinds(_degrades(rep))
+
+    # (a)
+    r, rels, recs = _run(_main([OFF]), json.dumps([GOOD]), "a")
+    assert (r["recovered"], r["residual"]) == (1, 0), r
+    assert rels == ["uses_tool"], rels
+    assert "unclassified" not in rels
+    assert recs == [], recs
+
+    # (b)
+    designed_difference = {"of empty dicts"}
+    for name, shape in _BARE_ARRAYS.items():
+        _, _, primary_recs = _run(json.dumps(shape), _main([]), f"p-{name}")
+        _, _, retry_recs = _run(_main([OFF]), json.dumps(shape), f"r-{name}")
+        assert not any(c == "bare_array" for _, c in retry_recs), (name, retry_recs)
+        if name in designed_difference:
+            assert primary_recs == [("member_skipped", "1")] and retry_recs == [], (
+                name, primary_recs, retry_recs)
+        else:
+            assert primary_recs == retry_recs, (name, primary_recs, retry_recs)
+
+    # (c) any list the extractor can return is wrapped, not just the ones a real
+    # answer produces: force the callee to return a list of a shape no provider
+    # would emit and the retry still records nothing about a bare array
+    for forced in ([], [GOOD], [{"a": 1}], [None]):
+        rep = _reporter(tmp_path, f"c{len(forced)}{forced!r:.4}.log")
+        mem = _mem(tmp_path, Stub(_main([OFF]), retry_raw=_main([])), rep, f"c{forced!r:.4}")
+        with pytest.MonkeyPatch.context() as mp:
+            calls = {"n": 0}
+            real = ingest_mod.extract_json
+            def fake(text):
+                calls["n"] += 1
+                return forced if calls["n"] > 1 else real(text)   # the retry's call only
+            mp.setattr(ingest_mod, "extract_json", fake)
+            _remember(mem)
+            assert calls["n"] == 2, "the retry did not reach the extractor"
+        assert not any(c == "bare_array" for _, c in _kinds(_degrades(rep))), forced

@@ -47,10 +47,38 @@ for byte by the suite.
   — the shipped CLI against a provider that fails the retry and one whose vocabulary
   drifted, then the log; the provider was scripted at the CLI's own seam.
 - **Not changed, by the accepted spec's own limit:** the three primary-answer shapes
-  that raise `TypeError` still raise (the spec records the inconsistency with the
-  silent string/dict shapes as an ingest-amendment question); the retry still treats a
-  bare JSON array as a failure (`cause=bare_array`) until the 0025 amendment the spec
-  drafts lands in its own commit.
+  that raise `TypeError` still raise. The spec records the inconsistency with the
+  silent string and dict shapes as an ingest-amendment question, which nobody has
+  ruled on.
+
+**A re-extraction retry that answers with a bare JSON array now repairs, where before
+it was discarded (specs/0025 §4b(1), amended; drafted as specs/0039 §2e).** When a
+provider returns off-vocabulary relations, Veracium re-asks once for those triples
+only. If that second answer came back as a bare array — the triples with the
+`{"triples": ...}` wrapper omitted, which is a common shape from a JSON-mode provider
+— the whole retry was treated as malformed and every repair in it was thrown away:
+the fact was stored under the reserved `unclassified` relation with `recovered=0`.
+The extractor's own contract says a bare array is "a fallback for the caller to
+normalize", and the first extraction always did normalize it; the retry did not, so
+one of that function's two callers was not honouring it. It now does.
+
+- **What changes for a host:** on this path only, `recovered` rises and `residual`
+  falls by the number of repairs that answer carried, and the stored relation is the
+  registry member the retry named instead of `unclassified`. Measured on the standard
+  fixture, both independent instruments in `specs/evidence/0039/` agreeing:
+  `recovered` 0 → 1, `residual` 1 → 0. Nothing else in the retry's contract moves —
+  the one-call budget, the one-to-one occurrence matching, the discard rule and the
+  `recovered` definition are as accepted. A retry answer that is a bare array of
+  scalars now skips its members exactly as a first answer would, which is one
+  `member_skipped` record rather than the `retry_failed` one it used to write.
+- **Consequently `cause=bare_array` can no longer occur.** It stays in the log
+  vocabulary that specs/0039 froze, and the suite asserts it is unproducible against a
+  forced list return rather than merely absent from a few fixtures.
+- **Still asymmetric, and named as such:** the two callers continue to disagree when
+  `triples` is `null`, a number or a boolean — the first extraction raises
+  `TypeError`, the retry records a `shape` degrade. One shared normalization rule
+  would settle that too; it is an open question in specs/0039 §10 and no one has
+  ruled on it.
 
 ## 0.20.1 — 2026-09-08
 

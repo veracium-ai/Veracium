@@ -498,6 +498,15 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                     for r in failing], ensure_ascii=False)),
                       system=prompts.EXTRACT_SYSTEM, role="distill-retry")
             retry_data = extract_json(raw)
+            # specs/0025 §4b(1), AMENDED 2026-09-10 (drafted as specs/0039 §2e): the
+            # extractor returns a bare JSON array "as a fallback for the caller to
+            # normalize" (its docstring). The first extraction normalizes it; this
+            # caller did not, so one of the function's two callers did not honour the
+            # documented obligation of the function it calls — a contract-conformance
+            # defect, not a symmetry preference. A bare-array retry answer is now a
+            # recovery attempt, exactly as on the first extraction.
+            if isinstance(retry_data, list):
+                retry_data = {"triples": retry_data}
             # §2c: the key test runs STRICTLY AFTER dict-ness is established — on
             # a list `in` is a membership test, and a bare array must reach the
             # `.get` below and stay matrix row 8/9 (`bare_array`), never row 3.
