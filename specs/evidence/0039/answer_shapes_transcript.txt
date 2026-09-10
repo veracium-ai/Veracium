@@ -1,10 +1,10 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-10 against veracium @ 5dfb83bf377195d7b601c49155f5390a70dc2a76
+# generated 2026-09-10 against veracium @ eb8b25ed31947b3f3e92248c0e74da7ada5363b2
 # Real ingest_event with a scripted provider. The pin line is asserted by tests/test_0039_answer_shapes.py
 # against the tree the test runs in: src/ must be unchanged since this commit, or the transcript is regenerated.
-# REGENERATED at the specs/0025 §4b(1) amendment commit (the pin above): ONE row moved —
-# `bare array of dicts` on the RETRY is now a recovery (recovered 0 -> 1, residual 1 -> 0).
-# Every other row came back byte-identical.
+# REGENERATED at the wider-normalization amendment (the pin above): THREE rows moved —
+# `null`, `number` and `boolean` on the PRIMARY answer are now `RESULT facts=0`, not
+# `RAISES TypeError`. Every other row came back byte-identical.
 
 === PRIMARY answer shapes (the retry answer fixed to a valid empty object) ===
   valid non-empty list             -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
@@ -13,9 +13,9 @@
   string                           -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   dictionary                       -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   nested dictionary                -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
-  null                             -> RAISES TypeError: "'NoneType' object is not iterable" calls=['distill']
-  number                           -> RAISES TypeError: "'int' object is not iterable" calls=['distill']
-  boolean                          -> RAISES TypeError: "'bool' object is not iterable" calls=['distill']
+  null                             -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  number                           -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  boolean                          -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   bare array of dicts              -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   bare array of scalars            -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   list with malformed members      -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
