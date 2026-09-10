@@ -1,10 +1,10 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-10 against veracium @ 69438f2a78d8f26f1fff7bb65234eae7b5abeea0
+# generated 2026-09-10 against veracium @ 5dfb83bf377195d7b601c49155f5390a70dc2a76
 # Real ingest_event with a scripted provider. The pin line is asserted by tests/test_0039_answer_shapes.py
 # against the tree the test runs in: src/ must be unchanged since this commit, or the transcript is regenerated.
-# REGENERATED at the 0039 implementation commit (the pin above): the outcome table below
-# came back BYTE-IDENTICAL to the one taken at 749e122, which is the evidence that adding
-# the five degrade records changed no outcome. Only the pin moved.
+# REGENERATED at the specs/0025 §4b(1) amendment commit (the pin above): ONE row moved —
+# `bare array of dicts` on the RETRY is now a recovery (recovered 0 -> 1, residual 1 -> 0).
+# Every other row came back byte-identical.
 
 === PRIMARY answer shapes (the retry answer fixed to a valid empty object) ===
   valid non-empty list             -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
@@ -28,7 +28,7 @@
 === RETRY answer shapes (the primary carries ONE off-vocabulary triple to trigger the retry) ===
   raising                          -> RESULT facts=1 unparseable=False retried=1 recovered=0 residual=1 calls=['distill', 'distill-retry']
   prose                            -> RESULT facts=1 unparseable=False retried=1 recovered=0 residual=1 calls=['distill', 'distill-retry']
-  bare array of dicts              -> RESULT facts=1 unparseable=False retried=1 recovered=0 residual=1 calls=['distill', 'distill-retry']
+  bare array of dicts              -> RESULT facts=1 unparseable=False retried=1 recovered=1 residual=0 calls=['distill', 'distill-retry']
   bare array of scalars            -> RESULT facts=1 unparseable=False retried=1 recovered=0 residual=1 calls=['distill', 'distill-retry']
   triples not a list (string)      -> RESULT facts=1 unparseable=False retried=1 recovered=0 residual=1 calls=['distill', 'distill-retry']
   triples not a list (dict)        -> RESULT facts=1 unparseable=False retried=1 recovered=0 residual=1 calls=['distill', 'distill-retry']
