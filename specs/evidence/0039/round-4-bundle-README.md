@@ -9,7 +9,18 @@ README rides in its successor's prior-rounds/); the version cells carry lineage,
 reviewer's dispositions or the process's disclosed failures. The package remains the
 archive; this copy is the record. Below this comment the bytes equal the packaged
 README — verifiable forever against the archived package: strip the lines above the
-first '# ' heading and compare. -->
+first '# ' heading and compare.
+
+ANNOTATION (2026-09-10, after acceptance; the body below is untouched): the README's
+front matter and errors ledger say the second seat's seal-leg kills were isolated to a
+probe that ran without PYTHONPATH=src, i.e. against the working tree's product rather
+than the archive's. Research retracted that isolation after reading its own history:
+round 2's legs ran the same command with PYTHONPATH=src and completed. The measured
+cause was memory — that session's cgroup at 12.9 GB of 15 (peak 14.5), a quantity
+`free`'s 'available' does not show — time-dependent, not command-dependent. In
+research's words: the second seat isolated a variable it had already disproved. The
+reviewer read the text as packaged; this note is the record's correction, not a
+rewrite of what the reviewer saw. -->
 
 # 0039 degradation visibility — round-4 external review bundle
 
