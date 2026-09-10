@@ -34,11 +34,13 @@ for byte by the suite.
   shortest is `member_skipped` (a count), the longest `primary_failed`/`no_triples_key`.
   The rotation window is 3,000,000 bytes (1 MB × 3 files), so it holds 19,354 records
   at the largest size and 30,612 at the smallest. An error record is a multi-line
-  traceback several times that size, so a traceback written now rotates out of the
+  traceback, measured across our CI matrix at 2.8 to 4.6 times the largest degrade
+  record, so a traceback written now rotates out of the
   window after roughly 19,300 further degraded events at the largest degrade size. No
   single byte figure is quoted for the error record on purpose: a traceback's length is
-  the interpreter's format and the absolute source paths of the installation, measured
-  across our CI matrix at 7 lines on CPython 3.10 and 12 on 3.13. Because the volatility
+  the interpreter's format and the absolute source paths of the installation: the same
+  three failures measured 439 bytes over 7 lines on CPython 3.10 and 714 over 12 on
+  3.13. Because the volatility
   path writes one record per CALL, not per triple, a drifted provider with ten triples
   per event still costs one record.
 - **Manual exercise (specs/0039 §6a):** `specs/evidence/0039/manual-cli-transcript.txt`

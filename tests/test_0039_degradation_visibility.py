@@ -570,7 +570,12 @@ def test_the_retention_figures_are_measured_not_recalled():
     # evidence to one machine. What IS ours: an error record is a multi-line traceback
     # several times a degrade record, which is why degrade VOLUME is the retention
     # question (§7) and the counted kinds are one record per call.
-    assert m["error_record_smallest"] >= 3 * m["largest"], (
+    # The bound is derived from the CI MATRIX, not from this machine: the smallest
+    # error record measured anywhere was 439 bytes over 7 lines (CPython 3.10, short
+    # runner paths) against a 155-byte largest degrade record, a factor of 2.8; the
+    # largest was 714 over 12 lines (3.13), a factor of 4.6. A bound read off one
+    # interpreter is how this assertion was wrong the first time.
+    assert m["error_record_smallest"] >= 2 * m["largest"], (
         m["error_record_smallest"], m["largest"])
     assert m["error_record_lines"] >= 5, m["error_record_lines"]
     changelog = (ROOT / "CHANGELOG.md").read_text()
