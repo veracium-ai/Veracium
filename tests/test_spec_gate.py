@@ -3306,3 +3306,87 @@ def test_the_retrospective_derivation_refuses_a_shallow_clone_rather_than_under_
     subprocess.run(("git", "clone", "-q", f"file://{src}", str(full)), check=True, env=env, capture_output=True)
     assert [o["sha"] for o in mod.obligations(full)] == [sha[:7]]
     assert len(mod.problems(full, "2026-09-08")) == 1
+
+
+# --- §6 table structure (0039 round-3 R3-1): a fold script inserted an
+# invariant row by replacing the OPENING of a neighbouring row and re-emitting
+# the new row after it, which left one row with two cells and the next with
+# six — neither invariant mapped to a check, and nothing failed. The reviewer
+# asked for a structural gate: every row of every §6 table carries exactly the
+# header's cell count. Parsing respects escaped pipes and code spans (a naive
+# split flagged correct rows). The gate's starting debt — rows in ACCEPTED
+# specs that already break the rule — is recorded so it can only shrink.
+def _table_cells(line):
+    out, buf, i, incode = [], "", 0, False
+    while i < len(line):
+        ch = line[i]
+        if ch == "\\" and i + 1 < len(line) and line[i + 1] == "|":
+            buf += "\\|"; i += 2; continue
+        if ch == "`":
+            incode = not incode
+        if ch == "|" and not incode:
+            out.append(buf); buf = ""
+        else:
+            buf += ch
+        i += 1
+    out.append(buf)
+    return out[1:-1] if line.rstrip().endswith("|") else out[1:]
+
+
+def _section6_row_mismatches(text):
+    """(row-prefix, cells, header cells) for every §6 table row whose cell count
+    differs from its table's header. A table is a contiguous block of pipe
+    lines; a blank line ends it."""
+    import re
+    bad, in6, header = [], False, None
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in6, header = line.startswith("## 6"), None; continue
+        if not in6:
+            continue
+        if not line.startswith("|"):
+            header = None; continue
+        n = len(_table_cells(line))
+        if header is None:
+            header = n; continue
+        if re.match(r"^\|\s*:?-", line):
+            continue
+        if n != header:
+            bad.append((line[:40], n, header))
+    return bad
+
+
+#: rows in ACCEPTED specs that broke the rule before the gate existed —
+#: recorded, never edited silently; an entry that stops mismatching must be
+#: removed (the set only shrinks), and a NEW mismatch anywhere fails.
+_SECTION6_KNOWN_SHORT_ROWS = {
+    ('0008', '| **C3** *(SUPERSEDED — `0012` accepted '),
+    ('0017', '| I10 — every 0015 invariant keeps runni'),
+    ('0017', '| I6 — whitelisted ⇒ populated (the `276'),
+    ('0023', '| **N15** the consumer inventory is GENE'),
+    ('0030', '| **V-BIND** (round-2 F4; C7; round-8 F1'),
+    ('0030', '| **V-WINDOW** one read window, one worl'),
+}
+
+
+def test_every_section_6_table_row_has_its_headers_cell_count():
+    root = Path(__file__).resolve().parent.parent
+    found = set()
+    for spec in sorted((root / "specs").glob("[0-9][0-9][0-9][0-9]-*.md")):
+        for prefix, n, h in _section6_row_mismatches(spec.read_text(encoding="utf-8")):
+            found.add((spec.name[:4], prefix))
+    new = found - _SECTION6_KNOWN_SHORT_ROWS
+    gone = _SECTION6_KNOWN_SHORT_ROWS - found
+    assert not new, f"§6 table rows whose cell count differs from the header (fold damage?): {sorted(new)}"
+    assert not gone, f"recorded short rows that no longer mismatch — remove them from the set: {sorted(gone)}"
+
+
+def test_a_planted_split_row_is_caught_and_escaped_pipes_are_not(tmp_path):
+    """RULE ZERO: the exact damage of 0039 v11 — a row with two cells and the
+    next with six — is reported; a row whose extra pipes sit inside a code span
+    or are escaped is not."""
+    good = "## 6. Invariants\n\n| id | invariant | check | node |\n|---|---|---|---|\n| **A** | a `x | y` thing \\| escaped | c | n |\n"
+    assert _section6_row_mismatches(good) == []
+    split = good + "| **B** | only two cells |\n| **C** | c1 | c2 | c3 | displaced | displaced |\n"
+    assert [(n, h) for _, n, h in _section6_row_mismatches(split)] == [(2, 4), (6, 4)]
+    assert _section6_row_mismatches("## 5. Other\n\n| a | b |\n|---|---|\n| one |\n") == [], "only §6 is gated"

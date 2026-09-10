@@ -65,7 +65,8 @@ def _assert_transcript_pin_is_this_tree(transcript: pathlib.Path, root: pathlib.
 
 def test_the_answer_shape_transcript_is_the_scripts_output():
     assert SCRIPT.name == "answer_shapes.py"          # the artifact this matrix binds (PROCESS-R23-1)
-    _assert_transcript_pin_is_this_tree(TRANSCRIPT)
+    # round-3 R3-2: reproduction runs EVERYWHERE, an archive included; the
+    # git-history binding is its own test below and skips only itself
     out = _run()
     assert out == _body(TRANSCRIPT), "the shipped outcomes moved: re-read specs/0039 §2c-ii against the new transcript"
     # the rows the spec's matrix leans on hardest, asserted by name so a
@@ -98,7 +99,6 @@ def test_researchs_independent_instrument_still_prints_its_transcript():
     transcript carries a header naming the pin it was generated against;
     the script's output is the body below that header, byte for byte."""
     assert RESEARCH_SCRIPT.name == "answer_shapes_research_instrument.py"
-    _assert_transcript_pin_is_this_tree(RESEARCH_TRANSCRIPT)
     out = subprocess.run([sys.executable, str(RESEARCH_SCRIPT)], capture_output=True, text=True, check=True).stdout
     body = _body(RESEARCH_TRANSCRIPT)
     assert out == body, "research's instrument no longer prints its transcript: the shipped outcomes moved"
@@ -141,3 +141,13 @@ def test_the_pin_binding_refuses_stale_foreign_and_unreachable_pins_and_names_th
     bare = tmp_path / "bare"; bare.mkdir()
     with pytest.raises(pytest.skip.Exception, match="no repository here"):
         _assert_transcript_pin_is_this_tree(good, root=bare)
+
+
+def test_devs_transcript_pin_describes_this_tree():
+    """The history-dependent half, separated from reproduction (round-3 R3-2):
+    skips only itself where there is no or not enough history."""
+    _assert_transcript_pin_is_this_tree(TRANSCRIPT)
+
+
+def test_researchs_transcript_pin_describes_this_tree():
+    _assert_transcript_pin_is_this_tree(RESEARCH_TRANSCRIPT)
