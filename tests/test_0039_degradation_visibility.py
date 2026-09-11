@@ -587,6 +587,47 @@ def test_the_manual_cli_transcript_reproduces(tmp_path):
 
 
 # ------------------------------------------------- §7, retention figures -----
+
+def _changelog_section_carrying_0039():
+    """The CHANGELOG section a HOST reads for this change: the top section, which is
+    `Unreleased` until the release that carries it is cut and that release's
+    `<version> — <date>` heading afterwards. Binding the heading's TEXT made the two
+    carrier tests fail by construction at the 0.21.0 cut (2026-09-11); what the tests
+    guard is the section's CONTENT, so the heading is checked for FORM only."""
+    changelog = (ROOT / "CHANGELOG.md").read_text()
+    section = changelog.split("\n## ", 2)[1]
+    heading = section.split("\n", 1)[0]
+    assert heading == "Unreleased" or re.fullmatch(r"\d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2}", heading), (
+        "the top CHANGELOG section is neither Unreleased nor a release heading: %r" % heading)
+    assert "`extraction_unusable`" in section, (
+        "the top CHANGELOG section (%s) does not carry the 0039/0025 change" % heading)
+    return heading, section
+
+
+def test_the_changelog_section_helper_refuses_a_foreign_heading_and_a_missing_change(tmp_path, monkeypatch):
+    """Negative controls for `_changelog_section_carrying_0039`: a top section whose
+    heading is neither Unreleased nor a release heading is refused, and a release-shaped
+    heading over a section that does not carry the field is refused too. Both mutants
+    are planted in a copy; the real file is read once to prove the helper passes it."""
+    real = (ROOT / "CHANGELOG.md").read_text()
+    heading, section = _changelog_section_carrying_0039()
+    assert heading == "Unreleased" or heading[0].isdigit()
+    top = real.split("\n## ", 2)
+    for label, mutant in (
+        ("foreign heading", real.replace("\n## " + heading, "\n## Notes for hosts", 1)),
+        ("release heading, change missing",
+         "\n## ".join([top[0], "9.9.9 — 2099-01-01\n\nnothing here", top[2]])),
+    ):
+        (tmp_path / "CHANGELOG.md").write_text(mutant)
+        monkeypatch.setattr(sys.modules[__name__], "ROOT", tmp_path)
+        try:
+            with pytest.raises(AssertionError):
+                _changelog_section_carrying_0039()
+        finally:
+            monkeypatch.undo()
+    assert _changelog_section_carrying_0039()[0] == heading
+
+
 def test_the_retention_figures_are_measured_not_recalled():
     """§7 sends the DERIVED figures to the CHANGELOG rather than stating them, so the
     binding is here: `specs/evidence/0039/retention_measurement.py` is re-run, its
@@ -623,12 +664,10 @@ def test_the_retention_figures_are_measured_not_recalled():
     assert m["error_record_bytes"] >= 2 * m["largest"], (
         m["error_record_bytes"], m["largest"])
     assert m["error_record_lines"] >= 5, m["error_record_lines"]
-    changelog = (ROOT / "CHANGELOG.md").read_text()
-    head = changelog.split("\n## ", 2)
-    assert head[1].startswith("Unreleased"), "no Unreleased section to check"
-    bullets = ("\n## " + head[1]).split("\n- **")
+    heading, section = _changelog_section_carrying_0039()
+    bullets = ("\n## " + section).split("\n- **")
     bullet = next((b for b in bullets if b.startswith("Log retention")), None)
-    assert bullet is not None, "the Unreleased section states no retention bullet (§7)"
+    assert bullet is not None, f"the CHANGELOG section {heading!r} states no retention bullet (§7)"
     text = bullet.replace("–", "-").replace("—", "-").replace("\n", " ")
     for figure in (f"{m['smallest']}-{m['largest']} bytes",
                    f"{m['window_bytes']:,} bytes",
@@ -936,11 +975,9 @@ def test_the_host_facing_carriers_state_the_current_contract(tmp_path):
     checked against the register's own patterns so the two halves cannot drift apart."""
     mod = _lint_module()
     entries = [e for e in mod.WITHDRAWN if e[0].startswith("0039-")]
-    changelog = (ROOT / "CHANGELOG.md").read_text()
-    unreleased = changelog.split("\n## ", 2)[1]
-    assert unreleased.startswith("Unreleased"), "no Unreleased section"
+    heading, unreleased = _changelog_section_carrying_0039()
     api = (ROOT / "docs" / "api.md").read_text()
-    for name, text in (("CHANGELOG Unreleased", unreleased), ("docs/api.md", api)):
+    for name, text in ((f"CHANGELOG {heading}", unreleased), ("docs/api.md", api)):
         assert "`extraction_unusable`" in text, f"{name}: the field is not stated"
         assert "no shape-valid triple" in text, f"{name}: the field's semantics are not stated"
         assert "legitimately empty" in text, f"{name}: the False case is not stated"
