@@ -1,14 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.21.0 — 2026-09-11
 
 **Upgrade recommendation: every host should read this section; hosts that catch
-`TypeError` around `remember` must act, and every host gains one result key.** The
+`TypeError` around `remember` must act, and every host gains one result key.** No
+schema, export-format or migration change; rollback to 0.20.1 is safe (a host loses
+the `extraction_unusable` key and the three non-list `triples` answers raise again). The
 extraction path stopped raising on three malformed provider answers, every `remember`
 result now carries a boolean that tells a malformed answer from an empty one, and a
 provider that degrades leaves a record in the diagnostics log when a reporter is
 attached. This is one account of the final behaviour; the last paragraph says how it
-was reached during this unreleased window, because the intermediate states were
+was reached between 0.20.1 and this release, because the intermediate states were
 published on `main` and a host tracking `main` may have seen them.
 
 **What a host sees now, in one place.**
@@ -38,7 +40,7 @@ published on `main` and a host tracking `main` may have seen them.
 - **Every stored byte is otherwise unchanged; no schema, export or migration changes.**
 
 **Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10; its
-implementation reviewed at rounds 5 and 6).** Veracium degrades in five places instead
+implementation reviewed at external rounds 5 through 9 and accepted 2026-09-11).** Veracium degrades in five places instead
 of failing, by design, and until now none of them left a record an operator could see:
 the ONE re-extraction retry that a provider fails, an extraction answered in prose, a
 volatility class outside the enum (silently DURABLE), a first answer with no usable
@@ -63,8 +65,8 @@ transcripts are committed (`specs/evidence/0039/`), asserted byte for byte by th
   shortest is `member_skipped` (a count), the longest `primary_failed`/`no_triples_key`.
   The rotation window is 3,000,000 bytes (1 MB × 3 files), so it holds 19,354 records
   at the largest size and 30,612 at the smallest. An error record is a multi-line
-  traceback, measured across our CI matrix at 2.8 to 4.6 times the largest degrade
-  record, so a traceback written now rotates out of the window after roughly 19,300
+  traceback, measured across our CI matrix (Python 3.10 to 3.13) at 2.8 to 4.6 times
+  the largest degrade record, so a traceback written now rotates out of the window after roughly 19,300
   further degraded events at the largest degrade size. No single byte figure is quoted
   for the error record on purpose: a traceback's length is the interpreter's format and
   the absolute source paths of the installation. Because the volatility path writes one
@@ -78,7 +80,7 @@ transcripts are committed (`specs/evidence/0039/`), asserted byte for byte by th
   unusable, never which way — that distinction is in the diagnostics log and needs a
   reporter.
 
-**How this window got here, for a host that tracked `main`.** The 0039 implementation
+**How this release got here, for a host that tracked `main` between 0.20.1 and 0.21.0.** The 0039 implementation
 landed first with the accepted scope: records only, no result change, the three
 non-list shapes still raising. The retry's bare-array normalization followed, then the
 wider normalization that stopped the raise. That last change removed the only signal a
@@ -86,7 +88,9 @@ host with no reporter had, so an intermediate commit widened the existing `unpar
 flag onto the failure paths; the external reviewer showed that flag then meant neither
 thing it could mean (silent on an all-invalid list, set on a parsed answer whose triples
 were fine), and it was replaced by `extraction_unusable` with `unparseable` restored to
-its narrow meaning. Only the final state above ships in this release.
+its narrow meaning. Only the final state above ships in this release; the external
+review of the implementation closed at round 9 with no product-code finding after the
+replacement.
 
 ## 0.20.1 — 2026-09-08
 
