@@ -38,6 +38,27 @@ WITHDRAWN = [
      "0025 v15 (2026-09-10, owner's word): the retry normalizes a bare JSON array exactly "
      "as the first extraction does — a recovery attempt; `cause=bare_array` is unproducible",
      "specs/0039 §2c-i row 2c and §2c-ii rows 8–9 as rewritten at v17; specs/0025 §4b(1) v15"),
+    # ---- 0039 round-7 R7-1: the semantic VARIANTS the reviewer named, plus dev's
+    # sweep's. These are the BACKSTOP; the primary check is the closed pointer-site
+    # list in tests/test_0039_degradation_visibility.py (a negative check over an
+    # open vocabulary cannot be complete — every round teaches one more word).
+    ("0039-result-surface-unchanged-variants",
+     # subject-scoped on purpose: this lint runs over EVERY spec, and "no new field" or
+     # "adds no field" are true sentences in nine other specs about their own surfaces.
+     # Generic paraphrases are the closed-site test's job (tests/test_0039_…, primary);
+     # this entry is the backstop for the phrasings that name THIS subject.
+     r"unchanged tool result|tool result is unchanged|(ingest |tool )?result(\'s)? key set is unchanged|"
+     r"degrade paths\' return values are unchanged|does not tell the MCP host more|"
+     r"diagnostics=None`? learns nothing new|does not add a principal-facing field|the default is NO new field",
+     "0025 v18 / 0039 v18: what the ingest result and the MCP tool result carry is stated ONCE in "
+     "0039 §2e; every other mention is a pointer that names the location and the subject and "
+     "never the value",
+     "specs/0039 §2e (v18) — the single carrier, and the pointer rule beside it"),
+    ("0039-conditional-raise-after-record",
+     r"whether or not the loop then raises|the one path where (it does|the operation raises)|then lets? the TypeError propagate",
+     "0025 v16 / 0039 v16: no provider ANSWER raises after a record is written; V-RECORD-ORDER-ON-ERROR "
+     "is instanced on a store failure after a record",
+     "specs/0039 §2a and V-DEGRADE-RECORDED as rewritten at v18"),
     ("0039-mcp-result-gains-no-field",
      r"MCP tool result gains no field|MCP tool result is unchanged|MCP result gains no field|tool result gain(s)? no field",
      "0025 v18 / 0039 v17: the MCP `remember` tool result carries exactly ONE field this "

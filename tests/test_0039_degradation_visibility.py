@@ -907,7 +907,12 @@ def test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy(tmp_
     file alone so the binding is local to the spec it protects."""
     mod = _lint_module()
     entries = [e for e in mod.WITHDRAWN if e[0].startswith("0039-")]
-    assert len(entries) == 3, [e[0] for e in entries]
+    # three at v17; round 7 added the subject-scoped variants and the conditional-raise
+    # wording — five, each named so a silently dropped entry is a red here
+    assert sorted(e[0] for e in entries) == sorted([
+        "0039-non-list-triples-still-raise", "0039-bare-array-retry-attributeerror",
+        "0039-mcp-result-gains-no-field", "0039-result-surface-unchanged-variants",
+        "0039-conditional-raise-after-record"]), [e[0] for e in entries]
     spec_text = (ROOT / "specs" / "0039-degradation-visibility.md").read_text()
     stripped = mod._normalise(spec_text.replace("OBSOLETE", "").replace("WITHDRAWN", ""))
     for rid, pat, _why, _where in entries:
@@ -947,3 +952,78 @@ def test_the_host_facing_carriers_state_the_current_contract(tmp_path):
             assert obsolete not in text, f"{name}: {obsolete!r}"
     # the CHANGELOG is ONE account: the MCP result is described once and consistently
     assert "MCP `remember`\n  tool result" in unreleased or "MCP `remember` tool result" in unreleased
+
+
+# ---------- round-7 R7-1: the result surface is stated ONCE; the rest point to it ----
+# The sites that MENTION the result surface, as a CLOSED list (research, round 7): a
+# positive check over a closed set is the one that can close the class — you can
+# enumerate the sites; you cannot enumerate the paraphrases. Each site is anchored by
+# a lead phrase that exists once in the spec. If a new section discusses the result
+# surface without a pointer it is findable here; a new paraphrase is findable only if
+# the backstop below guessed the word.
+_POINTER_SITES = {
+    "prerequisite bullet (0031 §4d)": "This spec keeps that strip;",
+    "§2b return values": "What the degrade paths return is §2e's;",
+    "§4 callback row": "the callback's carrier is the log, never the result;",
+    "§5 regime: diagnostics=None host": "| embedding host passing `diagnostics=None` |",
+    "§5 regime: MCP host": "| MCP host |",
+    "§8 MCP paragraph": "**The records tell the MCP host nothing;",
+    "§8 diagnostics=None paragraph": "**A host that passes `diagnostics=None` gets no record;",
+    "§10 Q1 resolution": "**RESOLVED at `0025` v18 on the owner's word, given twice on 2026-09-11",
+}
+# the VALUE vocabulary a pointer may not carry (the answer belongs in §2e alone).
+# WITHDRAWN phrases, listed here to be REFUSED — this comment is the house lint's marker
+_VALUE_TOKENS = ("extraction_unusable", "one field", "ONE field", "one outcome", "unchanged",
+                 "no field", "no new field", "learns nothing", "gains no", "adds no", "key set is")
+# the backstop: an OPEN vocabulary of paraphrases, incomplete by construction.
+# WITHDRAWN phrases, listed here to be REFUSED — this comment is the house lint's marker
+_VARIANT_BACKSTOP = re.compile(
+    r"unchanged (tool )?result|(tool |ingest )?result (is|stays|remains) (unchanged|as it was|as before|identical)|"
+    r"key set is unchanged|return values are unchanged|learns nothing new|does not tell the MCP host more|"
+    r"(does not|doesn't|will not) add a[^.|\n]{0,30}field|(gains?|adds?) no (new )?field|no new field|"
+    r"no change to what (callers|hosts) receive|whether or not the loop then raises|"
+    r"the one path where (it does|the operation raises)")
+
+
+def test_the_result_surface_is_stated_once_and_every_other_site_points_to_it():
+    """Round-7 R7-1. PRIMARY (closed set): §2e carries the result-surface claim with
+    the pointer rule beside it, and every site in `_POINTER_SITES` exists exactly once,
+    names §2e, and carries no value token. BACKSTOP (open set): no live paragraph of
+    the spec matches the variant pattern — a blocklist that the next paraphrase will
+    escape, kept because it is cheap and ranked second so nobody reads its green as
+    proof. The two halves are asserted in that order."""
+    mod = _lint_module()
+    spec = (ROOT / "specs" / "0039-degradation-visibility.md").read_text()
+    # the ONE location
+    assert spec.count("**THE RESULT SURFACE, STATED ONCE") == 1
+    assert spec.count("**THE POINTER RULE (v18, research):**") == 1
+    single = spec[spec.index("**THE RESULT SURFACE, STATED ONCE"):spec.index("**THE POINTER RULE")]
+    assert "`extraction_unusable`" in single and "V-RESULT-SHAPE-EXACT" in single and "V-MCP-RESULT-CARRIES-ONE" in single
+    # every pointer site: present once, points, carries no value
+    paras = re.split(r"\n\s*\n", spec)
+    for name, lead in _POINTER_SITES.items():
+        assert spec.count(lead) == 1, f"{name}: anchor {lead!r} found {spec.count(lead)} times"
+        holder = [x for x in paras if lead in x]
+        assert len(holder) == 1, name
+        site = holder[0]
+        # a table row or a bullet is one LINE inside a larger paragraph: judge the line;
+        # a prose paragraph is judged whole (the §8 claims span lines)
+        if lead.startswith("|") or name.startswith("prerequisite"):
+            site = [ln for ln in site.split("\n") if lead in ln][0]
+        # the marked history is not the pointer. NON-GREEDY ON PURPOSE (research): the
+        # span ends at the FIRST `*)`, so a quote that itself contains `*)` terminates
+        # early and its remainder is scanned as LIVE — an over-flag, loud, investigated.
+        # A greedy match would run to the LAST `*)` and swallow live text into the
+        # history span — an under-flag, silent. Choose the failure that shouts; do not
+        # "fix" this to greedy for tidiness.
+        live = re.sub(r"\(\*OBSOLETE.*?\*\)", "", site, flags=re.S)
+        assert "§2e" in live, f"{name}: does not point to §2e"
+        for tok in _VALUE_TOKENS:
+            assert tok not in live, f"{name}: pointer carries a value: {tok!r}"
+    # the backstop, over live paragraphs under the lint's normalisation
+    for para in paras:
+        if "OBSOLETE" in para or "WITHDRAWN" in para or para.lstrip().startswith("| **Version**"):
+            continue
+        flat = mod._normalise(para)
+        m = _VARIANT_BACKSTOP.search(flat)
+        assert not m, f"live paragraph restates the result surface: {m.group(0)!r} in {flat[:90]!r}"

@@ -3747,6 +3747,14 @@ CLOSURES = [
      'The contract carriers contradict the implementation: the normative body of 0039, the Unreleased changelog and docs/api.md still state the superseded behaviour (non-list triples raise; a bare-array retry raises; the MCP result gained no field; no new result field)',
      "v17: every live sentence rewritten in place with the accepted text kept as marked history in the same cell; V-MCP-RESULT-UNCHANGED RETIRED and replaced by V-MCP-RESULT-CARRIES-ONE (the sixth frozen structure to move, the only one undisclosed, under a green inherited from a check of an adjacent claim); the CHANGELOG consolidated into one account; extraction_unusable in docs/api.md; three withdrawn-phrase entries registered for 0039 with a positive control, and a carrier test over the two host-facing files lint cannot read",
      '$PY -m pytest tests/test_0039_degradation_visibility.py::test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy tests/test_0039_degradation_visibility.py::test_the_host_facing_carriers_state_the_current_contract tests/test_0039_degradation_visibility.py::test_the_new_field_reaches_the_mcp_host_and_not_telemetry'),
+    ("0039", "external", 7, '0039-R7-1',
+     'Live 0039 carriers still contradict the implementation in semantic variants the v17 register and carrier test did not reach (the prerequisite bullet, §2a, §4, §5, §8 twice, V-DEGRADE-RECORDED); the checks passed despite them',
+     "v18: every remaining passage reconciled in place with verbatim OBSOLETE history; §2e made the ONE location for the result-surface claim and every other mention a POINTER naming location and subject, never value (the rule written in §2e); the register extended with the reviewer's variants and dev's; a spec-level binding RANKED — the closed pointer-site list asserted (each names §2e, none carries a value) as primary, a variant blocklist as backstop, incomplete by construction",
+     '$PY -m pytest tests/test_0039_degradation_visibility.py::test_the_result_surface_is_stated_once_and_every_other_site_points_to_it tests/test_0039_degradation_visibility.py::test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy'),
+    ("0039", "external", 7, '0039-R7-2',
+     'V-RESULT-UNCHANGED has the same defect as its retired MCP sibling: its own current text says the clean result gained a key; disclosure does not make an identifier meaning "unchanged" accurate',
+     'v18: RETIRED as a struck row (still defined, OBSOLETE, the reason in its own words) and replaced by V-RESULT-SHAPE-EXACT, bound to X12\'s exact-set test — a test of the SAME claim, which the row says is the difference from the two retired ones',
+     '$PY -m pytest tests/test_0025_enforcement.py::test_public_counter_projection_is_exact tests/test_spec_gate.py::test_no_spec_cites_an_invariant_it_does_not_define'),
 
 ]
 

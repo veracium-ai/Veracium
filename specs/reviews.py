@@ -2968,6 +2968,12 @@ REVIEWS = [
     dict(spec="0039", round=6, kind="external", date="2026-09-11",
          verdict='RETURN for amendment — "Both round-5 implementation findings are closed, but one blocking carrier-consistency problem remains." R6-1 blocking: the normative body of 0039 and the user-facing documentation still state the superseded behaviour — §2a and the §2c-ii matrix say null/number/boolean raise, the matrix says a bare-array retry raises, the MCP impact row and V-MCP-RESULT-UNCHANGED say the tool result gained no field, the CHANGELOG\'s original 0039 section contradicts its later sections, docs/api.md omits the new field. Six required corrections, all carriers plus a mechanical binding; "No additional product-code changes appear necessary … this should be ready for acceptance." Reviewer\'s suites 2,920/37 extracted and 2,948/9 sealed, both totalling 2,957. Body sha16 0872ffd2198e4aa8.',
          raised=['0039-R6-1']),
+    dict(spec="0039", round=7, kind="external", date="2026-09-11",
+         verdict="SENT (round-7 package dde99136e0cda982cccf333b882f4992c186f570eee2d2cdc74900d4fb2aefe7 @ pin c5e4540e12a2705d80dc7a5a56ed411b80cff527, CI 34590912014; 0039 v17 + 0025 v18 — round 6's carrier finding folded; one assembly; both legs 50/0/2 on the same bytes, research's on the ledger fifty-three minutes before dispatch). Dispatched on the owner's word 2026-09-11T11:56Z.",
+         raised=[]),
+    dict(spec="0039", round=7, kind="external", date="2026-09-11",
+         verdict='RETURN for amendment — "Round 7 fixes the changelog and API documentation, but the round-6 carrier-consistency finding is not fully closed." R7-1 blocking: seven more live 0039 passages assert the superseded result surface in synonyms (the prerequisite bullet, §2a, §4\'s callback row, §5\'s MCP regime, §8 twice, V-DEGRADE-RECORDED), and the new checks pass despite them — the register recognises only the phrasings written, the carrier test reads only CHANGELOG and docs; required: reconcile, extend the regression to the normative spec, reject the named semantic variants. R7-2 blocking: V-RESULT-UNCHANGED must be retired like its MCP sibling — disclosure does not make an identifier meaning "unchanged" accurate. Closed: the CHANGELOG, docs/api.md, the matrix historicization, V-MCP-RESULT-CARRIES-ONE; no product-code problem. Reviewer\'s suites 2,922/37 and 2,950/9, both totalling 2,959. Body sha16 05cc5175d1367541.',
+         raised=['0039-R7-1', '0039-R7-2']),
 
 ]
 
