@@ -593,6 +593,22 @@ def test_the_manual_cli_transcript_reproduces(tmp_path):
 
 # ------------------------------------------------- §7, retention figures -----
 
+
+def test_the_retention_instrument_names_a_case_that_stops_recording(monkeypatch):
+    """Negative control (ocr review of v0.21.0, 2026-09-11): a case whose degrade record
+    goes missing must fail as the NAMED finding, not as a TypeError from min() over a
+    None. Plant a `_one` that returns no degrade size for one case and read the message."""
+    path = ROOT / "specs" / "evidence" / "0039" / "retention_measurement.py"
+    spec = importlib.util.spec_from_file_location("retention_measurement_ctrl", path)
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    real_one = mod._one
+    def one_missing(tmp, name, raw, retry_raw, retry_raises):
+        d, e, el, raised = real_one(tmp, name, raw, retry_raw, retry_raises)
+        return (None if name == "c0" else d), e, el, raised
+    monkeypatch.setattr(mod, "_one", one_missing)
+    with pytest.raises(AssertionError, match="no degrade record emitted for: \\['" + re.escape(mod.CASES[0][0]) + "'\\]"):
+        mod.measure()
+
 def _changelog_section_carrying_0039():
     """The CHANGELOG section a HOST reads for this change: the top section, which is
     `Unreleased` until the release that carries it is cut and that release's

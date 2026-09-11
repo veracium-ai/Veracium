@@ -43,8 +43,13 @@ refused. Neither of the other two kinds was honest for the six: a `Discharges:`
 line would claim a retrospective that was never written; a deferral would claim
 one is still coming.
 
-Run: `python3 retrospective_debt.py [--json]`. Exit 1 if anything is
-outstanding. Intended home: `specs/`, with a node in `tests/test_spec_gate.py`
+Run: `python3 specs/retrospective_debt.py [--json]` from anywhere — the repository
+root is derived from this file's location, never from the current directory
+(an ocr review of the v0.21.0 range, 2026-09-11, found `main()` defaulting to
+`Path.cwd()`: run from `specs/` as this docstring then said, `specs/specs/` was
+empty, every obligation was reported outstanding and every SUPERSEDED closure
+refused — real-looking debt from a wrong root). Exit 1 if anything is
+outstanding. Home: `specs/`, with a node in `tests/test_spec_gate.py`
 so it runs on every CI run rather than once at commit time — a deadline checked
 only at commit time is checked before it can be missed.
 """
@@ -57,11 +62,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[0]          # set by the caller
+REPO = Path(__file__).resolve().parents[1]          # the repository root: this file lives in specs/
 SPECS_DIRNAME = "specs"
 
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_SHA = re.compile(r"\b([0-9a-f]{7,40})\b")
 
 #: spec-or-sha -> the re-dated obligation. An owner decision, recorded.
 #: Every entry needs a NEW date in the future of the original and a reason;
@@ -308,7 +312,7 @@ def problems(repo: Path, today: str | None = None) -> list[str]:
 
 def main(argv: list[str]) -> int:
     repo = Path(argv[1]) if len(argv) > 1 and not argv[1].startswith("-") \
-        else Path.cwd()
+        else REPO
     probs = problems(repo)
     if "--json" in argv:
         print(json.dumps({"obligations": obligations(repo),

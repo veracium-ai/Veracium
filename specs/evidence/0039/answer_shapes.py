@@ -64,10 +64,14 @@ def run(llm) -> str:
     try:
         r = ingest_event(s, llm, "u", event_text="I use Vim for editing.", author=EvidenceAuthor.USER,
                          date="2026-09-01", context=EvidenceContext.direct())
-        return (f"RESULT facts={r['facts']} unparseable={r.get('unparseable', False)} "
-                f"retried={r.get('retried')} recovered={r.get('recovered')} residual={r.get('residual')} calls={llm.calls}")
     except Exception as e:  # the outcome IS the escaping class; this is a measurement, not a handler
         return f"RAISES {type(e).__name__}: {str(e)[:60]!r} calls={llm.calls}"
+    # OUTSIDE the try: the result is read with bracket access, and a KeyError here is
+    # this instrument's own failure, which must surface as one — inside the try it
+    # rendered as `RAISES KeyError` attributed to ingest_event, a wrong matrix cell the
+    # pinned transcript would have accepted (ocr review of v0.21.0, 2026-09-11).
+    return (f"RESULT facts={r['facts']} unparseable={r.get('unparseable', False)} "
+            f"retried={r.get('retried')} recovered={r.get('recovered')} residual={r.get('residual')} calls={llm.calls}")
 
 
 GOOD = {"subject": "user", "relation": "uses_tool", "object": "Vim", "volatility": "durable"}

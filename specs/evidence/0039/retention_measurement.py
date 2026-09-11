@@ -102,6 +102,11 @@ def measure() -> dict:
             rows.append({"case": name, "degrade_bytes": d, "error_bytes": e,
                          "error_lines": elines, "raised": raised})
         err_bytes, err_lines = _error_record(tmp)
+    # completeness FIRST: a case that emitted no degrade record is the finding "kind X
+    # stopped recording", named here — not a TypeError from min() over a None three
+    # lines later (ocr review of v0.21.0, 2026-09-11)
+    missing = [r["case"] for r in rows if r["degrade_bytes"] is None]
+    assert not missing, f"no degrade record emitted for: {missing} — a finding, not a measurement"
     sizes = [r["degrade_bytes"] for r in rows]
     return {
         "rows": rows,

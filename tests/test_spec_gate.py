@@ -3144,6 +3144,52 @@ def test_the_citation_derivation_detects_a_planted_name_and_resolves_a_real_one(
 # a `Discharges: <sha>` line inside a `## Retrospective` section; a deferral
 # needs a future date, a reason and an authoriser; zero obligations is not a
 # pass.
+
+def _hermetic_git_env(home) -> dict:
+    """The battery's git environment, the same discipline as the `Repo` fixture at the
+    top of this file: no global or system gitconfig (a `commit.gpgsign = true` or a
+    `core.hooksPath` set on the machine would hang or fail every commit and clone
+    below — the 0007 v3 incident), no terminal prompt, fixed identity. An ocr review
+    of the v0.21.0 range (2026-09-11) found four env dicts here redirecting HOME but
+    still reading /etc/gitconfig, with no timeouts."""
+    return {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
+            "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(home), "PATH": os.environ["PATH"],
+            "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+            "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"}
+
+
+
+def test_the_retrospective_gate_resolves_its_root_from_its_own_file_not_the_cwd(monkeypatch, capsys):
+    """Ocr review of v0.21.0 (2026-09-11): `main()` defaulted to `Path.cwd()` and the
+    docstring said to run it from `specs/`, where `specs/specs/` is empty — every
+    obligation reported outstanding, every SUPERSEDED closure refused, exit 1, all
+    from a wrong root that `git -C` still resolved. The root is now the file's parent's
+    parent, and the bare invocation from `specs/` equals the explicit-root one."""
+    mod = _retrospective_debt()
+    assert mod.REPO == _CIT_ROOT
+    monkeypatch.chdir(_CIT_ROOT / "specs")
+    bare = mod.main(["retrospective_debt.py", "--json"]); bare_out = capsys.readouterr().out
+    explicit = mod.main(["retrospective_debt.py", str(_CIT_ROOT), "--json"]); explicit_out = capsys.readouterr().out
+    assert (bare, bare_out) == (explicit, explicit_out)
+    import json as _json
+    assert len(_json.loads(bare_out)["obligations"]) >= 9, "the derivation found fewer than the nine in history"
+
+def test_the_hermetic_git_env_reads_no_config_outside_the_scratch_home(tmp_path):
+    """Negative control for `_hermetic_git_env`: with it, `git config --show-origin`
+    lists no origin outside tmp_path; with the old dict (HOME redirected only), the
+    system file is still an origin whenever the machine has one — so the control
+    asserts the PROPERTY on the hermetic env and shows the old env is weaker."""
+    env = _hermetic_git_env(tmp_path)
+    # a global config planted in the scratch HOME with the setting that hung 0007 v3
+    (tmp_path / ".gitconfig").write_text("[commit]\n\tgpgsign = true\n")
+    def listing(e):
+        return subprocess.run(("git", "config", "--show-origin", "--list"), env=e, cwd=tmp_path,
+                              capture_output=True, text=True, timeout=60).stdout
+    assert "gpgsign" not in listing(env), listing(env)                  # hermetic: not read
+    assert not [l for l in listing(env).splitlines() if l.startswith("file:")], listing(env)
+    weaker = {k: v for k, v in env.items() if not k.startswith("GIT_CONFIG_")}   # the old dicts
+    assert "commit.gpgsign=true" in listing(weaker), "the control is vacuous: the old env does not read the planted global config"
+
 def _retrospective_debt(*, bare=False):
     """A fresh module instance per call. `bare=True` empties the live
     disposition tables: they describe THIS tree's obligations and covering
@@ -3168,10 +3214,9 @@ def _hotfix_repo(tmp_path, due, *, discharges=None, subject="hotfix"):
     import subprocess
     repo = tmp_path / "repo"
     (repo / "specs").mkdir(parents=True)
-    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
-           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"]}
+    env = _hermetic_git_env(tmp_path)
     g = lambda *a: subprocess.run(("git", "-C", str(repo), *a), check=True, env=env,
-                                  capture_output=True, text=True).stdout
+                                  capture_output=True, text=True, timeout=60).stdout
     g("init", "-q", "-b", "main")
     (repo / "specs" / "0900-a.md").write_text("Spec-Status: accepted\n\n## Body\n\ntext\n")
     g("add", "-A")
@@ -3316,9 +3361,8 @@ def test_the_retrospective_derivation_owes_past_dates_closes_declared_ones_and_r
     # is load-bearing (b8a4489 on release/0.18 was named only because of it)
     import subprocess as _sp
     repo, sha = _hotfix_repo(tmp_path / "br", "2026-08-07")
-    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
-           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"]}
-    g = lambda *a: _sp.run(("git", "-C", str(repo), *a), check=True, env=env, capture_output=True, text=True).stdout
+    env = _hermetic_git_env(tmp_path)
+    g = lambda *a: _sp.run(("git", "-C", str(repo), *a), check=True, env=env, capture_output=True, text=True, timeout=60).stdout
     g("branch", "release-x")                      # the hotfix lives on the branch
     # an orphan main with no common history, so the hotfix is unreachable from HEAD
     g("checkout", "-q", "--orphan", "main2"); (repo / "m").write_text("m"); g("add", "-A"); g("commit", "-q", "-m", "main without the hotfix")
@@ -3328,12 +3372,11 @@ def test_the_retrospective_derivation_owes_past_dates_closes_declared_ones_and_r
     # vacuity: a history with no obligation is a refusal, not a pass
     import subprocess
     empty = tmp_path / "f" / "repo"; (empty / "specs").mkdir(parents=True)
-    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t",
-           "GIT_COMMITTER_EMAIL": "t@x", "HOME": str(tmp_path), "PATH": os.environ["PATH"]}
-    subprocess.run(("git", "-C", str(empty), "init", "-q", "-b", "main"), check=True, env=env)
+    env = _hermetic_git_env(tmp_path)
+    subprocess.run(("git", "-C", str(empty), "init", "-q", "-b", "main"), check=True, env=env, timeout=60)
     (empty / "x").write_text("x")
-    subprocess.run(("git", "-C", str(empty), "add", "-A"), check=True, env=env)
-    subprocess.run(("git", "-C", str(empty), "commit", "-q", "-m", "plain commit"), check=True, env=env)
+    subprocess.run(("git", "-C", str(empty), "add", "-A"), check=True, env=env, timeout=60)
+    subprocess.run(("git", "-C", str(empty), "commit", "-q", "-m", "plain commit"), check=True, env=env, timeout=60)
     probs = mod.problems(empty, today)
     assert len(probs) == 1 and "not a pass" in probs[0]
 
@@ -3348,14 +3391,13 @@ def test_the_retrospective_derivation_refuses_a_shallow_clone_rather_than_under_
     import subprocess
     mod = _retrospective_debt(bare=True)
     src, sha = _hotfix_repo(tmp_path / "src", "2026-08-07")
-    env = {"HOME": str(tmp_path), "PATH": os.environ["PATH"],
-           "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x"}
+    env = _hermetic_git_env(tmp_path)
     # a second commit so a depth-1 clone genuinely lacks the hotfix commit
     (src / "later").write_text("x")
-    subprocess.run(("git", "-C", str(src), "add", "-A"), check=True, env=env)
-    subprocess.run(("git", "-C", str(src), "commit", "-q", "-m", "later plain commit"), check=True, env=env)
+    subprocess.run(("git", "-C", str(src), "add", "-A"), check=True, env=env, timeout=60)
+    subprocess.run(("git", "-C", str(src), "commit", "-q", "-m", "later plain commit"), check=True, env=env, timeout=60)
     shallow = tmp_path / "shallow"
-    subprocess.run(("git", "clone", "-q", "--depth", "1", f"file://{src}", str(shallow)), check=True, env=env, capture_output=True)
+    subprocess.run(("git", "clone", "-q", "--depth", "1", f"file://{src}", str(shallow)), check=True, env=env, capture_output=True, timeout=60)
     assert subprocess.run(("git", "-C", str(shallow), "rev-parse", "--is-shallow-repository"),
                           capture_output=True, text=True).stdout.strip() == "true"
     with pytest.raises(RuntimeError, match="shallow repository"):
@@ -3363,7 +3405,7 @@ def test_the_retrospective_derivation_refuses_a_shallow_clone_rather_than_under_
     with pytest.raises(RuntimeError, match="shallow repository"):
         mod.problems(shallow, "2026-09-08")
     full = tmp_path / "full"
-    subprocess.run(("git", "clone", "-q", f"file://{src}", str(full)), check=True, env=env, capture_output=True)
+    subprocess.run(("git", "clone", "-q", f"file://{src}", str(full)), check=True, env=env, capture_output=True, timeout=60)
     assert [o["sha"] for o in mod.obligations(full)] == [sha[:7]]
     assert len(mod.problems(full, "2026-09-08")) == 1
 
