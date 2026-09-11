@@ -637,7 +637,7 @@ deferred.
 
 **External review item 1.** The spec asserted both *"never mutated after
 creation by any operation"* (N1) and *"`valid_from = min` stays the sole
-exception"* (M5). **Research owns the contradiction** — the exception was in
+exception"* (M5; WITHDRAWN wording, quoted as history). **Research owns the contradiction** — the exception was in
 their M5 ruling.
 
 **Narrow correction to the reviewer's premise, which does not save it.** The

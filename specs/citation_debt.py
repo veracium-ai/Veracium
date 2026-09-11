@@ -265,9 +265,20 @@ GENERATION_SET: frozenset = frozenset(
 #: the entries STILL carrying the grandfather reason — derived at import, the
 #: one number that says whether the debt is being paid (174 at generation; it
 #: can only fall)
-UNCLASSIFIED_REMAINING: int = sum(
-    1 for names in CITATION_DEBT.values() for r in names.values()
-    if r == "unclassified_at_generation")
+def unclassified_remaining(table=None) -> int:
+    """The grandfather count over `table` (default: the live CITATION_DEBT). A
+    FUNCTION, not only a constant, so a test can re-derive it after planting an
+    entry: GENERATION_SET is derived from the table at import, which makes the
+    "reserved for the frozen set" check in problems() unfalsifiable against an
+    entry EDITED INTO THE FILE — that loophole is closed by the ceiling
+    tests/test_spec_gate.py pins over this number (an ocr review of the v0.21.0
+    range found the tautology, 2026-09-11)."""
+    names_by_spec = CITATION_DEBT if table is None else table
+    return sum(1 for names in names_by_spec.values() for r in names.values()
+               if r == "unclassified_at_generation")
+
+
+UNCLASSIFIED_REMAINING: int = unclassified_remaining()
 
 
 def test_defs(root):

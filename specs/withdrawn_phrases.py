@@ -34,7 +34,12 @@ WITHDRAWN = [
      "`extraction_unusable: True`, nothing raises",
      "specs/0039 §2a/§2b/§2c-ii rows 6–7/§8 as rewritten at v17; specs/0025 §4b(1) v16"),
     ("0039-bare-array-retry-attributeerror",
-     r"AttributeError`? inside the `?try`?|bare_array`? — UNDESIGNED|retry_failed`?/`?bare_array`? — UNDESIGNED",
+     # v2 (2026-09-11): the two "— UNDESIGNED" branches quoted wording that left the
+     # spec at v17 and spelled `bare_array` with the underscore the lint then stripped,
+     # so neither could ever fire (an ocr review of the v0.21.0 range); the register's
+     # rule is history quoted VERBATIM, and the history that exists is §1/§2c's
+     # `bare array → cause=AttributeError`.
+     r"AttributeError`? inside the `?try`?|bare array → cause=`?AttributeError",
      "0025 v15 (2026-09-10, owner's word): the retry normalizes a bare JSON array exactly "
      "as the first extraction does — a recovery attempt; `cause=bare_array` is unproducible",
      "specs/0039 §2c-i row 2c and §2c-ii rows 8–9 as rewritten at v17; specs/0025 §4b(1) v15"),
@@ -143,16 +148,20 @@ WITHDRAWN = [
      r"direct restoration( material)?",
      "R4-1/0014: multi-prior absorption killed direct restoration; reversal is recomputation",
      "specs/0014 §7 Reversibility"),
+    # ---- 2026-09-11: five 0014 patterns below spelled identifiers WITHOUT their
+    # underscores because the lint's normaliser used to strip every underscore; it
+    # now keeps intra-token ones (see lint_withdrawn._normalise), so the patterns
+    # spell the identifiers as the specs do. Same fixtures, same coverage.
     ("0014-no-format-bump",
-     r"no FORMATVERSION change",
+     r"no FORMAT_VERSION change",
      "R5-4/0014: the exported Episode field bumps FORMAT_VERSION 4->5 (0010 refuse-dont-drop)",
      "specs/0014 §7a portability"),
     ("0014-sql-column",
-     r"consolidationoutputindex INTEGER|episodes\.consolidationoutputindex",
+     r"consolidation_output_index INTEGER|episodes\.consolidation_output_index",
      "R5-3/0014: the SQL-column form is withdrawn; the index is an Episode model field in the json blob",
      "specs/0014 §4c"),
     ("0014-preimage-into-request-digest",
-     r"(pre.image|drafts?|contributions?) (ENTERS?|enters?) .{0,25}logicalrequestdigest",
+     r"(pre.image|drafts?|contributions?) (ENTERS?|enters?) .{0,25}logical_request_digest",
      "R5-2/0014: the receipt split; the pre-image enters the OUTCOME digest, replay identity is the REQUEST digest",
      "specs/0014 §4b/§7b"),
     ("0014-loser-may-conflict",
@@ -164,7 +173,7 @@ WITHDRAWN = [
      "R9-6/0014: the migration ALSO carries the receipts ALTERs; the Episode field adds no DDL of its own but the claim as stated contradicted §7a",
      "specs/0014 §4c/§7a"),
     ("0014-needs-confirmation-recomputed",
-     r"needsconfirmation \(never cleared",
+     r"needs_confirmation \(never cleared",
      "R9-4/0014: needs_confirmation is EXACT-EQUAL — the shipped absorption (graph.py:163-167) inherits only valid_from/observed_at/confidence and never touches it",
      "specs/0014 §4b partition"),
     ("0014-liveness-trust-transfers",
@@ -196,7 +205,7 @@ WITHDRAWN = [
      "0012 Design 1 LANDED: restatements persist as their own edges",
      "specs/0012 §4a; specs/0014 §1 historical note"),
     ("0014-validfrom-consolidation",
-     r"validfrom\? (disclosure|derivedfrom)|validfrom is (in|part of) the consolidation",
+     r"valid_from\? (disclosure|derived_from)|valid_from is (in|part of) the consolidation",
      "R4-6/0014: Episodes have no valid_from; the consolidation set excludes it",
      "specs/0014 §4a"),
     # Narrowed deliberately. A first attempt matched any *description* of the
@@ -345,7 +354,11 @@ WITHDRAWN = [
      "Q5 resolved the other way: a correction inherits the corrected edge's class",
      "specs/0003 Q5, §M7"),
     ("0003-ladder-inverted",
-     r"assistant . third_party.{0,10}allow|assistant . user.{0,10}block",
+     # v2 (2026-09-11): the ladder is written with an arrow; `assistant . third_party`
+     # also matched 0011's entitlement table row `assistant | third_party | 0 | ALLOW`,
+     # a different table with a different meaning, once the lint stopped stripping the
+     # identifier's underscore.
+     r"assistant (->|→|=>) third_party.{0,10}allow|assistant (->|→|=>) user.{0,10}block",
      "inverted: the ladder gives assistant->user ALLOW and assistant->third_party BLOCK",
      "specs/0003 §3"),
     ("0003-one-guard-one-loop",

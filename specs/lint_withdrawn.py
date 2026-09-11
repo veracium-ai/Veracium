@@ -31,8 +31,14 @@ def _normalise(text: str) -> str:
     emphasis and fold clause punctuation (`,;:` — the separators that break a phrase
     without being part of a word) to a space. Hyphens and periods are left intact:
     they live INSIDE tokens (`same-author-class`, `0.4.5`), and folding them would
-    manufacture matches, not reveal them."""
-    text = re.sub(r"[*`_~]", "", text)
+    manufacture matches, not reveal them. Underscores are stripped ONLY where they
+    are emphasis — at a word's edge (`_same author_`) — and kept inside a token
+    (`extraction_unusable`, `valid_from`): stripping every underscore made any
+    register pattern that names an identifier unmatchable, so five entries could
+    never fire and three specs carried withdrawn wording the lint reported clean
+    (found by an ocr review of the v0.21.0 range, 2026-09-11)."""
+    text = re.sub(r"[*`~]", "", text)
+    text = re.sub(r"(?<!\w)_+|_+(?!\w)", "", text)
     text = re.sub(r"[,;:]", " ", text)
     return re.sub(r"\s+", " ", text)
 

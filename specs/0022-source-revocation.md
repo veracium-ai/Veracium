@@ -596,7 +596,7 @@ spot (**R7**).
 
 **Class (c) is defined by MISSING LINKAGE, not by authorship (external
 round 1, F4).** v2 counted only `system_authored` records with no
-contribution rows and called the result an upper bound. **It was not one.**
+contribution rows and called the result an upper bound (OBSOLETE, quoted as history). **It was not one.**
 A pre-`0014` absorption survivor keeps the INCOMING record's provenance —
 routinely user-authored — while carrying values transferred from a
 contributor that no ledger row names, because the linkage discipline did not

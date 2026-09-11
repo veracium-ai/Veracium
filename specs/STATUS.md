@@ -14,7 +14,7 @@ is the number that decides what can be built.
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-08 | 1 | 18 | 2 | 0 | 0 | — |
-| **0002** | the maintenance provenance invariant | `deferred` | 2026-08-29 | 2 | 8 | 0 | 0 | 10 | 8/10 |
+| **0002** | the maintenance provenance invariant | `deferred` | 2026-09-11 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-26 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-08-22 | 1 | 3 | 1 | 0 | 1 | 1/1 |
 | **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
@@ -34,7 +34,7 @@ is the number that decides what can be built.
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-20 | 1 | 14 | 0 | 0 | 0 | — |
-| **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-09-08 | 4 | 21 | 5 | 0 | 0 | — |
+| **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-09-11 | 4 | 21 | 5 | 0 | 0 | — |
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-09-08 | 3 | 21 | 3 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-08 | 2 | 24 | 3 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-11 | 2 | 24 | 2 | 0 | 0 | — |

@@ -546,6 +546,31 @@ def test_the_withdrawn_lint_is_punctuation_insensitive():
     assert lint_withdrawn._normalise("same-author-class") == "same-author-class"
 
 
+def test_the_withdrawn_lint_keeps_identifier_underscores_and_strips_emphasis_ones():
+    """An ocr review of the v0.21.0 range (2026-09-11) found the normaliser stripping
+    EVERY underscore, so a register pattern naming an identifier (`bare_array`,
+    `valid_from`, `system_authored`) could never match: five entries were dead and
+    three specs carried withdrawn wording the lint reported clean. Underscores are
+    emphasis only at a word's edge; inside a token they are the identifier."""
+    import sys, pathlib, importlib, re
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import lint_withdrawn, withdrawn_phrases
+    importlib.reload(lint_withdrawn)
+    n = lint_withdrawn._normalise
+    assert n("`extraction_unusable`") == "extraction_unusable"
+    assert n("valid_from = min") == "valid_from = min"
+    assert n("_same author_ and __twice__") == "same author and twice"
+    assert n("**bold** `code` ~~struck~~") == "bold code struck"
+    # every register pattern that spells an identifier with its underscore can now
+    # meet that identifier: the literal it names survives normalisation unchanged
+    for rid, pat, _why, _where in withdrawn_phrases.WITHDRAWN:
+        for ident in re.findall(r"[A-Za-z]+_[A-Za-z_]+", pat):
+            assert n(ident) == ident, (rid, ident)
+    # the negative control: a normaliser that strips every underscore fails this file
+    assert re.sub(r"[*`_~]", "", "`bare_array`") != "bare_array"
+
+
 def test_watch_rows_are_not_counted_as_open_questions():
     """Round-6 contract D: 0003 Q2a is a `watch` — a recorded trigger for a future
     condition, which the spec calls 'not an open question' — yet the status generator
@@ -3059,11 +3084,28 @@ def test_accepted_specs_cite_only_test_nodes_that_exist_or_recorded_debt():
     planned node becomes a claim."""
     mod = _citation_debt()
     assert mod.problems(_CIT_ROOT) == [], "\n".join(mod.problems(_CIT_ROOT))
-    # every entry carries a reason from the closed vocabulary, and the
-    # generation-time reason is confined to the pairs frozen at generation
+    # every entry carries a reason from the closed vocabulary
     for spec, entries in mod.CITATION_DEBT.items():
         for name, reason in entries.items():
             assert reason.split(":", 1)[0] in mod.REASONS, (spec, name, reason)
+    # THE GRANDFATHER CEILING. GENERATION_SET is derived from CITATION_DEBT at import,
+    # so problems()' "reserved for the frozen set" check cannot refuse an entry EDITED
+    # INTO THE FILE with the grandfather reason — it is in the set by construction (an
+    # ocr review of the v0.21.0 range found the tautology, 2026-09-11). What can refuse
+    # it is a number pinned OUTSIDE the module: the grandfather count was 138 when this
+    # pin was written and may only fall. Raising the pin is a deliberate act in this
+    # file, never a side effect of editing the table.
+    UNCLASSIFIED_CEILING = 138
+    assert mod.unclassified_remaining() <= UNCLASSIFIED_CEILING, (
+        f"{mod.unclassified_remaining()} entries carry unclassified_at_generation, above the "
+        f"ceiling of {UNCLASSIFIED_CEILING}: a NEW entry was declared with the grandfather reason")
+    assert len(mod.GENERATION_SET) == mod.unclassified_remaining() == mod.UNCLASSIFIED_REMAINING
+    # the mutant the tautology admitted: a new pair with the grandfather reason, as if
+    # edited into the file — problems() cannot see it once imported; the ceiling can
+    import copy
+    planted = copy.deepcopy(mod.CITATION_DEBT)
+    planted.setdefault("0001", {})["test_planted_grandfather_zzz"] = "unclassified_at_generation"
+    assert mod.unclassified_remaining(planted) == UNCLASSIFIED_CEILING + 1 > UNCLASSIFIED_CEILING
     # the mutants: a new key with no reason, a wrong reason, and the frozen
     # reason on an unfrozen pair are each refused by the derivation
     import copy
