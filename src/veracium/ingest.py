@@ -351,6 +351,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True,
+                # specs/0025 §4c as amended (round-5 R5-1): the OUTCOME field, present on
+                # every path — an answer rejected whole produced no shape-valid triple
+                "extraction_unusable": True,
                 "supersessions": 0, "reinforcements": 0,
                 # §4c: zeros PRESENT on the unparseable path — an absent key
                 # is not a zero.
@@ -364,20 +367,6 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 "birth_revocation_digest": (_birth_digest if revoked_at_birth
                                             else None),
                 "agreement_floored": 0, "agreement_recorded": 0}
-
-    # episode — always recorded; carries author so the gate knows a third-party
-    # episode records receipt, not truth.
-    episode_text = str(data.get("episode", "")).strip()
-    if episode_text:
-        store.add_episode(Episode(
-            id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
-            provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
-                                  # 0023 §4a (internal S3): the episode's OWN disclosure is
-                                  # set at birth — third-party influence caps it at USE_ONLY
-                                  # exactly as _disclosure_for caps the edges; C4 adds the
-                                  # standing-revoked → QUARANTINED branch on this same field
-                                  disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
-                                  derived_from=derived_from, source_id=source_id, observed_at=when)))
 
     n_facts = n_quarantined = n_supersessions = n_reinforcements = 0
     # ---- specs/0025 §4b(1): membership + the ONE retry per event ---------
@@ -438,6 +427,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     triples_in = data.get("triples")
     if not isinstance(triples_in, list):
         triples_in = []
+    n_shape_valid = 0
     parsed = []
     for t in triples_in:
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
@@ -445,6 +435,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # so the list-ness guard this counter carried is gone with the amendment
             n_members_skipped += 1
             continue
+        n_shape_valid += 1           # round-5 R5-1: passed the shape guard, whatever follows
         # specs/0025 (amended 2026-09-08 on the 0.20.0 selfcheck finding): the
         # SUBJECT GRAMMAR is enforced here, not only stated in the prompt. The
         # prompt's placeholder read `user|person:<name>|org:<name>` and one
@@ -592,7 +583,43 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             n_residual += 1
 
     n_agreement_floored = n_agreement_recorded = 0
+    # specs/0039 round-5 R5-2: EVERY degrade record is computed and emitted BEFORE the
+    # first effectful store operation. The two counted kinds used to be emitted after
+    # the storage loop, so a store failure inside it — a genuine error, recorded by
+    # `_on_error` with its traceback — took the promised degrade record with it:
+    # V-DEGRADE-RECORDED's "one record per occurrence" was zero on that path. The
+    # volatility coercion is pure, so it runs here as a pre-pass over every parsed row
+    # (the ONE continuing handler §1 names for it, moved, not duplicated); the member
+    # count is already complete after the retry. The episode write follows the
+    # emissions for the same reason: it is the first write, and a record must precede
+    # it. Ordering of the records themselves is unchanged.
     n_volatility_defaulted = 0
+    for row in parsed:
+        try:
+            row["vol"] = Volatility(str(row["t"].get("volatility", "durable")).strip().lower())
+        except ValueError:
+            row["vol"] = Volatility.DURABLE
+            n_volatility_defaulted += 1      # specs/0039 §2b: counted per call, one record
+    # specs/0039 §2b/§2c: the two COUNTED kinds, one record per call each, only when
+    # non-zero; the counters never reach the result (0025 X12 keeps the set closed)
+    if n_volatility_defaulted:
+        _emit_degrade(on_degrade, "volatility_defaulted", {"count": n_volatility_defaulted})
+    if n_members_skipped:
+        _emit_degrade(on_degrade, "member_skipped", {"count": n_members_skipped})
+    # episode — always recorded; carries author so the gate knows a third-party
+    # episode records receipt, not truth.
+    episode_text = str(data.get("episode", "")).strip()
+    if episode_text:
+        store.add_episode(Episode(
+            id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
+            provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
+                                  # 0023 §4a (internal S3): the episode's OWN disclosure is
+                                  # set at birth — third-party influence caps it at USE_ONLY
+                                  # exactly as _disclosure_for caps the edges; C4 adds the
+                                  # standing-revoked → QUARANTINED branch on this same field
+                                  disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
+                                  derived_from=derived_from, source_id=source_id, observed_at=when)))
+
     for row in parsed:
         t = row["t"]
         relation = row["relation"]
@@ -616,11 +643,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # configurable refusal mode; Q2 (ratified): a later lift does NOT
             # revisit this floor.
             disclosure = Disclosure.QUARANTINED
-        try:
-            vol = Volatility(str(t.get("volatility", "durable")).strip().lower())
-        except ValueError:
-            vol = Volatility.DURABLE
-            n_volatility_defaulted += 1      # specs/0039 §2b: counted per call, one record
+        vol = row["vol"]                     # coerced in the pre-pass above, before any write
         obj = str(t["object"]).strip()
         # specs/0019 §4a: between extraction and storage, the object's
         # specifics are checked against the event text (the §4b predicate;
@@ -670,12 +693,6 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             n_quarantined += 1
         else:
             n_facts += 1
-    # specs/0039 §2b/§2c: the two COUNTED kinds, one record per call each, only when
-    # non-zero; the counters never reach the result (0025 X12 keeps the set closed)
-    if n_volatility_defaulted:
-        _emit_degrade(on_degrade, "volatility_defaulted", {"count": n_volatility_defaulted})
-    if n_members_skipped:
-        _emit_degrade(on_degrade, "member_skipped", {"count": n_members_skipped})
     result = {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
             "supersessions": n_supersessions, "reinforcements": n_reinforcements,
             # specs/0025 §4c — THE counter inventory, present on every path;
@@ -704,11 +721,17 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # operator counters; telemetry consumption DEFERRED (R1-3)
             "agreement_floored": n_agreement_floored,
             "agreement_recorded": n_agreement_recorded}
-    # specs/0025 §4c as amended: the key is ADDED, never a new one — `unparseable`
-    # already rides the no-JSON path with this exact meaning ("the extraction yielded
-    # no usable `triples`"), so the pinned key set of a SUCCESSFUL ingest (X12) is
-    # untouched and no host learns a new name. It appears only on the paths that
-    # produced nothing usable, exactly as it does on the no-JSON path today.
-    if primary_unusable:
-        result["unparseable"] = True
+    # specs/0025 §4c, AMENDED for round-5 R5-1 (the owner's word: "Go with the new
+    # field"): `extraction_unusable` is the OUTCOME, present on EVERY path as True or
+    # False — the primary extraction produced no shape-valid triple, whether the answer
+    # was rejected whole (the early return above), lacked a usable `triples` list (the
+    # two carrier branches), or carried a non-empty list none of whose members passed
+    # the shape guard. A legitimately EMPTY list is False: it is a usable answer that
+    # says nothing. Members that passed the guard and were then refused for another
+    # reason (subject grammar, an instruction restatement, quarantine) are NOT this;
+    # each of those has its own counter. `unparseable` keeps its original narrow
+    # meaning (the early return) — the round-5 reviewer showed that widening it made
+    # its name false for parsed answers and its domain false for rejected ones.
+    result["extraction_unusable"] = bool(
+        primary_unusable or (len(triples_in) > 0 and n_shape_valid == 0))
     return result

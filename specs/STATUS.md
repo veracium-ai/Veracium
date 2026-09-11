@@ -4,7 +4,7 @@
 
 # Spec status
 
-**35 specs · 34 accepted · 387 external review
+**35 specs · 34 accepted · 388 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -37,7 +37,7 @@ is the number that decides what can be built.
 | **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-09-08 | 4 | 21 | 5 | 0 | 0 | — |
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-09-08 | 3 | 21 | 3 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-08 | 2 | 24 | 3 | 0 | 0 | — |
-| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-10 | 2 | 24 | 2 | 0 | 0 | — |
+| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-11 | 2 | 24 | 2 | 0 | 0 | — |
 | **0026** | label/value agreement check | `accepted` | 2026-09-08 | 14 | 12 | 2 | 0 | 0 | — |
 | **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-08 | 0 | 7 | 0 | 0 | 0 | — |
@@ -47,12 +47,12 @@ is the number that decides what can be built.
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 | **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-08 | 0 | 5 | 0 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-08 | 0 | 4 | 0 | 0 | 0 | — |
-| **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-10 | 0 | 4 | 0 | 0 | 0 | — |
+| **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-11 | 0 | 5 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
-**Per-finding closure ledger — 379 findings across the
+**Per-finding closure ledger — 381 findings across the
 11 tracked specs** (0001, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038, 0039), derived from
 `specs/closure_findings.py` and validated against `specs/reviews.py` by
 `specs/render_closure.py --check`. This total is rendered HERE ONLY (owner's

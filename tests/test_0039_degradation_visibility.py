@@ -720,65 +720,138 @@ def _default_host(tmp_path, primary, name):
 
 
 def test_a_default_host_can_tell_a_malformed_answer_from_an_empty_one(tmp_path):
-    """specs/0025 §4c, AMENDED 2026-09-10 on the owner's word, after research read the
-    wider normalization rule against 0039's ACCEPTED §8 ("a host that passes
-    `diagnostics=None` learns nothing new") and found it no longer true: with no
-    reporter, `{"triples": null}` returned a dict BYTE-IDENTICAL to a legitimately
-    empty extraction. That is 0039 §1a's founding complaint — a failure
-    indistinguishable in every carrier the host has — reproduced on the primary path
-    by the spec written to end it.
+    """specs/0025 §4c, AMENDED for 0039 round-5 R5-1 (the owner's word, 2026-09-11:
+    "Go with the new field"). The round-5 reviewer showed the narrow fix's flag meant
+    neither thing it could mean: an all-invalid list stayed silent, and the flag fired
+    on a response whose triples were usable but which 0038's instructions rule
+    rejected. `extraction_unusable` is the OUTCOME, present on every path as a bool:
+    the primary extraction produced no shape-valid triple — the answer rejected whole,
+    a missing or non-list `triples`, or a non-empty list none of whose members passed
+    the shape guard. A legitimately empty list is False. `unparseable` is narrow again.
 
-    The result now marks a primary answer that yielded no usable `triples`. Both
-    directions are asserted, because a rule that says only what must NOT happen is
-    satisfiable by marking everything: the five malformed shapes carry the key, and a
-    legitimately empty answer and a good one do not. It closes the two shapes that
-    were ALREADY silent before the wider rule (a string and a dict, silent since
-    before 0039 was written) as well as the three the rule moved."""
-    empty = _default_host(tmp_path, _main([]), "empty")
-    good = _default_host(tmp_path, _main([GOOD]), "good")
+    Every row the reviewer tabled, plus the one they stated in prose, plus the two
+    edges that bound the definition: a MIXED list (one usable member) is False, and a
+    list whose members passed the shape guard but were all refused for another reason
+    is False — those have their own counters and are not this field's claim."""
+    def r(primary, name):
+        return _default_host(tmp_path, primary, name)
+    empty = r(_main([]), "empty")
+    good = r(_main([GOOD]), "good")
+    assert empty["extraction_unusable"] is False and empty["facts"] == 0
+    assert good["extraction_unusable"] is False and good["facts"] == 1
     assert "unparseable" not in empty and "unparseable" not in good
-    assert empty["facts"] == 0 and good["facts"] == 1
+    # the reviewer's table, and the prose row
+    unusable = {
+        "all-invalid list": _main([{}, "junk", 7, None]),
+        "missing triples": json.dumps({"note": 1}),
+        "non-list: null": _main(None), "non-list: number": _main(5),
+        "non-list: boolean": _main(True), "non-list: string": _main("x"),
+        "non-list: dict": _main({"a": 1}),
+        "no JSON at all": "I refuse.",
+        "usable triples, rejected by the instructions rule": _main([GOOD], instructions="x"),
+    }
+    for name, raw in unusable.items():
+        res = r(raw, name.replace(" ", "_").replace(":", "").replace(",", ""))
+        assert res["facts"] == 0, name
+        assert res["extraction_unusable"] is True, f"{name}: not marked"
+    # `unparseable` is narrow again: only the two rejected-whole rows carry it
+    assert r("I refuse.", "u1").get("unparseable") is True
+    assert r(_main([GOOD], instructions="x"), "u2").get("unparseable") is True
+    assert "unparseable" not in r(_main([{}, "junk"]), "u3")
+    assert "unparseable" not in r(_main(None), "u4")
+    # the definition's edges: a mixed list has a usable member; an all-refused list
+    # (subjects off the grammar) passed the shape guard and is counted elsewhere
+    mixed = r(_main([GOOD, "junk", 7]), "mixed")
+    assert mixed["extraction_unusable"] is False and mixed["facts"] == 1
+    refused = r(_main([dict(GOOD, subject="user|person:x")]), "refused")
+    assert refused["extraction_unusable"] is False and refused["facts"] == 0
+    assert refused["subject_refused"] == 1
+    # present on EVERY path, as a bool — 0025 §4c: an absent key is not a zero
+    for res in (empty, good, mixed, refused):
+        assert isinstance(res["extraction_unusable"], bool)
 
-    malformed = {"null": None, "number": 5, "boolean": True,
-                 "string": "user uses Vim", "dict": {"a": 1}}
-    for name, value in malformed.items():
-        r = _default_host(tmp_path, _main(value), f"m-{name}")
-        assert r["facts"] == 0, name
-        assert r.get("unparseable") is True, f"{name}: still indistinguishable from empty"
-        assert {k: v for k, v in r.items() if k not in ("episode", "unparseable")} == \
-               {k: v for k, v in empty.items() if k != "episode"}, name
-    # the no-JSON path is unchanged: it carried this key with this meaning already
-    prose = _default_host(tmp_path, "I refuse.", "prose")
-    assert prose.get("unparseable") is True
 
-    # V-RESULT-UNCHANGED where it is asserted: a SUCCESSFUL ingest's key set is
-    # exactly X12's pinned set, so no host that was reading a good result sees a
-    # new name. The key appears only where the extraction produced nothing usable.
-    assert set(good) == set(empty)
-    assert "unparseable" not in set(good)
-
-
-def test_the_telemetry_counter_now_counts_the_wider_class(tmp_path):
-    """The one CONSUMER of the flag (`Memory.remember` projects it into the opt-in
-    telemetry ingest event as 0/1). Widening the flag widens that counter, which is
-    the change's only outward effect beyond the result dict — asserted here rather
-    than left to be discovered, and measured through the shipped projection."""
+def test_the_new_field_reaches_the_mcp_host_and_not_telemetry(tmp_path):
+    """Two consumers, dispositioned: the MCP tool result CARRIES the field (an MCP
+    host is exactly a default host, and 0031 §4d strips counters a model could learn
+    to probe from, not a boolean that says an answer was unusable — `unparseable` was
+    never stripped either); the opt-in telemetry event does NOT carry it and its
+    `unparseable` counter keeps the narrow meaning (0 for an all-invalid list), which
+    is the widening the reviewer refused, reverted and pinned."""
+    from veracium import mcp_server as m
     import veracium as v
+    mem = _mem(tmp_path, Stub(_main([{}, "junk"]), retry_raw=_main([])), None, "mcp")
+    tool = m.remember_impl(mem, USER, TEXT)
+    assert tool["extraction_unusable"] is True
+    assert "unparseable" not in tool
     seen = []
-
     class _Collector:
         def record(self, event, fields, **kw):
             seen.append((event, fields))
-        def __getattr__(self, name):            # tolerate the wider collector surface
+        def __getattr__(self, name):
             return lambda *a, **k: None
+    mem2 = v.Memory(llm=Stub(_main([{}, "junk"]), retry_raw=_main([])),
+                    config=MemoryConfig(db_path=str(tmp_path / "t.db"), wiki_recompile_after_writes=0),
+                    telemetry=_Collector())
+    _remember(mem2)
+    fields = [f for e, f in seen if e == "ingest"][0]
+    assert fields["unparseable"] == 0 and "extraction_unusable" not in fields
 
-    for i, (name, raw) in enumerate([("malformed", _main(None)), ("empty", _main([]))]):
-        mem = v.Memory(llm=Stub(raw, retry_raw=_main([])),
-                       config=MemoryConfig(db_path=str(tmp_path / f"t{i}.db"),
-                                           wiki_recompile_after_writes=0),
-                       telemetry=_Collector())
-        _remember(mem)
-    ingest_events = [f for e, f in seen if e == "ingest"]
-    assert len(ingest_events) == 2, seen
-    assert ingest_events[0]["unparseable"] == 1, "a malformed answer counts"
-    assert ingest_events[1]["unparseable"] == 0, "a legitimately empty one does not"
+
+# --------------------- round-5 R5-2: records survive a later store failure ----
+def _fail_at(monkeypatch, where):
+    """Force a genuine error at a named effectful store seam. The seam MATTERS: an
+    override placed after the emission point exonerates a broken ordering (research's
+    first attempt failed `add_episode` and the records appeared), so the seam is named
+    in every case rather than left to the reader."""
+    def boom(*a, **k):
+        raise RuntimeError(f"store failure at {where}")
+    if where == "apply_supersession":
+        monkeypatch.setattr(ingest_mod, "apply_supersession", boom)
+    elif where == "add_episode":
+        real_init = SqliteStore.__init__
+        def init(self, *a, **k):
+            real_init(self, *a, **k)
+            self.add_episode = boom
+        monkeypatch.setattr(SqliteStore, "__init__", init)
+    else:
+        raise ValueError(where)
+
+
+def test_counted_records_are_written_before_the_first_store_write(tmp_path, monkeypatch):
+    """Round-5 R5-2 (the reviewer's counterexample, reproduced at the pin before a line
+    moved): `member_skipped` and `volatility_defaulted` were emitted AFTER the storage
+    loop, so a store failure inside it — a genuine error `_on_error` records with its
+    traceback — took the promised degrade record with it: V-DEGRADE-RECORDED's one
+    record per occurrence was ZERO on that path, and V-RECORD-ORDER-ON-ERROR was
+    instanced only on the early-emitted retry site. Every degrade record is now
+    computed and emitted before the first effectful store operation. Asserted at the
+    seam the reviewer used (the edge write) AND at the one before it (the episode
+    write), which the reviewer did not test and which the class includes."""
+    # every answer carries an episode, so the episode seam actually WRITES (an answer
+    # with no episode never reaches add_episode, and a seam that never fires reads as
+    # a pass — the first draft of this test did exactly that)
+    cases = [
+        ("member_skipped", _main([GOOD, "junk"], episode="I use Vim."), "1"),
+        ("volatility_defaulted", _main([dict(GOOD, volatility="banana")], episode="I use Vim."), "1"),
+        ("primary_failed", _main({"a": 1}, episode="I use Vim."), "shape"),
+    ]
+    for where in ("apply_supersession", "add_episode"):
+        for kind, raw, detail in cases:
+            if where == "apply_supersession" and kind == "primary_failed":
+                continue        # a dict `triples` reaches no edge write; the episode seam covers it
+            with pytest.MonkeyPatch.context() as mp:
+                _fail_at(mp, where)
+                rep = _reporter(tmp_path, f"{where}-{kind}.log")
+                mem = _mem(tmp_path, Stub(raw, retry_raw=_main([])), rep, f"{where}-{kind}")
+                with pytest.raises(RuntimeError):
+                    _remember(mem)
+            recs = _records(rep)
+            assert [r[0] for r in recs] == ["WARNING", "ERROR"], (where, kind, recs)
+            assert recs[0][1]["degrade"] == kind and recs[0][1].get("count", recs[0][1].get("cause")) == detail, (where, kind, recs[0])
+            assert recs[1][1]["op"] == "remember"
+    # the control: the same inputs with no failure still write exactly one record each
+    for kind, raw, detail in cases:
+        rep = _reporter(tmp_path, f"ok-{kind}.log")
+        _remember(_mem(tmp_path, Stub(raw, retry_raw=_main([])), rep, f"ok-{kind}"))
+        assert _kinds(_degrades(rep)) == [(kind, detail)], kind

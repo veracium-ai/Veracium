@@ -92,26 +92,19 @@ def test_the_answer_shape_transcript_is_the_scripts_output():
     # amended 2026-09-10): every non-list `triples` is one recorded `shape` and zero
     # facts. The row is still asserted by name -- and its OLD text is asserted absent,
     # so a transcript restored from before the amendment fails instead of reading true.
-    # ...and `unparseable` flipped to True on all of them with specs/0025 §4c's narrow
-    # fix (2026-09-10): an answer that yielded no usable `triples` is marked in the
-    # RESULT, so a host with no reporter can tell it from a legitimately empty one.
-    # The old texts are asserted ABSENT: a transcript from before either amendment
-    # fails here instead of reading true.
-    assert "  null                             -> RESULT facts=0 unparseable=True" in out
+    # `unparseable` is NARROW again after round-5 R5-1 (2026-09-11): the reviewer
+    # showed the v17 widening made the flag mean neither thing it could mean, and the
+    # outcome now rides a new field, `extraction_unusable`, bound by its own test. The
+    # instrument renders an absent key as False, so these carrier rows read False;
+    # `null` stays a RESULT (the wider normalization rule), never a raise.
+    assert "  null                             -> RESULT facts=0 unparseable=False" in out
     assert "RAISES TypeError" not in out
-    assert "  number                           -> RESULT facts=0 unparseable=True" in out
-    assert "  boolean                          -> RESULT facts=0 unparseable=True" in out
-    assert "  string                           -> RESULT facts=0 unparseable=True" in out
-    assert "  missing key                      -> RESULT facts=0 unparseable=True" in out
-    # the negative half, from the same transcript: a legitimately empty extraction is
-    # NOT marked, which is the half a "mark everything" fix would break
-    # (the instrument renders an ABSENT key as False, which is what a clean result has)
+    assert "  number                           -> RESULT facts=0 unparseable=False" in out
+    assert "  boolean                          -> RESULT facts=0 unparseable=False" in out
+    assert "  string                           -> RESULT facts=0 unparseable=False" in out
+    assert "  missing key                      -> RESULT facts=0 unparseable=False" in out
     assert "  valid empty list                 -> RESULT facts=0 unparseable=False" in out
     assert "  valid non-empty list             -> RESULT facts=1 unparseable=False" in out
-    # and the two exact lines the malformed rows carried BEFORE the fix are gone, so a
-    # transcript restored from before it fails here rather than reading true
-    assert "  null                             -> RESULT facts=0 unparseable=False" not in out
-    assert "  missing key                      -> RESULT facts=0 unparseable=False" not in out
     assert "  bare array of dicts              -> RESULT facts=1" in out
     assert "  triples null                     -> RESULT facts=1 unparseable=False retried=1 recovered=0" in out
     assert "  primary call raises              -> RAISES RuntimeError" in out

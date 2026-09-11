@@ -2956,6 +2956,12 @@ REVIEWS = [
     dict(spec="0039", round=4, kind="external", date="2026-09-10",
          verdict='ACCEPT — "sufficiently complete, internally consistent, and finitely verifiable to proceed through acceptance and implementation." R3-1/2/3 closed; the invariant surface frozen in the reviewer\'s words (fourteen invariants; the five callback sites, six-value cause vocabulary, thirteen-row two-call-site matrix, record-plus-error ordering, local-only recording, the deterministic equivalence fixture, the unchanged result surfaces); the OWED tests and the manual CLI log exercise mandatory implementation obligations; 2,897 / 37 in the extracted tree reconciling with 2,925 / 9 in the clone at 2,934; the six malformed §6 rows in accepted specs do not block 0039 and are to be adjudicated separately',
          raised=[]),
+    dict(spec="0039", round=5, kind="external", date="2026-09-11",
+         verdict="SENT (round-5 package bb989e45c249716de5bea1fedc08d9593c2875fe119120fd7d9e815dc1c3c096 @ pin 371cff9f51cd343db2c64d1f4404a64110571dbe, CI 34540844625; 0039 v15 + 0025 v17 — the implementation and three post-acceptance amendments; two complete legs on the same bytes, dev 42/1/2 with the FAIL a stale candidate since cleared, research 43/0/2; the round's FIRST assembly d71a60b6… @ 8b5240e superseded before dispatch on research's finding and disclosed). Dispatched on the owner's word 2026-09-11T00:18Z.",
+         raised=[]),
+    dict(spec="0039", round=5, kind="external", date="2026-09-11",
+         verdict='RETURN for amendment — "The implementation is broadly sound and the package is complete, but two blocking gaps remain." R5-1 blocking (`unparseable` does not have the meaning X17 claims: an all-invalid list stays silent, and the flag fires on a rejected answer whose triples were usable — choose one precise meaning, probably under a new accurately named field); R5-2 blocking (the two aggregated records are emitted after the storage loop and vanish when a later store operation fails — emit before the first effectful store operation, add store-failure tests). Dispositions: bare-array normalization acceptable; uniform non-list normalization acceptable as a disclosed behaviour change; the ordering re-instancing reasonable but incomplete; the `unparseable` widening not acceptable. Reviewer\'s suites 2,919/37 local and 2,947/9 sealed, both totalling 2,956. Body sha16 3e4384e0b1f0ea69.',
+         raised=['0039-R5-1', '0039-R5-2']),
 
 ]
 

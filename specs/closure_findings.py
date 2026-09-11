@@ -3735,6 +3735,14 @@ CLOSURES = [
      'The deterministic fixture pseudocode does not match the shipped API (store.conn, "primary key", store._now)',
      'v12 (d2ef676): SqliteStore(":memory:", clock=…), the store\'s _conn seam, ORDER BY rowid declared as the current-schema rule, cursor-derived column names',
      'git show d2ef676 -- specs/0039-degradation-visibility.md'),
+    ("0039", "external", 5, '0039-R5-1',
+     '`unparseable` does not have the meaning claimed by X17: an all-invalid list stays indistinguishable from a legitimate empty for a default host, and the flag is set when usable triples are rejected by another top-level rule',
+     "v16 (0025 v18, the owner's word 'Go with the new field'): the widening reverted; `extraction_unusable`, a bool on EVERY path, carries the outcome — no shape-valid triple, a legitimately empty list False; X12's set amended; the MCP result carries it, telemetry does not",
+     '$PY -m pytest tests/test_0039_degradation_visibility.py::test_a_default_host_can_tell_a_malformed_answer_from_an_empty_one tests/test_0039_degradation_visibility.py::test_the_new_field_reaches_the_mcp_host_and_not_telemetry tests/test_0025_enforcement.py::test_public_counter_projection_is_exact'),
+    ("0039", "external", 5, '0039-R5-2',
+     'Aggregated records (member_skipped, volatility_defaulted) are emitted only after the storage loop and disappear when a later store operation fails',
+     'v16: every degrade record is computed and emitted before the first effectful store operation — the volatility coercion as a pure pre-pass, the episode write moved below the emissions; store-failure tests at BOTH seams (edge write, episode write) for all three record kinds',
+     '$PY -m pytest tests/test_0039_degradation_visibility.py::test_counted_records_are_written_before_the_first_store_write tests/test_0039_degradation_visibility.py::test_a_degrade_record_written_before_an_error_stays_before_it'),
 
 ]
 

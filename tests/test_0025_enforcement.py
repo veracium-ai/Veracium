@@ -319,6 +319,7 @@ def test_offvocab_counts_are_reported_separately():
             return "not json at all {{{"
     _, bad = _ingest(Garbage())
     assert bad.get("unparseable") is True
+    assert bad["extraction_unusable"] is True       # present on this path too
     for k in PUBLIC_COUNTERS:
         assert bad[k] == 0
 
@@ -337,8 +338,12 @@ def test_public_counter_projection_is_exact():
     q4_audit = {"quarantined_at_birth", "birth_revocation_digest"}
     # specs/0026 §3d: the two agreement counters joined every path
     agreement_counters = {"agreement_floored", "agreement_recorded"}
+    # specs/0025 §4c as amended for 0039 round-5 R5-1 (2026-09-11): the OUTCOME
+    # boolean, present on every path — see test_0039_degradation_visibility.py
+    outcome = {"extraction_unusable"}
     assert set(r) == (pre_0025 | set(PUBLIC_COUNTERS) | q4_audit
-                      | agreement_counters)
+                      | agreement_counters | outcome)
+    assert r["extraction_unusable"] is False        # a good answer: present, and False
     assert "retry_calls" not in r
 
 

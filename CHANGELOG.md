@@ -6,9 +6,10 @@
 `TypeError` around `remember` must act.** Two things happened here. A provider that
 degrades now leaves a record, which needs a diagnostics reporter to be visible. And one
 BEHAVIOUR changed for everyone, reporter or not: three provider answers that used to
-raise `TypeError` out of `remember` now return zero facts and an `unparseable: True` in
-the result instead, and two more answers that were silently empty carry that flag now
-too. Each is below under its own heading; do not read the first as the whole release.
+raise `TypeError` out of `remember` now return zero facts instead, and every result
+carries a new boolean, `extraction_unusable`, that tells a malformed answer from an
+empty one. Each is below under its own heading; do not read the first as the whole
+release.
 
 **Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10).**
 Veracium degrades in five places instead of failing, by design, and until now none of
@@ -100,26 +101,41 @@ one of that function's two callers was not honouring it. It now does.
 - **Consequently `cause=bare_array` can no longer occur.** It stays in the log
   vocabulary that specs/0039 froze, and the suite asserts it is unproducible against a
   forced list return rather than merely absent from a few fixtures.
-**A malformed extraction is now visible in the result, with no reporter and no opt-in
-(specs/0025 §4c, amended).** `remember` sets `unparseable: True` whenever the provider's
-first answer yielded no usable `triples` — a missing key, or a value that is a string, a
-dict, `null`, a number or a boolean. A legitimately empty extraction and a good one are
-unchanged and carry no such key, so a successful ingest's result is exactly what it was.
+**A malformed extraction is now visible in the result, with no reporter and no opt-in:
+a new boolean, `extraction_unusable`, present on every `remember` result (specs/0025
+§4c, amended).** It is True when the provider's first answer produced no shape-valid
+triple — rejected whole (no JSON, or an `instructions` value of the wrong type), a
+missing or non-list `triples`, or a non-empty list none of whose members is a
+well-formed triple — and False otherwise, including for a legitimately empty
+extraction and for a list whose members were well-formed but refused for another
+reason, which have their own counters.
 
 - **Why it is here:** the change above removes an exception, and without this a host
   passing `diagnostics=None` — the documented default — got a result byte-identical to
   a successful extraction that found nothing. Measured on the shipped path by two
-  people independently before the fix: `{"triples": null}` and `{"triples": []}`
-  returned the same dict, key for key.
-- **It also closes a hole that predates this release.** A string or dict `triples` was
-  already indistinguishable from an empty one, in every version of Veracium that has
-  shipped. Those two are marked now as well.
-- **The one consumer:** the opt-in telemetry ingest event's `unparseable` field counts
-  0 or 1 from this flag, so it now counts the wider class. Nothing else reads it.
+  people independently: `{"triples": null}` and `{"triples": []}` returned the same
+  dict, key for key. An earlier draft of this release widened the existing
+  `unparseable` flag instead; the external reviewer showed that flag then meant neither
+  thing it could mean (silent on an all-invalid list, set on a parsed answer whose
+  triples were fine), so the widening was reverted and the outcome given its own
+  accurately named field. `unparseable` keeps the meaning it has always had.
+- **It also closes a hole that predates this release.** A string or dict `triples`, and
+  a list of malformed members, were already indistinguishable from an empty extraction
+  in every version of Veracium that has shipped. All of them are marked now.
+- **Who sees it:** every `remember` result and the MCP `remember` tool result (an MCP
+  host is exactly a default host). Hosts that read results by key gain one key and are
+  otherwise unaffected. The opt-in telemetry event does NOT carry it.
 - **Not covered, deliberately:** a failed RETRY is still visible as `retried > 0,
   recovered = 0` rather than through this field, and the field says an answer was
-  unusable, never which shape it was. That distinction is in the diagnostics log and
-  needs a reporter.
+  unusable, never which way. That distinction is in the diagnostics log and needs a
+  reporter.
+
+**Degrade records are written before the first store write (specs/0039, round-5
+finding).** The two per-call records — skipped members and defaulted volatility —
+were emitted after the storage loop, so a store failure inside the loop lost them and
+the log showed the error alone. Every degrade record is now computed and emitted before
+the first effectful store operation, including the episode write, so an error that
+follows always finds its record already in the log. No outcome changes.
 
 ## 0.20.1 — 2026-09-08
 

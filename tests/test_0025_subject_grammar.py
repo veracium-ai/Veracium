@@ -138,6 +138,12 @@ def test_the_telemetry_whitelist_and_the_result_inventory_disagree_by_declaratio
     # member is the wrong direction, and this declaration says so per key.
     AWAITING, NEVER = "awaiting_consent", "never_eligible_content_free_event"
     declared = {
+        # specs/0025 §4c as amended for 0039 round-5 R5-1 (2026-09-11): the
+        # OUTCOME boolean — not content, not identity; may enter the whitelist
+        # by a SCHEMA_VERSION bump on a ruling, and has not (docs/telemetry.md)
+        "extraction_unusable": (AWAITING, "the §4c outcome boolean (0039 round-5 R5-1); "
+                                "not content, not identity; enters the whitelist only by a "
+                                "SCHEMA_VERSION bump on a ruling — docs/telemetry.md says it is not sent"),
         "episode": (NEVER, "the episode TEXT — content"),
         "quarantined_at_birth": (NEVER, "0023 Q4 audit fact — the audit sink's, whitelist-dropped by design"),
         "birth_revocation_digest": (NEVER, "0023 Q4 audit fact — an identity digest"),
