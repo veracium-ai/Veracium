@@ -1,21 +1,23 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-10 against veracium @ 05fffbef31f2402cf01123a2fc51585cfa215a86
+# generated 2026-09-10 against veracium @ ee5d7aa89e48da593230d4c17a0ba627099ad45e
 # Real ingest_event with a scripted provider. The pin line is asserted by tests/test_0039_answer_shapes.py
 # against the tree the test runs in: src/ must be unchanged since this commit, or the transcript is regenerated.
-# REGENERATED at the specs/0025 §4c narrow fix (the pin above): SEVEN primary rows moved —
-# every answer that yielded no usable `triples` now reads `unparseable=True`. The empty and
 # good rows are unchanged, which is the half a mark-everything fix would have broken.
+# REGENERATED at the round-5 fold (the pin above): the seven primary rows the v17 widening had
+# moved to `unparseable=True` are back to `unparseable=False`, and the body is BYTE-IDENTICAL to the
+# transcript taken before that widening. The outcome now rides `extraction_unusable`, bound by its
+# own tests; this instrument's frozen format does not print it.
 
 === PRIMARY answer shapes (the retry answer fixed to a valid empty object) ===
   valid non-empty list             -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   valid empty list                 -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
-  missing key                      -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
-  string                           -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
-  dictionary                       -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
-  nested dictionary                -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
-  null                             -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
-  number                           -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
-  boolean                          -> RESULT facts=0 unparseable=True retried=0 recovered=0 residual=0 calls=['distill']
+  missing key                      -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  string                           -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  dictionary                       -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  nested dictionary                -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  null                             -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  number                           -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
+  boolean                          -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   bare array of dicts              -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   bare array of scalars            -> RESULT facts=0 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
   list with malformed members      -> RESULT facts=1 unparseable=False retried=0 recovered=0 residual=0 calls=['distill']
