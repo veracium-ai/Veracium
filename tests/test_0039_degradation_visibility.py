@@ -766,8 +766,24 @@ def test_a_default_host_can_tell_a_malformed_answer_from_an_empty_one(tmp_path):
     refused = r(_main([dict(GOOD, subject="user|person:x")]), "refused")
     assert refused["extraction_unusable"] is False and refused["facts"] == 0
     assert refused["subject_refused"] == 1
+    # research's fourth row, the most plausible place for a later silent flip: some
+    # members passed the guard and were REFUSED, others FAILED the guard, and nothing
+    # was stored. False, correctly — a shape-valid triple existed, so X17's True clause
+    # does not apply, and the counters carry why. Anyone who reads "nothing stored and
+    # every member skipped or refused" as unusable would change this row.
+    both = r(_main([dict(GOOD, subject="user|person:x"), "junk"]), "refused-and-skipped")
+    assert both["extraction_unusable"] is False and both["facts"] == 0
+    assert both["subject_refused"] == 1
+    # three more guard-failure member shapes, each alone in a list, each True: a LIST
+    # member, a dict missing a key, and a dict of EMPTY strings — the last passes the
+    # type half of the guard and fails only its truthiness half, which is the row that
+    # proves the guard is both tests rather than the type test alone
+    for name, member in (("list member", [GOOD]), ("missing key", {"subject": "user", "relation": "uses_tool"}),
+                         ("empty strings", {"subject": "", "relation": "", "object": ""})):
+        res = r(_main([member]), name.replace(" ", "_"))
+        assert res["extraction_unusable"] is True and res["facts"] == 0, name
     # present on EVERY path, as a bool — 0025 §4c: an absent key is not a zero
-    for res in (empty, good, mixed, refused):
+    for res in (empty, good, mixed, refused, both):
         assert isinstance(res["extraction_unusable"], bool)
 
 
