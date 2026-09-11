@@ -219,6 +219,10 @@ def _len_sha16(text: str) -> tuple[int, str]:
     return len(b), hashlib.sha256(b).hexdigest()[:16]
 
 
+_UNSET = object()   # specs/0039 §2c: "the provider call raised" is a fact about WHICH LINE
+                    # raised, never about the value — a provider may legitimately return None
+
+
 def _answer_fields(raw) -> dict:
     """§2a `answer_len`/`answer_sha16` over the provider's raw answer exactly as the
     `Complete` callable returned it (a non-str return is measured as its str form)."""
@@ -392,10 +396,10 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     n_subject_refused = 0
     # specs/0039 §2c, the PRIMARY site (matrix rows 3–7, 10): once the answer is a
     # dict (a bare array having been wrapped above), a missing `triples` key or a
-    # non-list value is RECORDED — and only recorded. The loop below then does
-    # exactly what it did: a string or dict is iterated and every member skipped;
-    # `null`, a number or a boolean raise TypeError in the loop AFTER this record
-    # (record plus error, §2a; V-RECORD-ORDER-ON-ERROR). Outcomes unchanged.
+    # non-list value is RECORDED — and only recorded: the normalization below then
+    # yields NO triples for every non-list `triples` (specs/0025 §4b(1) v16 — a
+    # string or a dict is no longer iterated, and `null`, a number or a boolean no
+    # longer raise TypeError; 0039 v14, row P6). Zero facts, one record, nothing raised.
     # specs/0025 §4c, AMENDED 2026-09-10 (the narrow fix, on the owner's word after
     # research's finding): a primary answer that yielded NO USABLE `triples` list is
     # marked in the RESULT, the one carrier every host has. Without it, a host passing
@@ -501,7 +505,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     retry_degrade = None          # specs/0039 §2c: (cause, fields) or None — emitted ONCE below
     if failing and llm is not None:
         n_retried = len(failing)
-        retry_raw = None
+        retry_raw = _UNSET       # stays _UNSET iff the provider CALL raised
+        extracted = False        # flips once extract_json has returned
         try:
             retry_raw = raw = llm(prompts.RETRY_PROMPT.format(
                 relations=rel_names,
@@ -511,6 +516,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                     for r in failing], ensure_ascii=False)),
                       system=prompts.EXTRACT_SYSTEM, role="distill-retry")
             retry_data = extract_json(raw)
+            extracted = True
             # specs/0025 §4b(1), AMENDED 2026-09-10 (drafted as specs/0039 §2e): the
             # extractor returns a bare JSON array "as a fallback for the caller to
             # normalize" (its docstring). The first extraction normalizes it; this
@@ -535,15 +541,21 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             reps = []          # malformed output / provider failure: a no-op,
                                # visible as retried > 0, recovered = 0 — never
                                # re-raised, never a second call (§4b(1))
-            # specs/0039 §2c: which line raised decides the cause — the provider
-            # call (`provider_error`, the message's length and digest only, the
-            # class name never read), the extractor (`no_json`), or `.get` on a
-            # bare array (`bare_array`, the CURRENT state the matrix asserts
-            # until §2e's 0025 amendment lands)
-            if retry_raw is None:
+            # specs/0039 §2c: WHICH LINE raised decides the cause, and each line is
+            # named by a fact about control flow, never by the value or the class —
+            # the provider call (`provider_error`: `retry_raw` was never assigned; the
+            # message's length and digest only, the class name never read), the
+            # extractor (`no_json`: it returned nothing — a `ValueError` on prose, a
+            # `TypeError` on an answer that is not text, such as a provider returning
+            # None), or anything after extraction (`bare_array`, the catch-all §2c-i
+            # keeps and asserts unproducible since `0025` v15 wrapped the array).
+            # Keying on `retry_raw is None` conflated a provider that RAISED with one
+            # that RETURNED None and recorded the extractor's message as the
+            # provider's (found by an ocr review of the v0.21.0 range, 2026-09-11).
+            if retry_raw is _UNSET:
                 n, h = _len_sha16(str(e))
                 retry_degrade = ("provider_error", {"msg_len": n, "msg_sha16": h})
-            elif isinstance(e, ValueError):
+            elif not extracted:
                 retry_degrade = ("no_json", _answer_fields(retry_raw))
             else:
                 retry_degrade = ("bare_array", _answer_fields(retry_raw))

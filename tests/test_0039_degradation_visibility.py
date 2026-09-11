@@ -172,6 +172,11 @@ _RETRY_ROWS = [
     # (row, retry raw / raise, expected degrade kinds)
     (13, RuntimeError("boom"), [("retry_failed", "provider_error")]),
     (11, "cannot", [("retry_failed", "no_json")]),
+    # a provider that RETURNS None (a contract violation, not a raise): the extractor
+    # is the line that raises, so the cause is `no_json` over the answer's str form —
+    # never `provider_error` over the extractor's message (the handler keyed on
+    # `retry_raw is None` and conflated the two; ocr review of v0.21.0, 2026-09-11)
+    (11, None, [("retry_failed", "no_json")]),
     # rows 8 and 9 FLIPPED by §2e's 0025 amendment (2026-09-10): the retry now wraps a
     # bare array as the first extraction does, so these mirror primary rows 8 and 9 —
     # a bare array of dicts is a recovery attempt (measured: recovered 0 -> 1, residual
@@ -936,6 +941,36 @@ def _lint_module():
     return reg
 
 
+def _alternatives(pattern):
+    """Split a regex on its TOP-LEVEL `|` only (depth 0, outside character classes,
+    escapes honoured) — the branches a reader sees as separate entries."""
+    out, cur, depth, esc, in_class = [], "", 0, False, False
+    for ch in pattern:
+        if esc:
+            cur += ch; esc = False; continue
+        if ch == "\\":
+            cur += ch; esc = True; continue
+        if in_class:
+            cur += ch; in_class = ch != "]"; continue
+        if ch == "[":
+            in_class = True
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "|" and depth == 0:
+            out.append(cur); cur = ""; continue
+        cur += ch
+    return out + [cur]
+
+
+def test_the_alternation_splitter_splits_only_at_depth_zero():
+    assert _alternatives("a|b") == ["a", "b"]
+    assert _alternatives("(a|b)c|d[|]e") == ["(a|b)c", "d[|]e"]
+    assert _alternatives(r"x\|y|z") == [r"x\|y", "z"]
+    assert _alternatives("single") == ["single"]
+
+
 def test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy(tmp_path):
     """The positive control the register's own discipline demands at a spec's first
     registration: an entry that cannot fire is indistinguishable from one that is
@@ -956,6 +991,15 @@ def test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy(tmp_
     stripped = mod._normalise(spec_text.replace("OBSOLETE", "").replace("WITHDRAWN", ""))
     for rid, pat, _why, _where in entries:
         assert re.search(pat, stripped), f"{rid}: fires nowhere even with the history markers stripped — a dead entry"
+    # PER-BRANCH, for the entries that quote HISTORY (the variants entries are open
+    # backstops and may name wording that never appeared): an alternation whose branch
+    # cannot fire is a dead entry hiding inside a live one — the bare-array entry
+    # carried two such branches for three rounds (ocr review of v0.21.0, 2026-09-11)
+    for rid, pat, _why, _where in entries:
+        if rid in ("0039-bare-array-retry-attributeerror", "0039-non-list-triples-still-raise",
+                   "0039-conditional-raise-after-record"):
+            for branch in _alternatives(pat):
+                assert re.search(branch, stripped, re.I), f"{rid}: dead branch {branch!r}"
     # the live half: no unmarked paragraph of the real spec matches, under the lint's normalisation
     for para in re.split(r"\n\s*\n", spec_text):
         if "OBSOLETE" in para or "WITHDRAWN" in para:
