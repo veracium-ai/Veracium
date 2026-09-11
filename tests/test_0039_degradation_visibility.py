@@ -954,76 +954,135 @@ def test_the_host_facing_carriers_state_the_current_contract(tmp_path):
     assert "MCP `remember`\n  tool result" in unreleased or "MCP `remember` tool result" in unreleased
 
 
-# ---------- round-7 R7-1: the result surface is stated ONCE; the rest point to it ----
-# The sites that MENTION the result surface, as a CLOSED list (research, round 7): a
-# positive check over a closed set is the one that can close the class — you can
-# enumerate the sites; you cannot enumerate the paraphrases. Each site is anchored by
-# a lead phrase that exists once in the spec. If a new section discusses the result
-# surface without a pointer it is findable here; a new paraphrase is findable only if
-# the backstop below guessed the word.
-_POINTER_SITES = {
-    "prerequisite bullet (0031 §4d)": "This spec keeps that strip;",
-    "§2b return values": "What the degrade paths return is §2e's;",
-    "§4 callback row": "the callback's carrier is the log, never the result;",
-    "§5 regime: diagnostics=None host": "| embedding host passing `diagnostics=None` |",
-    "§5 regime: MCP host": "| MCP host |",
-    "§8 MCP paragraph": "**The records tell the MCP host nothing;",
-    "§8 diagnostics=None paragraph": "**A host that passes `diagnostics=None` gets no record;",
-    "§10 Q1 resolution": "**RESOLVED at `0025` v18 on the owner's word, given twice on 2026-09-11",
-}
-# the VALUE vocabulary a pointer may not carry (the answer belongs in §2e alone).
+# ---- round-7 R7-1 / round-8 R8-1: the result surface — DERIVED census, DECLARED classes ----
+# v18 verified eight hand-chosen anchors and never that they were the complete set:
+# closed by assertion, not by construction (round 8's finding, research's words about
+# research's own proposal). This is the ratchet's pattern instead: DERIVE every value
+# occurrence from the live text, DECLARE what is excluded as history and WHY, CLASSIFY
+# each occurrence's site by its FORM under §2e's carrier rule, FAIL on the rest.
+_VALUE_VOCAB = re.compile(
+    r"extraction_unusable|outcome boolean|one outcome|carries exactly ONE field|carries that one field|"
+    r"gains? one (field|key)|key set gains", re.I)
 # WITHDRAWN phrases, listed here to be REFUSED — this comment is the house lint's marker
-_VALUE_TOKENS = ("extraction_unusable", "one field", "ONE field", "one outcome", "unchanged",
-                 "no field", "no new field", "learns nothing", "gains no", "adds no", "key set is")
-# the backstop: an OPEN vocabulary of paraphrases, incomplete by construction.
-# WITHDRAWN phrases, listed here to be REFUSED — this comment is the house lint's marker
-_VARIANT_BACKSTOP = re.compile(
-    r"unchanged (tool )?result|(tool |ingest )?result (is|stays|remains) (unchanged|as it was|as before|identical)|"
-    r"key set is unchanged|return values are unchanged|learns nothing new|does not tell the MCP host more|"
-    r"(does not|doesn't|will not) add a[^.|\n]{0,30}field|(gains?|adds?) no (new )?field|no new field|"
-    r"no change to what (callers|hosts) receive|whether or not the loop then raises|"
-    r"the one path where (it does|the operation raises)")
+_SUBJECT_VOCAB = re.compile(
+    r"what (the |its |every )?(ingest |tool )?results? carr(y|ies)|tool result|result's key set|"
+    r"return values?|what (it|the host) learns from the result", re.I)
+# history, excluded from the LIVE text — each exclusion with its reason
+_HISTORY = [
+    ("OBSOLETE/WITHDRAWN spans", r"\(\*(?:OBSOLETE|WITHDRAWN).*?\*\)", "a marked verbatim quote asserts what was said, not what is"),
+    ("struck invariant rows", r"^\| ~~\*\*V-[^\n]*$", "a retired row is history by construction"),
+    ("the header table", r"^\| \*\*(Version|Author / session|Status|Internal reviewers|External review)\*\* \|[^\n]*$", "the arc's record, not the contract"),
+    ("the generated closure block", r"<!-- GENERATED:review-closure -->.*?<!-- /GENERATED:review-closure -->", "generated from the ledger; findings quote old text"),
+]
+# the three ASSERTING forms (§2e's carrier rule): the site may carry the value
+# the two contract matrices ONLY — §1's behaviour table is a dated measurement (history), not a
+# fourth form: admitting it by form would admit an undated restatement there too (research, round 8)
+_ASSERTING_SECTIONS_WITH_TABLES = ("2c-i.", "2c-ii.")
+
+
+def _live_spec_text():
+    text = (ROOT / "specs" / "0039-degradation-visibility.md").read_text()
+    for _name, pat, _why in _HISTORY:
+        text = re.sub(pat, "", text, flags=re.S | re.M)
+    return text
+
+
+def _sites(text):
+    """Every paragraph of the live text with its section heading; table rows are their
+    own sites (a row asserts on its own, and one table mixes asserting rows with none)."""
+    sec = "(preamble)"
+    for para in re.split(r"\n\s*\n", text):
+        head = re.search(r"^(#+ .*)$", para, re.M)
+        if head:
+            sec = head.group(1).strip("# ")
+        if para.lstrip().startswith("|"):
+            for row in para.split("\n"):
+                if row.startswith("|") and not row.startswith("|---"):
+                    yield sec, row
+        else:
+            yield sec, para
+
+
+def _asserts_the_surface(sec, site):
+    """The carrier rule, as a function of a site's FORM — never a list of anchors."""
+    if "**THE RESULT SURFACE, STATED ONCE" in site:
+        return True                                        # §2e's statement itself
+    if re.match(r"^\| \*\*V-[A-Z0-9-]+\*\* \|", site):
+        return True                                        # a §6 invariant row asserts a property
+    if site.startswith("|") and any(sec.startswith(s) for s in _ASSERTING_SECTIONS_WITH_TABLES):
+        return True                                        # a behaviour-table / matrix row asserts an outcome
+    return False
+
+
+def _census(text):
+    """(occurrences that may carry the value, occurrences that may NOT) — derived."""
+    allowed, refused = [], []
+    for sec, site in _sites(text):
+        for m in _VALUE_VOCAB.finditer(site):
+            (allowed if _asserts_the_surface(sec, site) else refused).append((sec, m.group(0), site[:100]))
+    return allowed, refused
 
 
 def test_the_result_surface_is_stated_once_and_every_other_site_points_to_it():
-    """Round-7 R7-1. PRIMARY (closed set): §2e carries the result-surface claim with
-    the pointer rule beside it, and every site in `_POINTER_SITES` exists exactly once,
-    names §2e, and carries no value token. BACKSTOP (open set): no live paragraph of
-    the spec matches the variant pattern — a blocklist that the next paraphrase will
-    escape, kept because it is cheap and ranked second so nobody reads its green as
-    proof. The two halves are asserted in that order."""
-    mod = _lint_module()
-    spec = (ROOT / "specs" / "0039-degradation-visibility.md").read_text()
-    # the ONE location
-    assert spec.count("**THE RESULT SURFACE, STATED ONCE") == 1
-    assert spec.count("**THE POINTER RULE (v18, research):**") == 1
-    single = spec[spec.index("**THE RESULT SURFACE, STATED ONCE"):spec.index("**THE POINTER RULE")]
-    assert "`extraction_unusable`" in single and "V-RESULT-SHAPE-EXACT" in single and "V-MCP-RESULT-CARRIES-ONE" in single
-    # every pointer site: present once, points, carries no value
-    paras = re.split(r"\n\s*\n", spec)
-    for name, lead in _POINTER_SITES.items():
-        assert spec.count(lead) == 1, f"{name}: anchor {lead!r} found {spec.count(lead)} times"
-        holder = [x for x in paras if lead in x]
-        assert len(holder) == 1, name
-        site = holder[0]
-        # a table row or a bullet is one LINE inside a larger paragraph: judge the line;
-        # a prose paragraph is judged whole (the §8 claims span lines)
-        if lead.startswith("|") or name.startswith("prerequisite"):
-            site = [ln for ln in site.split("\n") if lead in ln][0]
-        # the marked history is not the pointer. NON-GREEDY ON PURPOSE (research): the
-        # span ends at the FIRST `*)`, so a quote that itself contains `*)` terminates
-        # early and its remainder is scanned as LIVE — an over-flag, loud, investigated.
-        # A greedy match would run to the LAST `*)` and swallow live text into the
-        # history span — an under-flag, silent. Choose the failure that shouts; do not
-        # "fix" this to greedy for tidiness.
-        live = re.sub(r"\(\*OBSOLETE.*?\*\)", "", site, flags=re.S)
-        assert "§2e" in live, f"{name}: does not point to §2e"
-        for tok in _VALUE_TOKENS:
-            assert tok not in live, f"{name}: pointer carries a value: {tok!r}"
-    # the backstop, over live paragraphs under the lint's normalisation
-    for para in paras:
-        if "OBSOLETE" in para or "WITHDRAWN" in para or para.lstrip().startswith("| **Version**"):
+    """Round-8 R8-1. Two halves, RANKED by what each is keyed on (research, round 8,
+    reversing their round-7 ranking): PRIMARY — the value census, keyed on an IDENTIFIER.
+    `extraction_unusable` has one spelling, so a token set over the field's name is
+    complete by construction: every occurrence is DERIVED from the live text and must
+    sit in an asserting form (§2e's statement, a §6 invariant row, a behaviour-table or
+    matrix row) or the test fails and names it. BACKSTOP — the must-point check, keyed
+    on PROSE: a live discussion that names the result surface must point to §2e, and
+    "names the result surface" is an English judgement no token list closes — a
+    paragraph saying "what callers receive" escapes it. Incomplete by construction,
+    kept because it is cheap, ranked second so its green is not read as proof. The
+    general rule under both rounds: a check is closed when it keys on an identifier and
+    open when it keys on English. THE CHECKER'S OWN LIMIT: it tests the rule's
+    CONSEQUENCE — a site's FORM — not the rule; form is a proxy for assertion-ness. An
+    invariant row that merely mentions the field in passing is admitted here and
+    violates §2e's rule; a green census says every occurrence sits in an asserting form,
+    never that every occurrence is load-bearing. The history exclusions are declared
+    with reasons."""
+    text = _live_spec_text()
+    assert text.count("**THE RESULT SURFACE, STATED ONCE") == 1
+    assert text.count("**THE CARRIER RULE (v19") == 1
+    allowed, refused = _census(text)
+    assert allowed, "the census found no asserting site at all — the vocabulary or the rule moved"
+    assert not refused, "value restated outside an asserting site:\n" + "\n".join(f"  [{s}] {tok!r}: {site!r}" for s, tok, site in refused)
+    # the positive half: discussions that name the subject point to §2e
+    unpointed = []
+    for sec, site in _sites(text):
+        if _asserts_the_surface(sec, site):
             continue
-        flat = mod._normalise(para)
-        m = _VARIANT_BACKSTOP.search(flat)
-        assert not m, f"live paragraph restates the result surface: {m.group(0)!r} in {flat[:90]!r}"
+        if _SUBJECT_VOCAB.search(site) and "§2e" not in site:
+            unpointed.append((sec, site[:100]))
+    assert not unpointed, "a discussion names the result surface without pointing to §2e:\n" + "\n".join(f"  [{s}] {site!r}" for s, site in unpointed)
+
+
+def test_the_census_refuses_a_planted_restatement_and_admits_a_planted_invariant():
+    """RULE ZERO, the reviewer's mutation, both directions: the census is judging the
+    criterion's consequence, not a list. A value planted into a §8 prose paragraph must
+    FAIL it; the same value planted into a new `| **V-…** |` row must be ADMITTED by
+    it — which proves the checker admits invariant rows, NOT that it admits only
+    asserting ones (see the docstring above: form is a proxy); and the history
+    exclusion is exercised — the same value inside an OBSOLETE span is not counted."""
+    text = _live_spec_text()
+    _, refused0 = _census(text)
+    assert not refused0
+    # (a) a prose restatement in §8
+    i = text.index("## 8. Claims and limits")
+    planted = text[:i] + "## 8. Claims and limits\n\nThe result now carries `extraction_unusable: True` on every failure.\n\n" + text[i + len("## 8. Claims and limits"):]
+    _, refused = _census(planted)
+    assert any(tok.lower() == "extraction_unusable" and s.startswith("8.") for s, tok, _ in refused), refused
+    # (b) a new invariant row that carries the value: admitted by the rule, not by a list
+    j = text.index("| **V-RESULT-SHAPE-EXACT** |")
+    planted2 = text[:j] + "| **V-PLANTED** | the result carries `extraction_unusable` | a check | a node |\n" + text[j:]
+    allowed2, refused2 = _census(planted2)
+    assert not refused2 and any(site.startswith("| **V-PLANTED**") for _, _, site in allowed2)
+    # (c) the history exclusion: an OBSOLETE span carrying the value is not counted
+    raw = (ROOT / "specs" / "0039-degradation-visibility.md").read_text()
+    k = raw.index("## 8. Claims and limits")
+    planted3 = raw[:k] + "## 8. Claims and limits\n\nHistory: (*OBSOLETE at v13: \"gains one field, `extraction_unusable`\"*) — and nothing live.\n\n" + raw[k + len("## 8. Claims and limits"):]
+    stripped = planted3
+    for _name, pat, _why in _HISTORY:
+        stripped = re.sub(pat, "", stripped, flags=re.S | re.M)
+    _, refused3 = _census(stripped)
+    assert not refused3, refused3

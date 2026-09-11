@@ -2974,6 +2974,12 @@ REVIEWS = [
     dict(spec="0039", round=7, kind="external", date="2026-09-11",
          verdict='RETURN for amendment — "Round 7 fixes the changelog and API documentation, but the round-6 carrier-consistency finding is not fully closed." R7-1 blocking: seven more live 0039 passages assert the superseded result surface in synonyms (the prerequisite bullet, §2a, §4\'s callback row, §5\'s MCP regime, §8 twice, V-DEGRADE-RECORDED), and the new checks pass despite them — the register recognises only the phrasings written, the carrier test reads only CHANGELOG and docs; required: reconcile, extend the regression to the normative spec, reject the named semantic variants. R7-2 blocking: V-RESULT-UNCHANGED must be retired like its MCP sibling — disclosure does not make an identifier meaning "unchanged" accurate. Closed: the CHANGELOG, docs/api.md, the matrix historicization, V-MCP-RESULT-CARRIES-ONE; no product-code problem. Reviewer\'s suites 2,922/37 and 2,950/9, both totalling 2,959. Body sha16 05cc5175d1367541.',
          raised=['0039-R7-1', '0039-R7-2']),
+    dict(spec="0039", round=8, kind="external", date="2026-09-11",
+         verdict="SENT (round-8 package 66a51c3598c5186d24053e0de749ff650f947e5a488495de2ac3d4cfb1a6921f @ pin d05b0bfc02edf4beb0f7250989b7fc6bc5e573ff, CI 34599571300; 0039 v18 + 0025 v18 — round 7's two findings folded; one assembly; both legs 53/0/2 on the same bytes, research's counts sent directly before their ledger write). Dispatched on the owner's word 2026-09-11T13:52Z.",
+         raised=[]),
+    dict(spec="0039", round=8, kind="external", date="2026-09-11",
+         verdict='RETURN for amendment — "one blocking documentation/verification finding. No product-code defect found." R8-1: §2e\'s single-carrier rule is not true (§2a\'s row, matrix rows 6 and 9, both new invariant rows, §8, §9 and the checklist still state the value) and not fully checked (the test verifies eight hand-chosen anchors, never that they are the complete set — "the verification\'s asserted domain is narrower than the document"); required: make every statement a value-free pointer OR narrow the rule and enumerate justified exceptions, and make the test enforce the declared scope by a CENSUS with an exact allowed-location set plus a mutation. R7-2 CLOSED; R7-1 improved, not closed. Reviewer\'s suites 2,923/37 and 2,951/9, both totalling 2,960. Body sha16 52f6bf8450c16f04.',
+         raised=['0039-R8-1']),
 
 ]
 

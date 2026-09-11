@@ -3755,6 +3755,10 @@ CLOSURES = [
      'V-RESULT-UNCHANGED has the same defect as its retired MCP sibling: its own current text says the clean result gained a key; disclosure does not make an identifier meaning "unchanged" accurate',
      'v18: RETIRED as a struck row (still defined, OBSOLETE, the reason in its own words) and replaced by V-RESULT-SHAPE-EXACT, bound to X12\'s exact-set test — a test of the SAME claim, which the row says is the difference from the two retired ones',
      '$PY -m pytest tests/test_0025_enforcement.py::test_public_counter_projection_is_exact tests/test_spec_gate.py::test_no_spec_cites_an_invariant_it_does_not_define'),
+    ("0039", "external", 8, '0039-R8-1',
+     "The single-carrier rule is neither true nor fully checked: live sites outside §2e still state the value, and the test verifies eight hand-chosen anchors rather than the complete set — the verification's asserted domain is narrower than the document",
+     "v19: the rule rewritten as a CRITERION — a site carries the value iff the value is what it asserts (§2e; §6 invariant rows; behaviour-table and matrix rows), every other site points; six discussions made value-free; the checker replaced by a DERIVED census over the live text with the history exclusions declared, each occurrence classified by its site's form, failing on the rest; the discussion pointers derived by subject vocabulary; the reviewer's mutation both ways",
+     '$PY -m pytest tests/test_0039_degradation_visibility.py::test_the_result_surface_is_stated_once_and_every_other_site_points_to_it tests/test_0039_degradation_visibility.py::test_the_census_refuses_a_planted_restatement_and_admits_a_planted_invariant'),
 
 ]
 
