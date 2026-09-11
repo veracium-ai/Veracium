@@ -55,7 +55,22 @@ claims.
   content. See [concepts → A note on dates](concepts.md#a-note-on-dates).
 - `event_type` — `"chat"`, `"email"`, etc. Informational; affects source-type tagging.
 - Returns a summary dict for logging/telemetry. The counters are all
-  present on **every** path (an absent key is never a zero):
+  present on **every** path (an absent key is never a zero), and so is one
+  outcome boolean:
+  `extraction_unusable` (bool, specs/0025 §4c as amended 2026-09-11 —
+  **True when the provider's first answer produced no shape-valid triple**:
+  rejected before any triple was read (no JSON object; an `instructions`
+  value of the wrong type), a missing or non-list `triples`, or a non-empty
+  list none of whose members is a well-formed `{subject, relation, object}`
+  dict; **False otherwise**, including for a legitimately empty extraction
+  and for a list whose members were well-formed but all refused for another
+  reason, which the counters below carry. It says an answer was unusable,
+  never which way — that is in the diagnostics log. A host with no
+  diagnostics reporter attached reads this to tell a broken provider from a
+  provider that found nothing; the MCP `remember` tool result carries it
+  too, unlike the operator counters, which that surface strips) ·
+  `unparseable` (bool, PRESENT ONLY on the rejected-before-any-triple path,
+  where it is True — the narrower, older signal; a host may keep reading it) ·
   `episode` (str) · `facts` · `quarantined` · `supersessions` ·
   `reinforcements` · the vocabulary-enforcement counters `invalid` /
   `retried` / `recovered` / `residual` (specs/0025) · `subject_refused`

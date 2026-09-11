@@ -14,6 +14,36 @@ rule_id and asserts THAT entry matches it (R8-5 — proving a fixture matches
 """
 
 WITHDRAWN = [
+    # ---- 0039 (round-6 external finding, 2026-09-11): three post-acceptance
+    # amendments each rewrote the cell they touched and left the spec's other
+    # sentences asserting the superseded behaviour — the carrier sweep had been
+    # run for identifiers, not for the VOCABULARY of a behaviour. THE LIMIT OF
+    # THIS REGISTER, stated so a green is not read as "no stale claim survives":
+    # these entries refuse the PHRASINGS we happened to write, not the CLAIMS
+    # they made. "adds no field" or "the tool result is as before" escapes all
+    # three; the positive control (tests/test_0039_degradation_visibility.py)
+    # proves the entries FIRE on a marker-stripped copy of the spec, which is a
+    # different property from the entry set being complete.
+    ("0039-non-list-triples-still-raise",
+     # narrow on purpose: "no longer raise TypeError" is the CURRENT claim and must not
+     # match; the lint compares punctuation-insensitively, so no backticks here
+     r"(null|numeric|number)\b[^|\n]{0,40}(boolean|bool)\b[^|\n]{0,80}(still raises?|TypeError PROPAGATES|is a TypeError today)|"
+     r"three shapes that raise still raise|shapes that raise TypeError (today )?still raise",
+     "0025 v16 (2026-09-10, owner's word): every non-list `triples` is normalized to no "
+     "triples at both call sites — one `primary_failed`/`shape` record, zero facts, "
+     "`extraction_unusable: True`, nothing raises",
+     "specs/0039 §2a/§2b/§2c-ii rows 6–7/§8 as rewritten at v17; specs/0025 §4b(1) v16"),
+    ("0039-bare-array-retry-attributeerror",
+     r"AttributeError`? inside the `?try`?|bare_array`? — UNDESIGNED|retry_failed`?/`?bare_array`? — UNDESIGNED",
+     "0025 v15 (2026-09-10, owner's word): the retry normalizes a bare JSON array exactly "
+     "as the first extraction does — a recovery attempt; `cause=bare_array` is unproducible",
+     "specs/0039 §2c-i row 2c and §2c-ii rows 8–9 as rewritten at v17; specs/0025 §4b(1) v15"),
+    ("0039-mcp-result-gains-no-field",
+     r"MCP tool result gains no field|MCP tool result is unchanged|MCP result gains no field|tool result gain(s)? no field",
+     "0025 v18 / 0039 v17: the MCP `remember` tool result carries exactly ONE field this "
+     "line added, `extraction_unusable`, and the operator counters remain stripped "
+     "(V-MCP-RESULT-CARRIES-ONE; V-MCP-RESULT-UNCHANGED retired)",
+     "specs/0039 §2e and §6 V-MCP-RESULT-CARRIES-ONE, v17"),
     # ---- 0031 (round-2 self-correction, 2026-09-01): the P3-5 overreach was
     # withdrawn in the working candidate and the correction reached the README
     # but NOT the adopted spec — two carriers of one fact updated

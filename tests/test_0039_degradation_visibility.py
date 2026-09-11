@@ -800,6 +800,14 @@ def test_the_new_field_reaches_the_mcp_host_and_not_telemetry(tmp_path):
     tool = m.remember_impl(mem, USER, TEXT)
     assert tool["extraction_unusable"] is True
     assert "unparseable" not in tool
+    # V-MCP-RESULT-CARRIES-ONE (0039 v17, replacing the retired V-MCP-RESULT-UNCHANGED,
+    # whose inherited check asserted only that the counters are STRIPPED and so stayed
+    # green while a field was gained): the tool result's key set is EXACTLY the ingest
+    # result's keys minus the operator counters — a second added field fails here, and
+    # the new field's presence and every counter's absence are asserted, not inherited
+    full = _remember(_mem(tmp_path, Stub(_main([{}, "junk"]), retry_raw=_main([])), None, "full"))
+    assert set(tool) == set(full) - set(m._OPERATOR_ONLY), sorted(set(tool) ^ (set(full) - set(m._OPERATOR_ONLY)))
+    assert "extraction_unusable" in tool and not (set(m._OPERATOR_ONLY) & set(tool))
     seen = []
     class _Collector:
         def record(self, event, fields, **kw):
@@ -871,3 +879,71 @@ def test_counted_records_are_written_before_the_first_store_write(tmp_path, monk
         rep = _reporter(tmp_path, f"ok-{kind}.log")
         _remember(_mem(tmp_path, Stub(raw, retry_raw=_main([])), rep, f"ok-{kind}"))
         assert _kinds(_degrades(rep)) == [(kind, detail)], kind
+
+
+# ------------------ round-6 R6-1: the carriers agree with the implementation ----
+def _lint_module():
+    """The register AND the lint's own normaliser, loaded by path: the test matches
+    the way `specs/lint_withdrawn.py` matches (punctuation-insensitive, whitespace
+    collapsed) or the two checks over one artifact could disagree."""
+    import importlib.util, sys
+    if str(ROOT / "specs") not in sys.path:
+        sys.path.insert(0, str(ROOT / "specs"))
+    spec = importlib.util.spec_from_file_location("lint_withdrawn", ROOT / "specs" / "lint_withdrawn.py")
+    lint = importlib.util.module_from_spec(spec); spec.loader.exec_module(lint)
+    spec2 = importlib.util.spec_from_file_location("withdrawn_phrases", ROOT / "specs" / "withdrawn_phrases.py")
+    reg = importlib.util.module_from_spec(spec2); spec2.loader.exec_module(reg)
+    reg._normalise = lint._normalise
+    return reg
+
+
+def test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy(tmp_path):
+    """The positive control the register's own discipline demands at a spec's first
+    registration: an entry that cannot fire is indistinguishable from one that is
+    satisfied. Strip every WITHDRAWN/OBSOLETE marker from a copy of the spec, so its
+    history quotes become live text, and every 0039 entry must match at least once;
+    and against the REAL spec, none may match a live (unmarked) paragraph — which is
+    the assertion `specs/lint_withdrawn.py` makes over the whole tree, run here on this
+    file alone so the binding is local to the spec it protects."""
+    mod = _lint_module()
+    entries = [e for e in mod.WITHDRAWN if e[0].startswith("0039-")]
+    assert len(entries) == 3, [e[0] for e in entries]
+    spec_text = (ROOT / "specs" / "0039-degradation-visibility.md").read_text()
+    stripped = mod._normalise(spec_text.replace("OBSOLETE", "").replace("WITHDRAWN", ""))
+    for rid, pat, _why, _where in entries:
+        assert re.search(pat, stripped), f"{rid}: fires nowhere even with the history markers stripped — a dead entry"
+    # the live half: no unmarked paragraph of the real spec matches, under the lint's normalisation
+    for para in re.split(r"\n\s*\n", spec_text):
+        if "OBSOLETE" in para or "WITHDRAWN" in para:
+            continue
+        flat = mod._normalise(para)
+        for rid, pat, _why, _where in entries:
+            m = re.search(pat, flat)
+            assert not m, f"{rid} matches LIVE text: {m.group(0)!r}"
+
+
+def test_the_host_facing_carriers_state_the_current_contract(tmp_path):
+    """Round-6 R6-1, the half the house lint cannot reach: `specs/lint_withdrawn.py`
+    reads specs/ and tests/, and the two carriers a HOST reads — the CHANGELOG's
+    Unreleased section and docs/api.md — are outside it. Both must state the new field
+    with its semantics, and neither may carry the superseded claims that stood beside
+    the new ones at round 6 ("gain no field", "still raises"). The absent-phrase half is
+    checked against the register's own patterns so the two halves cannot drift apart."""
+    mod = _lint_module()
+    entries = [e for e in mod.WITHDRAWN if e[0].startswith("0039-")]
+    changelog = (ROOT / "CHANGELOG.md").read_text()
+    unreleased = changelog.split("\n## ", 2)[1]
+    assert unreleased.startswith("Unreleased"), "no Unreleased section"
+    api = (ROOT / "docs" / "api.md").read_text()
+    for name, text in (("CHANGELOG Unreleased", unreleased), ("docs/api.md", api)):
+        assert "`extraction_unusable`" in text, f"{name}: the field is not stated"
+        assert "no shape-valid triple" in text, f"{name}: the field's semantics are not stated"
+        assert "legitimately empty" in text, f"{name}: the False case is not stated"
+        for rid, pat, _why, _where in entries:
+            m = re.search(pat, mod._normalise(text))
+            assert not m, f"{name}: superseded claim {rid} still stated: {m.group(0)!r}"
+        # the two literal phrasings the reviewer quoted, beyond the register
+        for obsolete in ("gain no field", "gains no field", "still raises (a", "non-list path still raises"):
+            assert obsolete not in text, f"{name}: {obsolete!r}"
+    # the CHANGELOG is ONE account: the MCP result is described once and consistently
+    assert "MCP `remember`\n  tool result" in unreleased or "MCP `remember` tool result" in unreleased

@@ -2,32 +2,57 @@
 
 ## Unreleased
 
-**Upgrade recommendation: every host should read this section, and hosts that catch
-`TypeError` around `remember` must act.** Two things happened here. A provider that
-degrades now leaves a record, which needs a diagnostics reporter to be visible. And one
-BEHAVIOUR changed for everyone, reporter or not: three provider answers that used to
-raise `TypeError` out of `remember` now return zero facts instead, and every result
-carries a new boolean, `extraction_unusable`, that tells a malformed answer from an
-empty one. Each is below under its own heading; do not read the first as the whole
-release.
+**Upgrade recommendation: every host should read this section; hosts that catch
+`TypeError` around `remember` must act, and every host gains one result key.** The
+extraction path stopped raising on three malformed provider answers, every `remember`
+result now carries a boolean that tells a malformed answer from an empty one, and a
+provider that degrades leaves a record in the diagnostics log when a reporter is
+attached. This is one account of the final behaviour; the last paragraph says how it
+was reached during this unreleased window, because the intermediate states were
+published on `main` and a host tracking `main` may have seen them.
 
-**Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10).**
-Veracium degrades in five places instead of failing, by design, and until now none of
-them left a record an operator could see: the ONE re-extraction retry that a provider
-fails, an extraction answered in prose, a volatility class outside the enum (silently
-DURABLE), a first answer with no usable `triples`, and a list member that is not a
-well-formed triple. Each now writes ONE content-free `WARNING` line to the local
-diagnostics log when a reporter is attached — `op`, `degrade`, a hashed user id, a
-closed-vocabulary `cause`, and only the byte length and a sixteen-hex SHA-256 of the
-provider's message or raw answer (never text; never the exception's class name), or a
-per-call `count`. Every degrade path's return value is unchanged; the ingest result
-and the MCP tool result gain no field; no stored byte changes. A record never changes
-an outcome and is never sent inline — it waits for the next consented send. On the one
-path where the operation still raises (a `triples` value that is `null`, a number or a
-boolean) the log carries the degrade record and then the error record, in that order.
-Every provider answer shape was RUN through the real ingest path on two independent
-instruments and the transcripts are committed (`specs/evidence/0039/`), asserted byte
-for byte by the suite.
+**What a host sees now, in one place.**
+
+- **`extraction_unusable`, a boolean on every `remember` result and on the MCP `remember`
+  tool result** (specs/0025 §4c, amended). True when the provider's first answer produced
+  no shape-valid triple — rejected before any triple was read (no JSON object; an
+  `instructions` value of the wrong type), a missing or non-list `triples`, or a non-empty
+  list none of whose members is a well-formed triple. False otherwise, including for a
+  legitimately empty extraction and for a list whose members were well-formed but all
+  refused for another reason, which the existing counters carry. It says an answer was
+  unusable, never which way. The older `unparseable` flag keeps its narrow meaning and is
+  present only on the rejected-before-any-triple path. The opt-in telemetry event does
+  NOT carry the new field.
+- **`remember` no longer raises `TypeError` when a provider answers with a `null`, numeric
+  or boolean `triples`** (specs/0025 §4b(1), amended). Those answers returned an
+  exception while a string or a dict in the same position returned zero facts silently;
+  the difference was iterability, not a property anyone chose. Every non-list `triples` is
+  now one recorded shape failure, zero facts, `extraction_unusable: True`. A provider
+  EXCEPTION still propagates as before. Hosts that caught `TypeError` to detect a broken
+  provider must read `extraction_unusable` or the diagnostics log instead.
+- **A re-extraction retry answered with a bare JSON array now repairs** (specs/0025
+  §4b(1), amended): the triples without the `{"triples": ...}` wrapper used to be treated
+  as malformed and every repair in them discarded. On this path `recovered` rises and the
+  stored relation is the registry member the retry named instead of `unclassified`.
+  Measured on the standard fixture by two independent instruments: `recovered` 0 → 1.
+- **Every stored byte is otherwise unchanged; no schema, export or migration changes.**
+
+**Degradation visibility (specs/0039, ACCEPTED at external round 4, 2026-09-10; its
+implementation reviewed at rounds 5 and 6).** Veracium degrades in five places instead
+of failing, by design, and until now none of them left a record an operator could see:
+the ONE re-extraction retry that a provider fails, an extraction answered in prose, a
+volatility class outside the enum (silently DURABLE), a first answer with no usable
+`triples`, and a list member that is not a well-formed triple. Each now writes ONE
+content-free `WARNING` line to the local diagnostics log when a reporter is attached —
+`op`, `degrade`, a hashed user id, a closed-vocabulary `cause`, and only the byte length
+and a sixteen-hex SHA-256 of the provider's message or raw answer (never text; never the
+exception's class name), or a per-call `count`. A record never changes an outcome and is
+never sent inline — it waits for the next consented send. **Every degrade record is
+written before the first store write**, so an error that follows always finds its record
+already in the log (a round-5 review finding: the two per-call records used to be written
+after the storage loop, and a store failure inside it lost them). Every provider answer
+shape was RUN through the real ingest path on two independent instruments and the
+transcripts are committed (`specs/evidence/0039/`), asserted byte for byte by the suite.
 
 - **The CLI attaches a diagnostics reporter by default** (as the MCP entry point always
   did): `veracium remember` writes to `$XDG_STATE_HOME/veracium/veracium.log` when local
@@ -39,103 +64,29 @@ for byte by the suite.
   The rotation window is 3,000,000 bytes (1 MB × 3 files), so it holds 19,354 records
   at the largest size and 30,612 at the smallest. An error record is a multi-line
   traceback, measured across our CI matrix at 2.8 to 4.6 times the largest degrade
-  record, so a traceback written now rotates out of the
-  window after roughly 19,300 further degraded events at the largest degrade size. No
-  single byte figure is quoted for the error record on purpose: a traceback's length is
-  the interpreter's format and the absolute source paths of the installation: the same
-  three failures measured 439 bytes over 7 lines on CPython 3.10 and 714 over 12 on
-  3.13. Because the volatility
-  path writes one record per CALL, not per triple, a drifted provider with ten triples
-  per event still costs one record.
+  record, so a traceback written now rotates out of the window after roughly 19,300
+  further degraded events at the largest degrade size. No single byte figure is quoted
+  for the error record on purpose: a traceback's length is the interpreter's format and
+  the absolute source paths of the installation. Because the volatility path writes one
+  record per CALL, not per triple, a drifted provider with ten triples per event still
+  costs one record.
 - **Manual exercise (specs/0039 §6a):** `specs/evidence/0039/manual-cli-transcript.txt`
   — the shipped CLI against a provider that fails the retry and one whose vocabulary
   drifted, then the log; the provider was scripted at the CLI's own seam.
-**BEHAVIOUR CHANGE — `remember` no longer raises `TypeError` when a provider answers
-with a `null`, numeric or boolean `triples` (specs/0025 §4b(1), amended; the wider rule
-of specs/0039 §10).** Those three answers returned an exception to the caller while a
-string or a dict in the same position returned zero facts silently. The difference was
-iterability, not a property anyone chose, and the re-extraction retry had always
-treated every non-list value as one recorded shape. Now both call sites apply that one
-rule: every non-list `triples` is one `primary_failed` / `shape` record and zero facts.
-Nothing in the extraction path raises on a provider ANSWER any more.
-
-- **Who should act:** any host that was catching `TypeError` around `remember` to
-  detect a broken provider must now read the result or the diagnostics log instead.
-  That call returns normally with `facts=0`.
-- **Attach a diagnostics reporter if you have not.** This removes the last loud signal
-  on the extraction path: without a reporter, a provider answering `{"triples": null}`
-  is now indistinguishable from one that legitimately found nothing. That was already
-  true of the four other degrade paths, and it is the reason the degrade records above
-  exist. The CLI attaches a reporter by default.
-- **Unchanged:** the string and dict shapes (same zero-fact result, same record), the
-  per-member skipping of a well-formed list, every counter, every stored byte, and a
-  provider EXCEPTION, which still propagates as before. Measured across both
-  independent instruments in `specs/evidence/0039/`, exactly three transcript rows
-  moved in each: `RAISES TypeError` became `RESULT facts=0`.
-- **It moved part of an externally frozen surface, disclosed rather than absorbed:**
-  specs/0039 was accepted the same day with its answer matrix frozen, and this changes
-  the accepted cell for those three shapes, re-instances one invariant whose only
-  instance they were, and adds a second normalization site to another. specs/0039 v14
-  records all three for the next external round.
-
-**A re-extraction retry that answers with a bare JSON array now repairs, where before
-it was discarded (specs/0025 §4b(1), amended; drafted as specs/0039 §2e).** When a
-provider returns off-vocabulary relations, Veracium re-asks once for those triples
-only. If that second answer came back as a bare array — the triples with the
-`{"triples": ...}` wrapper omitted, which is a common shape from a JSON-mode provider
-— the whole retry was treated as malformed and every repair in it was thrown away:
-the fact was stored under the reserved `unclassified` relation with `recovered=0`.
-The extractor's own contract says a bare array is "a fallback for the caller to
-normalize", and the first extraction always did normalize it; the retry did not, so
-one of that function's two callers was not honouring it. It now does.
-
-- **What changes for a host:** on this path only, `recovered` rises and `residual`
-  falls by the number of repairs that answer carried, and the stored relation is the
-  registry member the retry named instead of `unclassified`. Measured on the standard
-  fixture, both independent instruments in `specs/evidence/0039/` agreeing:
-  `recovered` 0 → 1, `residual` 1 → 0. Nothing else in the retry's contract moves —
-  the one-call budget, the one-to-one occurrence matching, the discard rule and the
-  `recovered` definition are as accepted. A retry answer that is a bare array of
-  scalars now skips its members exactly as a first answer would, which is one
-  `member_skipped` record rather than the `retry_failed` one it used to write.
-- **Consequently `cause=bare_array` can no longer occur.** It stays in the log
-  vocabulary that specs/0039 froze, and the suite asserts it is unproducible against a
-  forced list return rather than merely absent from a few fixtures.
-**A malformed extraction is now visible in the result, with no reporter and no opt-in:
-a new boolean, `extraction_unusable`, present on every `remember` result (specs/0025
-§4c, amended).** It is True when the provider's first answer produced no shape-valid
-triple — rejected whole (no JSON, or an `instructions` value of the wrong type), a
-missing or non-list `triples`, or a non-empty list none of whose members is a
-well-formed triple — and False otherwise, including for a legitimately empty
-extraction and for a list whose members were well-formed but refused for another
-reason, which have their own counters.
-
-- **Why it is here:** the change above removes an exception, and without this a host
-  passing `diagnostics=None` — the documented default — got a result byte-identical to
-  a successful extraction that found nothing. Measured on the shipped path by two
-  people independently: `{"triples": null}` and `{"triples": []}` returned the same
-  dict, key for key. An earlier draft of this release widened the existing
-  `unparseable` flag instead; the external reviewer showed that flag then meant neither
-  thing it could mean (silent on an all-invalid list, set on a parsed answer whose
-  triples were fine), so the widening was reverted and the outcome given its own
-  accurately named field. `unparseable` keeps the meaning it has always had.
-- **It also closes a hole that predates this release.** A string or dict `triples`, and
-  a list of malformed members, were already indistinguishable from an empty extraction
-  in every version of Veracium that has shipped. All of them are marked now.
-- **Who sees it:** every `remember` result and the MCP `remember` tool result (an MCP
-  host is exactly a default host). Hosts that read results by key gain one key and are
-  otherwise unaffected. The opt-in telemetry event does NOT carry it.
-- **Not covered, deliberately:** a failed RETRY is still visible as `retried > 0,
-  recovered = 0` rather than through this field, and the field says an answer was
-  unusable, never which way. That distinction is in the diagnostics log and needs a
+- **Not covered, deliberately:** a failed RETRY is visible as `retried > 0, recovered =
+  0` rather than through `extraction_unusable`; and the field says an answer was
+  unusable, never which way — that distinction is in the diagnostics log and needs a
   reporter.
 
-**Degrade records are written before the first store write (specs/0039, round-5
-finding).** The two per-call records — skipped members and defaulted volatility —
-were emitted after the storage loop, so a store failure inside the loop lost them and
-the log showed the error alone. Every degrade record is now computed and emitted before
-the first effectful store operation, including the episode write, so an error that
-follows always finds its record already in the log. No outcome changes.
+**How this window got here, for a host that tracked `main`.** The 0039 implementation
+landed first with the accepted scope: records only, no result change, the three
+non-list shapes still raising. The retry's bare-array normalization followed, then the
+wider normalization that stopped the raise. That last change removed the only signal a
+host with no reporter had, so an intermediate commit widened the existing `unparseable`
+flag onto the failure paths; the external reviewer showed that flag then meant neither
+thing it could mean (silent on an all-invalid list, set on a parsed answer whose triples
+were fine), and it was replaced by `extraction_unusable` with `unparseable` restored to
+its narrow meaning. Only the final state above ships in this release.
 
 ## 0.20.1 — 2026-09-08
 

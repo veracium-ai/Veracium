@@ -2962,6 +2962,12 @@ REVIEWS = [
     dict(spec="0039", round=5, kind="external", date="2026-09-11",
          verdict='RETURN for amendment — "The implementation is broadly sound and the package is complete, but two blocking gaps remain." R5-1 blocking (`unparseable` does not have the meaning X17 claims: an all-invalid list stays silent, and the flag fires on a rejected answer whose triples were usable — choose one precise meaning, probably under a new accurately named field); R5-2 blocking (the two aggregated records are emitted after the storage loop and vanish when a later store operation fails — emit before the first effectful store operation, add store-failure tests). Dispositions: bare-array normalization acceptable; uniform non-list normalization acceptable as a disclosed behaviour change; the ordering re-instancing reasonable but incomplete; the `unparseable` widening not acceptable. Reviewer\'s suites 2,919/37 local and 2,947/9 sealed, both totalling 2,956. Body sha16 3e4384e0b1f0ea69.',
          raised=['0039-R5-1', '0039-R5-2']),
+    dict(spec="0039", round=6, kind="external", date="2026-09-11",
+         verdict="SENT (round-6 package 8b5ec82b7ef104a9aac98367e60c67b4d133062cac81cc6d4db8a6a1f1dbf33e @ pin 858eaffc97ec265bb8528df563599b502df95eea, CI 34550385395; 0039 v16 + 0025 v18 — round 5's two findings closed; two complete legs on the same bytes, both 47/0/2; the round's FIRST assembly 6e70b09d… discarded by dev before any leg — its PIN.txt lost the backticked names to an unquoted heredoc — and disclosed). Dispatched on the owner's word 2026-09-11T04:44Z.",
+         raised=[]),
+    dict(spec="0039", round=6, kind="external", date="2026-09-11",
+         verdict='RETURN for amendment — "Both round-5 implementation findings are closed, but one blocking carrier-consistency problem remains." R6-1 blocking: the normative body of 0039 and the user-facing documentation still state the superseded behaviour — §2a and the §2c-ii matrix say null/number/boolean raise, the matrix says a bare-array retry raises, the MCP impact row and V-MCP-RESULT-UNCHANGED say the tool result gained no field, the CHANGELOG\'s original 0039 section contradicts its later sections, docs/api.md omits the new field. Six required corrections, all carriers plus a mechanical binding; "No additional product-code changes appear necessary … this should be ready for acceptance." Reviewer\'s suites 2,920/37 extracted and 2,948/9 sealed, both totalling 2,957. Body sha16 0872ffd2198e4aa8.',
+         raised=['0039-R6-1']),
 
 ]
 

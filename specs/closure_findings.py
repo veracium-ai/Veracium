@@ -3743,6 +3743,10 @@ CLOSURES = [
      'Aggregated records (member_skipped, volatility_defaulted) are emitted only after the storage loop and disappear when a later store operation fails',
      'v16: every degrade record is computed and emitted before the first effectful store operation — the volatility coercion as a pure pre-pass, the episode write moved below the emissions; store-failure tests at BOTH seams (edge write, episode write) for all three record kinds',
      '$PY -m pytest tests/test_0039_degradation_visibility.py::test_counted_records_are_written_before_the_first_store_write tests/test_0039_degradation_visibility.py::test_a_degrade_record_written_before_an_error_stays_before_it'),
+    ("0039", "external", 6, '0039-R6-1',
+     'The contract carriers contradict the implementation: the normative body of 0039, the Unreleased changelog and docs/api.md still state the superseded behaviour (non-list triples raise; a bare-array retry raises; the MCP result gained no field; no new result field)',
+     "v17: every live sentence rewritten in place with the accepted text kept as marked history in the same cell; V-MCP-RESULT-UNCHANGED RETIRED and replaced by V-MCP-RESULT-CARRIES-ONE (the sixth frozen structure to move, the only one undisclosed, under a green inherited from a check of an adjacent claim); the CHANGELOG consolidated into one account; extraction_unusable in docs/api.md; three withdrawn-phrase entries registered for 0039 with a positive control, and a carrier test over the two host-facing files lint cannot read",
+     '$PY -m pytest tests/test_0039_degradation_visibility.py::test_the_withdrawn_entries_for_this_spec_fire_on_a_marker_stripped_copy tests/test_0039_degradation_visibility.py::test_the_host_facing_carriers_state_the_current_contract tests/test_0039_degradation_visibility.py::test_the_new_field_reaches_the_mcp_host_and_not_telemetry'),
 
 ]
 
