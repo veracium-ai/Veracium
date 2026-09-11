@@ -2980,6 +2980,12 @@ REVIEWS = [
     dict(spec="0039", round=8, kind="external", date="2026-09-11",
          verdict='RETURN for amendment — "one blocking documentation/verification finding. No product-code defect found." R8-1: §2e\'s single-carrier rule is not true (§2a\'s row, matrix rows 6 and 9, both new invariant rows, §8, §9 and the checklist still state the value) and not fully checked (the test verifies eight hand-chosen anchors, never that they are the complete set — "the verification\'s asserted domain is narrower than the document"); required: make every statement a value-free pointer OR narrow the rule and enumerate justified exceptions, and make the test enforce the declared scope by a CENSUS with an exact allowed-location set plus a mutation. R7-2 CLOSED; R7-1 improved, not closed. Reviewer\'s suites 2,923/37 and 2,951/9, both totalling 2,960. Body sha16 52f6bf8450c16f04.',
          raised=['0039-R8-1']),
+    dict(spec="0039", round=9, kind="external", date="2026-09-11",
+         verdict="SENT (round-9 package 1ac58958259d582f2ce6ff248dcfe2669e50cc06170cbf42b4c7f5385cd53944 @ pin d476b3c4880e0516264ec41b4ea2925cde77bc13, CI 34609837460; 0039 v19 + 0025 v18 — round 8's finding folded; one assembly; both legs 56/0/2 on the same bytes, research's first leg of nine with no finding of any kind). No dispatch word was typed into the dev session; the verdict's arrival is the evidence of dispatch.",
+         raised=[]),
+    dict(spec="0039", round=9, kind="external", date="2026-09-11",
+         verdict='ACCEPT — "Round 9 closes R8-1 without introducing a new blocking or moderate finding." The carrier rule "is now honest and enforceable": three value-asserting forms, value-free pointers elsewhere, a check that derives occurrences from the live document, history exclusions that remove marked spans rather than mixed-content lines, the planted-restatement mutation both ways, and the limitations "accurately documented and do not overstate what the check proves." Derived census 10/0/0; suites 2,924/37 extracted and 2,952/9 sealed, both totalling 2,961; no product source changed. CLOSES the implementation review of accepted 0039 (rounds 5-9). Body sha16 0e1b45a95e603c13.',
+         raised=[]),
 
 ]
 
