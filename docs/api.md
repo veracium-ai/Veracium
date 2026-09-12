@@ -331,7 +331,11 @@ that moved), every confirmation (who, when, by which call path), every
 outcome judgment (0009). `--json` returns the same as one document.
 `veracium why --user X --find TEXT` lists the edges whose subject, relation or
 object contains TEXT, with their ids and state, since no other verb prints
-ids (`export` does). Exit 0 when found, 1 when not, 2 on usage. Three reads
+ids (`export` does). Exit 0 when found, 1 when not, 2 on usage. One limit of the history it shows, stated once: the journal lives in the same
+file as the rows it describes, with no hash chain or signature, so veracium
+detects inconsistency, faults and changes made outside its own interfaces, but
+not changes made by the party who operates the store, who can alter both the
+records and the journal; independent witnessing is not part of v1. Three reads
 (`current_state`, the outcome episodes, the revocation standing) run after
 the snapshot window closes and may be one write newer than the rest; the
 module says so.

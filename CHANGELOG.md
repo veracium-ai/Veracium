@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Docs: the history's limit, stated.** The transaction-time journal (specs/0029) lives
+  in the same file as the rows it describes, with no hash chain or signature; veracium
+  detects inconsistency, faults and changes made outside its own interfaces, not changes
+  made by the party who operates the store. Independent witnessing is not part of v1.
+  Two sentences in the API reference (the owner's ruling, 2026-09-12); no behaviour change.
 - **Fix: a confirmation episode now has one id, and a host can delete or retire it.**
   `confirm()` (specs/0008) wrote the confirmation episode's row under one minted id
   and its stored payload under another; every read surface returned the payload's id
