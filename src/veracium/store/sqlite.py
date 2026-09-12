@@ -517,6 +517,16 @@ class SqliteStore(Store):
             edge.provenance.observed_at = max(edge.provenance.observed_at, confirmed_at)
             edge.provenance.confidence = max(edge.provenance.confidence, 0.9)
             cid = f"c-{uuid.uuid4().hex[:12]}"
+            # ONE id for the confirmation episode, derived from the confirmation's:
+            # the row and the payload it stores must agree, because every read
+            # surface returns the payload's id and every lookup is by the row's. Two
+            # independently minted ids left a confirmation episode that could be
+            # read but never deleted, retired or reinstated by the id a consumer
+            # held — the attempt found no row and reported success (found by
+            # `veracium doctor` on its first run, 2026-09-12; measured by both
+            # seats; fixed on the owner's word "Fix it"). No accepted spec names
+            # the id; 0008 pins the summary and the transaction, which stand.
+            ep_id = f"ep-{cid}"
             actor_v = ConfirmationActor(actor).value
             call_v = ConfirmationCallPath(call_path).value
             try:
@@ -527,9 +537,9 @@ class SqliteStore(Store):
                 self._conn.execute(
                     "INSERT OR REPLACE INTO episodes(id,user_id,date,json) "
                     "VALUES(?,?,?,?)",
-                    (f"ep-{uuid.uuid4().hex[:12]}", user_id,
+                    (ep_id, user_id,
                      confirmed_at.date().isoformat(),
-                     Episode(id=f"ep-{cid}", user_id=user_id,
+                     Episode(id=ep_id, user_id=user_id,
                              date=confirmed_at.date().isoformat(),
                              summary=f"({actor_v}) confirmed "
                                      f"'{edge.relation}: {edge.object}' still holds",

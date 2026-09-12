@@ -36,8 +36,9 @@ U = "ida"
 
 def _seed(db, *, confirm=False):
     """Three remembers (one supersession, one third-party claim with a source id).
-    `confirm=True` adds a confirmation and an outcome on the pet fact — which the
-    doctor reports (see test_the_doctor_found_the_confirmation_episode_id_mismatch)."""
+    `confirm=True` adds a confirmation and an outcome on the pet fact (the doctor was
+    clean on it only after the confirmation episode's two ids were made one — see
+    test_the_confirmation_episode_has_one_id_and_a_consumer_can_delete_it)."""
     mem = Memory(llm=Fake([
         {"triples": [{"subject": "user", "relation": "has_pet", "object": "cat Miso"},
                      {"subject": "user", "relation": "prefers", "object": "concise answers"}],
@@ -62,32 +63,35 @@ def _seed(db, *, confirm=False):
     return db
 
 
-def test_the_doctor_found_the_confirmation_episode_id_mismatch():
-    """FOUND ON THE DOCTOR'S FIRST RUN (2026-09-12), a product defect in guarded code:
-    `SqliteStore.confirm_edge` inserts the confirmation episode's ROW under one minted
-    id (`ep-<hex>`) while the Episode payload it stores carries another (`ep-c-<hex>`),
-    so the row and its JSON disagree about the episode's identity. NO ACCEPTED SPEC
-    governs the id (0008 pins the summary and the transaction, not the id — research's
-    read, same day), so the owner's question is which id is canonical. The consequence
-    is not cosmetic: every read surface returns the payload id and every lookup is by
-    the row id, so delete/retire/reinstate by the id a consumer holds find no row and
-    return without error (per-user `forget` is unaffected). Surfaced to the owner; not
-    this tool's to fix. This test pins the finding so it cannot be forgotten, and FAILS
-    the day it is fixed (delete it then, or flip it to assert equality)."""
+def test_the_confirmation_episode_has_one_id_and_a_consumer_can_delete_it():
+    """FOUND BY THE DOCTOR ON ITS FIRST RUN (2026-09-12) and FIXED on the owner's word
+    "Fix it": `SqliteStore.confirm_edge` used to insert the confirmation episode's ROW
+    under one minted id while the payload carried another, so every read surface
+    handed out an id no lookup could find — delete, retire and reinstate by that id
+    found no row and returned without error. The row id is now derived from the
+    confirmation id and equals the payload's. Three assertions, each the fix's own
+    claim: the doctor is clean on a store carrying a confirmation and an outcome; the
+    row and its payload agree; and `delete_episode` by the id the read surface hands
+    out removes the row (before the fix: 5 rows before and after, no exception).
+    Forward-only: rows written before the fix keep their two ids and the doctor still
+    names them."""
+    from veracium.store.sqlite import SqliteStore
     with tempfile.TemporaryDirectory() as d:
         db = _seed(f"{d}/t.db", confirm=True)
         rep = doctor.diagnose(db)
-        f = [x for x in rep.findings if x.check == "rows" and "episode row(s)" in x.message]
-        assert len(f) == 1 and len(f[0].ids) == 1, _messages(rep, "rows")
+        assert [x.message for x in rep.findings if x.level in ("error", "warn")] == [], _messages(rep)
         c = sqlite3.connect(db)
-        row_id, payload_id = c.execute("SELECT id, json_extract(json,'$.id') FROM episodes WHERE id=?",
-                                       (f[0].ids[0],)).fetchone()
+        rows = c.execute("SELECT id, json_extract(json,'$.id') FROM episodes WHERE id LIKE 'ep-c-%'").fetchall()
         c.close()
-        assert payload_id.startswith("ep-c-") and row_id != payload_id
-        # and nothing ELSE on a store with a confirmation and an outcome
-        assert [x.message for x in rep.findings if x.level in ("error", "warn")] == [f[0].message]
-
-
+        assert len(rows) == 1 and rows[0][0] == rows[0][1], rows
+        store = SqliteStore(db)
+        visible = [e.id for e in store.episodes(U, include_retired=True) if e.id.startswith("ep-c-")]
+        assert visible == [rows[0][0]]
+        before = len(store.episodes(U, include_retired=True))
+        store.delete_episode(visible[0])
+        after = len(store.episodes(U, include_retired=True))
+        store.close()
+        assert after == before - 1, (before, after)
 def _messages(rep, check=None):
     return [f.message for f in rep.findings if check is None or f.check == check]
 

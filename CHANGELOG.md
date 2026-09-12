@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Fix: a confirmation episode now has one id, and a host can delete or retire it.**
+  `confirm()` (specs/0008) wrote the confirmation episode's row under one minted id
+  and its stored payload under another; every read surface returned the payload's id
+  and every lookup used the row's, so `delete_episode`, retirement and reinstatement
+  by the id a consumer held found no row, changed nothing and returned without error
+  (found by `veracium doctor` on its first run; 0.22.0's release note carries the
+  erratum). The row id is now derived from the confirmation id and equals the
+  payload's. Forward-only: episodes written by earlier versions keep their two ids,
+  `doctor` keeps naming them, and per-user `forget` was and is unaffected. No
+  accepted spec names the episode id; 0008's summary and transaction obligations
+  stand unchanged.
+
 ## 0.22.0 — 2026-09-12
 
 **Upgrade recommendation:** no host must act. This release adds three operator verbs
