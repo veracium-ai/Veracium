@@ -51,7 +51,7 @@ class Fake:
 def _mem(tmp_path, name, scripts=None):
     scripts = scripts or [{"triples": [TRIPLE], "episode": "diet noted"}]
     return Memory(llm=Fake(scripts),
-                  config=MemoryConfig(db_path=f"{tmp_path}/{name}.db",
+                  config=MemoryConfig(require_source_id=False, db_path=f"{tmp_path}/{name}.db",  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                                       wiki_recompile_after_writes=0))
 
 

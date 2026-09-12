@@ -30,7 +30,7 @@ class Fake:
 
 
 def _mem(d):
-    mem = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/t.db",
+    mem = Memory(llm=Fake(), config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db",  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                                                  wiki_recompile_after_writes=0))
     mem.remember("u", "USER: I'm a designer at Acme.", date="2026-06-01", context=EvidenceContext.direct())
     mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",

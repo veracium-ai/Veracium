@@ -41,7 +41,7 @@ def _reporter(tmp_path, name="v.log", **cfg):
 
 
 def _mem(tmp_path, llm, reporter, name="m"):
-    return Memory(llm=llm, config=MemoryConfig(db_path=str(tmp_path / f"{name}.db"), wiki_recompile_after_writes=0),
+    return Memory(llm=llm, config=MemoryConfig(require_source_id=False, db_path=str(tmp_path / f"{name}.db"), wiki_recompile_after_writes=0),  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                   diagnostics=reporter)
 
 
@@ -884,7 +884,7 @@ def test_the_new_field_reaches_the_mcp_host_and_not_telemetry(tmp_path):
         def __getattr__(self, name):
             return lambda *a, **k: None
     mem2 = v.Memory(llm=Stub(_main([{}, "junk"]), retry_raw=_main([])),
-                    config=MemoryConfig(db_path=str(tmp_path / "t.db"), wiki_recompile_after_writes=0),
+                    config=MemoryConfig(require_source_id=False, db_path=str(tmp_path / "t.db"), wiki_recompile_after_writes=0),  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                     telemetry=_Collector())
     _remember(mem2)
     fields = [f for e, f in seen if e == "ingest"][0]

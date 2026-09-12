@@ -47,7 +47,8 @@ def test_write_read_supersession_and_quarantine():
         mem.remember("u", "USER: I'm vegetarian; keep answers concise.", date="2026-06-01")
         mem.remember("u", "USER: actually give me detailed answers now.", date="2026-06-03")
         mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
-                     author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+                     author=EvidenceAuthor.THIRD_PARTY, event_type="email",
+                 source_id="billing-mailbox")   # required for third-party content (0006 v8)
 
         # supersession: exactly one active `prefers`, and it's the new value
         prefs = [e for e in mem.store.edges("u", relation="prefers")]

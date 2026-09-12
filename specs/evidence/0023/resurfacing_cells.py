@@ -29,7 +29,9 @@ outside revocation's reach, the honest residual); and the completeness
 statement's class-(c) count SEES the stripped records. The pinned JSON
 stays exact for THIS generator; the by-name test asserts the invariant.
 Ingest configuration, for anyone reproducing the cells: author THIRD_PARTY,
-no evidence context (the absent-context floor), `source_id` per cell.
+no evidence context (the absent-context floor), `source_id` per cell — some cells
+deliberately unsourced, so the generator opts out of 0006 v8's ingest requirement
+(`require_source_id=False`): the cells measure records that exist, not ingest.
 """
 import json, tempfile
 from veracium import Memory, MemoryConfig, EvidenceAuthor
@@ -51,7 +53,7 @@ def script(value, relation="located_at"):
             "episode": f"the feed reported the user is {relation} {value}"}
 
 def mem(d, scripts):
-    return Memory(llm=Fake(scripts), config=MemoryConfig(db_path=f"{d}/m.db", wiki_recompile_after_writes=0))
+    return Memory(llm=Fake(scripts), config=MemoryConfig(require_source_id=False, db_path=f"{d}/m.db", wiki_recompile_after_writes=0))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
 
 def store_facts(m, rep):
     edges = m.store.edges(U, active_only=False, include_quarantined=True)

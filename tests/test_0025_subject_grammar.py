@@ -24,7 +24,7 @@ U = "u"
 
 
 def _mem(tmp_path, llm):
-    return Memory(llm=llm, config=MemoryConfig(db_path=str(tmp_path / "m.db"),
+    return Memory(llm=llm, config=MemoryConfig(require_source_id=False, db_path=str(tmp_path / "m.db"),  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                                               wiki_recompile_after_writes=0))
 
 

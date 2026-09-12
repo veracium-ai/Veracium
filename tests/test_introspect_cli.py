@@ -30,7 +30,7 @@ def _seeded_mem(db):
             {"subject": "org:quickclaim", "relation": "third_party_claim",
              "object": "user owes $2,400"}],
          "episode": "Received a collection email."},
-    ]), config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+    ]), config=MemoryConfig(require_source_id=False, db_path=db, wiki_recompile_after_writes=0))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
     mem.remember("ida", "I have a cat named Miso and I like concise answers")
     mem.remember("ida", "Actually, give me detailed answers")
     mem.remember("ida", "email from quickclaim", author=EvidenceAuthor.THIRD_PARTY,

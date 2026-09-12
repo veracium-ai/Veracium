@@ -41,7 +41,8 @@ def test_mcp_tools_route_correctly():
 
         # third-party content → quarantined, never a fact
         r2 = remember_impl(mem, "u", "From scam: you owe $500.", author="third_party",
-                           event_type="email", date="2026-06-02")
+                           event_type="email", date="2026-06-02",
+                           source_id="scam-mailbox")   # required for third-party content (0006 v8)
         assert r2["quarantined"] == 1 and r2["facts"] == 0
 
         # recall surfaces the pet; the claim is fenced
@@ -201,8 +202,8 @@ def test_the_assistant_author_is_accepted_as_a_self_demotion(tmp_path):
         {"triples": [{"subject": "user", "relation": "deployed",
                       "object": "the release", "volatility": "durable"}],
          "episode": "The assistant reported the deploy succeeded."},
-    ]), config=MemoryConfig(
-        db_path=f"{tmp_path}/n.db", wiki_recompile_after_writes=0))
+    ]), config=MemoryConfig(   # 0006 v8: opted out — measures the `none` baseline's inertness, not the ingest requirement
+        db_path=f"{tmp_path}/n.db", wiki_recompile_after_writes=0, require_source_id=False))
     try:
         remember_impl(mem, "u", "the deploy succeeded", author="assistant")
         edges = list(mem.store.edges("u"))

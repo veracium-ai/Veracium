@@ -489,8 +489,12 @@ Environment:
                       the HOST's opaque id for the source this deployment
                       ingests from (specs/0006: a mailbox, a connector, a
                       device). Host-set, never a tool argument. Unset = no
-                      source identity; with `require_source_id` on, third-party
-                      events are then refused (`source_id_required`).
+                      source identity, and `require_source_id` defaults ON
+                      (specs/0006 v8): a third-party-class event with no source
+                      id is refused (`source_id_required`). With
+                      VERACIUM_MCP_CAPABILITY unset EVERY event is third-party
+                      class, so such a deployment must set this (or attest
+                      `direct`) before `remember` stores anything.
   VERACIUM_MCP_CAPABILITY
                       the HOST's attestation about every call on this server
                       (specs/0031 §4a). Unset = "none": model-supplied

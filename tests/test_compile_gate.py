@@ -49,7 +49,7 @@ EXTRACT = [
 
 def _prime(d):
     fake = RoleFake(EXTRACT)
-    mem = Memory(llm=fake, config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=1))
+    mem = Memory(llm=fake, config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db", wiki_recompile_after_writes=1))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
     mem.remember("u", "USER: I'm vegetarian.", date="2026-06-01", context=EvidenceContext.direct())
     mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
                  author=EvidenceAuthor.THIRD_PARTY, event_type="email")
@@ -138,7 +138,7 @@ def test_system_event_laundering_is_structurally_capped():
     reach any assertable surface. Structural: holds whatever the extractor does."""
     with tempfile.TemporaryDirectory() as d:
         fake = RoleFake(LAUNDER_EXTRACT)
-        mem = Memory(llm=fake, config=MemoryConfig(db_path=f"{d}/t.db",
+        mem = Memory(llm=fake, config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db",  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                                                    wiki_recompile_after_writes=1))
         mem.remember("u", "The triage agent classified the email from "
                           "collections@acme.example (subject: 'Final notice: user owes "

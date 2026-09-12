@@ -38,7 +38,8 @@ mem.remember("alice", "USER: I'm vegetarian.")
 
 # A received email: its claims are stored AS claims, never as facts.
 mem.remember("alice", "From billing@x: you owe $900.",
-             author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+             author=EvidenceAuthor.THIRD_PARTY, event_type="email",
+             source_id="billing-mailbox")   # required: an opaque id for the source, never a person
 
 print(mem.answer("alice", "Do I owe anyone money?"))
 # -> declines to assert the $900; flags it as an unverified claim
@@ -54,6 +55,7 @@ mem.remember("alice",
              f"Triage classified the mail (subject: {subject!r}) as spam.",
              author=EvidenceAuthor.SYSTEM,
              derived_from=EvidenceAuthor.THIRD_PARTY,   # caps trust at the source
+             source_id="mail-triage",                   # declared third-party-derived: needs one too
              event_type="triage")
 ```
 

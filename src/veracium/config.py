@@ -24,10 +24,12 @@ class MemoryConfig:
     # when True, `remember` REFUSES third-party-authored evidence and DECLARED
     # third-party-derived content that carries no `source_id`, before any write —
     # a record without one has no source identity and no revocation can ever reach
-    # it. Default False (today's behaviour); the flip to True is a later minor with
-    # a BREAKING note. The 0011 §4d floor (an ingest with no declared context) is
-    # never refused: absence of a declaration is not a claim about the source.
-    require_source_id: bool = False
+    # it. Default True since 0006 v8 (option C stage 3, the owner's word
+    # 2026-09-12; BREAKING for hosts that ingested third-party content without
+    # ids — pass one, or set this False to keep the v7-and-earlier behaviour).
+    # The 0011 §4d floor (an ingest with no declared context) is never refused:
+    # absence of a declaration is not a claim about the source.
+    require_source_id: bool = True
     # specs/0027 §4d — the semantic-recall carriers. `semantic_min_cosine` is
     # tuned-then-frozen on the §6a tune split; `semantic_timeout_ms` is the
     # bounded-latency deadline (recall never blocks longer than this on the

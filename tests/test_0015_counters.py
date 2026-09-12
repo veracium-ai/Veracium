@@ -24,7 +24,7 @@ def _llm_for(value):
 
 def _mem(tmp, llm):
     db = str(tmp / "s.db")
-    return Memory(llm=llm, store=SqliteStore(db), config=MemoryConfig(db_path=db))
+    return Memory(llm=llm, store=SqliteStore(db), config=MemoryConfig(require_source_id=False, db_path=db))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
 
 
 def _edge(uid, obj, rel="located_at"):

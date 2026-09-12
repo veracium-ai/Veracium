@@ -1,6 +1,6 @@
 """specs/0006 §4 rule 9 / I15 (v7) — `require_source_id`, the owner's staged ruling
-(option C, stage 2, 2026-09-12). Default OFF: every existing 0006 test is the
-guard that nothing moved. ON: third-party-AUTHORED evidence and DECLARED
+(option C, stage 2, 2026-09-12; DEFAULT ON since stage 3 / v8 the same day). Opted out
+(`require_source_id=False`): the store behaves as v6. ON (the default): third-party-AUTHORED evidence and DECLARED
 third-party-derived content without a `source_id` are refused BEFORE ANY WRITE;
 the 0011 §4d floor is spared; a sourced ingest is accepted. The MCP deployment's
 binding is host-set and never a tool argument; the refusal carries its name."""
@@ -71,7 +71,7 @@ def test_require_source_id_refuses_unsourced_third_party_before_any_write():
         mem.close()
 
 
-def test_require_source_id_spares_the_floor_and_the_default_off_store():
+def test_require_source_id_spares_the_floor_and_the_opted_out_store():
     with tempfile.TemporaryDirectory() as d:
         # ON: an ingest with NO declared context takes the 0011 §4d floor
         # (derived_from=third_party by absence) and is NOT refused — absence of a
@@ -85,10 +85,10 @@ def test_require_source_id_spares_the_floor_and_the_default_off_store():
         # and a declared-direct user ingest needs no source id either
         assert mem.remember(U, "I like tea too", context=EvidenceContext.direct())["facts"] >= 0
         mem.close()
-        # OFF (the default): third-party without a source id is accepted exactly as before v7
+        # OPTED OUT (`require_source_id=False`): third-party without a source id is accepted exactly as before v7
         db2 = f"{d}/off.db"
         mem2 = _mem(db2, CLAIM, require=False)
-        assert MemoryConfig().require_source_id is False
+        assert MemoryConfig().require_source_id is True    # the default since v8 (stage 3)
         r2 = mem2.remember(U, "mail", author=EvidenceAuthor.THIRD_PARTY, event_type="email")
         assert r2["quarantined"] == 1
         mem2.close()

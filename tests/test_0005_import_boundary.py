@@ -46,7 +46,7 @@ class _Fake:
 
 def _mem(db, scripts=None):
     return Memory(llm=_Fake(scripts),
-                  config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+                  config=MemoryConfig(require_source_id=False, db_path=db, wiki_recompile_after_writes=0))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
 
 
 def _primed(tmp_path, db="src.db"):
@@ -599,7 +599,7 @@ def test_import_audit_payload_field_set_is_unchanged(tmp_path):
     exp = _export(tmp_path, src)
     log = AuditLog(str(tmp_path / "audit.jsonl"))
     dst = Memory(llm=_Fake([]), audit=log,
-                 config=MemoryConfig(db_path=str(tmp_path / "bob.db"),
+                 config=MemoryConfig(require_source_id=False, db_path=str(tmp_path / "bob.db"),  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                                      wiki_recompile_after_writes=0))
     r = dst.import_memory(exp, user_id="bob")
     assert r["capped"] > 0                                # the return DOES carry it

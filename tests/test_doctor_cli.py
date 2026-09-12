@@ -48,7 +48,7 @@ def _seed(db, *, confirm=False):
         {"triples": [{"subject": "org:quickclaim", "relation": "third_party_claim",
                       "object": "user owes $2,400"}],
          "episode": "Received a collection email."},
-    ]), config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+    ]), config=MemoryConfig(require_source_id=False, db_path=db, wiki_recompile_after_writes=0))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
     mem.remember(U, "I have a cat named Miso and I like concise answers", date="2026-09-01",
                  context=EvidenceContext.direct())
     mem.remember(U, "Actually, give me detailed answers", date="2026-09-02",
@@ -349,7 +349,7 @@ def test_third_party_records_without_a_source_id_are_named_and_the_floor_is_not(
              "episode": "Sourced mail."},
             {"triples": [{"subject": "user", "relation": "likes", "object": "tea"}],
              "episode": "A chat with no declared context."},
-        ]), config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+        ]), config=MemoryConfig(require_source_id=False, db_path=db, wiki_recompile_after_writes=0))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
         mem.remember(U, "mail one", author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-09-01")
         mem.remember(U, "mail two", author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-09-02",
                      source_id="acme-inbox")

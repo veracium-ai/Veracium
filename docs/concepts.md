@@ -61,6 +61,7 @@ honestly yours, yet an attacker wrote parts of what it says. Declare that with
 ```python
 mem.remember(user, f"Triage classified the mail (subject: {subject!r}) as spam.",
              author=EvidenceAuthor.SYSTEM, derived_from=EvidenceAuthor.THIRD_PARTY,
+             source_id="inbox",   # declared third-party-derived content needs a source id
              event_type="triage")
 ```
 

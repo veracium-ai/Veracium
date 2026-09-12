@@ -45,7 +45,7 @@ SCRIPTS = [
 
 def _mem(d):
     mem = Memory(llm=Fake(SCRIPTS),
-                 config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
+                 config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db", wiki_recompile_after_writes=0))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
     # specs/0019: the event texts GROUND their scripted extractions — the
     # canned objects' specifics (dates, "$900", "Acme") must appear in the
     # event text, exactly as a real conversation would carry them; a fixture

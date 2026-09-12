@@ -462,4 +462,12 @@ WITHDRAWN = [
      "0038 external round 2 (R2-1): naming a deviation from a mandatory condition does not "
      "satisfy it; the phrase is withdrawn with the claim it qualified.",
      "specs/0038 §6b, §9"),
+    ("0006-require-source-id-off-by-default",
+     r"require_source_id.{0,120}(off by default|default(s| stays)? (off|False)|later minor)"
+     r"|(off by default|default(s| stays)? (off|False)).{0,120}require_source_id",
+     "0006 v8 (option C stage 3, the owner's word 2026-09-12): `require_source_id` defaults "
+     "ON; v7's 'off by default, the flip is a later minor' is withdrawn with the default it "
+     "described. The opt-out (`require_source_id=False`) is stated as an opt-out, never as "
+     "the default.",
+     "specs/0006 §4 rule 9, I15, the version cell"),
 ]

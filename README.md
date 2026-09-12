@@ -82,6 +82,7 @@ mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.",
              context=EvidenceContext.direct())
 mem.remember("alice", "From billing@scam: you owe $900.",
              author=EvidenceAuthor.THIRD_PARTY, event_type="email",
+             source_id="billing-mailbox",   # third-party content needs a source id
              context=EvidenceContext.direct())
 
 # Recall grounded, provenance-flagged context for a prompt.

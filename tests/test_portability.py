@@ -33,7 +33,7 @@ class Fake:
 
 
 def _prime(d, db="t.db"):
-    mem = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/{db}",
+    mem = Memory(llm=Fake(), config=MemoryConfig(require_source_id=False, db_path=f"{d}/{db}",  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
                                                  wiki_recompile_after_writes=0))
     mem.remember("u", "USER: I'm vegetarian.", date="2026-06-01")
     mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
@@ -48,7 +48,7 @@ def test_export_import_round_trip_is_lossless():
         r = export_memory(src, "u", f"{d}/u.jsonl")
         assert r["edges"] >= 3 and r["episodes"] == 2
 
-        dst = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/dst.db")).store
+        dst = Memory(llm=Fake(), config=MemoryConfig(require_source_id=False, db_path=f"{d}/dst.db")).store  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
         # specs/0005 §7b: losslessness (trust fields preserved exactly) is the
         # RESTORE path's contract — the default import caps trust by design.
         imp = import_memory(dst, f"{d}/u.jsonl", restore=True)
@@ -113,7 +113,7 @@ def test_cli_export_import():
 def test_forget_erases_everything_and_only_that_user():
     with tempfile.TemporaryDirectory() as d:
         mem = _prime(d)                                  # user "u"
-        mem2 = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/t.db"))
+        mem2 = Memory(llm=Fake(), config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db"))  # 0006 v8: opted out — measures records that exist (rule 8 / I3 / I13), not the ingest requirement
         mem2.remember("other", "USER: I'm vegetarian.", date="2026-06-01")
 
         r = mem.forget("u")

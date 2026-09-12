@@ -2,15 +2,21 @@
 
 ## Unreleased
 
-- **`MemoryConfig.require_source_id` (default off) — option C, stage 2** (specs/0006 v7, §4
-  rule 9 / I15). When on, `remember` refuses before any write a third-party-authored
-  event or a declared third-party-derived one that carries no `source_id` — no source
-  identity means no revocation can ever reach the record. The 0011 floor (no declared
-  context) is never refused. New carriers for the id: the CLI's `--source-id` and the MCP
-  deployment's host-set `VERACIUM_MCP_SOURCE_ID` (the served tool exposes no argument —
-  0006 I1); the refusal is `SourceIdRequired` / `source_id_required`. Nothing changes
-  with the flag off, which is this release's default; the flip is a later minor with a
-  BREAKING note.
+- **BREAKING — `source_id` is now required for third-party content: `MemoryConfig.require_source_id`
+  defaults on** (specs/0006 v7 + v8, §4 rule 9 / I15; option C stages 2 and 3, on the owner's word).
+  `remember` refuses, before any write, a third-party-authored event or a declared
+  third-party-derived one that carries no `source_id` — no source identity means no revocation
+  can ever reach the record (0022 R12). The 0011 floor (no declared context) is never refused.
+  **Who must act:** a library host passing `author=THIRD_PARTY` or `derived_from=THIRD_PARTY`
+  adds `source_id=` (an opaque, stable id for the mailbox / connector / device — never a
+  person); a CLI host adds `--source-id`; an MCP deployment sets `VERACIUM_MCP_SOURCE_ID` —
+  and a deployment with `VERACIUM_MCP_CAPABILITY` unset has the third-party baseline (0031),
+  so without the binding **every** `remember` there is now refused with
+  `{"ok": false, "refusal": "source_id_required"}`. To keep the previous behaviour set
+  `MemoryConfig(require_source_id=False)`. Existing rows are untouched (no ids are invented,
+  0006 I1); `veracium doctor`'s `sources` check names the unsourced ones. The library
+  refusal is `veracium.ingest.SourceIdRequired`; the served MCP tool exposes no `source_id`
+  argument (0006 I1). The selfcheck's third-party cell and every docs example now carry an id.
 - **`veracium doctor` gains a `sources` check** (the owner's staged ruling on requiring
   `source_id` for third-party content, option C, stage 1): every third-party-authored fact
   or episode with no `source_id` is named — it has no source identity and no revocation
