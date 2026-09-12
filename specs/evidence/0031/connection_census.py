@@ -563,15 +563,20 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: `.items()` read) moved dotted/dataflow 5,697 -> 5,698, the rest unchanged;
 #: the doctor's `sources` check (2026-09-12, option C stage 1: twelve `.get`
 #: reads over the parsed payloads and the report's `add`) moved
-#: dotted/dataflow 5,698 -> 5,710, the rest unchanged.
+#: dotted/dataflow 5,698 -> 5,710, the rest unchanged; 0006 v7's
+#: `require_source_id` (2026-09-12, option C stage 2: the refusal in ingest,
+#: the flag threaded from `Memory.remember`, the MCP deployment binding and
+#: the adapter's refusal mapping, the CLI flag) moved dotted/dataflow
+#: 5,710 -> 5,719 and module-plain 288 -> 289 (`exc.reason` and the
+#: `os.environ` read in `main`), the rest unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5710,
+    "dotted/dataflow": 5719,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 288,
+    "dotted/module-plain": 289,
     "dotted/module-protected": 48,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 6099
+SRC_ATTRIBUTE_TOTAL = 6109
 SRC_DATA_DUNDERS_IN_DATAFLOW = 123
 
 

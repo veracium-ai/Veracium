@@ -146,8 +146,9 @@ def test_main_reads_the_environment_once_and_refuses_a_supplied_invalid(tmp_path
         def run(self):
             seen["ran"] = True
 
-    def fake_build_server(mem, *, default_user, capability=None):
+    def fake_build_server(mem, *, default_user, capability=None, source_id=None):
         seen["capability"] = capability
+        seen["source_id"] = source_id                 # 0006 v7: read once here too
         _resolve_capability(capability)          # the real validator, kept
         return _Srv()
 

@@ -407,6 +407,7 @@ class Memory:
                                  evidence_ref=evidence_ref, derived_from=derived_from,
                                  context=context,
                                  source_id=source_id, relations=self.config.relations,
+                                 require_source_id=self.config.require_source_id,
                                  # specs/0039 §2c: the degrade channel — an event, not
                                  # a counter; the result's key set does not change
                                  on_degrade=(lambda kind, payload:

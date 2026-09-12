@@ -219,6 +219,14 @@ def _len_sha16(text: str) -> tuple[int, str]:
     return len(b), hashlib.sha256(b).hexdigest()[:16]
 
 
+class SourceIdRequired(ValueError):
+    """specs/0006 §4 rule 9 (v7): with `require_source_id` on, third-party-authored
+    evidence and DECLARED third-party-derived content must carry a `source_id` —
+    refused before any write. `reason` is the MCP refusal name (the 0037 shape:
+    a library exception and a tool refusal carry the same name)."""
+    reason = "source_id_required"
+
+
 _UNSET = object()   # specs/0039 §2c: "the provider call raised" is a fact about WHICH LINE
                     # raised, never about the value — a provider may legitimately return None
 
@@ -237,7 +245,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                  context: Optional[EvidenceContext] = None,
                  source_id: Optional[str] = None,
                  relations: dict[str, Relation] = DEFAULT_RELATIONS,
-                 on_degrade=None) -> dict:
+                 on_degrade=None, require_source_id: bool = False) -> dict:
     """Extract and persist memory from one event. Returns a small summary dict
     (counts + the episode) for logging/telemetry.
 
@@ -263,7 +271,23 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # written. From this point on `derived_from` is the EFFECTIVE content
     # class: a declared derived(X), None for attested-direct, or the
     # THIRD_PARTY floor when the caller declared nothing.
+    declared = context is not None or derived_from is not None   # a declaration was MADE
     derived_from = _resolve_context(context, derived_from)
+    # specs/0006 §4 rule 9 (v7): with `require_source_id` on, third-party-AUTHORED
+    # evidence and DECLARED third-party-derived content must name their source —
+    # refused here, before the LLM runs or anything is written. The 0011 §4d
+    # floor is EXCLUDED on purpose: `declared` is false when the caller said
+    # nothing, and absence of a declaration is not a claim about the source.
+    # This is the one site that can tell the floor from a declaration; the
+    # stored payload cannot (the doctor's `sources` check keys on the author).
+    if require_source_id and source_id is None and (
+            author == EvidenceAuthor.THIRD_PARTY
+            or (declared and derived_from == EvidenceAuthor.THIRD_PARTY)):
+        raise SourceIdRequired(
+            "source_id is required for third-party-authored evidence and declared "
+            "third-party-derived content when MemoryConfig.require_source_id is on "
+            "(specs/0006 §4 rule 9): a record without one has no source identity and "
+            "no revocation can ever reach it; nothing was written")
     # specs/0037 §4b (V-BASIS-SCOPE): the extractor path cannot produce a
     # procedural record, so a basis on its context is a caller error —
     # REFUSED, nothing written; accepting it silently would ship declarative

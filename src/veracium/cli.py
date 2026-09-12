@@ -192,7 +192,8 @@ def _memory_verbs(args) -> int:
             from . import dryrun as _dr
             dr = _dr.run(args.db, llm, args.user, text, author=EvidenceAuthor(args.author),
                          event_type=args.event_type, date=args.date,
-                         derived_from=(EvidenceAuthor(args.derived_from) if args.derived_from else None))
+                         derived_from=(EvidenceAuthor(args.derived_from) if args.derived_from else None),
+                         source_id=args.source_id)
             if args.json:
                 print(json.dumps(_dr.to_json(dr), indent=2, default=str))
             else:
@@ -206,7 +207,8 @@ def _memory_verbs(args) -> int:
             r = mem.remember(args.user, text, author=EvidenceAuthor(args.author),
                              event_type=args.event_type, date=args.date,
                              derived_from=(EvidenceAuthor(args.derived_from)
-                                           if args.derived_from else None))
+                                           if args.derived_from else None),
+                             source_id=args.source_id)
             print(f"remembered: {r['facts']} facts, {r['quarantined']} quarantined "
                   f"claims for '{args.user}'")
             return 0
@@ -476,6 +478,10 @@ def main(argv=None) -> int:
     rm.add_argument("--date", default=None, help="ISO date the event occurred (default: today)")
     rm.add_argument("--derived-from", default=None, choices=["user", "third_party", "system", "assistant"],
                     help="lowest-trust party whose content the event embeds (caps trust)")
+    rm.add_argument("--source-id", default=None,
+                    help="the host's opaque id for the source this event came from (specs/0006: "
+                         "a mailbox, a connector, a device); required for third-party content "
+                         "when the store's require_source_id is on")
     rm.add_argument("--dry-run", action="store_true",
                     help="run the ingest against a snapshot copy of the store and report what would be "
                          "written — facts, tiers, quarantine, supersession, degrade records; the store is "

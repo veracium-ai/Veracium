@@ -520,6 +520,15 @@ Close the underlying store.
 | `scope_groups` | `None` | **scoped recall (spec 0020)**: `{group_name: [veracium.scope.Identity, ...]}`, the host's read-side scope policy. `None` disables the feature (a `principal=` at recall is then refused, never silently served unscoped); `{}` is the valid configured-empty state (each principal sees its own identity plus shared records). Validated when the config and the `Memory` are built — a malformed policy raises at load, never mid-recall. Read-side only: it governs what recall *shows*, never what maintenance *merges*. |
 | `cross_scope_visible` | `False` | whether records outside the principal's group are visible at all. When `True` they are visible but fenced as third-party testimony — never assertable, never volunteered proactively. |
 
+- **`require_source_id`** (`False`; specs/0006 §4 rule 9): when `True`, `remember`
+  refuses, before any write, third-party-authored evidence and declared third-party-
+  derived content that carries no `source_id` — a record without one has no source
+  identity and no revocation can ever reach it. Raises `veracium.ingest.SourceIdRequired`;
+  the MCP tool returns `{"ok": false, "refusal": "source_id_required"}`. An ingest with
+  no declared context (the 0011 floor) is never refused. Supply the id as
+  `remember(..., source_id=)`, the CLI's `--source-id`, or the MCP deployment's host-set
+  `VERACIUM_MCP_SOURCE_ID`. Off by default; the flip to on is a later minor.
+
 ## Providing an LLM
 
 Any callable with this shape is a valid `Complete`:

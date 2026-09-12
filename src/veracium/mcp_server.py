@@ -22,6 +22,8 @@ import os
 from enum import Enum
 from typing import Optional
 
+from .ingest import SourceIdRequired   # specs/0006 §4 rule 9: the tool refusal's name
+
 from . import Memory, MemoryConfig
 from .schema import EvidenceAuthor, EvidenceContext
 
@@ -114,7 +116,7 @@ def remember_report(mem: Memory, user_id: str, text: str,
                     author: Optional[str] = None, event_type: str = "chat",
                     date: Optional[str] = None,
                     derived_from: Optional[str] = None, *,
-                    capability=None) -> dict:
+                    capability=None, source_id: Optional[str] = None) -> dict:
     """The FULL write report — the library-level surface a host embedding these
     functions reads — including the operator counter
     `provenance_raises_discarded`. `remember_impl` is this with the operator
@@ -170,7 +172,8 @@ def remember_report(mem: Memory, user_id: str, text: str,
     else:
         context = EvidenceContext.derived(_AUTHOR[derived_from])   # bridge row 2
     r = dict(mem.remember(user_id, text, author=_AUTHOR[effective_author],
-                          event_type=event_type, date=date, context=context))
+                          event_type=event_type, date=date, context=context,
+                          source_id=source_id))          # host-set (0006 I1), never a tool argument
     # present on EVERY returned path, zero included — an absent key is not a
     # zero (the shipped `agreement_floored` shape; specs/0031 §4d)
     r["provenance_raises_discarded"] = discarded
@@ -205,16 +208,21 @@ def remember_impl(mem: Memory, user_id: str, text: str,
                   author: Optional[str] = None, event_type: str = "chat",
                   date: Optional[str] = None,
                   derived_from: Optional[str] = None, *,
-                  capability=None, basis=None) -> dict:
+                  capability=None, basis=None, source_id: Optional[str] = None) -> dict:
     """The tool result: `remember_report` minus every operator counter.
     specs/0037 §4b: `remember` gains NOTHING — a basis-shaped input writes
     nothing and returns the named refusal (the served tool schema carries no
     `basis`; this guards the implementation a host wires directly)."""
     if basis is not None:
         return {"ok": False, "refusal": "basis_not_applicable"}
-    r = remember_report(mem, user_id, text, author=author, event_type=event_type,
-                        date=date, derived_from=derived_from,
-                        capability=capability)
+    try:
+        r = remember_report(mem, user_id, text, author=author, event_type=event_type,
+                            date=date, derived_from=derived_from,
+                            capability=capability, source_id=source_id)
+    except SourceIdRequired as exc:
+        # specs/0006 §4 rule 9 (v7): the library exception and the tool refusal
+        # carry the same name (the 0037 shape); nothing was written
+        return {"ok": False, "refusal": exc.reason}
     for k in _OPERATOR_ONLY:
         r.pop(k, None)
     return r
@@ -345,7 +353,8 @@ def _server_cls():
         return FastMCP
 
 
-def build_server(mem: Memory, *, default_user: str = "default", capability=None):
+def build_server(mem: Memory, *, default_user: str = "default", capability=None,
+                 source_id: Optional[str] = None):
     """Construct the MCP server with veracium's tools registered. Separated from
     main() so the wiring is testable without starting the stdio loop.
 
@@ -391,9 +400,13 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None)
         capped at the minimum, so quoted material can never become an
         asserted fact. `date` is the ISO date the event occurred (defaults to
         today)."""
+        # specs/0006 I1: the source id is HOST-supplied, never model-supplied —
+        # it is the deployment's VERACIUM_MCP_SOURCE_ID binding, read once at
+        # start with the other environment, and is not a tool argument.
         return remember_impl(mem, default_user, text, author=author,
                              event_type=event_type, date=date,
-                             derived_from=derived_from, capability=cap)
+                             derived_from=derived_from, source_id=source_id,
+                             capability=cap)
 
     # specs/0031 §4b-iii applies to EVERY served tool (research's adjudication,
     # 2026-09-04): a model-suppliable user_id on RECALL is a cross-principal
@@ -472,6 +485,12 @@ Environment:
   ANTHROPIC_API_KEY   key for the reference LLM provider (required)
   VERACIUM_DB_PATH    SQLite store path        (default: veracium.db)
   VERACIUM_USER       default user id for tools (default: "default")
+  VERACIUM_MCP_SOURCE_ID
+                      the HOST's opaque id for the source this deployment
+                      ingests from (specs/0006: a mailbox, a connector, a
+                      device). Host-set, never a tool argument. Unset = no
+                      source identity; with `require_source_id` on, third-party
+                      events are then refused (`source_id_required`).
   VERACIUM_MCP_CAPABILITY
                       the HOST's attestation about every call on this server
                       (specs/0031 §4a). Unset = "none": model-supplied
@@ -533,7 +552,8 @@ def main(argv=None) -> None:
     try:
         server = build_server(
             mem, default_user=os.environ.get("VERACIUM_USER", "default"),
-            capability=os.environ.get("VERACIUM_MCP_CAPABILITY"))
+            capability=os.environ.get("VERACIUM_MCP_CAPABILITY"),
+            source_id=os.environ.get("VERACIUM_MCP_SOURCE_ID") or None)
     except ValueError as e:
         raise SystemExit(
             f"veracium-mcp: refusing to start: VERACIUM_MCP_CAPABILITY="
