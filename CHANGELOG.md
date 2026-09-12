@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.24.0 — 2026-09-12
+
+**Upgrade recommendation:** no host must act. This release changes what the extractor may
+STORE — a routine the user stated in an event can now be recorded as a procedural record,
+behind a verbatim-quote gate — and changes nothing about what is RENDERED: a captured
+procedure is excluded from recall, the briefing and the wiki exactly as a host-declared one
+is. Hosts that read raw edges (`store.edges`, exports) should know that procedural records
+can now arrive from ordinary `remember` calls on user-authored events, marked by the same
+stamp `record_procedure` writes (`is_procedural`). Two additive result keys, `procedures`
+and `procedural_refused`; the served MCP `remember` tool strips them with the other
+extractor counters. `veracium doctor` gains an informational check that cannot fail a run.
+No schema, export-format or stored-byte change for existing records; `require_source_id`
+stays on (0.23.0); rollback to 0.23.0 is safe.
 
 - **`veracium doctor` gains a `procedural` tripwire** (research's census as a standing check;
   the owner's word, 2026-09-12). Two numbers, never merged: `procedural_declared`, records
