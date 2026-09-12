@@ -1,5 +1,5 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ a710180364aa2ae2070d548e5dc95141a8945f32
+# generated 2026-09-12 against veracium @ 80673163c5a7c8a71c388cf1ef80bc40de961b76
 # Real ingest_event with a scripted provider. The pin line is asserted by tests/test_0039_answer_shapes.py
 # against the tree the test runs in: src/ must be unchanged since this commit, or the transcript is regenerated.
 # good rows are unchanged, which is the half a mark-everything fix would have broken.
@@ -16,6 +16,8 @@
 # RE-PINNED 2026-09-12 after `veracium doctor` (a new read-only module and a CLI verb, no ingest
 # change): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after `remember --dry-run` (a new module and two CLI flags, no ingest
+# change): body BYTE-IDENTICAL again.
+# RE-PINNED 2026-09-12 after the confirmation-episode id fix (store/sqlite.py, no ingest
 # change): body BYTE-IDENTICAL again.
 
 === PRIMARY answer shapes (the retry answer fixed to a valid empty object) ===

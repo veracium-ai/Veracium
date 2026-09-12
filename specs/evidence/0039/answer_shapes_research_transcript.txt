@@ -1,5 +1,5 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ a710180
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 8067316
 # script: proposals/0039-answer-shapes-research-instrument.py
 # Real ingest_event with a scripted provider. Not a simulation of the loop.
 # research's instrument as committed: ONE row moved — `R bare array of dicts` is now a
@@ -12,6 +12,7 @@
 # RE-PINNED 2026-09-12 after `veracium why` (no ingest change): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after `veracium doctor` (no ingest change): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after `remember --dry-run` (no ingest change): body BYTE-IDENTICAL again.
+# RE-PINNED 2026-09-12 after the confirmation-episode id fix (no ingest change): body BYTE-IDENTICAL again.
 
   primary answer shape     outcome                                             
   ------------------------ ----------------------------------------------------
