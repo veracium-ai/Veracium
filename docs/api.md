@@ -384,7 +384,13 @@ with no journal event (specs/0029); every third-party-AUTHORED fact or
 episode carrying a `source_id` (specs/0006), since one without it has no
 source identity and cannot be revoked by source — content merely derived from
 a third party is not checked, because the stored payload cannot tell a declared
-derivation from the default every undeclared ingest receives; and, for every
+derivation from the default every undeclared ingest receives; the procedural
+tripwire — two numbers never merged, `procedural_declared` (records stamped
+procedural, exact) and `procedural_shaped` (declarative records whose `note`
+matches research's census marker screen, a screen result and never a count of
+procedures; notes only, never `summary`; informational, it cannot fail the
+build) — there to notice an extractor that starts producing procedure-shaped
+notes or hosts feeding procedures down the declarative path; and, for every
 standing revocation (specs/0022), the reference sweep run over the store as it
 is with no proposed action — a pending effect means the revocation is not
 applied. Rebuildable

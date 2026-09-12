@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **`veracium doctor` gains a `procedural` tripwire** (research's census as a standing check;
+  the owner's word, 2026-09-12). Two numbers, never merged: `procedural_declared`, records
+  stamped procedural (exact, the record's own stamp), and `procedural_shaped`, declarative
+  records whose `note` matches the census marker screen — a screen result, never a count of
+  procedures (specs/0037 §4a: kind is the stamp, never the text). Notes only: `summary` is
+  never read (specs/0022 §7a, amended to disposition the doctor's one read of `note`).
+  Informational on every outcome; it cannot fail the build. Baseline recorded with the
+  screen: 13 of 312 notes on the LongMemEval-derived corpus, none genuine. It exists to
+  notice an extractor that starts producing procedure-shaped notes, or hosts feeding
+  procedures down the declarative path — neither would announce itself.
 - **Procedural capture reopened, render still closed** (specs/0037 v16, specs/0038 v6.1,
   specs/0025 amended; the owner's word, 2026-09-12). The extractor may now RECORD a
   routine the user stated — it may not conclude one. A procedural relation

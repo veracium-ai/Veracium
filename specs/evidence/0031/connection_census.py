@@ -571,15 +571,18 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: procedural branch) moved dotted/dataflow 5,719 -> 5,727, and the
 #: renderer's literal `getattr(r, "relation_kind", …)` is gone with the
 #: kind filter, getattr/dataflow 34 -> 33 (its allowance removed above),
-#: the rest unchanged.
+#: the rest unchanged; the doctor's `procedural` tripwire (2026-09-12: the
+#: payload `.get` reads, the screen's `.search`, the two list `.append`s and
+#: the report writes) moved dotted/dataflow 5,727 -> 5,739 and module-plain
+#: 289 -> 291 (`re.compile`, `re.I` for the screen), the rest unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5727,
+    "dotted/dataflow": 5739,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 289,
+    "dotted/module-plain": 291,
     "dotted/module-protected": 48,
     "getattr/dataflow": 33,
 }
-SRC_ATTRIBUTE_TOTAL = 6116
+SRC_ATTRIBUTE_TOTAL = 6130
 SRC_DATA_DUNDERS_IN_DATAFLOW = 123
 
 

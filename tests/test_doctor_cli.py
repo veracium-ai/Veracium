@@ -370,3 +370,49 @@ def test_third_party_records_without_a_source_id_are_named_and_the_floor_is_not(
         db2 = _seed(f"{d}/u.db")                                  # its claim carries source_id="quickclaim-inbox"
         assert not [x for x in doctor.diagnose(db2).findings if x.check == "sources"]
 
+
+
+def test_the_procedural_tripwire_reports_two_numbers_never_merged_and_never_fails():
+    """Research's census as a standing check (the owner's word, 2026-09-12):
+    `procedural_declared` counts the STAMP (exact); `procedural_shaped` counts
+    DECLARATIVE records whose `note` matches the marker screen (a tripwire); a
+    stamped record's note is never screened; an episode SUMMARY matching the
+    screen is NOT counted (0022 §7a: the doctor never reads `summary`); the
+    finding is informational on every outcome and the ids, never the text, are
+    reported; a store with neither reports two zeros."""
+    from veracium.schema import EvidenceContext
+    shaped_note = "before committing, run the formatter, then push"
+    assert doctor.PROCEDURAL_MARKERS.search(shaped_note), "fixture: the screen must match this note"
+    assert not doctor.PROCEDURAL_MARKERS.search("likes tea"), "fixture: the screen must not match this note"
+    with tempfile.TemporaryDirectory() as d:
+        db = f"{d}/t.db"
+        mem = Memory(llm=Fake([
+            {"triples": [{"subject": "user", "relation": "uses_tool", "object": "the formatter",
+                          "note": shaped_note}],
+             "episode": "Before committing the user runs the formatter, then pushes."},   # a SUMMARY that matches
+            {"triples": [{"subject": "user", "relation": "likes", "object": "tea", "note": "likes tea"}],
+             "episode": "A chat."},
+        ]), config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+        mem.remember(U, "I run the formatter before committing, then push.", context=EvidenceContext.direct(), date="2026-09-01")
+        mem.remember(U, "I like tea.", context=EvidenceContext.direct(), date="2026-09-02")
+        # a host-DECLARED procedure whose note would match the screen: counted as declared, never as shaped
+        pid = mem.record_procedure(U, "Rotate the keys quarterly.", author=EvidenceAuthor.USER,
+                                   context=EvidenceContext.direct(basis="stated"),
+                                   note="first, revoke the old key; then mint the new one")
+        edges = {e.object: e for e in mem.store.edges(U, active_only=False)}
+        mem.close()
+        rep = doctor.diagnose(db)
+        f = [x for x in rep.findings if x.check == "procedural"]
+        assert len(f) == 1 and f[0].level == "info", _messages(rep, "procedural")
+        assert rep.counts["procedural_declared"] == 1 and rep.counts["procedural_shaped"] == 1
+        assert "procedural_declared 1" in f[0].message and "procedural_shaped 1" in f[0].message
+        assert "never a count of procedures" in f[0].message and "never merged" in f[0].message
+        assert f[0].ids == [edges["the formatter"].id]           # the shaped declarative record, by id only
+        assert pid not in f[0].ids and shaped_note not in f[0].message
+        assert rep.exit_code == 0, "informational: the tripwire cannot fail the build"
+        assert "procedural" in rep.checks_run
+        # a store with neither: two zeros, still informational, still clean
+        db2 = _seed(f"{d}/u.db")
+        rep2 = doctor.diagnose(db2)
+        assert rep2.counts["procedural_declared"] == 0 and rep2.counts["procedural_shaped"] == 0
+        assert rep2.exit_code == 0 and "procedural_declared 0" in doctor.render(rep2)

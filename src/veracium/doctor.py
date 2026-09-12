@@ -68,6 +68,18 @@ The checks, each named in the output:
                 party is not checked, because the stored payload cannot tell a
                 declared derivation from the 0011 §4d floor every undeclared
                 ingest receives (the owner's staged ruling, option C, 2026-09-12)
+  procedural    TWO numbers, never merged (research's census, the owner's word
+                2026-09-12): `procedural_declared` — records stamped
+                `record_kind="procedural"`, EXACT, the record's own stamp —
+                and `procedural_shaped` — DECLARATIVE records whose `note`
+                matches the census marker SCREEN, a TRIPWIRE and never a
+                count of procedures (specs/0037 §4a: kind is the stamp, never
+                the text). Notes only: `summary` is never read (specs/0022
+                §7a); this is the doctor's one read of `note`, for a shape
+                screen — counts and ids only, the text itself never reported.
+                Informational: it cannot fail the build. What it is for:
+                noticing an extractor that starts producing procedure-shaped
+                notes, or hosts feeding procedures down the declarative path
   revocation    for every standing revocation (specs/0022), the reference
                 sweep over the store AS IT IS has no pending effect — the
                 sweep is the same pure function the commit path runs, called
@@ -367,6 +379,53 @@ def _check_sources(rep: Report, edges: dict, episodes: dict) -> None:
                 live + eps)
 
 
+# research's census marker SCREEN (section8-labelling, 2026-09-12), VERBATIM as
+# research re-ran and sent it (Python `re`, compiled with re.I and nothing else;
+# the TRAILING SPACES after `before`, `after`, `then` and `first` are load-bearing
+# — without them the screen matches inside words and the count changes). It is
+# the instrument behind the census's 13 of 312 and the 1-in-20 control (a 20-item
+# read of non-candidates: 1 arguably habitual), chosen over the unvalidated
+# detector. NOT the wider summaries screen (36/100), which is never shipped:
+# summaries are meta-narrations and specs/0022 §7a forbids reading them anyway.
+# Baseline, stated the only honest way: 13 SCREEN HITS in 312 notes, 0 GENUINE
+# ON READING (every hit temporal — "purchased two weeks before 2023-05-27" — not
+# sequential); production mailbox (0.13.0) 5,436 notes, 2 genuine of 12
+# detector positives read completely. The tripwire's meaning is a CHANGE IN THE
+# HIT RATE, never the hit count read as a quantity of procedures (specs/0037
+# §4a: kind is the stamp, never the text) — which is why the two numbers the
+# check reports are never merged. Measured before 0037 v16; a captured procedure
+# now carries its quote in `note`, but stamped records are never screened here.
+PROCEDURAL_MARKERS = re.compile(
+    r"every \d|each (week|month|day|morning)|routine|always|usually|before |after |then |"
+    r"by \w+ing|prefers to|steps?\b|first ", re.I)
+
+
+def _check_procedural(rep: Report, edges: dict) -> None:
+    """Research's census as a standing check (the owner's word, 2026-09-12).
+    Two numbers, deliberately separated and never added: what hosts DECLARED
+    (the stamp, exact) and what declarative notes LOOK like (the screen, a
+    tripwire). Notes only — specs/0022 §7a forbids reading `summary`; this is
+    the doctor's one read of `note`, for the screen, and it reports counts
+    and ids, never the text. Informational on every outcome."""
+    rep.checks_run.append("procedural")
+    declared, shaped = [], []
+    for (_u, eid), (_row, d) in edges.items():
+        prov = d.get("provenance") or {}
+        if prov.get("record_kind") == "procedural":
+            declared.append(eid)
+        elif PROCEDURAL_MARKERS.search(str(d.get("note") or "")):
+            shaped.append(eid)
+    rep.counts["procedural_declared"] = len(declared)
+    rep.counts["procedural_shaped"] = len(shaped)
+    rep.add("procedural", "info",
+            f"procedural_declared {len(declared)} (records stamped procedural — exact, the record's own "
+            f"stamp) · procedural_shaped {len(shaped)} (declarative records whose note matches the census "
+            f"marker screen — a SCREEN RESULT, never a count of procedures; the baseline is 13 screen hits "
+            f"in 312 notes with 0 genuine on reading, so only a CHANGE in the hit rate means anything; the two "
+            f"numbers are never merged)",
+            shaped)
+
+
 def _check_revocation(rep: Report, store, users: list) -> None:
     """The reference sweep, called with NO proposed action, over each user's
     standing revocations: its effect list is the delta between the store as it
@@ -433,6 +492,7 @@ def diagnose(path: str, *, user: Optional[str] = None) -> Report:
             _check_refs(rep, conn, user, edges, episodes)
             _check_journal(rep, conn, user, edges)
             _check_sources(rep, edges, episodes)
+            _check_procedural(rep, edges)
             try:
                 _check_revocation(rep, store, rep.users)
             except Exception as ex:                           # noqa: BLE001
