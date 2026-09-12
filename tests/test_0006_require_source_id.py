@@ -94,17 +94,28 @@ def test_require_source_id_spares_the_floor_and_the_default_off_store():
         mem2.close()
 
 
-def test_the_mcp_source_binding_is_host_set_and_the_refusal_is_named():
+def test_the_served_remember_tool_exposes_no_source_id():
+    """0006 I1 through the built server: the binding is host-set, never a tool
+    argument. Needs the framework that reflects the schemas (optional SDK; the
+    pydantic-floor CI lane installs without it and SKIPS here — the other three
+    tests in this file run without the SDK)."""
+    pytest.importorskip("mcp")
     from veracium import mcp_server as m
     with tempfile.TemporaryDirectory() as d:
-        # the served `remember` tool exposes no source_id argument (0006 I1)
-        import inspect
         mem = _mem(f"{d}/a.db", CLAIM, require=False)
         server = m.build_server(mem, default_user=U, capability="direct", source_id="mailbox-7")
-        tools = {t.name: t for t in server._tool_manager.list_tools()} if hasattr(server, "_tool_manager") else None
-        if tools is not None:
-            params = tools["remember"].parameters.get("properties", {})
-            assert "source_id" not in params, "the model must never supply a source id"
+        tools = {t.name: t for t in server._tool_manager.list_tools()}
+        params = tools["remember"].parameters.get("properties", {})
+        assert "source_id" not in params, "the model must never supply a source id"
+        mem.close()
+
+
+def test_the_mcp_source_binding_is_host_set_and_the_refusal_is_named():
+    """The adapter's binding and refusal, exercised through `remember_impl`
+    (the tool's implementation; no SDK needed)."""
+    from veracium import mcp_server as m
+    with tempfile.TemporaryDirectory() as d:
+        mem = _mem(f"{d}/a.db", CLAIM, require=False)
         # the binding threads through the adapter to the stored provenance
         out = m.remember_impl(mem, U, "mail", author="third_party", event_type="email", date=None,
                               derived_from=None, source_id="mailbox-7", capability="direct")

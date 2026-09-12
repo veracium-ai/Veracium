@@ -80,6 +80,17 @@ INVENTORY = [
                             "invariant tests run without the SDK. Author line: "
                             "all PASS (mcp importable in the authoring venv); "
                             "an mcp-absent environment sees 7 SKIP"),
+    ("tests/test_0006_require_source_id.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — 0006 I15's served-tool "
+                            "schema check (the built server exposes no "
+                            "source_id argument, I1) needs the framework that "
+                            "reflects the schemas; the importorskip is INSIDE "
+                            "test_the_served_remember_tool_exposes_no_source_id "
+                            "ONLY — the file's other 4 tests run without the "
+                            "SDK (found by the pydantic-floor CI lane at "
+                            "b3a405c, which installs without the extra). "
+                            "Author line: all 5 PASS; an mcp-absent "
+                            "environment sees 4 PASS + 1 SKIP"),
     # ---- FOUR ENTRIES MISSING SINCE 0021 SHIPPED (external round 3, R3-5).
     # These skip UNCONDITIONALLY on every host and were in no category, so the
     # generated inventory decomposed a measured line it could not account for
