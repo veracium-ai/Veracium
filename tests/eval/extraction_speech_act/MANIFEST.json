@@ -147,11 +147,18 @@
     "supersedes_pin": "62c0a13d41c33751759b05e1e1b045d5c88c48e96ddfcf4ad9daee3e67518e59",
     "utc": "2026-09-08",
     "what": "Re-pinned after the security-hotfix RETROSPECTIVE was recorded in the spec (process record, no design content), SECOND after the oracle pin, over the text carrying the new oracle-manifest line."
+   },
+   {
+    "by": "dev (veracium-90)",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly the one column-0 `corpus sha256: ` line removed (spec_pin.rule)",
+    "supersedes_pin": "b8a4c22799a9114a4670ddf0c08d083dee1311a2ab022b871b983dd36f13ebdf",
+    "utc": "2026-09-12",
+    "what": "Re-pinned to v6.1 (POST-ACCEPTANCE AMENDMENT, 2026-09-12, landed with 0037 v16): the \u00a72b instruction-drop rule exempts the verified procedural carrier; V-NO-PROCEDURAL-IN-PROMPT-VOCAB rewritten to follow 0037 v16; Spec-Requires and \u00a71a's cause B restated as history plus the new rule. Design content moved, so the pin moved BY DESIGN; re-derived from the LANDED bytes. Oracle pin FIRST (both lines excluded), corpus pin SECOND, as amendment 13 recorded."
    }
   ],
   "rule": "Remove EXACTLY the lines beginning at column 0 with \"corpus sha256: \" (the line and its terminator, nothing else), assert there is exactly ONE, then sha256 the remaining bytes.",
   "spec": "specs/0038-extraction-speech-act.md (on placement)",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "b8a4c22799a9114a4670ddf0c08d083dee1311a2ab022b871b983dd36f13ebdf",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "444b5b0de2b842523d9ce68d652830c3ffa8fc0815c020b0de04ae48490ab9a5",
   "spec_version": "accepted (closing cell)",
   "status": "BOUND"
  },

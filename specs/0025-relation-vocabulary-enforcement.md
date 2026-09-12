@@ -396,7 +396,10 @@ residual counts exposing registry pressure — silently bypassed by naming
 its bucket.
 
 - **The prompt renders the SELECTABLE set: the effective registry minus
-  `unclassified`.** `third_party_claim` REMAINS selectable — the trust
+  `unclassified`.** *(0037 v15 additionally filtered procedural relations out of
+  this set — V-EXTRACTOR-BLIND; 0037 v16, 2026-09-12, removes that filter, so the
+  selectable set is again exactly this sentence, and the product-level byte test's
+  frozen expectation moved with it, re-pinned then.)* `third_party_claim` REMAINS selectable — the trust
   convention requires the extractor to emit it for hearsay.
 - **In the registry's INSERTION order** (external round 4, R4-2, blocking:
   the v5 reference sorted the entries — the shipped renderer iterates the
@@ -702,6 +705,15 @@ content-free guarantee rather than merely need consent. The live derivation
 measures seven members, three of them never eligible; a reader who resolves
 the disagreement by adding one has the classes to tell them which way is wrong.
 
+**Amended for 0037 v16 (2026-09-12, the owner's word):** two keys join the
+public projection on EVERY path — `procedures` (procedural records written by
+the quote-gated extractor path, 0037 §4a-iii) and `procedural_refused`
+(procedural emissions refused for a missing, empty or unverifiable quote or a
+non-user author) — `0` when nothing procedural was emitted; the MCP surface
+strips them with the other counters; they are declared `awaiting_consent` in
+the telemetry-whitelist declaration and are NOT sent. X12's exact set includes
+them.
+
 **The public projection, exact (round 4, R4-3):** the production ingest
 result's counter additions are PRECISELY the public rows above — computed
 as the reference counters MINUS `{retry_calls}`. Not a convention: **X12**
@@ -754,7 +766,7 @@ this codebase has had.
 | **X9** | a host entry CONFLICTING with either reserved name's canonical definition is REFUSED at the boundary, before injection; an exactly-matching entry is accepted — the shipped `DEFAULT_RELATIONS` must pass (external round 2, R2-1) | `test_conflicting_reserved_shadow_is_refused` — both names, functional shadows refused, canonical matches accepted, AND the shipped default registry accepted verbatim |
 | **X10** | disclosure on a VOCABULARY-rewritten triple equals disclosure established BEFORE the vocabulary fallback ran — the fallback never changes an established disclosure (external round 2, R2-1: v3's "from the ORIGINAL relation" contradicted `0024` §4b, whose COHERENCE rewrite legitimately changes the semantic state disclosure is computed FOR; X10 is now scoped to the vocabulary fallback alone, and §4b-iii states the one combined pipeline) | `test_vocabulary_fallback_never_changes_disclosure` — includes the laundering cell AND the cross-spec ordering vector (an incoherent triple whose coherence rewrite yields MENTIONABLE is CORRECT; an off-vocabulary hearsay-shaped relation keeps its pre-fallback disclosure) |
 | **X13** | the receipt-state contract holds PER SURFACE over each surface's REACHABLE cells, with unreachable cells NAMED (§4b-v's reachability table; round 7 R7-2 created this invariant, round 8 R8-2 made it executable — one test over a product no surface exposes could only pass by omitting cells or faking states) | five per-surface tests: `test_receipt_write_states`, `test_receipt_read_states`, `test_receipt_phase1_states`, `test_receipt_phase2_states`, `test_receipt_migration_states` — each table-driven over its surface's cells |
-| **X12** | the production ingest result carries EXACTLY the §4c public counter keys — `retry_calls` (and any future reference-only counter) is ABSENT — **and, since v18, the §4c outcome boolean `extraction_unusable`, on every path** | `test_public_counter_projection_is_exact` — asserts the precise key delta between a pre-0025 result and a post-0025 result, both directions |
+| **X12** | the production ingest result carries EXACTLY the §4c public counter keys — `retry_calls` (and any future reference-only counter) is ABSENT — **and, since v18, the §4c outcome boolean `extraction_unusable`, on every path — and, since the 2026-09-12 amendment for 0037 v16, `procedures` and `procedural_refused`** | `test_public_counter_projection_is_exact` — asserts the precise key delta between a pre-0025 result and a post-0025 result, both directions |
 | **X11** | the effective registry is an immutable per-event snapshot of frozen internal `(name, functional, desc)` records (round 4, R4-2: this row had not moved with §4b-ii's round-3 three-field rule); mutation of the host's dict, the host's `Relation` objects, OR anything reachable through the snapshot changes nothing for that event (round 2, R2-1: a read-only mapping around mutable values is not deeply immutable) | `test_registry_snapshot_is_immutable` — mutates THROUGH the snapshot, not only the caller's copy |
 | **X5** | the host registry AS SUPPLIED is validated at the API boundary — shape, key == `Relation.name` for every entry, and non-empty — BEFORE reserved-member injection, so injection can never mask an empty or malformed registry (§4b-ii order; external round 1, F3) | `test_empty_registry_is_refused` — plus `test_mismatched_key_is_refused` |
 | **X6** | for a store whose extractions are all in-vocabulary, EXACTLY TWO carriers are byte-identical before and after — unaffected-edge serialized JSON (the None-omission rule, §2) and extraction-prompt bytes (insertion order, §4b-iv). **Explicitly NOT byte-identical, and honestly so (round 5, R5-2: the v6 row claimed the store wholesale while this spec changes these very carriers): receipt rows (new column, v2 digests), the database schema, request digests (v1 → v2 domain), and complete export bytes (FORMAT_VERSION header).** Cross-era behaviour is SEMANTIC equivalence via §4b-v, not byte equality | four SPLIT tests: `test_unaffected_edge_bytes_exact`, `test_prompt_bytes_exact` (default + custom-ordered registry), `test_receipt_era_semantic_equivalence`, `test_portability_version_gate` (new reader accepts old; old reader refuses new) |

@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- **Procedural capture reopened, render still closed** (specs/0037 v16, specs/0038 v6.1,
+  specs/0025 amended; the owner's word, 2026-09-12). The extractor may now RECORD a
+  routine the user stated — it may not conclude one. A procedural relation
+  (`follows_procedure`) is in the extraction vocabulary again; a triple under it must
+  carry `quote`, the verbatim span of the event text in which the user states the
+  routine, and ingest verifies that span against the event text it already holds: a
+  verified quote on a user-authored event is stored as a procedural record with basis
+  DERIVED `stated` (the quote kept in the never-rendered `note`); a missing, empty,
+  paraphrased or unverifiable quote, or an event the user did not author, is refused
+  and counted. Two new result keys on every path, `procedures` and `procedural_refused`
+  (stripped from the MCP tool result with the other extractor counters). Nothing
+  rendered changes: a captured procedure is excluded from recall, the briefing and
+  the wiki exactly as a host-declared one is, and `describe_procedures` shows it with
+  the `stated` attribution. `record_procedure` is unchanged; `observed` stays host-only;
+  no `inferred` basis exists. No stored byte moves for existing records. Motivation:
+  research's ablation showed the extractor flattening stated routines into completed
+  one-off events, a fidelity loss at capture.
+
 ## 0.23.0 — 2026-09-12
 
 **Upgrade recommendation — BREAKING; every host that ingests third-party content must

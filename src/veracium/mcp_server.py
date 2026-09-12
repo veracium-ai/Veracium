@@ -199,6 +199,9 @@ _OPERATOR_ONLY = ("supersessions", "reinforcements",
                   # recorded for v4 to ratify or reverse.
                   "instructions_dropped",
                   "subject_refused",
+                  # specs/0037 v16 §4a-iii: the quote-gated capture counters, stripped
+                  # with their 0025 siblings by the same 0031 §4d argument
+                  "procedures", "procedural_refused",
                   "quarantined_at_birth", "birth_revocation_digest",
                   "agreement_floored", "agreement_recorded",
                   "provenance_raises_discarded")

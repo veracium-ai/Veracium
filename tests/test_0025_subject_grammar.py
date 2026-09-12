@@ -149,6 +149,8 @@ def test_the_telemetry_whitelist_and_the_result_inventory_disagree_by_declaratio
         "birth_revocation_digest": (NEVER, "0023 Q4 audit fact — an identity digest"),
         "agreement_floored": (AWAITING, "0026 §3d counter — public, outside the consented schema (v4 is 0025's counters)"),
         "agreement_recorded": (AWAITING, "0026 §3d counter — public, outside the consented schema"),
+        "procedures": (AWAITING, "0037 v16 §4a-iii counter — public, outside the consented schema; not sent"),
+        "procedural_refused": (AWAITING, "0037 v16 §4a-iii counter — public, outside the consented schema; not sent"),
         "instructions_dropped": (AWAITING, "0038 §2b refusal counter — public, outside the consented schema"),
         "subject_refused": (AWAITING, "0025 v14 §4b-vi refusal counter — public, outside the consented schema"),
     }

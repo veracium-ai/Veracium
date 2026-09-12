@@ -91,6 +91,12 @@ DISPOSITIONS = {
  ("src/veracium/ingest.py", "ingest_event", "add_episode", "836c8cca9da2"):
    (W, "episode provenance (disclosure set at birth)", "observation",
     "clean — the origin of trust", "`test_third_party_text_never_moves_into_the_grounded_block`"),
+ # specs/0037 v16 §4a-iii (2026-09-12): the quote-gated extractor path writes a
+ # PROCEDURAL record directly, as record_procedure does — never through
+ # apply_supersession, never a fact, excluded from model context by its own stamp.
+ ("src/veracium/ingest.py", "ingest_event", "add_edge", "74ca6d95a054"):
+   (W, "a procedural record: `record_kind=\"procedural\"`, `basis=\"stated\"` DERIVED from a quote verified against the event text; the event's provenance otherwise", "act",
+    "clean — written only when the model's quote is a verbatim span of a user-authored event (V-EXTRACTOR-QUOTE-GATED); never rendered", "`test_a_quoted_user_routine_is_recorded_as_a_procedure_and_never_rendered` · `test_a_procedural_emission_without_a_verifying_user_quote_is_refused_and_counted`"),
 
  # -- maintenance ------------------------------------------------------------
  ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"):
@@ -184,6 +190,7 @@ STATES = {
   ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "79166908890e"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "836c8cca9da2"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_edge", "74ca6d95a054"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
   ("src/veracium/lifecycle.py", "expire", "add_edge", "79eaf6e63a9c"): "open",

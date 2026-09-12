@@ -73,7 +73,11 @@ claims.
   where it is True — the narrower, older signal; a host may keep reading it) ·
   `episode` (str) · `facts` · `quarantined` · `supersessions` ·
   `reinforcements` · the vocabulary-enforcement counters `invalid` /
-  `retried` / `recovered` / `residual` (specs/0025) · `subject_refused`
+  `retried` / `recovered` / `residual` (specs/0025) · `procedures` /
+  `procedural_refused` (specs/0037 v16 — routines the user stated in the event,
+  recorded as procedural records through the verbatim-quote gate, and
+  procedural emissions refused for a missing, paraphrased or unverifiable
+  quote; never rendered into context either way) · `subject_refused`
   (specs/0025 as amended 2026-09-08 — facts whose returned subject carries
   `|`, the prompt's alternation taken literally by a provider; dropped and
   never written, since a subject cannot be re-filed) ·

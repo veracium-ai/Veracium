@@ -470,4 +470,15 @@ WITHDRAWN = [
      "described. The opt-out (`require_source_id=False`) is stated as an opt-out, never as "
      "the default.",
      "specs/0006 §4 rule 9, I15, the version cell"),
+    ("0037-extractor-blind-live",
+     r"the extractor never sees a procedural relation(?!\.\n  \*\*v16)|extractor'?s vocabulary is unchanged|carries NO procedural relation|(?-i:sole producer of a procedural record)|the ONLY MCP write path for procedural records",
+     "0037 v16 (2026-09-12, the owner's word \"0037 procedural capture reopening\"): capture is "
+     "reopened behind a verbatim-quote gate (§4a-iii), the prompt vocabulary carries the "
+     "procedural relation, and record_procedure is one of TWO producers. v15's live claims "
+     "that the extractor never sees the relation, that its vocabulary is unchanged, and that "
+     "record_procedure is the sole producer are withdrawn with the design they described "
+     "(V-EXTRACTOR-BLIND -> V-EXTRACTOR-QUOTE-GATED; V-ONE-PRODUCER -> V-TWO-PRODUCERS). "
+     "The §1 rejected-alternatives bullet keeps the v1 sentence as HISTORY, immediately "
+     "followed by the v16 reversal note, which the first alternative's lookahead exempts.",
+     "specs/0037 §1, §4a, §4a-iii, §4b, §6, §8; specs/0038 §1a, §2b, Spec-Requires"),
 ]

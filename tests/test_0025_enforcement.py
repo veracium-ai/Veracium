@@ -143,11 +143,11 @@ def test_prompt_renders_selectable_set_in_insertion_order():
     reg = effective_registry(DEFAULT_RELATIONS)
     rendered = render_prompt_relations(reg)
     # byte-identical to the pre-0025 inline rendering of the default registry —
-    # over the extractor-SELECTABLE set: specs/0037 V-EXTRACTOR-BLIND filters a
-    # procedural relation out of the vocabulary (the extractor never sees one)
+    # the extractor-SELECTABLE set is exactly the registry minus `unclassified`:
+    # specs/0037 v16 (2026-09-12) removed v15's procedural-kind filter, so the
+    # frozen expectation moved with it (specs/0025 §4b-iv, amended the same day)
     legacy = "\n".join(f"- {n}: {r.desc}" if r.desc else f"- {n}"
-                       for n, r in DEFAULT_RELATIONS.items()
-                       if r.relation_kind != "procedural")
+                       for n, r in DEFAULT_RELATIONS.items())
     assert rendered == legacy
     assert UNCLASSIFIED_RELATION not in rendered
     assert QUARANTINE_RELATION in rendered        # hearsay stays selectable
@@ -341,8 +341,11 @@ def test_public_counter_projection_is_exact():
     # specs/0025 §4c as amended for 0039 round-5 R5-1 (2026-09-11): the OUTCOME
     # boolean, present on every path — see test_0039_degradation_visibility.py
     outcome = {"extraction_unusable"}
+    # specs/0037 v16 §4a-iii (0025 §4c amended 2026-09-12): the quote-gated
+    # capture path's two counters, present on every path
+    procedural = {"procedures", "procedural_refused"}
     assert set(r) == (pre_0025 | set(PUBLIC_COUNTERS) | q4_audit
-                      | agreement_counters | outcome)
+                      | agreement_counters | outcome | procedural)
     assert r["extraction_unusable"] is False        # a good answer: present, and False
     assert "retry_calls" not in r
 

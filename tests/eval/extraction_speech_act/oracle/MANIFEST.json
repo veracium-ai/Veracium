@@ -95,7 +95,7 @@
  },
  "spec_pin": {
   "spec": "specs/0038-extraction-speech-act.md",
-  "spec_text_sha256_excluding_both_pin_lines": "4192cefbb2942a5b723a06d91f10f4e0b30fea5a5ca596cdb2ac62f4ab05a69b",
+  "spec_text_sha256_excluding_both_pin_lines": "f94459ce3ca922726b198cde4c36b46c337dac9e6f5df2fc9cfefa85654f1c65",
   "excluded_lines": [
    "oracle manifest sha256: ",
    "corpus sha256: "
@@ -121,6 +121,12 @@
     "supersedes_pin": "b582a752cedce9f7acfbfcb2329448cec39f502fb7397e3c385c877eb3616bfa",
     "what": "Re-pinned after the machine-readable `Discharges: d59592d` line (and its explanatory paragraph) was added at the end of the `## Retrospective` section, the day specs/retrospective_debt.py landed as a CI gate (research's check, on the owner's word \"Fix the deadline check first, then name the variant\"); a process record, no design content moved; oracle pin FIRST (both lines excluded), corpus pin SECOND.",
     "method": "SHA-256 over the spec's UTF-8 bytes with exactly one `oracle manifest sha256: ` line and one `corpus sha256: ` line removed (spec_pin.rule)"
+   },
+   {
+    "by": "dev (veracium-90)",
+    "supersedes_pin": "4192cefbb2942a5b723a06d91f10f4e0b30fea5a5ca596cdb2ac62f4ab05a69b",
+    "utc": "2026-09-12",
+    "what": "Re-pinned to v6.1 (POST-ACCEPTANCE AMENDMENT, 2026-09-12, landed with 0037 v16): the §2b instruction-drop rule exempts the verified procedural carrier; V-NO-PROCEDURAL-IN-PROMPT-VOCAB rewritten to follow 0037 v16; Spec-Requires and §1a's cause B restated as history plus the new rule. Design content moved, so the pin moved BY DESIGN; re-derived from the LANDED bytes. Oracle pin FIRST (both lines excluded), corpus pin SECOND, as amendment 13 recorded."
    }
   ],
   "rule": "the sha256 of the spec text with exactly the one column-0 'oracle manifest sha256:' line AND the one column-0 'corpus sha256:' line removed (each line + terminator). Two single-line pins on one document: this one excludes both so the corpus pin — 0037's rule, inherited verbatim, excluding only its own line — can be re-pinned second over the final oracle line."

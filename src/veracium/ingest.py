@@ -40,6 +40,13 @@ def _instruction_key(text: str) -> str:
     return " ".join(str(text).casefold().split()).strip(" \t\r\n.,;:!?\"'`“”‘’()[]{}")
 
 
+def _norm_ws(text) -> str:
+    """specs/0037 v16 §4a-iii: inner-whitespace collapse ONLY — the quote check
+    tolerates line wrapping and nothing else (no casefold, no punctuation strip:
+    verbatim means verbatim)."""
+    return " ".join(str(text).split())
+
+
 def _uid(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:12]}"
 
@@ -391,6 +398,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 # that never parsed a response — present, zero.
                 "instructions_dropped": 0,
                 "subject_refused": 0,          # specs/0025 (amended 2026-09-08): present, zero
+                "procedures": 0, "procedural_refused": 0,   # specs/0037 v16: present, zero
                 "quarantined_at_birth": (1 if revoked_at_birth else 0),
                 "birth_revocation_digest": (_birth_digest if revoked_at_birth
                                             else None),
@@ -418,6 +426,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     declared.discard("")
     n_instructions_dropped = 0
     n_subject_refused = 0
+    n_procedures = n_procedural_refused = 0     # specs/0037 v16 §4a-iii
     # specs/0039 §2c, the PRIMARY site (matrix rows 3–7, 10): once the answer is a
     # dict (a bare array having been wrapped above), a missing `triples` key or a
     # non-list value is RECORDED — and only recorded: the normalization below then
@@ -478,6 +487,24 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 and subject_off_grammar(t["subject"])):
             n_subject_refused += 1
             continue
+        original = str(t["relation"]).strip()
+        # specs/0037 v16 §4a-iii (V-EXTRACTOR-QUOTE-GATED): a triple under a
+        # PROCEDURAL relation is admitted only when its `quote` is a verbatim
+        # span of THIS event's text (whitespace-collapsed substring, no
+        # casefold) and the event's author is the user — the user's own words
+        # are the declaration; basis is DERIVED `stated` below, never read from
+        # the model. Otherwise REFUSED and counted: never filed as
+        # `unclassified` (the name is in the vocabulary), never stamped.
+        procedural = is_procedural_relation(reg, original)
+        quote = None
+        if procedural:
+            q = t.get("quote")
+            q_n = _norm_ws(q) if isinstance(q, str) else ""
+            if not (q_n and q_n in _norm_ws(event_text)
+                    and author == EvidenceAuthor.USER):
+                n_procedural_refused += 1
+                continue
+            quote = str(q).strip()
         # V-THIRD-PARTY-UNTOUCHED: a `third_party_claim` is a RECEIPT record
         # (0001/0023 — "received an unverified notice that …"), never a speech
         # act attributed to the user; refusing one because the extractor also
@@ -485,23 +512,21 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # received-claim history the trust gate depends on. The refusal
         # reaches every relation but that one — the mechanism the spec's own
         # invariant requires, named here because §2b does not name it.
-        if (declared and str(t["relation"]).strip() != QUARANTINE_RELATION
+        # specs/0038 §2b as amended v6.1: the procedural carrier whose quote
+        # verified is EXEMPT (keyed on the relation's kind, like the receipt).
+        if (declared and not procedural and original != QUARANTINE_RELATION
                 and _instruction_key(str(t["object"])) in declared):
             n_instructions_dropped += 1
             continue
-        original = str(t["relation"]).strip()
         # specs/0024 §4a: the canonical subject is computed ONCE and used for
         # both the coherence test and the stored Edge, so the test can never
         # disagree with the subject the record carries.
         parsed.append({"t": t, "relation": original, "original": original,
                        "subject": str(t["subject"]).strip(),
-                       # specs/0037 (V-EXTRACTOR-BLIND): a PROCEDURAL name the
-                       # model emitted anyway (a prompt-injected name, a model
-                       # that has seen the docs) is OFF-vocabulary exactly like
-                       # any name the prompt did not carry — the registry holds
-                       # it, the extractor's vocabulary never did
-                       "off": (original not in reg or original == UNCLASSIFIED_RELATION
-                               or is_procedural_relation(reg, original))})
+                       # specs/0037 v16: a procedural name is IN the vocabulary and
+                       # passed the quote gate above; membership is the only test
+                       "procedural": procedural, "quote": quote,
+                       "off": (original not in reg or original == UNCLASSIFIED_RELATION)})
 
     # ---- specs/0024 §4a/§4b: authorship before structural quarantine -----
     # Step 1 of the combined pipeline (specs/0025 §4b-iii): the coherence
@@ -596,9 +621,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 n_members_skipped += 1       # specs/0039 §2a: the retry's shape guard
             if isinstance(rep, dict):
                 rrel = str(rep.get("relation", "")).strip()
-                # specs/0037: a repair can never land on a procedural
-                # relation either — the retry vocabulary is the same
-                # filtered one, and the pool enforces it (V-EXTRACTOR-BLIND)
+                # specs/0037 v16 §4a-iii: a repair can never land on a procedural
+                # relation — a retry carries no quote and can verify nothing, so
+                # the pool refuses the kind and the failing triple stays residual
                 if (rrel in reg and rrel not in RESERVED_RELATIONS
                         and not is_procedural_relation(reg, rrel)):
                     pool.append(((_norm(rep.get("subject", "")),
@@ -698,6 +723,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # disposition change. Marker absence is absence of evidence:
         # no record, no floor, byte-identical edge (V2/V7).
         note_str = str(t.get("note", "")).strip()
+        if row.get("procedural"):
+            note_str = row["quote"]          # specs/0037 v16 §4a-iii: the verified span, never rendered
         # the FLOOR first (restrict-only: MENTIONABLE -> USE_ONLY, never
         # raise), keyed on whether a restricting match exists; then THE
         # one derivation site builds the record from the FINAL
@@ -718,10 +745,25 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                else None),
             note=note_str, volatility=vol,
             ungrounded=flagged, agreement=agr,
-            provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
-                                  disclosure=disclosure, derived_from=derived_from,
-                                  source_id=source_id, observed_at=when),
+            provenance=(
+                # specs/0037 v16 §4a-iii: the STAMP and the DERIVED basis on the
+                # quote-gated path — a literal at this one site, so V-TWO-PRODUCERS'
+                # sweep sees it; every other record carries neither key
+                Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
+                           disclosure=disclosure, derived_from=derived_from,
+                           source_id=source_id, observed_at=when,
+                           record_kind="procedural", basis="stated")
+                if row.get("procedural") else
+                Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
+                           disclosure=disclosure, derived_from=derived_from,
+                           source_id=source_id, observed_at=when)),
             valid_from=when)
+        if row.get("procedural"):
+            # a procedural record is written directly, as record_procedure writes
+            # one — never a fact, never quarantined-counted, never superseding
+            store.add_edge(edge)
+            n_procedures += 1
+            continue
         c = apply_supersession(store, edge, relations)
         n_supersessions += c.superseded
         n_reinforcements += c.reinforced
@@ -740,6 +782,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # specs/0038 §2b: REFUSALS of triples that restate a declared
             # instruction — never declarations, never malformed members.
             "instructions_dropped": n_instructions_dropped,
+            # specs/0037 v16 §4a-iii: the quote-gated capture path's two counters
+            "procedures": n_procedures, "procedural_refused": n_procedural_refused,
             # specs/0025 (amended 2026-09-08): triples whose SUBJECT is off the
             # closed grammar — dropped, never written under any subject.
             "subject_refused": n_subject_refused,

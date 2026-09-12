@@ -320,9 +320,6 @@ GETATTR_ALLOWANCES = {
     ("registry.py", "v", "relation_kind"):
         (1, "host Relation value (validated for name/functional above)",
          "copied into the FrozenRel snapshot; \"declarative\"-defaulted"),
-    ("registry.py", "r", "relation_kind"):
-        (1, "FrozenRel snapshot entry",
-         "compared to \"procedural\" to filter the prompt vocabulary"),
     ("ingest.py", "context", "basis"):
         (1, "EvidenceContext (type-checked by _resolve_context first)",
          "None-checked; a present basis REFUSES the declarative event"),
@@ -568,15 +565,21 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: the flag threaded from `Memory.remember`, the MCP deployment binding and
 #: the adapter's refusal mapping, the CLI flag) moved dotted/dataflow
 #: 5,710 -> 5,719 and module-plain 288 -> 289 (`exc.reason` and the
-#: `os.environ` read in `main`), the rest unchanged.
+#: `os.environ` read in `main`), the rest unchanged; 0037 v16's quote-gated
+#: capture (2026-09-12: the `quote` read and its whitespace-collapse, the
+#: `procedural`/`quote` row reads, the direct `store.add_edge` on the
+#: procedural branch) moved dotted/dataflow 5,719 -> 5,727, and the
+#: renderer's literal `getattr(r, "relation_kind", …)` is gone with the
+#: kind filter, getattr/dataflow 34 -> 33 (its allowance removed above),
+#: the rest unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5719,
+    "dotted/dataflow": 5727,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 289,
     "dotted/module-protected": 48,
-    "getattr/dataflow": 34,
+    "getattr/dataflow": 33,
 }
-SRC_ATTRIBUTE_TOTAL = 6109
+SRC_ATTRIBUTE_TOTAL = 6116
 SRC_DATA_DUNDERS_IN_DATAFLOW = 123
 
 

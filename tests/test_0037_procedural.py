@@ -273,45 +273,13 @@ def test_describe_limit_and_query_are_validated(tmp_path):
 
 
 # --------------------------------------------------------- V-EXTRACTOR-BLIND
-def test_extractor_vocabulary_carries_no_procedural_relation(tmp_path):
-    """The prompt vocabulary carries no procedural relation for the default
-    registry or a host registry; a registry with a procedural relation
-    renders a prompt byte-identical to the same registry without it; an
-    extractor emitting a procedural name follows 0025's off-vocabulary path
-    — never an edge under a procedural relation, never a stamp."""
-    from veracium.registry import effective_registry, render_prompt_relations
-    reg = effective_registry(DEFAULT_RELATIONS)
-    assert PROC not in render_prompt_relations(reg)
-    without = {n: r for n, r in DEFAULT_RELATIONS.items() if r.relation_kind != "procedural"}
-    assert render_prompt_relations(effective_registry(without)) == render_prompt_relations(reg)
-    host = dict(DEFAULT_RELATIONS)
-    host["runs_playbook"] = Relation(name="runs_playbook", relation_kind="procedural", desc="p")
-    assert "runs_playbook" not in render_prompt_relations(effective_registry(host))
-    # the extractor emits the procedural name anyway
-    calls = []
-    def llm(prompt, **k):
-        calls.append(prompt)
-        if k.get("role") == "distill-retry":
-            return json.dumps({"triples": [{"subject": "user", "relation": PROC,
-                                            "object": "Run the formatter before committing."}]})
-        return json.dumps({"triples": [{"subject": "user", "relation": PROC,
-                                        "object": "Run the formatter before committing."}],
-                           "episode": "x", "instructions": []})
-    mem = Memory(llm=llm, config=_cfg(tmp_path, "x.db"))
-    r = mem.remember(U, "I run the formatter before committing.", context=EvidenceContext.direct())
-    edges = mem.store.edges(U, active_only=False)
-    assert all(e.relation != PROC and not is_procedural(e) for e in edges)
-    assert r["invalid"] == 1 and mem.describe_procedures(U).total_describable == 0
-    # the VOCABULARY handed to every prompt carries no procedural line (the
-    # retry prompt echoes the model's own failing triple, which is not vocabulary)
-    assert all(f"- {PROC}" not in p for p in calls)
-
-
-# ------------------------------------------------------------ V-ONE-PRODUCER
-def test_record_procedure_is_the_sole_producer():
+# ------------------------------------------------------------ V-TWO-PRODUCERS
+def test_the_two_producers_are_exactly_the_host_surface_and_the_quote_gated_extractor():
     """The sweep basis is 0029's own write-site registry, every site
-    classified; `record_kind="procedural"` is written at exactly ONE src
-    site; the CLI carries no basis option."""
+    classified; `record_kind="procedural"` is written at exactly TWO src
+    sites — `procedures.py` (the host's declared basis) and `ingest.py`
+    (0037 v16 §4a-iii, the quote-gated extractor path, derived basis); the
+    CLI carries no basis option."""
     from veracium.store.sqlite import EDGE_WRITE_SITE_RULINGS
     classified = {
         "_upsert_edge_row": "the choke point every writer uses — stamps nothing; refuses a same-id marker change",
@@ -329,7 +297,7 @@ def test_record_procedure_is_the_sole_producer():
             k.arg == "record_kind" and isinstance(k.value, ast.Constant) and k.value.value == "procedural"
             for k in n.keywords) for n in ast.walk(tree))
     stampers = sorted(p.relative_to(SRC).as_posix() for p in SRC.rglob("*.py") if _stamps(p))
-    assert stampers == ["procedures.py"], stampers
+    assert stampers == ["ingest.py", "procedures.py"], stampers
     assert "--basis" not in (SRC / "cli.py").read_text() and "basis" not in (SRC / "cli.py").read_text()
 
 
@@ -806,7 +774,11 @@ def test_unregistered_procedural_stamp_is_named_and_unregistered_declarative_is_
     assert _mem(tmp_path, store=mem.store, relations=host).describe_procedures(U).total_describable == 1
 
 
-def test_mcp_record_procedure_is_the_only_procedural_write_path(tmp_path):
+def test_mcp_record_procedure_is_the_host_declared_procedural_write_path(tmp_path):
+    """The MCP `record_procedure` tool: capability-gated, argument-validated,
+    and `remember` refuses a caller-declared basis. (v16: `remember` under
+    `direct` can also capture a procedure through the quote gate — tested in
+    test_0037_capture.py; this tool remains the host-DECLARED path.)"""
     from veracium import mcp_server as m
     mem = _mem(tmp_path)
     r = m.record_procedure_impl(mem, U, "Credentials are rotated quarterly.", "stated", capability=None)

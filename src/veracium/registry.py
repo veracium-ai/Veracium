@@ -79,13 +79,12 @@ def render_prompt_relations(reg) -> str:
     R4-2: sorting changed prompt bytes), in the exact line format the
     prompt has always used. `third_party_claim` stays selectable: the
     trust convention requires the extractor to emit it for hearsay."""
-    # specs/0037 §4a (F1, V-EXTRACTOR-BLIND): a PROCEDURAL relation is never
-    # in the extractor's vocabulary — filtered by kind, for the default
-    # registry and for any host registry — so the model cannot emit one and
-    # the prompt bytes for a registry with a procedural relation equal those
-    # for the same registry without it.
+    # specs/0037 v16 §4a-iii (V-EXTRACTOR-QUOTE-GATED; replaces v15's
+    # V-EXTRACTOR-BLIND filter): a PROCEDURAL relation IS in the extractor's
+    # vocabulary — the selectable set is exactly 0025 §4b-iv's, the effective
+    # registry minus `unclassified` — and a triple under it is admitted at
+    # ingest only with a verbatim `quote` verified against the event text.
     return "\n".join(
         f"- {name}: {r.desc}" if r.desc else f"- {name}"
         for name, r in reg.items()
-        if name != UNCLASSIFIED_RELATION
-        and getattr(r, "relation_kind", "declarative") != "procedural")
+        if name != UNCLASSIFIED_RELATION)
