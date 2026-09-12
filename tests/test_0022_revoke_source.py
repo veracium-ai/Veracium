@@ -135,11 +135,19 @@ def test_episode_read_seam_is_sole_path():
     import pathlib
     src_root = pathlib.Path("src/veracium")
     offenders = []
+    # §7a's ONE dispositioned raw site outside the store (2026-09-12): the
+    # read-only linter reads every episode row, retired ones on purpose, over a
+    # snapshot copy — ids, kinds and flags, never `summary`; not a consumer.
+    dispositioned = {"src/veracium/doctor.py"}
     for f in sorted(src_root.rglob("*.py")):
         if f.parts[:3] == ("src", "veracium", "store"):
             continue                     # the dispositioned §7a interior
-        if "FROM episodes" in f.read_text():
+        if "FROM episodes" in f.read_text() and str(f) not in dispositioned:
             offenders.append(str(f))
+    # the disposition names a file that exists and that reads no summary text
+    for d in dispositioned:
+        assert pathlib.Path(d).exists(), d
+        assert ".summary" not in pathlib.Path(d).read_text(), f"{d} reads episode text"
     assert not offenders, (
         f"{offenders} query episodes RAW outside the store package — retired "
         f"episodes would bypass the sole read seam (R18)")

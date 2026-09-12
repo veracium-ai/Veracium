@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **`veracium doctor --db X` — a read-only store linter, no provider needed** (the
+  developer-tools backlog's fifth item, started 2026-09-12 on the owner's word). It
+  copies the file and opens the copy through the store constructor — the original is
+  never opened, and specs/0031 §4b-ii's connection inventory gains no site — so the
+  constructor's refusals (below head, above head, unstamped/foreign, not a database)
+  are the first findings; then `quick_check`, the identity singleton and epoch, every
+  payload's consistency with its row (`id`, `user_id`, `active`, `quarantined`, a
+  dispositioned reason on retired edges), dangling and cyclic `supersedes` links, an
+  unretired predecessor, orphaned outcome episodes / confirmations / ledger rows /
+  embeddings / journal events, edges with no journal event, and for every standing
+  revocation the reference sweep's pending effects (specs/0022 §4e). Exit 0/1/2. It
+  repairs nothing. Found on its first run: `SqliteStore.confirm_edge` writes the
+  confirmation episode's row under one id and its payload under another (see
+  tests/test_doctor_cli.py); that fix lives under specs/0008 and is not in this entry.
 - **`veracium why --user X <edge-id>` — a fact's biography** (the developer-tools
   backlog's third item, started 2026-09-11 on the owner's word). Read-only,
   store-only, no provider: the fact with its provenance and source standing, its

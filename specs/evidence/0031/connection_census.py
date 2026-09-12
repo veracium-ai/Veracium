@@ -538,16 +538,26 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: 117 -> 120 (the three `type(ex).__name__` reads in the notes), the other
 #: three classes unchanged; its first measurement had ONE refused form (a
 #: `__dataclass_fields__` read in the JSON renderer) and nine literal getattr
-#: sites — both rewritten to plain attribute access rather than tabled.
+#: sites — both rewritten to plain attribute access rather than tabled;
+#: `veracium doctor` (2026-09-12: the new read-only `doctor.py` linter — its
+#: eight checks, the report and its two renderers — and the CLI's `doctor`
+#: verb) moved dotted/dataflow 5,393 -> 5,597, module-plain 272 -> 281 (the
+#: `os`/`re`/`shutil`/`tempfile`/`json`/`sv` module references), module-
+#: protected 46 -> 48 (the `sqlite3.DatabaseError`/`Row` type references and
+#: the snapshot store's `_conn`, read the way `revocation.project_store` reads
+#: it) and the dunders 120 -> 122, the other two classes unchanged. The
+#: doctor opens NO connection of its own: 0031 §4b-ii's inventory allows no
+#: second file-backed opener, so it copies the file and opens the copy
+#: through the constructor (see doctor.py's docstring).
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5393,
+    "dotted/dataflow": 5597,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 272,
-    "dotted/module-protected": 46,
+    "dotted/module-plain": 281,
+    "dotted/module-protected": 48,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5764
-SRC_DATA_DUNDERS_IN_DATAFLOW = 120
+SRC_ATTRIBUTE_TOTAL = 5979
+SRC_DATA_DUNDERS_IN_DATAFLOW = 122
 
 
 def _classify_attribute(base, attr, ctx):

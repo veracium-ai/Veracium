@@ -7,6 +7,7 @@ behavioral self-check.
     veracium introspect --user X             # transparency view: what is stored + where it came from
     veracium why --user X <edge-id>          # one fact's biography: provenance, journal, lineage (store-only)
     veracium why --user X --find "text"      # find edge ids by subject/relation/object text
+    veracium doctor [--db X] [--user U]      # read-only store linter: version, objects, rows, refs, journal, revocation
 
     veracium export / import / forget        # portability + compliance erasure
 
@@ -278,6 +279,20 @@ def _why(args) -> int:
         store.close()
 
 
+def _doctor(args) -> int:
+    """`doctor` — the read-only store linter (src/veracium/doctor.py). Opens the
+    file with a mode=ro connection, never the store class, so a below-head or
+    foreign file is reported rather than refused. Exit 0 clean, 1 findings,
+    2 unreadable. Changes nothing."""
+    from . import doctor as _d
+    rep = _d.diagnose(args.db, user=args.user)
+    if args.json:
+        print(json.dumps(_d.to_json(rep), indent=2, default=str))
+    else:
+        print(_d.render(rep), end="")
+    return rep.exit_code
+
+
 def _forget(args) -> int:
     from .store.sqlite import SqliteStore
     if not args.yes:
@@ -468,6 +483,13 @@ def main(argv=None) -> int:
                     help="instead of an id: list edges whose subject, relation or object contains TEXT")
     wy.add_argument("--json", action="store_true", help="machine-readable biography")
     wy.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+    dr = sub.add_parser("doctor", help="read-only static linter for a store file: schema version, "
+                                        "required/rebuildable objects, row consistency, dangling "
+                                        "references and supersession chains, unjournaled edges, "
+                                        "revocation completeness — no provider, nothing changed")
+    dr.add_argument("--user", help="restrict the row-level checks to one user id")
+    dr.add_argument("--json", action="store_true", help="machine-readable report")
+    dr.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
     args = p.parse_args(argv)
     if args.cmd == "selfcheck":
@@ -482,6 +504,8 @@ def main(argv=None) -> int:
         return _migrate(args)
     if args.cmd == "why":
         return _why(args)
+    if args.cmd == "doctor":
+        return _doctor(args)
     if args.cmd in ("recall", "remember", "introspect"):
         return _memory_verbs(args)
     if args.cmd != "telemetry":

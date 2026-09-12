@@ -336,6 +336,29 @@ ids (`export` does). Exit 0 when found, 1 when not, 2 on usage. Three reads
 the snapshot window closes and may be one write newer than the rest; the
 module says so.
 
+### A read-only store linter (`veracium doctor`)
+
+`veracium doctor --db X [--user U] [--json]` lints a store file without a
+provider and without changing it. It copies the file into a private temporary
+directory and opens the COPY through the store's own constructor (specs/0031
+§4b-ii permits no second file-backed opener), so the original is never opened
+and the constructor's typed refusals — below head, above head, unstamped or
+foreign shape, not a database — become the first findings. On a store the
+constructor accepts it runs SQLite's `quick_check`, then reports: the
+`store_identity` singleton and `store_epoch`; every `edges`/`episodes` payload
+parsing with `id`/`user_id` equal to the row columns, the `active` column
+agreeing with `invalidated_at`, `quarantined` agreeing with the payload's
+disclosure, retired edges carrying a dispositioned reason; dangling
+`supersedes` links, supersession cycles, an active successor over an active
+predecessor; outcome episodes, confirmations, ledger survivors and typed
+contributors, embeddings and journal events naming rows that exist; edges
+with no journal event (specs/0029); and, for every standing revocation
+(specs/0022), the reference sweep run over the store as it is with no proposed
+action — a pending effect means the revocation is not applied. Rebuildable
+index drift is not observable this way: the constructor repairs it on the copy
+at open (specs/0007). Exit 0 clean, 1 findings, 2 unreadable. It repairs
+nothing; `veracium migrate` is the version path.
+
 ### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
 
 Explicit user-feedback verbs (get `edge_id`s from `Recall.edges`):
