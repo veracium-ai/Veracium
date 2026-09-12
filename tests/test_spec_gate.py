@@ -3166,7 +3166,12 @@ def test_the_retrospective_gate_resolves_its_root_from_its_own_file_not_the_cwd(
     from a wrong root that `git -C` still resolved. The root is now the file's parent's
     parent, and the bare invocation from `specs/` equals the explicit-root one."""
     mod = _retrospective_debt()
-    assert mod.REPO == _CIT_ROOT
+    assert mod.REPO == _CIT_ROOT                      # needs no git: the root is the file's
+    if not (_CIT_ROOT / ".git").exists():
+        # the v0.22.0 cut's offline launcher went red HERE (2026-09-12): the bare
+        # invocation derives obligations from git history, and a `git archive`
+        # tree has none — the same visible skip the battery's other nodes carry
+        pytest.skip("no repository here (a git archive or a bare tree): the bare invocation derives the obligation set from git history, and a tree with none is SKIPPED visibly, never passed")
     monkeypatch.chdir(_CIT_ROOT / "specs")
     bare = mod.main(["retrospective_debt.py", "--json"]); bare_out = capsys.readouterr().out
     explicit = mod.main(["retrospective_debt.py", str(_CIT_ROOT), "--json"]); explicit_out = capsys.readouterr().out

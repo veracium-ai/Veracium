@@ -169,6 +169,13 @@ INVENTORY = [
      "--all`; a `git archive` tree has no history, so the live node skips "
      "there (the throwaway battery still runs)"),
     ("tests/test_spec_gate.py", "skip",
+     "the bare invocation derives the obligation set from git history",
+     "git-checkout", "v0.22.0 cut, 2026-09-12: the offline launcher went red on the "
+     "retrospective ROOT test (added with the ocr medium fixes), whose bare "
+     "invocation of the gate derives obligations from `git log`; a `git archive` "
+     "tree has none, so the node skips visibly after the one assertion that "
+     "needs no git (the root is the file's) — the same class as the entry above"),
+    ("tests/test_spec_gate.py", "skip",
      "the newest archive predates the identity record's domain",
      "package-artifact",
      "1 test. External round 20 asked for a FULL-REPACK regression, so the "
