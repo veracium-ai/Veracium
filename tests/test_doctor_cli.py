@@ -66,10 +66,14 @@ def test_the_doctor_found_the_confirmation_episode_id_mismatch():
     """FOUND ON THE DOCTOR'S FIRST RUN (2026-09-12), a product defect in guarded code:
     `SqliteStore.confirm_edge` inserts the confirmation episode's ROW under one minted
     id (`ep-<hex>`) while the Episode payload it stores carries another (`ep-c-<hex>`),
-    so the row and its JSON disagree about the episode's identity. Surfaced to the
-    owner; the fix lives under specs/0008 and is not this tool's to make. This test
-    pins the finding so the defect cannot be forgotten, and FAILS the day it is fixed
-    (delete it then)."""
+    so the row and its JSON disagree about the episode's identity. NO ACCEPTED SPEC
+    governs the id (0008 pins the summary and the transaction, not the id — research's
+    read, same day), so the owner's question is which id is canonical. The consequence
+    is not cosmetic: every read surface returns the payload id and every lookup is by
+    the row id, so delete/retire/reinstate by the id a consumer holds find no row and
+    return without error (per-user `forget` is unaffected). Surfaced to the owner; not
+    this tool's to fix. This test pins the finding so it cannot be forgotten, and FAILS
+    the day it is fixed (delete it then, or flip it to assert equality)."""
     with tempfile.TemporaryDirectory() as d:
         db = _seed(f"{d}/t.db", confirm=True)
         rep = doctor.diagnose(db)

@@ -10,8 +10,15 @@ should take it for `doctor`, which lints a store without a provider and without
 touching it. **Known and disclosed:** on any store carrying a confirmation, `doctor`
 reports one finding it did not cause — `SqliteStore.confirm_edge` writes the
 confirmation episode's row under one id and its payload under another (found by
-this release's own linter; the fix lives under specs/0008 and is not in this
-release). The finding is real and harmless to reads; it names the episode row.
+this release's own linter; not fixed in this release). It names the episode row.
+*Erratum, 2026-09-12, after the other seat read the specs against it:* no accepted
+spec governs the episode's id (specs/0008 pins the summary and the transaction,
+not the id), so this is an internal inconsistency awaiting an owner ruling on
+which id is canonical — and it is NOT harmless. Every read surface returns the
+payload id and every lookup is by the row id, so `store.delete_episode(...)`,
+retirement and reinstatement of a CONFIRMATION episode by the id a consumer holds
+find no row, change nothing, and return without error. Per-user erasure
+(`forget`) is unaffected and still removes the row. Measured by both seats.
 
 - **`veracium remember --dry-run` — what an ingest would write, without writing it**
   (the developer-tools backlog's fourth item, started 2026-09-12 on the owner's word).
@@ -36,7 +43,8 @@ release). The finding is real and harmless to reads; it names the episode row.
   revocation the reference sweep's pending effects (specs/0022 §4e). Exit 0/1/2. It
   repairs nothing. Found on its first run: `SqliteStore.confirm_edge` writes the
   confirmation episode's row under one id and its payload under another (see
-  tests/test_doctor_cli.py); that fix lives under specs/0008 and is not in this entry.
+  tests/test_doctor_cli.py and the erratum in this release's upgrade note); not fixed
+  in this entry.
 - **`veracium why --user X <edge-id>` — a fact's biography** (the developer-tools
   backlog's third item, started 2026-09-11 on the owner's word). Read-only,
   store-only, no provider: the fact with its provenance and source standing, its
