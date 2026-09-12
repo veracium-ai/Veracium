@@ -1,6 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.23.0 — 2026-09-12
+
+**Upgrade recommendation — BREAKING; every host that ingests third-party content must
+act before upgrading.** `MemoryConfig.require_source_id` now defaults on: a
+third-party-authored event, or one declared third-party-derived, is refused before any
+write unless it carries a `source_id`. Who must act, per surface: a library host adds
+`source_id=` to those `remember` calls; a CLI host adds `--source-id`; an MCP deployment
+sets `VERACIUM_MCP_SOURCE_ID` — and a deployment with `VERACIUM_MCP_CAPABILITY` unset has
+the third-party baseline, so without the binding **every** `remember` there is refused. A
+host that cannot supply ids yet sets `MemoryConfig(require_source_id=False)` and keeps
+0.22.0's behaviour exactly. Stored bytes do not move, no schema or export-format change,
+existing unsourced rows are untouched and `veracium doctor` names them; rollback to 0.22.0
+is safe. The other entries need no action: the `doctor` `sources` check, the confirmation-
+episode id fix (0.22.0's disclosed finding), an inert third recall lane, and two doc sentences.
 
 - **BREAKING — `source_id` is now required for third-party content: `MemoryConfig.require_source_id`
   defaults on** (specs/0006 v7 + v8, §4 rule 9 / I15; option C stages 2 and 3, on the owner's word).
@@ -23,8 +36,15 @@
   can reach it (specs/0006 I13, specs/0022 R12); only per-user erasure does. Keyed on the
   evidence author only: content merely derived from a third party is not checked, because
   the stored payload cannot tell a declared derivation from the default every undeclared
-  ingest receives. Stage 2 — refusing such ingests behind a config flag, default off —
-  follows separately; no ingest behaviour changes in this entry.
+  ingest receives. The ingest-time refusal is the BREAKING entry above; this check
+  reads the store and changes nothing.
+- **Recall fusion gains an inert third lane** (specs/0027 v11, the owner's design ruling):
+  `fused_subgraph(..., policy_rank=None)` accepts a `{edge_id: rank}` map whose term
+  `1/(K + rank)` feeds `fused_score` only, for ids the lexical or semantic lane already
+  holds — never the protected reserve (`rel_ext`) and never Stage 3 membership, so a
+  learned ranking adjustment can never decide what counts as protected evidence. No
+  shipped caller passes one; with it absent every recall path is byte-identical to 0.22.0.
+  The receipt and any automatic acceptance are later steps, not in this release.
 - **Docs: the history's limit, stated.** The transaction-time journal (specs/0029) lives
   in the same file as the rows it describes, with no hash chain or signature; veracium
   detects inconsistency, faults and changes made outside its own interfaces, not changes
