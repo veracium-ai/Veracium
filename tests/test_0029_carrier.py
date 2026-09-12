@@ -541,7 +541,16 @@ def test_events_are_store_local_and_required():
             continue
         if re.search(r"edge_events\(|edge_state_at\(|edge_event\b", py.read_text()):
             callers.append(str(py.relative_to(SRC)))
-    assert callers == [], f"events reached a non-store surface: {callers}"
+    # V-INERT's own words (§, "operator/substrate-only: no recall, context,
+    # export, or MCP path"): `why.py` is the operator surface — `veracium why`
+    # reads the journal into a terminal biography (2026-09-12) and is reachable
+    # from no recall/context/export/MCP path, which the second half checks
+    # structurally: none of those surfaces imports it.
+    assert callers == ["why.py"], f"events reached a non-store surface: {callers}"
+    for surface in ("__init__.py", "compile.py", "proactive.py", "gate.py", "portability.py",
+                    "mcp_server.py", "introspect.py", "scope_read.py", "asof/recall.py"):
+        assert not re.search(r"^\s*(from|import)\s[^\n]*\bwhy\b", (SRC / surface).read_text(), re.M), (
+            f"{surface} imports why.py and so reaches the events surface")
     objs = {o.name: o for o in sv.SCHEMAS[13]}
     assert objs["edge_event"].policy == sv.REQUIRED
     assert objs["ix_edge_event_lookup"].policy == sv.REBUILDABLE

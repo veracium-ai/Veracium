@@ -5,6 +5,8 @@ behavioral self-check.
     veracium recall --user X "the query"     # query-matched recall (store-only, cached wiki)
     veracium remember --user X "event text"  # ingest one event ('-' reads stdin; needs provider)
     veracium introspect --user X             # transparency view: what is stored + where it came from
+    veracium why --user X <edge-id>          # one fact's biography: provenance, journal, lineage (store-only)
+    veracium why --user X --find "text"      # find edge ids by subject/relation/object text
 
     veracium export / import / forget        # portability + compliance erasure
 
@@ -248,6 +250,34 @@ def _memory_verbs(args) -> int:
         mem.close()
 
 
+def _why(args) -> int:
+    """`why` — a fact's biography (src/veracium/why.py). Store-only and read-only:
+    no provider, no Memory, no write. Exit 0 when the edge (or a --find hit) is
+    found, 1 when not, 2 on a usage error."""
+    from .store.sqlite import SqliteStore
+    from . import why as _w
+    if bool(args.edge) == bool(args.find):
+        print("usage: veracium why --user X <edge-id>  |  veracium why --user X --find TEXT")
+        return 2
+    store = SqliteStore(args.db)
+    try:
+        if args.find:
+            hits = _w.find(store, args.user, args.find)
+            if args.json:
+                print(json.dumps(hits, indent=2))
+            else:
+                print(_w.render_find(args.user, args.find, hits), end="")
+            return 0 if hits else 1
+        bio = _w.gather(store, args.user, args.edge)
+        if args.json:
+            print(json.dumps(_w.to_json(bio), indent=2, default=str))
+        else:
+            print(_w.render(bio), end="")
+        return 0 if bio.found else 1
+    finally:
+        store.close()
+
+
 def _forget(args) -> int:
     from .store.sqlite import SqliteStore
     if not args.yes:
@@ -429,6 +459,15 @@ def main(argv=None) -> int:
                     help="include the facts themselves, grouped by relation")
     it.add_argument("--json", action="store_true", help="machine-readable report")
     it.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+    wy = sub.add_parser("why", help="one fact's biography: where it came from, every recorded "
+                                    "change with its reason, what superseded or absorbed it, its "
+                                    "confirmations and outcomes — store-only, read-only")
+    wy.add_argument("--user", required=True, help="user id the edge belongs to")
+    wy.add_argument("edge", nargs="?", help="edge id (as printed by `why --find` or `export`)")
+    wy.add_argument("--find", metavar="TEXT",
+                    help="instead of an id: list edges whose subject, relation or object contains TEXT")
+    wy.add_argument("--json", action="store_true", help="machine-readable biography")
+    wy.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
     args = p.parse_args(argv)
     if args.cmd == "selfcheck":
@@ -441,6 +480,8 @@ def main(argv=None) -> int:
         return _forget(args)
     if args.cmd == "migrate":
         return _migrate(args)
+    if args.cmd == "why":
+        return _why(args)
     if args.cmd in ("recall", "remember", "introspect"):
         return _memory_verbs(args)
     if args.cmd != "telemetry":

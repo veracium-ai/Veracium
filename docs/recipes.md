@@ -162,6 +162,8 @@ mem.introspect("ida", mode="categories")   # + the facts themselves, grouped,
 veracium recall --user ida                  # session-start briefing (store-only)
 veracium recall --user ida "the deadline"   # query recall (store-only, cached wiki)
 echo "Dentist on 2026-08-14" | veracium remember --user ida -   # needs the provider
+veracium why --user ida --find "dentist"    # find the fact's id (store-only)
+veracium why --user ida e-3f9a1c2b7d6e     # its biography: provenance, journal, lineage
 ```
 
 ## Give Claude Code ambient memory via hooks (0.4.0)

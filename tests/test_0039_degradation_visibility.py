@@ -616,13 +616,18 @@ def _changelog_section_carrying_0039():
     carrier tests fail by construction at the 0.21.0 cut (2026-09-11); what the tests
     guard is the section's CONTENT, so the heading is checked for FORM only."""
     changelog = (ROOT / "CHANGELOG.md").read_text()
-    section = changelog.split("\n## ", 2)[1]
-    heading = section.split("\n", 1)[0]
-    assert heading == "Unreleased" or re.fullmatch(r"\d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2}", heading), (
-        "the top CHANGELOG section is neither Unreleased nor a release heading: %r" % heading)
-    assert "`extraction_unusable`" in section, (
-        "the top CHANGELOG section (%s) does not carry the 0039/0025 change" % heading)
-    return heading, section
+    # the FIRST section, from the top, that carries the field: Unreleased while the
+    # change is unreleased, the release that shipped it afterwards — and once a
+    # later Unreleased section opens above it (0.21.0's did, 2026-09-12), still
+    # that release, never the newer section
+    for section in changelog.split("\n## ")[1:]:
+        if "`extraction_unusable`" in section:
+            heading = section.split("\n", 1)[0]
+            assert heading == "Unreleased" or re.fullmatch(r"\d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2}", heading), (
+                "the CHANGELOG section carrying the 0039/0025 change is neither Unreleased "
+                "nor a release heading: %r" % heading)
+            return heading, section
+    raise AssertionError("no CHANGELOG section carries the 0039/0025 change (`extraction_unusable`)")
 
 
 def test_the_changelog_section_helper_refuses_a_foreign_heading_and_a_missing_change(tmp_path, monkeypatch):
@@ -633,11 +638,9 @@ def test_the_changelog_section_helper_refuses_a_foreign_heading_and_a_missing_ch
     real = (ROOT / "CHANGELOG.md").read_text()
     heading, section = _changelog_section_carrying_0039()
     assert heading == "Unreleased" or heading[0].isdigit()
-    top = real.split("\n## ", 2)
     for label, mutant in (
-        ("foreign heading", real.replace("\n## " + heading, "\n## Notes for hosts", 1)),
-        ("release heading, change missing",
-         "\n## ".join([top[0], "9.9.9 — 2099-01-01\n\nnothing here", top[2]])),
+        ("foreign heading on the carrying section", real.replace("\n## " + heading, "\n## Notes for hosts", 1)),
+        ("no section carries the change", real.replace("`extraction_unusable`", "`something_else`")),
     ):
         (tmp_path / "CHANGELOG.md").write_text(mutant)
         monkeypatch.setattr(sys.modules[__name__], "ROOT", tmp_path)

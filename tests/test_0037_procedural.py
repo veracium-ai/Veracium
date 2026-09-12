@@ -887,6 +887,7 @@ def test_basis_reaches_every_carrier():
         "contribution.py": "readers of source_id/origin/evidence_ref (the ledger)",
         "store/migration.py": "the on-disk migration rewrites provenance keys of older eras; markers absent by construction on every pre-feature row",
         "store/revocation.py": "readers of source identity",
+        "why.py": "readers of author/disclosure/confidence/observed_at/evidence_ref/origin/source_id/record_kind/basis for the biography; the row dump passes both markers through",
     }
     pattern = re.compile(r"Provenance\(|provenance\.model_copy\(update=|\.provenance\.")
     sites = sorted(p.relative_to(SRC).as_posix() for p in SRC.rglob("*.py")

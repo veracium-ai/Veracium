@@ -531,16 +531,23 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: dotted/dataflow 5,161 -> 5,160 — the wider rule replaced the loop's
 #: `data.get("triples", [])` and the member counter's `isinstance(data.get(...))`
 #: with one `.get` bound to a name — the other four classes and the dunders
-#: unchanged.
+#: unchanged; `veracium why` (2026-09-12: the new read-only `why.py` module —
+#: the biography gatherer, its diff over journal states, the two renderers —
+#: and the CLI's `why` verb) moved dotted/dataflow 5,160 -> 5,393, module-plain
+#: 268 -> 272 (the `json`/`asdict` module references) and the dunders
+#: 117 -> 120 (the three `type(ex).__name__` reads in the notes), the other
+#: three classes unchanged; its first measurement had ONE refused form (a
+#: `__dataclass_fields__` read in the JSON renderer) and nine literal getattr
+#: sites — both rewritten to plain attribute access rather than tabled.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5160,
+    "dotted/dataflow": 5393,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 268,
+    "dotted/module-plain": 272,
     "dotted/module-protected": 46,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5527
-SRC_DATA_DUNDERS_IN_DATAFLOW = 117
+SRC_ATTRIBUTE_TOTAL = 5764
+SRC_DATA_DUNDERS_IN_DATAFLOW = 120
 
 
 def _classify_attribute(base, attr, ctx):

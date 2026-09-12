@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **`veracium why --user X <edge-id>` — a fact's biography** (the developer-tools
+  backlog's third item, started 2026-09-11 on the owner's word). Read-only,
+  store-only, no provider: the fact with its provenance and source standing, its
+  lineage both ways with the reasons the retired side carries, the contribution
+  ledger both ways, refusals it was party to, and a timeline of every journal event
+  (specs/0029), confirmation (specs/0008) and outcome judgment (specs/0009) — a
+  mutation names the fields that moved. `--json` for the same as one document;
+  `--find TEXT` lists edge ids by subject, relation or object text, since no other
+  verb prints ids. Composed from existing public store accessors; no stored byte,
+  no schema and no guarded module changes. Three of the reads run after the
+  snapshot window closes (the accessors take the store's non-reentrant lock) and
+  may be one write newer than the rest; the module documents it.
+
 ## 0.21.0 — 2026-09-11
 
 **Upgrade recommendation: every host should read this section; hosts that catch

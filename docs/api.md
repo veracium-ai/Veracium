@@ -315,6 +315,27 @@ llm is a registered `Metered` wrapper (specs/0017), the result also carries
 `"llm_usage"` — per-role calls and token counts for this user, scope
 `"instance-lifetime"`, local and consent-independent, erased by `forget()`.
 
+### A fact's biography (`veracium why`)
+
+`veracium why --user X <edge-id>` prints everything the store recorded about
+one fact, read-only and without a provider: the row with its provenance
+(evidence author, disclosure tier, confidence, evidence ref, source identity
+and whether a standing revocation covers it, the store's three-valued
+source-restriction verdict), its lineage both ways (`supersedes` and
+`superseded by`, each with the reason the retired side carries), what was
+absorbed into it and what it was absorbed into (the 0014 contribution ledger),
+supersessions refused with it on either side, then a timeline: every
+transaction-time journal event (0029: created / mutated / invalidated /
+reinstated, with the invalidation's reason and, for a mutation, the fields
+that moved), every confirmation (who, when, by which call path), every
+outcome judgment (0009). `--json` returns the same as one document.
+`veracium why --user X --find TEXT` lists the edges whose subject, relation or
+object contains TEXT, with their ids and state, since no other verb prints
+ids (`export` does). Exit 0 when found, 1 when not, 2 on usage. Three reads
+(`current_state`, the outcome episodes, the revocation standing) run after
+the snapshot window closes and may be one write newer than the rest; the
+module says so.
+
 ### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
 
 Explicit user-feedback verbs (get `edge_id`s from `Recall.edges`):

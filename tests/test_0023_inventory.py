@@ -186,6 +186,11 @@ _DISPOSITIONED = {
     "graph.py",         # renders EDGES; episode summary reads are outcome
                         # bookkeeping, not prompt text
     "schema.py",        # the type itself
+    "why.py",           # `veracium why` (2026-09-12) reads the OUTCOME episodes
+                        # naming one edge — their date, judgment, evidence ref
+                        # and retired reason — for the biography's timeline;
+                        # it never reads `.summary` and nothing it prints
+                        # reaches a prompt (a terminal report, read-only)
 }
 
 

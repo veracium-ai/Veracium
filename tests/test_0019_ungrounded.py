@@ -141,7 +141,11 @@ def test_ungrounded_grants_nothing():
                        # table; no branch, no read, no write. The N-ary OR
                        # that actually consumes the flag stays in graph.py
                        # and sqlite.py, both already enumerated.
-                       "combining.py"}, (
+                       "combining.py",
+                       # `veracium why` (2026-09-12): the biography REPORTS the
+                       # flag beside the row's other flags, as introspect.py
+                       # does — a marker surface; no branch, grants nothing.
+                       "why.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
         f"trust/authority/staleness key)")
