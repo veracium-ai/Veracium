@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ fed6cdc
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ a0215d3
+# RE-PINNED 2026-09-12 after the doctor's procedural tripwire (doctor.py only): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after 0037 v16 (the quote gate in ingest; no procedural triple in these answers): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after 0006 v8 (the default flip; `ingest_event` called directly): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after 0006 v7 `require_source_id` (default-off branch in ingest): body BYTE-IDENTICAL again.
