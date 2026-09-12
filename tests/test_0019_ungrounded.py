@@ -145,7 +145,11 @@ def test_ungrounded_grants_nothing():
                        # `veracium why` (2026-09-12): the biography REPORTS the
                        # flag beside the row's other flags, as introspect.py
                        # does — a marker surface; no branch, grants nothing.
-                       "why.py"}, (
+                       "why.py",
+                       # `remember --dry-run` (2026-09-12): reports the flag of
+                       # each fact that WOULD be written, beside its tier — the
+                       # same marker surface; no branch, grants nothing.
+                       "dryrun.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
         f"trust/authority/staleness key)")

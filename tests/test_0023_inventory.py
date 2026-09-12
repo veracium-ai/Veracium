@@ -186,6 +186,12 @@ _DISPOSITIONED = {
     "graph.py",         # renders EDGES; episode summary reads are outcome
                         # bookkeeping, not prompt text
     "schema.py",        # the type itself
+    "dryrun.py",        # `remember --dry-run` (2026-09-12) COUNTS the episodes of a
+                        # snapshot copy before and after a real ingest, to report
+                        # how many would be filed; it reads no `.summary` — the
+                        # episode text it prints is the ingest's own return value
+                        # for the input the operator typed, to a terminal, not a
+                        # prompt; the copy is deleted
     "why.py",           # `veracium why` (2026-09-12) reads the OUTCOME episodes
                         # naming one edge — their date, judgment, evidence ref
                         # and retired reason — for the biography's timeline;

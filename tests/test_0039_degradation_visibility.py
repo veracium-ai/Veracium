@@ -609,6 +609,9 @@ def test_the_retention_instrument_names_a_case_that_stops_recording(monkeypatch)
     with pytest.raises(AssertionError, match="no degrade record emitted for: \\['" + re.escape(mod.CASES[0][0]) + "'\\]"):
         mod.measure()
 
+_CHANGELOG_LEAD = "- **`extraction_unusable`, a boolean on every `remember` result"
+
+
 def _changelog_section_carrying_0039():
     """The CHANGELOG section a HOST reads for this change: the top section, which is
     `Unreleased` until the release that carries it is cut and that release's
@@ -620,14 +623,17 @@ def _changelog_section_carrying_0039():
     # change is unreleased, the release that shipped it afterwards — and once a
     # later Unreleased section opens above it (0.21.0's did, 2026-09-12), still
     # that release, never the newer section
+    # keyed on the ENTRY'S OWN LEAD, not on the field's name: a later entry that
+    # merely mentions `extraction_unusable` (the dry-run entry, 2026-09-12) must
+    # not be mistaken for the section that carries the change
     for section in changelog.split("\n## ")[1:]:
-        if "`extraction_unusable`" in section:
+        if _CHANGELOG_LEAD in section:
             heading = section.split("\n", 1)[0]
             assert heading == "Unreleased" or re.fullmatch(r"\d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2}", heading), (
                 "the CHANGELOG section carrying the 0039/0025 change is neither Unreleased "
                 "nor a release heading: %r" % heading)
             return heading, section
-    raise AssertionError("no CHANGELOG section carries the 0039/0025 change (`extraction_unusable`)")
+    raise AssertionError("no CHANGELOG section carries the 0039/0025 change (its entry's lead is missing)")
 
 
 def test_the_changelog_section_helper_refuses_a_foreign_heading_and_a_missing_change(tmp_path, monkeypatch):
@@ -640,7 +646,7 @@ def test_the_changelog_section_helper_refuses_a_foreign_heading_and_a_missing_ch
     assert heading == "Unreleased" or heading[0].isdigit()
     for label, mutant in (
         ("foreign heading on the carrying section", real.replace("\n## " + heading, "\n## Notes for hosts", 1)),
-        ("no section carries the change", real.replace("`extraction_unusable`", "`something_else`")),
+        ("no section carries the change", real.replace(_CHANGELOG_LEAD, "- **`something_else`, a boolean on every `remember` result")),
     ):
         (tmp_path / "CHANGELOG.md").write_text(mutant)
         monkeypatch.setattr(sys.modules[__name__], "ROOT", tmp_path)

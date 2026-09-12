@@ -548,16 +548,22 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: it) and the dunders 120 -> 122, the other two classes unchanged. The
 #: doctor opens NO connection of its own: 0031 §4b-ii's inventory allows no
 #: second file-backed opener, so it copies the file and opens the copy
-#: through the constructor (see doctor.py's docstring).
+#: through the constructor (see doctor.py's docstring); `remember --dry-run`
+#: (2026-09-12: the new `dryrun.py` module — a real ingest into a snapshot
+#: copy, the before/after delta, two renderers — and the two CLI flags)
+#: moved dotted/dataflow 5,597 -> 5,698, module-plain 281 -> 289 (the
+#: `os`/`shutil`/`tempfile` module references) and the dunders 122 -> 123,
+#: the other three classes unchanged; the CLI's two literal `getattr(args,
+#: ...)` reads were rewritten to plain access rather than tabled.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5597,
+    "dotted/dataflow": 5698,
     "dotted/module-machinery": 19,
-    "dotted/module-plain": 281,
+    "dotted/module-plain": 289,
     "dotted/module-protected": 48,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 5979
-SRC_DATA_DUNDERS_IN_DATAFLOW = 122
+SRC_ATTRIBUTE_TOTAL = 6088
+SRC_DATA_DUNDERS_IN_DATAFLOW = 123
 
 
 def _classify_attribute(base, attr, ctx):

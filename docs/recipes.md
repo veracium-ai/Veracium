@@ -162,6 +162,7 @@ mem.introspect("ida", mode="categories")   # + the facts themselves, grouped,
 veracium recall --user ida                  # session-start briefing (store-only)
 veracium recall --user ida "the deadline"   # query recall (store-only, cached wiki)
 echo "Dentist on 2026-08-14" | veracium remember --user ida -   # needs the provider
+veracium remember --user ida "I moved to Porto" --dry-run   # what WOULD be written; nothing written
 veracium why --user ida --find "dentist"    # find the fact's id (store-only)
 veracium why --user ida e-3f9a1c2b7d6e     # its biography: provenance, journal, lineage
 veracium doctor --db veracium.db           # read-only lint: version, rows, refs, journal, revocation

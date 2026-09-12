@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **`veracium remember --dry-run` — what an ingest would write, without writing it**
+  (the developer-tools backlog's fourth item, started 2026-09-12 on the owner's word).
+  The shipped ingest runs for real against a snapshot copy of the store, and the report
+  is the delta: each fact that would be written with its author, disclosure tier,
+  quarantine / grounding / confirmation flags, agreement record and supersession
+  target; each existing fact that would move, with what moved; the ingest's counters
+  verbatim (including `subject_refused`, `quarantined_at_birth`, `agreement_floored`
+  — the 0026 relay floor — and `extraction_unusable`); the episode; every specs/0039
+  degrade record. The original is never opened and is byte-identical afterwards. The
+  provider is called once, as the real ingest calls it. `--json`; exit 0 usable, 1 not.
 - **`veracium doctor --db X` — a read-only store linter, no provider needed** (the
   developer-tools backlog's fifth item, started 2026-09-12 on the owner's word). It
   copies the file and opens the copy through the store constructor — the original is

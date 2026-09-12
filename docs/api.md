@@ -336,6 +336,25 @@ ids (`export` does). Exit 0 when found, 1 when not, 2 on usage. Three reads
 the snapshot window closes and may be one write newer than the rest; the
 module says so.
 
+### An ingest dry run (`veracium remember --dry-run`)
+
+`veracium remember --user X "text" --dry-run [--json]` reports what the ingest
+WOULD write, without writing it: the real ingest runs against a snapshot copy
+of the store in a private temporary directory, with a diagnostics reporter on a
+temporary log, and the report is the delta — every fact that would be written
+with its evidence author, disclosure tier, `quarantined` / `ungrounded` /
+`needs_confirmation` flags, agreement record and the fact it supersedes; every
+existing fact that would move (retired with its reason, or its liveness
+advanced); the ingest's counters verbatim (`facts`, `quarantined`,
+`supersessions`, `reinforcements`, `subject_refused`, `quarantined_at_birth`,
+`agreement_floored`, … and `extraction_unusable`); the episode that would be
+filed; and every degrade record (specs/0039) the run emitted. Because the
+shipped ingest ran, the report cannot disagree with what the real write does
+to the same store with the same answer. The provider IS called (a dry run of
+an extraction is an extraction). The original file is never opened and is
+byte-identical afterwards; the copy is deleted. Exit 0 when the extraction was
+usable, 1 when it was unparseable or unusable.
+
 ### A read-only store linter (`veracium doctor`)
 
 `veracium doctor --db X [--user U] [--json]` lints a store file without a

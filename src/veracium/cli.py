@@ -4,6 +4,7 @@ behavioral self-check.
     veracium recall --user X                 # proactive session-start briefing (store-only)
     veracium recall --user X "the query"     # query-matched recall (store-only, cached wiki)
     veracium remember --user X "event text"  # ingest one event ('-' reads stdin; needs provider)
+    veracium remember --user X "text" --dry-run   # what WOULD be written, against a snapshot copy; nothing written
     veracium introspect --user X             # transparency view: what is stored + where it came from
     veracium why --user X <edge-id>          # one fact's biography: provenance, journal, lineage (store-only)
     veracium why --user X --find "text"      # find edge ids by subject/relation/object text
@@ -187,6 +188,16 @@ def _memory_verbs(args) -> int:
         from .schema import EvidenceAuthor
         llm = _build_llm(_provider_help(
             "remember", "use Memory.remember() with your own Complete callable"))
+        if args.dry_run:
+            from . import dryrun as _dr
+            dr = _dr.run(args.db, llm, args.user, text, author=EvidenceAuthor(args.author),
+                         event_type=args.event_type, date=args.date,
+                         derived_from=(EvidenceAuthor(args.derived_from) if args.derived_from else None))
+            if args.json:
+                print(json.dumps(_dr.to_json(dr), indent=2, default=str))
+            else:
+                print(_dr.render(dr), end="")
+            return 0 if dr.usable else 1
         # specs/0039 §2d: the CLI attaches a reporter as the MCP entry point does —
         # a Reporter iff log_enabled, so a degrade during `remember` leaves a record
         mem = Memory(llm=llm, config=MemoryConfig(db_path=args.db),
@@ -465,6 +476,11 @@ def main(argv=None) -> int:
     rm.add_argument("--date", default=None, help="ISO date the event occurred (default: today)")
     rm.add_argument("--derived-from", default=None, choices=["user", "third_party", "system", "assistant"],
                     help="lowest-trust party whose content the event embeds (caps trust)")
+    rm.add_argument("--dry-run", action="store_true",
+                    help="run the ingest against a snapshot copy of the store and report what would be "
+                         "written — facts, tiers, quarantine, supersession, degrade records; the store is "
+                         "not touched (the provider is still called)")
+    rm.add_argument("--json", action="store_true", help="with --dry-run: machine-readable report")
     rm.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
     it = sub.add_parser("introspect", help="the transparency view: what is stored for a user "
