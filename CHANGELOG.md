@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.22.0 — 2026-09-12
+
+**Upgrade recommendation:** no host must act. This release adds three operator verbs
+to the CLI — `veracium why`, `veracium doctor` and `veracium remember --dry-run` —
+and changes nothing else: no schema, export-format, library-API or MCP change, no
+stored byte moves, and rollback to 0.21.0 is safe. Hosts that operate a store
+should take it for `doctor`, which lints a store without a provider and without
+touching it. **Known and disclosed:** on any store carrying a confirmation, `doctor`
+reports one finding it did not cause — `SqliteStore.confirm_edge` writes the
+confirmation episode's row under one id and its payload under another (found by
+this release's own linter; the fix lives under specs/0008 and is not in this
+release). The finding is real and harmless to reads; it names the episode row.
 
 - **`veracium remember --dry-run` — what an ingest would write, without writing it**
   (the developer-tools backlog's fourth item, started 2026-09-12 on the owner's word).
