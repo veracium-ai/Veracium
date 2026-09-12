@@ -16,15 +16,27 @@ output: with every candidate assertable and lexically relevant, the first
 test_0027_semantic_recall.py); a candidate that is NOT in `rel_ext` can never
 occupy one of them, whatever its fused rank."""
 
-from datetime import timedelta
+import importlib.util
+import pathlib
 
 import pytest
 
 from veracium.graph import RRF_K, fused_subgraph
-from veracium.schema import Edge, EvidenceAuthor, Provenance
 
-import tests.test_0027_semantic_recall as base
 
+def _base_module():
+    """The 0027 test module's fixture helpers (`_edge`, `U`), loaded by PATH: the
+    tests directory is not a package, and `import tests.…` resolved only when
+    the invocation happened to put the repo root on sys.path — CI's did not
+    (five red jobs at ca4674d, ModuleNotFoundError: No module named 'tests')."""
+    path = pathlib.Path(__file__).with_name("test_0027_semantic_recall.py")
+    spec = importlib.util.spec_from_file_location("test_0027_semantic_recall_base", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+base = _base_module()
 U = base.U
 _edge = base._edge
 
