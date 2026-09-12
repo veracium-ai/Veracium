@@ -18,7 +18,7 @@ spec at next review. See `PROCESS.md`.*
 | | |
 |---|---|
 | **Author / session** | research (veracium-research); adopted + implemented by dev |
-| **Version** | **v10 (ACCEPTED)** — round-9 external verdict: ACCEPT, 0027 is closed (this revision records the verdict; no normative change) |
+| **Version** | **v11 — POST-ACCEPTANCE AMENDMENT: THE POLICY LANE (the owner's design ruling in the research session, 2026-09-12: *"I agree with this option: add a distinct policy lane parameter that feeds fused_score but not rel_ext. But implement it in the order that makes the most sense."*; the implementation word in the dev session, 2026-09-12: *"I approve the implementation of steps 3 through 5"*).** §4a Stage 2 gains a THIRD fusion lane, `Pl`, contributing `1/(K + rank_Pl(e))` to `fused_score` and NOTHING ELSE — never to the reserve's relevance set `rel_ext`, never to Stage 3 membership; `K` stays fixed; the `(0, 1/61]` bound is PER LANE, so k live lanes give at most k/61, unbounded in k (stated now, before a fourth lane makes it a discovery); the lane is inert when no policy is passed, which is why V10's byte-identity oracle still holds; and NO POLICY IS APPLIED before the receipt exists (research T1 — `recalled_edges` cannot record a displaced record), so the parameter lands first and its use waits. Why a new parameter and not `sm`: the semantic lane already has the policy lane's formula, but `rel_ext = relevant_ids ∪ sm_rank` feeds the I6 protected reserve, so a policy expressed through `sm` would decide which evidence counts as PROTECTED — the owner's standing prohibition on learning touching entitlement. The order (research's, kept): `rel_ext` had NO test; its behaviour was pinned first, then the invariant's control was SEEN TO FAIL through the `sm` route (a policy-rank-1 target lands at position 1, inside the reserve) before the parameter that satisfies it was written (with it: position reserve_n + 1). V-POLICY added to §6. Not in this amendment: the receipt, automatic acceptance, any change to `sm`, `RRF_K`, Stage 3 membership or the reserve's own rule. *Prior:* **v10 (ACCEPTED)** — round-9 external verdict: ACCEPT, 0027 is closed (this revision records the verdict; no normative change) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
 | **External review** | NINE rounds, CLOSED AT ACCEPTANCE (round 9, 2026-08-31): "ACCEPT — 0027 is closed" — R8-1 fully resolved, packaged artifacts byte-verified against the repository at `a25426e`, no further amendment or acceptance rerun required. Rounds 1-6 research-side (paper), 7-9 dev-side (implementation-verification) |
@@ -310,9 +310,10 @@ assertability, not the raw one (R3-1).
 
 **Stage 2 — [SEM] fusion → one ordered candidate list, and `relevant_ids`.**
 - Union Lx ∪ Sm by `edge_id`.
-- **RRF**, `K = 60` (fixed): `fused_score(e) = Σ_{L∈{Lx,Sm}, e∈L} 1/(K +
+- **RRF**, `K = 60` (fixed): `fused_score(e) = Σ_{L∈{Lx,Sm,Pl}, e∈L} 1/(K +
   rank_L(e))`, ranks 1-indexed descending; a list in which `e` does not appear
-  contributes NO term (absence ≠ a max-rank penalty).
+  contributes NO term (absence ≠ a max-rank penalty). *(`Pl`, the policy lane,
+  is v11's addition — its own bullet below.)*
 - **Order** the union by `(−fused_score, −observed_at)` — the SAME recency
   tiebreak the shipped scan uses; then `edge_id` ascending for full
   determinism. This ordered list REPLACES the `scored`-ordered list at
@@ -328,6 +329,31 @@ assertability, not the raw one (R3-1).
 - `route(e)` ∈ {`lexical`,`semantic`,`both`} by which lanes ranked it; a
   user-subject edge present only via the eligibility floor (overlap 0, not in
   Sm) is `route="lexical"`, exactly its status today.
+- **The policy lane `Pl` (v11, post-acceptance, the owner's ruling).** A host
+  may pass `policy_rank: dict[edge_id -> rank ≥ 1]` to `fused_subgraph`. It
+  adds `1/(K + rank_Pl(e))` to `fused_score(e)` and does NOTHING ELSE:
+  1. **`fused_score` only.** The policy term is added in the same sum as the
+     other two lanes, for an `e` that is ALREADY in `Lx ∪ Sm`; a policy id
+     outside both lanes gets no term and no membership.
+  2. **Never `rel_ext`.** The reserve's relevance set stays
+     `{e : overlap>0} ∪ {e : e ∈ Sm}`; a policy-promoted record that is not
+     lexically relevant and not a semantic entry cannot occupy a reserve
+     slot, so at policy rank 1 it lands at the first position AFTER the
+     reserve (`reserve_n + 1`) — the property V-POLICY asserts, observed from
+     the output. Through `sm` the same record would land at position 1,
+     inside protected evidence; that is the hazard the parameter exists to
+     avoid, and it is pinned as an executed failure.
+  3. **Never Stage 3 membership** (R6-1: membership is lexical, plus semantic
+     arrivals); `route(e)` is unchanged by the policy lane.
+  4. **`K` stays fixed, not tunable.** The bound `(0, 1/61]` is PER LANE:
+     with k live lanes a record can reach k/61, unbounded in k — three today.
+  5. **Inert when absent.** With no policy passed the construction is
+     byte-identical to v10 (V10's oracle is the guard).
+  6. **No policy is APPLIED before the receipt exists** (research T1, §3 of
+     `A1-parameter-and-receipt`): `recalled_edges` cannot record a displaced
+     record, and a policy applied without a receipt is the untraceable
+     ranking change the owner's approval assumed impossible. The parameter
+     lands first; its use waits. Automatic acceptance is later and separate.
 
 **Stage 3 — collapse (0012 I8, `graph.py:674,879`): membership from LEXICAL,
 order from FUSED (rewritten at R5-1, corrected at R6-1).** v3-v5 fed the fused
@@ -680,6 +706,7 @@ CREATE INDEX ix_edge_embedding_lookup ON edge_embedding(user_id, embedder_id, di
 | **V-TOK** tokenizer frozen: the lexical `overlap` on both query and edge sides uses `graph.py:588 _tokens` (and its `_stem`/`_STOP`); a change to any is a spec change | `test_lexical_tokenizer_is_pinned` | CI |
 | **V-FRESH** freshness: `semantic_candidates` never returns a row whose stored `content_digest` ≠ the live edge's §4e digest (covers note-append/confirm/recompute in-place mutation) | `test_stale_vector_excluded_after_text_mutation` | CI |
 | **V-STATUS** closed status vocabulary: `Recall.semantic_status` is always one of the six §4b values; every degrade path sets the correct one | `test_semantic_status_closed_vocabulary` | CI |
+| **V-POLICY** the policy lane feeds `fused_score` ONLY (v11): a policy-rank-1 record outside `Lx`-relevance and `Sm` lands at exactly `reserve_n + 1`, never in a reserve slot, while a semantic entry does gain the slot and a floor-only lexical entry does not; the same control through the `sm` route is pinned FAILING (position 1) as the executed hazard; with no policy passed V10 holds | `test_a_policy_lane_entry_does_not_gain_reserve_eligibility`, `test_the_reserve_reads_the_extended_relevance_set_semantic_yes_non_entry_no`, `test_the_sm_route_grants_reserve_eligibility_the_hazard_is_real` | CI |
 
 ### 6a. Acceptance measurement — REQUIRED, FINITE *(R2-7)*
 

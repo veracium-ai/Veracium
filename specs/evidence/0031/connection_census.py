@@ -558,15 +558,17 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: confirmation-episode id fix (2026-09-12, `confirm_edge`: the row id is now
 #: derived from the confirmation id, so the second `uuid.uuid4().hex` mint is
 #: gone) moved dotted/dataflow 5,698 -> 5,697 and module-plain 289 -> 288,
-#: the other three classes and the dunders unchanged.
+#: the other three classes and the dunders unchanged; 0027 v11's policy lane
+#: (2026-09-12, `graph.fused_subgraph`: the `policy_rank` parameter's one
+#: `.items()` read) moved dotted/dataflow 5,697 -> 5,698, the rest unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5697,
+    "dotted/dataflow": 5698,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 288,
     "dotted/module-protected": 48,
     "getattr/dataflow": 34,
 }
-SRC_ATTRIBUTE_TOTAL = 6086
+SRC_ATTRIBUTE_TOTAL = 6087
 SRC_DATA_DUNDERS_IN_DATAFLOW = 123
 
 

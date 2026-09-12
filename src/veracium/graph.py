@@ -818,7 +818,7 @@ def semantic_duplicate_of(m: Edge, survivor: Edge) -> bool:
 def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
                    coverage_share: float = 0.25,
                    relations: Optional[dict[str, Relation]] = None,
-                   assertable=None):
+                   assertable=None, policy_rank: Optional[dict] = None):
     """specs/0027 §4a Stages 2-5 — the one total ordered retrieval-and-budget
     construction, over prepared inputs: `scored`/`relevant_ids`/`by_id` from
     `_lexical_scored` (Stage 0-1, already scoped/shaped), `sm` the semantic
@@ -833,7 +833,14 @@ def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
     Degenerate identity (V10): with `sm` empty this reduces to the legacy
     construction — fused_score is strictly decreasing in lexical rank, Stage 3
     keeps exactly `collapse_for_render(Lx)` in lexical order, and Stages 4-5
-    receive byte-identical input to `subgraph_for_query`'s."""
+    receive byte-identical input to `subgraph_for_query`'s.
+
+    `policy_rank` (specs/0027 §4a Stage 2, v11 — the POLICY LANE, the owner's
+    ruling): `{edge_id: rank >= 1}`, a third RRF lane contributing
+    `1/(RRF_K + rank)` to fused_score and NOTHING ELSE — never to `rel_ext`
+    (the reserve's relevance set), never to Stage 3 membership: a policy id
+    outside `Lx ∪ Sm` gets no term and no membership. Inert when None (V10).
+    A policy is not to be APPLIED before the receipt exists (§4a bullet 6)."""
     relations = relations if relations is not None else DEFAULT_RELATIONS
     lx_edges = [e for _sc, _ov, e in scored]
     lx_rank = {e.id: i + 1 for i, e in enumerate(lx_edges)}       # 1-indexed
@@ -841,6 +848,15 @@ def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
     sm = [(eid, cos) for eid, cos in (sm or []) if eid in by_id]
     sm_rank = {eid: i + 1 for i, (eid, _c) in enumerate(sm)}
     sm_cos = dict(sm)
+    # the policy lane (v11): a term for ids the two membership lanes already
+    # hold, and NOTHING for any other id — membership is never the policy's.
+    # A malformed rank is a programming error, refused rather than skipped.
+    pl_rank: dict[str, int] = {}
+    for eid, rank in (policy_rank or {}).items():
+        if not isinstance(rank, int) or isinstance(rank, bool) or rank < 1:
+            raise ValueError(f"policy_rank[{eid!r}] must be an int >= 1, got {rank!r}")
+        if eid in lx_rank or eid in sm_rank:
+            pl_rank[eid] = rank
 
     # Stage 2 — RRF fusion. Absence from a lane contributes NO term (never a
     # max-rank penalty); order (-fused, -observed_at, edge_id) — the shipped
@@ -853,13 +869,17 @@ def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
             f += 1.0 / (RRF_K + lx_rank[eid])
         if eid in sm_rank:
             f += 1.0 / (RRF_K + sm_rank[eid])
+        if eid in pl_rank:
+            f += 1.0 / (RRF_K + pl_rank[eid])       # the policy lane: fused_score only
         fused_score[eid] = f
     fused_ids = sorted(fused_score, key=lambda i: (
         -fused_score[i], -by_id[i].provenance.observed_at.timestamp(), i))
     fused_order = [by_id[i] for i in fused_ids]
     fused_rank = {eid: i + 1 for i, eid in enumerate(fused_ids)}
     # the EXTENDED relevance set: a semantic hit counts as relevance for the
-    # I6 reserve, not just eligibility (§4a Stage 2)
+    # I6 reserve, not just eligibility (§4a Stage 2). The policy lane is NOT
+    # here, by the owner's ruling (v11): a learned adjustment never decides
+    # which evidence counts as protected.
     rel_ext = set(relevant_ids) | set(sm_rank)
 
     # Stage 3 — collapse: MEMBERSHIP from lexical, ORDER from fused (R6-1).

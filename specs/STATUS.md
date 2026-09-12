@@ -39,7 +39,7 @@ is the number that decides what can be built.
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-08 | 2 | 24 | 3 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-09-11 | 2 | 24 | 2 | 0 | 0 | — |
 | **0026** | label/value agreement check | `accepted` | 2026-09-08 | 14 | 12 | 2 | 0 | 0 | — |
-| **0027** | semantic hybrid recall | `accepted` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
+| **0027** | semantic hybrid recall | `accepted` | 2026-09-12 | 0 | 0 | 0 | 0 | 0 | — |
 | **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-08 | 0 | 7 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-09-07 | 1 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-09-08 | 0 | 18 | 0 | 0 | 0 | — |
