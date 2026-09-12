@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **`veracium doctor` gains a `sources` check** (the owner's staged ruling on requiring
+  `source_id` for third-party content, option C, stage 1): every third-party-authored fact
+  or episode with no `source_id` is named — it has no source identity and no revocation
+  can reach it (specs/0006 I13, specs/0022 R12); only per-user erasure does. Keyed on the
+  evidence author only: content merely derived from a third party is not checked, because
+  the stored payload cannot tell a declared derivation from the default every undeclared
+  ingest receives. Stage 2 — refusing such ingests behind a config flag, default off —
+  follows separately; no ingest behaviour changes in this entry.
 - **Docs: the history's limit, stated.** The transaction-time journal (specs/0029) lives
   in the same file as the rows it describes, with no hash chain or signature; veracium
   detects inconsistency, faults and changes made outside its own interfaces, not changes

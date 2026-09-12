@@ -375,9 +375,14 @@ disclosure, retired edges carrying a dispositioned reason; dangling
 `supersedes` links, supersession cycles, an active successor over an active
 predecessor; outcome episodes, confirmations, ledger survivors and typed
 contributors, embeddings and journal events naming rows that exist; edges
-with no journal event (specs/0029); and, for every standing revocation
-(specs/0022), the reference sweep run over the store as it is with no proposed
-action — a pending effect means the revocation is not applied. Rebuildable
+with no journal event (specs/0029); every third-party-AUTHORED fact or
+episode carrying a `source_id` (specs/0006), since one without it has no
+source identity and cannot be revoked by source — content merely derived from
+a third party is not checked, because the stored payload cannot tell a declared
+derivation from the default every undeclared ingest receives; and, for every
+standing revocation (specs/0022), the reference sweep run over the store as it
+is with no proposed action — a pending effect means the revocation is not
+applied. Rebuildable
 index drift is not observable this way: the constructor repairs it on the copy
 at open (specs/0007). Exit 0 clean, 1 findings, 2 unreadable. It repairs
 nothing; `veracium migrate` is the version path.

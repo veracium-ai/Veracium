@@ -60,6 +60,14 @@ The checks, each named in the output:
   journal       every edge has at least one journal event (specs/0029: a row
                 with no `created`/`baseline` event was written outside the
                 journal)
+  sources       every record whose evidence is THIRD-PARTY AUTHORED carries a
+                `source_id` (specs/0006): without one it has no source identity,
+                no digest, and cannot be revoked by source (specs/0022 R12) —
+                the only remedy left is per-user erasure. Keyed on the AUTHOR
+                only: a record whose content was merely DERIVED from a third
+                party is not checked, because the stored payload cannot tell a
+                declared derivation from the 0011 §4d floor every undeclared
+                ingest receives (the owner's staged ruling, option C, 2026-09-12)
   revocation    for every standing revocation (specs/0022), the reference
                 sweep over the store AS IT IS has no pending effect — the
                 sweep is the same pure function the commit path runs, called
@@ -340,6 +348,25 @@ def _check_journal(rep: Report, conn, user: Optional[str], edges: dict) -> None:
                 "outside the journal, or a pre-epoch row the migration did not baseline)", silent)
 
 
+def _check_sources(rep: Report, edges: dict, episodes: dict) -> None:
+    """specs/0006 I13 / specs/0022 R12, read the other way round: a third-party-
+    AUTHORED record with no `source_id` is one no revocation can ever reach."""
+    rep.checks_run.append("sources")
+    def unsourced(d):
+        prov = d.get("provenance") or {}
+        return prov.get("author_of_evidence") == "third_party" and not prov.get("source_id")
+    live = [eid for (_u, eid), (_row, d) in edges.items() if unsourced(d) and d.get("invalidated_at") is None]
+    gone = [eid for (_u, eid), (_row, d) in edges.items() if unsourced(d) and d.get("invalidated_at") is not None]
+    eps = [eid for (_u, eid), d in episodes.items() if unsourced(d) and not d.get("retired_reason")]
+    if live or eps:
+        rep.add("sources", "warn",
+                f"{len(live)} active fact(s) and {len(eps)} episode(s) with third-party-authored evidence "
+                f"carry no source_id: no source identity, no digest, not revocable by source (specs/0006 "
+                f"I13, specs/0022 R12) — only per-user erasure reaches them"
+                + (f"; {len(gone)} retired fact(s) likewise" if gone else ""),
+                live + eps)
+
+
 def _check_revocation(rep: Report, store, users: list) -> None:
     """The reference sweep, called with NO proposed action, over each user's
     standing revocations: its effect list is the delta between the store as it
@@ -405,6 +432,7 @@ def diagnose(path: str, *, user: Optional[str] = None) -> Report:
                                               if d.get("invalidated_at") is None)}
             _check_refs(rep, conn, user, edges, episodes)
             _check_journal(rep, conn, user, edges)
+            _check_sources(rep, edges, episodes)
             try:
                 _check_revocation(rep, store, rep.users)
             except Exception as ex:                           # noqa: BLE001

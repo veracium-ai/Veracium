@@ -330,3 +330,43 @@ def test_the_cli_round_trips_with_exit_codes(capsys):
         assert "dangling supersession link" in capsys.readouterr().out
         assert cli_main(["doctor", "--db", f"{d}/missing.db"]) == 2
         assert "UNREADABLE" in capsys.readouterr().out
+
+
+def test_third_party_records_without_a_source_id_are_named_and_the_floor_is_not():
+    """The `sources` check (the owner's option C, stage 1, 2026-09-12): a third-
+    party-AUTHORED fact or episode with no `source_id` is named — it has no
+    source identity and no revocation can reach it (specs/0006 I13, 0022 R12) —
+    while the same content WITH a source id is clean, and a user-authored ingest
+    that received the 0011 §4d floor (derived_from=third_party by absence of a
+    declaration) is NOT named: the payload cannot tell the floor from a
+    declaration, so the check keys on the author only, and says so."""
+    with tempfile.TemporaryDirectory() as d:
+        db = f"{d}/t.db"
+        mem = Memory(llm=Fake([
+            {"triples": [{"subject": "org:acme", "relation": "third_party_claim", "object": "user owes $10"}],
+             "episode": "Unsourced mail."},
+            {"triples": [{"subject": "org:acme", "relation": "third_party_claim", "object": "user owes $20"}],
+             "episode": "Sourced mail."},
+            {"triples": [{"subject": "user", "relation": "likes", "object": "tea"}],
+             "episode": "A chat with no declared context."},
+        ]), config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+        mem.remember(U, "mail one", author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-09-01")
+        mem.remember(U, "mail two", author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-09-02",
+                     source_id="acme-inbox")
+        mem.remember(U, "I like tea", date="2026-09-03")          # the floor: derived_from=third_party, author=user
+        edges = {e.object: e for e in mem.store.edges(U, active_only=False, include_quarantined=True)}
+        assert edges["tea"].provenance.derived_from.value == "third_party", "fixture: the floor did not apply"
+        assert edges["tea"].provenance.author_of_evidence.value == "user"
+        mem.close()
+        rep = doctor.diagnose(db)
+        f = [x for x in rep.findings if x.check == "sources"]
+        assert len(f) == 1 and f[0].level == "warn", _messages(rep, "sources")
+        assert "1 active fact(s) and 1 episode(s)" in f[0].message
+        assert edges["user owes $10"].id in f[0].ids and edges["user owes $20"].id not in f[0].ids
+        assert edges["tea"].id not in f[0].ids, "the floored user ingest must not be named"
+        assert rep.exit_code == 1
+        assert "not revocable by source" in doctor.render(rep)
+        # a store whose third-party content all carries a source id is clean on this check
+        db2 = _seed(f"{d}/u.db")                                  # its claim carries source_id="quickclaim-inbox"
+        assert not [x for x in doctor.diagnose(db2).findings if x.check == "sources"]
+
