@@ -574,15 +574,18 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: the rest unchanged; the doctor's `procedural` tripwire (2026-09-12: the
 #: payload `.get` reads, the screen's `.search`, the two list `.append`s and
 #: the report writes) moved dotted/dataflow 5,727 -> 5,739 and module-plain
-#: 289 -> 291 (`re.compile`, `re.I` for the screen), the rest unchanged.
+#: 289 -> 291 (`re.compile`, `re.I` for the screen), the rest unchanged; 0006
+#: v9 / 0037 v17 (2026-09-12: the procedure path's source-id refusal reads
+#: `context.derived_from`, the author and the config flag) moved
+#: dotted/dataflow 5,739 -> 5,744, the rest unchanged.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 5739,
+    "dotted/dataflow": 5744,
     "dotted/module-machinery": 19,
     "dotted/module-plain": 291,
     "dotted/module-protected": 48,
     "getattr/dataflow": 33,
 }
-SRC_ATTRIBUTE_TOTAL = 6130
+SRC_ATTRIBUTE_TOTAL = 6135
 SRC_DATA_DUNDERS_IN_DATAFLOW = 123
 
 

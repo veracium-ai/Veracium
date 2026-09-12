@@ -86,11 +86,12 @@ INVENTORY = [
                             "source_id argument, I1) needs the framework that "
                             "reflects the schemas; the importorskip is INSIDE "
                             "test_the_served_remember_tool_exposes_no_source_id "
-                            "ONLY — the file's other 4 tests run without the "
-                            "SDK (found by the pydantic-floor CI lane at "
-                            "b3a405c, which installs without the extra). "
-                            "Author line: all 5 PASS; an mcp-absent "
-                            "environment sees 4 PASS + 1 SKIP"),
+                            "and (0006 v9) test_the_served_record_procedure_tool_"
+                            "takes_the_deployment_binding_not_an_argument ONLY — "
+                            "the file's other 5 tests run without the SDK (found "
+                            "by the pydantic-floor CI lane at b3a405c, which "
+                            "installs without the extra). Author line: all 7 "
+                            "PASS; an mcp-absent environment sees 5 PASS + 2 SKIP"),
     # ---- FOUR ENTRIES MISSING SINCE 0021 SHIPPED (external round 3, R3-5).
     # These skip UNCONDITIONALLY on every host and were in no category, so the
     # generated inventory decomposed a measured line it could not account for

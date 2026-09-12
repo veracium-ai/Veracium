@@ -547,9 +547,9 @@ class Memory:
                          note: Optional[str] = None, when=None,
                          evidence_ref: Optional[str] = None,
                          source_id: Optional[str] = None) -> str:
-        """specs/0037 §4b — record a PROCEDURAL record: the ONLY producer of
-        one (the extractor path never sees a procedural relation). Returns
-        the new edge id.
+        """specs/0037 §4b — record a PROCEDURAL record from the host's own
+        declaration (since v16 the extractor path can also record one, behind
+        the verbatim-quote gate of §4a-iii). Returns the new edge id.
 
         `summary` is the host's gloss-level name of the procedure — the ONLY
         stored text `describe_procedures` ever renders; `note` (step-level
@@ -573,7 +573,8 @@ class Memory:
         edge, revoked_at_birth, birth_digest = build_procedure_edge(
             self.store, self.config.relations, user_id, summary, author=author,
             context=context, relation=relation, note=note, when=when,
-            evidence_ref=evidence_ref, source_id=source_id)
+            evidence_ref=evidence_ref, source_id=source_id,
+            require_source_id=self.config.require_source_id)   # specs/0006 §4 rule 9 (v9)
         counts = apply_supersession(self.store, edge, self.config.relations)
         self._record("record_procedure",
                      {"facts": 1, "basis": edge.provenance.basis,

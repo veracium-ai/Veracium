@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **BREAKING for one MCP surface — the served `record_procedure` tool no longer takes
+  `source_id`; `require_source_id` now reaches `record_procedure`** (specs/0006 v9, specs/0037
+  v17; the owner's word, 2026-09-12). The tool took `source_id` as a model-supplied argument
+  and stored it unchanged — a model could mint or impersonate a source identity, which 0006 I1
+  forbids and its test never reached. The tool now carries the deployment's
+  `VERACIUM_MCP_SOURCE_ID` binding exactly as `remember` does. **Who must act:** an MCP host
+  whose model passed `source_id` on `record_procedure` sets the binding instead (none known;
+  the tool shipped 2026-09-08). Second: `Memory.record_procedure` with a third-party author, or
+  a context derived from a third party, and no `source_id` was written even with
+  `require_source_id` on — the 0.23.0 rule reached the extractor path only. It now raises
+  `SourceIdRequired` before any write; the MCP tool returns `{"ok": false, "refusal":
+  "source_id_required"}`. Hosts that opted out are unaffected. No stored byte moves.
+
 ## 0.24.0 — 2026-09-12
 
 **Upgrade recommendation:** no host must act. This release changes what the extractor may

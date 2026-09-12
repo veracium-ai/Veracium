@@ -144,3 +144,65 @@ def test_the_cli_source_id_flag_threads_through(monkeypatch, capsys):
         e = next(e for e in mem.store.edges(U, include_quarantined=True) if e.relation == "third_party_claim")
         assert e.provenance.source_id == "acme-inbox"
         mem.close()
+
+
+# ------------------------------------------------------------------- v9: the procedure path
+def test_require_source_id_reaches_record_procedure_before_any_write():
+    """0006 §4 rule 9 as amended v9: the requirement reaches BOTH producers.
+    A third-party-AUTHORED or declared third-party-DERIVED procedure with no
+    source_id is refused before any write with the flag on; a user-authored
+    direct one needs none; the same procedure WITH a source id is accepted;
+    the opted-out store accepts as before."""
+    with tempfile.TemporaryDirectory() as d:
+        db = f"{d}/p.db"
+        mem = _mem(db, FACT)
+        before = _counts(db)
+        with pytest.raises(SourceIdRequired, match="procedure"):
+            mem.record_procedure(U, "Invoices are paid on the 1st.", author=EvidenceAuthor.THIRD_PARTY,
+                                 context=EvidenceContext.direct(basis="stated"))
+        with pytest.raises(SourceIdRequired):
+            mem.record_procedure(U, "Invoices are paid on the 1st.", author=EvidenceAuthor.SYSTEM,
+                                 context=EvidenceContext.derived(EvidenceAuthor.THIRD_PARTY, basis="stated"))
+        assert _counts(db) == before
+        ok = mem.record_procedure(U, "Keys rotate quarterly.", author=EvidenceAuthor.USER,
+                                  context=EvidenceContext.direct(basis="stated"))
+        sourced = mem.record_procedure(U, "Invoices are paid on the 1st.", author=EvidenceAuthor.THIRD_PARTY,
+                                       context=EvidenceContext.direct(basis="stated"), source_id="acme-ap")
+        got = {e.id: e for e in mem.store.edges(U, active_only=False, include_quarantined=True)}
+        assert got[ok].provenance.source_id is None and got[sourced].provenance.source_id == "acme-ap"
+        mem.close()
+        mem2 = _mem(f"{d}/q.db", FACT, require=False)
+        assert mem2.record_procedure(U, "Invoices are paid on the 1st.", author=EvidenceAuthor.THIRD_PARTY,
+                                     context=EvidenceContext.direct(basis="stated"))
+        mem2.close()
+
+
+def test_the_served_record_procedure_tool_takes_the_deployment_binding_not_an_argument():
+    """0006 I1 through the built server, on the procedural tool (v9): the
+    schema exposes no `source_id`; the deployment's binding reaches the stored
+    provenance; a smuggled `source_id` never does; with the flag on and no
+    binding, a third-party-authored procedure returns the NAMED refusal and
+    nothing is written."""
+    pytest.importorskip("mcp")
+    import asyncio
+    from veracium import mcp_server as m
+    with tempfile.TemporaryDirectory() as d:
+        mem = _mem(f"{d}/a.db", FACT, require=False)
+        server = m.build_server(mem, default_user=U, capability="direct", source_id="mailbox-7")
+        tools = {t.name: t for t in server._tool_manager.list_tools()}
+        assert "source_id" not in tools["record_procedure"].parameters.get("properties", {})
+        asyncio.run(server.call_tool("record_procedure", {"summary": "Keys rotate quarterly.", "basis": "stated"}))
+        try:   # the framework drops or refuses an unknown argument; either way it never lands
+            asyncio.run(server.call_tool("record_procedure", {"summary": "Backups run nightly.", "basis": "stated",
+                                                              "source_id": "model-chose-this"}))
+        except Exception:
+            pass
+        ids = {e.provenance.source_id for e in mem.store.edges(U, active_only=False)}
+        assert ids == {"mailbox-7"}, ids
+        mem.close()
+        mem2 = _mem(f"{d}/b.db", FACT, require=True)
+        out = m.record_procedure_impl(mem2, U, "Invoices are paid on the 1st.", "stated",
+                                      author="third_party", capability="direct", source_id=None)
+        assert out["ok"] is False and out["refusal"] == "source_id_required"
+        assert _counts(f"{d}/b.db") == (0, 0, 0)
+        mem2.close()

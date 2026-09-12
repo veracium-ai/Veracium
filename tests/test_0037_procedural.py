@@ -48,8 +48,12 @@ def _llm(*a, **k):
 
 def _cfg(tmp_path, name="m.db", *, xv=False, cap=40, relations=None):
     kw = {} if relations is None else {"relations": relations}
+    # 0006 v9: opted out — this file measures 0037's contract over records that
+    # exist (third-party-authored and -derived procedures among them), not the
+    # source-id requirement, which tests/test_0006_require_source_id.py covers
     return MemoryConfig(db_path=str(tmp_path / name), wiki_recompile_after_writes=0,
-                        scope_groups={}, cross_scope_visible=xv, max_subgraph_edges=cap, **kw)
+                        scope_groups={}, cross_scope_visible=xv, max_subgraph_edges=cap,
+                        require_source_id=False, **kw)
 
 
 def _mem(tmp_path, name="m.db", *, xv=False, cap=40, store=None, relations=None):

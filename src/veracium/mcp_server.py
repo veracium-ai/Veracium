@@ -441,15 +441,16 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
         once a day)."""
         return maintain_impl(mem, default_user)
 
-    # specs/0037 §4b — the ONLY MCP procedural write path, capability-gated
-    # to `direct` (under `none` it refuses as an attempted elevation), and
-    # its read surface. `author`/`derived_from` mirror `remember`'s own.
+    # specs/0037 §4b — the host-DECLARED MCP procedural write path, capability-
+    # gated to `direct` (under `none` it refuses as an attempted elevation), and
+    # its read surface. `author`/`derived_from` mirror `remember`'s own. The
+    # source identity is the DEPLOYMENT's binding (0006 I1, v9: never a tool
+    # argument — a model must not mint or impersonate a source), as `remember`.
     @server.tool()
     def record_procedure(summary: str, basis: str, author: str = "user",
                          derived_from: Optional[str] = None,
                          relation: str = "follows_procedure",
-                         note: Optional[str] = None, date: Optional[str] = None,
-                         source_id: Optional[str] = None) -> dict:
+                         note: Optional[str] = None, date: Optional[str] = None) -> dict:
         """Record a PROCEDURE the user follows — a host-declared content kind
         that is never asserted as fact and never enters recall's context.
         `summary` is the gloss-level name of the procedure (the only text
@@ -457,10 +458,13 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
         rendered. `basis` is REQUIRED: "stated" (the user said they follow
         it) or "observed" (a pattern they reported observing). `author` /
         `derived_from` as for `remember`. Refused unless the deployment
-        attests first-party capture (VERACIUM_MCP_CAPABILITY=direct)."""
+        attests first-party capture (VERACIUM_MCP_CAPABILITY=direct). The
+        source identity is the deployment's (VERACIUM_MCP_SOURCE_ID), never
+        an argument."""
         return record_procedure_impl(mem, default_user, summary, basis, author=author,
                                      derived_from=derived_from, relation=relation,
-                                     note=note, date=date, source_id=source_id,
+                                     note=note, date=date,
+                                     source_id=source_id,     # the deployment's binding (0006 I1)
                                      capability=cap)
 
     @server.tool()

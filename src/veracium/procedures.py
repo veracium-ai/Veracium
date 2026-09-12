@@ -73,7 +73,8 @@ def build_procedure_edge(store, relations, user_id: str, summary: str, *, author
                          context, relation: str = "follows_procedure",
                          note: Optional[str] = None, when=None,
                          evidence_ref: Optional[str] = None,
-                         source_id: Optional[str] = None):
+                         source_id: Optional[str] = None,
+                         require_source_id: bool = False):
     """Validate every argument (§2c) and construct the procedural Edge §4b
     specifies — RETURNS (edge, quarantined_at_birth, birth_digest); writes
     nothing (the caller persists). Every refusal raises BEFORE construction,
@@ -146,6 +147,19 @@ def build_procedure_edge(store, relations, user_id: str, summary: str, *, author
             "relation_not_procedural",
             f"relation {relation!r} is not registered as procedural in the active registry "
             "(specs/0037 §4b, V-RELATION-VALID) — nothing written")
+    # -- specs/0006 §4 rule 9 (v9, 2026-09-12): the requirement reaches THIS
+    #    producer too — a third-party-AUTHORED or declared third-party-DERIVED
+    #    procedure with no source_id has no source identity and no revocation
+    #    can reach it; refused before any write when the host's config says so
+    #    (the context is always explicit here, so its derivation IS a declaration)
+    if require_source_id and source_id is None and (
+            author == EvidenceAuthor.THIRD_PARTY
+            or context.derived_from == EvidenceAuthor.THIRD_PARTY):
+        from .ingest import SourceIdRequired
+        raise SourceIdRequired(
+            "source_id is required for a third-party-authored or third-party-derived procedure "
+            "when MemoryConfig.require_source_id is on (specs/0006 §4 rule 9, v9): a record "
+            "without one has no source identity and cannot be revoked by source; nothing was written")
     # -- construction (§4b): id minted like remember's, subject "user"
     edge_id = _uid("e")
     valid_from = when or utcnow()

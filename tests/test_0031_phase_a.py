@@ -527,6 +527,9 @@ def test_tool_schemas_omit_identity_arguments(tmp_path):
     assert props["recall"] == {"query", "token_budget"}
     assert props["answer"] == {"query"}
     assert props["maintain"] == set()
+    # 0006 v9 (2026-09-12): the procedural write tool takes the DEPLOYMENT's source
+    # binding, never a `source_id` argument — absent BY SCHEMA like `remember`'s
+    assert props["record_procedure"] == {"summary", "basis", "author", "derived_from", "relation", "note", "date"}
     for name, t_ in tools.items():
         flat = json.dumps({"in": _schema(t_, "input"), "out": _schema(t_, "output")})
         for forbidden in ("user_id", "proposer", "resolver", "turn_id", "principal"):
