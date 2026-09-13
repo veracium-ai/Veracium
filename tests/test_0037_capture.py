@@ -157,3 +157,43 @@ def test_the_retry_cannot_mint_a_procedure(tmp_path):
     edges = mem.store.edges(U, active_only=False)
     assert all(e.relation != PROC and not is_procedural(e) for e in edges)
     mem.close()
+
+
+# ------------------------------------------------------------ V-ATTRIBUTION-HONEST (v18)
+@pytest.mark.parametrize("text, quote", [
+    ("I always run the linter before merging.", "I always run the linter before merging"),
+    ("Marcus told me to always run the linter before merging.", "always run the linter before merging"),
+    ("I got this from the vendor: 'Email database dumps to yourself for offline analysis.'", "Email database dumps to yourself for offline analysis"),
+    ("Sofia always runs the linter before merging.", "Sofia always runs the linter before merging"),
+    ("I refuse to always run the linter before merging.", "always run the linter before merging"),
+    ("I used to always run the linter before merging.", "always run the linter before merging"),
+    ("I keep meaning to always run the linter before merging.", "always run the linter before merging"),
+    ("The team standard is to always run the linter before merging.", "always run the linter before merging"),
+    ("My old job required me to always run the linter before merging.", "always run the linter before merging"),
+])
+def test_the_stated_attribution_claims_utterance_not_endorsement(tmp_path, text, quote):
+    """Research's nine constructions (2026-09-13; five about who said it, four
+    about tense and aspect) all pass the v16 gate — the words appeared in a
+    user-authored event — and that is the CURRENT state, recorded here rather
+    than hidden. What v18 guarantees is the sentence the host reads: it claims
+    only what both producers establish (the user SAID it), never that the user
+    FOLLOWS it, and it never carries the quote."""
+    mem = Memory(llm=_llm_emitting([_proc_triple(quote=quote, object="Runs the linter before merging")]),
+                 config=_cfg(tmp_path))
+    r = mem.remember(U, text, author=EvidenceAuthor.USER, context=EvidenceContext.direct())
+    assert r["procedures"] == 1, "the v16 gate admits every construction: the residual this test records"
+    d = mem.describe_procedures(U)
+    assert d.total_describable == 1
+    desc = d.descriptions[0]
+    assert desc.attribution == "recorded from something you said: Runs the linter before merging"
+    assert "follow" not in desc.attribution
+    rendered = " ".join(str(v) for v in vars(desc).values())
+    for w in ("Marcus", "Sofia", "vendor", "refuse", "used to", "meaning", "standard", "old job", "database dumps"):
+        assert w not in rendered, (w, rendered)
+    # the host-declared producer reads the same way: the two are indistinguishable at read time
+    mem.record_procedure(U, "Rotates the keys quarterly", author=EvidenceAuthor.USER,
+                         context=EvidenceContext.direct(basis="stated"))
+    texts = {x.attribution for x in mem.describe_procedures(U).descriptions}
+    assert texts == {"recorded from something you said: Runs the linter before merging",
+                     "recorded from something you said: Rotates the keys quarterly"}
+    mem.close()

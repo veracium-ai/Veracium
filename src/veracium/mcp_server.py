@@ -470,7 +470,8 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
     @server.tool()
     def describe_procedures(query: Optional[str] = None) -> dict:
         """Describe the user's recorded procedures — each with its basis
-        ("you said you follow …" / "a pattern you reported observing: …")
+        ("recorded from something you said: …" / "a pattern you reported
+        observing: …")
         and provenance, never a record's note, and never a summary that
         reads as executable step text (withheld by name). `query` orders
         the descriptions; it never filters. Records the user may not be

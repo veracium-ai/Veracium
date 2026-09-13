@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **`describe_procedures` no longer says "you said you follow"** (specs/0037 v18; the owner's word,
+  2026-09-13, on research's pre-dispatch read of the amendments review package). The 0.24.0
+  quote gate proves that a routine's words appeared in the user's own message — not who the
+  routine belongs to, nor that the user endorses it now: "Marcus told me to always run the
+  linter", "I refuse to always run the linter" and "I used to always run the linter" all
+  store a procedural record with basis `stated`, and describe rendered each as a routine the
+  user follows. Render stays closed, so nothing could instruct the model; the misattribution
+  reached the host. The `stated` attribution now reads "recorded from something you said:
+  <summary>", which is true of a host-declared procedure and of every captured one; the
+  host-declared path gives up its stronger wording. The gate itself is unchanged and its
+  residual is stated in the spec; an acceptance grammar over the quoted span is the named
+  next refinement, not in this entry.
 - **BREAKING for one MCP surface — the served `record_procedure` tool no longer takes
   `source_id`; `require_source_id` now reaches `record_procedure`** (specs/0006 v9, specs/0037
   v17; the owner's word, 2026-09-12). The tool took `source_id` as a model-supplied argument

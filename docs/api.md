@@ -147,8 +147,12 @@ withheld under the **first** failing conjunct's named outcome
 `quarantined`, `use_only`, `basis_unknown`, `executable_detail`). A record
 hidden from `principal` is in neither list — indistinguishable from no
 match. Each `ProcedureDescription` carries the summary, its basis and an
-attribution ("you said you follow …" / "a pattern you reported observing:
-…"), author and dates — never the note. `query` ORDERS `descriptions`
+attribution ("recorded from something you said: …" / "a pattern you reported
+observing: …"), author and dates — never the note. The `stated` sentence claims
+only that the user SAID it (specs/0037 v18): an extractor-captured procedure
+proves utterance in the user's own message, not endorsement or currency, and a
+host-declared one reads the same way because the two are indistinguishable at
+read time. `query` ORDERS `descriptions`
 (relevance, then `valid_from` desc, then id) and never filters either list;
 `withheld` is query-blind. `limit` defaults to `max_subgraph_edges` and must
 be an int in `[1, max_subgraph_edges]`; `total_describable` counts the

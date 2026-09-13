@@ -14980,13 +14980,20 @@
     "supersedes_pin": "1e48a1a90e247f5f3c49a604d46864701cfc4051db60c933a5f7fdcd553fa097",
     "utc": "2026-09-12",
     "what": "Re-pinned to the v17 spec text (POST-ACCEPTANCE AMENDMENT with 0006 v9, the owner's word \"Do A and B\"): the served MCP record_procedure tool loses its model-supplied source_id argument for the deployment's binding (0006 I1), and Memory.record_procedure honours require_source_id. Design content moved, so the pin moved BY DESIGN; re-derived from the LANDED bytes in the frozen serialisation. The corpus and its 972 cells are untouched."
+   },
+   {
+    "by": "dev (veracium-90)",
+    "method": "SHA-256 over the spec's UTF-8 bytes with exactly the one column-0 `corpus sha256: ` line and its terminator removed (spec_pin.rule)",
+    "supersedes_pin": "bd6c765a422aaf4f2dc8d660f742a0769b619e60c8ffee2d78623b25d7908c74",
+    "utc": "2026-09-13",
+    "what": "Re-pinned to the v18 spec text (POST-ACCEPTANCE AMENDMENT, the owner's word \"I approve option c\"): describe's stated attribution made honest for both producers after research's pre-dispatch finding on the round-1 amendments package; V-ATTRIBUTION-HONEST added. Design content moved, so the pin moved BY DESIGN; re-derived from the LANDED bytes in the frozen serialisation. The corpus and its 972 cells are untouched: no cell pins the attribution sentence (checked: zero occurrences in this manifest)."
    }
   ],
   "rule": "Remove EXACTLY the lines whose text begins with \"corpus sha256: \" at column 0 (the line and its terminator; nothing else), then sha256 the remaining bytes. There MUST be exactly one such line \u2014 assert it and fail otherwise, rather than silently hashing a spec with zero or two.",
   "second_line_hazard_at_acceptance": "\u00a76a says that at acceptance the same digest MOVES INTO `## Review closure`. If that lands as a second column-0 \"corpus sha256: \" line, grep -v removes BOTH while a count=1 regex removes only the FIRST \u2014 the two impls would silently diverge exactly at acceptance. The exactly-one assertion above turns that divergence into a test failure instead of a wrong pin.",
   "spec": "specs/0037-procedural-basis.md",
-  "spec_text_sha256_excluding_the_corpus_digest_line": "bd6c765a422aaf4f2dc8d660f742a0769b619e60c8ffee2d78623b25d7908c74",
-  "spec_version": "v17 (POST-ACCEPTANCE AMENDMENT 2026-09-12: the MCP tool's source identity is the deployment's binding; require_source_id reaches record_procedure)",
+  "spec_text_sha256_excluding_the_corpus_digest_line": "ccd08ab536afe5222ba06ab60bfe093d4a0c62c9ec8cce906be002fb4b12f099",
+  "spec_version": "v18 (POST-ACCEPTANCE AMENDMENT 2026-09-13: the stated attribution claims utterance, not endorsement)",
   "status": "BOUND",
   "why_this_rule_and_not_a_regex": "A regex of the form `^corpus sha256: \\S+\\s*$\\n?` OVER-DELETES: `\\s` matches newline, so `\\s*` greedily consumes the blank line that follows \u00a76a's digest line as well. On the v11 working tree it consumed \"corpus sha256: CORPUS-DIGEST-NOT-YET-BOUND\\n\\n\" and digested to c18c10c07329807d\u2026, which is NOT the digest of the spec-minus-that-line. \u00a76a says the manifest removes THE LINE; a rule that also removes an adjacent blank line makes the pin sensitive to formatting the spec never claimed was load-bearing."
  },

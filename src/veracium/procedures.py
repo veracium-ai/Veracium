@@ -319,7 +319,14 @@ def _tokens(text: str) -> set:
 
 
 def _attribution(basis: str, summary: str) -> str:
-    return (f"you said you follow {summary}" if basis == "stated"
+    """specs/0037 v18 (V-ATTRIBUTION-HONEST): the `stated` sentence claims what
+    BOTH producers establish — that the user SAID it — and never that the user
+    FOLLOWS it. A host-declared `stated` procedure earned the stronger wording;
+    an extractor-captured one (§4a-iii) proves only utterance in a user-authored
+    event, and the two records are indistinguishable at read time, so the
+    sentence true of every record is the one rendered. The gloss only; the
+    note (the quote, for an extracted record) is rendered nowhere."""
+    return (f"recorded from something you said: {summary}" if basis == "stated"
             else f"a pattern you reported observing: {summary}")
 
 

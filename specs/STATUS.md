@@ -45,7 +45,7 @@ is the number that decides what can be built.
 | **0030** | time-relative trust classification | `accepted` | 2026-09-08 | 0 | 18 | 0 | 0 | 0 | — |
 | **0031** | the agent-facing trust surface | `accepted` | 2026-09-08 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
-| **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-12 | 0 | 5 | 0 | 0 | 0 | — |
+| **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-13 | 0 | 5 | 0 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-12 | 0 | 4 | 0 | 0 | 0 | — |
 | **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-11 | 0 | 9 | 0 | 0 | 0 | — |
 
