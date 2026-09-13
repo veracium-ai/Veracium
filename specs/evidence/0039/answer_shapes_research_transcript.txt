@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 9efbd77
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ deae188
+# RE-PINNED 2026-09-13 after 0037 v18 (the describe attribution; ingest untouched): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after 0006 v9 / 0037 v17 (procedures, mcp_server; ingest untouched): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after the doctor's procedural tripwire (doctor.py only): body BYTE-IDENTICAL again.
 # RE-PINNED 2026-09-12 after 0037 v16 (the quote gate in ingest; no procedural triple in these answers): body BYTE-IDENTICAL again.
