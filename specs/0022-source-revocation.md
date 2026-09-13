@@ -11,6 +11,17 @@ Spec-Requires: 0004, 0006, 0014, 0020, 0021, 0023
 this spec (A3a — the operation) and **0023** (A3b — non-revival under
 maintenance). See `## Review closure`.*
 
+> **Post-acceptance disposition notes, 2026-09-12 (dev; no rule of this spec
+> changes).** §7a's row for the one raw `… episodes` SQL site outside the store
+> package (`src/veracium/doctor.py`) gained two sentences the day each read was
+> introduced: the doctor parses each episode payload but never reads, reports or
+> renders `summary` (the `sources` check and the 0.22.0 erratum, 12977bf / 670a4a4);
+> and, for the `procedural` tripwire (a0215d3), the doctor reads each edge's `note`
+> ONCE for research's census marker screen — counts and ids only, the text never
+> reported — with `summary` still never read and any extension to summaries a
+> further deliberate amendment here. R18's reasoning is unchanged; the row's own
+> text carries both notes. These ride the 2026-09-13 post-acceptance review package.
+
 > **v2 — internal round 1 folded (research, 2026-08-17; full review at
 > `veracium-research/proposals/0022-0023-internal-review.md`).** One
 > BLOCKING finding, and it was a design completion rather than a prose
