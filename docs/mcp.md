@@ -26,10 +26,30 @@ from the environment).
 | `VERACIUM_MCP_SOURCE_ID` | *(unset)* | **The host's opaque, stable id for the source this deployment ingests from** (specs/0006: a mailbox, a connector instance, a device — never a person). Host-set, never a tool argument. `require_source_id` defaults on (specs/0006 v8), so a third-party-class event with no source id is refused with `{"ok": false, "refusal": "source_id_required"}` — and under an unset `VERACIUM_MCP_CAPABILITY` **every** event is third-party-class, so such a deployment must set this (or attest `direct`) before `remember` stores anything. |
 | `ANTHROPIC_API_KEY` | — | for the reference provider. |
 
-## Register with a client
+## Client recipes
 
-**Claude Desktop / Claude Code** — add to the MCP servers config
-(`claude_desktop_config.json`, or `.mcp.json` for Claude Code):
+Copy-paste configs for common MCP clients. Each recipe sets the launch
+command, wires a per-user id (`VERACIUM_USER` — one process per principal;
+see [Per-user isolation](#per-user-isolation--scheduling)), and includes a
+remember → answer round-trip you can run once the tools appear.
+
+Personal Claude / editor hosts that capture the authenticated user's own
+turns should attest `VERACIUM_MCP_CAPABILITY=direct` so `remember` stores
+user-class events. Leave it unset (or omit it) for any deployment reachable
+by an untrusted agent — then set `VERACIUM_MCP_SOURCE_ID` before third-party
+events can be stored (see [Environment](#environment)).
+
+Install once on the machine that will run the server:
+
+```bash
+pip install "veracium[mcp,anthropic]"
+```
+
+### Claude Code (`.mcp.json`)
+
+Project-local: put this at the repo root as `.mcp.json`. User-wide: merge
+the same `mcpServers` block into `~/.claude.json` (Claude Code's global
+MCP config).
 
 ```json
 {
@@ -38,14 +58,91 @@ from the environment).
       "command": "veracium-mcp",
       "env": {
         "ANTHROPIC_API_KEY": "sk-...",
-        "VERACIUM_DB_PATH": "/home/you/.veracium.db"
+        "VERACIUM_DB_PATH": "/home/you/.veracium/claude-code.db",
+        "VERACIUM_USER": "you",
+        "VERACIUM_MCP_CAPABILITY": "direct"
       }
     }
   }
 }
 ```
 
-Restart the client; the four tools below become available to the agent.
+Restart Claude Code (or reload MCP). Confirm with this round-trip in chat:
+
+1. Ask the agent to call `remember` with text
+   `USER: I'm vegetarian and have a dog named Ollie.`
+2. Ask it to call `answer` with query `Do I have dietary constraints?`
+3. Expect an answer grounded in the vegetarian fact (not a guess).
+
+### Claude Desktop
+
+Edit the Desktop MCP config and add the same server block:
+
+| OS | config path |
+|---|---|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+
+```json
+{
+  "mcpServers": {
+    "veracium": {
+      "command": "veracium-mcp",
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-...",
+        "VERACIUM_DB_PATH": "/home/you/.veracium/claude-desktop.db",
+        "VERACIUM_USER": "you",
+        "VERACIUM_MCP_CAPABILITY": "direct"
+      }
+    }
+  }
+}
+```
+
+Fully quit and reopen Claude Desktop so it relaunches the stdio server.
+Then run the same remember → answer round-trip as above (Desktop exposes
+the tools to the model the same way).
+
+If `veracium-mcp` is not on Desktop's `PATH`, set `"command"` to the
+absolute path from `which veracium-mcp`.
+
+### Editor-agnostic (any stdio MCP client)
+
+Any client that launches an MCP server over stdio with a `command` + `env`
+block can use the same shape — Cursor (`.cursor/mcp.json` or the MCP
+settings UI), Zed, Continue, and others. Example:
+
+```json
+{
+  "mcpServers": {
+    "veracium": {
+      "command": "veracium-mcp",
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-...",
+        "VERACIUM_DB_PATH": "/home/you/.veracium/editor.db",
+        "VERACIUM_USER": "you",
+        "VERACIUM_MCP_CAPABILITY": "direct"
+      }
+    }
+  }
+}
+```
+
+Equivalent shell launch (what the client runs):
+
+```bash
+ANTHROPIC_API_KEY=sk-... \
+VERACIUM_DB_PATH=~/.veracium/editor.db \
+VERACIUM_USER=you \
+VERACIUM_MCP_CAPABILITY=direct \
+veracium-mcp
+```
+
+After the client lists the Veracium tools, run the remember → answer
+round-trip once to confirm the store path and user id are the ones you
+intended (`VERACIUM_DB_PATH` / `VERACIUM_USER` above).
+
 
 ## Tools
 
