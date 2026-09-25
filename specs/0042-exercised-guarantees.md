@@ -5,7 +5,7 @@ Spec-Status: accepted
 | | |
 |---|---|
 | **Author / session** | research (veracium-research-48), the candidate's author → dev (veracium-61), each adoption at rest and re-read from the file, dated per entry: v3.1 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 28068200aa6f90fa); v4 2026-09-18 from the same file (sha16 0fd0af01bfb56a39); v5 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 f8cf6f68e0016625); v6 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 ba262106068d3efc); v7 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 ccf0715041f3148a); v8.1 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 b94d814d20b96d2c); v9.2 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 a230ae09793790be) — ACCEPTED at the design level, the flip on the owner's word |
-| **Version** | **v11.3 — A NAME IS A CLAIM: A TYPE IS DESCRIBED BY NAME ONLY IF PYTHON CODE CANNOT HAVE MADE IT; AND THE TRUST BOUNDARY INV-7 HAS ALWAYS RESTED ON IS STATED, AND PUT TO THE REVIEWER.** Two parts, of two kinds. (1) **An implementation note** (round 19; the round-18 verdict's one correction): route B describes a type by module and qualified name only if `Py_TPFLAGS_IMMUTABLETYPE` is set, and describes every other type by its one recursive rule. Each census is executed and described in a fresh interpreter, so it cannot reach the transform. A round-19 paragraph after round 18's states the mechanism, the fourth rung of the ladder, the cells, and the INV-7 run re-made. (2) 🔴 **Not an implementation note: a PROPOSED addition to INV-7's scope, pending external design review**, on the owner's word "Disclose + state it" (2026-09-25). It sits beside the frozen text, after §6's table, and edits none of it. Census code changes behaviour; it does not attack the measurement. Three of INV-7's four readings run inside a process that executed census code, and a forge of one of them is shown silent. `Spec-Status` stays `accepted` for everything outside the proposal. **Prior cell follows.** **v11.2 — THE JOIN CHECK'S NAMED OVER-REFUSAL IS CLOSED, AND THE ORACLE NOW GENERATES ANNOTATIONS.** An implementation note (round 19); no frozen invariant's text changes, and `Spec-Status` stays `accepted`. v9.5's round-13 paragraph named two limits "recorded for the next round" and one count. All three are annotated IN PLACE:
+| **Version** | **v12.0 — THE ROUND-19 SCOPE OF INV-7 IS ACCEPTED AND FOLDED; ROUTE B ANSWERS ON ITS OWN CHANNEL; THE RESOLVER READS NAMES AS THE SYMBOL TABLE SPELLS THEM.** Two parts, of two kinds. (1) 🔴 **A FROZEN INVARIANT'S TEXT CHANGES BY ACCEPTANCE**, as v11.0 did for round 16: the round-19 verdict (banked `496a120`, body sha16 `7d2135a69dff4081`) ACCEPTED the scope proposed in v11.3. INV-7's row and §3b now state it. v11.3's PROPOSED block becomes the record of the acceptance, keeping the executed and inferred cases apart as the verdict asks. §11 records the unscoped text, with the verdict's own limit: the ruling "*accepts the scope now*" and approves nothing earlier. (2) **An implementation note** (round 20; the verdict's two corrections): route B's child writes its description to a response file and ends with `os._exit(0)`, and every failure to describe is named; the resolver derives the names the compiler adds by two routes, and compares every name in the symbol table's spelling. The second seat's stage-1 read found private-name mangling as a wider case of F2. `Spec-Status` stays `accepted`. **Prior cell follows.** **v11.3 — A NAME IS A CLAIM: A TYPE IS DESCRIBED BY NAME ONLY IF PYTHON CODE CANNOT HAVE MADE IT; AND THE TRUST BOUNDARY INV-7 HAS ALWAYS RESTED ON IS STATED, AND PUT TO THE REVIEWER.** Two parts, of two kinds. (1) **An implementation note** (round 19; the round-18 verdict's one correction): route B describes a type by module and qualified name only if `Py_TPFLAGS_IMMUTABLETYPE` is set, and describes every other type by its one recursive rule. Each census is executed and described in a fresh interpreter, so it cannot reach the transform. A round-19 paragraph after round 18's states the mechanism, the fourth rung of the ladder, the cells, and the INV-7 run re-made. (2) 🔴 **Not an implementation note: a PROPOSED addition to INV-7's scope, pending external design review**, on the owner's word "Disclose + state it" (2026-09-25). It sits beside the frozen text, after §6's table, and edits none of it. Census code changes behaviour; it does not attack the measurement. Three of INV-7's four readings run inside a process that executed census code, and a forge of one of them is shown silent. `Spec-Status` stays `accepted` for everything outside the proposal. **Prior cell follows.** **v11.2 — THE JOIN CHECK'S NAMED OVER-REFUSAL IS CLOSED, AND THE ORACLE NOW GENERATES ANNOTATIONS.** An implementation note (round 19); no frozen invariant's text changes, and `Spec-Status` stays `accepted`. v9.5's round-13 paragraph named two limits "recorded for the next round" and one count. All three are annotated IN PLACE:
 - the over-refusal is closed on 3.12 and later;
 - the oracle's generator now emits parameter, keyword-only and return annotations;
 - the count of modules the join check refuses none of is dated.
@@ -468,7 +468,7 @@ A round-19 paragraph states the mechanism and the evidence. **Prior cell follows
 > executed and described in a fresh `python -I`, and its description returns as data read under 0026's strict-pairs rule.
 > Inside that child, the built-ins are restored after the census runs, so the describer reads with the real ones. This
 > protects the TRANSFORM. It does not protect the DESCRIPTION: the describer shares the child's process with the census it
-> describes. That limit is not specific to route B. It is the trust boundary proposed after §6's table.
+> describes. That limit is not specific to route B. It is the trust boundary proposed after §6's table. *(v12.0: ACCEPTED by the round-19 verdict, now INV-7's stated scope.)*
 >
 > **Cells:**
 > - the verdict's witness, the spoof, and same-named subclasses of `str` (overriding `__eq__`), `int` and `dict` (overriding
@@ -486,6 +486,82 @@ A round-19 paragraph states the mechanism and the evidence. **Prior cell follows
 >
 > **The INV-7 run is RE-MADE, not carried**, because the normaliser the runtime digest calls changed. Its figures are in
 > the transcript committed with this version, not here.
+
+> **ROUND 20: ROUTE B'S CHILD ANSWERS ON A CHANNEL THE CENSUS DOES NOT WRITE, AND THE RESOLVER READS NAMES IN THE SYMBOL
+> TABLE'S SPELLING** (v12.0, research as the specification's author; the round-19 verdict's two corrections, banked `496a120`,
+> body sha16 `7d2135a69dff4081`). Neither finding attacks the measurement; both are defects, which the accepted scope
+> leaves in the implementation review.
+>
+> **F1: census output reached the child's response.** Round 19's child wrote its description to the stdout the census also
+> writes. One `print("census initialized")` appended to the census made route B, `site_drift()`, `derive()` and `verify()`
+> raise `JSONDecodeError`. It was new in round 19: round 18 described `Site` in-process and had no transport. It is the
+> found-in-fix class: the isolation was checked for what `-I` REMOVES, not for what the child SHARES with the census.
+> - The child writes its description to a response file, in a temporary directory outside the tree, at an absolute path.
+>   It closes the file and then calls `os._exit(0)`, so no atexit handler and no non-daemon thread the census started
+>   runs after it.
+> - **A complete, well-formed response is authoritative. The exit code is diagnostic only.**
+> - No response, a malformed one, one of the wrong shape, or a timeout is a NAMED "could not be described" refusal, never
+>   a bare exception, and **never reported as drift**: on either side it reads "*this is not drift, and T does not
+>   advance*". Round 19 reported a census whose stdout was closed as "*HEAD's Site has drifted … T must advance*", and the
+>   first form of this fix still wrapped the failure under that headline (the second seat's read, before the hand-over).
+> - The census's stdout and stderr are captured and ignored unless the description fails. The census can read the
+>   response path from argv; that is within the accepted scope.
+>
+> **F2: a name the compiler adds, and a name the compiler respells.** Round 19's comprehension signature decided which
+> inlined names merge by the names the enclosing block "already holds", read from the AST.
+> - **The compiler adds names the AST does not hold.** A `super` read adds `__class__` to the block, so the verdict's
+>   witness merged an inner `__class__` target that CPython does not merge, and the resolver refused a program that runs.
+> - **Every compiler-introduced name is DERIVED, by two routes, one asserted to contain the other.**
+>   - Route 1 is CPython's `symtable.c` at 3.12.3 and 3.13.15. In a comprehension's own block, the only added name is
+>     `__class__` on a `super` load, besides the `.0` parameter. `__classdict__` and the dotted type-parameter names go
+>     to type-parameter, annotation and class blocks.
+>   - Route 2 is a census of the standard library's symbol tables: every symbol that is never a NAME token, compared
+>     after NFKC normalisation as the compiler reads identifiers (PEP 3131), must be in route 1's set or be a mangled
+>     private name, and `__class__` must be seen. It found none outside, over the full `Lib/` of 3.12.3 and 3.13.15.
+>     **A local green was not CI's:** the box's stdlib had no `Lib/test`, and CI's did, where unnormalised spellings
+>     ("Unicode", "μ") read as names without a token. It cannot see `__classdict__`, which no standard-library module
+>     triggers, so it does not stand alone. It skips before 3.12, where `tokenize` keeps an f-string as one token
+>     (inventoried).
+> - **The compiler RESPELLS private names (found by the second seat's stage-1 read, the verdict's class widened).**
+>   `symtable` spells `__p` inside class `C` as `_C__p`. The comprehension signature and the join check's lambda and `def`
+>   parameter comparison both used the AST's spelling, giving three loud over-refusals:
+>   - a private inner target in a method (3.12, 3.13);
+>   - same-line list comprehensions with a private target (3.11, not inlined);
+>   - same-line lambdas with a private parameter (every version).
+>   Every comparison now uses the symbol table's spelling (CPython's mangling rule, the underscore-only class name
+>   included). **The binding scan's module-level reading was measured CORRECT under mangling:** `__S` in a method is read
+>   as `_C__S`, never as the module's `__S`.
+> - **Named, not modelled:** a PEP 695 generic class's type-parameter scope. The join check refuses there.
+>
+> **Cells:**
+> - F1, 19 cells, each through `derive()` and `verify()`:
+>   `tests/test_0042_inv7.py::test_r20_census_output_never_reaches_the_isolated_child_s_response`.
+>   - 14 accept: print variants, JSON-looking text, stderr, stdout or fd 1 closed, atexit handlers, threads, chdir.
+>   - 3 refuse by name.
+>   - 2 are drift, with and without output.
+> - A census whose import never ends: `tests/test_0042_inv7.py::test_r20_a_census_whose_import_never_ends_is_a_named_failure`.
+> - An undescribable census, on HEAD's side and on the reference's, refuses by name and never as drift:
+>   `tests/test_0042_inv7.py::test_r20_an_undescribable_census_is_never_reported_as_drift`.
+> - Each superseded transport fails its cell: `tests/test_0042_inv7.py::test_r20_each_superseded_transport_fails_its_cell`.
+> - The verdict's seven, nesting, lambdas and mangling, end to end:
+>   `tests/test_0042_scope_resolution.py::test_r20_f2_compiler_names_and_mangling_match_symtable_and_resolve`.
+> - A generated corpus of 576 programs, each equal to `symtable` and resolving on 3.10 to 3.13:
+>   `tests/test_0042_scope_resolution.py::test_r20_f2_the_generated_corpus_equals_symtable_and_resolves`.
+> - The two superseded rules fail it: `tests/test_0042_scope_resolution.py::test_r20_f2_each_superseded_rule_fails_the_corpus`.
+> - The two routes: `tests/test_0042_scope_resolution.py::test_r20_f2_route_two_finds_no_implicit_name_route_one_lacks`.
+> - F2 end to end through `derive()` and `verify()`, the reviewer's "*retain end-to-end derivation controls*" on their own
+>   setup (a valid helper in a product module beside a measured site). Four cells, each deriving with `verify()` clean:
+>   the verdict's witness and a method calling `super(C, self)` (the implicit `__class__`), a class-private inner target,
+>   and same-line lambdas with a class-private parameter (mangling):
+>   `tests/test_0042_inv7.py::test_r20_a_valid_helper_beside_a_measured_decision_derives`.
+>
+> At the round-19 pin the round-20 cells split three ways, and the red/green transcript counts each. Some FAIL ON THE DEFECT
+> ITSELF: a bare `JSONDecodeError`, a bare `TimeoutExpired`, a census failure refused as "*Site has drifted … T must
+> advance*", a signature unequal to `symtable`, an unresolvable scope. Some CANNOT RUN there, because they name what round
+> 20 introduced (the timeout constant, the superseded-form mutants, the two routes). The rest PASS there: the cells whose
+> right answer round 19 already gave, the acceptance cells and a silent real drift. A census that raises or calls
+> `sys.exit(3)` during import was already refused by round 19, but under the drift headline, so those cells FAIL there
+> too.
 
 > **Implementation note, round 6 pre-seal (2026-09-20).** Building the per-site decision trace the round-5
 > verdict asked for at implementation review found two defects in the runtime leg, both fixed before the seal
@@ -803,7 +879,8 @@ this spec does not attempt.
 ## 3b. Authorization and scope
 
 The census is **observation-only and cannot alter a decision** (INV-7, now a
-THREE-arm diff — see Part A-2). It has no authorization surface of its own: it
+THREE-arm diff — see Part A-2). **INV-7 establishes this against census code that changes behaviour, not against
+census code written to defeat the measurement** (the round-19 scope, ACCEPTED; v12.0; the record after §6's table). It has no authorization surface of its own: it
 reads what the host already computes. 🔴 **It runs in PRODUCTION and is opt-in,
 default OFF**; the fixture-store constraint that stood here belonged to the
 harness and travelled with it.
@@ -1238,7 +1315,7 @@ removal is why the two are separable at all.
 | **INV-2b** | 🔴 **DISABLED IS A STATUS, NOT A MISSING REPORT** — activation is opt-in and default OFF (Quentin, 2026-09-18, *relayed*); a deployment that never enabled the census reports **`DISABLED`** for every declared id. **Never a zero, never `UNREACHED` or `UNEXERCISED`, and never a report-level flag a per-id reader can skip.** **The enum and its precedence live in Part A-1 and nowhere else** | run the report with the census off; assert every row reads `DISABLED` and that NO row reads `UNEXERCISED` |
 | **INV-2c** | 🔴 **INSTALLED IS NOT EXERCISED, AND RUNTIME CANNOT TELL THEM APART** (amendment 4) — *a correctly installed site with no traffic and a MISSING site both produce no runtime events.* So INV-1's missing-site check is settled against the **AST inventory**, never against runtime counts | 🔴 **the missing-site check compares the DECLARATION against the REVIEWED set, never against DISCOVERED (Part A-0-bis)** — four checks, each with its own fixture: **installed-but-unused** (asserts 🔴 **`UNREACHED`**, not missing — *`consulted == 0`; v4 said `UNEXERCISED` and the six-status change reached A-1 and INV-2 but not this row*) · **missing** (🔴 **REVIEWED-as-enforcement, absent from the declaration → REFUSE** — *v4 compared the raw inventory to the declaration, which would demand declaring every ordinary `raise`; Part A-0-bis*) · **undeclared** (reports an id nobody declared → REFUSE) · **duplicate id** (two sites, one id → REFUSE) |
 | **INV-2d** | 🔴 **TWO AUTHORED LISTS AGREEING PROVE CONSISTENCY, NOT COMPLETENESS** (amendment 4) — the declaration and the report are both authored; their agreement cannot establish that neither omits the same point. **The third source is the AST inventory, which nobody authored** | 🔴 assert the report REFUSES when a **DISCOVERED candidate has NO DECISION in the REVIEWED set** — *not when it is absent from the DECLARATION, which round 2 showed would require declaring every ordinary `raise`. The inventory forces a DECISION, never a declaration (Part A-0-bis)* |
-| **INV-7** | **OBSERVATION-ONLY** — no counter may alter a decision | **a THREE-ARM DECISION-TRACE DIFF, not a green run** (amendment 5; the two-arm form is withdrawn because both arms carry the instrument): capture the trace with counters **healthy**, **forced to error**, and **UNINSTRUMENTED** — *the product with every measurement removed, whose census is the census.py of an ACCEPTED commit T, pinned by digest in this specification (the ACCEPTED record after this table), and never the census under test; no census code of the commit under review runs in the reference arm* (the round-16 amendment, ACCEPTED; v11.0) — over **the trace fields listed in Part A-2's table below**, and assert all three are **byte-identical**. Name the suites that actually reach the instrumented sites — **0027's (graph.py) and the gate/ingest/schema suites**. 🔴 **NOT 0041's**: it is accepted and UNIMPLEMENTED, its tests are frozen-record transition tests with eleven strict xfails, and none exercises a gate decision — **forcing counters to error there changes nothing they can observe, so that half would pass vacuously** |
+| **INV-7** | **OBSERVATION-ONLY** — no counter may alter a decision, **established against census code that CHANGES BEHAVIOUR, not against census code written to ATTACK THE MEASUREMENT: the observer and its evidence machinery are trusted parts of the measurement** (the round-19 scope, ACCEPTED; v12.0; the record after this table) | **a THREE-ARM DECISION-TRACE DIFF, not a green run** (amendment 5; the two-arm form is withdrawn because both arms carry the instrument): capture the trace with counters **healthy**, **forced to error**, and **UNINSTRUMENTED** — *the product with every measurement removed, whose census is the census.py of an ACCEPTED commit T, pinned by digest in this specification (the ACCEPTED record after this table), and never the census under test; no census code of the commit under review runs in the reference arm* (the round-16 amendment, ACCEPTED; v11.0) — over **the trace fields listed in Part A-2's table below**, and assert all three are **byte-identical**. Name the suites that actually reach the instrumented sites — **0027's (graph.py) and the gate/ingest/schema suites**. 🔴 **NOT 0041's**: it is accepted and UNIMPLEMENTED, its tests are frozen-record transition tests with eleven strict xfails, and none exercises a gate decision — **forcing counters to error there changes nothing they can observe, so that half would pass vacuously** |
 | **INV-8** | **COUNTS CARRY NO CONTENT** — a census row is an id and integers | assert no record text, user id, or digest appears in the report |
 
 **Each check must be demonstrated RED** against a deliberately wrong
@@ -1269,13 +1346,22 @@ this spec exists to find.
 > (`tests/test_0042_inv7.py::test_r16_the_twin_census_is_the_reference_census_and_verify_refuses_any_other`), and the
 > drift check (`tests/test_0042_inv7.py::test_r17_site_drift_reads_the_definition_and_the_realized_class`).
 
-> 🔴 **PROPOSED: THE TRUST BOUNDARY INV-7 RESTS ON — round 19, PENDING EXTERNAL DESIGN REVIEW. The INV-7 row above is the
-> accepted, frozen text; this block is not yet accepted.** (v11.3; research as the specification's author; the owner's word
-> "Disclose + state it", 2026-09-25.) INV-7 has made this assumption since the round-5 acceptance. It is stated here for
-> the first time, and put to the reviewer as a design question, as round 16's amendment was.
+> 🏁 **THE ROUND-19 SCOPE OF INV-7 — ACCEPTED** by the round-19 verdict (banked `496a120`, body sha16 `7d2135a69dff4081`):
+> "*the proposed INV-7 scope addition is ACCEPTED; the implementation is RETURNED for two corrections*". It was proposed in
+> v11.3 by research as the specification's author, on the owner's word "Disclose + state it" (2026-09-25). Its text now
+> lives in the INV-7 row above and in §3b.
 >
-> **Proposed addition to the INV-7 row, and to §3b's "cannot alter a decision":** "…established against census code that
-> CHANGES BEHAVIOUR, not against census code written to ATTACK THE MEASUREMENT."
+> **What was accepted, in the verdict's words:** "*INV-7 establishes its observation-only claim against behavior-changing
+> census defects, while excluding census code deliberately written to attack the measurement. The observer and its
+> evidence machinery are trusted parts of this regression measurement. Resistance to hostile census code that rewrites the
+> describer, recorder or evidence is not a requirement under this accepted scope.*"
+>
+> **What it does NOT do, also in the verdict's words:**
+> - "*This ruling accepts the scope now; it does not turn an unstated assumption into an earlier explicit approval.*" The
+>   acceptances of rounds 5 and 16 were of INV-7 without this clause (§11).
+> - "*Ordinary defects, type collisions, incidental diagnostic output and resolver mistakes remain within the
+>   implementation review.*" The scope excludes an ATTACK on the measurement, never a defect. The round-19 verdict's two
+>   findings were of that kind, and round 20 answers them.
 >
 > **Why it cannot be a checked property.** Python has no in-process confinement. Any reading made inside a process that
 > executed census code can be rewritten by that code:
@@ -1287,7 +1373,7 @@ this spec exists to find.
 > | the realized-`Site` digest (`uninstrumented:site_realized_equal`) | each arm | **yes** |
 > | the decision trace itself | each arm's observer | **yes** |
 >
-> **Shown by running it:**
+> **EXECUTED, and re-run by the reviewer at round 19:**
 > - **Route B forged, SILENT.** The round-19 spoof alone reads one drift entry. With four more lines appended, which install a
 >   name-trusting predicate into the describer, it reads **none, while the decision still changes.** The same attack
 >   **with no import statement** also reads none: it reaches `sys` through `object.__subclasses__()`. So an allowlist of the
@@ -1295,17 +1381,16 @@ this spec exists to find.
 > - **A trace erased, LOUD.** Four appended lines replace the observer's recorder in an arm: 519 records become 0, and the
 >   arm's suite stays green. An empty trace reads DIVERGENT against the reference arm, so this move is detected.
 >
-> **Inferred, NOT built** (by the owner's decision): **a SILENT trace forge**, in which the census changes a decision and
-> records the reference arm's label for it. The write access it needs is shown above. The forge is not. **Nothing in this
-> specification claims that this move is detected.**
+> **INFERRED, NOT BUILT, and not promoted by the acceptance:** **a SILENT trace forge**, in which the census changes a decision
+> and records the reference arm's label for it. The write access it needs is shown above. The forge is not. The verdict:
+> "*This review does not promote it to measured evidence, and does not require it to be built to accept the stated
+> boundary.*" **Nothing in this specification claims that this move is detected.**
 >
-> **What would move the boundary:** a reading made outside every process that executed census code. Route A is the only one,
-> and it reads only the ClassDef. Widening it to the whole module would reverse the accepted round-16 rule that a change
-> ELSEWHERE in HEAD's census is not drift. **The question to the reviewer:** is this boundary acceptable as INV-7's stated
-> scope, or does INV-7 require a reading the census cannot reach?
+> **Route B's fresh interpreter protects the TRANSFORM, not the DESCRIPTION** — in the verdict's words, "*it does not make
+> the child's description tamper-resistant*".
 >
 > **Evidence:** research's probe, repository veracium-research at commit 99a110ec (probe and transcript under its
-> probes directory); dev's trace run, `specs/evidence/0042/trust_boundary_probe.py` with its recorded output `specs/evidence/0042/trust_boundary_probe.txt` (committed at `9932c7f`, and reproduced from a clean export by the second seat); the stated limit in the docstring of `_described_in_isolation` in
+> probes directory), shipped in the round-19 package; dev's trace run, `specs/evidence/0042/trust_boundary_probe.py` with its recorded output `specs/evidence/0042/trust_boundary_probe.txt` (committed at `9932c7f`, and reproduced from a clean export by the second seat); the stated limit in the docstring of `_described_in_isolation` in
 > `specs/evidence/0042/inv7_uninstrument.py`.
 
 ## 7. Failure modes and reversibility
@@ -1482,6 +1567,16 @@ census changed nothing, because it is the only one without a census in it.*" Rou
 hold together with a reference faithful by construction, because a declaration binds a census object. Round 16's amendment,
 ACCEPTED (verdict `a17ebc7`, body sha16 `fb62c45af45289a7`), replaced "without a census" with "without the census UNDER TEST",
 where the reference's census is an accepted commit's, pinned by digest.
+
+### INV-7 and §3b without a stated scope — superseded by the round-19 scope *(v12.0)*
+
+From the round-5 acceptance until v12.0, INV-7's row read "*no counter may alter a decision*", and §3b read "*observation-only
+and cannot alter a decision*", with no statement of which census code the claim was established against. Every reading
+INV-7 takes inside a process that ran census code could be rewritten by that code, so the unscoped claim was an assumption
+the text did not state. Round 19 disclosed it, and the round-19 verdict (`496a120`, body sha16 `7d2135a69dff4081`) ACCEPTED
+the scope: "*against behavior-changing census defects, while excluding census code deliberately written to attack the
+measurement*". The verdict is explicit that this "*accepts the scope now*", and "*does not turn an unstated assumption into
+an earlier explicit approval*".
 
 ### The “delete a counter” control — superseded
 
