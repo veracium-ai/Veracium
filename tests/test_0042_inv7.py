@@ -2758,6 +2758,333 @@ def test_r20_a_valid_helper_beside_a_measured_decision_derives(cell, helper, tmp
     assert un.verify(out, src) == [], cell
 
 
+# ---- round 21: the ROUND-20 VERDICT'S F1 — the isolated child's boundary is BYTES, and the transform reads UTF-8 --------
+# Round 20 moved the description to a file the child owns, but the parent still captured the census's stdout and stderr
+# with text=True, so a census writing bytes that are not UTF-8 made derive() and verify() raise UnicodeDecodeError
+# although the description was valid; and the census text went in, and verify() read files, in the LOCALE's encoding.
+_R21_BAD = "\nimport sys as _s\n_s.{stream}.buffer.write(b'\\xff\\xfe census\\n'); _s.{stream}.flush()\n"
+_R21_F1_CELLS = [
+    ("invalid UTF-8 on stdout", _R21_BAD.format(stream="stdout"), "accept"),
+    ("invalid UTF-8 on stderr", _R21_BAD.format(stream="stderr"), "accept"),
+    ("invalid UTF-8 on both", _R21_BAD.format(stream="stdout") + _R21_BAD.format(stream="stderr"), "accept"),
+    ("valid non-ASCII on stdout", "\nprint('census µ é 中')\n", "accept"),
+    ("a non-ASCII comment in the census", "\n# census µ é 中\n", "accept"),
+    ("real drift with invalid UTF-8 on stdout", _R20_REAL_DRIFT + _R21_BAD.format(stream="stdout"), "drift"),
+    # on stdout, so the escaped bytes survive in the failure's detail (stderr's tail is the traceback, kept to 200 chars)
+    ("a crash after invalid UTF-8 on stdout", _R21_BAD.format(stream="stdout") + "raise RuntimeError('census failed')\n", "refuse"),
+]
+
+
+def _r21_verify_problems(un, tmp_path, head):
+    """verify() over a clean twin, the source census then edited and its hash carried into the manifest."""
+    ref = un.REFERENCE_CENSUS.read_text(encoding="utf-8")
+    src = _r13_pkg(tmp_path, "verify", _R14_SELF + "def f():\n    return 1\n", "")
+    (src / "census.py").write_text(ref, encoding="utf-8")
+    out = tmp_path / "verify" / "twin" / "vpkg"
+    un.derive(src, out)
+    (src / "census.py").write_text(head, encoding="utf-8")
+    man_path = out.parent / "twin_manifest.json"
+    man = json.loads(man_path.read_text(encoding="utf-8"))
+    man["modules"]["census.py"]["sha256_before"] = hashlib.sha256(head.encode("utf-8")).hexdigest()
+    man_path.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    return [p for p in un.verify(out, src) if p.startswith("census.py")]
+
+
+@pytest.mark.parametrize("cell,suffix,expect", _R21_F1_CELLS, ids=[c[0] for c in _R21_F1_CELLS])
+def test_r21_census_bytes_never_break_the_isolated_boundary(cell, suffix, expect, tmp_path):
+    """The verdict's F1 and its class, through derive() AND verify(): whatever bytes the census writes, a valid
+    description is authoritative; a failure is named, its bytes backslash-escaped; real drift keeps its name."""
+    un = _load("inv7_uninstrument_r21f1", EVIDENCE / "inv7_uninstrument.py")
+    ref = un.REFERENCE_CENSUS.read_text(encoding="utf-8")
+    head = ref + suffix
+    src = _r13_pkg(tmp_path, "derive", _R14_SELF + "def f():\n    return 1\n", "")
+    (src / "census.py").write_text(head, encoding="utf-8")
+    out = tmp_path / "derive" / "twin" / "vpkg"
+    if expect == "accept":
+        un.derive(src, out)
+    else:
+        with pytest.raises(un.Refused) as e:
+            un.derive(src, out)
+        msg = str(e.value)
+        assert "UnicodeDecodeError" not in msg, (cell, msg[:300])
+        if expect == "refuse":
+            assert "could not be described" in msg and "T must advance" not in msg and "\\xff" in msg, (cell, msg[:400])
+        else:
+            assert "Site.fire (realized)" in msg and "T must advance" in msg, (cell, msg[:300])
+    problems = _r21_verify_problems(un, tmp_path, head)
+    if expect == "accept":
+        assert problems == [], (cell, problems)
+    elif expect == "refuse":
+        assert problems and all("could not be described" in p and "T must advance" not in p for p in problems), (cell, problems)
+    else:
+        assert any("Site.fire (realized)" in p and "T must advance" in p for p in problems), (cell, problems)
+
+
+# The locale cell: derive() and verify() in a child whose locale encoding is NOT UTF-8, over a census holding non-ASCII
+# (the reference census's own em dash, and a comment). The child FIRST asserts its encoding is not UTF-8 and fails
+# loudly otherwise — PEP 538 coerces LANG=C and LC_CTYPE=C to UTF-8, so a cell that merely set them would pass vacuously
+# (the second seat's measurement); LC_ALL=C with UTF-8 mode off gives ASCII.
+_R21_LOCALE_CHILD = r"""
+import importlib.util, locale, pathlib, sys
+enc = locale.getpreferredencoding(False)
+if enc.replace("-", "").lower() in ("utf8",):
+    print(f"LOCALE CELL VACUOUS: the child's encoding is {enc}, not a non-UTF-8 one"); sys.exit(3)
+s = importlib.util.spec_from_file_location("un", sys.argv[1]); un = importlib.util.module_from_spec(s)
+sys.modules["un"] = un; s.loader.exec_module(un)
+src, out = pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+un.derive(src, out)
+problems = un.verify(out, src)
+print(f"encoding {enc}; verify {problems!r}")
+sys.exit(0 if problems == [] else 4)
+"""
+_R21_LOCALE_MUTANTS = [
+    ("shipped", None, None),
+    ("the census text sent in the locale's encoding", 'input=census_text.encode("utf-8")',
+     'input=census_text.encode(__import__("locale").getpreferredencoding(False))'),
+    ("verify reading the census in the locale's encoding",
+     "site_drift(_read_source(src / rel), _read_source(p_out))",
+     "site_drift((src / rel).read_text(), p_out.read_text())"),
+]
+
+
+@pytest.mark.parametrize("form,anchor,replacement", _R21_LOCALE_MUTANTS, ids=[m[0] for m in _R21_LOCALE_MUTANTS])
+def test_r21_derive_and_verify_hold_under_a_non_utf8_locale(form, anchor, replacement, tmp_path):
+    module = EVIDENCE / "inv7_uninstrument.py"
+    if anchor is not None:
+        ev = tmp_path / "evidence"
+        shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+        text = (ev / "inv7_uninstrument.py").read_text(encoding="utf-8")
+        assert text.count(anchor) == 1, (form, "the mutant's anchor moved")
+        (ev / "inv7_uninstrument.py").write_text(text.replace(anchor, replacement), encoding="utf-8")
+        module = ev / "inv7_uninstrument.py"
+    un = _load("inv7_uninstrument_r21loc", EVIDENCE / "inv7_uninstrument.py")
+    src = _r13_pkg(tmp_path, "loc", _R14_SELF + "def f():\n    return 1\n", "")
+    (src / "census.py").write_text(un.REFERENCE_CENSUS.read_text(encoding="utf-8") + "\n# census µ é\n", encoding="utf-8")
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("LC_", "LANG", "PYTHONUTF8", "PYTHONIOENCODING"))}
+    env["LC_ALL"] = "C"
+    r = subprocess.run([sys.executable, "-X", "utf8=0", "-B", "-c", _R21_LOCALE_CHILD, str(module), str(src),
+                        str(tmp_path / "loc" / "twin" / "vpkg")], capture_output=True, env=env, timeout=600)
+    shown = (r.stdout + r.stderr).decode("utf-8", errors="backslashreplace")
+    assert r.returncode != 3, shown[-400:]                    # the cell itself must be non-vacuous, never skipped
+    if anchor is None:
+        assert r.returncode == 0, shown[-800:]
+    else:
+        assert r.returncode != 0, (form, "the mutant held under a non-UTF-8 locale — it is not killed", shown[-400:])
+
+
+def test_r21_decoding_the_census_output_on_success_fails_the_byte_cells(tmp_path):
+    """The round-20 capture's behaviour as a mutant: the census's output decoded (strictly) on every run. It must
+    fail the invalid-stdout cell that the shipped boundary accepts."""
+    text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    anchor = '    context = f"exit {r.returncode}; stderr: {shown(r.stderr)!r}; stdout: {shown(r.stdout)!r}"'
+    assert text.count(anchor) == 1, "the mutant's anchor moved"
+    ev = tmp_path / "evidence"
+    shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+    (ev / "inv7_uninstrument.py").write_text(
+        text.replace(anchor, '    r.stdout.decode("utf-8"); r.stderr.decode("utf-8")\n' + anchor), encoding="utf-8")
+    mut = _load("inv7_uninstrument_r21dec", ev / "inv7_uninstrument.py")
+    ref = mut.REFERENCE_CENSUS.read_text(encoding="utf-8")
+    with pytest.raises(UnicodeDecodeError):
+        mut.site_drift(ref + _R21_BAD.format(stream="stdout"), ref)
+
+
+def _r21_text_io_violations(source: str) -> list:
+    """Every call that reads or writes TEXT in the locale's encoding: read_text/write_text without encoding=, open()
+    in text mode without encoding=, a subprocess run with text=True (or universal_newlines=True), and a read or write
+    on sys.stdin/stdout/stderr themselves rather than their .buffer. Returns [(line, description)]."""
+    out = []
+    for n in ast.walk(ast.parse(source)):
+        if not isinstance(n, ast.Call):
+            continue
+        kw = {k.arg for k in n.keywords}
+        f = n.func
+        name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+        if name in ("read_text", "write_text") and "encoding" not in kw:
+            out.append((n.lineno, f"{name}() without encoding="))
+        elif name in ("open", "open_") and "encoding" not in kw:
+            mode = n.args[1].value if len(n.args) > 1 and isinstance(n.args[1], ast.Constant) else next(
+                (k.value.value for k in n.keywords if k.arg == "mode" and isinstance(k.value, ast.Constant)), "r")
+            if "b" not in str(mode):
+                out.append((n.lineno, f"{name}() in text mode without encoding="))
+        elif name in ("run", "Popen", "check_output", "check_call") and any(
+                k.arg in ("text", "universal_newlines") and isinstance(k.value, ast.Constant) and k.value.value
+                for k in n.keywords):
+            out.append((n.lineno, f"subprocess {name}(text=True)"))
+        elif name in ("read", "readline", "write") and isinstance(f, ast.Attribute) and isinstance(f.value, ast.Attribute) \
+                and isinstance(f.value.value, ast.Name) and f.value.value.id == "sys" and f.value.attr in ("stdin", "stdout", "stderr"):
+            out.append((n.lineno, f"sys.{f.value.attr}.{name}() on the text stream"))
+    return out
+
+
+# The functions whose ROLE is a text boundary; the gate refuses a decode, an encode or a text read/write anywhere else in
+# the transform (the second seat's stage-1b read: a source read spelled `read_text(encoding="utf-8")` assumes an encoding
+# the source declares for itself, and a gate that only asks for SOME encoding blesses it).
+_R21_BOUNDARY_FUNCTIONS = {"_source_encoding", "_source_text", "_read_source", "_write_source", "_read_data", "_write_data",
+                           "_described_in_isolation",
+                           # encodes its OWN repr to hash it: an in-memory digest, never I/O, and str.encode() is UTF-8
+                           # whatever the locale
+                           "site_description_digest"}
+
+
+def _r21_boundary_violations(source: str) -> list:
+    """Every decode/encode/read_text/write_text/open() call OUTSIDE a boundary function, by the innermost enclosing
+    def — plus the locale-default forms anywhere (_r21_text_io_violations)."""
+    tree = ast.parse(source)
+    funcs = [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+
+    def owners(line):
+        return {f.name for f in funcs if f.lineno <= line <= f.end_lineno}
+    out = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call):
+            continue
+        f = n.func
+        name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+        if name in ("decode", "encode", "read_text", "write_text", "open") and not owners(n.lineno) & _R21_BOUNDARY_FUNCTIONS:
+            out.append((n.lineno, f"{name}() outside a text-boundary function ({sorted(owners(n.lineno)) or ['<module>']})"))
+    return out
+
+
+def test_r21_the_transform_reads_and_writes_text_only_at_its_boundaries():
+    """The class guard (round-21 stage 1 and 1b), derived from the AST rather than a hand list — two hand counts of
+    these calls were short in one exchange. SCOPE, stated: inv7_uninstrument.py (the transform: derive and verify),
+    including the isolated child's source, which the module carries as a string and runs. Two rules: nothing reads or
+    writes text in the locale's encoding, and nothing decodes, encodes or reads/writes text OUTSIDE the named boundary
+    functions — so a Python source is decoded only by `_source_text` (its own declared encoding) and never by an
+    assumed one. OUTSIDE THE SCOPE, named: the INV-7 harness and observer and the other evidence modules read and write
+    in the locale's encoding (queued)."""
+    un = _load("inv7_uninstrument_r21ast", EVIDENCE / "inv7_uninstrument.py")
+    source = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    found = [("module", *v) for v in _r21_text_io_violations(source) + _r21_boundary_violations(source)]
+    child = [v for v in _r21_text_io_violations(un._ISOLATED_CHILD)]
+    child += [(ln, why) for ln, why in _r21_boundary_violations(un._ISOLATED_CHILD)
+              if not (why.startswith("decode()") and 'sys.stdin.buffer.read().decode("utf-8")' in un._ISOLATED_CHILD.splitlines()[ln - 1])
+              and not why.startswith("open()")]                       # the child's one decode is OUR utf-8 transport
+    found += [("_ISOLATED_CHILD", *v) for v in child]
+    # and the one decode of a SOURCE carries an error handler: valid Python may hold bytes invalid in its declared
+    # encoding inside a comment (the second seat's stage-1c read), and a strict decode would crash on it
+    tree = ast.parse(source)
+    fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_source_text")
+    decodes = [c for c in ast.walk(fn) if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute) and c.func.attr == "decode"]
+    if not (decodes and all(any(k.arg == "errors" for k in c.keywords) for c in decodes)):
+        found.append(("module", fn.lineno, "_source_text decodes without an error handler"))
+    assert found == [], found
+
+
+def test_r21_the_boundary_gate_flags_a_utf8_assuming_source_read():
+    """The gate's own mutant: the form the second seat showed it blessing — a source read in verify() spelled
+    read_text(encoding="utf-8") — must be flagged."""
+    source = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    anchor = "site_drift(_read_source(src / rel), _read_source(p_out))"
+    assert source.count(anchor) == 1, "the mutant's anchor moved"
+    mutated = source.replace(anchor, 'site_drift((src / rel).read_text(encoding="utf-8"), p_out.read_text(encoding="utf-8"))')
+    flagged = [v for v in _r21_boundary_violations(mutated) if "read_text" in v[1]]
+    assert len(flagged) == 2, flagged
+
+
+# A Python SOURCE declares its own encoding (PEP 263, a BOM). Each cell writes a census or a product module in a declared
+# encoding and runs derive() and verify(); a product module's twin must also RUN as its source does.
+_R21_COOKIE = "# -*- coding: {enc} -*-\n"
+_R21_SOURCE_CELLS = [
+    ("census: the reference, UTF-8 BOM", "census", lambda ref: b"\xef\xbb\xbf" + ref, "accept"),
+    ("census: the reference re-encoded gb18030, with its cookie", "census",
+     lambda ref: _R21_COOKIE.format(enc="gb18030").encode() + ref.decode("utf-8").encode("gb18030"), "accept"),
+    ("census: a utf-8 cookie line", "census", lambda ref: _R21_COOKIE.format(enc="utf-8").encode() + ref, "accept"),
+    ("census: a latin-1 cookie over UTF-8 bytes (the census's strings REALLY change: drift)", "census",
+     lambda ref: _R21_COOKIE.format(enc="latin-1").encode() + ref + "\n# café\n".encode("latin-1"), "drift"),
+    ("product: latin-1 cookie, a latin-1 string", "product",
+     lambda _: _R21_COOKIE.format(enc="latin-1").encode() + (_R14_SELF + "def f():\n    return 'café'\n").encode("latin-1"), "accept"),
+    ("product: cp1252 cookie, a cp1252 string (the cookie is lost in the twin)", "product",
+     lambda _: _R21_COOKIE.format(enc="cp1252").encode() + (_R14_SELF + "def f():\n    return '— café'\n").encode("cp1252"), "accept"),
+    ("product: UTF-8 BOM, a non-ASCII string", "product",
+     lambda _: b"\xef\xbb\xbf" + (_R14_SELF + "def f():\n    return 'µ 中'\n").encode("utf-8"), "accept"),
+    # the second seat's stage-1c read: a byte invalid in the declared encoding is VALID PYTHON inside a comment (the
+    # tokenizer does not decode comment bytes; it imports and runs on 3.10-3.13), and an unknown cookie is not Python
+    ("census: a trailing comment holding an invalid UTF-8 byte", "census", lambda ref: ref + b"\n# \xff comment\n", "accept"),
+    ("census: a utf-8 cookie and a comment holding an invalid byte", "census",
+     lambda ref: _R21_COOKIE.format(enc="utf-8").encode() + ref + b"\n# \xff\n", "accept"),
+    ("census: an invalid comment byte and REAL drift", "census",
+     lambda ref: ref + b"\n# \xff\n" + _R20_REAL_DRIFT.encode(), "drift"),
+    ("census: an unknown coding cookie (not Python: a named refusal)", "census",
+     lambda ref: _R21_COOKIE.format(enc="nonexistent").encode() + ref, "refuse"),
+    ("product: a comment holding an invalid UTF-8 byte", "product",
+     lambda _: (_R14_SELF + "def f():\n    return 'x'\n").encode() + b"# \xff\n", "accept"),
+]
+
+
+def _r21_source_cell(un, tmp_path, kind, make):
+    ref = un.REFERENCE_CENSUS.read_bytes()
+    src = _r13_pkg(tmp_path, "enc", _R14_SELF + "def f():\n    return 1\n", "")
+    (src / "census.py").write_bytes(make(ref) if kind == "census" else ref)
+    if kind == "product":
+        (src / "b.py").write_bytes(make(ref))
+    return src, tmp_path / "enc" / "twin" / "vpkg"
+
+
+@pytest.mark.parametrize("cell,kind,make,expect", _R21_SOURCE_CELLS, ids=[c[0] for c in _R21_SOURCE_CELLS])
+def test_r21_a_source_is_read_in_the_encoding_it_declares(cell, kind, make, expect, tmp_path):
+    un = _load("inv7_uninstrument_r21src", EVIDENCE / "inv7_uninstrument.py")
+    src, out = _r21_source_cell(un, tmp_path, kind, make)
+    if expect == "drift":
+        with pytest.raises(un.Refused, match="T must advance"):
+            un.derive(src, out)
+        return
+    if expect == "refuse":
+        with pytest.raises(un.Refused, match="could not be read as Python source") as e:
+            un.derive(src, out)
+        assert "T must advance" not in str(e.value) and "not drift" in str(e.value), str(e.value)[:300]
+        return
+    _r21_holds(un, src, out, kind, cell)
+
+
+def _r21_holds(un, src, out, kind, cell):
+    """derive() and verify() clean, every twin file compiles, and a product twin RUNS as its source does."""
+    un.derive(src, out)
+    assert un.verify(out, src) == [], cell
+    for p in out.rglob("*.py"):
+        compile(p.read_bytes(), str(p), "exec")                      # the twin declares what it is
+    if kind == "product":
+        runs = [subprocess.run([sys.executable, "-c", f"import sys; sys.path.insert(0, {str(root)!r}); import vpkg.b as b; "
+                                "print(ascii(b.f()))"], capture_output=True, text=True, encoding="utf-8") for root in (src.parent, out.parent)]
+        assert [r.returncode for r in runs] == [0, 0], [r.stderr[-300:] for r in runs]
+        assert runs[0].stdout == runs[1].stdout, (cell, runs[0].stdout, runs[1].stdout)
+
+
+_R21_CP1252 = "product: cp1252 cookie, a cp1252 string (the cookie is lost in the twin)"
+
+
+@pytest.mark.parametrize("mutant,anchor,replacement,killer", [
+    ("a source decoded as UTF-8, whatever it declares", '    return data.decode(encoding, errors="replace")',
+     '    return data.decode("utf-8", errors="replace")', _R21_CP1252),
+    ("the twin written in the ORIGINAL's encoding", '    data = text.encode(_source_encoding(text.encode("utf-8")))',
+     '    data = text.encode("cp1252")', _R21_CP1252),
+    ("a source decoded strictly (no error handler)", '    return data.decode(encoding, errors="replace")',
+     "    return data.decode(encoding)", "census: a trailing comment holding an invalid UTF-8 byte"),
+    ("an unreadable source raising bare", "        raise SourceUnreadable(", "        raise\n        raise SourceUnreadable(",
+     "census: an unknown coding cookie (not Python: a named refusal)"),
+], ids=["decode as utf-8", "write in the original's encoding", "strict decoding", "bare on an unknown cookie"])
+def test_r21_each_superseded_source_rule_fails_a_cell(mutant, anchor, replacement, killer, tmp_path):
+    text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    assert text.count(anchor) == 1, (mutant, "the anchor moved")
+    ev = tmp_path / "evidence"
+    shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+    (ev / "inv7_uninstrument.py").write_text(text.replace(anchor, replacement), encoding="utf-8")
+    mut = _load("inv7_uninstrument_r21srcmut", ev / "inv7_uninstrument.py")
+    _, kind, make, expect = {c[0]: c for c in _R21_SOURCE_CELLS}[killer]
+    src, out = _r21_source_cell(mut, tmp_path, kind, make)
+    try:
+        if expect == "refuse":
+            with pytest.raises(mut.Refused, match="could not be read as Python source"):
+                mut.derive(src, out)
+        else:
+            _r21_holds(mut, src, out, kind, killer)
+    except BaseException as e:                                   # the cell no longer holds under the mutant: killed
+        if isinstance(e, (KeyboardInterrupt, SystemExit)):
+            raise
+        return
+    pytest.fail(f"{mutant}: the killing cell still holds — the mutant is not killed")
+
+
 # ---- round 18, N-6: the Site each arm IMPORTED, compared at runtime --------------------------------------------------
 # site_drift reads both censuses in the TRANSFORM's process, so a change to Site made after the class and CONDITIONAL on
 # the arm's runtime state (its environment, what it imports) is seen by neither route. The observer now digests route B's

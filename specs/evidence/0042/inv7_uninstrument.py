@@ -337,7 +337,7 @@ import builtins, importlib.util, json, os, sys
 spec = importlib.util.spec_from_file_location("_inv7_uninstrument_isolated", sys.argv[1])
 un = importlib.util.module_from_spec(spec); spec.loader.exec_module(un)
 response, dumps, open_, exit_ = sys.argv[2], json.dumps, open, os._exit     # bound BEFORE the census runs
-census = sys.stdin.read()
+census = sys.stdin.buffer.read().decode("utf-8")   # bytes: never the locale's encoding
 bdict = vars(builtins); saved = dict(bdict)          # a census may rebind a built-in; the DESCRIBER must not see it
 site = un._realized_site(census, "_inv7_head_census")
 bdict.clear(); bdict.update(saved)                   # bound names only: `vars` itself is a built-in
@@ -371,7 +371,10 @@ def _described_in_isolation(census_text: str):
     census's atexit hooks and non-daemon threads cannot append to it, change its exit or hold it open; a complete,
     well-formed response is authoritative and the exit code is diagnostic only. No response, a malformed one, one
     of the wrong shape and a child that outruns its budget are each a NAMED failure, which derive() refuses and
-    verify() reports as "could not be described" — never a bare exception. The census can read the response path
+    verify() reports as "could not be described" — never a bare exception. THE BOUNDARY IS BYTES (round 21, the
+    round-20 verdict's F1): the census text goes in as UTF-8 bytes and the census's own stdout and stderr come back as
+    bytes, decoded only to name a failure (invalid UTF-8 backslash-escaped), so neither a census that prints arbitrary
+    bytes nor a non-UTF-8 locale can turn a valid description into a UnicodeDecodeError. The census can read the response path
     from argv; within the accepted scope (below) it does not attack the measurement.
     INV-7's ACCEPTED SCOPE (the round-19 verdict accepted it; before then it was an unstated assumption), not a gap of
     this route: describing an object needs the object, and the
@@ -388,7 +391,7 @@ def _described_in_isolation(census_text: str):
         response = pathlib.Path(d).resolve() / "description.json"
         try:
             r = subprocess.run([sys.executable, "-I", "-B", "-c", _ISOLATED_CHILD, str(pathlib.Path(__file__).resolve()),
-                                str(response)], input=census_text, capture_output=True, text=True,
+                                str(response)], input=census_text.encode("utf-8"), capture_output=True,
                                timeout=_ISOLATION_TIMEOUT)
         except subprocess.TimeoutExpired:
             return f"the isolated interpreter did not finish within {_ISOLATION_TIMEOUT}s"
@@ -398,7 +401,9 @@ def _described_in_isolation(census_text: str):
             body, unreadable = None, f"{type(e).__name__}: {e}"
         else:
             unreadable = None
-    context = (f"exit {r.returncode}; stderr: {r.stderr.strip()[-200:]!r}; stdout: {r.stdout.strip()[-200:]!r}")
+    def shown(b: bytes) -> str:                        # decoded only to NAME a failure, never on success
+        return b.decode("utf-8", errors="backslashreplace").strip()[-200:]
+    context = f"exit {r.returncode}; stderr: {shown(r.stderr)!r}; stdout: {shown(r.stdout)!r}"
     if body is None:
         return f"the isolated interpreter wrote no description ({unreadable or context})"
     try:
@@ -471,6 +476,63 @@ def _strict_pairs(pairs):
 
 class Refused(Exception):
     pass
+
+
+# ROUND 21 (the round-20 verdict's F1, and the second seat's stage-1b read): every text boundary is one of these, and
+# the gate in tests/test_0042_inv7.py refuses a decode, an encode or a text read/write anywhere else in this module.
+# A Python SOURCE is decoded as the interpreter decodes it — its PEP 263 coding cookie, or a UTF-8 BOM, else UTF-8
+# (tokenize.detect_encoding, the rule importlib's decode_source applies; line endings are kept, so an ordinary file's
+# twin bytes do not move) — because a census, or a product module, is any valid Python, and valid Python declares its
+# own encoding. Everything else this module reads or writes (the manifest) is UTF-8.
+def _source_encoding(data: bytes) -> str:
+    import io
+    import tokenize
+    return tokenize.detect_encoding(io.BytesIO(data).readline)[0]
+
+
+class SourceUnreadable(Refused):
+    """A file the transform must read as Python source is not Python the interpreter accepts — an unknown coding
+    cookie, bytes invalid in the declared encoding outside a comment, or a syntax error. A refusal of its own and
+    never drift: T does not advance for it."""
+
+
+def _source_text(data: bytes, label: str = "<source>") -> str:
+    """A source's TEXT for analysis. The BYTES are first parsed exactly as the interpreter parses a file (its cookie,
+    a BOM, its tokenizer), so what is accepted here is what Python would run, and anything else is a NAMED refusal.
+    Valid Python may still hold bytes invalid in its declared encoding, but only inside a COMMENT (the tokenizer does
+    not decode comment bytes; measured on 3.10–3.13, round 21, the second seat's stage-1c read); so the text is
+    decoded with errors="replace", which can change nothing but a comment's characters — which neither route reads
+    and no twin executes. (errors="surrogateescape" round-trips, but ast.parse and compile of a str re-encode it as
+    UTF-8 and reject the surrogate: measured on the same four interpreters.)"""
+    try:
+        ast.parse(data, filename=label)
+        encoding = _source_encoding(data)
+    except (SyntaxError, LookupError, ValueError) as e:
+        raise SourceUnreadable(f"{label} could not be read as Python source — this is not drift, and T does not "
+                               f"advance: {type(e).__name__}: {e}") from None
+    return data.decode(encoding, errors="replace")
+
+
+def _read_source(path: pathlib.Path) -> str:
+    return _source_text(path.read_bytes(), str(path))
+
+
+def _write_source(path: pathlib.Path, text: str) -> bytes:
+    """Writes transformed source in the encoding the TEXT ITSELF declares — a PEP 263 cookie in its first two lines,
+    else UTF-8 — so the twin always declares what it is. Not the original's encoding: the transform may drop comments,
+    and a cp1252 file whose cookie is gone would be written as cp1252 bytes read back as UTF-8 (measured, round 21).
+    Returns the bytes written: the manifest's `sha256_after` is of those, never of a re-encoding of the text."""
+    data = text.encode(_source_encoding(text.encode("utf-8")))
+    path.write_bytes(data)
+    return data
+
+
+def _read_data(path: pathlib.Path) -> str:
+    return path.read_bytes().decode("utf-8")
+
+
+def _write_data(path: pathlib.Path, text: str) -> None:
+    path.write_bytes(text.encode("utf-8"))
 
 
 class SiteUndescribed(Refused):
@@ -914,7 +976,7 @@ def _dotted_of(root: pathlib.Path, path: pathlib.Path, pkg: str | None = None) -
 
 def _exported(path: pathlib.Path) -> set:
     """What `from <module> import *` binds: a literal `__all__` if the module has one, else its public names."""
-    tree = ast.parse(path.read_text())
+    tree = ast.parse(_read_source(path))
     for stmt in tree.body:
         if isinstance(stmt, (ast.Assign, ast.AugAssign, ast.AnnAssign)):
             targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
@@ -928,7 +990,7 @@ def _exported(path: pathlib.Path) -> set:
 
 def _module_bindings(path: pathlib.Path) -> set:
     """Module-level names a module binds, by the interpreter's own scope analysis."""
-    top = symtable.symtable(path.read_text(), str(path), "exec")
+    top = symtable.symtable(_read_source(path), str(path), "exec")
     return {s.get_name() for s in top.get_symbols() if s.is_assigned() or s.is_imported()}
 
 
@@ -953,7 +1015,7 @@ def cross_module_references(root: pathlib.Path, pkg: str | None = None) -> list:
     files = sorted(p for p in root.rglob("*.py") if "__pycache__" not in p.parts)
     refs = []
     for path in files:
-        tree = ast.parse(path.read_text())
+        tree = ast.parse(_read_source(path))
         here = _dotted_of(root, path, pkg)
         package = here if path.name == "__init__.py" else here.rsplit(".", 1)[0]
         modules = {}                                      # local name -> dotted module it is bound to
@@ -1282,7 +1344,7 @@ def derive(src: pathlib.Path, out: pathlib.Path) -> dict:
         if is_census_module_file(rel):
             ref = reference_census_bytes()
             try:
-                drift = site_drift(before.decode(), ref.decode())
+                drift = site_drift(_source_text(before, rel), _source_text(ref, "the reference census"))
             except SiteUndescribed as e:
                 raise SiteUndescribed(f"{rel}: {e}") from e
             if drift:
@@ -1292,7 +1354,7 @@ def derive(src: pathlib.Path, out: pathlib.Path) -> dict:
             manifest["modules"][rel] = {"sha256_before": hashlib.sha256(before).hexdigest(), "sha256_after": hashlib.sha256(ref).hexdigest(),
                                         "reference": REFERENCE_CENSUS_COMMIT}
             continue
-        text = before.decode()
+        text = _source_text(before, rel)
         if may_skip_uninstrumenting(text):
             manifest["modules"][rel] = {"sha256_before": hashlib.sha256(before).hexdigest(), "sha256_after": hashlib.sha256(before).hexdigest(), "unchanged": True}
             continue
@@ -1302,7 +1364,7 @@ def derive(src: pathlib.Path, out: pathlib.Path) -> dict:
             # ROUND 13 (research's S2-6): an UnresolvableScope escaped here WITHOUT the module path, because only
             # Refused was wrapped — a refusal naming a line and not the file it is in. Each keeps its own type.
             raise type(e)(f"{rel}: {e}") from None
-        p.write_text(new)
+        after = _write_source(p, new)
         # ROUND 10: summed BY PROPERTY, not by an exclusion list. This read `if k != "exits"`, so every
         # new stat had to be remembered in two places — and adding one that is not a number KeyErrors here,
         # which is how the unresolved-bypass detail first landed. A numeric stat now sums automatically and
@@ -1311,9 +1373,9 @@ def derive(src: pathlib.Path, out: pathlib.Path) -> dict:
             if isinstance(v, int):
                 totals[k] = totals.get(k, 0) + v
         totals["modules_changed"] += 1
-        manifest["modules"][rel] = {"sha256_before": hashlib.sha256(before).hexdigest(), "sha256_after": hashlib.sha256(new.encode()).hexdigest(), **stats}
+        manifest["modules"][rel] = {"sha256_before": hashlib.sha256(before).hexdigest(), "sha256_after": hashlib.sha256(after).hexdigest(), **stats}
     manifest["totals"] = totals
-    (out.parent / "twin_manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
+    _write_data(out.parent / "twin_manifest.json", json.dumps(manifest, indent=1, sort_keys=True) + "\n")
     return totals
 
 
@@ -1356,13 +1418,13 @@ def verify(out: pathlib.Path, src: pathlib.Path | None = None, manifest: pathlib
     for extra in sorted(twin_files - src_files):
         problems.append(f"{extra}: present in the twin and absent from the source")
     for rel in sorted(twin_files & src_files):
-        p_out = out / rel; text = p_out.read_text()
+        p_out = out / rel; text = _read_source(p_out)
         if is_census_module_file(rel):                   # ROUND 12, R4: the transform's own reading, not a second one
             if hashlib.sha256(p_out.read_bytes()).hexdigest() != REFERENCE_CENSUS_SHA256:
                 problems.append(f"{rel}: the census module is not the reference census (round 16: accepted commit "
                                 f"{REFERENCE_CENSUS_COMMIT[:7]}'s census.py, sha256 {REFERENCE_CENSUS_SHA256[:16]}…)")
             try:
-                problems += [f"{rel}: {d} — T must advance" for d in site_drift((src / rel).read_text(), p_out.read_text())]
+                problems += [f"{rel}: {d} — T must advance" for d in site_drift(_read_source(src / rel), _read_source(p_out))]
             except SiteUndescribed as e:
                 problems.append(f"{rel}: {e}")
             continue
@@ -1374,12 +1436,12 @@ def verify(out: pathlib.Path, src: pathlib.Path | None = None, manifest: pathlib
             problems.append(f"{rel}: the twin does not COMPILE ({e.msg}, line {e.lineno}) — `ast.parse` accepts text "
                             f"`compile()` refuses, such as a `from __future__` import that is no longer first")
             continue
-        lost = lost_bindings((src / rel).read_text(), text)
+        lost = lost_bindings(_read_source(src / rel), text)
         if lost:
             problems.append(f"{rel}: LOST BINDING(S) {sorted(lost)} — bound at module level in the source, still read "
                             f"by the twin, bound nowhere in it: the twin raises NameError where the source ran")
         try:
-            redone, _ = uninstrument_source((src / rel).read_text(), str(src / rel))
+            redone, _ = uninstrument_source(_read_source(src / rel), str(src / rel))
         except Refused as e:
             problems.append(f"{rel}: re-deriving the transform from the source REFUSES ({e})")
             continue
@@ -1396,7 +1458,7 @@ def verify(out: pathlib.Path, src: pathlib.Path | None = None, manifest: pathlib
     if not man_path.exists():
         problems.append(f"no twin manifest at {man_path} — the derivation's own record of what it rewrote is missing")
     else:
-        man = json.loads(man_path.read_text(), object_pairs_hook=_strict_pairs)
+        man = json.loads(_read_data(man_path), object_pairs_hook=_strict_pairs)
         mods = man.get("modules") or {}
         if set(mods) != {str(r) for r in twin_files}:
             only_man = sorted(set(mods) - {str(r) for r in twin_files}); only_twin = sorted({str(r) for r in twin_files} - set(mods))
