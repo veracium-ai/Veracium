@@ -3307,6 +3307,183 @@ def test_r22_the_transform_never_uses_tokenize_detect_encoding():
     assert found == [], found
 
 
+# ---- round 23 (the round-22 verdict): a cookie's NAME is read as the interpreter normalises it -----------------------
+# Round 22's byte-level reader looked a cookie's name up as written; the interpreter first folds every spelling of UTF-8
+# and Latin-1 onto one name (`utf-8-unix`, `iso-latin-1`), so valid sources were refused. Round 22's corpus varied the
+# header's STRUCTURE over a hand list of four canonical names; the NAME is a grammar of its own. Its domain is DERIVED
+# here from both halves of the rule: every name the codecs know (encodings.aliases), and every spelling of the
+# families the tokenizer folds. The interpreter judges each, with and without a BOM, in BOTH directions.
+_R23_TAILS = ("", "-x", "-unix", "_dos", ".y", "x", "-something-very-long-tail")
+_R23_BOUNDARY_ACCEPTED = ("ISO-LATIN-1-UNIX", "UTF-8-UNIX-LONGNAME", "Iso_Latin_1_Dos", "iso-latin-1-",
+                          "LATIN-1-SOMETHING-VERY-LONG", "iso-8859-1_mac", "Utf-8-Emacs", "UTF_8", "utf8")
+_R23_BOUNDARY_REFUSED = ("iso-latin-1x", "utf-8x")
+
+
+def _r23_names():
+    import encodings.aliases
+    names = set(_R23_BOUNDARY_ACCEPTED) | set(_R23_BOUNDARY_REFUSED)
+    for b in set(encodings.aliases.aliases) | set(encodings.aliases.aliases.values()):     # what the codecs know
+        for v in (b, b.replace("_", "-"), b.upper(), b.replace("_", "-").upper()):
+            names.update(v + tail for tail in _R23_TAILS[:5])
+    for fam in ("utf-8", "latin-1", "iso-8859-1", "iso-latin-1"):                          # what the tokenizer folds
+        for sep in ("-", "_"):
+            base = fam.replace("-", sep)
+            for tail in _R23_TAILS:
+                for v in (base + tail, (base + tail).upper(), (base + tail).title(), base.upper() + tail.swapcase()):
+                    names.add(v)
+    return sorted(names)
+
+
+def _r23_program(name, bom):
+    """A cookie naming `name`, and a literal in whatever the interpreter will read it as (ASCII when that is unknown)."""
+    import codecs, tokenize
+    try:
+        codec = "utf-8" if bom else codecs.lookup(tokenize._get_normal_name(name)).name
+        body = "S = 'café'\n".encode(codec)
+    except (LookupError, UnicodeError, TypeError):
+        body = b"S = 'abc'\n"
+    return (b"\xef\xbb\xbf" if bom else b"") + f"# -*- coding: {name} -*-\n".encode("ascii") + body
+
+
+def _r23_cells(un):
+    """(name, bom) -> (interpreter accepts, we accept, the two read S alike)."""
+    out = {}
+    for name in _r23_names():
+        for bom in (False, True):
+            data = _r23_program(name, bom)
+            ok, value = _r22_interpreter(data)
+            try:
+                ns = {}
+                exec(compile(un._source_text(data, name), "<r23-text>", "exec", dont_inherit=True), ns)
+                ours_ok, same = True, ok and ns["S"] == value
+            except un.Refused:
+                ours_ok, same = False, False
+            out[(name, bom)] = (ok, ours_ok, same)
+    return out
+
+
+def _r23_disagreements(un):
+    return sorted(k for k, (ok, ours, same) in _r23_cells(un).items() if ok != ours or (ok and not same))
+
+
+def test_r23_the_source_reader_agrees_with_the_interpreter_over_every_cookie_name():
+    """Accept exactly what CPython compiles, in both directions, reading the literal as CPython does — over every name
+    the codecs know and every spelling the tokenizer folds, each with and without a BOM. Every cell is populated."""
+    un = _load("inv7_uninstrument_r23", EVIDENCE / "inv7_uninstrument.py")
+    cells = _r23_cells(un)
+    grid = collections.Counter((ok, bom) for (_, bom), (ok, _, _) in cells.items())
+    assert min(grid.get((ok, bom), 0) for ok in (True, False) for bom in (True, False)) >= 20, grid
+    assert _r23_disagreements(un) == []
+    for name in _R23_BOUNDARY_ACCEPTED:
+        assert cells[(name, False)][:2] == (True, True), name
+    for name in _R23_BOUNDARY_REFUSED:
+        assert cells[(name, False)][:2] == (False, False), name
+    assert cells[("utf8", True)][:2] == (False, False)                  # a BOM is compared by the NORMAL name
+
+
+def test_r23_the_normaliser_is_the_interpreters_over_the_name_domain():
+    """Secondary to the interpreter (which judges above): the mirror equals the stdlib's copy of the C rule, name by name."""
+    import tokenize
+    un = _load("inv7_uninstrument_r23norm", EVIDENCE / "inv7_uninstrument.py")
+    assert [n for n in _r23_names() if un._normal_name(n) != tokenize._get_normal_name(n)] == []
+
+
+def _r23_mutant(tmp_path, anchor, replacement, tag):
+    text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    assert text.count(anchor) == 1, (tag, "the anchor moved")
+    ev = tmp_path / tag
+    shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+    (ev / "inv7_uninstrument.py").write_text(text.replace(anchor, replacement), encoding="utf-8")
+    return _load(f"inv7_uninstrument_r23_{tag}", ev / "inv7_uninstrument.py")
+
+
+# round 22's reader, as it was: the name looked up as written, and a BOM compared by the codec's name
+_R23_ROUND_22 = ('            name = _normal_name(m.group(1).decode("ascii"))\n            codecs.lookup(name)\n'
+                 '            if bom and name != "utf-8":\n',
+                 '            name = m.group(1).decode("ascii")\n            codecs.lookup(name)\n'
+                 '            if bom and codecs.lookup(name).name != "utf-8":\n')
+
+
+def test_r23_the_controls_are_sets_round_22_fails_exactly_the_folded_names_round_21_passes_them(tmp_path):
+    """Round 22's reader (the normaliser removed) must fail on EXACTLY the names the interpreter accepts and the codecs
+    do not know as written — the verdict's class, by name, derived — and round 21's detect_encoding must pass them."""
+    import codecs
+    def unknown(n):
+        try:
+            codecs.lookup(n)
+            return False
+        except LookupError:
+            return True
+    un = _load("inv7_uninstrument_r23ctl", EVIDENCE / "inv7_uninstrument.py")
+    cells = _r23_cells(un)
+    expected = sorted(k for k, (ok, _, _) in cells.items() if ok and unknown(k[0]))
+    assert ("iso-latin-1", False) in expected and ("utf-8-unix", False) in expected, "the verdict's witnesses"
+    r22 = _r23_mutant(tmp_path, *_R23_ROUND_22, "r22")
+    assert _r23_disagreements(r22) == expected
+    r21 = _r23_mutant(tmp_path, *_R22_MUTANTS[0][1:], "r21")
+    assert [k for k in _r23_disagreements(r21) if k in set(expected)] == []
+
+
+_R23_MUTANTS = [
+    ("no lower-casing", "    s = s.lower()\n", ""),
+    ("no _ read as -", '    s = s.replace("_", "-")\n', ""),
+    ("no utf-8- prefix", '            s.startswith("utf-8-"):\n', "            False:\n"),
+    ("no latin-1 prefixes", '            s.startswith(("latin-1-", "iso-8859-1-", "iso-latin-1-")):\n', "            False:\n"),
+    ("the folded name returned", "    return name                                        #", "    return s  #"),
+]
+
+
+@pytest.mark.parametrize("mutant,anchor,replacement", _R23_MUTANTS, ids=[m[0] for m in _R23_MUTANTS])
+def test_r23_each_step_of_the_normaliser_is_load_bearing(mutant, anchor, replacement, tmp_path):
+    mut = _r23_mutant(tmp_path, anchor, replacement, "m")
+    assert _r23_disagreements(mut), (mutant, "the mutant agrees with the interpreter over every name — not killed")
+
+
+def _r23_bom_disagreements(un):
+    """The BOM rule at its OWN site: behind _source_text the interpreter refuses a bad BOM first and masks it. For
+    every name with a BOM, _source_encoding refuses exactly when the interpreter does."""
+    bad = []
+    for name in _r23_names():
+        data = _r23_program(name, True)
+        try:
+            un._source_encoding(data)
+            ours = True
+        except (SyntaxError, LookupError):
+            ours = False
+        if ours != _r22_interpreter(data)[0]:
+            bad.append(name)
+    return bad
+
+
+def test_r23_a_bom_is_compared_by_the_normal_name_at_its_own_site(tmp_path):
+    un = _load("inv7_uninstrument_r23bom", EVIDENCE / "inv7_uninstrument.py")
+    assert _r23_bom_disagreements(un) == []
+    mut = _r23_mutant(tmp_path, '            if bom and name != "utf-8":\n',
+                      '            if bom and codecs.lookup(name).name != "utf-8":\n', "bom")
+    assert "utf8" in _r23_bom_disagreements(mut), "a BOM compared by the codec's name is not killed"
+
+
+def test_r23_the_twelve_character_cut_is_an_equivalent_mutant(tmp_path):
+    """Shown by running, not asserted: every exact name the rule matches is shorter than 12 characters and the longest
+    prefix it matches (`iso-latin-1-`) is exactly 12, so reading the whole name changes no verdict over the domain."""
+    mut = _r23_mutant(tmp_path, "    s = name[:12]\n", "    s = name\n", "cut")
+    assert _r23_disagreements(mut) == []
+
+
+def test_r23_a_refusal_after_the_interpreter_accepts_is_named_a_disagreement(monkeypatch):
+    """The refusal direction (the verdict's second gap): once the interpreter has accepted the bytes, a failure of the
+    transform's reading says so — never that the source is not Python. And a source the interpreter refuses keeps
+    its own refusal, without the disagreement's words."""
+    un = _load("inv7_uninstrument_r23dir", EVIDENCE / "inv7_uninstrument.py")
+    with pytest.raises(un.SourceUnreadable, match="could not be read as Python source") as e:
+        un._source_text(b"# coding: no-such-codec\nS = 1\n", "m.py")
+    assert "interpreter accepts" not in str(e.value)
+    def lookup_fails(data):
+        raise LookupError("unknown encoding: forced")
+    monkeypatch.setattr(un, "_source_encoding", lookup_fails)
+    with pytest.raises(un.SourceUnreadable, match="the interpreter accepts this source and the transform cannot read it"):
+        un._source_text(b"S = 1\n", "m.py")
+
 # ---- round 18, N-6: the Site each arm IMPORTED, compared at runtime --------------------------------------------------
 # site_drift reads both censuses in the TRANSFORM's process, so a change to Site made after the class and CONDITIONAL on
 # the arm's runtime state (its environment, what it imports) is seen by neither route. The observer now digests route B's
