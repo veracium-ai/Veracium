@@ -5,7 +5,7 @@ Spec-Status: accepted
 | | |
 |---|---|
 | **Author / session** | research (veracium-research-48), the candidate's author → dev (veracium-61), each adoption at rest and re-read from the file, dated per entry: v3.1 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 28068200aa6f90fa); v4 2026-09-18 from the same file (sha16 0fd0af01bfb56a39); v5 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 f8cf6f68e0016625); v6 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 ba262106068d3efc); v7 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 ccf0715041f3148a); v8.1 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 b94d814d20b96d2c); v9.2 2026-09-18 from `0042-exercised-guarantees-CANDIDATE.md` (sha16 a230ae09793790be) — ACCEPTED at the design level, the flip on the owner's word |
-| **Version** | **v12.0 — THE ROUND-19 SCOPE OF INV-7 IS ACCEPTED AND FOLDED; ROUTE B ANSWERS ON ITS OWN CHANNEL; THE RESOLVER READS NAMES AS THE SYMBOL TABLE SPELLS THEM.** Two parts, of two kinds. (1) 🔴 **A FROZEN INVARIANT'S TEXT CHANGES BY ACCEPTANCE**, as v11.0 did for round 16: the round-19 verdict (banked `496a120`, body sha16 `7d2135a69dff4081`) ACCEPTED the scope proposed in v11.3. INV-7's row and §3b now state it. v11.3's PROPOSED block becomes the record of the acceptance, keeping the executed and inferred cases apart as the verdict asks. §11 records the unscoped text, with the verdict's own limit: the ruling "*accepts the scope now*" and approves nothing earlier. (2) **An implementation note** (round 20; the verdict's two corrections): route B's child writes its description to a response file and ends with `os._exit(0)`, and every failure to describe is named; the resolver derives the names the compiler adds by two routes, and compares every name in the symbol table's spelling. The second seat's stage-1 read found private-name mangling as a wider case of F2. `Spec-Status` stays `accepted`. **Prior cell follows.** **v11.3 — A NAME IS A CLAIM: A TYPE IS DESCRIBED BY NAME ONLY IF PYTHON CODE CANNOT HAVE MADE IT; AND THE TRUST BOUNDARY INV-7 HAS ALWAYS RESTED ON IS STATED, AND PUT TO THE REVIEWER.** Two parts, of two kinds. (1) **An implementation note** (round 19; the round-18 verdict's one correction): route B describes a type by module and qualified name only if `Py_TPFLAGS_IMMUTABLETYPE` is set, and describes every other type by its one recursive rule. Each census is executed and described in a fresh interpreter, so it cannot reach the transform. A round-19 paragraph after round 18's states the mechanism, the fourth rung of the ladder, the cells, and the INV-7 run re-made. (2) 🔴 **Not an implementation note: a PROPOSED addition to INV-7's scope, pending external design review**, on the owner's word "Disclose + state it" (2026-09-25). It sits beside the frozen text, after §6's table, and edits none of it. Census code changes behaviour; it does not attack the measurement. Three of INV-7's four readings run inside a process that executed census code, and a forge of one of them is shown silent. `Spec-Status` stays `accepted` for everything outside the proposal. **Prior cell follows.** **v11.2 — THE JOIN CHECK'S NAMED OVER-REFUSAL IS CLOSED, AND THE ORACLE NOW GENERATES ANNOTATIONS.** An implementation note (round 19); no frozen invariant's text changes, and `Spec-Status` stays `accepted`. v9.5's round-13 paragraph named two limits "recorded for the next round" and one count. All three are annotated IN PLACE:
+| **Version** | **v12.1 — EVERY TEXT BOUNDARY OF THE TRANSFORM IS STATED, NOT INHERITED.** An implementation note (round 21; the round-20 verdict's one correction, banked `3e6c072`, body sha16 `08bf83879e03eaf0`). No frozen invariant's text changes, and `Spec-Status` stays `accepted`. Route B's channel to its child is bytes both ways, with the census's output decoded only to name a failure. A Python source is read in the encoding it declares, parsed from its bytes as the interpreter parses a file, and refused BY NAME when the interpreter would refuse it. The twin declares what it is. On 3.13 a class's `__firstlineno__` is a location, not content, and no longer reads a line above `Site` as drift. A gate holds the class inside the transform. The same assumption in the other evidence modules is NAMED as a limit. A round-21 paragraph after round 20's states the mechanism and the cells. **Prior cell follows.** **v12.0 — THE ROUND-19 SCOPE OF INV-7 IS ACCEPTED AND FOLDED; ROUTE B ANSWERS ON ITS OWN CHANNEL; THE RESOLVER READS NAMES AS THE SYMBOL TABLE SPELLS THEM.** Two parts, of two kinds. (1) 🔴 **A FROZEN INVARIANT'S TEXT CHANGES BY ACCEPTANCE**, as v11.0 did for round 16: the round-19 verdict (banked `496a120`, body sha16 `7d2135a69dff4081`) ACCEPTED the scope proposed in v11.3. INV-7's row and §3b now state it. v11.3's PROPOSED block becomes the record of the acceptance, keeping the executed and inferred cases apart as the verdict asks. §11 records the unscoped text, with the verdict's own limit: the ruling "*accepts the scope now*" and approves nothing earlier. (2) **An implementation note** (round 20; the verdict's two corrections): route B's child writes its description to a response file and ends with `os._exit(0)`, and every failure to describe is named; the resolver derives the names the compiler adds by two routes, and compares every name in the symbol table's spelling. The second seat's stage-1 read found private-name mangling as a wider case of F2. `Spec-Status` stays `accepted`. **Prior cell follows.** **v11.3 — A NAME IS A CLAIM: A TYPE IS DESCRIBED BY NAME ONLY IF PYTHON CODE CANNOT HAVE MADE IT; AND THE TRUST BOUNDARY INV-7 HAS ALWAYS RESTED ON IS STATED, AND PUT TO THE REVIEWER.** Two parts, of two kinds. (1) **An implementation note** (round 19; the round-18 verdict's one correction): route B describes a type by module and qualified name only if `Py_TPFLAGS_IMMUTABLETYPE` is set, and describes every other type by its one recursive rule. Each census is executed and described in a fresh interpreter, so it cannot reach the transform. A round-19 paragraph after round 18's states the mechanism, the fourth rung of the ladder, the cells, and the INV-7 run re-made. (2) 🔴 **Not an implementation note: a PROPOSED addition to INV-7's scope, pending external design review**, on the owner's word "Disclose + state it" (2026-09-25). It sits beside the frozen text, after §6's table, and edits none of it. Census code changes behaviour; it does not attack the measurement. Three of INV-7's four readings run inside a process that executed census code, and a forge of one of them is shown silent. `Spec-Status` stays `accepted` for everything outside the proposal. **Prior cell follows.** **v11.2 — THE JOIN CHECK'S NAMED OVER-REFUSAL IS CLOSED, AND THE ORACLE NOW GENERATES ANNOTATIONS.** An implementation note (round 19); no frozen invariant's text changes, and `Spec-Status` stays `accepted`. v9.5's round-13 paragraph named two limits "recorded for the next round" and one count. All three are annotated IN PLACE:
 - the over-refusal is closed on 3.12 and later;
 - the oracle's generator now emits parameter, keyword-only and return annotations;
 - the count of modules the join check refuses none of is dated.
@@ -562,6 +562,70 @@ A round-19 paragraph states the mechanism and the evidence. **Prior cell follows
 > right answer round 19 already gave, the acceptance cells and a silent real drift. A census that raises or calls
 > `sys.exit(3)` during import was already refused by round 19, but under the drift headline, so those cells FAIL there
 > too.
+
+> **ROUND 21: EVERY TEXT BOUNDARY OF THE TRANSFORM IS STATED, NOT INHERITED** (v12.1, research as the specification's author;
+> the round-20 verdict's one correction, banked `3e6c072`, body sha16 `08bf83879e03eaf0`: "*F1 remains: non-UTF-8
+> diagnostic output raises `UnicodeDecodeError` in derivation and verification, despite a valid response*"; F2 closed).
+> Round 20 moved route B's RESPONSE off the census's stdout, but the parent still captured that stdout and stderr as TEXT,
+> decoded strictly on every run, so a census printing invalid UTF-8 broke `derive()` and `verify()` before the response was
+> read. The class is wider than the verdict's case. **Every place the transform turns bytes into text, or text into bytes,
+> assumed an encoding it had not been told.** Three were found and closed this round.
+> - **Route B's channel, both ways.** It is now bytes. The census text goes in as UTF-8 and the child reads it as UTF-8;
+>   the census's stdout and stderr are decoded only to NAME a failure, with escapes, and never on success. Before, the
+>   channel followed two locales, the parent's and the child's. Under a non-UTF-8 locale with UTF-8 mode off, the
+>   reference census failed against itself on its own em dash.
+> - **A Python source is read in the encoding IT declares**, by the interpreter's own rule (a PEP 263 cookie or a BOM,
+>   else UTF-8), never by the locale's and never by assumption. The bytes are parsed first, exactly as the interpreter
+>   parses a file. A source the interpreter would refuse (an unknown encoding, an undecodable byte in a literal) is a NAMED
+>   refusal, "*could not be read as Python source — this is not drift, and T does not advance*". Once the bytes parse, an
+>   undecodable byte can only sit in a COMMENT, which CPython 3.10 to 3.13 import and run, measured. It is decoded with
+>   replacement, which changes nothing either route reads. `errors="surrogateescape"` was measured and REJECTED: `compile`
+>   re-encodes a text source as UTF-8 and refuses lone surrogates.
+> - **The twin declares what it is.** It is written in the encoding its OWN text declares, else UTF-8. The transform drops
+>   comments, the cookie among them, so writing in the original's encoding produced a module whose bytes contradicted its
+>   declaration. The manifest hashes the bytes written, not a re-encoding of them.
+>
+> **And a location read as content, found by CI's 3.13 lane on the first commit of this round.** From 3.13, a class holds the
+> line its statement starts on as `__firstlineno__`. Route B's recursive rule (round 18) reads every class-namespace entry,
+> so on 3.13 ANY comment or blank line above `class Site` read as drift, in route B and in the runtime gate, from round 18
+> until this round. The refusal was loud, never silent, and no cell had ever shifted the lines ABOVE the class. It is now
+> excluded by the property that already excludes a code object's location fields: it records WHERE the class was written,
+> not what it is. The description is unchanged on 3.10, 3.11 and 3.12, the carried INV-7 run's interpreter included.
+>
+> Other data files (the manifest's JSON) are UTF-8, stated. **A gate holds the class.** Inside the transform module, the
+> child's code string included, no text I/O takes the locale's encoding, and no decode, encode, read or write happens
+> outside the named boundary functions. The source decode must carry its error handler. The gate is shown to flag a
+> UTF-8-assuming source read.
+>
+> **Named, not closed:** outside the transform, the evidence modules (the INV-7 harness and observer, the binding scan,
+> key derivation and others) read and write text in the locale's encoding, and read sources without their declared
+> encoding. Under a non-UTF-8 locale with UTF-8 mode off, or on a source that declares another encoding or holds bytes
+> invalid in it, they are unmeasured. The count, by the same AST query, is in the round-21 package.
+>
+> **Cells:**
+> - census bytes on stdout, stderr and both, valid non-ASCII, real drift with invalid bytes, and a crash after invalid
+>   bytes, each through `derive()` and `verify()`:
+>   `tests/test_0042_inv7.py::test_r21_census_bytes_never_break_the_isolated_boundary`;
+> - under a non-UTF-8 locale, in a child that first proves its locale is not UTF-8 and FAILS if it is (never skips):
+>   `tests/test_0042_inv7.py::test_r21_derive_and_verify_hold_under_a_non_utf8_locale`;
+> - the round-20 decode-on-success, as a mutant:
+>   `tests/test_0042_inv7.py::test_r21_decoding_the_census_output_on_success_fails_the_byte_cells`;
+> - sources in the encoding they declare (a BOM, GB18030, latin-1 and cp1252 cookies, a byte in a comment, an unknown
+>   encoding), census and product, the twin compiled and RUN with the source's output:
+>   `tests/test_0042_inv7.py::test_r21_a_source_is_read_in_the_encoding_it_declares`;
+> - each superseded source rule fails a cell, including a UTF-8-assuming decode caught only by running the twin:
+>   `tests/test_0042_inv7.py::test_r21_each_superseded_source_rule_fails_a_cell`;
+> - the gate: `tests/test_0042_inv7.py::test_r21_the_transform_reads_and_writes_text_only_at_its_boundaries`, and its own
+>   mutant, `tests/test_0042_inv7.py::test_r21_the_boundary_gate_flags_a_utf8_assuming_source_read`;
+> - a line above `Site` is not drift on any version:
+>   `tests/test_0042_inv7.py::test_r21_a_line_above_site_is_not_drift_on_any_version`, and the exclusion is shown
+>   load-bearing on 3.13 (it skips before 3.13, inventoried):
+>   `tests/test_0042_inv7.py::test_r21_the_class_location_exclusion_is_load_bearing_on_313`.
+>
+> At the round-20 pin, the round-21 cells fail on the defect itself or cannot run there, with two exceptions that pass. The
+> first is the acceptance halves whose right answer round 20 already gave (valid non-ASCII output, a non-ASCII census
+> comment, a UTF-8 cookie line). The second is the line-above-`Site` cells on interpreters BEFORE 3.13, where the defect
+> does not exist. On 3.13 those fail at the round-20 pin with "*Site.__firstlineno__ (realized): differs*", and pass here.
 
 > **Implementation note, round 6 pre-seal (2026-09-20).** Building the per-site decision trace the round-5
 > verdict asked for at implementation review found two defects in the runtime leg, both fixed before the seal
