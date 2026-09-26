@@ -3009,6 +3009,12 @@ _R21_SOURCE_CELLS = [
      lambda ref: _R21_COOKIE.format(enc="nonexistent").encode() + ref, "refuse"),
     ("product: a comment holding an invalid UTF-8 byte", "product",
      lambda _: (_R14_SELF + "def f():\n    return 'x'\n").encode() + b"# \xff\n", "accept"),
+    # the second seat's round-21 stage 2 (V3): the bytes-parse is what makes "a bad byte can only be in a comment" true;
+    # outside one, the source is not Python, and a census Python cannot compile must not be silently transformed
+    ("census: an invalid byte in a string literal (not Python: a named refusal)", "census",
+     lambda ref: ref + b"\nX_EXTRA = '\xff'\n", "refuse"),
+    ("product: an invalid byte in a string literal (not Python: a named refusal)", "product",
+     lambda _: (_R14_SELF + "def f():\n    return 'x'\n").encode() + b"S2 = '\xff'\n", "refuse"),
 ]
 
 
@@ -3062,7 +3068,10 @@ _R21_CP1252 = "product: cp1252 cookie, a cp1252 string (the cookie is lost in th
      "    return data.decode(encoding)", "census: a trailing comment holding an invalid UTF-8 byte"),
     ("an unreadable source raising bare", "        raise SourceUnreadable(", "        raise\n        raise SourceUnreadable(",
      "census: an unknown coding cookie (not Python: a named refusal)"),
-], ids=["decode as utf-8", "write in the original's encoding", "strict decoding", "bare on an unknown cookie"])
+    ("the bytes-parse removed (stage 2's V3)", "        ast.parse(data, filename=label)\n", "        pass\n",
+     "census: an invalid byte in a string literal (not Python: a named refusal)"),
+], ids=["decode as utf-8", "write in the original's encoding", "strict decoding", "bare on an unknown cookie",
+        "bytes-parse removed"])
 def test_r21_each_superseded_source_rule_fails_a_cell(mutant, anchor, replacement, killer, tmp_path):
     text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
     assert text.count(anchor) == 1, (mutant, "the anchor moved")
