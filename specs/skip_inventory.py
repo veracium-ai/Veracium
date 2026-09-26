@@ -74,6 +74,11 @@ INVENTORY = [
                          "cannot locate a read and must not pass there. 1 test; "
                          "the 3.11/3.12/3.13 CI lanes execute it, 3.10 skips "
                          "with this reason"),
+    ("tests/test_0042_inv7.py", "skip", "__firstlineno__ is stored in a class's vars() from 3.13",
+     "host-conditional", "specs/0042 round 21: the mutant that drops route B's class-location "
+                         "exclusion can only differ where the field exists (3.13+). 1 test; "
+                         "the 3.13 CI lane executes it, 3.10/3.11/3.12 skip with this reason; "
+                         "the acceptance cells run on every version"),
     ("tests/test_0042_scope_resolution.py", "skip", "tokenize returns an f-string as ONE token",
      "host-conditional", "specs/0042 round 20: the second seat's ROUTE 2 over the stdlib "
                          "counts a symbol whose name is never a NAME token as "

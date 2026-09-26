@@ -3085,6 +3085,39 @@ def test_r21_each_superseded_source_rule_fails_a_cell(mutant, anchor, replacemen
     pytest.fail(f"{mutant}: the killing cell still holds — the mutant is not killed")
 
 
+# ---- round 21: a line ABOVE Site is not drift on any version (CI's 3.13 lane, on the first round-21 commit) ---------
+# 3.13 stores the class statement's first line in vars() as __firstlineno__, which route B and the runtime gate read, so
+# a comment or blank line above Site refused on 3.13 alone — from round 18 to round 21, unseen because no cell shifted
+# the lines ABOVE the class (the formatting cell added them inside and after it).
+_R21_ABOVE = [("a comment above everything", lambda r: "# a comment\n" + r),
+              ("blank lines above everything", lambda r: "\n\n\n" + r),
+              ("a comment right above class Site", lambda r: r.replace("class Site", "# a comment\nclass Site", 1))]
+
+
+@pytest.mark.parametrize("cell,edit", _R21_ABOVE, ids=[c[0] for c in _R21_ABOVE])
+def test_r21_a_line_above_site_is_not_drift_on_any_version(cell, edit):
+    un = _load("inv7_uninstrument_r21above", EVIDENCE / "inv7_uninstrument.py")
+    ref = un.REFERENCE_CENSUS.read_text(encoding="utf-8")
+    head = edit(ref)
+    assert head != ref and head.count("class Site") == ref.count("class Site"), cell
+    assert un.site_drift(head, ref) == [], cell
+
+
+def test_r21_the_class_location_exclusion_is_load_bearing_on_313(tmp_path):
+    """The exclusion's mutant: without it, a comment above Site is drift — on 3.13 and later, where the field exists."""
+    if sys.version_info < (3, 13):
+        pytest.skip("__firstlineno__ is stored in a class's vars() from 3.13; before it the exclusion excludes nothing")
+    text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    anchor = '_CLASS_LOCATION = ("__firstlineno__",)'
+    assert text.count(anchor) == 1, "the mutant's anchor moved"
+    ev = tmp_path / "evidence"
+    shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+    (ev / "inv7_uninstrument.py").write_text(text.replace(anchor, "_CLASS_LOCATION = ()"), encoding="utf-8")
+    mut = _load("inv7_uninstrument_r21abovemut", ev / "inv7_uninstrument.py")
+    ref = mut.REFERENCE_CENSUS.read_text(encoding="utf-8")
+    assert mut.site_drift("# a comment\n" + ref, ref), "the mutant read a line shift as no drift on 3.13 — not killed"
+
+
 # ---- round 18, N-6: the Site each arm IMPORTED, compared at runtime --------------------------------------------------
 # site_drift reads both censuses in the TRANSFORM's process, so a change to Site made after the class and CONDITIONAL on
 # the arm's runtime state (its environment, what it imports) is seen by neither route. The observer now digests route B's

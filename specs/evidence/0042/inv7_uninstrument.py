@@ -148,6 +148,11 @@ def _definition_drift(head_census: str, reference_census: str) -> list:
 # things not compared are named below, each by the property that justifies it:
 _NAMESPACE_REFS = ("__globals__", "__builtins__")   # the defining module's namespace — census code under test, by design
 _CODE_LOCATION = ("co_filename", "co_firstlineno", "co_linetable", "co_lnotab")   # WHERE code was written, not what it does
+# The same property for the CLASS: 3.13 stores the line its class statement starts on in vars() as `__firstlineno__`, so
+# a comment or a blank line ABOVE Site read as drift on 3.13 alone — an over-refusal in route B and the runtime gate
+# from round 18 until round 21, found by CI's 3.13 lane on a census with a coding cookie on line 1. Absent before 3.13,
+# so the description is unchanged there.
+_CLASS_LOCATION = ("__firstlineno__",)
 _CACHE_BIT = 1 << 19      # Py_TPFLAGS_VALID_VERSION_TAG (CPython's Include/object.h): the type's attribute-cache state, set
                           # by a plain lookup on 3.10–3.12 (measured by both seats); IS_ABSTRACT (1 << 20) stays compared
 # `__class__` is not read as a field: every object's type is the first component of its description. A BUILT-IN type is
@@ -314,7 +319,7 @@ def site_description(cls) -> list:
     doc, attributes and closure; slots by name; anything else by type and address-free repr), every TYPE-LEVEL field its
     metaclass defines (derived, not listed; the attribute-cache bit masked), and the metaclass. vars() is read FIRST:
     reading __annotations__ on 3.10+ inserts one into vars."""
-    v = dict(vars(cls))
+    v = {k: x for k, x in vars(cls).items() if k not in _CLASS_LOCATION}
     out = [("mro", tuple(c.__name__ for c in cls.__mro__)), ("vars.order", tuple(v))]
     out += [(f"vars.{k}", _normal_value(x, {id(cls): 0})) for k, x in v.items()]
     # every NON-built-in base, described by the same rule (a base's content is inherited behaviour; route A does not see
