@@ -3247,6 +3247,34 @@ def test_r22_the_interpreter_guard_fires_on_a_wrong_reading(monkeypatch):
         un._source_text(data, "m.py")
 
 
+def test_r22_the_interpreter_guard_fires_on_a_wrong_utf8_reading(monkeypatch):
+    """The mirror of the control above (the second seat's round-22 stage 2, W6): a source wrongly read as UTF-8 — what
+    a MISSED cookie produces, since UTF-8 is the fallback — must be refused by name too. A latin-1-declared source
+    holding a non-ASCII literal, with _source_encoding forced to "utf-8"."""
+    un = _load("inv7_uninstrument_r22guard8", EVIDENCE / "inv7_uninstrument.py")
+    data = b"# -*- coding: latin-1 -*-\n" + "S = 'caf\u00e9'\n".encode("latin-1")
+    assert "caf\u00e9" in un._source_text(data, "m.py")
+    monkeypatch.setattr(un, "_source_encoding", lambda d: "utf-8")
+    with pytest.raises(un.SourceUnreadable, match="disagrees with the interpreter"):
+        un._source_text(data, "m.py")
+
+
+def test_r22_the_guard_skipped_for_utf8_readings_fails_the_mirror_cell(tmp_path, monkeypatch):
+    """W6 as a mutant, anchored on a line OTHER than the guard's (the second seat's note: two mutant tests anchored on
+    one line mask each other in a campaign): return before the guard whenever the reading is UTF-8."""
+    text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    anchor = "        from_text = ast.parse(text, filename=label)\n"
+    assert text.count(anchor) == 1, "the mutant's anchor moved"
+    ev = tmp_path / "evidence"
+    shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+    (ev / "inv7_uninstrument.py").write_text(
+        text.replace(anchor, anchor + '        if encoding.startswith("utf-8"):\n            return text\n'), encoding="utf-8")
+    mut = _load("inv7_uninstrument_r22w6", ev / "inv7_uninstrument.py")
+    monkeypatch.setattr(mut, "_source_encoding", lambda d: "utf-8")
+    data = b"# -*- coding: latin-1 -*-\n" + "S = 'caf\u00e9'\n".encode("latin-1")
+    assert "caf\u00e9" not in mut._source_text(data, "m.py"), "the mutant refused the wrong UTF-8 reading — not killed"
+
+
 _R22_MUTANTS = [
     ("round 21's detect_encoding", "def _source_encoding(data: bytes) -> str:\n",
      "def _source_encoding(data: bytes) -> str:\n    import io, tokenize\n    return tokenize.detect_encoding(io.BytesIO(data).readline)[0]\n\n\ndef _unused_(data: bytes) -> str:\n"),
