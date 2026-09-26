@@ -3060,15 +3060,19 @@ _R21_CP1252 = "product: cp1252 cookie, a cp1252 string (the cookie is lost in th
 
 
 @pytest.mark.parametrize("mutant,anchor,replacement,killer", [
-    ("a source decoded as UTF-8, whatever it declares", '    return data.decode(encoding, errors="replace")',
-     '    return data.decode("utf-8", errors="replace")', _R21_CP1252),
+    ("a source decoded as UTF-8, whatever it declares", '        text = data.decode(encoding, errors="replace")',
+     '        text = data.decode("utf-8", errors="replace")', _R21_CP1252),
     ("the twin written in the ORIGINAL's encoding", '    data = text.encode(_source_encoding(text.encode("utf-8")))',
      '    data = text.encode("cp1252")', _R21_CP1252),
-    ("a source decoded strictly (no error handler)", '    return data.decode(encoding, errors="replace")',
-     "    return data.decode(encoding)", "census: a trailing comment holding an invalid UTF-8 byte"),
-    ("an unreadable source raising bare", "        raise SourceUnreadable(", "        raise\n        raise SourceUnreadable(",
+    ("a source decoded strictly (no error handler)", '        text = data.decode(encoding, errors="replace")',
+     "        text = data.decode(encoding)", "census: a trailing comment holding an invalid UTF-8 byte"),
+    ("an unreadable source raising bare", '        raise SourceUnreadable(f"{label} could not be read as Python source',
+     '        raise\n        raise SourceUnreadable(f"{label} could not be read as Python source',
      "census: an unknown coding cookie (not Python: a named refusal)"),
-    ("the bytes-parse removed (stage 2's V3)", "        ast.parse(data, filename=label)\n", "        pass\n",
+    # round 22 made the bytes-parse also the interpreter's side of the guard, so the V3 form is now "parse the decoded
+    # text in its place": no BYTE-level validation at all
+    ("the bytes-parse removed (stage 2's V3)", "        from_bytes = ast.parse(data, filename=label)\n",
+     '        from_bytes = ast.parse(data.decode(_source_encoding(data), errors="replace"), filename=label)\n',
      "census: an invalid byte in a string literal (not Python: a named refusal)"),
 ], ids=["decode as utf-8", "write in the original's encoding", "strict decoding", "bare on an unknown cookie",
         "bytes-parse removed"])
@@ -3125,6 +3129,154 @@ def test_r21_the_class_location_exclusion_is_load_bearing_on_313(tmp_path):
     mut = _load("inv7_uninstrument_r21abovemut", ev / "inv7_uninstrument.py")
     ref = mut.REFERENCE_CENSUS.read_text(encoding="utf-8")
     assert mut.site_drift("# a comment\n" + ref, ref), "the mutant read a line shift as no drift on 3.13 — not killed"
+
+
+# ---- round 22: the ROUND-21 VERDICT — a source's ENCODING HEADER, read as the interpreter reads it --------------------
+# Round 21 found the coding cookie with tokenize.detect_encoding and called it "the interpreter's rule"; it decodes lines
+# 1-2 as UTF-8 first, and refused valid Python whose header comments hold bytes in the declared encoding (or an invalid
+# byte), which CPython's own tokenizer accepts. The cookie is now found at the byte level AND every reading is checked
+# against the interpreter's: the syntax tree of our text must equal the one parsed from the bytes. The oracle for the
+# corpus below is the interpreter itself — compile(bytes) — never our reading of PEP 263.
+_R22_LITERALS = {"utf-8": "中 é", "latin-1": "café", "cp1252": "— café", "gb18030": "中 é"}
+
+
+def _r22_corpus():
+    """Programs crossing: line 1 (absent, blank, a shebang, an ASCII comment, a comment in the declared encoding, a
+    comment holding an invalid UTF-8 byte, a line of CODE) x the cookie's form (none, emacs, vim, emacs with mode, plain
+    `coding=` with trailing non-ASCII) x the declared encoding x the BODY's encoding (the declared one, or UTF-8 whatever
+    the cookie says) x a BOM. The body holds a non-ASCII string literal."""
+    out = []
+    forms = {"none": None, "emacs": "# -*- coding: {e} -*-", "vim": "# vim: set fileencoding={e} :",
+             "emacs+mode": "# -*- mode: python; coding: {e} -*-", "coding= + text": "# coding={e} é"}
+    for enc, lit in _R22_LITERALS.items():
+        for l1 in ("absent", "blank", "shebang", "ascii comment", "comment in enc", "invalid-utf8 comment", "code"):
+            for form, cookie in forms.items():
+                for body_enc in (enc, "utf-8"):
+                    for bom in (False, True):
+                        def enc_line(s, e):
+                            try:
+                                return s.encode(e)
+                            except UnicodeEncodeError:
+                                return None
+                        head = []
+                        if l1 != "absent":
+                            head.append({"blank": b"\n", "shebang": b"#!/usr/bin/env python\n", "ascii comment": b"# a comment\n",
+                                         "comment in enc": enc_line("# é comment\n", enc), "invalid-utf8 comment": b"# \xff comment\n",
+                                         "code": b"x0 = 0\n"}[l1])
+                        if cookie is not None:
+                            head.append(enc_line(cookie.format(e=enc) + "\n", enc))
+                        body = enc_line(f"S = {lit!r}\n", body_enc)
+                        if None in head or body is None:
+                            continue
+                        data = (b"\xef\xbb\xbf" if bom else b"") + b"".join(head) + body
+                        out.append((f"{enc}/{l1}/{form}/body {body_enc}/{'BOM' if bom else 'no BOM'}", data))
+    return out
+
+
+def _r22_interpreter(data):
+    """The oracle: does CPython compile these bytes, and if so, what is S?"""
+    try:
+        code = compile(data, "<r22>", "exec", dont_inherit=True)
+    except (SyntaxError, ValueError):
+        return False, None
+    ns = {}
+    exec(code, ns)
+    return True, ns["S"]
+
+
+def _r22_disagreements(un):
+    bad = []
+    for label, data in _r22_corpus():
+        ok, value = _r22_interpreter(data)
+        try:
+            text = un._source_text(data, label)
+            ours_ok, ours = True, None
+            ns = {}
+            exec(compile(text, "<r22-text>", "exec", dont_inherit=True), ns)
+            ours = ns["S"]
+        except un.Refused:
+            ours_ok = False
+        if ok != ours_ok or (ok and value != ours):
+            bad.append((label, ok, ours_ok))
+    return bad
+
+
+def test_r22_the_source_reader_agrees_with_the_interpreter_over_the_header_corpus():
+    """For every program: we accept exactly what CPython compiles, and read its literal as CPython does."""
+    un = _load("inv7_uninstrument_r22", EVIDENCE / "inv7_uninstrument.py")
+    corpus = _r22_corpus()
+    accepted = sum(_r22_interpreter(d)[0] for _, d in corpus)
+    assert len(corpus) >= 500 and accepted >= 100 and len(corpus) - accepted >= 100, (len(corpus), accepted)
+    bad = _r22_disagreements(un)
+    assert bad == [], bad[:8]
+
+
+_R22_PRODUCT = _R14_SELF + "def f():\n    return {lit!r}\n"
+_R22_CELLS = [
+    ("product: a latin-1 comment on line 1, a latin-1 cookie on line 2",
+     lambda _: "# café\n".encode("latin-1") + b"# -*- coding: latin-1 -*-\n" + _R22_PRODUCT.format(lit="café").encode("latin-1")),
+    ("product: a shebang, then a cookie followed by latin-1 text",
+     lambda _: b"#!/usr/bin/env python\n" + "# -*- coding: latin-1 -*- café\n".encode("latin-1") + _R22_PRODUCT.format(lit="café").encode("latin-1")),
+    ("product: a cp1252 comment above a cp1252 cookie",
+     lambda _: "# — café\n".encode("cp1252") + b"# coding: cp1252\n" + _R22_PRODUCT.format(lit="—").encode("cp1252")),
+    ("product: an invalid UTF-8 byte in a line-1 comment",
+     lambda _: b"# \xff\n" + _R22_PRODUCT.format(lit="é").encode("utf-8")),
+    ("census: the reference, a gb18030 comment above its gb18030 cookie",
+     lambda ref: "# 中文\n".encode("gb18030") + b"# coding: gb18030\n" + ref.decode("utf-8").encode("gb18030")),
+    ("census: the reference, an invalid UTF-8 byte in a line-1 comment", lambda ref: b"# \xff\n" + ref),
+]
+
+
+@pytest.mark.parametrize("cell,make", _R22_CELLS, ids=[c[0] for c in _R22_CELLS])
+def test_r22_a_header_the_interpreter_accepts_derives_and_verifies(cell, make, tmp_path):
+    """The verdict's class through derive() and verify(); a product twin RUNS as its source does."""
+    un = _load("inv7_uninstrument_r22cells", EVIDENCE / "inv7_uninstrument.py")
+    kind = "census" if cell.startswith("census") else "product"
+    src, out = _r21_source_cell(un, tmp_path, kind, make)
+    _r21_holds(un, src, out, kind, cell)
+
+
+def test_r22_the_interpreter_guard_fires_on_a_wrong_reading(monkeypatch):
+    """The guard's control (the second seat's stage-1 addition): force a WRONG encoding on a UTF-8 source holding a
+    non-ASCII literal, and the reading must be refused by name — the guard shown to fire, not only to pass."""
+    un = _load("inv7_uninstrument_r22guard", EVIDENCE / "inv7_uninstrument.py")
+    data = "S = 'café'\n".encode("utf-8")
+    assert un._source_text(data, "m.py") == "S = 'café'\n"
+    monkeypatch.setattr(un, "_source_encoding", lambda d: "latin-1")
+    with pytest.raises(un.SourceUnreadable, match="disagrees with the interpreter"):
+        un._source_text(data, "m.py")
+
+
+_R22_MUTANTS = [
+    ("round 21's detect_encoding", "def _source_encoding(data: bytes) -> str:\n",
+     "def _source_encoding(data: bytes) -> str:\n    import io, tokenize\n    return tokenize.detect_encoding(io.BytesIO(data).readline)[0]\n\n\ndef _unused_(data: bytes) -> str:\n"),
+    ("line 2 examined after a line of code", "        if i == 0 and not _BLANK_OR_COMMENT.match(line):\n            break\n", ""),
+    ("the interpreter guard removed", "    if ast.dump(from_bytes, include_attributes=True) != ast.dump(from_text, include_attributes=True):\n",
+     "    if False:\n"),
+]
+
+
+@pytest.mark.parametrize("mutant,anchor,replacement", _R22_MUTANTS, ids=[m[0] for m in _R22_MUTANTS])
+def test_r22_each_superseded_reading_fails(mutant, anchor, replacement, tmp_path, monkeypatch):
+    text = (EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8")
+    assert text.count(anchor) == 1, (mutant, "the anchor moved")
+    ev = tmp_path / "evidence"
+    shutil.copytree(EVIDENCE, ev, ignore=shutil.ignore_patterns("__pycache__"))
+    (ev / "inv7_uninstrument.py").write_text(text.replace(anchor, replacement), encoding="utf-8")
+    mut = _load("inv7_uninstrument_r22mut", ev / "inv7_uninstrument.py")
+    if mutant == "the interpreter guard removed":             # killed by the guard's control: a wrong reading passes
+        monkeypatch.setattr(mut, "_source_encoding", lambda d: "latin-1")
+        assert mut._source_text("S = 'café'\n".encode("utf-8"), "m.py") != "S = 'café'\n"
+        return
+    assert _r22_disagreements(mut), (mutant, "the mutant agrees with the interpreter over the corpus — it is not killed")
+
+
+def test_r22_the_transform_never_uses_tokenize_detect_encoding():
+    """The superseded rule may not come back (the second seat's stage-1 addition, c)."""
+    tree = ast.parse((EVIDENCE / "inv7_uninstrument.py").read_text(encoding="utf-8"))
+    found = [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Attribute) and n.attr == "detect_encoding"]
+    found += [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Name) and n.id == "detect_encoding"]
+    assert found == [], found
 
 
 # ---- round 18, N-6: the Site each arm IMPORTED, compared at runtime --------------------------------------------------

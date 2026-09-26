@@ -51,6 +51,7 @@ import ast
 import hashlib
 import json
 import pathlib
+import re
 import shutil
 import symtable
 import sys
@@ -485,14 +486,38 @@ class Refused(Exception):
 
 # ROUND 21 (the round-20 verdict's F1, and the second seat's stage-1b read): every text boundary is one of these, and
 # the gate in tests/test_0042_inv7.py refuses a decode, an encode or a text read/write anywhere else in this module.
-# A Python SOURCE is decoded as the interpreter decodes it — its PEP 263 coding cookie, or a UTF-8 BOM, else UTF-8
-# (tokenize.detect_encoding, the rule importlib's decode_source applies; line endings are kept, so an ordinary file's
-# twin bytes do not move) — because a census, or a product module, is any valid Python, and valid Python declares its
-# own encoding. Everything else this module reads or writes (the manifest) is UTF-8.
+# A Python SOURCE is read in the encoding it DECLARES — a PEP 263 coding cookie on line 1 or 2, or a UTF-8 BOM, else
+# UTF-8 — because a census, or a product module, is any valid Python, and valid Python declares its own encoding. Line
+# endings are kept, so an ordinary file's twin bytes do not move. Everything else this module reads or writes (the
+# manifest) is UTF-8.
+# ROUND 22 (the round-21 verdict): round 21 found the cookie with tokenize.detect_encoding and called that "the
+# interpreter's rule". It is not: detect_encoding decodes lines 1-2 as UTF-8 BEFORE looking for a cookie, and raises on a
+# header comment the interpreter's own tokenizer, which scans those lines as BYTES, accepts (a latin-1 comment above a
+# latin-1 cookie; text after a cookie; an invalid byte in a line-1 comment — measured on 3.10, 3.12 and 3.13). The
+# cookie is now found at the byte level, as PEP 263 states it — and because that is a second implementation of the
+# interpreter's rule too, it is never trusted alone: _source_text checks every reading against the interpreter's.
+_COOKIE = re.compile(rb"^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)")
+_BLANK_OR_COMMENT = re.compile(rb"^[ \t\f]*(?:[#\r\n]|$)")
+_BOM = b"\xef\xbb\xbf"
+
+
 def _source_encoding(data: bytes) -> str:
-    import io
-    import tokenize
-    return tokenize.detect_encoding(io.BytesIO(data).readline)[0]
+    """The encoding a source declares: a coding cookie on line 1, or on line 2 when line 1 is blank or a comment; a
+    UTF-8 BOM (which admits no other declaration); else UTF-8. Scanned as BYTES, never decoded to find the cookie. An
+    encoding Python's codecs do not know raises LookupError, which the caller names."""
+    import codecs
+    bom = data.startswith(_BOM)
+    for i, line in enumerate((data[len(_BOM):] if bom else data).splitlines(keepends=True)[:2]):
+        m = _COOKIE.match(line)
+        if m:
+            name = m.group(1).decode("ascii")
+            codecs.lookup(name)
+            if bom and codecs.lookup(name).name != "utf-8":
+                raise SyntaxError(f"encoding problem: {name} with BOM")
+            return "utf-8-sig" if bom else name
+        if i == 0 and not _BLANK_OR_COMMENT.match(line):
+            break
+    return "utf-8-sig" if bom else "utf-8"
 
 
 class SourceUnreadable(Refused):
@@ -508,14 +533,22 @@ def _source_text(data: bytes, label: str = "<source>") -> str:
     not decode comment bytes; measured on 3.10–3.13, round 21, the second seat's stage-1c read); so the text is
     decoded with errors="replace", which can change nothing but a comment's characters — which neither route reads
     and no twin executes. (errors="surrogateescape" round-trips, but ast.parse and compile of a str re-encode it as
-    UTF-8 and reject the surrogate: measured on the same four interpreters.)"""
+    UTF-8 and reject the surrogate: measured on the same four interpreters.)
+    THE INTERPRETER IS THE ORACLE, per file (round 22): the text is parsed too, and its syntax tree — positions included
+    — must equal the one the interpreter built from the bytes. A wrong decoding changes a literal or a column, so any
+    disagreement between _source_encoding and the interpreter's own tokenizer is a NAMED refusal, never a misreading."""
     try:
-        ast.parse(data, filename=label)
+        from_bytes = ast.parse(data, filename=label)
         encoding = _source_encoding(data)
+        text = data.decode(encoding, errors="replace")
+        from_text = ast.parse(text, filename=label)
     except (SyntaxError, LookupError, ValueError) as e:
         raise SourceUnreadable(f"{label} could not be read as Python source — this is not drift, and T does not "
                                f"advance: {type(e).__name__}: {e}") from None
-    return data.decode(encoding, errors="replace")
+    if ast.dump(from_bytes, include_attributes=True) != ast.dump(from_text, include_attributes=True):
+        raise SourceUnreadable(f"{label}: the transform's reading of this source (as {encoding}) disagrees with the "
+                               f"interpreter's — this is not drift, and T does not advance")
+    return text
 
 
 def _read_source(path: pathlib.Path) -> str:
