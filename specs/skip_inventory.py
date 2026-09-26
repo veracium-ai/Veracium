@@ -83,11 +83,12 @@ INVENTORY = [
                          "the 3.12/3.13 CI lanes execute it, 3.10/3.11 skip with "
                          "this reason"),
     ("tests/test_0042_scope_resolution.py", "skip", "no comprehension is inlined before 3.12",
-     "host-conditional", "specs/0042 round 20: the mutant that drops the compiler's "
-                         "implicit __class__ can only change a signature where a "
-                         "comprehension is INLINED (PEP 709, 3.12+). 1 cell of 2; "
-                         "the 3.12/3.13 CI lanes execute it, 3.10/3.11 skip with "
-                         "this reason — the mangling cell runs on every version"),
+     "host-conditional", "specs/0042 round 20: a mutant of the compiler's implicit "
+                         "__class__ (dropped, or added on a STORE of super) can "
+                         "only change a signature where a comprehension is INLINED "
+                         "(PEP 709, 3.12+). Those cells skip on 3.10/3.11 with this "
+                         "reason and run on the 3.12/3.13 CI lanes; the mangling "
+                         "cells run on every version"),
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the two 0015 lock-adapter tests run the POSIX kernel "
                          "contract via independent processes; they skip on "

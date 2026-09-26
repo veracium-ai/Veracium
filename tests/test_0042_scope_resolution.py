@@ -1556,6 +1556,19 @@ _R20_CELLS = [
      "class C:\n    def m(self, a, b):\n        return [__p for __p in a], [y for y in b]\n"),
     ("same-line lambdas with a class-private parameter",
      "class C:\n    def m(self):\n        return (lambda __p: __p), (lambda q: q)\n"),
+    # the second seat's round-20 stage 2 (U5, U3), each reachable and each killing a mutant that survived the rest:
+    ("super STORED as a target adds no __class__ (only a LOAD does)",
+     "def f(a, b):\n    return (x for super in a if [__class__ for __class__ in b]), (y for y in b)\n"),
+    ("a class decorator inside a method is mangled by the ENCLOSING class",
+     "def dec(*a):\n    return lambda c: c\nclass C:\n    def m(self, a, b):\n"
+     "        @dec((__p for __p in a), (__q for __q in b))\n        class D:\n            pass\n        return D\n"),
+    ("a class's bases inside a method are mangled by the ENCLOSING class",
+     "class C:\n    def m(self, a, b):\n        class D(*[(__p for __p in a), (__q for __q in b)] and [object]):\n"
+     "            pass\n        return D\n"),
+    ("a class's keywords inside a method are mangled by the ENCLOSING class",
+     "class M(type):\n    def __new__(m, n, b, d, **k):\n        return super().__new__(m, n, b, d)\nclass C:\n"
+     "    def m(self, a, b):\n        class D(metaclass=M, g=((__p for __p in a), (__q for __q in b))):\n"
+     "            pass\n        return D\n"),
 ]
 
 
@@ -1676,3 +1689,32 @@ def test_r20_f2_route_two_finds_no_implicit_name_route_one_lacks():
     unknown = {n for n in found if n != "<mangled>"} - sr._IMPLICIT_NAMES_ALL_BLOCKS
     assert unknown == set(), (sorted(unknown), dict(found))
     assert found["__class__"] > 0, dict(found)
+
+
+# The second seat's round-20 stage-2 survivors, as source substitutions at anchors that must match once: each mutant
+# must REFUSE its killing cell above, which the shipped resolver answers (the cell's own test).
+_R20_STAGE2_MUTANTS = [
+    ("U5: super adds __class__ even when stored",
+     "                if isinstance(x.ctx, ast.Load) and x.id in _IMPLICIT_IN_COMPREHENSION:",
+     "                if x.id in _IMPLICIT_IN_COMPREHENSION:",
+     "super STORED as a target adds no __class__ (only a LOAD does)"),
+    ("U3: a class header mangled by the class's own name",
+     "            for c in [*node.decorator_list, *node.bases, *node.keywords]:\n                visit(c, private)",
+     "            for c in [*node.decorator_list, *node.bases, *node.keywords]:\n                visit(c, node.name)",
+     "a class decorator inside a method is mangled by the ENCLOSING class"),
+]
+
+
+@pytest.mark.parametrize("mutant,anchor,replacement,killer", _R20_STAGE2_MUTANTS, ids=[m[0] for m in _R20_STAGE2_MUTANTS])
+def test_r20_f2_the_stage_two_survivors_are_killed(mutant, anchor, replacement, killer, tmp_path):
+    if mutant.startswith("U5") and sys.version_info < (3, 12):
+        pytest.skip("no comprehension is inlined before 3.12, so a held __class__ decides nothing there")
+    text = (EVIDENCE / "scope_resolution.py").read_text()
+    assert text.count(anchor) == 1, (mutant, "the anchor moved")
+    path = tmp_path / "scope_resolution_mutant.py"
+    path.write_text(text.replace(anchor, replacement))
+    mut = _load("scope_resolution_r20_stage2", path)
+    src = dict(_R20_CELLS)[killer]
+    sr.Resolver(src, "<shipped>")
+    with pytest.raises(mut.UnresolvableScope):
+        mut.Resolver(src, "<mutant>")
