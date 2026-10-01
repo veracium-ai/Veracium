@@ -44,7 +44,7 @@ captured outputs.
 - **[API reference](api.md)** — `Memory`, recall with token budgets, feedback
   verbs, portability, compliance erasure.
 - **[MCP server](mcp.md)** — plug memory into any MCP-compatible agent with no
-  host-side Python.
+  host-side Python; includes client recipes (Claude Code, Desktop, others).
 - **[Design rationale](design-rationale.md)** — why there's no
   `update()`/`delete()`, no LLM-free extraction, no TTL purging — a *refused*
   feature is not a *missing* one.

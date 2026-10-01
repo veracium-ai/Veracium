@@ -104,7 +104,9 @@ whatever model name your server serves.
 
 `veracium-mcp` exposes `remember` / `recall` / `answer` / `maintain` tools to any
 MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
-[docs/mcp.md](docs/mcp.md) for the config JSON and tool reference.
+[docs/mcp.md](docs/mcp.md) for install, tool reference, and **client recipes**
+(Claude Code `.mcp.json`, Claude Desktop, editor-agnostic) with per-user wiring
+and a remember → answer check.
 
 ## Documentation
 
@@ -124,7 +126,7 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
   feedback verbs, audit, local models).
 - **[docs/api.md](docs/api.md)** — the public API: `Memory`, `MemoryConfig`,
   `EvidenceAuthor`, providing your own LLM callable or store.
-- **[docs/mcp.md](docs/mcp.md)** — running and registering the MCP server.
+- **[docs/mcp.md](docs/mcp.md)** — MCP server, tools, and client recipes.
 - **[docs/design-rationale.md](docs/design-rationale.md)** — why there's no
   `update()`/`delete()`, no LLM-free extraction, no TTL purging — and what's
   genuinely on the roadmap.
