@@ -149,7 +149,12 @@ def test_ungrounded_grants_nothing():
                        # `remember --dry-run` (2026-09-12): reports the flag of
                        # each fact that WOULD be written, beside its tier — the
                        # same marker surface; no branch, grants nothing.
-                       "dryrun.py"}, (
+                       "dryrun.py",
+                       # the as-of renderer (2026-10-11): `asof/resolve.py`'s `render_line`
+                       # places the marker after the object on every branch, as graph.py
+                       # does — a MARKER surface the 0045-0047 round-1 reviewer found
+                       # missing (R1-05's witness); no branch keys anything on the flag.
+                       "resolve.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
         f"trust/authority/staleness key)")

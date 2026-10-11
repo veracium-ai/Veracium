@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Fixed: historical recall now shows the possible-extraction-error marker (specs/0019, U5).** Since 0019 landed,
+  `recall(as_of=...)` and `facts_valid_at` rendered a fact the extraction check had flagged WITHOUT
+  `[possible extraction error]`, although every current-recall surface shows it. A model reading a historical answer
+  could therefore present an extractor's guess with no warning attached. `asof.resolve.render_line` now places the
+  marker exactly where `graph.render_edges` does (after the object, before the note) on all three of its branches:
+  grounded as of the time asked, fenced ("what was believed"), and indeterminate. Found by the external reviewer of
+  the 0045-0047 round-1 package (2026-10-10), as a witness inside finding R1-05. Three tests, one per branch, each
+  checked to fail when that branch's marker is removed. **Who should upgrade:** hosts that call `recall(as_of=...)`
+  or `facts_valid_at` and pass the result to a model.
+
 - **Accepted: the implementation of specs/0043, the refusal harness, at external round 9 — "ACCEPT —
   IMPLEMENTATION at the reviewed pin. R8-01 is closed. No new blocking finding."** The implementation review ran
   rounds 5 to 9 on round 4's design acceptance. The accepted code is pin `f7a1a42`, reviewed as the round-9 package;

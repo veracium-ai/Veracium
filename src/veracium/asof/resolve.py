@@ -414,17 +414,21 @@ def render_line(e: Edge, r: Optional[Resolution], T: datetime) -> str:
         return ""
     who = "" if e.subject == "user" else f"{e.subject} "
     note = f" — {e.note}" if e.note else ""
+    # specs/0019 §4c / U5: the marker rides EVERY branch a flagged fact renders through, placed as
+    # graph.render_edges places it (after the object, before the note). This renderer was missed when
+    # 0019 landed; the 0045-0047 round-1 reviewer found it (R1-05's witness, 2026-10-10)
+    ug = " [possible extraction error]" if e.ungrounded else ""
     held = (f"held {r.valid_from.date()}→"
             f"{r.invalidated_at.date() if r.invalidated_at else 'open'}")
     prov = f"(as of {T.date()}: {r.tag}; {held})"
     if r.outcome in GROUNDED_OUTCOMES:
         stale = (" [possibly stale — confirm before relying on it]"
                  if STALE_AT_RECALL in r.flags else "")
-        return f"{who}{e.relation}: {e.object}{note} {prov}{stale}"
+        return f"{who}{e.relation}: {e.object}{ug}{note} {prov}{stale}"
     if r.outcome == INDETERMINATE:
         cause = f"; cause {r.cause}" if r.cause else ""
         return (f"[INDETERMINATE as of {T.date()}{cause}, never assert as fact] "
-                f"{who}{e.relation}: {e.object}{note} {prov}")
+                f"{who}{e.relation}: {e.object}{ug}{note} {prov}")
     ptr = ""
     if r.pointer is not None:
         if r.pointer.outcome == POINTER_TO:
@@ -433,7 +437,7 @@ def render_line(e: Edge, r: Optional[Resolution], T: datetime) -> str:
             c = f" — {r.pointer.cause}" if r.pointer.cause else ""
             ptr = f" [truth became: INDETERMINATE{c}]"
     return (f"[FENCED as of {T.date()} — what was believed, never assert as fact] "
-            f"{who}{e.relation}: {e.object}{note} {prov}{ptr}")
+            f"{who}{e.relation}: {e.object}{ug}{note} {prov}{ptr}")
 
 
 def render_fn_for(answer: AsOfAnswer) -> Callable:
