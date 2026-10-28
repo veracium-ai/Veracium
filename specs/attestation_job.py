@@ -42,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+from collections import Counter
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SPECS = ROOT / "specs"
@@ -58,6 +59,18 @@ OUTCOME_EXIT = {"evidence": 0, "bootstrap-pending": 0, "refused": 0, "unattestab
 the workflow's: no job script ran, so the aggregator names the row from the workflow's matrix.)"""
 
 PYTEST_ARGS = ("-p", "no:randomly", "-p", "no:cacheprovider", "-q")
+COLLECT_PLUGIN_DIR = SPECS / "attestation_collect"
+COLLECT_ENV = "VERACIUM_ATTESTATION_COLLECTED"
+"""SA-R3-02: `-p attestation_collect` records the items as collected, in the same invocation (attestation_collect.py)."""
+ENV_REFUSED = ("PYTHONPATH", "PYTHONHOME")
+ENV_REFUSED_PREFIXES = ("PYTEST_",)
+"""SA-R3-02 (and research's stage-1 read): the job's own environment must not shape pytest. PYTEST_ADDOPTS deselects
+(`--deselect`) or shrinks collection itself (`-o python_functions=…`, which the same invocation's own collection then
+agrees with), PYTEST_PLUGINS loads outcome-rewriting code, PYTHONPATH/PYTHONHOME change what is imported. Any of them
+present REFUSES the job before anything runs; nothing is silently stripped. Every other variable is inherited, so
+CI's own environment (which sets none of these) reaches the suite unchanged."""
+PYTEST_EXIT = {2: "interrupted", 3: "internal error", 4: "usage error", 5: "no tests collected"}
+"""SA-R3-03: pytest's exit codes other than 0 (all passed) and 1 (tests failed), each named in the refusal."""
 
 BOOTSTRAP = ("tests/test_migrations_0013.py::test_the_committed_path_evidence_was_generated_on_an_attested_build",)
 """0007 v21 (Quentin, 2026-10-27: "Two runs, bootstrap"): the ONE node exempt at a zero-current state. A10 asserts the
@@ -145,15 +158,67 @@ def _check_evidence() -> tuple:
     return p.returncode, (p.stdout + p.stderr)[-2000:]
 
 
+def collected_path(junit) -> pathlib.Path:
+    junit = pathlib.Path(junit)
+    return junit.with_name(junit.name + ".collected.json")
+
+
 def _run_suite(junit) -> int:
+    """The suite, ONCE, by the committed rule; returns pytest's exit status (SA-R3-03: decide consumes it). The
+    collection plugin is the only thing the job adds to the child's environment."""
     modules = attestation_suite.suite(ROOT)
-    return subprocess.run([sys.executable, "-m", "pytest", *PYTEST_ARGS, f"--junitxml={junit}", *modules],
-                          cwd=str(ROOT)).returncode
+    env = {**os.environ, "PYTHONPATH": str(COLLECT_PLUGIN_DIR), COLLECT_ENV: str(collected_path(junit))}
+    return subprocess.run([sys.executable, "-m", "pytest", *PYTEST_ARGS, "-p", "attestation_collect",
+                           f"--junitxml={junit}", *modules], cwd=str(ROOT), env=env).returncode
 
 
 def _head() -> str:
+    """The checkout's HEAD. A failed `git rev-parse` is the job's state, named (research's stage-1 read of SA-R3-03):
+    its "" used to reach the record validator and read as confinement-failed."""
     import attestation_writer as aw
-    return aw.run_git(["rev-parse", "HEAD"], ROOT)[1]
+    rc, out = aw.run_git(["rev-parse", "HEAD"], ROOT)
+    if rc != 0:
+        raise Decided("wrong-job-state", f"git rev-parse HEAD exited {rc}: the job's checkout has no readable HEAD")
+    return out
+
+
+def environment_problem(environ=None) -> str | None:
+    """SA-R3-02: None, or the inherited variables that would shape the suite (ENV_REFUSED, ENV_REFUSED_PREFIXES)."""
+    environ = os.environ if environ is None else environ
+    bad = sorted(k for k in environ if k in ENV_REFUSED or k.startswith(ENV_REFUSED_PREFIXES))
+    return (f"the job's environment shapes pytest ({', '.join(bad)}): the suite must run by the committed rule alone"
+            if bad else None)
+
+
+def node_problems(cases, collected) -> list:
+    """SA-R3-02: the JUnit's node ids must equal the invocation's own collection as a MULTISET (identity and
+    multiplicity), each difference named. Module equality alone admitted a node deselected inside a present module."""
+    if collected is None:
+        return ["the suite left no collection record (attestation_collect did not run)"]
+    got, want = Counter(n for n, _, _ in cases), Counter(collected)
+    out = []
+    for label, nodes in (("missing (collected, not reported)", want - got), ("unexpected (reported, not collected)",
+                                                                             got - want)):
+        if nodes:
+            out.append(f"{sum(nodes.values())} {label}: " + ", ".join(sorted(nodes)[:20]))
+    dup = sorted(n for n, c in got.items() if c > 1)
+    if dup:
+        out.append(f"{len(dup)} reported more than once: " + ", ".join(dup[:20]))
+    return out
+
+
+def exit_problem(rc, cases):
+    """SA-R3-03: (outcome, reason) when pytest's exit status disagrees with its JUnit, else None. 0 means no failing
+    case and 1 means at least one; a 1 with every case passing is a session-level failure (a hook raising after the
+    report was written). Any other status is named; 5 (no tests collected) is what a fully shrunk collection gives."""
+    failing = any(o in ("failed", "error") for _, o, _ in cases)
+    if rc == 1 and not failing:
+        return "failed-tests", "pytest exited 1 with no failing case in its JUnit: a session-level failure"
+    if rc == 0 and failing:
+        return "suite-mismatch", "pytest exited 0 while its JUnit has a failing case"
+    if rc not in (0, 1):
+        return "suite-mismatch", f"pytest exited {rc!r} ({PYTEST_EXIT.get(rc, 'not a pytest exit status')})"
+    return None
 
 
 def job_state_problem(euid=None) -> str | None:
@@ -179,7 +244,7 @@ def bootstrap_open(records=None) -> bool:
 
 
 def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_suite=_run_suite, probes=None,
-           head=_head, euid=None, records=None) -> dict:
+           head=_head, euid=None, records=None, environ=None) -> dict:
     """The job's closed result. Every seam is injectable, so each outcome is a cell."""
     from veracium.store import schema_version as sv
     import attestation_writer as aw
@@ -192,7 +257,7 @@ def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_sui
         bad = interpreter_problem(args.expect_prefix)
         if bad:
             raise Decided("wrong-interpreter", bad)
-        bad = job_state_problem(euid)
+        bad = job_state_problem(euid) or environment_problem(environ)
         if bad:
             raise Decided("wrong-job-state", bad)
         result["key"] = list(sv.attestation_key(sv.attestation_identity()) or []) or None
@@ -209,13 +274,20 @@ def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_sui
                                           + ", ".join(k for k in sv.KEY_FIELDS if ident.get(k) is None))
         with tempfile.TemporaryDirectory() as td:
             junit = pathlib.Path(td) / "junit.xml"
-            run_suite(junit)
+            rc = run_suite(junit)
             if not junit.exists():
-                raise Decided("suite-mismatch", "the suite wrote no JUnit file")
-            mismatch = attestation_suite.nodes_problems(junit, ROOT)
+                raise Decided("suite-mismatch", f"the suite wrote no JUnit file (pytest exited {rc!r})")
+            mismatch = attestation_suite.nodes_problems(junit, ROOT)      # the committed rule's modules, kept
             if mismatch:
                 raise Decided("suite-mismatch", "; ".join(mismatch))
             cases = junit_cases(junit)
+            cp = collected_path(junit)
+            mismatch = node_problems(cases, json.loads(cp.read_text()) if cp.exists() else None)
+            if mismatch:
+                raise Decided("suite-mismatch", "; ".join(mismatch))
+            bad = exit_problem(rc, cases)
+            if bad:
+                raise Decided(*bad)
         result["result_digest"] = result_digest(cases)
         fired, unmapped = classify_skips(cases)
         if unmapped:

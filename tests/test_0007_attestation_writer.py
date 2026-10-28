@@ -13,6 +13,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -481,6 +482,76 @@ def test_real_a_fresh_write_drops_bootstrap_records_and_refuses_a_non_bootstrap_
         aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=True)
 
 
+_FRESH_EXTRA = {   # SA-R3-04 and research's stage-1 siblings: the record beside K's bootstrap record, and what the
+    # ORDINARY write does with it ("refuse:<text>" or "keep"); a fresh write must refuse wherever that one keeps or refuses
+    "same-key-future": (lambda a1: record(commit=a1, schema_version=sv.SCHEMA_VERSION + 1), "refuse:(S75)"),
+    "other-key-future": (lambda a1: record(commit=a1, machine=OTHER_MACHINE, schema_version=sv.SCHEMA_VERSION + 1),
+                         "keep"),
+    "other-key-malformed": (lambda a1: record(commit=a1, machine=OTHER_MACHINE, schema_version=str(sv.SCHEMA_VERSION)),
+                            "refuse:would be poisoned"),
+}
+
+
+@pytest.mark.parametrize("case", sorted(_FRESH_EXTRA))
+def test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key(repo, tmp_path, case):
+    """0007 round 3, SA-R3-04 (the reviewer's witness is same-key-future; research's stage-1 read found the other two).
+    Fresh mode checked only CURRENT records and then cleared the list, so `merged` never saw a future or malformed
+    record of any key: it returned `written` and erased it. Now every such record refuses the fresh write, with the
+    artifact's bytes unchanged, and the ordinary write's own answer on the same input is unchanged too."""
+    make, ordinary = _FRESH_EXTRA[case]
+    boot = record(commit=repo["A1"])                          # A1 held no artifact: a bootstrap record of key K
+    extra = make(repo["A1"])
+    head = _commit_artifact(repo, [boot, extra])
+    assert aw.is_bootstrap_record(boot, repo=repo["path"]) is True
+    path = tmp_path / "out.json"
+    path.write_text(json.dumps({"attestations": [boot, extra]}, indent=2))
+    before = path.read_bytes()
+    with pytest.raises(aw.AttestationRefused, match="a fresh write would erase a (NEWER revision|malformed) record"):
+        aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=True)
+    assert path.read_bytes() == before
+    if ordinary == "keep":
+        aw.write_records([record(commit=head)], path=path, repo=repo["path"])
+        assert extra in json.loads(path.read_text())["attestations"]           # W6: kept, byte for byte
+    else:
+        with pytest.raises(aw.AttestationRefused, match=re.escape(ordinary.split(":", 1)[1])):
+            aw.write_records([record(commit=head)], path=path, repo=repo["path"])
+        assert path.read_bytes() == before
+
+
+def test_real_a_fresh_write_drops_a_superseded_record_of_another_key(repo, tmp_path):
+    """SA-R3-04's clean control: a SUPERSEDED record (an older revision) contributes nothing and is not evidence a
+    fresh write could erase; it is dropped with the bootstrap record, as fresh mode intends."""
+    boot = record(commit=repo["A1"])
+    old = record(commit=repo["A1"], machine=OTHER_MACHINE, manifest_algorithm=sv.MANIFEST_ALGORITHM - 1)
+    head = _commit_artifact(repo, [boot, old])
+    path = tmp_path / "out.json"
+    path.write_text(json.dumps({"attestations": [boot, old]}))
+    assert aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=True) == {
+        repr(sv.attestation_key(record(commit=head))): "written"}
+    assert [sv.record_commit(r) for r in json.loads(path.read_text())["attestations"]] == [head]
+
+
+def test_real_a_fresh_write_keeps_v19s_order(repo, tmp_path):
+    """SA-R3-04, the order (dev's reproduction): K's bootstrap record is at a commit NEWER than the writing HEAD. The
+    ordinary write refuses "OLDER"; a fresh write cleared the list first and wrote. Its dry run over the original
+    artifact now refuses the same way, with the bytes unchanged."""
+    h1 = _commit_artifact(repo, [record(commit=repo["A1"], machine=OTHER_MACHINE)])   # h1's artifact holds a current record
+    h2 = _commit_artifact(repo, [])                                                   # a zero-current state
+    boot = record(commit=h2)
+    assert aw.is_bootstrap_record(boot, repo=repo["path"]) is True
+    _commit_artifact(repo, [boot])
+    repo["git"]("checkout", "-q", h1)                                                  # the writing checkout is OLDER
+    new = record(commit=h1)
+    assert aw.is_bootstrap_record(new, repo=repo["path"]) is False
+    path = tmp_path / "out.json"
+    path.write_text(json.dumps({"attestations": [boot]}))
+    before = path.read_bytes()
+    for fresh in (False, True):
+        with pytest.raises(aw.AttestationRefused, match="is OLDER than the recorded"):
+            aw.write_records([new], path=path, repo=repo["path"], fresh=fresh)
+        assert path.read_bytes() == before
+
+
 def test_real_the_bootstrap_derivation_and_the_exemption_are_one_predicate(repo):
     """0007 v22 (N1): over every artifact state, the derivation's answer at a commit EQUALS the job's exemption test on
     that artifact (one function). The two v21 readings disagreed on a future-only and a malformed-only artifact."""
@@ -578,6 +649,7 @@ SHALLOW = ('''    rc, out = git(["rev-parse", "--is-shallow-repository"], repo)
                                  "--is-ancestor's exit 1 would be ambiguous")
 ''')
 ARM = "test_each_cross_run_arm_refuses_with_its_message"
+FRESH_ANY = "test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key"
 MUTANTS = {
     # name: ([(anchor, replacement), ...], [(killing cell, its parameters), ...])
     # ---- I4: a later suite revision with a changed result digest (round 2's obligation; the three failure words) -----
@@ -596,6 +668,18 @@ MUTANTS = {
           '            raise AttestationRefused("a different result digest for this key")\n'
           "        decision = _ordered(r, new, commit, repo, git, fmt)\n")],
         [("test_a_later_suite_revision_with_a_changed_result_digest_replaces_and_keeps_every_other_key", {})]),
+    # ---- SA-R3-04 (round 3): a fresh write runs every ordinary check against the ORIGINAL artifact ----------------
+    "fresh refuses no future or malformed record (another key's is erased; the same key's reads as S75)": (
+        [('            if rev in ("future", "malformed"):\n', "            if False:\n")],
+        [(FRESH_ANY, {"case": "other-key-future"}), (FRESH_ANY, {"case": "other-key-malformed"}),
+         (FRESH_ANY, {"case": "same-key-future"})]),
+    "fresh skips the dry run over the original artifact (v19's order is not applied)": (
+        [("        probe = list(records)\n        for new in news:\n            probe, _ = merged(probe, new, repo=repo, git=git)\n", "")],
+        [("test_real_a_fresh_write_keeps_v19s_order", {})]),
+    "the superseded implementation: fresh checks only current records, then clears the list": (
+        [('            if rev in ("future", "malformed"):\n', "            if False:\n"),
+         ("        probe = list(records)\n        for new in news:\n            probe, _ = merged(probe, new, repo=repo, git=git)\n", "")],
+        [(FRESH_ANY, {"case": "same-key-future"}), ("test_real_a_fresh_write_keeps_v19s_order", {})]),
     "shallow check dropped": ([('    if rc != 0 or out != "false":\n', "    if False:\n")],
                               [(ARM, {"arm": "shallow"}), ("test_real_a_shallow_clone_is_unanswerable_before_any_ancestry", {})]),
     "shallow check after the ancestry": (

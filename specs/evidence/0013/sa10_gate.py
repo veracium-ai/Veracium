@@ -126,6 +126,41 @@ _IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 CONN_METHODS = frozenset({"execute", "executemany", "commit", "rollback", "close"})
 CONN_READ_ATTRS = frozenset({"isolation_level", "row_factory", "text_factory", "in_transaction", "total_changes"})
 CONN_SET_ATTRS = frozenset({"isolation_level", "row_factory", "text_factory"})
+SET_VALUES = {"isolation_level": (None, "", "DEFERRED", "IMMEDIATE", "EXCLUSIVE"),
+              "row_factory": (None, sqlite3.Row), "text_factory": (str, bytes)}
+"""0007 round 3 (research's stage-1 read of SA-R3-01, in the closure's letter: "replay must not execute opaque
+caller-supplied connection behavior"): a settable attribute takes a value from a CLOSED set. `isolation_level` is an
+exact str or None; a factory is compared BY IDENTITY, so a Python function is never a row or text factory and replay
+never re-runs one. The ladder sets only `isolation_level` (schema_version.open_versioned: None, then its prior value)."""
+CONNECT_KW = frozenset({"timeout"})
+"""SA-R3-01 (round 3): the census's connect admits the store path and a numeric timeout and nothing else. A `factory`
+(keyword or positional), any positional extra and every other keyword are executable or connection-shaping caller
+input, refused BEFORE `sqlite3.connect` runs: no constructor executes outside the authorizer and the trace, and replay
+never re-invokes one. The seamed callers pass `path` (migration.py) or `path, timeout=` (release_migration.py)."""
+SEAM_ATTRS = frozenset({"Error", "DatabaseError", "OperationalError"})
+"""SA-R3-01, research's stage-1 read: what the module seam exposes besides `connect`, which the census runs. It was the
+whole module, so `sqlite3.Connection(path)` wrote with no census at all. These three are every `sqlite3.<name>` the
+seamed modules read at run time (their `sqlite3.Connection` uses are annotations under `from __future__ import
+annotations`, never evaluated); any other name is refused and recorded, Connection included."""
+
+
+def connect_args_problem(args, kw) -> str | None:
+    """SA-R3-01: None, or what in a connect call is outside CONNECT_KW. Used by the census AND by replay."""
+    if args:
+        return f"{len(args)} positional argument(s) after the path (a factory, among others, can be positional)"
+    extra = sorted(set(kw) - CONNECT_KW)
+    if extra:
+        return f"the keyword argument(s) {extra} (only {sorted(CONNECT_KW)} is admitted)"
+    if "timeout" in kw and type(kw["timeout"]) not in (int, float):
+        return f"a timeout of type {type(kw['timeout']).__name__}"
+    return None
+
+
+def set_value_ok(name, value) -> bool:
+    """A value from SET_VALUES[name]: by value for an exact str (or None), by identity for anything else."""
+    if type(value) is str:
+        return value in SET_VALUES.get(name, ())
+    return any(value is v for v in SET_VALUES.get(name, ()))
 CONN_REFUSED = frozenset({
     "executescript", "cursor", "blobopen", "backup", "deserialize", "serialize", "setconfig", "getconfig",
     "setlimit", "getlimit", "set_authorizer", "set_progress_handler", "set_trace_callback", "create_aggregate",
@@ -261,6 +296,9 @@ class Census:
     def connect(self, database, args, kw):
         cid = len(self.reals) + len([e for e in self.events if e.kind == "connect-failed"])
         site = issuer()
+        bad = connect_args_problem(args, kw)
+        if bad:                                   # SA-R3-01: before sqlite3.connect, so no factory ever runs
+            raise self.refuse(f"connect with {bad}", site)
         if not isinstance(database, (str, os.PathLike)) or os.path.realpath(database) != self.store:
             self.problems.append(f"connect to {database!r} from {site.by if site else '?'}: not the store")
         kw2 = dict(kw)
@@ -404,6 +442,8 @@ def connection_proxy(real, census: Census, cid: int):
         def __setattr__(self, n, v):
             if n not in CONN_SET_ATTRS:
                 raise census.refuse(f"setting connection.{n}")
+            if not set_value_ok(n, v):
+                raise census.refuse(f"setting connection.{n} to {v!r} (outside {SET_VALUES[n]!r})")
             census.set_attr(cid, n, v)
             setattr(real, n, v)
 
@@ -470,13 +510,17 @@ def cursor_proxy(cur, census: Census, rec: Call):
 
 
 class _Seam:
-    """What `migration.sqlite3` and `release_migration.sqlite3` are, for one path: the module, except `connect`."""
+    """What `migration.sqlite3` and `release_migration.sqlite3` are, for one path: `connect`, which the census runs,
+    and SEAM_ATTRS. Every other name is refused and recorded (SA-R3-01: the seam forwarded the whole module, so a
+    direct `sqlite3.Connection(path)` wrote with no census)."""
 
     def __init__(self, census: Census):
         self._census = census
 
     def __getattr__(self, n):
-        return getattr(sqlite3, n)
+        if n in SEAM_ATTRS:
+            return getattr(sqlite3, n)
+        raise self._census.refuse(f"sqlite3.{n} through the module seam")
 
     def connect(self, database, *args, **kw):
         return self._census.connect(database, args, kw)
@@ -692,10 +736,15 @@ def replay(events, copy_path: str) -> list:
             continue
         if ev.kind == "connect":
             kw = {k: v for k, v in ev.kw.items() if k != "cached_statements"}
-            conns[ev.cid] = sqlite3.connect(copy_path, *ev.args, **kw)
+            bad = connect_args_problem(ev.args, kw)
+            if bad:                               # SA-R3-01: replay never runs recorded caller behaviour
+                return problems + [f"replay refuses connection {ev.cid}'s recorded connect: {bad}"]
+            conns[ev.cid] = sqlite3.connect(copy_path, **kw)
             continue
         c = conns[ev.cid]
         if ev.kind == "set":
+            if ev.name not in CONN_SET_ATTRS or not set_value_ok(ev.name, ev.value):
+                return problems + [f"replay refuses connection {ev.cid}'s recorded set of {ev.name} to {ev.value!r}"]
             setattr(c, ev.name, ev.value)
             continue
         try:

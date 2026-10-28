@@ -248,6 +248,21 @@ def write_records(news, *, path=None, repo=ROOT, git=run_git, fresh=False) -> di
         raise AttestationRefused(f"the existing artifact's top level is not within {sorted(sv.ARTIFACT_KEYS)}")
     records, outcomes = data["attestations"], {}
     if fresh:
+        # 0007 round 3, SA-R3-04: every ordinary check runs against the ORIGINAL artifact before fresh mode discards
+        # anything. A future or malformed record of ANY key is newer or unreadable evidence, never a licence to erase
+        # it (the ordinary write keeps another key's, W6, or refuses the artifact); then a dry run of the ordinary merge
+        # over the original applies S75 to the same key, v19's order and the poison check, all with bytes unchanged.
+        for r in records:
+            rev = sv.attestation_revision(r)
+            if rev in ("future", "malformed"):
+                what = (f"({r.get('sqlite_version')!r}, {r.get('machine')!r})" if isinstance(r, dict) else repr(r)[:60])
+                raise AttestationRefused(
+                    f"a fresh write would erase a {'NEWER revision' if rev == 'future' else 'malformed'} record "
+                    f"{what}: fresh mode replaces only a bootstrap run's records"
+                    + (" (S75)" if rev == "future" else ""))
+        probe = list(records)
+        for new in news:
+            probe, _ = merged(probe, new, repo=repo, git=git)
         # v21 (3): fresh mode is NOT a W6 bypass. It drops prior records only when every CURRENT one is a bootstrap
         # record by derivation, so an attested key whose route was unavailable on the day is never silently lost.
         for r in records:
@@ -280,7 +295,8 @@ def main(argv) -> int:
     """`attestation_writer.py [--fresh] <records.json | aggregate.json>`.
 
     `--fresh` (v21) writes the given records ALONE, dropping the existing artifact's, and only over bootstrap records
-    (derived; see is_bootstrap_record): it is how run 2's records replace run 1's. It refuses an aggregate that has any
+    (derived; see is_bootstrap_record): it is how run 2's records replace run 1's. Every ordinary check runs against
+    the existing artifact first, and a future or malformed record of ANY key refuses it (SA-R3-04). It refuses an aggregate that has any
     bootstrap-pending job, since a bootstrap run's records are never the shipped set."""
     flags = {a for a in argv[1:] if a.startswith("--")}
     args = [a for a in argv[1:] if not a.startswith("--")]

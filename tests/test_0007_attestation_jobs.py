@@ -226,14 +226,23 @@ def _status(status="verified"):
     return lambda: sv.runtime_status()._replace(status=status, reason="" if status != "refused" else "probe x is False")
 
 
-def _decide(tmp_path, cases=(), modules=None, status="verified", evidence_rc=0, probes=None, records=None, **over):
+def _decide(tmp_path, cases=(), modules=None, status="verified", evidence_rc=0, probes=None, records=None,
+            suite_rc=None, collected=None, euid=1000, environ=None, head=None, **over):
+    """A synthetic job. Its suite stands in for a real one in all three carriers: the JUnit, the invocation's own
+    collection record (the JUnit's nodes unless `collected` says otherwise, SA-R3-02) and an exit status that agrees
+    with the JUnit unless `suite_rc` says otherwise (SA-R3-03). C1 (round 3): `euid` is EXPLICIT and non-root, so a
+    synthetic case reaches the behaviour it tests on a root host too; only the root-job cell passes 0."""
     junit = _junit(tmp_path, cases, modules)
+    nodes = [n for n, _, _ in job.junit_cases(junit)]
+    failing = any(o in ("failed", "error") for _, o, _ in job.junit_cases(junit))
 
     def run_suite(target):
         pathlib.Path(target).write_bytes(junit.read_bytes())
-        return 0
+        job.collected_path(target).write_text(json.dumps(nodes if collected is None else collected))
+        return (1 if failing else 0) if suite_rc is None else suite_rc
     return job.decide(_args(**over), runtime_status=_status(status), check_evidence=lambda: (evidence_rc, "tail"),
-                      run_suite=run_suite, head=lambda: "a" * 40, records=records,
+                      run_suite=run_suite, head=head or (lambda: "a" * 40), records=records, euid=euid,
+                      environ={} if environ is None else environ,
                       probes=probes or (lambda: {k: True for k in sv.CONFINEMENT_PROBE_KEYS}))
 
 
@@ -265,6 +274,103 @@ def test_a_root_job_is_a_named_failure_before_anything_runs(tmp_path):
     assert "root" in r["reason"] and job.job_state_problem(1000) is None
 
 
+@pytest.mark.parametrize("var,value", [
+    ("PYTEST_ADDOPTS", "--deselect=tests/test_a.py::test_second"),        # the reviewer's SA-R3-02 route
+    ("PYTEST_ADDOPTS", "-o python_functions=test_first"),                 # research's: collection itself shrinks
+    ("PYTEST_PLUGINS", "some_plugin"), ("PYTHONPATH", "/elsewhere"), ("PYTHONHOME", "/elsewhere"),
+])
+def test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs(tmp_path, var, value):
+    """SA-R3-02 (round 3) and research's stage-1 read: an inherited PYTEST_* (or PYTHONPATH/PYTHONHOME) can deselect
+    a node, shrink collection so that the invocation's own collection agrees, or load code that rewrites outcomes. The
+    job refuses it, named, at step 0 and runs nothing. Control: an ordinary CI environment is no problem."""
+    ran = []
+    r = job.decide(_args(), runtime_status=_status(), check_evidence=lambda: ran.append("ce") or (0, ""),
+                   run_suite=lambda t: ran.append("suite"), head=lambda: "a" * 40, euid=1000, environ={var: value})
+    assert (r["outcome"], ran) == ("wrong-job-state", []) and var in r["reason"]
+    assert job.environment_problem({"PATH": "/usr/bin", "HOME": "/h", "CI": "true", "GITHUB_RUN_ID": "1"}) is None
+
+
+@pytest.mark.parametrize("change", ["missing", "unexpected", "duplicate"])
+def test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset(tmp_path, change):
+    """SA-R3-02's closure: executed node identities AND multiplicities equal the same invocation's collection. The
+    reviewer's witness is `missing`: a node deselected inside a module that still reports, so the rule's module check
+    passes. The module check itself is kept (control: `test_the_job_must_have_run_exactly_the_rules_modules`)."""
+    mod = suite_rule.suite(ROOT)[0]
+    cases = [(mod, "test_first", "passed", None), (mod, "test_second", "passed", None)]
+    nodes = [n for n, _, _ in job.junit_cases(_junit(tmp_path, cases))]
+    collected = {"missing": nodes + [f"{mod}::test_deselected"], "unexpected": nodes[:-1],
+                 "duplicate": nodes}[change]
+    if change == "duplicate":
+        cases = cases + [cases[-1]]
+    r = _decide(tmp_path, cases=cases, collected=collected)
+    word = {"missing": "1 missing", "unexpected": "1 unexpected", "duplicate": "reported more than once"}[change]
+    assert r["outcome"] == "suite-mismatch" and word in r["reason"], r["reason"]
+    if change == "missing":
+        assert _decide(tmp_path, cases=cases)["outcome"] == "evidence"                     # control: equal multisets
+
+
+@pytest.mark.parametrize("rc,failing,outcome,word", [
+    (1, False, "failed-tests", "session-level failure"),       # SA-R3-03: the reviewer's real witness, in the JUnit form
+    (0, True, "suite-mismatch", "exited 0 while its JUnit has a failing case"),
+    (2, False, "suite-mismatch", "interrupted"), (3, False, "suite-mismatch", "internal error"),
+    (4, False, "suite-mismatch", "usage error"), (5, False, "suite-mismatch", "no tests collected"),
+])
+def test_pytests_exit_status_must_agree_with_its_junit(tmp_path, rc, failing, outcome, word):
+    """SA-R3-03 (round 3): `decide` discarded run_suite's status, so a pytest that exited 1 after writing an all-pass
+    JUnit attested. Now 0 means no failing case and 1 at least one; any other status is named. The bootstrap control
+    (exit 1, the A10 node alone failing, at a zero-current state) stays `bootstrap-pending`:
+    `test_the_bootstrap_node_failing_at_a_zero_current_state_is_bootstrap_pending`."""
+    mod = suite_rule.suite(ROOT)[0]
+    cases = [(mod, "test_x", "failed" if failing else "passed", None)]
+    r = _decide(tmp_path, cases=cases, suite_rc=rc)
+    assert r["outcome"] == outcome and word in r["reason"], r
+
+
+def test_a_failed_git_head_is_the_jobs_state_not_a_confinement_failure(tmp_path, monkeypatch):
+    """Research's stage-1 read of SA-R3-03: `_head()` dropped git's exit code, and its "" reached the record validator
+    as `confinement-failed`. Now it is `wrong-job-state`, naming the exit; a readable HEAD still passes."""
+    import attestation_writer as aw_mod
+    monkeypatch.setattr(aw_mod, "run_git", lambda args, repo: (128, ""))
+    r = _decide(tmp_path, head=job._head)
+    assert r["outcome"] == "wrong-job-state" and "exited 128" in r["reason"], r
+    monkeypatch.setattr(aw_mod, "run_git", lambda args, repo: (0, "b" * 40))
+    assert _decide(tmp_path, head=job._head)["outcome"] == "evidence"
+
+
+_LIVE_A = "def test_first():\n    assert True\n\n\ndef test_second():\n    assert True\n"
+_LIVE_B = "def test_first():\n    assert True\n\n\ndef test_other():\n    assert True\n"
+_LIVE_RAISE = ("import pytest\n\n\n@pytest.hookimpl(wrapper=True)\ndef pytest_sessionfinish(session):\n"
+               "    yield\n    raise RuntimeError('a session-finish failure after the JUnit was written')\n")
+
+
+@pytest.mark.parametrize("mode", ["control", "deselect", "session-finish-raise"])
+def test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status(tmp_path, monkeypatch, mode):
+    """SA-R3-02 and SA-R3-03 with a REAL pytest process through the unchanged `_run_suite` (the reviewer's minimal
+    fixture: two modules, four tests; ROOT and the rule's module list are the only seams). `deselect` reaches pytest
+    because decide's own environment check is handed a clean environment, so the collection binding alone must catch
+    it; `session-finish-raise` writes an all-pass JUnit and exits 1."""
+    root = tmp_path / "tree"
+    (root / "tests").mkdir(parents=True)
+    (root / "tests" / "test_a.py").write_text(_LIVE_A)
+    (root / "tests" / "test_b.py").write_text(_LIVE_B)
+    if mode == "session-finish-raise":
+        (root / "conftest.py").write_text(_LIVE_RAISE)
+    for k in [k for k in __import__("os").environ if k.startswith("PYTEST_")]:
+        monkeypatch.delenv(k)
+    if mode == "deselect":
+        monkeypatch.setenv("PYTEST_ADDOPTS", "--deselect=tests/test_a.py::test_second")
+    mods = ["tests/test_a.py", "tests/test_b.py"]
+    monkeypatch.setattr(job, "ROOT", root)
+    monkeypatch.setattr(job.attestation_suite, "suite", lambda r: mods)
+    r = job.decide(_args(), runtime_status=_status(), check_evidence=lambda: (0, ""), run_suite=job._run_suite,
+                   head=lambda: "a" * 40, euid=1000, environ={}, records=[],
+                   probes=lambda: {k: True for k in sv.CONFINEMENT_PROBE_KEYS})
+    want = {"control": ("evidence", ""), "deselect": ("suite-mismatch", "1 missing (collected, not reported): "
+                                                      "tests/test_a.py::test_second"),
+            "session-finish-raise": ("failed-tests", "session-level failure")}[mode]
+    assert r["outcome"] == want[0] and want[1] in r["reason"], r
+
+
 def test_an_unreadable_key_is_unattestable_after_the_rederivation_and_runs_no_suite(tmp_path, monkeypatch):
     """0007 v22 §4d: the re-derivation runs FIRST (owed on every verifying build), then a build whose key has an
     unreadable field ends `unattestable`, exit 0, naming the field; no suite runs. A failing re-derivation stays red."""
@@ -273,11 +379,11 @@ def test_an_unreadable_key_is_unattestable_after_the_rederivation_and_runs_no_su
     monkeypatch.setattr(sv, "attestation_identity", lambda: {**real(), "libc": None})
     ran = []
     r = job.decide(_args(), runtime_status=_status(), check_evidence=lambda: ran.append("ce") or (0, ""),
-                   run_suite=lambda t: ran.append("suite"), head=lambda: "a" * 40)
+                   run_suite=lambda t: ran.append("suite"), head=lambda: "a" * 40, euid=1000, environ={})
     assert (r["outcome"], ran) == ("unattestable", ["ce"]) and job.OUTCOME_EXIT["unattestable"] == 0
     assert "libc" in r["reason"] and r["record"] is None
     red = job.decide(_args(), runtime_status=_status(), check_evidence=lambda: (1, "differs"),
-                     run_suite=lambda t: None, head=lambda: "a" * 40)
+                     run_suite=lambda t: None, head=lambda: "a" * 40, euid=1000, environ={})
     assert red["outcome"] == "evidence-mismatch"
     out = agg.aggregate([dict(agg_input, reason=r["reason"])])
     assert not agg.failed(out) and out["unattestable"] and not out["records"]
@@ -286,7 +392,7 @@ def test_an_unreadable_key_is_unattestable_after_the_rederivation_and_runs_no_su
 def test_a_refused_build_is_a_census_row_and_runs_nothing(tmp_path):
     ran = []
     r = job.decide(_args(), runtime_status=_status("refused"), check_evidence=lambda: ran.append("ce") or (0, ""),
-                   run_suite=lambda t: ran.append("suite"), head=lambda: "a" * 40)
+                   run_suite=lambda t: ran.append("suite"), head=lambda: "a" * 40, euid=1000, environ={})
     assert (r["outcome"], r["record"], ran) == ("refused", None, []) and job.OUTCOME_EXIT["refused"] == 0
     assert "probe x is False" in r["reason"]
 
@@ -671,6 +777,10 @@ def test_the_attestation_suite_rule_mutation_matrix(tmp_path_factory):
 
 def test_the_attestation_job_mutation_matrix(tmp_path_factory):
     """P1 for specs/attestation_job.py: each closed outcome's arm, and BLOCKING 1–4."""
+    ENVC = "test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs"
+    MULTI = "test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset"
+    EXITC = "test_pytests_exit_status_must_agree_with_its_junit"
+    LIVE = "test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status"
     _matrix(SPECS / "attestation_job.py", "job", {
         "the interpreter check dropped": ([("        if bad:\n            raise Decided(\"wrong-interpreter\", bad)", "        if False:\n            raise Decided(\"wrong-interpreter\", bad)")],
                                           [("test_a_wrong_interpreter_is_a_named_failure_naming_both_locations", {})]),
@@ -680,7 +790,8 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
                                    [("test_a_refused_build_is_a_census_row_and_runs_nothing", {})]),
         "check-evidence read as refused (BLOCKING 2)": ([('raise Decided("evidence-mismatch",', 'raise Decided("refused",')],
                                                         [("test_a_check_evidence_failure_is_evidence_mismatch_not_refused", {})]),
-        "the suite's module set unchecked": ([("            if mismatch:\n", "            if False:\n")],
+        "the suite's module set unchecked": ([("      # the committed rule's modules, kept\n            if mismatch:\n",
+                                               "      # the committed rule's modules, kept\n            if False:\n")],
                                              [("test_a_suite_other_than_the_rules_is_suite_mismatch", {})]),
         "an xfail read as a skip (BLOCKING 4)": ([('            if sk.get("type") == "pytest.xfail":', "            if False:")],
                                                  [("test_an_xfail_is_not_a_skip_and_an_unmapped_skip_fails", {})]),
@@ -702,8 +813,31 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
                                           [("test_the_suite_runs_once_in_pytests_own_order", {})]),
         "timings in the digest": ([("    pairs = sorted((n, o) for n, o, _ in cases)", "    pairs = [(n, o) for n, o, _ in cases]")],
                                   [("test_the_result_digest_ignores_timing_and_order_and_sees_one_outcome", {})]),
-        "drop the job-state assertion (INV-SA6)": ([("        bad = job_state_problem(euid)\n        if bad:\n            raise Decided(\"wrong-job-state\", bad)", "        pass")],
+        "drop the job-state assertion (INV-SA6)": ([("        bad = job_state_problem(euid) or environment_problem(environ)\n        if bad:\n            raise Decided(\"wrong-job-state\", bad)", "        pass")],
                                                    [("test_a_root_job_is_a_named_failure_before_anything_runs", {})]),
+        # ---- round 3: SA-R3-02, SA-R3-03 and research's stage-1 siblings -------------------------------------------
+        "the environment is not checked (SA-R3-02: an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite)": (
+            [(" or environment_problem(environ)\n", "\n")],
+            [(ENVC, {"var": "PYTEST_ADDOPTS", "value": "-o python_functions=test_first"}), (ENVC, {"var": "PYTHONPATH", "value": "/elsewhere"})]),
+        "PYTEST_* not refused (only PYTHONPATH/PYTHONHOME are)": ([('ENV_REFUSED_PREFIXES = ("PYTEST_",)', "ENV_REFUSED_PREFIXES = ()")],
+                                                                  [(ENVC, {"var": "PYTEST_PLUGINS", "value": "some_plugin"})]),
+        "the shipped rule: modules compared, nodes not (SA-R3-02)": (
+            [("            mismatch = node_problems(cases, json.loads(cp.read_text()) if cp.exists() else None)\n", "            mismatch = []\n")],
+            [(MULTI, {"change": "missing"}), (LIVE, {"mode": "deselect"})]),
+        "nodes compared as a set (multiplicity dropped)": ([("    dup = sorted(n for n, c in got.items() if c > 1)\n", "    dup = []\n")],
+                                                           [(MULTI, {"change": "duplicate"})]),
+        "the collection plugin not loaded": ([('"-p", "attestation_collect",\n', "\n")], [(LIVE, {"mode": "control"})]),
+        "the shipped rule: pytest's exit status discarded (SA-R3-03)": ([("            bad = exit_problem(rc, cases)\n", "            bad = None\n")],
+                                                                        [(EXITC, {"rc": 1, "failing": False, "outcome": "failed-tests", "word": "session-level failure"}),
+                                                                         (LIVE, {"mode": "session-finish-raise"})]),
+        "an exit 1 with no failing case admitted": ([("    if rc == 1 and not failing:\n", "    if False:\n")],
+                                                    [(EXITC, {"rc": 1, "failing": False, "outcome": "failed-tests", "word": "session-level failure"})]),
+        "an exit 0 beside a failing case admitted": ([("    if rc == 0 and failing:\n", "    if False:\n")],
+                                                     [(EXITC, {"rc": 0, "failing": True, "outcome": "suite-mismatch", "word": "exited 0 while its JUnit has a failing case"})]),
+        "an unnamed exit status admitted": ([("    if rc not in (0, 1):\n", "    if False:\n")],
+                                            [(EXITC, {"rc": 5, "failing": False, "outcome": "suite-mismatch", "word": "no tests collected"})]),
+        "git's exit code dropped (_head)": ([('    if rc != 0:\n        raise Decided("wrong-job-state", f"git rev-parse HEAD', '    if False:\n        raise Decided("wrong-job-state", f"git rev-parse HEAD')],
+                                            [("test_a_failed_git_head_is_the_jobs_state_not_a_confinement_failure", {})]),
         "the bootstrap exemption covers a second node (v21)": ([('        pending = sorted(n for n, o, _ in cases if o == "failed" and n in BOOTSTRAP)', '        pending = sorted(n for n, o, _ in cases if o == "failed")')],
                                                                [("test_the_bootstrap_exemption_never_covers_a_second_node", {})]),
         "the bootstrap exemption at a non-zero-current state (v21)": ([("        open_ = bootstrap_open(records)", "        open_ = True")],

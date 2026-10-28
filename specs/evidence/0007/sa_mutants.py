@@ -373,6 +373,14 @@ CARRIERS = {
     ("INV-SA6", 23): ("cite", f"{JOB_MATRIX}::an unreadable key ends the job red (v22)"),
     ("INV-SA6", 24): ("cite", f"{WRITER_MATRIX}::the bootstrap mark derived by a test other than the exemption's (v22)"),
     ("INV-SA6", 25): ("cite", f"{WRITER_MATRIX}::a fresh write accepts a new bootstrap record (v22)"),
+    # (v23) the round-3 verdict: SA-R3-02, SA-R3-03 (and research's _head sibling), SA-R3-04
+    ("INV-SA6", 26): ("cite", f"{JOB_MATRIX}::the shipped rule: modules compared, nodes not (SA-R3-02)"),
+    ("INV-SA6", 27): ("cite", f"{JOB_MATRIX}::the environment is not checked (SA-R3-02: an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite)"),
+    ("INV-SA6", 28): ("cite", f"{JOB_MATRIX}::the shipped rule: pytest's exit status discarded (SA-R3-03)"),
+    ("INV-SA6", 29): ("cite", f"{JOB_MATRIX}::git's exit code dropped (_head)"),
+    ("INV-SA6", 30): ("cite", f"{WRITER_MATRIX}::fresh refuses no future or malformed record (another key's is erased; the same key's reads as S75)"),
+    ("INV-SA6", 31): ("cite", f"{WRITER_MATRIX}::fresh skips the dry run over the original artifact (v19's order is not applied)"),
+    ("INV-SA6", 32): ("cite", f"{WRITER_MATRIX}::the superseded implementation: fresh checks only current records, then clears the list"),
     ("INV-SA12", 12): ("mutant", "sa12-pt-interp-from-a-fixed-window"),
     ("INV-SA12", 13): ("mutant", "sa12-a-short-segment-read-as-a-name"),
     ("INV-SA7", 0): ("mutant", "sa7-warn-on-every-open"),
@@ -418,6 +426,11 @@ CARRIERS = {
     ("INV-SA10", 14): ("cite", f"{SA10_TABLE}::v37-a-second-use"),
     ("INV-SA10", 15): ("cite", f"{SA10_TABLE}::v37-outside-a-prepare"),
     ("INV-SA10", 16): ("cite", f"{SA10_TABLE}::v37-no-change-dropped"),
+    # (v38) the round-3 verdict, SA-R3-01, and research's stage-1 siblings: the census's input surface
+    ("INV-SA10", 17): ("cite", f"{SA10_TABLE}::sa-r3-01-connect-forwards-the-callers-arguments"),
+    ("INV-SA10", 18): ("cite", f"{SA10_TABLE}::sa-r3-01-the-seam-forwards-the-module"),
+    ("INV-SA10", 19): ("cite", f"{SA10_TABLE}::sa-r3-01-set-values-unchecked"),
+    ("INV-SA10", 20): ("cite", f"{SA10_TABLE}::sa-r3-01-replay-runs-recorded-behaviour"),
 }
 """Every phrase's ONE carrier (an INV-SA1 phrase spans both gate sites, so it names two mutants)."""
 

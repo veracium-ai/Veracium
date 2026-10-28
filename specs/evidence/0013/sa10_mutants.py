@@ -285,6 +285,64 @@ MUTANTS = [
      "a write added to release_migration's _observe, inside its BEGIN IMMEDIATE ... ROLLBACK"),
 ]
 
+_CONNECT = "    conn = sqlite3.connect(path)\n"
+_FACTORY = ("class _ReviewerFactory(sqlite3.Connection):\n    def __init__(self, *a, **k):\n        super().__init__(*a, **k)\n"
+            "        self.execute(\"UPDATE episodes SET json = json_set(json, '$.summary', 'factory mutation')\")\n"
+            "        self.commit()\n\n\n")
+_CF = lambda f: C(f"test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[{f}]")      # noqa: E731
+_SETV = lambda i: C(f"test_a_settable_attribute_takes_only_its_closed_values[{i}]")                         # noqa: E731
+_RPL = lambda f: C(f"test_replay_never_runs_recorded_caller_behaviour[{f}]")                                # noqa: E731
+_SEAM = C("test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else")
+MUTANTS += [
+    # ---- 0007 round 3, SA-R3-01 and research's stage-1 read: caller-supplied connection behaviour -------------------
+    # TREE: the reviewer's product mutation and its siblings, each refused across the COMPLETE gate (the closure's words)
+    ("tree-connect-factory-keyword", "tree", MIGRATION,
+     [("def migrate_store(path: str, *,", _FACTORY + "def migrate_store(path: str, *,"),
+      (_CONNECT, "    conn = sqlite3.connect(path, factory=_ReviewerFactory)\n")],
+     [CLEAN_GATE], [ROUTE("connection.blobopen")], "refused connect with the keyword argument(s) ['factory']",
+     "SA-R3-01, the reviewer's mutation: migrate_store's connection is a Connection subclass whose constructor "
+     "updates an episode summary and commits, before the authorizer and trace exist"),
+    ("tree-connect-factory-positional", "tree", MIGRATION,
+     [("def migrate_store(path: str, *,", _FACTORY + "def migrate_store(path: str, *,"),
+      (_CONNECT, "    conn = sqlite3.connect(path, 5.0, 0, None, True, _ReviewerFactory)\n")],
+     [CLEAN_GATE], [ROUTE("connection.blobopen")], "refused connect with 5 positional argument(s)",
+     "SA-R3-01: the same factory passed positionally"),
+    ("tree-direct-connection", "tree", MIGRATION,
+     [(_CONNECT, "    _w = sqlite3.Connection(path)\n"
+                 "    _w.execute(\"UPDATE episodes SET json = json_set(json, '$.summary', 'direct')\")\n"
+                 "    _w.commit()\n    _w.close()\n" + _CONNECT)],
+     [CLEAN_GATE], [ROUTE("connection.blobopen")], "refused sqlite3.Connection through the module seam",
+     "research's stage-1 read: a connection constructed directly through the seam, with no connect at all"),
+    ("tree-row-factory-function", "tree", MIGRATION,
+     [(_CONNECT, _CONNECT + "    conn.row_factory = lambda cur, row: row\n")],
+     [CLEAN_GATE], [ROUTE("connection.blobopen")], "refused setting connection.row_factory to",
+     "research's stage-1 read: a Python row factory, caller code that replay would re-run"),
+    ("tree-text-factory-function", "tree", MIGRATION,
+     [(_CONNECT, _CONNECT + "    conn.text_factory = lambda b: b.decode()\n")],
+     [CLEAN_GATE], [ROUTE("connection.blobopen")], "refused setting connection.text_factory to",
+     "research's stage-1 read: a Python text factory, likewise"),
+    # GATE: each new check removed, each killed by its own cells
+    ("sa-r3-01-connect-forwards-the-callers-arguments", "gate", GATE,
+     [('        bad = connect_args_problem(args, kw)\n        if bad:                                   # SA-R3-01: '
+       'before sqlite3.connect, so no factory ever runs\n            raise self.refuse(f"connect with {bad}", site)\n', "")],
+     [_CF("factory-keyword"), _CF("factory-positional")], [_SETV("row_factory-Row")], None,
+     "the shipped connect: the caller's arguments, factory included, reach sqlite3.connect"),
+    ("sa-r3-01-the-seam-forwards-the-module", "gate", GATE,
+     [('        if n in SEAM_ATTRS:\n            return getattr(sqlite3, n)\n'
+       '        raise self._census.refuse(f"sqlite3.{n} through the module seam")\n', "        return getattr(sqlite3, n)\n")],
+     [_SEAM], [_CF("factory-keyword")], None, "the shipped seam: every sqlite3 attribute but connect forwarded"),
+    ("sa-r3-01-set-values-unchecked", "gate", GATE,
+     [("            if not set_value_ok(n, v):\n", "            if False:\n")],
+     [_SETV("row_factory-function"), _SETV("text_factory-function")], [_SETV("row_factory-Row")], None,
+     "a settable attribute takes any value, a Python factory included"),
+    ("sa-r3-01-replay-runs-recorded-behaviour", "gate", GATE,
+     [("            bad = connect_args_problem(ev.args, kw)\n            if bad:                               # SA-R3-01: "
+       "replay never runs recorded caller behaviour\n", "            bad = None\n            if bad:\n"),
+      ("            if ev.name not in CONN_SET_ATTRS or not set_value_ok(ev.name, ev.value):\n", "            if False:\n")],
+     [_RPL("connect-factory"), _RPL("set-function")], [PARAMS], None,
+     "replay re-runs a recorded connect's arguments and a recorded set's value"),
+]
+
 MUTANTS += [
     # ---- 0013 v37 §5f.1: the pre-3.41 declare_vtab sequence (Quentin, 2026-10-27: "Yes, build v37") -----------------
     ("v37-filter-without-the-probe", "gate", GATE,

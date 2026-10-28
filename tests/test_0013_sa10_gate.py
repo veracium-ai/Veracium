@@ -14,6 +14,7 @@ demonstration against the gate mutant §5f.1 names beside it is specs/evidence/0
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import os
 import pathlib
@@ -279,6 +280,119 @@ def test_a_swallowed_refusal_is_still_recorded(tmp_path):
     assert getattr(conn, "blobopen", None) is None
     assert not hasattr(conn, "_real")
     assert [r[0] for r in census.refusals] == ["connection.blobopen", "connection._real"]
+
+
+class _Constructed(sqlite3.Connection):
+    """A connection factory whose constructor would run outside the census (SA-R3-01): it records that it ran."""
+    ran = []
+
+    def __init__(self, *a, **k):
+        _Constructed.ran.append(1)
+        super().__init__(*a, **k)
+
+
+_CONNECT_FORMS = {   # SA-R3-01 (round 3): (args, kw) that connect must refuse BEFORE sqlite3.connect runs
+    "factory-keyword": ((), {"factory": _Constructed}),          # the reviewer's route
+    "factory-positional": ((5.0, 0, None, True, _Constructed), {}),
+    "another-keyword": ((), {"detect_types": sqlite3.PARSE_DECLTYPES}),
+    "a-str-timeout": ((), {"timeout": "5"}),
+}
+
+
+@pytest.mark.parametrize("form", sorted(_CONNECT_FORMS))
+def test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs(tmp_path, form):
+    """SA-R3-01: `Census.connect` forwarded the caller's arguments, `factory` included, to the real sqlite3.connect,
+    so a factory's constructor ran before the authorizer and the trace were installed, and replay re-invoked it. Now
+    anything but the path and a numeric timeout is refused and recorded, and no constructor runs. Control: the
+    seamed callers' own forms (path; path and timeout) still connect."""
+    census, conn = _census(tmp_path)
+    conn.close()
+    _Constructed.ran.clear()
+    args, kw = _CONNECT_FORMS[form]
+    with pytest.raises(g.ChannelRefused):
+        census.connect(census.store, args, kw)
+    assert _Constructed.ran == [] and len(census.reals) == 1, (_Constructed.ran, census.reals)
+    assert census.refusals[-1][0].startswith("connect with "), census.refusals
+    census.connect(census.store, (), {"timeout": 5.0}).close()
+    census.connect(census.store, (), {}).close()
+    assert len(census.reals) == 3 and len(census.refusals) == 1
+
+
+def _runtime_sqlite3_names(path):
+    """Every `sqlite3.<name>` a module READS at run time: annotations (unevaluated under `from __future__ import
+    annotations`) excluded."""
+    tree = ast.parse(pathlib.Path(path).read_text())
+    skip = set()
+    for node in ast.walk(tree):
+        for ann in ([a.annotation for a in (node.args.args + node.args.kwonlyargs + node.args.posonlyargs)]
+                    + [node.returns] if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) else
+                    [node.annotation] if isinstance(node, ast.AnnAssign) else []):
+            if ann is not None:
+                skip |= {id(n) for n in ast.walk(ann)}
+    return {n.attr for n in ast.walk(tree) if isinstance(n, ast.Attribute) and id(n) not in skip
+            and isinstance(n.value, ast.Name) and n.value.id == "sqlite3"}
+
+
+def test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else(tmp_path):
+    """SA-R3-01, research's stage-1 read: the seam forwarded the whole sqlite3 module, so `sqlite3.Connection(path)`
+    wrote with no census. Now it exposes `connect` (the census) and SEAM_ATTRS; every other name is refused and
+    recorded. SEAM_ATTRS is checked against what the seamed modules actually read, by AST, so a new use fails here by
+    name rather than at a migration."""
+    census, conn = _census(tmp_path)
+    seam = g._Seam(census)
+    assert all(getattr(seam, n) is getattr(sqlite3, n) for n in g.SEAM_ATTRS)
+    for name in ("Connection", "Cursor", "Row", "Blob", "complete_statement", "sqlite_version"):
+        with pytest.raises(g.ChannelRefused):
+            getattr(seam, name)
+        assert census.refusals[-1][0] == f"sqlite3.{name} through the module seam"
+    used = set().union(*(_runtime_sqlite3_names(ROOT / "src" / "veracium" / "store" / m)
+                         for m in ("migration.py", "release_migration.py")))
+    assert used == g.SEAM_ATTRS | {"connect"}, used
+
+
+@pytest.mark.parametrize("name,value,ok", [
+    pytest.param("isolation_level", None, True, id="isolation_level-None"),
+    pytest.param("isolation_level", "", True, id="isolation_level-empty"),
+    pytest.param("isolation_level", "DEFERRED", True, id="isolation_level-DEFERRED"),
+    pytest.param("isolation_level", "BOGUS", False, id="isolation_level-BOGUS"),
+    pytest.param("row_factory", None, True, id="row_factory-None"),
+    pytest.param("row_factory", sqlite3.Row, True, id="row_factory-Row"),
+    pytest.param("row_factory", lambda cur, row: row, False, id="row_factory-function"),
+    pytest.param("text_factory", str, True, id="text_factory-str"),
+    pytest.param("text_factory", lambda b: b.decode(), False, id="text_factory-function"),
+])
+def test_a_settable_attribute_takes_only_its_closed_values(tmp_path, name, value, ok):
+    """Research's stage-1 read, in SA-R3-01's closure's letter: replay re-ran `setattr` with the recorded VALUE, so a
+    Python row or text factory is caller code executed twice. A value now comes from a closed set (by identity for a
+    callable); anything else is refused and recorded, and never recorded as a set."""
+    census, conn = _census(tmp_path)
+    if ok:
+        setattr(conn, name, value)
+        assert census.refusals == [] and [e.name for e in census.events if e.kind == "set"] == [name]
+        return
+    with pytest.raises(g.ChannelRefused):
+        setattr(conn, name, value)
+    assert census.refusals[-1][0].startswith(f"setting connection.{name} to ")
+    assert [e for e in census.events if e.kind == "set"] == []
+
+
+@pytest.mark.parametrize("forged", ["connect-factory", "connect-positional", "set-function"])
+def test_replay_never_runs_recorded_caller_behaviour(tmp_path, forged):
+    """SA-R3-01's closure: replay must not execute opaque caller-supplied behaviour as inert input. A recorded connect
+    with a factory or a positional extra, or a recorded set to a Python function, is refused by replay itself (the
+    census no longer records one; this is the second check), and nothing in it runs."""
+    copy = _db(str(tmp_path / "copy.db"), ["CREATE TABLE episodes(id INTEGER PRIMARY KEY, json TEXT)"])
+    called = []
+    ok_connect = g.Event("connect", 0, args=(), kw={"cached_statements": 0})
+    events = {"connect-factory": [g.Event("connect", 0, args=(), kw={"factory": _Constructed, "cached_statements": 0})],
+              "connect-positional": [g.Event("connect", 0, args=(5.0,), kw={"cached_statements": 0})],
+              "set-function": [ok_connect, g.Event("set", 0, name="row_factory",
+                                                   value=lambda cur, row: called.append(row) or row)]}[forged]
+    _Constructed.ran.clear()
+    problems = g.replay(events, copy)
+    assert problems and problems[-1].startswith("replay refuses connection 0's recorded"), problems
+    assert _Constructed.ran == [] and called == []
+    assert g.replay([ok_connect, g.Event("set", 0, name="isolation_level", value=None)], copy) == []      # control
 
 
 def test_no_allowed_name_hands_back_a_real_connection_cursor_or_blob(tmp_path):
