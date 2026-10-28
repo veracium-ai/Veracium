@@ -350,6 +350,53 @@ def test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_e
     assert used == g.SEAM_ATTRS | {"connect"}, used
 
 
+def _sqlite3_reaches(path):
+    """Every way a module reaches the sqlite3 module: (kind, detail). The one admitted form is a single module-level,
+    unaliased `import sqlite3`, which is the name the census's seam replaces."""
+    tree = ast.parse(pathlib.Path(path).read_text())
+    top = {id(n) for n in tree.body}
+    out = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                if a.name == "sqlite3" or a.name.startswith("sqlite3."):
+                    form = "module-level import" if id(node) in top and a.name == "sqlite3" and a.asname is None else \
+                        f"a second binding: import {a.name}" + (f" as {a.asname}" if a.asname else "") + f" at line {node.lineno}"
+                    out.append(form)
+        elif isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == "sqlite3":
+            out.append(f"a second binding: from {node.module} import ... at line {node.lineno}")
+        elif isinstance(node, ast.Call):
+            f = node.func
+            name = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else ""
+            if name in ("__import__", "import_module") and any(
+                    isinstance(a, ast.Constant) and "sqlite3" in str(a.value) for a in node.args):
+                out.append(f"a second binding: {name}(...'sqlite3'...) at line {node.lineno}")
+        elif isinstance(node, ast.Subscript) and "sys.modules" in ast.unparse(node.value) and "sqlite3" in ast.unparse(node.slice):
+            out.append(f"a second binding: sys.modules[...'sqlite3'...] at line {node.lineno}")
+        elif isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            if any(isinstance(x, ast.Name) and x.id == "sqlite3" for tg in targets for x in ast.walk(tg)):
+                out.append(f"a second binding: the name sqlite3 rebound at line {node.lineno}")
+    return out
+
+
+def test_each_seamed_module_reaches_sqlite3_only_through_the_name_the_seam_replaces(tmp_path):
+    """Research's stage 2 on 95c207c (v38's sentence, made true by mechanism): the seam is the module's global
+    `sqlite3`, so a second binding (`import sqlite3 as _real` inside a function, `from sqlite3 import Connection`,
+    `importlib.import_module("sqlite3")`, `sys.modules["sqlite3"]`) reaches the real module past it, and only replay
+    would see the write. Each seamed module binds sqlite3 exactly once, by a module-level unaliased import.
+    Control: each planted form is found."""
+    for m in ("migration.py", "release_migration.py"):
+        reaches = _sqlite3_reaches(ROOT / "src" / "veracium" / "store" / m)
+        assert reaches == ["module-level import"], (m, reaches)
+    planted = tmp_path / "planted.py"
+    planted.write_text("import sqlite3\nimport importlib, sys\n\n\ndef f(path):\n    import sqlite3 as _real\n"
+                       "    from sqlite3 import Connection\n    importlib.import_module('sqlite3')\n    sys.modules['sqlite3']\n"
+                       "    sqlite3 = None\n")
+    found = _sqlite3_reaches(planted)
+    assert found[0] == "module-level import" and len([x for x in found if x.startswith("a second binding")]) == 5, found
+
+
 @pytest.mark.parametrize("name,value,ok", [
     pytest.param("isolation_level", None, True, id="isolation_level-None"),
     pytest.param("isolation_level", "", True, id="isolation_level-empty"),

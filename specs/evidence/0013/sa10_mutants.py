@@ -321,6 +321,15 @@ MUTANTS += [
      [(_CONNECT, _CONNECT + "    conn.text_factory = lambda b: b.decode()\n")],
      [CLEAN_GATE], [ROUTE("connection.blobopen")], "refused setting connection.text_factory to",
      "research's stage-1 read: a Python text factory, likewise"),
+    ("tree-second-sqlite3-binding", "tree", MIGRATION,
+     [(_CONNECT, "    import sqlite3 as _real\n"
+                 "    _w = _real.Connection(path)\n"
+                 "    _w.execute(\"UPDATE episodes SET json = json_set(json, '$.summary', 'second binding')\")\n"
+                 "    _w.commit()\n    _w.close()\n" + _CONNECT)],
+     [C("test_each_seamed_module_reaches_sqlite3_only_through_the_name_the_seam_replaces")], [ROUTE("connection.blobopen")],
+     "a second binding: import sqlite3 as _real",
+     "research's stage 2 on 95c207c: a second binding of sqlite3 inside migrate_store writes past the seam (the complete "
+     "gate sees it only through replay, rule 5's read-influence limit on three paths)"),
     # GATE: each new check removed, each killed by its own cells
     ("sa-r3-01-connect-forwards-the-callers-arguments", "gate", GATE,
      [('        bad = connect_args_problem(args, kw)\n        if bad:                                   # SA-R3-01: '

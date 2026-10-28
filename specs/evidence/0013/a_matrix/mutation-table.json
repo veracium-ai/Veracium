@@ -1,5 +1,5 @@
 {
- "body_sha256": "59882a0e2ec9f471f3ac6617032c83c3fcffec1e8940f4007138982ed66d232d",
+ "body_sha256": "7810a0b91cfbe0441e0effd10411eb943d54065be3acc7b67315ebadff08539c",
  "controls": [
   {
    "anchor_counts": [
@@ -67,7 +67,7 @@
     "passed": 28
    }
   },
-  "commit": "46ae1209d5888adb482fb3aaecadd5f21a21f1c4",
+  "commit": "95c207c6526da0a9203c9d04f0d7d2747d7f1538",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "a01256bf9e58e26f267def3e17a6dbdfc5835320a1a14bf48685ae91aa597edf"
   },
@@ -96,7 +96,7 @@
    "p3-require-stamp-false-verified": "67071ea6c550f1cbef9af2aed82babe81cb002fcd583e651d5ca62890f401bf1"
   },
   "digests": {
-   "specs/0013-store-migrations.md": "1a48989e68f46614a13c462721b21d37d0bbb849ab7a2605d97283311985fd2d",
+   "specs/0013-store-migrations.md": "933b60fc573c6f1b114e33b150d1a30fce1213ed5ca0f85e2f0cec95ae0086a6",
    "specs/evidence/0013/a_matrix_mutants.py": "48f361791274de79bbe0c1eb61d6821602fd630993f17881ac4c609c62d8bb45",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "69b2aa50b14d9bc190a6dac42ac483289316991fb2f5ef723f3604be1acce9e0",
@@ -123,14 +123,11 @@
   "tracked_changes": [
    "specs/0007-store-schema-versioning.md",
    "specs/0013-store-migrations.md",
-   "specs/attestation_job.py",
-   "specs/attestation_writer.py",
+   "specs/attestation_collect/attestation_collect.py",
    "specs/evidence/0007/sa_mutants.py",
    "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_gate.py",
    "specs/evidence/0013/sa10_mutants.py",
    "tests/test_0007_attestation_jobs.py",
-   "tests/test_0007_attestation_writer.py",
    "tests/test_0013_sa10_gate.py"
   ]
  },
@@ -163,7 +160,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.28s",
+   "pytest": "1 failed in 1.32s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -196,7 +193,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.27s",
+   "pytest": "1 failed in 1.46s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -234,7 +231,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.32s",
+   "pytest": "2 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "the TEMP trigger and TEMP virtual-table probes report the TEMP table probe's answer (one probe for three classes)"
@@ -267,7 +264,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.25s",
+   "pytest": "1 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -300,7 +297,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.38s",
+   "pytest": "1 failed in 1.37s",
    "reason": null,
    "reason_seen": null,
    "what": "0013 round 3's hole: when no recorded path record covers the source x declaration, derive it from live code"
@@ -333,7 +330,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.12s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "two identical current records for one key: the artifact validator says nothing"
@@ -366,7 +363,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.15s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "two current records for one key with different outputs: the first is kept, the contradiction unreported"
@@ -402,7 +399,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.24s",
+   "pytest": "2 failed in 1.38s",
    "reason": null,
    "reason_seen": null,
    "what": "0013 round 4's hole: a malformed current-algorithm record (a missing algorithm field, or a record failing its own rules) is filtered out, poisoning nothing, and the valid record is selected"
@@ -435,7 +432,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.13s",
+   "pytest": "1 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "a path record's generated_on is never resolved: provenance poisons nothing"
@@ -468,7 +465,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.24s",
+   "pytest": "1 failed in 1.41s",
    "reason": null,
    "reason_seen": null,
    "what": "a recorded False probe is AUTHORITY: the migration refuses on the record, without running the probes live"
@@ -501,7 +498,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.07s",
+   "pytest": "1 failed in 1.15s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale-algorithm record is current: validated, counted and selectable"
@@ -537,7 +534,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.64s",
+   "pytest": "2 failed in 1.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the path key without the migration declaration digest: an altered declaration selects the recorded evidence"
@@ -570,7 +567,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.09s",
+   "pytest": "1 failed in 1.23s",
    "reason": null,
    "reason_seen": null,
    "what": "cardinality counts only expected keys: a current record outside the expected set is not refused"
@@ -603,7 +600,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.13s",
+   "pytest": "1 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "the model's evidence validator admits two accepted manifestations sharing one acceptance digest"
@@ -639,7 +636,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.34s",
+   "pytest": "2 failed in 1.46s",
    "reason": null,
    "reason_seen": null,
    "what": "S66's single-active-runtime count kept: a second attested key poisons the attestation artifact"
@@ -672,7 +669,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.07s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "an attestation record carrying a probe result False is well-formed: the recorded False passes"
@@ -705,7 +702,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "production's evidence check admits two accepted manifestations sharing one acceptance digest"
@@ -739,7 +736,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -773,7 +770,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.76s",
+   "pytest": "1 failed, 1 warning in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's migration skips _validated_current"
@@ -810,7 +807,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "only open_versioned gates: the release preflight never reads the measured status, so a refused build reaches it"
@@ -844,7 +841,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.69s",
+   "pytest": "1 failed, 1 warning in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's migration commits before _validated_current runs"
@@ -878,7 +875,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.72s",
+   "pytest": "1 failed, 1 warning in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's revalidation passes require_stamp=False"
@@ -894,6 +891,6 @@
   "good": 22,
   "killed": 22,
   "rows": 22,
-  "seconds": 90
+  "seconds": 96
  }
 }

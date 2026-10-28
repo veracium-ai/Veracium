@@ -343,6 +343,48 @@ _LIVE_RAISE = ("import pytest\n\n\n@pytest.hookimpl(wrapper=True)\ndef pytest_se
                "    yield\n    raise RuntimeError('a session-finish failure after the JUnit was written')\n")
 
 
+_DROP_HOOK = {   # research's stage 2 on 95c207c: a conftest drops a failing test from `items`, no deselect report
+    "unmarked": "", "tryfirst": "@pytest.hookimpl(tryfirst=True)\n", "trylast": "@pytest.hookimpl(trylast=True)\n",
+    "wrapper": "@pytest.hookimpl(wrapper=True)\n",
+}
+_SUPERSEDED_PLUGIN = (   # the first form (95c207c): a tryfirst modifyitems hook, which a conftest's tryfirst one precedes
+    "import json, os\nimport pytest\n\n\n@pytest.hookimpl(tryfirst=True)\n"
+    "def pytest_collection_modifyitems(session, config, items):\n    path = os.environ.get('VERACIUM_ATTESTATION_COLLECTED')\n"
+    "    if path:\n        with open(path, 'w') as f:\n            json.dump([i.nodeid for i in items], f)\n")
+
+
+@pytest.mark.parametrize("hook", sorted(_DROP_HOOK))
+def test_a_conftest_that_drops_a_collected_test_is_caught_whatever_its_hook_priority(tmp_path, monkeypatch, hook):
+    """SA-R3-02, research's stage 2: the collection record must precede EVERY collection_modifyitems implementation, a
+    conftest's tryfirst one and a wrapper included. A real pytest process through `_run_suite`; the conftest drops a
+    FAILING test. The committed plugin (pytest_itemcollected) names it missing for every priority. Its superseded form
+    is run against the same fixture as the cell's own control, and must miss the tryfirst and wrapper forms: a cell
+    that cannot tell the two plugins apart would prove nothing."""
+    root = tmp_path / "tree"
+    (root / "tests").mkdir(parents=True)
+    (root / "tests" / "test_a.py").write_text("def test_first():\n    assert True\n\n\ndef test_second():\n    assert False\n")
+    body = ("    items[:] = [i for i in items if i.name != 'test_second']\n" if hook != "wrapper" else
+            "    items[:] = [i for i in items if i.name != 'test_second']\n    yield\n")   # before every inner hook
+    (root / "tests" / "conftest.py").write_text(f"import pytest\n\n\n{_DROP_HOOK[hook]}def pytest_collection_modifyitems(items):\n{body}")
+    for k in [k for k in __import__("os").environ if k.startswith("PYTEST_")]:
+        monkeypatch.delenv(k)
+    monkeypatch.setattr(job, "ROOT", root)
+    monkeypatch.setattr(job.attestation_suite, "suite", lambda r: ["tests/test_a.py"])
+
+    def outcome():
+        return job.decide(_args(), runtime_status=_status(), check_evidence=lambda: (0, ""), run_suite=job._run_suite,
+                          head=lambda: "a" * 40, euid=1000, environ={}, records=[],
+                          probes=lambda: {k: True for k in sv.CONFINEMENT_PROBE_KEYS})
+    r = outcome()
+    assert r["outcome"] == "suite-mismatch" and "1 missing (collected, not reported): tests/test_a.py::test_second" in r["reason"], r
+    old = tmp_path / "superseded"
+    old.mkdir()
+    (old / "attestation_collect.py").write_text(_SUPERSEDED_PLUGIN)
+    monkeypatch.setattr(job, "COLLECT_PLUGIN_DIR", old)
+    caught = outcome()["outcome"] == "suite-mismatch"
+    assert caught is (hook not in ("tryfirst", "wrapper")), (hook, caught)
+
+
 @pytest.mark.parametrize("mode", ["control", "deselect", "session-finish-raise"])
 def test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status(tmp_path, monkeypatch, mode):
     """SA-R3-02 and SA-R3-03 with a REAL pytest process through the unchanged `_run_suite` (the reviewer's minimal

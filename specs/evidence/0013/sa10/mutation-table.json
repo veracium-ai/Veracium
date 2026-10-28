@@ -1,5 +1,5 @@
 {
- "body_sha256": "6b518c530dd1ab4148e8305fc3f19c2d671a74ce68998286ad4e760675a7f141",
+ "body_sha256": "368a1521cc7a718c29708a9dae0ff373ddf7f2b018acedd2ed79946b86e888d6",
  "controls": [
   {
    "anchor_counts": [
@@ -53,6 +53,7 @@
     "tests/test_0013_sa10_gate.py::test_each_classification_rule_refuses_its_case_and_admits_its_legitimate_one[5]",
     "tests/test_0013_sa10_gate.py::test_each_classification_rule_refuses_its_case_and_admits_its_legitimate_one[6]",
     "tests/test_0013_sa10_gate.py::test_each_classification_rule_refuses_its_case_and_admits_its_legitimate_one[8]",
+    "tests/test_0013_sa10_gate.py::test_each_seamed_module_reaches_sqlite3_only_through_the_name_the_seam_replaces",
     "tests/test_0013_sa10_gate.py::test_execute_hands_back_the_cursor_wrapper_never_the_real_cursor",
     "tests/test_0013_sa10_gate.py::test_n11_a_statement_around_the_proxy_is_an_orphan",
     "tests/test_0013_sa10_gate.py::test_n12_setconfig_writable_schema_then_a_schema_table_delete_is_refused_twice_over",
@@ -106,17 +107,17 @@
   },
   "clean": {
    "first": {
-    "of": 71,
+    "of": 72,
     "ok": true,
-    "passed": 71
+    "passed": 72
    },
    "last": {
-    "of": 71,
+    "of": 72,
     "ok": true,
-    "passed": 71
+    "passed": 72
    }
   },
-  "commit": "46ae1209d5888adb482fb3aaecadd5f21a21f1c4",
+  "commit": "95c207c6526da0a9203c9d04f0d7d2747d7f1538",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "0f24898c8e6fa5c5dc15ab1345e97221888f49a8bcf6510939b41c1ee59e8ed3"
   },
@@ -174,6 +175,7 @@
    "tree-direct-connection": "0d0b0e44eceb4e5246aa8d96440f72636daaf69bc517b02ef78484624297b86e",
    "tree-release-migration-write": "9837507d1e9c8d653f2740fe8435443d770e8cd880c451391b1da3741ae52bef",
    "tree-row-factory-function": "1c5b6f4502a494625ddb3e6a682ca1606248e5a861d68ba10d96e1939a9d420a",
+   "tree-second-sqlite3-binding": "580b50e3210bae920b4414639e6b3854a3a033a8ba86d31a520eeec962c53db8",
    "tree-text-factory-function": "196ba5c81a1d38afe082d542569c13822a2b0f0d593b29977dd94ca5f84fda12",
    "tree-undeclared-ddl": "74c5a91aa0aab807ab870609ac8f3f8b1654256eb6e323a85cf3111c3af1c604",
    "tree-unmapped-write": "f8016b9048d21ad366e68ea984c8041d1aa23185d545f3c20aedd8708823edfa",
@@ -190,14 +192,14 @@
    "specs/evidence/0013/pa1_campaign.py": "1f381ba1f29979a598ef5cc666aa9b2a32b727402d8ce598e8a01e32854781c3",
    "specs/evidence/0013/sa10_digest.py": "b3267bc12cf0b45b2c407747f01c0b1d51381edb549bf0a0e798b4e42ecf5f3e",
    "specs/evidence/0013/sa10_gate.py": "708a82806afd09808ec63a7875207ed7b5642c80cd66870b51ec28fa5d34a0c6",
-   "specs/evidence/0013/sa10_mutants.py": "74d4c70415eeb3854b31269e64f0d1b89719b65ba660514186651b1c26190254",
+   "specs/evidence/0013/sa10_mutants.py": "de1baeb2c985e64125499c158cf9842b8cae3ba913d4f73e2c136d37c6e6ca2a",
    "specs/evidence/0013/steptable.py": "3bd0703a285479090d542883fecd10c1165eb4857dc70c7f4f0ef1c3a5cdab29",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "69b2aa50b14d9bc190a6dac42ac483289316991fb2f5ef723f3604be1acce9e0",
    "src/veracium/store/migration.py": "be5542418a560310b45af5555602b10f2e8cc6cb161730be45c6101495e6dc42",
    "src/veracium/store/release_migration.py": "0e750325e0347d02dfea19dedecdc6c3bd0bce2733a25556f8df52a7e83f1ce4",
    "src/veracium/store/schema_version.py": "452a7750f8fc23173b4c65e1fc86a68ccd4ae6241d656f191e9adade92968a05",
-   "tests/test_0013_sa10_gate.py": "b49891d8f60a5d8b2651cb408eef2cd160e94df3c58b38e6a12909bf4c991249"
+   "tests/test_0013_sa10_gate.py": "b8b69f6f1300dc2b1341aaa91a25a5181c509c35010448d7cabda36ba0de5481"
   },
   "finding": "INV-SA10",
   "honest_nodes": [
@@ -214,13 +216,10 @@
   "tracked_changes": [
    "specs/0007-store-schema-versioning.md",
    "specs/0013-store-migrations.md",
-   "specs/attestation_job.py",
-   "specs/attestation_writer.py",
+   "specs/attestation_collect/attestation_collect.py",
    "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0013/sa10_gate.py",
    "specs/evidence/0013/sa10_mutants.py",
    "tests/test_0007_attestation_jobs.py",
-   "tests/test_0007_attestation_writer.py",
    "tests/test_0013_sa10_gate.py"
   ]
  },
@@ -256,7 +255,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.09s",
+   "pytest": "2 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -289,7 +288,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -322,7 +321,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -361,7 +360,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.18s",
+   "pytest": "3 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "N4/N8: executescript allowed, the script classified by its first statement"
@@ -397,7 +396,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.58s",
+   "pytest": "2 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "N5/N10: the gate no longer asserts its head constructors are plain creates"
@@ -433,7 +432,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.07s",
+   "pytest": "2 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "N6/N7: a statement the prefix label calls a read is classified as a read"
@@ -466,7 +465,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.89s",
+   "pytest": "1 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "N7: the write complement runs over labelled DML only"
@@ -502,7 +501,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.85s",
+   "pytest": "2 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "N9: every pragma other than the stamp is a read"
@@ -535,7 +534,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "N11: the orphan check skipped"
@@ -571,7 +570,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.83s",
+   "pytest": "2 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "N12: a write to sqlite_master alone is classified as a read"
@@ -607,7 +606,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.04s",
+   "pytest": "2 failed in 1.19s",
    "reason": null,
    "reason_seen": null,
    "what": "N12: the getconfig assertion after every call dropped"
@@ -655,7 +654,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 1.33s",
+   "pytest": "6 failed in 1.59s",
    "reason": null,
    "reason_seen": null,
    "what": "N13\u2013N15: the connection proxy forwards every name it does not list to the real connection"
@@ -692,7 +691,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.56s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "stage-1 4(g): the superseded shape, the allowlist in __getattr__ with the real connection an instance attribute, so a name the object HAS (`_real`, `__dict__`) never reaches the allowlist"
@@ -728,7 +727,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.57s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the proxy's __setattr__ forwards every name to the real connection: setting `_real` or `autocommit` is admitted"
@@ -761,7 +760,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "stage-1 4(f): `with conn as c` binds the real connection"
@@ -797,7 +796,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.57s",
+   "pytest": "2 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "stage-1 4(f): execute returns the real cursor, whose .connection is the real connection"
@@ -830,7 +829,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "stage-1 4(f) note: iter() of the cursor wrapper is the real cursor"
@@ -863,7 +862,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the comparator's column lookup misses every table: rows digest as rowids"
@@ -896,7 +895,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "the comparator digests values without their storage class"
@@ -929,7 +928,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.14s",
    "reason": null,
    "reason_seen": null,
    "what": "the comparator digests physical placement (rootpage) with the schema rows"
@@ -962,7 +961,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.30s",
+   "pytest": "1 failed in 0.42s",
    "reason": null,
    "reason_seen": null,
    "what": "the comparator does not assert the census's SQLite build"
@@ -998,7 +997,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.04s",
+   "pytest": "2 failed in 1.50s",
    "reason": null,
    "reason_seen": null,
    "what": "integrity_check on the census file is not asserted"
@@ -1031,7 +1030,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "replay re-runs nothing"
@@ -1064,7 +1063,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "replay does not compare each call's outcome"
@@ -1097,7 +1096,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "parameters recorded by reference: a later mutation reaches the replay"
@@ -1133,7 +1132,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.83s",
+   "pytest": "2 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "a call that ran untraced and unauthorized is not refused"
@@ -1166,7 +1165,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "an allowed name may hand back a real Connection, Cursor or Blob"
@@ -1199,7 +1198,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "site coverage reports no unobserved site"
@@ -1232,7 +1231,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "an authorizer callback from another connection is attributed to the current call"
@@ -1265,7 +1264,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "an action code outside the closed table reads as a read"
@@ -1298,7 +1297,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.07s",
+   "pytest": "1 failed in 1.18s",
    "reason": null,
    "reason_seen": null,
    "what": "a gate run with no real (b2) observed passes"
@@ -1331,7 +1330,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a stamp below the head is admitted"
@@ -1364,7 +1363,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "a schema write from an undeclared site is admitted"
@@ -1397,7 +1396,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 1.19s",
    "reason": null,
    "reason_seen": null,
    "what": "release_migration's own connections bypass the seam"
@@ -1430,7 +1429,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "a row write two steps' matchers both claim is admitted (exact-one ownership)"
@@ -1463,7 +1462,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 1.02s",
    "reason": "the call traced more than once",
    "reason_seen": true,
    "what": "\u00a75f.1 rule 3: a per-call trace count refuses the nested table-valued pragma"
@@ -1496,7 +1495,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 1.03s",
    "reason": "a row write on ['episodes'] maps to 0 steps",
    "reason_seen": true,
    "what": "a ladder write that maps to no step, after the stamp postcondition"
@@ -1529,7 +1528,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 12.01s",
+   "pytest": "1 failed in 14.93s",
    "reason": "site never observed on any path: veracium/store/migration.py:_apply_forward:",
    "reason_seen": true,
    "what": "the same write behind a condition no fixture satisfies (dev's mutant2-conditional): the site check alone"
@@ -1562,7 +1561,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.99s",
    "reason": "a schema write from a site not declared to issue DDL",
    "reason_seen": true,
    "what": "(b2) and (b1) texts issued from _drop_wiki_cache, a site not declared to issue DDL"
@@ -1595,7 +1594,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 1.07s",
    "reason": "veracium/store/release_migration.py:_observe:",
    "reason_seen": true,
    "what": "a write added to release_migration's _observe, inside its BEGIN IMMEDIATE ... ROLLBACK"
@@ -1629,7 +1628,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.27s",
+   "pytest": "1 failed in 7.66s",
    "reason": "refused connect with the keyword argument(s) ['factory']",
    "reason_seen": true,
    "what": "SA-R3-01, the reviewer's mutation: migrate_store's connection is a Connection subclass whose constructor updates an episode summary and commits, before the authorizer and trace exist"
@@ -1663,7 +1662,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 8 warnings in 6.28s",
+   "pytest": "1 failed, 8 warnings in 7.44s",
    "reason": "refused connect with 5 positional argument(s)",
    "reason_seen": true,
    "what": "SA-R3-01: the same factory passed positionally"
@@ -1696,7 +1695,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.27s",
+   "pytest": "1 failed in 7.88s",
    "reason": "refused sqlite3.Connection through the module seam",
    "reason_seen": true,
    "what": "research's stage-1 read: a connection constructed directly through the seam, with no connect at all"
@@ -1729,7 +1728,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.44s",
+   "pytest": "1 failed in 7.94s",
    "reason": "refused setting connection.row_factory to",
    "reason_seen": true,
    "what": "research's stage-1 read: a Python row factory, caller code that replay would re-run"
@@ -1762,10 +1761,43 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.50s",
+   "pytest": "1 failed in 8.64s",
    "reason": "refused setting connection.text_factory to",
    "reason_seen": true,
    "what": "research's stage-1 read: a Python text factory, likewise"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_each_seamed_module_reaches_sqlite3_only_through_the_name_the_seam_replaces": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_each_seamed_module_reaches_sqlite3_only_through_the_name_the_seam_replaces"
+   ],
+   "definition_sha256": "580b50e3210bae920b4414639e6b3854a3a033a8ba86d31a520eeec962c53db8",
+   "file": "src/veracium/store/migration.py",
+   "finding": "INV-SA10",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_the_proxy_refuses_each_route_and_records_the_refusal[connection.blobopen]"
+   ],
+   "id": "tree-second-sqlite3-binding",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "tree",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_each_seamed_module_reaches_sqlite3_only_through_the_name_the_seam_replaces"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.30s",
+   "reason": "a second binding: import sqlite3 as _real",
+   "reason_seen": true,
+   "what": "research's stage 2 on 95c207c: a second binding of sqlite3 inside migrate_store writes past the seam (the complete gate sees it only through replay, rule 5's read-influence limit on three paths)"
   },
   {
    "anchor_counts": [
@@ -1798,7 +1830,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed, 2 warnings in 0.62s",
+   "pytest": "2 failed, 2 warnings in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped connect: the caller's arguments, factory included, reach sqlite3.connect"
@@ -1831,7 +1863,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped seam: every sqlite3 attribute but connect forwarded"
@@ -1867,7 +1899,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.59s",
+   "pytest": "2 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "a settable attribute takes any value, a Python factory included"
@@ -1904,7 +1936,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.28s",
+   "pytest": "2 failed in 0.32s",
    "reason": null,
    "reason_seen": null,
    "what": "replay re-runs a recorded connect's arguments and a recorded set's value"
@@ -1935,7 +1967,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.24s",
+   "pytest": "1 failed in 0.27s",
    "reason": null,
    "reason_seen": null,
    "what": "v37: the sequence attributed on a build whose own probe does not reproduce it"
@@ -1975,7 +2007,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.34s",
+   "pytest": "4 failed in 0.42s",
    "reason": null,
    "reason_seen": null,
    "what": "v37: a loose sequence (callback codes only, from UPDATE/READ) accepts a sixth column, another table, another database or a trigger argument"
@@ -2006,7 +2038,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.25s",
+   "pytest": "1 failed in 0.31s",
    "reason": null,
    "reason_seen": null,
    "what": "v37: the sequence accepted on a second use on one connection"
@@ -2037,7 +2069,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.24s",
+   "pytest": "1 failed in 0.32s",
    "reason": null,
    "reason_seen": null,
    "what": "v37: the sequence accepted outside a prepare"
@@ -2068,7 +2100,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.25s",
+   "pytest": "1 failed in 0.31s",
    "reason": null,
    "reason_seen": null,
    "what": "v37: the probe's no-change check dropped"
@@ -2101,7 +2133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -2136,7 +2168,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "N11: actions attributed by trace sequence: a callback that arrives while no proxied call runs joins the call that traced last (on its connection), instead of being an orphan"
@@ -2170,7 +2202,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 12.45s",
+   "pytest": "1 failed in 13.74s",
    "reason": "C2: no (b2) statement carrying a DROP_INDEX action was observed",
    "reason_seen": true,
    "what": "C2: a gate with no C2 fixture (`wrong`) in scope, on either entry: the clean ladder then fails as no (b2) observed"
@@ -2206,7 +2238,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 13.60s",
+   "pytest": "2 failed in 14.76s",
    "reason": "C3-missing: execute 'DROP INDEX IF EXISTS ",
    "reason_seen": true,
    "what": "C3: every label/SQLite disagreement refused in both directions (rule 6's one exception, the (b2) no-op of an index already absent, dropped): the clean ladder's C3 path refuses"
@@ -2245,7 +2277,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.99s",
+   "pytest": "3 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "I1: a pragma name off the list is a read when its argument has a well-formed shape (the shape still checked for a listed name)"
@@ -2278,7 +2310,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "I1: a listed pragma is a read with any well-formed argument shape (the vocabulary frozen by name only)"
@@ -2314,7 +2346,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.74s",
+   "pytest": "2 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "I1: a listed code (ATTACH) re-classed from refused to read in the closed table"
@@ -2347,7 +2379,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "I1: a call with both effects evaluated by its schema branch only (its row writes dropped)"
@@ -2378,7 +2410,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.70s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "I1: the census leaves the statement cache at its default (a cached PREPARE gives no authorizer callback)"
@@ -2411,7 +2443,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "I1: REINDEX paired with ANY CREATE_INDEX in the call, not the one of its name"
@@ -2420,13 +2452,13 @@
  "summary": {
   "by_kind": {
    "gate": 55,
-   "tree": 9
+   "tree": 10
   },
   "controls": 1,
   "controls_good": 1,
-  "good": 64,
-  "killed": 64,
-  "rows": 64,
-  "seconds": 269
+  "good": 65,
+  "killed": 65,
+  "rows": 65,
+  "seconds": 319
  }
 }

@@ -381,6 +381,11 @@ CARRIERS = {
     ("INV-SA6", 30): ("cite", f"{WRITER_MATRIX}::fresh refuses no future or malformed record (another key's is erased; the same key's reads as S75)"),
     ("INV-SA6", 31): ("cite", f"{WRITER_MATRIX}::fresh skips the dry run over the original artifact (v19's order is not applied)"),
     ("INV-SA6", 32): ("cite", f"{WRITER_MATRIX}::the superseded implementation: fresh checks only current records, then clears the list"),
+    # (v23.1) research's stage 2 on 95c207c: the record is taken per item, before any collection hook of any priority
+    ("INV-SA6", 33): ("absent", "the superseded plugin is a separate file the child pytest loads, not a line of "
+                                "attestation_job.py, so no matrix row can plant it; the cell runs it as its own control "
+                                "against the same fixture and requires it to MISS the tryfirst and pre-yield wrapper forms",
+                      f"{JOBS}::test_a_conftest_that_drops_a_collected_test_is_caught_whatever_its_hook_priority[tryfirst]"),
     ("INV-SA12", 12): ("mutant", "sa12-pt-interp-from-a-fixed-window"),
     ("INV-SA12", 13): ("mutant", "sa12-a-short-segment-read-as-a-name"),
     ("INV-SA7", 0): ("mutant", "sa7-warn-on-every-open"),
@@ -431,6 +436,7 @@ CARRIERS = {
     ("INV-SA10", 18): ("cite", f"{SA10_TABLE}::sa-r3-01-the-seam-forwards-the-module"),
     ("INV-SA10", 19): ("cite", f"{SA10_TABLE}::sa-r3-01-set-values-unchecked"),
     ("INV-SA10", 20): ("cite", f"{SA10_TABLE}::sa-r3-01-replay-runs-recorded-behaviour"),
+    ("INV-SA10", 21): ("cite", f"{SA10_TABLE}::tree-second-sqlite3-binding"),
 }
 """Every phrase's ONE carrier (an INV-SA1 phrase spans both gate sites, so it names two mutants)."""
 
