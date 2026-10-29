@@ -2854,12 +2854,16 @@ def _build_measurement():
         # draft verdict (research's stage 2 on 8ed96ff, BLOCKING: a different snapshot entered after the first
         # context exited was served the first one's verdict, unreproduced).
         pre = _DRAFT["measured"] if _DRAFT["depth"] > 0 else None
-    if pre is not None:
-        return pre
-    try:
-        return sv.runtime_status()
-    except Exception as exc:  # noqa: BLE001 - production's is total; a patched defect is carried, not lost
-        return _MeasurementEscape(exc)
+        if pre is not None:
+            return pre
+        # No context is open, and none can open or close while the lock is held: the BUILD is measured here, under
+        # it. Measured after release, a concurrent context's install (or restore) could swap the globals mid-
+        # measurement, and a half-patched registry reads `refused` ("verification raised NearMissError": M-Q2 under
+        # load, 2026-10-29, 10 of 80 runs).
+        try:
+            return sv.runtime_status()
+        except Exception as exc:  # noqa: BLE001 - production's is total; a patched defect is carried, not lost
+            return _MeasurementEscape(exc)
 
 
 def _operation_measurement(st, snapshot):
