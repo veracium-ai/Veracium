@@ -12,7 +12,9 @@ The protocol, on a copy of the tracked tree (TMPDIR=/dev/shm recommended):
            run under pytest with a JUnit record, each failing cell classified by specs/evidence/mutation_kinds.py;
            KILLED iff the classifier says so AND every named cell failed AND, where the row declares a REASON, that
            text is in a named cell's failure; the file is restored byte-identically.
-  CONTROL  a negative control the classifier must read UNCLASSIFIED, never KILLED.
+  CONTROL  a negative control the classifier must read UNCLASSIFIED, never KILLED; or a NO-OP control (expected
+           SURVIVED): an edit that changes the file's bytes and no behaviour, whose named cells must ALL pass, so a
+           kill in that file is never merely "the file changed" (a digest-pinning cell would kill every mutant).
 `problems()` is FAST and re-runs nothing: definitions, anchors, digests, the named cells' existence, every row good.
 
 A mutant is (id, kind, file, [(anchor, replacement)], named cells, honest nodes, reason or None, what).
@@ -82,6 +84,13 @@ def junit_node(classname: str, name: str) -> str:
     parts = (classname or "").split(".")
     mod = next((i for i, p in enumerate(parts) if p.startswith("test_")), len(parts) - 1)
     return "::".join(["/".join(parts[:mod + 1]) + ".py", *parts[mod + 1:], name or ""])
+
+
+def _noop_fired(row) -> bool:
+    """A NO-OP control fired iff EVERY named cell ran and passed, and none failed or errored."""
+    named = set(row.get("named_cells") or [])
+    return (bool(named) and named <= set(row.get("cells_passed") or [])
+            and not row.get("cells_failed") and not row.get("cells_errored"))
 
 
 class Subject:
@@ -215,7 +224,11 @@ class Subject:
         finally:
             (root / rel).write_bytes(original)
         row.update(MK.classify(c["kinds"], c["failed"], c["errored"]))
-        row["good"] = row["import"] == "ok" and row["outcome"] == expected and bool(row["cells_failed"])
+        # a negative control must fail a cell (for no reason a row names); a NO-OP control must PASS every named cell —
+        # "none failed" alone is vacuous when the selection collected nothing (a renamed cell, a typo'd node: research)
+        row["cells_passed"] = sorted(c["passed"])
+        fired = (_noop_fired(row) if expected == "SURVIVED" else bool(row["cells_failed"]))
+        row["good"] = row["import"] == "ok" and row["outcome"] == expected and fired
         return row
 
     # ---- the campaign and its table ---------------------------------------------------------------------------------------
@@ -329,7 +342,9 @@ class Subject:
             out.append("the controls are not one per CONTROLS entry, in order")
         for k in ctls:
             recount = MK.classify(k.get("cell_kinds") or {}, k.get("cells_failed") or [], k.get("cells_errored") or [])
-            if not (k.get("good") is True and k.get("outcome") == k.get("expected") == recount["outcome"] != "KILLED"):
+            noop_ok = k.get("expected") != "SURVIVED" or _noop_fired(k)
+            if not (k.get("good") is True and noop_ok
+                    and k.get("outcome") == k.get("expected") == recount["outcome"] != "KILLED"):
                 out.append(f"{k.get('id')}: the classifier's negative control is not good (outcome {k.get('outcome')}, "
                            f"recounted {recount['outcome']}, expected {k.get('expected')})")
         return out

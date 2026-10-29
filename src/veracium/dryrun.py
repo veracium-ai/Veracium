@@ -188,7 +188,8 @@ def render(dr: DryRun) -> str:
         out.append(f"  ~ {c['fact']}  ({c['id']})")
         for k, b, a in c["changed"]:
             out.append(f"      {k}: {_fmt(b)} -> {_fmt(a)}")
-    counters = ("facts", "quarantined", "supersessions", "reinforcements", "invalid", "retried", "recovered",
+    counters = ("facts", "quarantined", "supersessions", "reinforcements", "within_episode_contested", "invalid",
+                "retried", "recovered",
                 "residual", "redispositioned", "instructions_dropped", "subject_refused", "speaker_restricted",
                 "quarantined_at_birth",
                 "agreement_floored", "agreement_recorded")

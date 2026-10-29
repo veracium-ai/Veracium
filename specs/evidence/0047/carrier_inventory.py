@@ -59,6 +59,7 @@ CLASSIFIED = {
     ("asof/resolve.py", "render_line"): ("ASOF", "the historical renderer (0019 U5's marker landed here 84b50c2)"),
     ("graph.py", "value_groups"): ("COLLAPSE", "groups values for render-time collapse"),
     ("graph.py", "_collapse_survivor_order"): ("COLLAPSE", "orders a collapse group's survivor"),
+    ("graph.py", "within_episode_order"): ("INTERNAL", "write-path planning (0003/within-episode): groups and orders one episode's edges for supersession; returns no fact content to any renderer"),
     ("__init__.py", "Memory._recall"): ("RAW", "builds `Recall` — `Recall.edges` hands whole facts to the caller"),
     ("__init__.py", "Memory._proactive"): ("RAW", "builds the proactive `Recall`"),
     ("asof/recall.py", "recall_at"): ("RAW", "the as-of `Recall`; it renders the CURRENT acts, whatever T (0047 INV-R20)"),

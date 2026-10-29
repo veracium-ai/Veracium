@@ -79,7 +79,8 @@ claims.
   `unparseable` (bool, PRESENT ONLY on the rejected-before-any-triple path,
   where it is True — the narrower, older signal; a host may keep reading it) ·
   `episode` (str) · `facts` · `quarantined` · `supersessions` ·
-  `reinforcements` · the vocabulary-enforcement counters `invalid` /
+  `reinforcements` · `within_episode_contested` (functional keys the event named two
+  value groups for: nothing retired for them, the values held as contested; specs/0003) · the vocabulary-enforcement counters `invalid` /
   `retried` / `recovered` / `residual` (specs/0025) · `procedures` /
   `procedural_refused` (specs/0037 v16 — routines the user stated in the event,
   recorded as procedural records through the verbatim-quote gate, and
@@ -446,7 +447,7 @@ with its evidence author, disclosure tier, `quarantined` / `ungrounded` /
 `needs_confirmation` flags, agreement record and the fact it supersedes; every
 existing fact that would move (retired with its reason, or its liveness
 advanced); the ingest's counters verbatim (`facts`, `quarantined`,
-`supersessions`, `reinforcements`, `subject_refused`, `speaker_restricted`, `quarantined_at_birth`,
+`supersessions`, `reinforcements`, `within_episode_contested`, `subject_refused`, `speaker_restricted`, `quarantined_at_birth`,
 `agreement_floored`, … and `extraction_unusable`); the episode that would be
 filed; and every degrade record (specs/0039) the run emitted. Because the
 shipped ingest ran, the report cannot disagree with what the real write does

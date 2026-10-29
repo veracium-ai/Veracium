@@ -759,7 +759,7 @@ rule below), and a retry is a new request.
 
 **One erasure rule, for both packages:** `forget_user` deletes, atomically with the user's records, the user's
 registry rows (every verb), act rows, and 0044's `migration_outcome`, `migration_run` (the run rows, which name the
-0018 amendment's `op_id`), `arity_inventory` and `refusal_inventory` rows; every such table joins `_ERASE_TABLES`.
+0018 amendment's `op_id`), `arity_inventory` and `refusal_inventory` rows, and 0022's `source_revocations` rows (2026-10-29, the owner); every such table joins `_ERASE_TABLES`. A census gate holds it, by property: every table with a `user_id` column is in `_ERASE_TABLES`, and every table in it has one (`tests/test_0022_erasure.py`).
 *The 0018 amendment's admission record, `migration_op`, is NOT per-user and holds no user content (an id, a mode, a
 digest of declarations, a time), so erasure has nothing of it to remove (v1.3, corrected before adoption).* Replay and 0044's once-per-plan
 end at erasure: a retry after erasure is a NEW request, and nothing erased is recreated in order to replay. The

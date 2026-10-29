@@ -38,6 +38,10 @@ from .registry import declared_arity
 # excluded — binding them would force spurious recompiles).
 _CONTENTION_POLICY_VERSION = "0012-v1"
 _ENVELOPE = "\x00policy:"      # cache-envelope marker: the digest precedes the wiki body
+# The body when there is NO grounded input (research's adoption probe 3, 2026-10-29): fixed by code, never model prose.
+# Asked to compile `(none)`/`(none)`, a compiler wrote "Document is empty pending user information" above an
+# UNVERIFIED section, and drivers then told the user their memory was empty. recall's own placeholder uses it too.
+EMPTY_GROUNDED_BODY = "(no verified facts yet)"
 
 COMPILE_SYSTEM = (
     "You are the memory curator for an AI assistant. You compile a compact, "
@@ -291,7 +295,9 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     facts = "\n".join(fact_lines) or "(none)"
     hist = "\n".join(ep_lines) or "(none)"
     prompt = COMPILE_PROMPT.format(budget=budget_tokens, facts=facts, episodes=hist)
-    raw = llm(prompt, system=COMPILE_SYSTEM, role="compile").strip()
+    # nothing grounded to compile: the fixed line, not the model (a model narrates an empty input as an empty memory)
+    raw = (EMPTY_GROUNDED_BODY if not edges and not episodes
+           else llm(prompt, system=COMPILE_SYSTEM, role="compile").strip())
     # sanitize FIRST (forged sentinels become inert), then append the code-owned marker
     wiki = _budgets.append_compile_marker(_budgets.sanitize_llm_body(raw),
                                           facts_dropped, eps_dropped)

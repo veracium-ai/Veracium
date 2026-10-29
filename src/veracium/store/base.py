@@ -830,7 +830,9 @@ class Store(ABC):
     def forget_user(self, user_id: str) -> dict:
         """Irreversibly erase EVERYTHING stored for `user_id` — edges (including
         superseded history and quarantined claims), episodes, the wiki cache,
-        and counters. Returns {"edges": n, "episodes": n}. This is the
+        counters, and (where the store keeps them) the user's confirmations,
+        replies and source revocations. Returns at least {"edges": n,
+        "episodes": n}. This is the
         data-subject right, deliberately distinct from lifecycle (which never
         deletes). Not abstract so pre-existing Store implementations keep
         working; they get this behavior only once they implement it."""

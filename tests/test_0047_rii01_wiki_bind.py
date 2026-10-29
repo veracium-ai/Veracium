@@ -606,12 +606,15 @@ def test_a_row_evicted_between_the_staleness_check_and_the_read_recompiles(tmp_p
                 writer.reply(U, "location", kind="challenge", text="Please withhold this.")
             return row
         monkeypatch.setattr(reader.store, "get_wiki", evict_after_first)
-        compiles = state["compiles"]
+        # "recompiles" is counted at the compiler, not the provider: after the challenge the only fact is withheld,
+        # and an empty grounded input compiles to the fixed body without a model call (adoption probe 3)
+        real_compile, compiles = compile_mod.compile_wiki, []
+        monkeypatch.setattr(compile_mod, "compile_wiki", lambda *a, **k: (compiles.append(1), real_compile(*a, **k))[1])
         try:
             r = reader.recall(U, FACT, semantic=False)
         except TypeError as e:                       # the defect's own shape, reported as the cell's failure
             raise AssertionError(f"the evicted row was indexed: {e}") from e
-        assert len(reads) >= 2 and state["compiles"] > compiles
+        assert len(reads) >= 2 and compiles, (reads, compiles)
         assert not r.inspection["location"].challenge_clear and FACT not in r.grounded, r.grounded
     finally:
         reader.close()

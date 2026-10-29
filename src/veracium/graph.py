@@ -115,7 +115,8 @@ def _min_basis(a, b):
     return "observed" if "observed" in (a, b) else a
 
 
-def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "SupersessionCounts":
+def apply_supersession(store, edge: Edge, relations: dict[str, Relation], *,
+                       within_episode: Optional[tuple] = None) -> "SupersessionCounts":
     """Persist a new edge with supersession, reinforcement, and absorption:
 
     - Reinforcement (specs/0012, Design 1): if an active same-class edge already
@@ -140,6 +141,11 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "Su
     - Supersession: for a *functional* relation, a new value invalidates the
       prior active value (retained, reason 'superseded'), so history stays queryable.
     - Non-functional relations otherwise accumulate.
+    - Within one episode (specs/0003/within-episode §4b): `within_episode` is set, by
+      `within_episode_order`, for an edge of a key the episode CONTESTS (its values fall in
+      two or more value groups). Then the functional branch retires nothing, and a
+      `within-episode-v1` refusal row names each edge of the tuple (§4c) unless the ladder
+      refused that pair itself. Reinforcement, and absorption of a same-group prior, run.
 
     Absorption fires at write time — fresh evidence just arrived — which is why
     it may mutate the absorbed prior; maintain-time bookkeeping never may.
@@ -218,7 +224,8 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "Su
         # identity UNAVAILABLE, never "different": continue to planning and
         # phase 2, where the version-selected outcome comparison governs.
     for _ in range(_MAX_PLAN_ATTEMPTS):
-        plan, is_reinforcement = _build_supersession_plan(store, edge, relations, op_id)
+        plan, is_reinforcement = _build_supersession_plan(store, edge, relations, op_id,
+                                                          within_episode=within_episode)
         plan.raw_request = snapshot
         result = store.apply_supersession_plan(plan)
         if result is not PLAN_STALE:
@@ -404,7 +411,8 @@ def plan_correction(store, prior: Edge, replacement: Edge,
 
 
 def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
-                             op_id: str) -> tuple[SupersessionPlan, bool]:
+                             op_id: str, *, within_episode: Optional[tuple] = None
+                             ) -> tuple[SupersessionPlan, bool]:
     """Compute the plan for one incoming edge from a store read (specs/0003 §4f). Pure —
     it reads and returns a plan, it does not mutate; the Store applies it atomically."""
     same = _value_key(edge.object)
@@ -453,8 +461,10 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                               # COUNTED as reinforcement; it accumulates plain
         pk = _value_key(prior.object)
         if pk == same or _subsumes(pk, same):
+            # specs/0003/within-episode §4c: a contested key's rows are owed whichever branch the edge takes
             return SupersessionPlan(incoming_edge=edge, insert_incoming=True,
-                                    operation_id=op_id, expected_state=expected), True
+                                    operation_id=op_id, expected_state=expected,
+                                    refusals=_within_episode_drafts(edge, within_episode, set())), True
 
     incoming = edge.model_copy(deep=True)
     upserts: list[Edge] = []
@@ -512,6 +522,8 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                               # below is the ONE seam where currency survives
                               # (M2: there is no renewal verb), so refusing
                               # candidacy IS refusing renewal
+        if within_episode is not None and prior.id in {p.id for p in within_episode}:
+            continue          # specs/0003/within-episode §4b: only a SAME-group prior is absorbed in a contested key
         if _subsumes(same, _value_key(prior.object)) and same_scope(prior):
             if store.acted_edge_ids(edge.user_id, [prior.id]):
                 kept_for_acts.add(prior.id)
@@ -597,6 +609,8 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                                     prior.provenance.derived_from,
                                     incoming.provenance.author_of_evidence,
                                     incoming.provenance.derived_from):
+                if within_episode is not None:
+                    continue      # specs/0003/within-episode §4b: a contested key retires NOTHING
                 invalidations.append((prior.id, incoming.valid_from, "superseded"))
                 incoming.supersedes = prior.id
             else:
@@ -606,6 +620,7 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                     prior_effective=authority.edge_effective(prior),
                     incoming_effective=authority.edge_effective(incoming)))
 
+    refusals += _within_episode_drafts(incoming, within_episode, {r.prior_edge_id for r in refusals})
     return SupersessionPlan(incoming_edge=incoming, insert_incoming=True,
                             operation_id=op_id, expected_state=expected,
                             prior_upserts=upserts, prior_invalidations=invalidations,
@@ -1218,6 +1233,52 @@ def _strictly_redundant(m: Edge, survivor: Edge) -> bool:
                 and (m.times_used == 0 or m.times_used == survivor.times_used)
                 and (not m.outcome_counts or m.outcome_counts == survivor.outcome_counts)
                 and (m.last_outcome is None or m.last_outcome == survivor.last_outcome), "withhold"))
+
+
+def _within_episode_drafts(incoming: Edge, within_episode: Optional[tuple], covered: set) -> list:
+    """specs/0003/within-episode §4c: one `within-episode-v1` refusal draft per named edge the ladder did not
+    already refuse (`covered`), so every (named, incoming) pair has exactly one row."""
+    if not within_episode:
+        return []
+    return [SupersessionRefusalDraft(prior_edge_id=p.id, incoming_edge_id=incoming.id, relation=incoming.relation,
+                                     prior_effective=authority.edge_effective(p),
+                                     incoming_effective=authority.edge_effective(incoming),
+                                     rule_version=authority.WITHIN_EPISODE_RULE_VERSION)
+            for p in within_episode if p.id not in covered]
+
+
+def within_episode_order(store, edges: list, relations: dict) -> tuple:
+    """specs/0003/within-episode §4b–§4c: the order, and the named edges, in which ONE episode's built edges are
+    applied. A functional (subject, relation) key is CONTESTED when the episode's edges fall into two or more
+    `value_groups`, grouped over the key's active priors and the episode's edges TOGETHER (one grouping decides
+    both the contest and the rows; grouping the episode alone could split what a prior joins). Uncontested edges
+    keep emission order and get `None` (today's path). A contested key's edges are applied in CANONICAL order,
+    (group key, value-key length, value key, id), so emission order cannot matter and every edge an edge names is
+    already written when its plan is applied (the store binds a refusal's prior to an existing edge); each names
+    the key's priors and its canonical predecessors in a DIFFERENT group. Returns ([(edge, named or None)], the
+    number of contested keys)."""
+    keys: dict = {}
+    for e in edges:
+        rel = relations.get(e.relation)
+        if rel and rel.functional:
+            keys.setdefault((e.user_id, e.subject, e.relation), []).append(e)
+    contested, group_of, priors_of = set(), {}, {}
+    for k, es in keys.items():
+        if len({_value_key(e.object) for e in es}) < 2:
+            continue                     # one value key: one group whatever the priors (the common case reads nothing)
+        priors = [p for p in store.edges(k[0], subject=k[1], relation=k[2], active_only=True,
+                                         include_quarantined=True)]
+        g = {m.id: gk for gk, members in value_groups(priors + es).items() for m in members}
+        if len({g[e.id] for e in es}) >= 2:
+            contested.add(k)
+            group_of.update(g)
+            priors_of[k] = priors
+    ordered = [(e, None) for e in edges if (e.user_id, e.subject, e.relation) not in contested]
+    for k in sorted(contested):
+        canon = sorted(keys[k], key=lambda e: (group_of[e.id], len(_value_key(e.object)), _value_key(e.object), e.id))
+        for i, e in enumerate(canon):
+            ordered.append((e, tuple(p for p in priors_of[k] + canon[:i] if group_of[p.id] != group_of[e.id])))
+    return ordered, len(contested)
 
 
 def value_groups(members: list[Edge]) -> dict:

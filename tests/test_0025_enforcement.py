@@ -348,8 +348,10 @@ def test_public_counter_projection_is_exact():
     nonuser = {"nonuser_ungrounded_refused"}
     # specs/0051 INV-S7: the speaker-turn restriction counter, present on every path
     speaker = {"speaker_restricted"}
+    # specs/0003/within-episode §4b: the contested-key counter, present on every path
+    within_episode = {"within_episode_contested"}
     assert set(r) == (pre_0025 | set(PUBLIC_COUNTERS) | q4_audit
-                      | agreement_counters | outcome | procedural | nonuser | speaker)
+                      | agreement_counters | outcome | procedural | nonuser | speaker | within_episode)
     assert r["extraction_unusable"] is False        # a good answer: present, and False
     assert "retry_calls" not in r
 

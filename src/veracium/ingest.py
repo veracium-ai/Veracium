@@ -409,6 +409,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 # is not a zero.
                 "invalid": 0, "retried": 0, "recovered": 0, "residual": 0,
                 "redispositioned": 0,
+                "within_episode_contested": 0,  # specs/0003/within-episode: present, zero on the unparseable path
                 # specs/0038 §2c row 8: the refusal counter on the one path
                 # that never parsed a response — present, zero.
                 "instructions_dropped": 0,
@@ -713,6 +714,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
 
+    # specs/0003/within-episode §4b: the episode's declarative edges are BUILT first and applied after, so the
+    # whole set is grouped before any supersession (emission order must not decide a functional key)
+    built: list = []
     for row in parsed:
         t = row["t"]
         relation = row["relation"]
@@ -827,7 +831,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         if speaker_restricted or (user_effective and att != _ATTESTED and _attest_v3.attests(
                 edge.subject, edge.relation, edge.object, event_text) == "ATTESTED"):
             n_speaker_restricted += 1
-        c = apply_supersession(store, edge, relations)
+        built.append(edge)
+    from .graph import within_episode_order
+    ordered, n_within_episode_contested = within_episode_order(store, built, relations)
+    for edge, named in ordered:
+        c = apply_supersession(store, edge, relations, within_episode=named)
         n_supersessions += c.superseded
         n_reinforcements += c.reinforced
         if edge.quarantined:
@@ -842,6 +850,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             "invalid": n_invalid, "retried": n_retried,
             "recovered": n_recovered, "residual": n_residual,
             "redispositioned": n_redispositioned,
+            # specs/0003/within-episode §4b: functional keys this episode named two value groups for (0 when none)
+            "within_episode_contested": n_within_episode_contested,
             # specs/0038 §2b: REFUSALS of triples that restate a declared
             # instruction — never declarations, never malformed members.
             "instructions_dropped": n_instructions_dropped,

@@ -1,0 +1,754 @@
+{
+ "body_sha256": "c2f57c8c1c5b8726e3170d140b4c494a77aaf9d9cb6e3ae7f94ca6abd9b248ca",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values0]",
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values1]",
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest",
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_in_a_contested_key_keeps_its_own_row_and_gets_no_second",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values0]",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values1]",
+    "tests/test_0003_within_episode.py::test_a_shorter_value_of_its_own_group_is_not_absorbed_in_a_contested_key",
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]",
+    "tests/test_0003_within_episode.py::test_one_grouping_decides_the_contest_with_the_priors"
+   ],
+   "definition_sha256": "0279fb4a924c44bf08bdd266c57af3518fbd7277b0dcac1fe481a17d533b9506",
+   "expected": "SURVIVED",
+   "file": "src/veracium/graph.py",
+   "good": true,
+   "id": "NOOP-graph",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values0]",
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values1]",
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest",
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_in_a_contested_key_keeps_its_own_row_and_gets_no_second",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values0]",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values1]",
+    "tests/test_0003_within_episode.py::test_a_shorter_value_of_its_own_group_is_not_absorbed_in_a_contested_key",
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]",
+    "tests/test_0003_within_episode.py::test_one_grouping_decides_the_contest_with_the_priors"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/graph.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_within_episode.py::test_the_counter_is_present_and_zero_on_every_uncontested_path"
+   ],
+   "definition_sha256": "cf757bd85227fd48e58c44a31096f8f6e7456e1f8e3295bcc95da252109ed74f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/ingest.py",
+   "good": true,
+   "id": "NOOP-ingest",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_the_counter_is_present_and_zero_on_every_uncontested_path"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/ingest.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "definition_sha256": "672d78e57f08e9c8eb2115afba9018e6193d8520d3ae8fa1f0a24f26caeb10b6",
+   "expected": "SURVIVED",
+   "file": "src/veracium/prompts.py",
+   "good": true,
+   "id": "NOOP-prompts",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/prompts.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_serializes_exactly_as_before_the_field"
+   ],
+   "definition_sha256": "a5c7ce39ed6a72e8c34cb3c44208822928eb16415139ac5145f0c5a52562ec24",
+   "expected": "SURVIVED",
+   "file": "src/veracium/schema.py",
+   "good": true,
+   "id": "NOOP-schema",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_serializes_exactly_as_before_the_field"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/schema.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_within_episode.py::test_the_store_refuses_a_rule_version_outside_the_closed_set"
+   ],
+   "definition_sha256": "670ca373504e79f82a029406ff0b1448f535d14404cb7ecb38317706bde1e16f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/sqlite.py",
+   "good": true,
+   "id": "NOOP-sqlite",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_the_store_refuses_a_rule_version_outside_the_closed_set"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]": "other: TypeError",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]": "other: TypeError",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]": "other: TypeError",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]": "other: TypeError"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]"
+   ],
+   "cells_passed": [],
+   "definition_sha256": "ae79327ed7f5b62d40f25c77d6ce0112554bedcc2141e0d1ce82b6764f658254",
+   "expected": "UNCLASSIFIED",
+   "file": "src/veracium/graph.py",
+   "good": true,
+   "id": "CTRL-unrelated-TypeError",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]"
+   ],
+   "outcome": "UNCLASSIFIED",
+   "what": "an UNRELATED TypeError in within_episode_order: every cell fails for no reason a row names"
+  }
+ ],
+ "header": {
+  "cells": {
+   "within-episode": [
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values0]",
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values1]",
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest",
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_in_a_contested_key_keeps_its_own_row_and_gets_no_second",
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_serializes_exactly_as_before_the_field",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values0]",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values1]",
+    "tests/test_0003_within_episode.py::test_a_shorter_value_of_its_own_group_is_not_absorbed_in_a_contested_key",
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]",
+    "tests/test_0003_within_episode.py::test_one_grouping_decides_the_contest_with_the_priors",
+    "tests/test_0003_within_episode.py::test_the_counter_is_present_and_zero_on_every_uncontested_path",
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor",
+    "tests/test_0003_within_episode.py::test_the_store_refuses_a_rule_version_outside_the_closed_set"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 17,
+    "ok": true,
+    "passed": 17
+   },
+   "last": {
+    "of": 17,
+    "ok": true,
+    "passed": 17
+   }
+  },
+  "commit": "d087f6e7218fd66faed2ee0b43762019a4963c74",
+  "control_definitions": {
+   "CTRL-unrelated-TypeError": "ae79327ed7f5b62d40f25c77d6ce0112554bedcc2141e0d1ce82b6764f658254",
+   "NOOP-graph": "0279fb4a924c44bf08bdd266c57af3518fbd7277b0dcac1fe481a17d533b9506",
+   "NOOP-ingest": "cf757bd85227fd48e58c44a31096f8f6e7456e1f8e3295bcc95da252109ed74f",
+   "NOOP-prompts": "672d78e57f08e9c8eb2115afba9018e6193d8520d3ae8fa1f0a24f26caeb10b6",
+   "NOOP-schema": "a5c7ce39ed6a72e8c34cb3c44208822928eb16415139ac5145f0c5a52562ec24",
+   "NOOP-sqlite": "670ca373504e79f82a029406ff0b1448f535d14404cb7ecb38317706bde1e16f"
+  },
+  "definitions": {
+   "WE1-emission-order": "5c3ace73bcbfc8ca911c755795962eb0883522f420ee66fbeb333e04b85b657e",
+   "WE1-grouping-by-value-key": "317f4617ba534507ad98ec1adb24970625792a06b3e2a7668160d40bbb754744",
+   "WE2-priors-retired-first": "6489d3d0baa1d0ebe5ade7b21966eca16645cadec743bec0ea694f345f57af51",
+   "WE3-group-check-on-every-key": "6c70de1fb2d15ce07c202ed0db446e15e386db459e575dd7f42a67e2dfbcc062",
+   "WE4-all-reinforce-rows-omitted": "2951c3d92ac3480bb0f993140e92e7207470ce03f1471216229e354e62771900",
+   "WE4-counter-absent-unparseable": "1f3211c228543237757f435636010b1b3bfba72ac2a18bf15b6858bef0d77b40",
+   "WE4-ladder-row-relabelled": "4c02ed6db16b072a826f37103664433cc58b7f771977864f35225e91ecf98343",
+   "WE4-no-refusal-row": "2c542f85708b7c665e3c2b1b9b81b746d7f14526554bf9bd61ed783186da86c3",
+   "WE5-rule-not-sent": "f0c1d904258c58d41c5d1de32c8acadb62ea765c9e243f6c98742ceb8285e7a0",
+   "WE8-absent-rule-version-serialized": "d238c63cd960f78d79499492fd721df2e6526718de9c7ed2cbee6aa147365263",
+   "WE8-closed-set-unchecked": "2a0634b98969cba493b1482be72203971c5cff2b4e7543494fc9cde4792e2199",
+   "WE9-absorption-guard-removed": "0ffc479d267f6d10d3cfad8fb8c1b8eeedb492ce2e080e5237ebf4f1830e300f",
+   "WE9-episode-only-grouping": "48be29de6c297f6128c6df916e8bc19a9f61a4ab5b2d29f1aaeab7aeb3a1f3a3"
+  },
+  "digests": {
+   "specs/evidence/0003/within_episode_mutants.py": "9d5357b44af9c9c19f54707de90689338c09924020be4c0b45c4afdb2c4900ae",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/graph.py": "cc5bfdeab09d38375386bcb89157a68c1100b55a28dda9f30550a189e86138d4",
+   "src/veracium/ingest.py": "b32fae65142aff6f2c15b0acc54a97f873671c97675caf514725c59224e4b6b8",
+   "src/veracium/prompts.py": "00ab4fee62b48fceffca75529b4ad14ab5c6f78008e88262263ea62d6ecf650e",
+   "src/veracium/schema.py": "936c1838943db7c0a997a61c6b1919c5a0d97c23fb1ebd8d3b77f4c73b6036da",
+   "src/veracium/store/sqlite.py": "70106e5de0e99bdf88af55b16565e49d4de6cc7f0799bd8d473ec59d8bc88272",
+   "tests/test_0003_within_episode.py": "869e49a51f9d330c8d91e3d33831df08a1019dad96437ad234342ab8306552f0"
+  },
+  "finding": "within-episode",
+  "honest_nodes": [
+   "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today",
+   "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0003",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "docs/api.md",
+   "specs/0003-supersession-authority.md",
+   "specs/0008-staleness-clearing.md",
+   "specs/0022-source-revocation.md",
+   "specs/0041-targeted-redaction.md",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/evidence/mutation_protocol.py",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/__init__.py",
+   "src/veracium/authority.py",
+   "src/veracium/compile.py",
+   "src/veracium/dryrun.py",
+   "src/veracium/graph.py",
+   "src/veracium/ingest.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/prompts.py",
+   "src/veracium/schema.py",
+   "src/veracium/store/base.py",
+   "src/veracium/store/schema_version.py",
+   "src/veracium/store/sqlite.py",
+   "tests/test_0025_enforcement.py",
+   "tests/test_0025_subject_grammar.py",
+   "tests/test_0047_rii01_wiki_bind.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]"
+   ],
+   "definition_sha256": "5c3ace73bcbfc8ca911c755795962eb0883522f420ee66fbeb333e04b85b657e",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE1-emission-order",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 7.92s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "per-edge supersession in emission order (the code before the amendment)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values0]": "assertion",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values1]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values0]",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values1]"
+   ],
+   "definition_sha256": "317f4617ba534507ad98ec1adb24970625792a06b3e2a7668160d40bbb754744",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE1-grouping-by-value-key",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values0]",
+    "tests/test_0003_within_episode.py::test_a_refinement_of_one_city_is_not_a_contest[values1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 2.50s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the contest grouped by _value_key, not value_groups: a refinement reads as two values"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values0]": "assertion",
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values1]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values0]",
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values1]"
+   ],
+   "definition_sha256": "6489d3d0baa1d0ebe5ade7b21966eca16645cadec743bec0ea694f345f57af51",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE2-priors-retired-first",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values0]",
+    "tests/test_0003_within_episode.py::test_a_contested_key_retires_no_prior_and_no_own_edge[values1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 2.46s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the functional retire not withheld in a contested key"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today"
+   ],
+   "definition_sha256": "6c70de1fb2d15ce07c202ed0db446e15e386db459e575dd7f42a67e2dfbcc062",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE3-group-check-on-every-key",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.58s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "every functional key treated as contested (no supersession at all)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]": "assertion",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]"
+   ],
+   "definition_sha256": "2c542f85708b7c665e3c2b1b9b81b746d7f14526554bf9bd61ed783186da86c3",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE4-no-refusal-row",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[two-prior-boston]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-no-prior]",
+    "tests/test_0003_within_episode.py::test_every_emission_order_leaves_the_same_active_set_and_row_set[three-prior-boston]",
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 9.10s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "no within-episode refusal row is drafted"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_the_counter_is_present_and_zero_on_every_uncontested_path": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_the_counter_is_present_and_zero_on_every_uncontested_path"
+   ],
+   "definition_sha256": "1f3211c228543237757f435636010b1b3bfba72ac2a18bf15b6858bef0d77b40",
+   "file": "src/veracium/ingest.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today"
+   ],
+   "id": "WE4-counter-absent-unparseable",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_the_counter_is_present_and_zero_on_every_uncontested_path"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.47s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the counter absent, not 0, on the unparseable path"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest"
+   ],
+   "definition_sha256": "2951c3d92ac3480bb0f993140e92e7207470ce03f1471216229e354e62771900",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE4-all-reinforce-rows-omitted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_key_already_holding_both_values_still_records_its_contest"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.26s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a contested key whose edges all reinforce records no row"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_in_a_contested_key_keeps_its_own_row_and_gets_no_second": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_in_a_contested_key_keeps_its_own_row_and_gets_no_second"
+   ],
+   "definition_sha256": "4c02ed6db16b072a826f37103664433cc58b7f771977864f35225e91ecf98343",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE4-ladder-row-relabelled",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_in_a_contested_key_keeps_its_own_row_and_gets_no_second"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a pair the ladder refused also drafted within-episode (two rows)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "definition_sha256": "f0c1d904258c58d41c5d1de32c8acadb62ea765c9e243f6c98742ceb8285e7a0",
+   "file": "src/veracium/prompts.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today"
+   ],
+   "id": "WE5-rule-not-sent",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.82s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the extraction rule in a constant the extractor is never sent"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_serializes_exactly_as_before_the_field": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_serializes_exactly_as_before_the_field"
+   ],
+   "definition_sha256": "d238c63cd960f78d79499492fd721df2e6526718de9c7ed2cbee6aa147365263",
+   "file": "src/veracium/schema.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today"
+   ],
+   "id": "WE8-absent-rule-version-serialized",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_ladder_refusal_serializes_exactly_as_before_the_field"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.08s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the absent rule_version dumped as null (every ladder refusal's digest moves)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_the_store_refuses_a_rule_version_outside_the_closed_set": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_the_store_refuses_a_rule_version_outside_the_closed_set"
+   ],
+   "definition_sha256": "2a0634b98969cba493b1482be72203971c5cff2b4e7543494fc9cde4792e2199",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_a_single_value_episode_supersedes_as_today"
+   ],
+   "id": "WE8-closed-set-unchecked",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_the_store_refuses_a_rule_version_outside_the_closed_set"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.10s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the store accepts a rule_version outside the closed set"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_a_shorter_value_of_its_own_group_is_not_absorbed_in_a_contested_key": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_a_shorter_value_of_its_own_group_is_not_absorbed_in_a_contested_key"
+   ],
+   "definition_sha256": "0ffc479d267f6d10d3cfad8fb8c1b8eeedb492ce2e080e5237ebf4f1830e300f",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE9-absorption-guard-removed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_a_shorter_value_of_its_own_group_is_not_absorbed_in_a_contested_key"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "absorption retires a differing-group edge in a contested key"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_within_episode.py::test_one_grouping_decides_the_contest_with_the_priors": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_within_episode.py::test_one_grouping_decides_the_contest_with_the_priors"
+   ],
+   "definition_sha256": "48be29de6c297f6128c6df916e8bc19a9f61a4ab5b2d29f1aaeab7aeb3a1f3a3",
+   "file": "src/veracium/graph.py",
+   "finding": "within-episode",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_within_episode.py::test_the_extraction_rule_reaches_the_extractor"
+   ],
+   "id": "WE9-episode-only-grouping",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_within_episode.py::test_one_grouping_decides_the_contest_with_the_priors"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.81s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the contest decided over the episode's edges alone, not with the priors"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 13
+  },
+  "controls": 6,
+  "controls_good": 6,
+  "good": 13,
+  "killed": 13,
+  "rows": 13,
+  "seconds": 214
+ }
+}

@@ -199,6 +199,7 @@ def remember_report(mem: Memory, user_id: str, text: str,
 # counters; specs/0031 §4d: the discarded-raise counter — a model that learns
 # how often its elevation attempts are refused learns to probe.
 _OPERATOR_ONLY = ("supersessions", "reinforcements",
+                  "within_episode_contested",          # specs/0003/within-episode: an operator counter, as supersessions
                   "invalid", "retried", "recovered", "residual",
                   "redispositioned",
                   # specs/0038 §2b: the refusal counter for triples restating a
@@ -450,7 +451,10 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
         and claim flags are kept in preference to the wiki and old episodes.
         Omit `query` for a session-start briefing: commitments coming due,
         facts to confirm, current context, recent history (verified facts
-        only — nothing unverified is ever volunteered unprompted)."""
+        only — nothing unverified is ever volunteered unprompted). The user's
+        own words in this conversation outrank a recalled memory: when they
+        contradict it, act on what the user says now and record the change
+        with `remember`."""
         return recall_impl(mem, default_user, query, token_budget=token_budget)
 
     @server.tool()

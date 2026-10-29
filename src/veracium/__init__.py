@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from . import compile as _compile
+from .compile import EMPTY_GROUNDED_BODY
 from . import gate as _gate
 from . import lifecycle as _lifecycle
 from .config import MemoryConfig
@@ -629,6 +630,9 @@ class Memory:
                       "recovered": r["recovered"], "residual": r["residual"],
                       "redispositioned": r["redispositioned"],
                       "subject_refused": r["subject_refused"],
+                      # specs/0003/within-episode: a content-free count, MCP-stripped and outside telemetry's
+                      # consented schema (AWAITING consent, 0025 §4c's declared difference): the whitelist drops it
+                      "within_episode_contested": r["within_episode_contested"],
                       # specs/0023 Q4: audit-only facts — the AuditLog
                       # records them; telemetry's whitelist drops them.
                       "quarantined_at_birth": r["quarantined_at_birth"],
@@ -1250,7 +1254,9 @@ class Memory:
             grounded_parts.append("## RELEVANT DETAIL\n" + detail_grounded)
         if withheld_report:
             grounded_parts.append(withheld_report)
-        grounded = "\n\n".join(grounded_parts).strip() or "(no memory yet for this user)"
+        # an empty grounded part above unverified claims is "no VERIFIED facts", never "no memory" (adoption probe 3)
+        grounded = "\n\n".join(grounded_parts).strip() or (EMPTY_GROUNDED_BODY if unverified
+                                                            else "(no memory yet for this user)")
 
         context = grounded
         if unverified:
@@ -2280,7 +2286,7 @@ class Memory:
     def forget(self, user_id: str) -> dict:
         """Irreversibly erase everything stored for `user_id`: all edges
         (superseded history and quarantined claims included), all episodes,
-        the wiki cache, and counters, with the user's confirmations and replies. Returns
+        the wiki cache, and counters, with the user's confirmations, replies and source revocations. Returns
         {"edges": n, "episodes": n, "confirmations": n, "replies": n}.
 
         This is the data-subject right ("right to be forgotten"), deliberately

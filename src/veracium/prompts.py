@@ -65,6 +65,11 @@ RULES (these are safety rules, follow them exactly):
 - Copy dates from the DATE CONTEXT calendar; never compute a weekday's date
   yourself. If a date is neither stated nor in the calendar, keep the text's words.
 - One fact per triple. Keep names, numbers, and dates exactly as written.
+- A value the event says is NO LONGER true ("previously", "used to",
+  "formerly", "no longer", "moved from", "before that") is history, not a
+  current fact: do NOT emit it as a triple; say it in the episode ("moved
+  from Boston to Denver"). A value that is STILL true is current even when it
+  began in the past ("since 2019", "for ten years"): emit it as usual.
 - Only extract what THIS event states. Empty lists are valid."""
 
 

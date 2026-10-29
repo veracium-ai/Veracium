@@ -157,6 +157,7 @@ def test_the_telemetry_whitelist_and_the_result_inventory_disagree_by_declaratio
         "subject_refused": (AWAITING, "0025 v14 §4b-vi refusal counter — public, outside the consented schema"),
         "speaker_restricted": (AWAITING, "0051 INV-S7 restriction counter — public, MCP-stripped, outside the consented "
                                "schema; not sent"),
+        "within_episode_contested": (AWAITING, "0003/within-episode §4b counter — a content-free count, public, MCP-stripped, outside the consented schema; not sent"),
     }
     assert all(cls in (AWAITING, NEVER) for cls, _why in declared.values())
     assert set(r) - EVENT_FIELDS["ingest"] == set(declared), \

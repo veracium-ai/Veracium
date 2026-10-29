@@ -1245,6 +1245,19 @@ class SupersessionRefusalDraft(BaseModel):
     relation: str
     prior_effective: int
     incoming_effective: int
+    # specs/0003/within-episode §4c: set ONLY for a within-episode refusal; the store stamps RULE_VERSION when it is
+    # absent. OMITTED from the dump when None (the 0037 form), so a ladder refusal serializes, and so DIGESTS, exactly
+    # as before this field existed: a receipt committed earlier still replays (the logical digest binds the dump).
+    # A CLOSED value space by type, = authority.DRAFTED_RULE_VERSIONS (a test pins the two): a rule label, never
+    # content, so 0041's carrier enumeration has nothing to treat; the store refuses any other value too
+    rule_version: Optional[Literal["within-episode-v1"]] = None
+
+    @model_serializer(mode="wrap")
+    def _omit_absent_rule_version(self, handler):
+        d = handler(self)
+        if d.get("rule_version") is None:
+            d.pop("rule_version", None)
+        return d
 
 
 class SupersessionPlan(BaseModel):

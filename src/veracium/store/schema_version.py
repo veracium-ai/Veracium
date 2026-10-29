@@ -378,8 +378,9 @@ SCHEMA_V8 = tuple(
 )
 
 # v9 (specs/0022 §4a, accepted at external round 21): `source_revocations` —
-# the APPEND-ONLY standing-state ledger. No UPDATE, no `active` column, no row
-# edited in place: the standing state is DERIVED as the latest row per
+# the APPEND-ONLY (between erasures: forget_user deletes the user's rows, specs/0008
+# §6g) standing-state ledger. No UPDATE but 0041 v15's reason treatment, no `active`
+# column, no row edited in place: the standing state is DERIVED as the latest row per
 # (user, identity_digest) by `seq` ALONE. `seq` is the store-allocated
 # per-user append ordinal; PRIMARY KEY(user_id, seq) makes an ordinal
 # collision an IntegrityError the R19 operation classifies rather than a

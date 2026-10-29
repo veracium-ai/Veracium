@@ -20,7 +20,7 @@ from typing import Optional
 
 from pydantic import ValidationError
 
-from ..authority import RULE_VERSION, scope_fingerprint
+from ..authority import DRAFTED_RULE_VERSIONS, RULE_VERSION, scope_fingerprint
 from .. import redaction as _redaction
 from ..attestation import declarative_grounding
 from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
@@ -171,7 +171,10 @@ _ERASE_TABLES = ("contribution_ledger",
                  # specs/0044 §4g-ii (the 0008 amendment's one erasure rule, §6g): everything 0044 records for the user.
                  # arity_era, plan_header, reclassification_plan and migration_op are store-level, never per-user, and
                  # never erased
-                 "arity_inventory", "refusal_inventory", "migration_outcome", "migration_run")
+                 "arity_inventory", "refusal_inventory", "migration_outcome", "migration_run",
+                 # specs/0022 × 0008 §6g (the owner, 2026-10-29: "Erase it"): the user's revocation ledger. Append-only
+                 # BETWEEN erasures; erasure ends it, so a recreated user id inherits no standing revocation
+                 "source_revocations")
 # specs/0044 §4f-ii: every ruling carries a LIFETIME disposition — `choke-point` (its lifetime transitions are derived
 # at `_journal_edge_write` from the persisted prior and new row) or `erasure` (`forget_user`, under 0008 §6g's one
 # erasure rule). tests/test_0029_carrier.py refuses a ruling without one.
@@ -1847,12 +1850,19 @@ class SqliteStore(Store):
                             if prow is None or prow[0] != user_id:
                                 raise _SITE_SUPERSESSION_PLAN.fire(ValueError(
                                     "refusal.prior_edge_id must be an existing edge of this user"), "refusal-prior")
+                            # specs/0003/within-episode §4c: a draft names its rule only from the CLOSED set;
+                            # absent is the ladder's RULE_VERSION, stamped here as before
+                            if d.rule_version is not None and d.rule_version not in DRAFTED_RULE_VERSIONS:
+                                raise _SITE_SUPERSESSION_PLAN.fire(ValueError(
+                                    f"refusal.rule_version {d.rule_version!r} is not one of {DRAFTED_RULE_VERSIONS}"),
+                                    "refusal-rule-version")
                             self._conn.execute(
                                 "INSERT INTO supersession_refusals(refusal_id,user_id,prior_edge_id,"
                                 "incoming_edge_id,relation,prior_effective,incoming_effective,"
                                 "rule_version,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
                                 (f"ref-{uuid.uuid4().hex[:12]}", user_id, d.prior_edge_id, inc.id,
-                                 d.relation, d.prior_effective, d.incoming_effective, RULE_VERSION, now))
+                                 d.relation, d.prior_effective, d.incoming_effective,
+                                 d.rule_version or RULE_VERSION, now))
                         # the durable receipt commits atomically with the effects (§4f
                         # idempotency; 0014 R9-1/R9-2/R10-1): the persisted EFFECT payload
                         # (result minus the runtime replayed flag), the store-computed

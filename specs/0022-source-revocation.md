@@ -22,6 +22,16 @@ maintenance). See `## Review closure`.*
 > further deliberate amendment here. R18's reasoning is unchanged; the row's own
 > text carries both notes. These ride the 2026-09-13 post-acceptance review package.
 
+> **Post-acceptance amendment, 2026-10-29 (the owner's ruling, "Erase it"; a rule
+> of this spec changes).** `forget_user` now erases the user's `source_revocations`
+> rows, atomically with the user's other records (0008 §6g's one erasure rule; the
+> table joins `_ERASE_TABLES`). Before this, the user's revoke and lift rows survived
+> erasure, so a recreated user id still met 0023's guards on a revoked source; no
+> spec ruled on it. The append-only rule now holds BETWEEN ERASURES. Rows amended:
+> C3, §2's `source_revocations` row, §4a (twice), R1, R9, and §8's "It is not
+> erasure". 0041 v15's one admitted UPDATE (the reason treatment) is unchanged;
+> this adds the one admitted DELETE.
+
 > **v2 — internal round 1 folded (research, 2026-08-17; full review at
 > `veracium-research/proposals/0022-0023-internal-review.md`).** One
 > BLOCKING finding, and it was a design completion rather than a prose
@@ -115,7 +125,7 @@ research's and are used throughout):
 |---|---|---|---|
 | C1 | restrict-only | 0006 (identity groups, never grants) / 0020 | revocation only ever retires, quarantines or reduces. It can never promote a rival record, never clear a flag, never raise a confidence. Un-revoke RESTORES; it never grants |
 | C2 | identity is namespacing, NOT authentication | 0006 (the non-authenticated-origin rule, and its own deferred authenticated-origin question) | the revocation key is unauthenticated, so the forged-source cell is real (§3b) and reversibility is a THREAT-MODEL REQUIREMENT, not a courtesy |
-| C3 | **retain-never-erase** (v3 — WITHDRAWN NAME quoted to retract it: this rule was called *supersede*-never-erase until external round 1's F3 — the supersede half named a carrier the product does not have) — reversible in-place record state over an append-only LEDGER | house rule | revoked records RETIRE with reason `revoked_source`; **nothing is deleted and content stays re-derivable**; `forget()` remains the separate data-subject erasure op. **This spec does NOT define retirement events, ids, links or read-time resolution — the shipped store changes record state in place (`_invalidate_edge_row`) and the append-only carrier is `source_revocations`.** §4f states the withdrawal; **Q9** holds the successor |
+| C3 | **retain-never-erase** (v3 — WITHDRAWN NAME quoted to retract it: this rule was called *supersede*-never-erase until external round 1's F3 — the supersede half named a carrier the product does not have) — reversible in-place record state over an append-only LEDGER | house rule | revoked records RETIRE with reason `revoked_source`; **nothing is deleted and content stays re-derivable**; `forget()` remains the separate data-subject erasure op, and the one route by which `source_revocations` rows are removed: the user's own, with the user (the 2026-10-29 note). **This spec does NOT define retirement events, ids, links or read-time resolution — the shipped store changes record state in place (`_invalidate_edge_row`) and the append-only carrier is `source_revocations`.** §4f states the withdrawal; **Q9** holds the successor |
 | C4 | transitively closed consumption | 0021 (the closed-consumption rule) | the blast radius is the CLOSED set over typed links; a single-level sweep is a defect by accepted rule |
 | C5 | fail-closed on missing evidence | 0020 (the fail-closed membership hierarchy) | where attribution is absent, revocation REPORTS incompleteness. Every revocation returns a completeness statement. *A tool that quietly misses half the blast radius is worse than none* is hereby a design requirement, not a warning |
 | C6 | ordinary-release bias | 0018 | one small append-only table plus read-side consultation is a SCHEMA bump on the ordinary migration path; no API-breaking window is needed or requested |
@@ -164,7 +174,7 @@ research's and are used throughout):
 | `Provenance.disclosure` | **NOT written** by this spec | written exactly once, at ingest | gate, render | untouched here. Disclosure at WRITE time under a standing revocation is 0023's, at the one site that writes it |
 | `contribution_ledger` rows | READ ONLY | 0014: insert-only; rows key the survivor by `(survivor_type, survivor_id)` and the contributor source by `identity_digest`; the digest join is the revocation join, named A9 in that spec and already implemented as `contributors_of_source` | 0020's membership, 0021's closure | the sweep is a READER. It writes no row, drops no row, and rewrites no payload. The ledger's insert-only discipline is inherited, not re-litigated |
 | the compiled wiki | dropped | 0004: a derived view must not outlive the trust decision it was compiled under | recall's grounded block | dropped by the retirement itself, through the reason vocabulary — this spec adds no second mechanism (§7b) |
-| `source_revocations` | **NEW TABLE**, append-only | none today | the sweep; 0023's write- and maintain-time gates | one row per revoke and per lift; the STANDING state is DERIVED by reading the latest row per (user, digest). No UPDATE, no `active` column (§4a) |
+| `source_revocations` | **NEW TABLE**, append-only between erasures: `forget_user` deletes the user's rows (0008 §6g) | none today | the sweep; 0023's write- and maintain-time gates | one row per revoke and per lift; the STANDING state is DERIVED by reading the latest row per (user, digest). No UPDATE, no `active` column (§4a) |
 | `Recall` / the gate | unchanged | assertability keys on `active` and disclosure | recall, answer, proactive | revoked records leave the assertable set through the EXISTING retirement machinery. No gate change, no new field on any read surface |
 
 Consumers were enumerated mechanically, not recalled — the commands and
@@ -348,8 +358,7 @@ source_revocations(user_id, identity_digest, action, at, seq, reason)
 ```
 
 **The standing state is DERIVED — the latest row per `(user_id,
-identity_digest)` by `seq` ALONE — and is never stored.** There is no
-`active` column and no UPDATE statement anywhere near this table.
+identity_digest)` by `seq` ALONE — and is never stored.** There is no `active` column and no UPDATE statement anywhere near this table. Rows leave the table in exactly one way, the user's erasure: `forget_user` deletes every row of that user, in the transaction that erases the user's records (0008 §6g). Between erasures the table only grows; a recreated user's ordinals restart, and no earlier row survives to be ordered against them.
 
 **`at` IS AUDIT METADATA AND ORDERS NOTHING (external round 1, F2).** v2
 ordered by the tuple `(at, seq)` while asserting two paragraphs later that
@@ -380,8 +389,7 @@ who revoked, when, why, and whether it was lifted and re-applied — which
 is the ledger's shape, not the flag's. Choosing the mutable form would
 have put a second, contradictory answer to the same seam in the same
 store, and would have made the audit trail a diff. **R1** pins it in both
-directions: the derivation is tested, AND the absence of any
-update/delete writer against the table is asserted mechanically, the
+directions: the derivation is tested, AND the absence of any update/delete writer against the table, other than the two admitted (0041 v15's reason treatment and `forget_user`'s erasure), is asserted mechanically, the
 `test_sole_active_zero_writer` pattern 0004 v3.1 uses for its own
 structural claim.
 
@@ -1014,7 +1022,7 @@ the only row with a live artifact, and its evidence is
 
 | invariant | executable check |
 |---|---|
-| **R1** the standing state is DERIVED from an append-only table: latest row per (user, digest) wins, no UPDATE or DELETE writer exists against `source_revocations`, and two rows at one ordinal REFUSE | `test_revocation_state_is_derived_not_stored` + `test_no_update_writer_against_source_revocations` (an AST sweep, the `test_sole_active_zero_writer` pattern) |
+| **R1** the standing state is DERIVED from an append-only table: latest row per (user, digest) wins, no UPDATE or DELETE writer exists against `source_revocations` except 0041 v15's reason treatment and `forget_user`'s erasure, the latter through `_ERASE_TABLES` and asserted by the census and delete-route gates (`tests/test_0022_erasure.py`), and two rows at one ordinal REFUSE | `test_revocation_state_is_derived_not_stored` + `test_no_update_writer_against_source_revocations` (an AST sweep, the `test_sole_active_zero_writer` pattern) |
 | **R2** a revocation retires the directly-sourced records with reason `revoked_source`, and deletes nothing | `test_revoked_source_retires_direct_records` |
 | **R3** the sole-basis test requires a DIFFERENT RESOLVED IDENTITY: same-source self-corroboration does not save a record, and a NULL-digest contributor does not corroborate | `test_sole_basis_requires_a_different_identity` |
 | **R4** the recompute is EXACT and RESTRICT-ONLY: exactly the surviving-evidence fold, never punitively below it, never above the full-evidence fold — with the clamp exercised against a deliberately non-monotone aggregator | `test_recompute_is_exact_and_restrict_only` + `test_revocation_grants_nothing` (the enumerated temptations) |
@@ -1022,7 +1030,7 @@ the only row with a live artifact, and its evidence is
 | **R6** dry-run and commit produce the IDENTICAL statement from ONE code path; the dry run leaves the store byte-identical; the planner is a pure function of its inputs | `test_dry_run_equals_the_commit` (+ the `preview_agrees` vectors) |
 | **R7** the completeness statement reports all three class counts, **counts retired-synthesized separately from retired-sole-basis**, and is `complete=False` whenever the class-(b) or class-(c) population is non-empty. **Class (c) is UNATTRIBUTED AND UNREACHED — every record with no contribution rows that this sweep did not already find, WHATEVER ITS AUTHORSHIP (external round 1, F4)** | `test_completeness_statement_is_honest` + `test_retired_synthesized_counted_separately` + **`test_user_authored_unattributed_is_counted`** — a pre-`0014` absorption survivor that kept the INCOMING record's user authorship while carrying transferred values no ledger row names. The vector BITES: under the v2 predicate it counted 1, under v3 it counts 5 |
 | **R8** consumption closure is TRANSITIVE and the property RECURSES (a condemned contributor is not corroboration one hop up); a self-naming row REFUSES instead of looping; the fixpoint terminates | `test_closure_is_transitive_and_recursive` |
-| **R9** **retain-never-erase**: after any revoke/lift sequence **every record is still present** (none deleted, none created), **the `source_revocations` table only grew** (no row updated or removed), and no effect verb outside `{retire, recompute, reinstate}` exists. **v3 (external round 2, F1) — WITHDRAWN wording, quoted to retract it: v2 said "history only grew", which asserted a generic record-value history the store does not have, so an implementation could not satisfy R9 and §4f at once** | `test_revocation_retains_every_record` + `test_source_revocations_is_append_only` + `test_effect_verbs_are_closed` |
+| **R9** **retain-never-erase**: after any revoke/lift sequence with no erasure of that user in it, **every record is still present** (none deleted, none created), **the `source_revocations` table only grew** (no row removed; no row updated except by 0041 v15's reason treatment), and no effect verb outside `{retire, recompute, reinstate}` exists. **v3 (external round 2, F1) — WITHDRAWN wording, quoted to retract it: v2 said "history only grew", which asserted a generic record-value history the store does not have, so an implementation could not satisfy R9 and §4f at once** | `test_revocation_retains_every_record` + `test_source_revocations_is_append_only` + `test_effect_verbs_are_closed` |
 | **R10** a lift is DESIRED STATE, not undo: it reinstates only what `revoked_source` retired, restores recomputed values by recomputation, and leaves a record retired while a SECOND revocation still reaches it | `test_lift_is_desired_state_not_undo` |
 | **R11** the shipped surface agrees with the normative reference on every pinned vector, through the SHIPPED harness | `test_revocation_reference_vectors` — today: `.venv/bin/python specs/evidence/0022/vector_harness.py`, whose recorded result ships as `vector_harness_result.txt` (the one carrier for the count) |
 | **R12** a source with no `source_id` has no digest, no join and no reach: it cannot be revoked and cannot be reached by any revocation | `test_unknown_source_is_not_revocable` |
@@ -1129,7 +1137,7 @@ else:
   and dry-run bound that to availability; they do not close it. Signed or
   re-namespaced origins are S3's world.
 - **It is not erasure.** Revoked content is RETIRED, not deleted;
-  `forget()` remains the data-subject erasure surface and is unchanged.
+  `forget()` remains the data-subject erasure surface; since 2026-10-29 it also erases the user's `source_revocations` rows.
   Do not describe revocation as deletion anywhere.
 - **It is not complete, and it says so.** Class (b) survivors have
   unreachable descendants; class (c) records are unattributed and are

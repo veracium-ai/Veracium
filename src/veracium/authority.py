@@ -49,6 +49,11 @@ _RUNGS: dict[str, int] = {"user": 3, "system": 2, "assistant": 1, "third_party":
 # prior. A refusal-widening flips pairs from allowed to refused, which is
 # exactly the change class this constant exists to version.
 RULE_VERSION = "supersession-authority-v2"
+# specs/0003/within-episode §4c: a refusal recorded because ONE episode named two value groups for a functional key
+# (the net under the extraction rule): no ladder decided it, so it carries its own value. The CLOSED set a refusal
+# draft may name; absent means RULE_VERSION, and absent is how every ladder refusal is drafted.
+WITHIN_EPISODE_RULE_VERSION = "within-episode-v1"
+DRAFTED_RULE_VERSIONS = (WITHIN_EPISODE_RULE_VERSION,)
 
 
 def effective(author: EvidenceAuthor, derived_from: Optional[EvidenceAuthor]) -> int:
