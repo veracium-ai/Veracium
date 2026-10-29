@@ -1718,7 +1718,7 @@
    "group": "R-II r2 V1 (c, d: the held basetemp and the sqlite error names)"
   }
  ],
- "pin_digest": "7ba7638d73575a8b3a006875032baf929084864a5a7d24c796e8432ad733b1a4",
+ "pin_digest": "f3160f17b1665eb31739e16d441547abadb8039b7e7c85ade328c02b0c6f5d39",
  "rows": [
   {
    "anchor_count": 1,
@@ -12723,7 +12723,7 @@
    "cells_failed": [
     "tests/test_0044_t6_operation.py::test_erasure_ends_the_receipt_and_a_recreated_user_restores_nothing"
    ],
-   "def_digest": "771358ccaeb46590a05c19f166d18260633f0b52d6e406c94fd38df5d0a59df6",
+   "def_digest": "f2c406ea35a1465a846a40f8223aa5e75d26df9ded8ce9e466c1bfcf7c9c71bd",
    "file": "src/veracium/store/sqlite.py",
    "group": "0044 INV-A20 (user erasure removes outcomes, runs, inventory)",
    "kill_kind": "assertion",
@@ -12878,7 +12878,7 @@
    "cells_failed": [
     "tests/test_0044_t5_era.py::test_forget_user_erases_the_users_inventory_outcome_and_run_rows_and_no_one_elses"
    ],
-   "def_digest": "1125137c4e4c3a6e7663a48a9793b73857509145c0d60ac9571800a87b31a882",
+   "def_digest": "89bec1095ce439121e059182affb81948b1cd5a0ba61a3b35d87d7edc1bc69c0",
    "file": "src/veracium/store/sqlite.py",
    "group": "T5-2 (I30 doctor; \u00a74g-ii erasure; R1 identity)",
    "kill_kind": "assertion",
