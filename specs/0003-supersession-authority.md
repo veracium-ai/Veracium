@@ -89,7 +89,7 @@ Folds: 0044/0003-contested-order
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v17 — THE WITHIN-EPISODE FOLD (amendment `0003/within-episode`, v0.5, sha16 `16fc86e955086217`), ADOPTED BEFORE EXTERNAL REVIEW.** The owner ruled *"Adopt now"* and *"Ship, then review w/ trust-tools"* (2026-10-29, dev session): it ships in the held release and rides the trust-tools amendment's external review. Folded as §4c-iv, labelled by the amendment's own section numbers; pointers added at §2, §4a and §6. Rides the same adoption: 0041 §2d-iii-bis row 60's reason (the amendment's Amends). Not folded: its review brief, open questions and version history. **Prior: v16 — THE CONTESTED-ORDER FOLD (amendment `0044/0003-contested-order`, v1.5, sha16 `b6c87fcbb74bafdf`).** Round 3 of the 0044 package APPROVED its design on INV-O1–O10 with its activation held to 0044's; round 4 accepted it with 0044 (verdict 2026-10-13), and the owner ruled “Accept now, fold next” (2026-10-14). Folded as §4c-iii, labelled by the amendment's own section numbers so its internal references still resolve; pointers added at §2, §4c-ii, §4e and §6. Its reach rows are restated at `af1e564`: rows 1–3 re-executed with identical output, rows 4–8 reading the same lines. Not folded: its review brief, open questions, checklist and version history. Prior: **v15 (ACCEPTED)** — *re-read before editing; quote the version you approve.* Round-12 acceptance: one same-commit deletion-pass correction (removed the stale round-9 "`correct()`/lifecycle need not invalidate" sentence that contradicted the round-10 symmetric resolution rule) + §11a heading fixed to the canonical `## Review closure` form + `Spec-Status: accepted`. No behaviour change. Narrow design approved 3–5, re-approved 6–10, architecture approved 11, **accepted 12; broad external architecture review CLOSED.** |
+| **Version** | **v17.1 — 2026-10-29: §4c-iv's three behaviour headings relabelled `4c-iv.6a`–`6c` (dev's held-release suite: `test_no_spec_has_a_duplicated_section_heading` found `##### 4a.`–`4c.` twice, the fold having kept the amendment's labels beside §4c-iii's), with the references to them inside §4c-iv. No other change. **Prior: v17 — THE WITHIN-EPISODE FOLD (amendment `0003/within-episode`, v0.5, sha16 `16fc86e955086217`), ADOPTED BEFORE EXTERNAL REVIEW.** The owner ruled *"Adopt now"* and *"Ship, then review w/ trust-tools"* (2026-10-29, dev session): it ships in the held release and rides the trust-tools amendment's external review. Folded as §4c-iv, labelled by the amendment's own section numbers; pointers added at §2, §4a and §6. Rides the same adoption: 0041 §2d-iii-bis row 60's reason (the amendment's Amends). Not folded: its review brief, open questions and version history. **Prior: v16 — THE CONTESTED-ORDER FOLD (amendment `0044/0003-contested-order`, v1.5, sha16 `b6c87fcbb74bafdf`).** Round 3 of the 0044 package APPROVED its design on INV-O1–O10 with its activation held to 0044's; round 4 accepted it with 0044 (verdict 2026-10-13), and the owner ruled “Accept now, fold next” (2026-10-14). Folded as §4c-iii, labelled by the amendment's own section numbers so its internal references still resolve; pointers added at §2, §4c-ii, §4e and §6. Its reach rows are restated at `af1e564`: rows 1–3 re-executed with identical output, rows 4–8 reading the same lines. Not folded: its review brief, open questions, checklist and version history. Prior: **v15 (ACCEPTED)** — *re-read before editing; quote the version you approve.* Round-12 acceptance: one same-commit deletion-pass correction (removed the stale round-9 "`correct()`/lifecycle need not invalidate" sentence that contradicted the round-10 symmetric resolution rule) + §11a heading fixed to the canonical `## Review closure` form + `Spec-Status: accepted`. No behaviour change. Narrow design approved 3–5, re-approved 6–10, architecture approved 11, **accepted 12; broad external architecture review CLOSED.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | complete — narrow design approved r3–r5, direction re-approved r6–r10, architecture approved r11, **APPROVED FOR ACCEPTANCE at r12 (broad review closed)**. Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
@@ -991,15 +991,15 @@ loss is stated (by the landed report line).
 ## 4c-iv. One episode that names two values for a functional relation (v17, amendment `0003/within-episode`)
 
 > **The rules this section adds:** (1) the extraction prompt treats a value the event says is no longer true as
-> history, not a triple (the amendment's §4a), which is the fix; (2) a functional key whose built edges, with its
+> history, not a triple (§4c-iv.6a), which is the fix; (2) a functional key whose built edges, with its
 > active priors, fall into two or more `value_groups` is CONTESTED within the episode: the functional RETIRE is
-> withheld, rows are recorded under `within-episode-v1`, and order cannot matter (§4b, §4c), which is the
+> withheld, rows are recorded under `within-episode-v1`, and order cannot matter (§4c-iv.6b, §4c-iv.6c), which is the
 > extractor-independent net. **Rulings** (the owner, 2026-10-29): within one episode two values contest, *"keep
 > both and flag the conflict"* (research session; and in the dev session, *"Contest, retire nothing"*); *"Adopt
 > now"* and *"Ship, then review w/ trust-tools"* (dev session). No tense rule in the store. A bare retraction
 > ("I no longer live in Boston." with no new value) retires nothing and is a named limit, not fixed here.
 
-Labelled by the amendment's own section numbers, so its internal references (§4a, §4b, §4c, INV-WE*) resolve
+Labelled by the amendment's own section numbers, prefixed `4c-iv.` (v17.1: its bare `4a`–`4c` collided with §4c-iii's), so its internal references (§4c-iv.6a–6c, INV-WE*) resolve
 within this section. Folded from the amendment at v0.5 (research, sha16 `16fc86e955086217`). Not folded: its review brief,
 open questions and version history.
 
@@ -1035,20 +1035,20 @@ store recorded the opposite.
 **Why a store-only fix is not enough.** Suppose the store's rule were only "within one episode, two values contest".
 With an earlier Boston edge, an episode emitting `[Denver, Boston]` re-asserts Boston as current, and Denver arrives
 contested: **the move is not applied at all.** For the commonest wording that is worse than today's coin flip.
-Only the extractor can read the tense, so the fix has two halves: an extraction rule (§4a), which is the fix, and a
-store rule (§4b), which is the extractor-independent net.
+Only the extractor can read the tense, so the fix has two halves: an extraction rule (§4c-iv.6a), which is the fix, and a
+store rule (§4c-iv.6b), which is the extractor-independent net.
 
 ### 4c-iv.2 Field contracts (the amendment's §2)
 
 | carrier | change | guarded |
 |---|---|---|
-| the prompts module, `EXTRACT_PROMPT` RULES | one rule: a value the event says is PAST is history, not a triple (§4a) | — (changes stored output; external review covers it) |
-| the ingest module, the triple loop | a pre-pass groups the episode's built edges by functional `(subject, relation)` before any supersession (§4b) | yes |
-| the graph module, `apply_supersession` | takes the episode's contested keys, and plans no supersession for them (§4b) | yes |
+| the prompts module, `EXTRACT_PROMPT` RULES | one rule: a value the event says is PAST is history, not a triple (§4c-iv.6a) | — (changes stored output; external review covers it) |
+| the ingest module, the triple loop | a pre-pass groups the episode's built edges by functional `(subject, relation)` before any supersession (§4c-iv.6b) | yes |
+| the graph module, `apply_supersession` | takes the episode's contested keys, and plans no supersession for them (§4c-iv.6b) | yes |
 | `supersession_refusals.rule_version` | gains the value `within-episode-v1`. The column stays free TEXT, so no schema change | — |
-| `SupersessionRefusalDraft` (the graph module) | gains `rule_version: Optional[Literal["within-episode-v1"]]`, a CLOSED type, OMITTED from the dump when None (0037's form). The type is closed because 0041's carrier enumeration rightly flags an unbounded `str` on a persisted model as an untreated carrier: the value space is a set of one, so the model refuses any other value at construction. A cell pins the Literal's arguments to `DRAFTED_RULE_VERSIONS`. The logical digest binds each refusal's dump, so a ladder refusal digests byte-identically to before the field, and a receipt committed before the upgrade still REPLAYS on a lost-response retry (§4c) | yes |
+| `SupersessionRefusalDraft` (the graph module) | gains `rule_version: Optional[Literal["within-episode-v1"]]`, a CLOSED type, OMITTED from the dump when None (0037's form). The type is closed because 0041's carrier enumeration rightly flags an unbounded `str` on a persisted model as an untreated carrier: the value space is a set of one, so the model refuses any other value at construction. A cell pins the Literal's arguments to `DRAFTED_RULE_VERSIONS`. The logical digest binds each refusal's dump, so a ladder refusal digests byte-identically to before the field, and a receipt committed before the upgrade still REPLAYS on a lost-response retry (§4c-iv.6c) | yes |
 | the authority module | gains `WITHIN_EPISODE_RULE_VERSION` and a closed `DRAFTED_RULE_VERSIONS`; the store refuses a drafted value outside it, as defence in depth behind the Literal. An absent value still stamps `RULE_VERSION`, as today | — |
-| 0041 §2d-iii-bis, row 60 (`SupersessionRefusal.rule_version`, PRESERVE) | the disposition stays PRESERVE; its REASON is reworded, because the column now holds one of two module constants (§4c) | — (0041's text; rides this adoption) |
+| 0041 §2d-iii-bis, row 60 (`SupersessionRefusal.rule_version`, PRESERVE) | the disposition stays PRESERVE; its REASON is reworded, because the column now holds one of two module constants (§4c-iv.6c) | — (0041's text; rides this adoption) |
 | 0047's carrier census | the new ordering helper is classified INTERNAL: write-path planning that groups and orders one episode's edges for supersession and returns no fact content to any renderer | — |
 | the ingest result | gains the counter `within_episode_contested` (keys), present on every path; an absent key is not a zero (0025 §4c). **Not in telemetry: AWAITING consent.** 0025 §4c's declared-difference test has two classes. AWAITING is a content-free count that may enter telemetry only by a telemetry SCHEMA_VERSION bump under 0015's consent machinery. NEVER eligible is content or identity, such as `quarantined_at_birth`. `within_episode_contested` is a content-free count, so it is AWAITING, like `speaker_restricted`: public, stripped from MCP results, outside the consented schema, and not sent. Both 0025 test modules declare it so. *v0.4 called it "audit-only, like `quarantined_at_birth`", which put it in the wrong class (dev, 2026-10-29).* **Carriers, all in one commit:** the ingest module (both paths); `Memory.remember`'s record; the MCP server's `_OPERATOR_ONLY` strip; the dry-run module's counter list; the API docs (`docs/api.md`, both lists). *v0.2 listed telemetry and, in research's message, `why.py`. Both were wrong: the first by the consent rule above, the second a grep hit on a docstring (dev, 2026-10-29)* | yes |
 | digests of the prompts module | `EXTRACT_PROMPT` is read by the LongMemEval harness (its `extract_prompt_sha`) and digested by 0044's consolidated campaign definitions: a regeneration, nothing to decide | — |
@@ -1058,7 +1058,7 @@ store rule (§4b), which is the extractor-independent net.
 | input | supplied by | treated as |
 |---|---|---|
 | the event text | the caller (user words, or relayed content under its author) | data. The new rule is an instruction to the extractor about the text's tense; the text cannot change the rule |
-| the extractor's triples | a model | untrusted output. §4b does not depend on the extractor following §4a: whatever the extractor emits, two values for one functional key in one episode retire nothing |
+| the extractor's triples | a model | untrusted output. §4c-iv.6b does not depend on the extractor following §4c-iv.6a: whatever the extractor emits, two values for one functional key in one episode retire nothing |
 
 **A new denial-of-update route, stated.** Text that names two values for one functional key, for example quoted
 content pasted inside the user's own message, now stops that episode from changing the key's current value. Today the
@@ -1077,7 +1077,7 @@ A third-party episode could already not retire a user's value (0003's ladder).
 Every edge of one episode carries one author and one `derived_from` (the event's), so the within-episode rule never
 compares two classes.
 
-| class of the episode | §4a (extraction) | §4b (within-episode) | cross-episode (0003's ladder) |
+| class of the episode | §4c-iv.6a (extraction) | §4c-iv.6b (within-episode) | cross-episode (0003's ladder) |
 |---|---|---|---|
 | `user` | applies | applies | unchanged |
 | `system` | applies | applies | unchanged |
@@ -1086,7 +1086,7 @@ compares two classes.
 
 ### 4c-iv.6 Behaviour (the amendment's §4)
 
-##### 4a. The extraction rule (the fix)
+##### 4c-iv.6a. The extraction rule (the fix; the amendment's §4a)
 
 Added to `EXTRACT_PROMPT`'s RULES (dev's final wording, 2026-10-29):
 
@@ -1106,17 +1106,17 @@ episode is retired `superseded` and kept (supersession never erases), and the ep
 **What it costs:** when no earlier episode holds Boston, the store has no structured "lived in Boston" fact, only the
 episode text. That is the right side to fail on: a past value stored as current is the defect.
 
-##### 4b. The within-episode rule (the net)
+##### 4c-iv.6b. The within-episode rule (the net; the amendment's §4b)
 
 Stated over the episode's whole set, so that emission order cannot matter:
 
 > Before applying supersession for an episode, group its built edges by functional `(subject, relation)`. **A key
 > whose built edges fall into two or more groups of `value_groups`, computed over the key's active priors and the
-> episode's edges TOGETHER, is contested within the episode.** That one grouping decides both the contest and §4c's
+> episode's edges TOGETHER, is contested within the episode.** That one grouping decides both the contest and §4c-iv.6c's
 > "group differs". For a contested key, **only the functional branch's RETIRE is withheld**, for the key's priors
 > and for the episode's own edges alike. The same-group branches run as today: reinforcement, and absorption into a
 > same-group prior, but absorption never takes a differing-group edge (below). A contested key's edges are applied
-> in canonical order (§4c). Durable refusal rows are recorded (§4c), and `within_episode_contested` counts the key
+> in canonical order (§4c-iv.6c). Durable refusal rows are recorded (§4c-iv.6c), and `within_episode_contested` counts the key
 > once. A key whose edges fall into ONE group proceeds exactly as today, in emission order, through 0003's ladder.
 
 **Why one grouping over priors and episode together** (dev, building it): grouping the episode alone can split what
@@ -1136,9 +1136,9 @@ Boston.
 
 **Consequences, each a cell in §6:**
 - **No prior, both values emitted, either order:** both active, contested; identical in both orders.
-- **Prior Boston, extractor follows §4a (`[Denver]`):** Denver current; the prior Boston retired `superseded`. **This
+- **Prior Boston, extractor follows §4c-iv.6a (`[Denver]`):** Denver current; the prior Boston retired `superseded`. **This
   is the fix.**
-- **Prior Boston, extractor ignores §4a (`[Denver, Boston]` or `[Boston, Denver]`):** Boston (reinforced) and Denver
+- **Prior Boston, extractor ignores §4c-iv.6a (`[Denver, Boston]` or `[Boston, Denver]`):** Boston (reinforced) and Denver
   both active, contested, identical in both orders. The move is not applied, and is visible as a contention.
   It is not silently reversed.
 - **One value, as today:** unchanged.
@@ -1147,7 +1147,7 @@ Boston.
 two current values has not said which is current. Retiring the prior on behalf of one of them would pick a winner by
 a rule the episode did not state.
 
-##### 4c. The refusal record
+##### 4c-iv.6c. The refusal record (the amendment's §4c)
 
 The existing `supersession_refusals` row, content-free (0003 §4b), with `rule_version` `within-episode-v1`.
 `prior_edge_id` is NOT NULL, so a contested key with no prior can only name the episode's own edges.
@@ -1160,7 +1160,7 @@ order.
    the order so that a shorter same-group form comes first and is absorbed deterministically, not by an id tie-break.
    Uncontested keys keep emission order, exactly as today.
 2. **Each episode edge's NAMED set.** For an episode edge *e*, its named set is every *p* in (the key's active priors)
-   ∪ (the episode's edges canonically before *e*) whose group differs from *e*'s, under the one grouping of §4b.
+   ∪ (the episode's edges canonically before *e*) whose group differs from *e*'s, under the one grouping of §4c-iv.6b.
 3. **Rows are owed by the contest, not by a withheld retire.** One row per named pair, `prior_edge_id = p`,
    `incoming_edge_id = e`, effective ranks computed as for any refusal, WHATEVER branch *e* takes. The reinforcement
    branch returns early with no refusals. A key already holding both values reinforces twice and withholds
@@ -1182,8 +1182,8 @@ logical digest, is unchanged. The store accepts only `DRAFTED_RULE_VERSIONS`.
 ### 4c-iv.7 Regimes (the amendment's §5)
 
 - **Ingest (write time):** the only regime touched.
-- **Maintain:** unchanged. Consolidation outputs are episodes with their own extraction, so §4a applies when they are
-  extracted, and §4b applies to them like any episode.
+- **Maintain:** unchanged. Consolidation outputs are episodes with their own extraction, so §4c-iv.6a applies when they are
+  extracted, and §4c-iv.6b applies to them like any episode.
 - **Import / restore:** unchanged; no supersession is re-run.
 
 ### 4c-iv.8 Invariants (the amendment's §6)
@@ -1197,7 +1197,7 @@ Each check must be shown RED against the named mutant before it is accepted.
 | INV-WE1 | order-independence: an episode emitting values V for one functional key leaves the same active set, and the same refusal-row SET, for every order of V; and a refinement is not a contest | scripted extractor; every permutation of `[Denver, Boston]` and of three values, with and without a prior. Rows are compared as (prior value group, incoming value group), since ids are fresh per run. Plus `[Denver, Denver Colorado]` after a prior Boston: Denver current, Boston superseded, nothing contested | per-edge supersession in emission order (today's code); grouping by `_value_key` instead of `value_groups` |
 | INV-WE2 | a contested key retires nothing: no prior and no own edge | prior Boston; episode `[Denver, Boston]`; Boston and Denver both active, nothing retired by this episode | priors retired by the first new value, before the group is checked |
 | INV-WE3 | a single-value episode behaves as today | prior Boston; episode `[Denver]`; Boston retired `superseded`, Denver active | the group check applied to every key (no supersession at all) |
-| INV-WE4 | a contested key records one row per NAMED pair (§4c) with `rule_version` `within-episode-v1`, including when every edge reinforces; a ladder refusal keeps its own `rule_version`; `within_episode_contested` counts the key | read the table and the ingest result; the `[Austin, Boston]` over-both-priors cell | no row; rows only where a retire was withheld; a ladder row relabelled; the counter absent rather than 0 on an uncontested episode |
+| INV-WE4 | a contested key records one row per NAMED pair (§4c-iv.6c) with `rule_version` `within-episode-v1`, including when every edge reinforces; a ladder refusal keeps its own `rule_version`; `within_episode_contested` counts the key | read the table and the ingest result; the `[Austin, Boston]` over-both-priors cell | no row; rows only where a retire was withheld; a ladder row relabelled; the counter absent rather than 0 on an uncontested episode |
 | INV-WE8 | the `rule_version` carriers: a ladder refusal's draft dump, and so the logical digest, is byte-identical to before the field; the store refuses a drafted value outside `DRAFTED_RULE_VERSIONS` | a committed pre-upgrade receipt replays on a lost-response retry; a draft with an unknown value is refused | the absent field serialized as null; the closed-set check removed |
 | INV-WE9 | absorption in a contested key never takes a differing-group edge, and the grouping is one, over priors and episode together | the ambiguous-cell case ("Denver" beside "Denver, Colorado" and "Denver, Texas"); the prior-joins case (a prior "Denver Colorado", an episode's "Denver" and "Colorado") | the absorption guard removed; an episode-only grouping |
 | INV-WE5 | the extraction rule is in the prompt the extractor receives | assert the RULES text contains the rule, read from the prompt actually sent (a capturing completer) | the rule written to a constant that is not sent |
@@ -1212,8 +1212,8 @@ and the result is a visible contention, not a reversal.
 
 | failure | effect | reversible? |
 |---|---|---|
-| the extractor ignores §4a | the key is contested; the move not applied, but visible | yes: a later single-value episode, or `correct()`, settles it |
-| the extractor over-applies §4a (drops a current value it reads as past) | the value is not stored; the episode text keeps it. The rule's second sentence guards the commonest form, and INV-WE7 measures it | yes: a later statement stores it |
+| the extractor ignores §4c-iv.6a | the key is contested; the move not applied, but visible | yes: a later single-value episode, or `correct()`, settles it |
+| the extractor over-applies §4c-iv.6a (drops a current value it reads as past) | the value is not stored; the episode text keeps it. The rule's second sentence guards the commonest form, and INV-WE7 measures it | yes: a later statement stores it |
 | quoted text names two values | that episode changes nothing for the key (§2c) | yes |
 
 The feature is reverted by removing the pre-pass and the rule; no stored state depends on it beyond refusal rows,
@@ -1225,9 +1225,9 @@ which are content-free.
   guarantee. The store-side rule guarantees only that a non-following extractor produces a contention instead of a
   reversal.
 - **A bare negation retires nothing.** *"I no longer live in Boston."* alone, with no new value, emits no triple
-  under §4a, so a prior Boston stays current. That is a separate defect (a retraction without a replacement), not this
+  under §4c-iv.6a, so a prior Boston stays current. That is a separate defect (a retraction without a replacement), not this
   one, and today's code has it too. It is not fixed here.
-- **No structured history for a past value first mentioned as past** (§4a's cost).
+- **No structured history for a past value first mentioned as past** (§4c-iv.6a's cost).
 - **Benchmark figures across the change.** `EXTRACT_PROMPT` changes what the product stores for a given input. So any
   figure measured under the old prompt is a pre-change figure: the LongMemEval harness's results, and any published
   benchmark. No number is quoted across the change without saying which prompt it was measured under.
