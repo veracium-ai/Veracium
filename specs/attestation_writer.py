@@ -260,6 +260,16 @@ def write_records(news, *, path=None, repo=ROOT, git=run_git, fresh=False) -> di
                     f"a fresh write would erase a {'NEWER revision' if rev == 'future' else 'malformed'} record "
                     f"{what}: fresh mode replaces only a bootstrap run's records"
                     + (" (S75)" if rev == "future" else ""))
+        # 0007 round 4, SA-R4-02: "malformed" is what THIS revision's ARTIFACT VALIDATOR rejects, not only a malformed
+        # revision field. It runs over the ORIGINAL records, before the dry run can replace one, so a same-key current
+        # record with a bad digest, a missing or false confinement probe, or an unexpected field (and a conflicting
+        # duplicate) refuses, bytes unchanged. Validation of the prospective output is not validation of the original it
+        # removes. A superseded record is outside this validator by S74 and is dropped by design (a later format's
+        # validator cannot judge it); a future one was refused above.
+        bad = sv.attestation_artifact_problems(records)
+        if bad:
+            raise AttestationRefused(f"a fresh write would erase a malformed record: {bad[0]} (fresh mode replaces only a "
+                                     f"bootstrap run's records, and only records this revision's validator accepts)")
         probe = list(records)
         for new in news:
             probe, _ = merged(probe, new, repo=repo, git=git)

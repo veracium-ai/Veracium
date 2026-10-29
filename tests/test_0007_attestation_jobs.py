@@ -227,7 +227,7 @@ def _status(status="verified"):
 
 
 def _decide(tmp_path, cases=(), modules=None, status="verified", evidence_rc=0, probes=None, records=None,
-            suite_rc=None, collected=None, euid=1000, environ=None, head=None, **over):
+            suite_rc=None, collected=None, euid=1000, environ=None, head=None, completion=True, **over):
     """A synthetic job. Its suite stands in for a real one in all three carriers: the JUnit, the invocation's own
     collection record (the JUnit's nodes unless `collected` says otherwise, SA-R3-02) and an exit status that agrees
     with the JUnit unless `suite_rc` says otherwise (SA-R3-03). C1 (round 3): `euid` is EXPLICIT and non-root, so a
@@ -239,7 +239,12 @@ def _decide(tmp_path, cases=(), modules=None, status="verified", evidence_rc=0, 
     def run_suite(target):
         pathlib.Path(target).write_bytes(junit.read_bytes())
         job.collected_path(target).write_text(json.dumps(nodes if collected is None else collected))
-        return (1 if failing else 0) if suite_rc is None else suite_rc
+        rc = (1 if failing else 0) if suite_rc is None else suite_rc
+        if completion is not None:     # SA-R4-01: an honest suite's record (pytest.main returned rc), unless overridden
+            job.completion_path(target).write_text(json.dumps(
+                completion(rc, job.nonce_path(target).read_text()) if callable(completion) else
+                {"returned": True, "exit_status": rc, "nonce": job.nonce_path(target).read_text()}))
+        return rc
     return job.decide(_args(**over), runtime_status=_status(status), check_evidence=lambda: (evidence_rc, "tail"),
                       run_suite=run_suite, head=head or (lambda: "a" * 40), records=records, euid=euid,
                       environ={} if environ is None else environ,
@@ -413,6 +418,101 @@ def test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status(t
     assert r["outcome"] == want[0] and want[1] in r["reason"], r
 
 
+
+# ---- 0007 round 4, SA-R4-01: the exempt bootstrap failure explains exit 1 only if the process COMPLETED --------------------
+_BOOT_MOD, _BOOT_NAME = job.BOOTSTRAP[0].split("::")
+_LATE_FAILURE = {   # failures pytest itself does not catch, each AFTER the JUnit was written
+    "session-finish-raise": _LIVE_RAISE,                          # the reviewer's: an unmarked sessionfinish wrapper
+    "tryfirst-wrapper-raise": ("import pytest\n\n\n@pytest.hookimpl(wrapper=True, tryfirst=True)\n"
+                               "def pytest_sessionfinish(session):\n    yield\n"
+                               "    raise RuntimeError('a tryfirst session-finish failure after the JUnit was written')\n"),
+    "unconfigure-raise": ("def pytest_unconfigure(config):\n    raise RuntimeError('an unconfigure failure')\n"),
+    "exit-after-junit": ("import os\nimport pytest\n\n\n@pytest.hookimpl(trylast=True)\n"
+                         "def pytest_unconfigure(config):\n    os._exit(0)\n"),
+}
+
+
+def _boot_tree(tmp_path, monkeypatch, *, boot_fails, other_fails, late=None):
+    root = tmp_path / "tree"
+    (root / "tests").mkdir(parents=True)
+    (root / _BOOT_MOD).write_text(f"def {_BOOT_NAME}():\n    assert {not boot_fails}\n\n\ndef test_two():\n    assert True\n")
+    (root / "tests" / "test_b.py").write_text(f"def test_first():\n    assert True\n\n\ndef test_other():\n    assert {not other_fails}\n")
+    if late:
+        (root / "conftest.py").write_text(_LATE_FAILURE[late])
+    for k in [k for k in __import__("os").environ if k.startswith("PYTEST_")]:
+        monkeypatch.delenv(k)
+    monkeypatch.setattr(job, "ROOT", root)
+    monkeypatch.setattr(job.attestation_suite, "suite", lambda r: [_BOOT_MOD, "tests/test_b.py"])
+    return job.decide(_args(), runtime_status=_status(), check_evidence=lambda: (0, ""), run_suite=job._run_suite,
+                      head=lambda: "a" * 40, euid=1000, environ={}, records=[],
+                      probes=lambda: {k: True for k in sv.CONFINEMENT_PROBE_KEYS})
+
+
+@pytest.mark.parametrize("row", ["passing-control", "passing+session-raise", "bootstrap-alone", "bootstrap+session-raise",
+                                 "bootstrap+other-failure"])
+def test_r4_01_the_reviewers_five_rows(tmp_path, monkeypatch, row):
+    """0007 round 4, SA-R4-01 (the reviewer's table, a REAL pytest process through `_run_suite`, the declared A10 node at
+    a zero-current state): the exact bootstrap failure plus a session-finish exception after the JUnit was written read
+    `bootstrap-pending`, identical to the bootstrap failure alone. Now it is refused, no record; the other rows stand."""
+    boot, other, late = {"passing-control": (False, False, None), "passing+session-raise": (False, False, "session-finish-raise"),
+                         "bootstrap-alone": (True, False, None), "bootstrap+session-raise": (True, False, "session-finish-raise"),
+                         "bootstrap+other-failure": (True, True, None)}[row]
+    r = _boot_tree(tmp_path, monkeypatch, boot_fails=boot, other_fails=other, late=late)
+    want = {"passing-control": ("evidence", ""), "passing+session-raise": ("failed-tests", "session-level failure"),
+            "bootstrap-alone": ("bootstrap-pending", "bootstrap run"),
+            "bootstrap+session-raise": ("failed-tests", "did not complete normally"),
+            "bootstrap+other-failure": ("failed-tests", "failing")}[row]
+    assert r["outcome"] == want[0] and want[1] in r["reason"], r
+    assert (r["record"] is None) is (want[0] == "failed-tests"), r
+
+
+@pytest.mark.parametrize("late", ["tryfirst-wrapper-raise", "unconfigure-raise", "exit-after-junit"])
+def test_r4_01_a_failure_pytest_does_not_catch_is_refused_whatever_its_priority(tmp_path, monkeypatch, late):
+    """The completion record is written after pytest.main RETURNS, so no hook of any priority runs after it: a conftest's
+    TRYFIRST sessionfinish wrapper (which runs outside a -p plugin's own wrapper: the hookwrapper design, kept as a
+    mutant), a raising pytest_unconfigure, and a process that exits 0 from inside pytest after writing its JUnit. The
+    last runs with every test PASSING: exit 0 beside a failing case is already exit_problem's suite-mismatch, so only an
+    all-pass JUnit isolates the completion check (before it, that process attested though it never finished)."""
+    r = _boot_tree(tmp_path, monkeypatch, boot_fails=(late != "exit-after-junit"), other_fails=False, late=late)
+    assert r["outcome"] == "failed-tests" and "did not complete normally" in r["reason"] and r["record"] is None, r
+
+
+@pytest.mark.parametrize("kind", ["stale", "status", "absent", "keys"])
+def test_r4_01_the_completion_record_must_be_this_runs_and_agree(tmp_path, kind):
+    """Research's stage-1 (e) freshness, and the record's own fields: another run's record (its nonce), a pytest.main
+    status other than the process's, no record, and a record with other keys each refuse, at the bootstrap state where
+    the record matters most."""
+    mod = suite_rule.suite(ROOT)[0]
+    cases = [(job.BOOTSTRAP[0].split("::")[0], job.BOOTSTRAP[0].split("::")[1], "failed", None), (mod, "test_x", "passed", None)]
+    completion = {"stale": lambda rc, n: {"returned": True, "exit_status": rc, "nonce": "0" * 32},
+                  "status": lambda rc, n: {"returned": True, "exit_status": 0, "nonce": n},
+                  "absent": None,
+                  "keys": lambda rc, n: {"returned": True, "exit_status": rc, "nonce": n, "extra": 1}}[kind]
+    r = _decide(tmp_path, cases=cases, records=[], completion=completion)
+    word = {"stale": "nonce differs", "status": "returned 0 but the process exited 1", "absent": "no completion record",
+            "keys": "keys are not"}[kind]
+    assert r["outcome"] == "failed-tests" and word in r["reason"] and r["record"] is None, r
+    (tmp_path / "control").mkdir()
+    assert _decide(tmp_path / "control", cases=cases, records=[])["outcome"] == "bootstrap-pending"   # an honest record
+
+
+def test_r4_01_every_record_producing_outcome_requires_the_completion_record():
+    """Research's stage-1 (d), as a CHECKED predicate over decide's own source: the outcomes decide pairs with a record
+    are exactly {evidence, bootstrap-pending}, and the completion check precedes every one of them in the same body.
+    A future outcome that yields a record after the check is placed fails here by name."""
+    import ast
+    tree = ast.parse(inspect.getsource(job.decide))
+    calls = [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "completion_problem"]
+    assert len(calls) == 1, calls
+    yields = {}
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "update":
+            kw = {k.arg: k.value for k in n.keywords}
+            if "record" in kw and "outcome" in kw and isinstance(kw["outcome"], ast.Constant):
+                yields[kw["outcome"].value] = n.lineno
+    assert set(yields) == {"evidence", "bootstrap-pending"}, yields
+    assert all(line > calls[0] for line in yields.values()), (calls, yields)
+
 def test_an_unreadable_key_is_unattestable_after_the_rederivation_and_runs_no_suite(tmp_path, monkeypatch):
     """0007 v22 §4d: the re-derivation runs FIRST (owed on every verifying build), then a build whose key has an
     unreadable field ends `unattestable`, exit 0, naming the field; no suite runs. A failing re-derivation stays red."""
@@ -553,12 +653,16 @@ def test_a_failing_confinement_probe_is_never_a_record(tmp_path):
 
 
 def test_the_suite_runs_once_in_pytests_own_order(monkeypatch, tmp_path):
-    """BLOCKING 1: pytest-randomly disabled, no cache, the rule's modules, one process."""
+    """BLOCKING 1: pytest-randomly disabled, no cache, the rule's modules, one process. SA-R4-01: that process is the
+    completion child around pytest.main, handed the completion path and decide's nonce before pytest's own arguments."""
     seen = []
     monkeypatch.setattr(job.subprocess, "run", lambda argv, **k: seen.append(argv) or SimpleNamespace(returncode=0))
-    job._run_suite(tmp_path / "j.xml")
+    junit = tmp_path / "j.xml"
+    job.nonce_path(junit).write_text("n" * 32)
+    job._run_suite(junit)
     (argv,) = seen
-    assert argv[1:3] == ["-m", "pytest"] and "no:randomly" in argv and argv[argv.index("no:randomly") - 1] == "-p"
+    assert argv[1:5] == ["-c", job._CHILD, str(job.completion_path(junit)), "n" * 32], argv[:5]
+    assert "no:randomly" in argv and argv[argv.index("no:randomly") - 1] == "-p"
     assert "-n" not in argv and argv[-len(suite_rule.suite(ROOT)):] == suite_rule.suite(ROOT)
 
 
@@ -868,7 +972,9 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
             [(MULTI, {"change": "missing"}), (LIVE, {"mode": "deselect"})]),
         "nodes compared as a set (multiplicity dropped)": ([("    dup = sorted(n for n, c in got.items() if c > 1)\n", "    dup = []\n")],
                                                            [(MULTI, {"change": "duplicate"})]),
-        "the collection plugin not loaded": ([('"-p", "attestation_collect",\n', "\n")], [(LIVE, {"mode": "control"})]),
+        # re-anchored for SA-R4-01's launch (research's stage-1 (f): the round-3 guard re-run on the new child)
+        "the collection plugin not loaded": ([('*PYTEST_ARGS, "-p", "attestation_collect", f"--junitxml={junit}"', '*PYTEST_ARGS, f"--junitxml={junit}"')],
+                                             [(LIVE, {"mode": "control"})]),
         "the shipped rule: pytest's exit status discarded (SA-R3-03)": ([("            bad = exit_problem(rc, cases)\n", "            bad = None\n")],
                                                                         [(EXITC, {"rc": 1, "failing": False, "outcome": "failed-tests", "word": "session-level failure"}),
                                                                          (LIVE, {"mode": "session-finish-raise"})]),
@@ -876,6 +982,18 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
                                                     [(EXITC, {"rc": 1, "failing": False, "outcome": "failed-tests", "word": "session-level failure"})]),
         "an exit 0 beside a failing case admitted": ([("    if rc == 0 and failing:\n", "    if False:\n")],
                                                      [(EXITC, {"rc": 0, "failing": True, "outcome": "suite-mismatch", "word": "exited 0 while its JUnit has a failing case"})]),
+        "SA-R4-01: the completion record ignored": ([("            bad = completion_problem(completion_path(junit), rc, nonce)\n", "            bad = None\n")],
+                                                     [("test_r4_01_the_reviewers_five_rows", {"row": "bootstrap+session-raise"}),
+                                                      ("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "absent"})]),
+        "SA-R4-01: the completion record required only for evidence": ([('            if bad:\n                raise Decided("failed-tests", bad)\n',
+                                                                         '            if bad and not any(o == "failed" and n in BOOTSTRAP for n, o, _ in cases):\n                raise Decided("failed-tests", bad)\n')],
+                                                                       [("test_r4_01_the_reviewers_five_rows", {"row": "bootstrap+session-raise"})]),
+        "SA-R4-01: the record written from a sessionfinish hookwrapper (research's first idea)": ([('_CHILD = ("import json, sys\\n"\n          "import pytest\\n"\n          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\\n"\n          "rc = int(pytest.main(args))\\n"\n          "with open(path, \'w\', encoding=\'utf-8\') as f:\\n"\n          "    json.dump({\'returned\': True, \'exit_status\': rc, \'nonce\': nonce}, f)\\n"\n          "sys.exit(rc)\\n")', '_CHILD = ("import json, sys\\n"\n          "import pytest\\n"\n          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\\n"\n          "class W:\\n"\n          "    @pytest.hookimpl(wrapper=True)\\n"\n          "    def pytest_sessionfinish(self, session):\\n"\n          "        r = yield\\n"\n          "        json.dump({\'returned\': True, \'exit_status\': int(session.exitstatus), \'nonce\': nonce}, open(path, \'w\'))\\n"\n          "        return r\\n"\n          "sys.exit(int(pytest.main(args, plugins=[W()])))\\n")')],
+            [("test_r4_01_a_failure_pytest_does_not_catch_is_refused_whatever_its_priority", {"late": "tryfirst-wrapper-raise"})]),
+        "SA-R4-01: pytest.main's status not compared with the process's": ([('    if type(rec["exit_status"]) is not int or rec["exit_status"] != rc:\n', '    if type(rec["exit_status"]) is not int:\n')],
+                                                                            [("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "status"})]),
+        "SA-R4-01: the nonce not checked (a stale record stands)": ([('    if rec["nonce"] != nonce:\n', "    if False:\n")],
+                                                                    [("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "stale"})]),
         "an unnamed exit status admitted": ([("    if rc not in (0, 1):\n", "    if False:\n")],
                                             [(EXITC, {"rc": 5, "failing": False, "outcome": "suite-mismatch", "word": "no tests collected"})]),
         "git's exit code dropped (_head)": ([('    if rc != 0:\n        raise Decided("wrong-job-state", f"git rev-parse HEAD', '    if False:\n        raise Decided("wrong-job-state", f"git rev-parse HEAD')],

@@ -386,6 +386,15 @@ CARRIERS = {
                                 "attestation_job.py, so no matrix row can plant it; the cell runs it as its own control "
                                 "against the same fixture and requires it to MISS the tryfirst and pre-yield wrapper forms",
                       f"{JOBS}::test_a_conftest_that_drops_a_collected_test_is_caught_whatever_its_hook_priority[tryfirst]"),
+    # (v23.2.1) 0007 round 4: SA-R4-02 (fresh validates the ORIGINAL artifact) and SA-R4-01 (the completion record)
+    ("INV-SA6", 34): ("cite", f"{WRITER_MATRIX}::SA-R4-02: 'malformed' read as the revision classifier's (one word, two predicates)"),
+    ("INV-SA6", 35): ("cite", f"{WRITER_MATRIX}::SA-R4-02: the validator run on the MERGED output, not the originals (the reviewer's point)"),
+    ("INV-SA6", 36): ("cite", f"{WRITER_MATRIX}::SA-R4-02: the validation applied only to OTHER keys (a same-key record still erased)"),
+    ("INV-SA6", 37): ("cite", f"{WRITER_MATRIX}::SA-R4-02: per-record validation without the artifact-level check (a conflicting duplicate passes)"),
+    ("INV-SA6", 38): ("cite", f"{JOB_MATRIX}::SA-R4-01: the completion record ignored"),
+    ("INV-SA6", 39): ("cite", f"{JOB_MATRIX}::SA-R4-01: the record written from a sessionfinish hookwrapper (research's first idea)"),
+    ("INV-SA6", 40): ("cite", f"{JOB_MATRIX}::SA-R4-01: the nonce not checked (a stale record stands)"),
+    ("INV-SA6", 41): ("cite", f"{JOB_MATRIX}::SA-R4-01: pytest.main's status not compared with the process's"),
     ("INV-SA12", 12): ("mutant", "sa12-pt-interp-from-a-fixed-window"),
     ("INV-SA12", 13): ("mutant", "sa12-a-short-segment-read-as-a-name"),
     ("INV-SA7", 0): ("mutant", "sa7-warn-on-every-open"),

@@ -650,8 +650,28 @@ SHALLOW = ('''    rc, out = git(["rev-parse", "--is-shallow-repository"], repo)
 ''')
 ARM = "test_each_cross_run_arm_refuses_with_its_message"
 FRESH_ANY = "test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key"
+R402 = "test_r4_02_the_reviewers_rows_in_both_modes"
 MUTANTS = {
     # name: ([(anchor, replacement), ...], [(killing cell, its parameters), ...])
+    # ---- 0007 round 4, SA-R4-02: fresh mode validates the ORIGINAL records before the dry run replaces one ---------------
+    "SA-R4-02: the original-record validation removed (the round-4 code)": (
+        [("        bad = sv.attestation_artifact_problems(records)\n", "        bad = []\n")],
+        [(R402, {"case": "same-key-bad-digest", "mode": "fresh"}), (R402, {"case": "same-key-missing-confinement", "mode": "fresh"}), (R402, {"case": "same-key-false-probe", "mode": "fresh"}), (R402, {"case": "same-key-extra-field", "mode": "fresh"})]),
+    "SA-R4-02: the validation applied only to OTHER keys (a same-key record still erased)": (
+        [("        bad = sv.attestation_artifact_problems(records)\n", "        bad = sv.attestation_artifact_problems([x for x in records if not isinstance(x, dict) or "
+                     "sv.attestation_key(x) not in [sv.attestation_key(n) for n in news]])\n")],
+        [(R402, {"case": "same-key-bad-digest", "mode": "fresh"}), (R402, {"case": "same-key-missing-confinement", "mode": "fresh"}), (R402, {"case": "same-key-false-probe", "mode": "fresh"}), (R402, {"case": "same-key-extra-field", "mode": "fresh"})]),
+    "SA-R4-02: 'malformed' read as the revision classifier's (one word, two predicates)": (
+        [("        bad = sv.attestation_artifact_problems(records)\n", "        bad = [x for x in records if sv.attestation_revision(x) == 'malformed']\n")],
+        [(R402, {"case": "same-key-bad-digest", "mode": "fresh"}), (R402, {"case": "same-key-missing-confinement", "mode": "fresh"}), (R402, {"case": "same-key-false-probe", "mode": "fresh"}), (R402, {"case": "same-key-extra-field", "mode": "fresh"})]),
+    "SA-R4-02: the validator run on the MERGED output, not the originals (the reviewer's point)": (
+        [("        bad = sv.attestation_artifact_problems(records)\n", "        bad = sv.attestation_artifact_problems([x for n in news for x in merged(list(records), n, repo=repo, "
+                     "git=git)[0]])\n")],
+        [(R402, {"case": "same-key-bad-digest", "mode": "fresh"}), (R402, {"case": "same-key-missing-confinement", "mode": "fresh"}), (R402, {"case": "same-key-false-probe", "mode": "fresh"}), (R402, {"case": "same-key-extra-field", "mode": "fresh"})]),
+    "SA-R4-02: per-record validation without the artifact-level check (a conflicting duplicate passes)": (
+        [("        bad = sv.attestation_artifact_problems(records)\n", "        bad = [q for x in records if sv.attestation_revision(x) == 'current' "
+                     "for q in sv.attestation_record_problems(x)]\n")],
+        [("test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write", {})]),
     # ---- I4: a later suite revision with a changed result digest (round 2's obligation; the three failure words) -----
     "keep the replaced record beside the new one (two current records for one key)": (
         [('        outcome = "replaced"                          # this current record is replaced by the new one\n',
@@ -830,3 +850,90 @@ def test_the_attestation_writer_mutation_matrix(tmp_path_factory):
             survivors[name] = results
     control("control, last")
     assert not survivors, survivors
+
+
+# ---- 0007 round 4, SA-R4-02: fresh mode validates the ORIGINAL records before replacing one ------------------------------
+def _damaged(kind):
+    def make(a1):
+        r = record(commit=a1)
+        if kind == "digest":
+            r["result_digest"] = "not-a-digest"
+        elif kind == "missing-confinement":
+            del r["confinement"]["denies_attach"]
+        elif kind == "false-probe":
+            r["confinement"]["denies_attach"] = False
+        elif kind == "extra-field":
+            r["unexpected"] = 1
+        return r
+    return make
+
+
+# the reviewer's nine rows (round 4, SA-R4-02), each original record committed at A1 (no artifact: the zero-current
+# state, so it is a bootstrap record by derivation) beside the incoming valid record naming HEAD. FRESH after the fix;
+# ORDINARY exactly as measured on d087f6e (the reviewer's request does not redefine the ordinary writer's repair semantics)
+_R4_02 = {
+    "valid-bootstrap": (lambda a1: record(commit=a1), "write", "write"),
+    "future-same-key": (lambda a1: record(commit=a1, schema_version=sv.SCHEMA_VERSION + 1), "refuse:NEWER revision",
+                        "refuse:(S75)"),
+    "future-other-key": (lambda a1: record(commit=a1, machine=OTHER_MACHINE, schema_version=sv.SCHEMA_VERSION + 1),
+                         "refuse:NEWER revision", "write"),
+    "string-revision": (lambda a1: record(commit=a1, schema_version=str(sv.SCHEMA_VERSION)),
+                        "refuse:erase a malformed record", "refuse:would be poisoned"),
+    "same-key-bad-digest": (_damaged("digest"), "refuse:erase a malformed record", "write"),
+    "same-key-missing-confinement": (_damaged("missing-confinement"), "refuse:erase a malformed record", "write"),
+    "same-key-false-probe": (_damaged("false-probe"), "refuse:erase a malformed record", "write"),
+    "same-key-extra-field": (_damaged("extra-field"), "refuse:erase a malformed record", "write"),
+    # research's stage-1 (b): a malformed BOOTSTRAP record of ANOTHER key (current, so the validator judges it)
+    "other-key-bad-digest": (lambda a1: dict(_damaged("digest")(a1), machine=OTHER_MACHINE),
+                             "refuse:erase a malformed record", "refuse:would be poisoned"),
+}
+
+
+@pytest.mark.parametrize("mode", ["fresh", "ordinary"])
+@pytest.mark.parametrize("case", list(_R4_02))
+def test_r4_02_the_reviewers_rows_in_both_modes(repo, tmp_path, case, mode):
+    """0007 round 4, SA-R4-02 (the reviewer's table, every row): fresh mode's preflight checked only the revision
+    classification, so a same-key CURRENT record the production validator rejects was replaced by the dry-run merge and
+    erased. Now the artifact validator runs over the ORIGINAL records first. Every refusal leaves the bytes unchanged;
+    the ordinary writer's answers are the ones it gave before the fix."""
+    make, want_fresh, want_ordinary = _R4_02[case]
+    original = make(repo["A1"])
+    head = _commit_artifact(repo, [original])
+    path = tmp_path / "out.json"
+    path.write_text(json.dumps({"attestations": [original]}, indent=2))
+    before = path.read_bytes()
+    want = want_fresh if mode == "fresh" else want_ordinary
+    if want == "write":
+        aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=(mode == "fresh"))
+        assert sv.record_commit(json.loads(path.read_text())["attestations"][-1]) == head
+    else:
+        with pytest.raises(aw.AttestationRefused, match=re.escape(want.split(":", 1)[1])):
+            aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=(mode == "fresh"))
+        assert path.read_bytes() == before
+
+
+def test_r4_02_a_superseded_record_with_a_bad_digest_is_dropped_by_design(repo, tmp_path):
+    """Research's stage-1 (a): "malformed" is what THIS revision's validator rejects; a SUPERSEDED record is outside it
+    by S74 (a later format's validator cannot judge an older one), so fresh mode drops it, damaged or not."""
+    old = dict(_damaged("digest")(repo["A1"]), schema_version=sv.SCHEMA_VERSION - 1)
+    assert sv.attestation_revision(old) == "superseded"
+    boot = record(commit=repo["A1"], machine=OTHER_MACHINE)
+    head = _commit_artifact(repo, [boot, old])
+    path = tmp_path / "out.json"
+    path.write_text(json.dumps({"attestations": [boot, old]}, indent=2))
+    aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=True)
+    assert [sv.record_commit(r) for r in json.loads(path.read_text())["attestations"]] == [head]
+
+
+def test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write(repo, tmp_path):
+    """The reviewer's secondary observation (prospective-only validation): two CURRENT records of one key whose evidence
+    differs. Each alone is valid; the ARTIFACT validator names the conflict, so the fresh write refuses, bytes unchanged."""
+    a, b = record(commit=repo["A1"]), record(commit=repo["A1"], digest="f" * 64)
+    assert sv.attestation_record_problems(a) == [] and sv.attestation_record_problems(b) == []
+    head = _commit_artifact(repo, [a, b])
+    path = tmp_path / "out.json"
+    path.write_text(json.dumps({"attestations": [a, b]}, indent=2))
+    before = path.read_bytes()
+    with pytest.raises(aw.AttestationRefused, match="erase a malformed record"):
+        aw.write_records([record(commit=head)], path=path, repo=repo["path"], fresh=True)
+    assert path.read_bytes() == before

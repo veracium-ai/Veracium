@@ -328,6 +328,24 @@ def test_mq2_concurrent_migration_runs_exactly_once():
     assert c.execute("SELECT COUNT(*) FROM confirmations").fetchone()[0] == 0
 
 
+def test_mq2_the_build_is_measured_under_the_draft_lock(monkeypatch):
+    """With no context open, an operation measures the BUILD while holding `_DRAFT_LOCK`, so no concurrent context
+    can install or restore the globals mid-measurement. Found 2026-10-29: measured after the lock's release, a loaded
+    M-Q2 run read a half-patched registry as `refused` ("verification raised NearMissError"), 10 of 80 runs, and the
+    loser returned `unsupported-sqlite`. Mutant: the measurement moved back outside the lock."""
+    seen = []
+    real = sv.runtime_status()
+
+    def probe():
+        seen.append(m13._DRAFT_LOCK.locked())
+        return real
+
+    monkeypatch.setattr(sv, "runtime_status", probe)
+    assert m13._DRAFT["depth"] == 0
+    assert m13._build_measurement() is real
+    assert seen == [True], seen
+
+
 def test_mq2_hazard_a_stale_v1_connection_writes_after_migration():
     """Round 2, finding 5 — DEMONSTRATED, not fixed: the write lock serialises
     the migration itself, but a connection opened before it never re-runs the

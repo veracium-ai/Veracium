@@ -38,6 +38,7 @@ import hashlib
 import json
 import os
 import pathlib
+import secrets
 import subprocess
 import sys
 import tempfile
@@ -69,6 +70,21 @@ ENV_REFUSED_PREFIXES = ("PYTEST_",)
 agrees with), PYTEST_PLUGINS loads outcome-rewriting code, PYTHONPATH/PYTHONHOME change what is imported. Any of them
 present REFUSES the job before anything runs; nothing is silently stripped. Every other variable is inherited, so
 CI's own environment (which sets none of these) reaches the suite unchanged."""
+COMPLETION_KEYS = ("returned", "exit_status", "nonce")
+_CHILD = ("import json, sys\n"
+          "import pytest\n"
+          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\n"
+          "rc = int(pytest.main(args))\n"
+          "with open(path, 'w', encoding='utf-8') as f:\n"
+          "    json.dump({'returned': True, 'exit_status': rc, 'nonce': nonce}, f)\n"
+          "sys.exit(rc)\n")
+"""0007 round 4, SA-R4-01: the suite's POSITIVE completion signal, at the process boundary. The child runs pytest.main
+and writes this record only if pytest.main RETURNED. A failure pytest does not catch, such as an exception escaping
+pytest_sessionfinish after the JUnit was written (wrap_session calls it in its `finally` with no handler for an ordinary
+exception, so it leaves pytest.main) or a raising pytest_unconfigure, leaves no record, whatever hook priority raised it:
+no hook runs after pytest.main returns. A sessionfinish hookwrapper would not do, because a conftest's tryfirst wrapper
+registers after a -p plugin and runs OUTSIDE it (research's stage-1 read; kept as a mutant). It proves pytest.main
+returned against HONEST process failures; code inside the suite could forge it, which is outside the stated adversary."""
 PYTEST_EXIT = {2: "interrupted", 3: "internal error", 4: "usage error", 5: "no tests collected"}
 """SA-R3-03: pytest's exit codes other than 0 (all passed) and 1 (tests failed), each named in the refusal."""
 
@@ -163,13 +179,48 @@ def collected_path(junit) -> pathlib.Path:
     return junit.with_name(junit.name + ".collected.json")
 
 
+def completion_path(junit) -> pathlib.Path:
+    junit = pathlib.Path(junit)
+    return junit.with_name(junit.name + ".completion.json")
+
+
+def nonce_path(junit) -> pathlib.Path:
+    junit = pathlib.Path(junit)
+    return junit.with_name(junit.name + ".nonce")
+
+
 def _run_suite(junit) -> int:
-    """The suite, ONCE, by the committed rule; returns pytest's exit status (SA-R3-03: decide consumes it). The
-    collection plugin is the only thing the job adds to the child's environment."""
+    """The suite, ONCE, by the committed rule; returns pytest's exit status (SA-R3-03: decide consumes it). The child
+    is `_CHILD` around pytest.main (SA-R4-01), handed the completion path and decide's nonce; the same arguments as
+    before, the collection plugin included, which is still the only thing the job adds to the child's environment."""
     modules = attestation_suite.suite(ROOT)
     env = {**os.environ, "PYTHONPATH": str(COLLECT_PLUGIN_DIR), COLLECT_ENV: str(collected_path(junit))}
-    return subprocess.run([sys.executable, "-m", "pytest", *PYTEST_ARGS, "-p", "attestation_collect",
-                           f"--junitxml={junit}", *modules], cwd=str(ROOT), env=env).returncode
+    return subprocess.run([sys.executable, "-c", _CHILD, str(completion_path(junit)), nonce_path(junit).read_text(),
+                           *PYTEST_ARGS, "-p", "attestation_collect", f"--junitxml={junit}", *modules],
+                          cwd=str(ROOT), env=env).returncode
+
+
+def completion_problem(path, rc, nonce) -> str | None:
+    """SA-R4-01: None iff the suite process COMPLETED: its completion record exists, holds exactly COMPLETION_KEYS,
+    says pytest.main returned, carries THIS run's nonce (a stale record refuses) and the exit status the process
+    exited with. Otherwise the reason, named."""
+    path = pathlib.Path(path)
+    head = "the suite process did not complete normally: "
+    if not path.exists():
+        return head + "no completion record (pytest.main did not return; e.g. a session-finish failure after the JUnit)"
+    try:
+        rec = json.loads(path.read_text())
+    except ValueError as e:
+        return head + f"its completion record is not JSON ({e})"
+    if not isinstance(rec, dict) or set(rec) != set(COMPLETION_KEYS):
+        return head + f"its completion record's keys are not {list(COMPLETION_KEYS)}"
+    if rec["returned"] is not True:
+        return head + "its completion record does not say pytest.main returned"
+    if rec["nonce"] != nonce:
+        return head + "its completion record is not this run's (the nonce differs)"
+    if type(rec["exit_status"]) is not int or rec["exit_status"] != rc:
+        return head + f"pytest.main returned {rec['exit_status']!r} but the process exited {rc!r}"
+    return None
 
 
 def _head() -> str:
@@ -274,6 +325,8 @@ def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_sui
                                           + ", ".join(k for k in sv.KEY_FIELDS if ident.get(k) is None))
         with tempfile.TemporaryDirectory() as td:
             junit = pathlib.Path(td) / "junit.xml"
+            nonce = secrets.token_hex(16)                 # SA-R4-01: this run's, so no other run's record can stand in
+            nonce_path(junit).write_text(nonce)
             rc = run_suite(junit)
             if not junit.exists():
                 raise Decided("suite-mismatch", f"the suite wrote no JUnit file (pytest exited {rc!r})")
@@ -288,6 +341,11 @@ def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_sui
             bad = exit_problem(rc, cases)
             if bad:
                 raise Decided(*bad)
+            # SA-R4-01: BEFORE any outcome past the suite, so before every outcome that yields a record: the exempt
+            # bootstrap failure explains exit 1 only if the process otherwise COMPLETED
+            bad = completion_problem(completion_path(junit), rc, nonce)
+            if bad:
+                raise Decided("failed-tests", bad)
         result["result_digest"] = result_digest(cases)
         fired, unmapped = classify_skips(cases)
         if unmapped:
