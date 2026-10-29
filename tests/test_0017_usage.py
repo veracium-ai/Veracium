@@ -15,7 +15,7 @@ import threading
 
 import pytest
 
-from veracium import Memory, MemoryConfig
+from veracium import EvidenceContext, Memory, MemoryConfig
 from veracium import telemetry as T
 from veracium.audit import AuditLog
 from veracium.llm.metered import METERING_CAPABILITY, Metered, count_valid
@@ -461,7 +461,9 @@ def test_attribution_is_exact_under_concurrency(tmp_path):
 def test_nested_answer_recall_attributes_to_inner_context(tmp_path):
     mem, w = _metered_mem(tmp_path, "nested.db")
     mem.config.wiki_recompile_after_writes = 1   # force a compile during recall
-    mem.remember(U, "USER: I'm a chef.", date="2026-06-01")
+    # GROUNDED (direct): with no grounded input the compiler emits its fixed body without a model call (the empty-
+    # grounded header fix), so the model-backed compile this cell attributes needs a grounded fact to compile
+    mem.remember(U, "USER: I'm a chef.", date="2026-06-01", context=EvidenceContext.direct())
     mem.answer(U, "what is my job?")
     roles = mem.introspect(U)["llm_usage"]["roles"]
     assert roles["gate"]["calls"] == 1           # answer's own producer

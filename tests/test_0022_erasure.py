@@ -39,8 +39,8 @@ def test_every_per_user_table_is_erased_and_every_erased_table_is_per_user(tmp_p
     act_counter, store_identity, the 0044 plan tables, …) are outside by that property, never by a list of names.
     Mutant: drop any table from `_ERASE_TABLES`, or add a per-user table to the schema without it."""
     s = SqliteStore(str(tmp_path / "census.db"))
-    tables = [r[0] for r in s._conn.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
+    tables = [r[0] for r in s._conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+              if not r[0].startswith("sqlite_")]          # SQLite's own internal tables, by exact prefix
     per_user = {t for t in tables if any(c[1] == "user_id" for c in s._conn.execute(f"PRAGMA table_info({t})"))}
     assert per_user, "the census found no per-user table: it is measuring nothing"
     assert per_user - set(_ERASE_TABLES) == set(), (
