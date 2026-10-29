@@ -12,6 +12,8 @@ MCP description now says so.
 import json
 import tempfile
 
+import pytest
+
 from veracium import EvidenceAuthor, Memory, MemoryConfig
 from veracium import compile as _compile
 from veracium.compile import compile_wiki
@@ -85,6 +87,7 @@ def test_the_compiler_is_not_asked_to_narrate_an_empty_grounded_input():
 
 
 def test_the_recall_tool_says_the_users_words_outrank_a_memory():
+    pytest.importorskip("mcp")       # the built server needs the optional SDK (the pydantic-floor lane has none)
     from veracium.mcp_server import build_server
     with tempfile.TemporaryDirectory() as d:
         server = build_server(_mem(d, Fake()), default_user="u")

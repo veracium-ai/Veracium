@@ -120,6 +120,15 @@ INVENTORY = [
                             "invariant tests run without the SDK. Author line: "
                             "all PASS (mcp importable in the authoring venv); "
                             "an mcp-absent environment sees 7 SKIP"),
+    ("tests/test_empty_grounded_header.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — the recall tool's served "
+                            "description (the user's own words outrank a recalled "
+                            "memory) is read from the built server; the importorskip "
+                            "is INSIDE test_the_recall_tool_says_the_users_words_"
+                            "outrank_a_memory ONLY — the file's other 3 tests run "
+                            "without the SDK (found by the pydantic-floor CI lane at "
+                            "c877648, run 40934117705). Author line: all 4 PASS; an "
+                            "mcp-absent environment sees 3 PASS + 1 SKIP"),
     ("tests/test_0006_require_source_id.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — 0006 I15's served-tool "
                             "schema check (the built server exposes no "
