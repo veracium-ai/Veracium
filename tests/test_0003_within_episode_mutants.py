@@ -7,7 +7,10 @@ import hashlib
 import importlib.util
 import json
 import pathlib
+import subprocess
 import sys
+
+import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -20,6 +23,11 @@ def _load(name="veracium_within_episode_mutants"):
 
 
 wm = _load()
+
+
+def _is_checkout():
+    r = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    return r.returncode == 0 and pathlib.Path(r.stdout.strip()).resolve() == ROOT.resolve()
 
 
 def test_the_mutation_table_is_current_and_every_row_good():
@@ -35,6 +43,7 @@ def test_every_mutated_file_has_a_no_op_control_naming_its_mutants_cells():
         assert set(noops[rel][3]) == {c for m in wm.MUTANTS if m[2] == rel for c in m[4]}, rel
 
 
+@pytest.mark.skipif(not _is_checkout(), reason="the no-op control's run snapshots the TRACKED tree (git ls-files); a git-less copy has none")
 def test_a_no_op_control_whose_cells_never_ran_is_not_good(tmp_path):
     """Research's guard on the protocol's no-op form: 'none failed' is vacuous when nothing was collected. A NO-OP
     control naming a cell that does not exist reads NOT good, run for real on a copy of the tree."""

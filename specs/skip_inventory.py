@@ -275,6 +275,10 @@ INVENTORY = [
      "git-checkout", "specs/0013 v33 0013-PA1 (the migration postconditions' mutation table): the first code mutant's "
      "reproduction snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has none, "
      "so the row cannot be re-run there — CI is a checkout, where it always runs", "job:runs"),
+    ("tests/test_0003_within_episode_mutants.py", "skipif", "not _is_checkout()",
+     "git-checkout", "specs/0003 within-episode §6 (the held minor release's mutation table): the no-op control's run "
+     "snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has none, so the cell "
+     "cannot run there — CI is a checkout, where it always runs (found by the 0007 round-5 offline leg at 8738f56)"),
     ("tests/test_0013_pa1_retired_keys.py", "skip",
      "no repository here (a packaged tree)",
      "git-checkout", "specs/0013 v33 §4f / M-Q6 (ruled by 0016 D2): RETIRED_EPISODE_KEYS is bound to a derivation over "
@@ -607,6 +611,8 @@ EMITTED = {
     ("tests/test_0044_v1_readonly_db.py", "geteuid"):
         ("root writes a read-only file",),
     ("tests/test_0013_pa1_campaign.py", "not _is_checkout()"):
+        ("a git-less copy has none",),
+    ("tests/test_0003_within_episode_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_0041_mutation_campaign.py", "not _is_checkout()"):
         ("a git-less copy has none",),
