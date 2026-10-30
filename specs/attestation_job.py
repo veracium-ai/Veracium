@@ -365,6 +365,8 @@ def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_sui
             rc = run_suite(junit)
             if not junit.exists():
                 raise Decided("suite-mismatch", f"the suite wrote no JUnit file (pytest exited {rc!r})")
+            if not junit.is_file():         # round 5 G1: a FIFO here would block the parse's open (the child has exited)
+                raise Decided("suite-mismatch", "the suite's JUnit is not a regular file")
             try:                    # round 5 F3: the child's outputs are read to a named refusal, never an escape
                 cases = junit_cases(junit)
                 attestation_suite.junit_modules(junit)      # nodes_problems' reader too, so only the tree can raise below

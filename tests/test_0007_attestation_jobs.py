@@ -569,12 +569,51 @@ def _decided(tmp_path, monkeypatch, **kw):
         pytest.fail(f"decide raised {type(exc).__name__} (an escape, not a closed outcome): {exc}")
 
 
+def _fifo_releaser(path, deadline=10.0):
+    """Round 5 G2 (research's measured form): a FIFO is released only if something OPENED it to read. A thread polls a
+    NON-BLOCKING writer open (ENXIO: no reader yet) until the deadline or the path is gone; on success it closes at once,
+    so a blocked reader sees EOF, and records "released". "no-reader" is a direct observation that decide never opened
+    the path, independent of any message text; a blocking writer open would hang whenever decide is correct."""
+    import errno
+    import threading
+    import time
+    state = {"result": "no-reader"}
+
+    def run():
+        end = time.monotonic() + deadline
+        while time.monotonic() < end:
+            try:
+                fd = __import__("os").open(path, __import__("os").O_WRONLY | __import__("os").O_NONBLOCK)
+            except OSError as e:
+                if e.errno == errno.ENXIO:
+                    time.sleep(0.01)
+                    continue
+                return                          # the job's temporary directory is gone: nobody opened it
+            __import__("os").close(fd)
+            state["result"] = "released"
+            return
+    state["thread"] = threading.Thread(target=run, daemon=True)
+    state["thread"].start()
+    return state
+
+
+def _never_opened(after):
+    """The FIFO form's own verdict: the releaser ended without finding a reader."""
+    th = after.releaser["thread"]
+    th.join(timeout=15)
+    assert not th.is_alive(), "the FIFO releaser outlived its deadline"
+    assert after.releaser["result"] == "no-reader", "decide OPENED the FIFO (a reader was blocked on it): the is_file guard is gone"
+
+
 def _rewrite(which, form):
     def after(target):
         path = {"completion": job.completion_path, "collected": job.collected_path, "junit": lambda j: j}[which](target)
         path.unlink()
         if form == "directory":
             path.mkdir()
+        elif form == "fifo":                  # round 5 G1/G2: a FIFO blocks an open until a writer appears
+            __import__("os").mkfifo(path)
+            after.releaser = _fifo_releaser(path)
         elif form == "nested":
             path.write_text("[" * 100_000 + "]" * 100_000)
         elif form == "invalid-utf8":
@@ -590,33 +629,52 @@ def _rewrite(which, form):
     return after
 
 
-@pytest.mark.parametrize("form", ["nested", "directory", "invalid-utf8", "truncated"])
+@pytest.mark.parametrize("form", ["nested", "directory", "fifo", "invalid-utf8", "truncated"])
 def test_r5_f3_an_unreadable_completion_record_is_refused_not_raised(tmp_path, monkeypatch, form):
-    """A completion record nested past the recursion limit, a directory at its path, invalid UTF-8 and a truncated
-    write each end `failed-tests` with a named reason and no record; decide returns, so main still writes --out."""
+    """A completion record nested past the recursion limit, a directory at its path, a FIFO, invalid UTF-8 and a truncated
+    write each end `failed-tests` with a named reason and no record; decide returns, so main still writes --out. Round 5
+    G2: each form asserts ITS reason, so the is_file guard's refusal is told apart from the parse catch's (with the guard
+    removed, a directory and a released FIFO both still refuse, as "could not be read" or "not JSON")."""
     mod = suite_rule.suite(ROOT)[0]
-    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=_rewrite("completion", form))
+    after = _rewrite("completion", form)
+    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=after)
+    word = {"directory": "not a regular file", "fifo": "not a regular file"}.get(form, "is not JSON")
     assert r["outcome"] == "failed-tests" and "did not complete normally" in r["reason"] and r["record"] is None, r
+    assert word in r["reason"], (form, r["reason"])
+    if form == "fifo":
+        _never_opened(after)
 
 
-@pytest.mark.parametrize("form", ["directory", "truncated", "nested", "a-mapping"])
+@pytest.mark.parametrize("form", ["directory", "fifo", "truncated", "nested", "a-mapping"])
 def test_r5_f3_an_unreadable_collection_record_is_suite_mismatch(tmp_path, monkeypatch, form):
     """The collection record (SA-R3-02) the same way: anything but a JSON list of node ids is `suite-mismatch`, named.
-    A mapping of the right node ids would otherwise compare EQUAL: Counter of a mapping counts its values."""
+    A mapping of the right node ids would otherwise compare EQUAL: Counter of a mapping counts its values. Round 5 G2:
+    each form's own reason, and the FIFO never opened."""
     mod = suite_rule.suite(ROOT)[0]
     after = _rewrite("collected", form)
     after.nodes = json.dumps([f"{mod}::test_x"])
     r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=after)
+    word = {"directory": "not a regular file", "fifo": "not a regular file", "a-mapping": "not a list of node ids"}.get(
+        form, "could not be read")
     assert r["outcome"] == "suite-mismatch" and "collection record" in r["reason"] and r["record"] is None, r
+    assert word in r["reason"], (form, r["reason"])
+    if form == "fifo":
+        _never_opened(after)
 
 
-@pytest.mark.parametrize("form", ["truncated", "no-test-module", "directory"])
+@pytest.mark.parametrize("form", ["truncated", "no-test-module", "directory", "fifo"])
 def test_r5_f3_an_unreadable_junit_is_suite_mismatch(tmp_path, monkeypatch, form):
     """The JUnit too: a truncated write, a testcase whose classname names no test module (junit_cases raised
-    StopIteration; attestation_suite.junit_modules' ValueError is now both readers' rule) and a directory."""
+    StopIteration; attestation_suite.junit_modules' ValueError is now both readers' rule), a directory, and (round 5 G1)
+    a FIFO, whose open blocked decide until a writer appeared: the child has exited, so none would. Each form's reason;
+    the FIFO never opened."""
     mod = suite_rule.suite(ROOT)[0]
-    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=_rewrite("junit", form))
-    assert r["outcome"] == "suite-mismatch" and "JUnit could not be read" in r["reason"] and r["record"] is None, r
+    after = _rewrite("junit", form)
+    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=after)
+    word = {"directory": "JUnit is not a regular file", "fifo": "JUnit is not a regular file"}.get(form, "JUnit could not be read")
+    assert r["outcome"] == "suite-mismatch" and word in r["reason"] and r["record"] is None, (form, r)
+    if form == "fifo":
+        _never_opened(after)
 
 
 # ---- 0007 round 5, research's stage 2 F1: the child's import path is python -m pytest's -------------------------------
@@ -1158,6 +1216,15 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
              ('    except (ValueError, RecursionError) as e:', '    except ValueError as e:')],
             [("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "nested"}),
              ("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "directory"})]),
+        "G2: the completion record's is_file guard removed": ([('    if not path.is_file():\n        return head + "its completion record is not a regular file"\n', "")],
+                                                               [("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "fifo"}),
+                                                                ("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "directory"})]),
+        "G2: the collection record's is_file guard removed": ([('    if not path.is_file():\n        return None, "the suite\'s collection record is not a regular file"\n', "")],
+                                                              [("test_r5_f3_an_unreadable_collection_record_is_suite_mismatch", {"form": "fifo"}),
+                                                               ("test_r5_f3_an_unreadable_collection_record_is_suite_mismatch", {"form": "directory"})]),
+        "G1: the JUnit's is_file guard removed (a FIFO blocks the parse)": ([('            if not junit.is_file():         # round 5 G1', '            if False:         # round 5 G1')],
+                                                                             [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "fifo"}),
+                                                                              ("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "directory"})]),
         "F3: the JUnit read unguarded": ([('            except CHILD_READ_ERRORS as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit', '            except ZeroDivisionError as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit')],
                                          [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "truncated"})]),
         "F3: the collection record read unguarded": ([('    except CHILD_READ_ERRORS as e:\n        return None, f"the suite\'s collection record could not be read', '    except ZeroDivisionError as e:\n        return None, f"the suite\'s collection record could not be read')],

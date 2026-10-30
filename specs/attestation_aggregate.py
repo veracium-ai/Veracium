@@ -92,7 +92,7 @@ def aggregate(results, rows=()) -> dict:
             continue
         if kinds - set(RECORD_OUTCOMES):
             out["disagreements"].append({"key": repr(key), "why": "a verifying job beside a "
-                                         + "/".join(sorted(kinds - {"evidence"})) + " one", "jobs": names})
+                                         + "/".join(sorted(kinds - set(RECORD_OUTCOMES))) + " one", "jobs": names})
             continue
         recs = [m["record"] for m in members]
         base = {k: v for k, v in recs[0].items() if k != "provenance"}
