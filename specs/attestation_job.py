@@ -71,7 +71,9 @@ agrees with), PYTEST_PLUGINS loads outcome-rewriting code, PYTHONPATH/PYTHONHOME
 present REFUSES the job before anything runs; nothing is silently stripped. Every other variable is inherited, so
 CI's own environment (which sets none of these) reaches the suite unchanged."""
 COMPLETION_KEYS = ("returned", "exit_status", "nonce")
-_CHILD = ("import json, sys\n"
+_CHILD = ("import json, os, sys\n"
+          "if sys.path[:1] == ['']:\n"
+          "    sys.path[0] = os.getcwd()\n"
           "import pytest\n"
           "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\n"
           "rc = int(pytest.main(args))\n"
@@ -84,7 +86,10 @@ pytest_sessionfinish after the JUnit was written (wrap_session calls it in its `
 exception, so it leaves pytest.main) or a raising pytest_unconfigure, leaves no record, whatever hook priority raised it:
 no hook runs after pytest.main returns. A sessionfinish hookwrapper would not do, because a conftest's tryfirst wrapper
 registers after a -p plugin and runs OUTSIDE it (research's stage-1 read; kept as a mutant). It proves pytest.main
-returned against HONEST process failures; code inside the suite could forge it, which is outside the stated adversary."""
+returned against HONEST process failures; code inside the suite could forge it, which is outside the stated adversary.
+Its first two lines restore `python -m pytest`'s import path (research's stage 2 of round 5, F1): `-c` puts '' at
+sys.path[0], so an import resolves against the cwd AT THAT IMPORT, where `-m` put the absolute cwd; under safe-path
+(-P, -I, PYTHONSAFEPATH) neither adds the cwd, and sys.path[0] is the stdlib entry, which is left alone."""
 PYTEST_EXIT = {2: "interrupted", 3: "internal error", 4: "usage error", 5: "no tests collected"}
 """SA-R3-03: pytest's exit codes other than 0 (all passed) and 1 (tests failed), each named in the refusal."""
 
@@ -130,7 +135,9 @@ def junit_cases(junit_path) -> list:
     out = []
     for case in ET.parse(junit_path).getroot().iter("testcase"):
         parts = (case.get("classname") or "").split(".")
-        mod = next(i for i, p in enumerate(parts) if p.startswith("test_"))
+        mod = next((i for i, p in enumerate(parts) if p.startswith("test_")), None)
+        if mod is None:                                   # attestation_suite.junit_modules' rule, never a StopIteration
+            raise ValueError(f"a testcase with no test module in its classname: {case.get('classname')!r}")
         nodeid = "::".join(["/".join(parts[:mod + 1]) + ".py", *parts[mod + 1:], case.get("name") or ""])
         kids = {c.tag: c for c in case}
         if "error" in kids:
@@ -174,6 +181,30 @@ def _check_evidence() -> tuple:
     return p.returncode, (p.stdout + p.stderr)[-2000:]
 
 
+CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError)
+"""Round 5 F3 (research's stage 2): what reading the child's three outputs can raise. The JUnit, the collection record
+and the completion record are written by the suite process, and a truncated write (a full disk, a killed process), a
+directory at the path, invalid UTF-8 or nesting deep enough to recurse each become a NAMED refusal; decide still returns
+a closed result, so main still writes --out."""
+
+
+def read_collected(path):
+    """SA-R3-02's collection record, read to (nodes or None, problem or None). Absent is node_problems' own named case;
+    anything else that is not a JSON list of node-id strings is a named refusal (round 5 F3), never an escape."""
+    path = pathlib.Path(path)
+    if not path.exists():
+        return None, None
+    if not path.is_file():
+        return None, "the suite's collection record is not a regular file"
+    try:
+        nodes = json.loads(path.read_text(encoding="utf-8"))
+    except CHILD_READ_ERRORS as e:
+        return None, f"the suite's collection record could not be read ({type(e).__name__}: {str(e)[:200]})"
+    if not isinstance(nodes, list) or not all(isinstance(n, str) for n in nodes):
+        return None, "the suite's collection record is not a list of node ids"
+    return nodes, None
+
+
 def collected_path(junit) -> pathlib.Path:
     junit = pathlib.Path(junit)
     return junit.with_name(junit.name + ".collected.json")
@@ -208,10 +239,14 @@ def completion_problem(path, rc, nonce) -> str | None:
     head = "the suite process did not complete normally: "
     if not path.exists():
         return head + "no completion record (pytest.main did not return; e.g. a session-finish failure after the JUnit)"
+    if not path.is_file():
+        return head + "its completion record is not a regular file"
     try:
-        rec = json.loads(path.read_text())
-    except ValueError as e:
-        return head + f"its completion record is not JSON ({e})"
+        rec = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as e:                                # round 5 F3: a refusal, never an escape from decide
+        return head + f"its completion record could not be read ({type(e).__name__}: {e})"
+    except (ValueError, RecursionError) as e:           # invalid UTF-8 and JSON are ValueErrors; deep nesting recurses
+        return head + f"its completion record is not JSON ({type(e).__name__}: {str(e)[:200]})"
     if not isinstance(rec, dict) or set(rec) != set(COMPLETION_KEYS):
         return head + f"its completion record's keys are not {list(COMPLETION_KEYS)}"
     if rec["returned"] is not True:
@@ -330,12 +365,18 @@ def decide(args, *, runtime_status=None, check_evidence=_check_evidence, run_sui
             rc = run_suite(junit)
             if not junit.exists():
                 raise Decided("suite-mismatch", f"the suite wrote no JUnit file (pytest exited {rc!r})")
+            try:                    # round 5 F3: the child's outputs are read to a named refusal, never an escape
+                cases = junit_cases(junit)
+                attestation_suite.junit_modules(junit)      # nodes_problems' reader too, so only the tree can raise below
+            except CHILD_READ_ERRORS as e:
+                raise Decided("suite-mismatch", f"the suite's JUnit could not be read ({type(e).__name__}: {str(e)[:200]})")
             mismatch = attestation_suite.nodes_problems(junit, ROOT)      # the committed rule's modules, kept
             if mismatch:
                 raise Decided("suite-mismatch", "; ".join(mismatch))
-            cases = junit_cases(junit)
-            cp = collected_path(junit)
-            mismatch = node_problems(cases, json.loads(cp.read_text()) if cp.exists() else None)
+            collected, bad = read_collected(collected_path(junit))
+            if bad:
+                raise Decided("suite-mismatch", bad)
+            mismatch = node_problems(cases, collected)
             if mismatch:
                 raise Decided("suite-mismatch", "; ".join(mismatch))
             bad = exit_problem(rc, cases)

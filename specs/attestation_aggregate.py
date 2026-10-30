@@ -32,6 +32,9 @@ from veracium.store import schema_version as sv  # noqa: E402
 
 FAILING = ("failed-tests", "evidence-mismatch", "confinement-failed", "wrong-job-state")
 """Red job outcomes that still measured a key: members of their key's group, never a record (§4d step 3)."""
+RECORD_OUTCOMES = ("evidence", "bootstrap-pending")
+"""The job outcomes that carry a record, as this consumer reads them (research's stage 2 of round 5, F4): ONE carrier,
+which the job's cells compare with the outcomes decide is observed to pair with a record."""
 
 
 def _job(r) -> str:
@@ -56,7 +59,7 @@ def aggregate(results, rows=()) -> dict:
         if outcome == "excluded":
             out["excluded"].append(_job(r) + ": " + "; ".join(r.get("excluded_entries") or []))
             continue
-        if outcome in ("evidence", "bootstrap-pending"):
+        if outcome in RECORD_OUTCOMES:
             rec = r.get("record")
             key = sv.attestation_key(rec) if isinstance(rec, dict) else None
             if key is None or sv.attestation_record_problems(rec):
@@ -80,14 +83,14 @@ def aggregate(results, rows=()) -> dict:
         if kinds == {"refused"}:
             out["refused"] += names
             continue
-        if not kinds & {"evidence", "bootstrap-pending"}:
+        if not kinds & set(RECORD_OUTCOMES):
             out["failed_keys"].append({"key": repr(key), "jobs": names})
             continue
         if "bootstrap-pending" in kinds and kinds != {"bootstrap-pending"}:
             out["disagreements"].append({"key": repr(key), "why": "a bootstrap job beside a non-bootstrap one",
                                          "jobs": names})
             continue
-        if kinds - {"evidence", "bootstrap-pending"}:
+        if kinds - set(RECORD_OUTCOMES):
             out["disagreements"].append({"key": repr(key), "why": "a verifying job beside a "
                                          + "/".join(sorted(kinds - {"evidence"})) + " one", "jobs": names})
             continue

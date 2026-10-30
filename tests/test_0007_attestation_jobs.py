@@ -227,11 +227,12 @@ def _status(status="verified"):
 
 
 def _decide(tmp_path, cases=(), modules=None, status="verified", evidence_rc=0, probes=None, records=None,
-            suite_rc=None, collected=None, euid=1000, environ=None, head=None, completion=True, **over):
+            suite_rc=None, collected=None, euid=1000, environ=None, head=None, completion=True, after=None, **over):
     """A synthetic job. Its suite stands in for a real one in all three carriers: the JUnit, the invocation's own
     collection record (the JUnit's nodes unless `collected` says otherwise, SA-R3-02) and an exit status that agrees
     with the JUnit unless `suite_rc` says otherwise (SA-R3-03). C1 (round 3): `euid` is EXPLICIT and non-root, so a
-    synthetic case reaches the behaviour it tests on a root host too; only the root-job cell passes 0."""
+    synthetic case reaches the behaviour it tests on a root host too; only the root-job cell passes 0. `after(target)`
+    (round 5 F3) rewrites the child's outputs once the honest suite has written them."""
     junit = _junit(tmp_path, cases, modules)
     nodes = [n for n, _, _ in job.junit_cases(junit)]
     failing = any(o in ("failed", "error") for _, o, _ in job.junit_cases(junit))
@@ -244,6 +245,8 @@ def _decide(tmp_path, cases=(), modules=None, status="verified", evidence_rc=0, 
             job.completion_path(target).write_text(json.dumps(
                 completion(rc, job.nonce_path(target).read_text()) if callable(completion) else
                 {"returned": True, "exit_status": rc, "nonce": job.nonce_path(target).read_text()}))
+        if after is not None:
+            after(pathlib.Path(target))
         return rc
     return job.decide(_args(**over), runtime_status=_status(status), check_evidence=lambda: (evidence_rc, "tail"),
                       run_suite=run_suite, head=head or (lambda: "a" * 40), records=records, euid=euid,
@@ -477,41 +480,186 @@ def test_r4_01_a_failure_pytest_does_not_catch_is_refused_whatever_its_priority(
     assert r["outcome"] == "failed-tests" and "did not complete normally" in r["reason"] and r["record"] is None, r
 
 
-@pytest.mark.parametrize("kind", ["stale", "status", "absent", "keys"])
+@pytest.mark.parametrize("kind", ["stale", "status", "absent", "keys", "returned-int", "status-bool"])
 def test_r4_01_the_completion_record_must_be_this_runs_and_agree(tmp_path, kind):
     """Research's stage-1 (e) freshness, and the record's own fields: another run's record (its nonce), a pytest.main
     status other than the process's, no record, and a record with other keys each refuse, at the bootstrap state where
-    the record matters most."""
+    the record matters most. Round 5 F2 (research's stage 2): `returned: 1` and `exit_status: True` are EQUAL to the
+    honest values (1 == True), so only the identity and type guards refuse them; each is its own row."""
     mod = suite_rule.suite(ROOT)[0]
     cases = [(job.BOOTSTRAP[0].split("::")[0], job.BOOTSTRAP[0].split("::")[1], "failed", None), (mod, "test_x", "passed", None)]
     completion = {"stale": lambda rc, n: {"returned": True, "exit_status": rc, "nonce": "0" * 32},
                   "status": lambda rc, n: {"returned": True, "exit_status": 0, "nonce": n},
                   "absent": None,
-                  "keys": lambda rc, n: {"returned": True, "exit_status": rc, "nonce": n, "extra": 1}}[kind]
+                  "keys": lambda rc, n: {"returned": True, "exit_status": rc, "nonce": n, "extra": 1},
+                  "returned-int": lambda rc, n: {"returned": 1, "exit_status": rc, "nonce": n},
+                  "status-bool": lambda rc, n: {"returned": True, "exit_status": True, "nonce": n}}[kind]
     r = _decide(tmp_path, cases=cases, records=[], completion=completion)
     word = {"stale": "nonce differs", "status": "returned 0 but the process exited 1", "absent": "no completion record",
-            "keys": "keys are not"}[kind]
+            "keys": "keys are not", "returned-int": "does not say pytest.main returned",
+            "status-bool": "returned True but the process exited 1"}[kind]
     assert r["outcome"] == "failed-tests" and word in r["reason"] and r["record"] is None, r
     (tmp_path / "control").mkdir()
     assert _decide(tmp_path / "control", cases=cases, records=[])["outcome"] == "bootstrap-pending"   # an honest record
 
 
-def test_r4_01_every_record_producing_outcome_requires_the_completion_record():
-    """Research's stage-1 (d), as a CHECKED predicate over decide's own source: the outcomes decide pairs with a record
-    are exactly {evidence, bootstrap-pending}, and the completion check precedes every one of them in the same body.
-    A future outcome that yields a record after the check is placed fails here by name."""
-    import ast
-    tree = ast.parse(inspect.getsource(job.decide))
-    calls = [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "completion_problem"]
-    assert len(calls) == 1, calls
-    yields = {}
-    for n in ast.walk(tree):
-        if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "update":
-            kw = {k.arg: k.value for k in n.keywords}
-            if "record" in kw and "outcome" in kw and isinstance(kw["outcome"], ast.Constant):
-                yields[kw["outcome"].value] = n.lineno
-    assert set(yields) == {"evidence", "bootstrap-pending"}, yields
-    assert all(line > calls[0] for line in yields.values()), (calls, yields)
+def test_r5_f4_the_outcomes_that_carry_a_record_are_the_aggregates_record_outcomes(tmp_path, monkeypatch):
+    """Research's stage-1 (d), re-made by its round-5 stage 2 (F4). decide is DRIVEN to every outcome of its closed set,
+    and the outcomes it returns with a record must equal attestation_aggregate.RECORD_OUTCOMES, the one carrier the
+    consumer branches on. This is the "provides" direction, by behaviour, so a refactor that changes nothing cannot fail
+    it. The "requires" direction (every record-producing outcome is reached only past the completion check) is carried by
+    the DYNAMIC cells (the reviewer's five rows, the completion-record kinds, the late failures): the AST check this
+    replaces passed M1, completion enforced only at rc 0, which those cells kill."""
+    rule = _one_rule(monkeypatch)
+    mod = rule[0]
+    e = _job_runs_entry()
+    first = sorted(sv.CONFINEMENT_PROBE_KEYS)[0]
+    boot = [tuple(job.BOOTSTRAP[0].split("::")) + ("failed", None), (mod, "test_x", "passed", None)]
+    real = sv.attestation_identity
+    drive = {
+        "evidence": dict(),
+        "bootstrap-pending": dict(cases=boot, records=[]),
+        "refused": dict(status="refused"),
+        "unattestable": dict(identity={"libc": None}),
+        "excluded": dict(cases=[(e[0], "test_s", "skip", e[2])]),
+        "wrong-interpreter": dict(expect_prefix="/no/such/route"),
+        "wrong-job-state": dict(euid=0),
+        "evidence-mismatch": dict(evidence_rc=1),
+        "suite-mismatch": dict(cases=[("tests/test_not_in_suite.py", "t", "passed", None)]),
+        "unmapped-skip": dict(cases=[(mod, "test_s", "skip", "an invented reason")]),
+        "failed-tests": dict(cases=[(mod, "test_f", "failed", None)]),
+        "confinement-failed": dict(probes=lambda: {k: k != first for k in sv.CONFINEMENT_PROBE_KEYS}),
+    }
+    assert set(drive) == set(job.OUTCOME_EXIT), set(drive) ^ set(job.OUTCOME_EXIT)
+    carried = set()
+    for outcome, kw in drive.items():
+        kw = dict(kw)
+        override = kw.pop("identity", None)
+        with monkeypatch.context() as mp:
+            if override:
+                mp.setattr(sv, "attestation_identity", lambda: {**real(), **override})
+            (tmp_path / outcome).mkdir()
+            r = _decide(tmp_path / outcome, modules=rule, **kw)
+        assert r["outcome"] == outcome, (outcome, r["outcome"], r["reason"])
+        if r["record"] is not None:
+            carried.add(outcome)
+    assert carried == set(agg.RECORD_OUTCOMES), (carried, agg.RECORD_OUTCOMES)
+
+
+# ---- 0007 round 5, research's stage 2 F3: the child's outputs are read to a named refusal, never an escape ---------------
+_RULE = []
+
+
+def _one_rule(monkeypatch) -> list:
+    """The suite rule's modules, derived ONCE per process for the round-5 cells, which drive decide many times
+    (`suite(ROOT)` reads every test module, ~4 s a call, twice per decide). The rule itself is its own matrix's subject;
+    these cells test what decide does with a suite, so the same derived list stands in for each call."""
+    if not _RULE:
+        _RULE.append(list(suite_rule.suite(ROOT)))
+    monkeypatch.setattr(job.attestation_suite, "suite", lambda tree=None: _RULE[0])
+    return _RULE[0]
+
+
+def _decided(tmp_path, monkeypatch, **kw):
+    """decide's result; an exception escaping it fails the cell BY ASSERTION, so an escape mutant is a kill."""
+    rule = _one_rule(monkeypatch)
+    try:
+        return _decide(tmp_path, modules=rule, **kw)
+    except Exception as exc:  # noqa: BLE001 - the escape IS the defect under test
+        pytest.fail(f"decide raised {type(exc).__name__} (an escape, not a closed outcome): {exc}")
+
+
+def _rewrite(which, form):
+    def after(target):
+        path = {"completion": job.completion_path, "collected": job.collected_path, "junit": lambda j: j}[which](target)
+        path.unlink()
+        if form == "directory":
+            path.mkdir()
+        elif form == "nested":
+            path.write_text("[" * 100_000 + "]" * 100_000)
+        elif form == "invalid-utf8":
+            path.write_bytes(b"\xff\xfe{")
+        elif form == "truncated":
+            path.write_text({"junit": '<testsuites><testsuite><testcase classname="tests.test_x" name="a"'}.get(which, '{"a":'))
+        elif form == "no-test-module":
+            path.write_text('<testsuites><testsuite><testcase classname="tests.helpers" name="a"/></testsuite></testsuites>')
+        elif form == "a-mapping":
+            path.write_text(json.dumps({n: 1 for n in json.loads(after.nodes)}))
+        else:
+            raise AssertionError(form)
+    return after
+
+
+@pytest.mark.parametrize("form", ["nested", "directory", "invalid-utf8", "truncated"])
+def test_r5_f3_an_unreadable_completion_record_is_refused_not_raised(tmp_path, monkeypatch, form):
+    """A completion record nested past the recursion limit, a directory at its path, invalid UTF-8 and a truncated
+    write each end `failed-tests` with a named reason and no record; decide returns, so main still writes --out."""
+    mod = suite_rule.suite(ROOT)[0]
+    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=_rewrite("completion", form))
+    assert r["outcome"] == "failed-tests" and "did not complete normally" in r["reason"] and r["record"] is None, r
+
+
+@pytest.mark.parametrize("form", ["directory", "truncated", "nested", "a-mapping"])
+def test_r5_f3_an_unreadable_collection_record_is_suite_mismatch(tmp_path, monkeypatch, form):
+    """The collection record (SA-R3-02) the same way: anything but a JSON list of node ids is `suite-mismatch`, named.
+    A mapping of the right node ids would otherwise compare EQUAL: Counter of a mapping counts its values."""
+    mod = suite_rule.suite(ROOT)[0]
+    after = _rewrite("collected", form)
+    after.nodes = json.dumps([f"{mod}::test_x"])
+    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=after)
+    assert r["outcome"] == "suite-mismatch" and "collection record" in r["reason"] and r["record"] is None, r
+
+
+@pytest.mark.parametrize("form", ["truncated", "no-test-module", "directory"])
+def test_r5_f3_an_unreadable_junit_is_suite_mismatch(tmp_path, monkeypatch, form):
+    """The JUnit too: a truncated write, a testcase whose classname names no test module (junit_cases raised
+    StopIteration; attestation_suite.junit_modules' ValueError is now both readers' rule) and a directory."""
+    mod = suite_rule.suite(ROOT)[0]
+    r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=_rewrite("junit", form))
+    assert r["outcome"] == "suite-mismatch" and "JUnit could not be read" in r["reason"] and r["record"] is None, r
+
+
+# ---- 0007 round 5, research's stage 2 F1: the child's import path is python -m pytest's -------------------------------
+@pytest.mark.parametrize("flag", ["default", "safe-path"])
+def test_r5_f1_the_child_puts_the_cwd_first_only_where_python_c_left_an_empty_entry(tmp_path, flag):
+    """`python -c` puts '' at sys.path[0] (resolved against the cwd AT EACH IMPORT); `python -m` puts the absolute cwd.
+    The child's prelude turns the first into the second and changes nothing else. Under safe-path (-P) neither form
+    adds the cwd: sys.path[0] is the stdlib entry, kept (research's stage-1 correction: an unconditional overwrite
+    would replace it). Compared with a bare `-c` launch of the same interpreter, entry for entry."""
+    prelude = job._CHILD[:job._CHILD.index("import pytest\n")]
+    flags = {"default": [], "safe-path": ["-P"]}[flag]
+    show = "import json, sys\nprint(json.dumps(sys.path))\n"
+    run = lambda code: json.loads(subprocess.run([sys.executable, *flags, "-c", code], cwd=tmp_path, check=True,
+                                                 capture_output=True, text=True, env={}).stdout)
+    bare, child = run(show), run(prelude + show)
+    if flag == "default":
+        assert bare[0] == "" and child == [str(tmp_path), *bare[1:]], (bare[:2], child[:2])
+    else:
+        assert bare[0] != "" and child == bare and str(tmp_path) not in child, (bare[:2], child[:2])
+
+
+_LAZY = ("import os\n\n\ndef test_a_root_module_imported_after_a_chdir(tmp_path):\n    here = os.getcwd()\n"
+         "    os.chdir(tmp_path)\n    try:\n        import rootmod\n    finally:\n        os.chdir(here)\n"
+         "    assert rootmod.VALUE == 1\n")
+
+
+def test_r5_f1_a_test_that_chdirs_then_imports_a_root_module_passes_as_under_python_m(tmp_path, monkeypatch):
+    """Research's probe L2b, through `_run_suite` (a REAL pytest process): a root-level module imported lazily after a
+    chdir resolves as it did under `python -m pytest`. Under the bare `-c` launch the '' entry resolves against the new
+    cwd, the import fails and an honest suite reads `failed-tests`."""
+    root = tmp_path / "tree"
+    (root / "tests").mkdir(parents=True)
+    (root / "rootmod.py").write_text("VALUE = 1\n")
+    (root / "tests" / "test_lazy.py").write_text(_LAZY)
+    for k in [k for k in __import__("os").environ if k.startswith("PYTEST_")]:
+        monkeypatch.delenv(k)
+    monkeypatch.setattr(job, "ROOT", root)
+    monkeypatch.setattr(job.attestation_suite, "suite", lambda r: ["tests/test_lazy.py"])
+    r = job.decide(_args(), runtime_status=_status(), check_evidence=lambda: (0, ""), run_suite=job._run_suite,
+                   head=lambda: "a" * 40, euid=1000, environ={}, records=[],
+                   probes=lambda: {k: True for k in sv.CONFINEMENT_PROBE_KEYS})
+    assert r["outcome"] == "evidence", r
+
 
 def test_an_unreadable_key_is_unattestable_after_the_rederivation_and_runs_no_suite(tmp_path, monkeypatch):
     """0007 v22 §4d: the re-derivation runs FIRST (owed on every verifying build), then a build whose key has an
@@ -968,7 +1116,7 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
         "PYTEST_* not refused (only PYTHONPATH/PYTHONHOME are)": ([('ENV_REFUSED_PREFIXES = ("PYTEST_",)', "ENV_REFUSED_PREFIXES = ()")],
                                                                   [(ENVC, {"var": "PYTEST_PLUGINS", "value": "some_plugin"})]),
         "the shipped rule: modules compared, nodes not (SA-R3-02)": (
-            [("            mismatch = node_problems(cases, json.loads(cp.read_text()) if cp.exists() else None)\n", "            mismatch = []\n")],
+            [("            mismatch = node_problems(cases, collected)\n", "            mismatch = []\n")],      # re-anchored for round 5 F3 (read_collected)
             [(MULTI, {"change": "missing"}), (LIVE, {"mode": "deselect"})]),
         "nodes compared as a set (multiplicity dropped)": ([("    dup = sorted(n for n, c in got.items() if c > 1)\n", "    dup = []\n")],
                                                            [(MULTI, {"change": "duplicate"})]),
@@ -988,12 +1136,38 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
         "SA-R4-01: the completion record required only for evidence": ([('            if bad:\n                raise Decided("failed-tests", bad)\n',
                                                                          '            if bad and not any(o == "failed" and n in BOOTSTRAP for n, o, _ in cases):\n                raise Decided("failed-tests", bad)\n')],
                                                                        [("test_r4_01_the_reviewers_five_rows", {"row": "bootstrap+session-raise"})]),
-        "SA-R4-01: the record written from a sessionfinish hookwrapper (research's first idea)": ([('_CHILD = ("import json, sys\\n"\n          "import pytest\\n"\n          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\\n"\n          "rc = int(pytest.main(args))\\n"\n          "with open(path, \'w\', encoding=\'utf-8\') as f:\\n"\n          "    json.dump({\'returned\': True, \'exit_status\': rc, \'nonce\': nonce}, f)\\n"\n          "sys.exit(rc)\\n")', '_CHILD = ("import json, sys\\n"\n          "import pytest\\n"\n          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\\n"\n          "class W:\\n"\n          "    @pytest.hookimpl(wrapper=True)\\n"\n          "    def pytest_sessionfinish(self, session):\\n"\n          "        r = yield\\n"\n          "        json.dump({\'returned\': True, \'exit_status\': int(session.exitstatus), \'nonce\': nonce}, open(path, \'w\'))\\n"\n          "        return r\\n"\n          "sys.exit(int(pytest.main(args, plugins=[W()])))\\n")')],
+        "SA-R4-01: the record written from a sessionfinish hookwrapper (research's first idea)": ([('_CHILD = ("import json, os, sys\\n"\n          "if sys.path[:1] == [\'\']:\\n"\n          "    sys.path[0] = os.getcwd()\\n"\n          "import pytest\\n"\n          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\\n"\n          "rc = int(pytest.main(args))\\n"\n          "with open(path, \'w\', encoding=\'utf-8\') as f:\\n"\n          "    json.dump({\'returned\': True, \'exit_status\': rc, \'nonce\': nonce}, f)\\n"\n          "sys.exit(rc)\\n")', '_CHILD = ("import json, os, sys\\n"\n          "if sys.path[:1] == [\'\']:\\n"\n          "    sys.path[0] = os.getcwd()\\n"\n          "import pytest\\n"\n          "path, nonce, args = sys.argv[1], sys.argv[2], sys.argv[3:]\\n"\n          "class W:\\n"\n          "    @pytest.hookimpl(wrapper=True)\\n"\n          "    def pytest_sessionfinish(self, session):\\n"\n          "        r = yield\\n"\n          "        json.dump({\'returned\': True, \'exit_status\': int(session.exitstatus), \'nonce\': nonce}, open(path, \'w\'))\\n"\n          "        return r\\n"\n          "sys.exit(int(pytest.main(args, plugins=[W()])))\\n")')],
             [("test_r4_01_a_failure_pytest_does_not_catch_is_refused_whatever_its_priority", {"late": "tryfirst-wrapper-raise"})]),
         "SA-R4-01: pytest.main's status not compared with the process's": ([('    if type(rec["exit_status"]) is not int or rec["exit_status"] != rc:\n', '    if type(rec["exit_status"]) is not int:\n')],
                                                                             [("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "status"})]),
         "SA-R4-01: the nonce not checked (a stale record stands)": ([('    if rec["nonce"] != nonce:\n', "    if False:\n")],
                                                                     [("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "stale"})]),
+        # round 5, research's stage 2 F1-F4
+        "F1: the child's import path left as python -c's": ([('          "if sys.path[:1] == [\'\']:\\n"\n          "    sys.path[0] = os.getcwd()\\n"\n', "")],
+                                                             [("test_r5_f1_a_test_that_chdirs_then_imports_a_root_module_passes_as_under_python_m", {}),
+                                                              ("test_r5_f1_the_child_puts_the_cwd_first_only_where_python_c_left_an_empty_entry", {"flag": "default"})]),
+        "F1: the cwd put first unconditionally (research's stage-1 correction)": ([('          "if sys.path[:1] == [\'\']:\\n"\n          "    sys.path[0] = os.getcwd()\\n"\n', '          "sys.path[0] = os.getcwd()\\n"\n')],
+                                                                                  [("test_r5_f1_the_child_puts_the_cwd_first_only_where_python_c_left_an_empty_entry", {"flag": "safe-path"})]),
+        "F2: `returned` not checked": ([('    if rec["returned"] is not True:\n', "    if False:\n")],
+                                       [("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "returned-int"})]),
+        "F2: exit_status's type not checked (True == 1)": ([('    if type(rec["exit_status"]) is not int or rec["exit_status"] != rc:\n', '    if rec["exit_status"] != rc:\n')],
+                                                           [("test_r4_01_the_completion_record_must_be_this_runs_and_agree", {"kind": "status-bool"})]),
+        "F3: the completion reader's round-4 rule (exists, then ValueError only)": (
+            [('    if not path.is_file():\n        return head + "its completion record is not a regular file"\n', ""),
+             ('    except OSError as e:', '    except ZeroDivisionError as e:'),
+             ('    except (ValueError, RecursionError) as e:', '    except ValueError as e:')],
+            [("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "nested"}),
+             ("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "directory"})]),
+        "F3: the JUnit read unguarded": ([('            except CHILD_READ_ERRORS as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit', '            except ZeroDivisionError as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit')],
+                                         [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "truncated"})]),
+        "F3: the collection record read unguarded": ([('    except CHILD_READ_ERRORS as e:\n        return None, f"the suite\'s collection record could not be read', '    except ZeroDivisionError as e:\n        return None, f"the suite\'s collection record could not be read')],
+                                                     [("test_r5_f3_an_unreadable_collection_record_is_suite_mismatch", {"form": "truncated"})]),
+        "F3: a collection record that is not a list admitted": ([('    if not isinstance(nodes, list) or not all(isinstance(n, str) for n in nodes):\n', "    if False:\n")],
+                                                                [("test_r5_f3_an_unreadable_collection_record_is_suite_mismatch", {"form": "a-mapping"})]),
+        "F3: junit_cases' StopIteration (no test module in a classname)": ([('        mod = next((i for i, p in enumerate(parts) if p.startswith("test_")), None)\n        if mod is None:', '        mod = next(i for i, p in enumerate(parts) if p.startswith("test_"))\n        if mod is None:')],
+                                                                           [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "no-test-module"})]),
+        "F4: a confinement-failed job keeps its record": ([('        if problems:                                       # a failing confinement probe', '        if problems:\n            result["record"] = record\n        if problems:                                       # a failing confinement probe')],
+                                                          [("test_r5_f4_the_outcomes_that_carry_a_record_are_the_aggregates_record_outcomes", {})]),
         "an unnamed exit status admitted": ([("    if rc not in (0, 1):\n", "    if False:\n")],
                                             [(EXITC, {"rc": 5, "failing": False, "outcome": "suite-mismatch", "word": "no tests collected"})]),
         "git's exit code dropped (_head)": ([('    if rc != 0:\n        raise Decided("wrong-job-state", f"git rev-parse HEAD', '    if False:\n        raise Decided("wrong-job-state", f"git rev-parse HEAD')],
@@ -1040,6 +1214,8 @@ def test_the_attestation_aggregate_mutation_matrix(tmp_path_factory):
             [('        base = {k: v for k, v in recs[0].items() if k != "provenance"}\n        if any({k: v for k, v in rec.items() if k != "provenance"} != base for rec in recs[1:]):',
               '        base = dict(recs[0])\n        if any(dict(rec) != base for rec in recs[1:]):')],
             [("test_equal_evidence_aggregates_to_one_record_with_sorted_union_provenance", {})]),
+        "F4: bootstrap-pending dropped from RECORD_OUTCOMES (round 5)": ([('RECORD_OUTCOMES = ("evidence", "bootstrap-pending")', 'RECORD_OUTCOMES = ("evidence",)')],
+                                                                         [("test_r5_f4_the_outcomes_that_carry_a_record_are_the_aggregates_record_outcomes", {})]),
         "bootstrap jobs unnamed (v21)": ([('            out["bootstrap_jobs"] += names', "            pass")],
                                          [("test_bootstrap_jobs_aggregate_to_records_named_as_bootstrap_and_a_mixed_key_disagrees", {})]),
         "a mixed bootstrap key aggregates (v21)": ([('        if "bootstrap-pending" in kinds and kinds != {"bootstrap-pending"}:', "        if False:")],
