@@ -605,6 +605,47 @@ def _never_opened(after):
     assert after.releaser["result"] == "no-reader", "decide OPENED the FIFO (a reader was blocked on it): the is_file guard is gone"
 
 
+_RECURSE = "<<a parse that recurses past the limit>>"
+
+
+def _recursing_parser(monkeypatch):
+    """Round 5: whether a deep nest raises RecursionError depends on the BUILD, not the input: 3.14 measures the C stack,
+    and attestation run 7 (41029898264) measured it. The 100,000-level nest the local 3.14.7 build refuses with
+    RecursionError PARSES on 19 of its 29 jobs and is then refused for its shape. So the RecursionError catch is
+    exercised through a seam on every build: json.loads raises it for exactly this marker text and delegates
+    otherwise (the job module and these cells share the one json module, restored by monkeypatch). Returns the count of
+    calls that saw the marker, which the cell requires to be non-zero: a reader that stopped calling json.loads would
+    otherwise pass the recursion form for the wrong reason (research's stage-1 condition). RecursionError is the JSON
+    readers' alone WHERE ElementTree is the C accelerator (_elementtree, as on every build this suite attests): it parses
+    a 200,000-level XML nest without recursing, on the main thread and a worker thread, under 8 MB and unlimited stacks
+    (measured 2026-10-30, dev and research); the pure-Python ElementTree recurses on the same nest (research). So the
+    JUnit path has no recursion form, and its catch keeps RecursionError through CHILD_READ_ERRORS, which the
+    "RecursionError dropped" matrix row pins."""
+    real, seen = json.loads, {"marker": 0}
+
+    def loads(s, *a, **k):
+        if s == _RECURSE:
+            seen["marker"] += 1
+            raise RecursionError("maximum recursion depth exceeded while decoding a JSON array")
+        return real(s, *a, **k)
+    monkeypatch.setattr(json, "loads", loads)
+    return seen
+
+
+_NEST = "[" * 100_000 + "]" * 100_000
+
+
+def _nest_reading() -> str:
+    """Which reading THIS process gives the deep nest, measured on the calling thread (decide reads on the same one):
+    "recursion" or "parses". Under `ulimit -s unlimited` the main thread parses while a worker thread still raises, so
+    the fact is the thread's stack, measured where it is used, never assumed (research's stage-1 condition)."""
+    try:
+        json.loads(_NEST)
+    except RecursionError:
+        return "recursion"
+    return "parses"
+
+
 def _rewrite(which, form):
     def after(target):
         path = {"completion": job.completion_path, "collected": job.collected_path, "junit": lambda j: j}[which](target)
@@ -615,7 +656,9 @@ def _rewrite(which, form):
             __import__("os").mkfifo(path)
             after.releaser = _fifo_releaser(path)
         elif form == "nested":
-            path.write_text("[" * 100_000 + "]" * 100_000)
+            path.write_text(_NEST)
+        elif form == "recursion":
+            path.write_text(_RECURSE)
         elif form == "invalid-utf8":
             path.write_bytes(b"\xff\xfe{")
         elif form == "truncated":
@@ -629,35 +672,48 @@ def _rewrite(which, form):
     return after
 
 
-@pytest.mark.parametrize("form", ["nested", "directory", "fifo", "invalid-utf8", "truncated"])
+@pytest.mark.parametrize("form", ["nested", "recursion", "directory", "fifo", "invalid-utf8", "truncated"])
 def test_r5_f3_an_unreadable_completion_record_is_refused_not_raised(tmp_path, monkeypatch, form):
     """A completion record nested past the recursion limit, a directory at its path, a FIFO, invalid UTF-8 and a truncated
     write each end `failed-tests` with a named reason and no record; decide returns, so main still writes --out. Round 5
     G2: each form asserts ITS reason, so the is_file guard's refusal is told apart from the parse catch's (with the guard
-    removed, a directory and a released FIFO both still refuse, as "could not be read" or "not JSON")."""
+    removed, a directory and a released FIFO both still refuse, as "could not be read" or "not JSON"). The deep nest
+    has TWO honest readings, by the reading thread's stack (see _recursing_parser): the cell MEASURES which one this
+    process gives (_nest_reading) and asserts that arm's reason only; `recursion` is the RecursionError catch on every
+    build, through a seam that must fire."""
     mod = suite_rule.suite(ROOT)[0]
+    arm = _nest_reading() if form == "nested" else None
+    seen = _recursing_parser(monkeypatch) if form == "recursion" else None
     after = _rewrite("completion", form)
     r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=after)
-    word = {"directory": "not a regular file", "fifo": "not a regular file"}.get(form, "is not JSON")
+    word = {"directory": "not a regular file", "fifo": "not a regular file",
+            "nested": {"recursion": "is not JSON", "parses": "keys are not"}.get(arm)}.get(form, "is not JSON")
     assert r["outcome"] == "failed-tests" and "did not complete normally" in r["reason"] and r["record"] is None, r
-    assert word in r["reason"], (form, r["reason"])
+    assert word in r["reason"], (form, arm, r["reason"])
+    if seen is not None:
+        assert seen["marker"] >= 1, "the recursion seam never fired: the reader did not parse through json.loads"
     if form == "fifo":
         _never_opened(after)
 
 
-@pytest.mark.parametrize("form", ["directory", "fifo", "truncated", "nested", "a-mapping"])
+@pytest.mark.parametrize("form", ["directory", "fifo", "truncated", "nested", "recursion", "a-mapping"])
 def test_r5_f3_an_unreadable_collection_record_is_suite_mismatch(tmp_path, monkeypatch, form):
     """The collection record (SA-R3-02) the same way: anything but a JSON list of node ids is `suite-mismatch`, named.
     A mapping of the right node ids would otherwise compare EQUAL: Counter of a mapping counts its values. Round 5 G2:
-    each form's own reason, and the FIFO never opened."""
+    each form's own reason, and the FIFO never opened. The deep nest's reading is MEASURED in-cell (a RecursionError:
+    "could not be read"; parsed: "not a list of node ids"); `recursion` is the catch on every build, its seam required."""
     mod = suite_rule.suite(ROOT)[0]
+    arm = _nest_reading() if form == "nested" else None
     after = _rewrite("collected", form)
     after.nodes = json.dumps([f"{mod}::test_x"])
+    seen = _recursing_parser(monkeypatch) if form == "recursion" else None
     r = _decided(tmp_path, monkeypatch, cases=[(mod, "test_x", "passed", None)], after=after)
-    word = {"directory": "not a regular file", "fifo": "not a regular file", "a-mapping": "not a list of node ids"}.get(
-        form, "could not be read")
+    word = {"directory": "not a regular file", "fifo": "not a regular file", "a-mapping": "not a list of node ids",
+            "nested": {"recursion": "could not be read", "parses": "not a list of node ids"}.get(arm)}.get(form, "could not be read")
     assert r["outcome"] == "suite-mismatch" and "collection record" in r["reason"] and r["record"] is None, r
-    assert word in r["reason"], (form, r["reason"])
+    assert word in r["reason"], (form, arm, r["reason"])
+    if seen is not None:
+        assert seen["marker"] >= 1, "the recursion seam never fired: the reader did not parse through json.loads"
     if form == "fifo":
         _never_opened(after)
 
@@ -1214,7 +1270,7 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
             [('    if not path.is_file():\n        return head + "its completion record is not a regular file"\n', ""),
              ('    except OSError as e:', '    except ZeroDivisionError as e:'),
              ('    except (ValueError, RecursionError) as e:', '    except ValueError as e:')],
-            [("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "nested"}),
+            [("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "recursion"}),
              ("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "directory"})]),
         "G2: the completion record's is_file guard removed": ([('    if not path.is_file():\n        return head + "its completion record is not a regular file"\n', "")],
                                                                [("test_r5_f3_an_unreadable_completion_record_is_refused_not_raised", {"form": "fifo"}),
@@ -1225,6 +1281,8 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
         "G1: the JUnit's is_file guard removed (a FIFO blocks the parse)": ([('            if not junit.is_file():         # round 5 G1', '            if False:         # round 5 G1')],
                                                                              [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "fifo"}),
                                                                               ("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "directory"})]),
+        "F3: RecursionError dropped from CHILD_READ_ERRORS (research's stage-1 condition)": ([("CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError)", "CHILD_READ_ERRORS = (OSError, ValueError, ET.ParseError)")],
+                                                                                        [("test_r5_f3_an_unreadable_collection_record_is_suite_mismatch", {"form": "recursion"})]),
         "F3: the JUnit read unguarded": ([('            except CHILD_READ_ERRORS as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit', '            except ZeroDivisionError as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit')],
                                          [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "truncated"})]),
         "F3: the collection record read unguarded": ([('    except CHILD_READ_ERRORS as e:\n        return None, f"the suite\'s collection record could not be read', '    except ZeroDivisionError as e:\n        return None, f"the suite\'s collection record could not be read')],
