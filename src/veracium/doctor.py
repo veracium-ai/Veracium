@@ -99,8 +99,10 @@ The checks, each named in the output:
                 claim of eligibility, which is the plan's. The planned phases
                 are the data-migration operation's (not yet implemented)
   runtime       this interpreter's SQLite build, measured before any store
-                is opened (specs/0007 §4g): attested or verified (info), or
-                refused (error, naming the failing step)
+                is opened (specs/0007 §4g), whether or not a store exists:
+                attested or verified (info), or refused (error, naming the
+                failing step), naming any unreadable key field; then the
+                list of attested builds, each with its machine, system and libc
 
 Exit codes: 0 clean, 1 findings, 2 the file could not be read at all.
 """
@@ -139,6 +141,7 @@ class Report:
     counts: dict = field(default_factory=dict)
     checks_run: list = field(default_factory=list)
     findings: list = field(default_factory=list)
+    attested_builds: list = field(default_factory=list)   # 0007 §4g.6 (v0.12): every current, unpoisoned record
 
     def add(self, check: str, level: str, message: str, ids=()) -> None:
         self.findings.append(Finding(check, level, message, sorted(set(ids))))
@@ -659,18 +662,47 @@ def _check_data_migration(rep: Report, conn, user: Optional[str], edges: dict) -
         rep.add("data-migration", "warn", f"{len(ids)} retired value(s) {PRE_PLAN_WARNING}", ids)
 
 
+def _attested_builds() -> list:
+    """Each attested build, `SQLite <version> on <machine> <system> <libc> (<route> <image>, …)`, one per CURRENT record of an
+    UNPOISONED artifact: attested_key's rule, so a poisoned or unreadable artifact lists nothing (it attests nothing).
+    Total: an escape lists nothing rather than failing the report."""
+    try:
+        records = sv.attestations()
+        if sv.attestation_artifact_problems(records):
+            return []
+        out = []
+        for r in records:
+            if sv.attestation_revision(r) != "current":
+                continue
+            routes = ", ".join(sorted({f"{p['route']} {p['runner_image']}" for p in r["provenance"]}))
+            out.append((tuple(int(x) for x in r["sqlite_version"].split(".")),
+                        f"SQLite {r['sqlite_version']} on {r['machine']} {r['system']} {r['libc']} ({routes})"))
+        return [s for _, s in sorted(out)]
+    except Exception:  # noqa: BLE001 - a listing never fails the report
+        return []
+
+
 def _check_runtime(rep: Report) -> None:
     """0007 §4g.6 4e (INV-SA9): the SQLite status, measured BEFORE any store is opened, so it runs exactly when a
-    refused build needs it. `attested` and `verified` are `info` (doctor exits 1 on any warning, and an unattested
-    but verified build is not a store problem); `refused` is `error`, with the failing step."""
+    refused build needs it, and always leaves its one finding (a store-less run reports the build too). `attested`
+    and `verified` are `info` (doctor exits 1 on any warning, and an unattested but verified build is not a store
+    problem); `refused` is `error`, with the failing step. Each names any unreadable field of the build's key (such a
+    build matches no record), and the report carries the attested builds (v0.12)."""
     rep.checks_run.append("runtime")
     st = sv.runtime_status()                                  # total: never raises
+    build = (f"SQLite {st.sqlite_version or '(version unreadable)'} on "
+             + " ".join(v if v else "(unreadable)" for v in st.platform))
+    gaps = (f"; unreadable key field(s): {', '.join(st.unreadable)}, so it matches no attestation record"
+            if st.unreadable else "")
+    rep.attested_builds = _attested_builds()
     if st.status == "refused":
-        rep.add("runtime", "error", f"this interpreter's SQLite cannot be verified for the store: {st.reason}")
+        rep.add("runtime", "error", f"this interpreter's SQLite cannot be verified for the store: {st.reason}{gaps}")
     elif st.status == "verified":
-        rep.add("runtime", "info", "this interpreter's SQLite is not an attested build; it was verified on this run "
+        rep.add("runtime", "info", f"this interpreter's {build} is not an attested build; it was verified on this run "
                 "(it reproduces every schema version and tells apart every near-miss)"
-                + (f"; the attestation records were not used: {st.reason}" if st.reason else ""))
+                + (f"; the attestation records were not used: {st.reason}" if st.reason else "") + gaps)
+    else:
+        rep.add("runtime", "info", f"this interpreter's {build} is an attested build" + gaps)
 
 
 # ------------------------------------------------------------------- driver --
@@ -713,11 +745,22 @@ def diagnose(path: str, *, user: Optional[str] = None) -> Report:
     return rep
 
 
+def _attested_lines(rep: Report) -> list:
+    """The attested builds under the runtime line, every one (never MAX_IDS-truncated: the list is the remedy a
+    refusal names)."""
+    if not rep.attested_builds:
+        return ["      no build is attested by this package"]
+    return [f"      attested builds ({len(rep.attested_builds)}):"] + [f"        {b}" for b in rep.attested_builds]
+
+
 def render(rep: Report) -> str:
     out = [f"veracium doctor — {rep.db}"]
+    mark = {"error": "✘", "warn": "!", "info": "·"}
     if not rep.readable:
         for f in rep.findings:
-            out.append(f"  ✘ {f.check:11s} {f.message}")
+            out.append(f"  {mark[f.level]} {f.check:11s} {f.message}")
+            if f.check == "runtime":
+                out += _attested_lines(rep)
         out.append("  UNREADABLE")
         return "\n".join(out) + "\n"
     out.append(f"  schema v{rep.user_version} (head v{rep.head_version})   users {len(rep.users)}   "
@@ -726,7 +769,6 @@ def render(rep: Report) -> str:
     by_check = {}
     for f in rep.findings:
         by_check.setdefault(f.check, []).append(f)
-    mark = {"error": "✘", "warn": "!", "info": "·"}
     run = rep.checks_run
     # checks that ran, then any check that only left a finding (the refused-snapshot
     # path adds an info under "revocation" without running it)
@@ -740,6 +782,8 @@ def render(rep: Report) -> str:
                 shown = ", ".join(f.ids[:MAX_IDS])
                 more = f" … and {len(f.ids) - MAX_IDS} more" if len(f.ids) > MAX_IDS else ""
                 out.append(f"      {shown}{more}")
+            if check == "runtime":
+                out += _attested_lines(rep)
     n_err = sum(1 for f in rep.findings if f.level == "error")
     n_warn = sum(1 for f in rep.findings if f.level == "warn")
     out.append(f"  {'CLEAN' if rep.exit_code == 0 else 'FINDINGS'}: {n_err} error(s), {n_warn} warning(s); "

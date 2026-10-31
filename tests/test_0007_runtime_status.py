@@ -847,6 +847,69 @@ def test_doctor_reports_verified_at_info_and_refused_at_error(monkeypatch, statu
     assert [f.level for f in rep.findings if f.check == "runtime"] == [level]
 
 
+def test_doctor_lists_every_current_record_of_an_unpoisoned_artifact(monkeypatch):
+    """0007 §4g.6 (v0.12) "lists each attested build with its machine, system and libc": every CURRENT record, in the
+    report and its JSON and on the text form, untruncated; a superseded record attests nothing, so it is not listed
+    (0.28.0's release read, research B1: doctor listed nothing while the refusal and warning said it lists them)."""
+    from veracium import doctor
+    me = record_for_this_build()
+    other = record_for_this_build(machine="riscv64")
+    old = record_for_this_build(machine="ppc64le", schema_version=HEAD - 1)
+    with_records(monkeypatch, me, other, old)
+    rep = doctor.Report(db="x", readable=False)
+    doctor._check_runtime(rep)
+    assert len(rep.attested_builds) == 2, rep.attested_builds
+    assert any(f" on {me['machine']} {me['system']} {me['libc']} (setup-python ubuntu-24.04)" in b
+               for b in rep.attested_builds), rep.attested_builds
+    assert any(" on riscv64 " in b for b in rep.attested_builds) and not any("ppc64le" in b for b in rep.attested_builds)
+    assert doctor.to_json(rep)["attested_builds"] == rep.attested_builds
+    text = doctor.render(rep)
+    assert "attested builds (2):" in text and all(b in text for b in rep.attested_builds), text
+
+
+def test_a_poisoned_artifact_lists_no_build(monkeypatch):
+    """attested_key's rule: a record in a poisoned artifact attests nothing, so doctor lists none of them (listing them
+    would name builds the package does not attest), and says so."""
+    from veracium import doctor
+    with_records(monkeypatch, record_for_this_build(), record_for_this_build(machine="AMD64"))
+    rep = doctor.Report(db="x", readable=False)
+    doctor._check_runtime(rep)
+    assert rep.attested_builds == []
+    assert "no build is attested by this package" in doctor.render(rep)
+
+
+@pytest.mark.parametrize("status, level, mark", [("attested", "info", "·"), ("verified", "info", "·"),
+                                                 ("refused", "error", "✘")])
+def test_doctor_reports_the_build_with_no_store_for_every_status(monkeypatch, tmp_path, status, level, mark):
+    """INV-SA9 "before any store is opened", for a user with NO store yet (research B2: an attested build printed only
+    the missing file, and a verified build's info rendered as an error). One runtime finding for every status, at its
+    level and with its own mark, the attested list beneath it; the missing file is still exit 2."""
+    from veracium import doctor
+    st = sv.runtime_status()._replace(status=status, reason="probe x is False" if status == "refused" else None)
+    monkeypatch.setattr(sv, "runtime_status", lambda: st)
+    rep = doctor.diagnose(str(tmp_path / "absent.db"))
+    assert [f.level for f in rep.findings if f.check == "runtime"] == [level]
+    assert not rep.readable and rep.exit_code == 2
+    lines = doctor.render(rep).splitlines()
+    rt = [i for i, ln in enumerate(lines) if ln.strip().startswith(f"{mark} runtime")]
+    assert len(rt) == 1, lines
+    assert lines[rt[0] + 1].strip().startswith(("attested builds (", "no build is attested")), lines
+
+
+def test_doctor_names_an_unreadable_key_field(monkeypatch):
+    """0007 §4g.6 (v0.12) "names any field of the running build's key that was unreadable": such a build matches no
+    record, and the report says which field and why."""
+    from veracium import doctor
+    st = sv.runtime_status()
+    st = st._replace(status="verified", reason=None, key=None, unreadable=("libc",),
+                     platform=(st.platform[0], st.platform[1], None))
+    monkeypatch.setattr(sv, "runtime_status", lambda: st)
+    rep = doctor.Report(db="x", readable=False)
+    doctor._check_runtime(rep)
+    (msg,) = [f.message for f in rep.findings if f.check == "runtime"]
+    assert "unreadable key field(s): libc" in msg and "(unreadable)" in msg, msg
+
+
 def test_the_compile_options_come_from_the_probe_connection(monkeypatch):
     """INV-SA12 "read them from a SQLite library other than the one the store's connections use": the digest is of
     `_probe_build()`'s options, the one scratch connection of this module's own `sqlite3`. A digest read anywhere
