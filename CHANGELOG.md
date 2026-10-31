@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Fixed (SA-R5-C1, 0.28.0's known limitation): the attestation job reads an unsupported XML encoding in its child's
+  JUnit output to its named `suite-mismatch` refusal.** A JUnit file declaring a codec that does not exist
+  (`encoding="UTF-9"`) or is not a text encoding (`base64_codec`) made `specs/attestation_job.py`'s `decide` raise
+  `LookupError`; it now returns `suite-mismatch` naming the error, with no record, like a truncated file. Measured over
+  every codec name and alias CPython 3.14.7 knows, plus bogus names, through both JUnit readers: `LookupError` was the
+  only exception that escaped. The project's CI tooling, not the library.
+
 ## 0.28.0 — 2026-10-31
 
 **Veracium now runs on any SQLite build that passes its measured check, not on one qualified build. 0.27.x opened a

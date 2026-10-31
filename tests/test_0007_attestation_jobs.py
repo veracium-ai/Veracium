@@ -646,6 +646,13 @@ def _nest_reading() -> str:
     return "parses"
 
 
+_UNREADABLE_DECLARATIONS = {"unknown-encoding": "UTF-9", "bytes-codec": "base64_codec"}
+"""SA-R5-C1 (the round-5 reviewer's two forms): an encoding name no codec answers, and a codec that is not a TEXT
+encoding. Measured over every codec name and alias CPython knows plus bogus names, through both JUnit readers, on
+3.14.7 (expat 2.8.2; dev) and 3.12.3 (expat 2.6.1; research, 9672b063): these two shapes are the whole LookupError class; every other declaration parses, or raises a caught ParseError,
+ValueError or UnicodeError."""
+
+
 def _rewrite(which, form):
     def after(target):
         path = {"completion": job.completion_path, "collected": job.collected_path, "junit": lambda j: j}[which](target)
@@ -665,6 +672,8 @@ def _rewrite(which, form):
             path.write_text({"junit": '<testsuites><testsuite><testcase classname="tests.test_x" name="a"'}.get(which, '{"a":'))
         elif form == "no-test-module":
             path.write_text('<testsuites><testsuite><testcase classname="tests.helpers" name="a"/></testsuite></testsuites>')
+        elif form in _UNREADABLE_DECLARATIONS:     # SA-R5-C1: a declaration naming no text codec raises LookupError
+            path.write_text(f'<?xml version="1.0" encoding="{_UNREADABLE_DECLARATIONS[form]}"?><testsuites/>')
         elif form == "a-mapping":
             path.write_text(json.dumps({n: 1 for n in json.loads(after.nodes)}))
         else:
@@ -718,7 +727,7 @@ def test_r5_f3_an_unreadable_collection_record_is_suite_mismatch(tmp_path, monke
         _never_opened(after)
 
 
-@pytest.mark.parametrize("form", ["truncated", "no-test-module", "directory", "fifo"])
+@pytest.mark.parametrize("form", ["truncated", "no-test-module", "directory", "fifo", *_UNREADABLE_DECLARATIONS])
 def test_r5_f3_an_unreadable_junit_is_suite_mismatch(tmp_path, monkeypatch, form):
     """The JUnit too: a truncated write, a testcase whose classname names no test module (junit_cases raised
     StopIteration; attestation_suite.junit_modules' ValueError is now both readers' rule), a directory, and (round 5 G1)
@@ -1281,8 +1290,11 @@ def test_the_attestation_job_mutation_matrix(tmp_path_factory):
         "G1: the JUnit's is_file guard removed (a FIFO blocks the parse)": ([('            if not junit.is_file():         # round 5 G1', '            if False:         # round 5 G1')],
                                                                              [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "fifo"}),
                                                                               ("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "directory"})]),
-        "F3: RecursionError dropped from CHILD_READ_ERRORS (research's stage-1 condition)": ([("CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError)", "CHILD_READ_ERRORS = (OSError, ValueError, ET.ParseError)")],
+        "F3: RecursionError dropped from CHILD_READ_ERRORS (research's stage-1 condition)": ([("CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError, LookupError)", "CHILD_READ_ERRORS = (OSError, ValueError, ET.ParseError, LookupError)")],
                                                                                         [("test_r5_f3_an_unreadable_collection_record_is_suite_mismatch", {"form": "recursion"})]),
+        "SA-R5-C1: LookupError dropped from CHILD_READ_ERRORS (the round-5 reviewer's form)": ([("CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError, LookupError)", "CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError)")],
+                                                                                            [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "unknown-encoding"}),
+                                                                                             ("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "bytes-codec"})]),
         "F3: the JUnit read unguarded": ([('            except CHILD_READ_ERRORS as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit', '            except ZeroDivisionError as e:\n                raise Decided("suite-mismatch", f"the suite\'s JUnit')],
                                          [("test_r5_f3_an_unreadable_junit_is_suite_mismatch", {"form": "truncated"})]),
         "F3: the collection record read unguarded": ([('    except CHILD_READ_ERRORS as e:\n        return None, f"the suite\'s collection record could not be read', '    except ZeroDivisionError as e:\n        return None, f"the suite\'s collection record could not be read')],

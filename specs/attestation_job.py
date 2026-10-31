@@ -181,11 +181,16 @@ def _check_evidence() -> tuple:
     return p.returncode, (p.stdout + p.stderr)[-2000:]
 
 
-CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError)
+CHILD_READ_ERRORS = (OSError, ValueError, RecursionError, ET.ParseError, LookupError)
 """Round 5 F3 (research's stage 2): what reading the child's three outputs can raise. The JUnit, the collection record
 and the completion record are written by the suite process, and a truncated write (a full disk, a killed process), a
 directory at the path, invalid UTF-8 or nesting deep enough to recurse each become a NAMED refusal; decide still returns
-a closed result, so main still writes --out."""
+a closed result, so main still writes --out. SA-R5-C1 (the round-5 reviewer): the JUnit names its own codec, and a
+declaration naming none (`encoding="UTF-9"`) or one that is not a text encoding (`base64_codec`) raises LookupError,
+which none of the others is; the two JSON records are decoded as UTF-8 by name, so only the JUnit can raise it.
+LookupError is also KeyError's and IndexError's base (research, N1): nothing in the guarded readers indexes today
+(kids["skipped"] sits behind its membership test), but an indexing bug added inside junit_cases, junit_modules or
+read_collected would read as a named suite-mismatch, not a crash."""
 
 
 def read_collected(path):
