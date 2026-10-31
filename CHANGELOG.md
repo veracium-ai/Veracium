@@ -2,35 +2,104 @@
 
 ## Unreleased
 
-**The SQLite widening (spec 0007 §4g; in progress, not yet released).**
+## 0.28.0 — 2026-10-31
+
+**Veracium now runs on any SQLite build that passes its measured check, not on one qualified build. 0.27.x opened a
+store on exactly one build (SQLite 3.45.1 as Ubuntu 24.04 packages it); this release measures the build instead, on
+every open, and the project's CI has
+attested 22 builds: SQLite 3.34.1 to 3.54.1, on Linux (glibc and musl, x86_64 and arm64) and macOS (arm64), from uv,
+python.org, Homebrew, conda-forge, setup-python, deadsnakes, pyenv, the official Docker images and the distributions'
+own Pythons.** The widening is spec 0007 §4g, implementation-accepted at external review (round 5, 2026-10-31).
+Also: `forget` now erases the user's source-revocation ledger, and when one message carries an old and a new value of
+a single-valued fact, the order the extractor happened to emit them no longer decides which one is current. Store
+schema stays 16 and the export format stays 14: a 0.27.x store opens as it is.
+
+**Who should take this release:** every 0.27.x deployment. Two of its fixes are on the trust surface:
+- `forget_user` left one per-user table behind, `source_revocations`, so an erased user's revocations survived the
+  erasure and a user later created with the same id inherited them;
+- one message carrying an old and a new value of a single-valued fact ("I moved and now live in Denver (previously lived
+  in Boston)") could leave the OLD value current and retire the new one, depending only on the order the extractor
+  emitted the two.
+
+And anyone who could not run 0.27.x because their Python's SQLite was refused should try again: check with
+`veracium doctor`, which reports the build's status, and lists the attested builds, before it opens any store, and
+with no store at all.
+
+**Who must act:** a host whose `audit_sink` unpacks `MigrationAuditEvent` into exactly six names (below, BREAKING). A
+store created by 0.26.x or earlier still needs the offline migration described under 0.27.0 ("Before you upgrade from
+0.26.1", `veracium.store.migration.migrate_store`): `veracium migrate` still migrates only the previous schema version,
+and the open-refusal message and `veracium doctor`'s remedy still name `veracium migrate` for those stores. Both
+messages are corrected with the CLI's migration from released versions, in a later release.
+
+**Known limitations.**
+- **No Windows build is attested.** The attestation suite does not yet pass on Windows, so no Windows record ships. By
+  the code, a Windows build that passes the measured check opens as `verified`, with the warning; that has not yet
+  been run on Windows.
+- **A user can hold only one deadline.** `deadline` is single-valued, and the extractor stores each commitment as the
+  user's deadline, so a later one supersedes an earlier one ("the dentist on the 3rd", then "a haircut on the 5th",
+  keeps only the haircut). The fix, each commitment stored under its own name, is in the next release; 0.27.x had the
+  same behaviour.
+- **SA-R5-C1 (non-blocking, from the accepting review): the attestation JOB's read of its child's JUnit output does not
+  catch an unsupported XML encoding.** A JUnit file declaring `encoding="UTF-9"` (or `base64_codec`) makes
+  `specs/attestation_job.py`'s `decide` raise `LookupError` instead of returning its named `suite-mismatch` refusal. No
+  attestation record is issued either way. This is the project's CI tooling, not the library; the fix is the next
+  batch's first item.
+
+**The SQLite widening (spec 0007 §4g).**
 
 - **Changed: the store opens on a SQLite build by MEASUREMENT, not by a list.** On every open the build is
   `attested`, `verified` or `refused` (`veracium.store.schema_version.runtime_status()`). It must pass the feature
   probes, reproduce every accepted schema version exactly, and tell apart six packaged near-miss schemas; a record
   from the project's CI only removes the warning. `refused` keeps the reason `unsupported-sqlite`, and its message
-  now names the first failing check and no file outside the package. `veracium doctor` reports the build before it
-  opens any store.
+  now names the first failing check and no file outside the package.
+- **Changed: `veracium doctor` reports the build on every run, store or not, and lists the attested builds** (spec
+  0007 §4g.6): the build's status (`attested` or `verified` at info, `refused` at error with the failing step) and any
+  unreadable field of its key, then every attested build with its SQLite version, machine, system, libc and the CI
+  route that measured it (`--json`: `attested_builds`). The refusal and the warning both send the user there.
 - **Added: `UnattestedBuildWarning`** (a `UserWarning`), once per process, when a `verified` build opens a store.
 - **BREAKING for hosts that unpack a migration audit event by position: `MigrationAuditEvent` gains a seventh, LAST
   field, `runtime`** (`MigrationRuntime`: the migrating build's `sqlite_version`, `source_id` and measured status;
   spec 0013 INV-SA11), on both `migration_attempted` and `migration_committed`. A host whose `audit_sink` reads the
   fields by name, or the first six by position, is unaffected; one that unpacks exactly six must change. The 0018
   sidecar's `attempted` entry copies it as `runtime`.
-- **Fixed: uv's Python on arm64 Linux, and on musl, read its libc as unreadable.** The reader of the interpreter's ELF
-  `PT_INTERP` looked only at the first 1 MiB of the binary, and python-build-standalone's aarch64 (glibc and musl) and
-  x86_64 musl CPython 3.14 builds keep it at about 19–20 MiB. Every such build was at most `verified` and could never
-  be attested. Measured on the real 3.14.9 binaries: they read glibc, musl and musl now; the x86_64 glibc build and
-  the system interpreters were unaffected. The reader now seeks to the segment, and a short, empty or unterminated one
-  is unreadable rather than an empty path.
+- **The build's libc is read from the interpreter's ELF `PT_INTERP` segment, wherever it lies.**
+  python-build-standalone's aarch64 (glibc and musl) and x86_64 musl CPython 3.14 builds keep it at about 19–20 MiB
+  into the binary; a first, never-released reader that looked only at the first 1 MiB read them as unreadable, and CI's
+  first attestation run caught it. A short, empty or unterminated segment is unreadable, never an empty path.
 - **Attestation records name one commit.** Every provenance entry of a record must carry the same commit (the commit
   the attestation suite ran at). A record mixing commits is malformed, and like any malformed record it poisons the
-  artifact. `specs/attestation_writer.py` is the one way a record is written: it binds the record to the checkout's
-  `HEAD`, refuses fixture records, and orders a replacement by git ancestry, refusing whenever the order cannot be
-  answered (a shallow clone, an unknown commit).
+  artifact: a poisoned artifact attests no build, and every build that passes the measured check still opens,
+  `verified`. The records are made by the CI attestation job (`specs/attestation_job.py`), which issues one only when
+  that invocation's suite run completed (a per-run completion record and nonce), and `specs/attestation_writer.py`
+  is the one way a record is written: it binds the record to the checkout's `HEAD`, refuses fixture records, and
+  orders a replacement by git ancestry, refusing whenever the order cannot be answered (a shallow clone, an unknown
+  commit).
 - **Removed: 0007 v16's single-runtime record class** (`sqlite_runtimes.json`'s `runtimes`, and the predicate and
   validators that read it). A build is supported by measurement alone; the artifact now holds attestation records
   only. The offline launcher (`specs/evidence/offline/run_offline.sh`) and the package verifier accept a `verified`
   build, so the offline suite runs on any SQLite build that passes the measured check, not only the recorded one.
+
+**Erasure, supersession and two wordings (the held 0.28.0 batch).**
+
+- **Fixed: `forget_user` now erases the user's source-revocation ledger (`source_revocations`).** It was the one
+  per-user table outside the erasure set: in a fresh store, 21 tables carry a `user_id` column and 20 of them were
+  erased. So an erased user's revocations survived `forget_user`, and a user later created with the same id inherited
+  them. The suite now checks the erasure set against every `user_id` table of a fresh store, both ways (specs/0022's
+  post-acceptance note; specs/0008 §6g).
+- **Fixed: one episode's values for a single-valued fact no longer supersede each other in the order the extractor
+  emitted them** (specs/0003 v17). "I moved and now live in Denver (previously lived in Boston)." emitted as
+  [Denver, Boston] left Boston current. Now (1) the extraction prompt treats a value the event says is no longer true
+  ("previously", "used to", "no longer", "moved from") as history, said in the episode rather than emitted as a fact,
+  while a value still true since some past date stays current; and (2) when one episode still yields two or more
+  distinct values for one single-valued key, it retires nothing: both stay current, the conflict is recorded as
+  `within-episode-v1` supersession refusal rows, and `remember()`'s result counts it as `within_episode_contested`
+  (a content-free count, stripped from MCP results and outside telemetry's consented schema). This is a prompt change:
+  extraction output for messages describing past values differs from 0.27.x.
+- **Changed: recall's MCP description says the user's own words outrank a recalled memory**: when they contradict it,
+  act on what the user says now and record the change with `remember`.
+- **Changed: an empty verified section reads "(no verified facts yet)" when unverified claims follow it**, not "(no
+  memory yet for this user)". The text is fixed (`veracium.compile.EMPTY_GROUNDED_BODY`) and emitted without a model
+  call when there is no grounded input.
 
 ## 0.27.1 — 2026-10-26
 

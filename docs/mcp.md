@@ -10,16 +10,16 @@ pip install "veracium[mcp,anthropic]"
 ANTHROPIC_API_KEY=sk-... VERACIUM_DB_PATH=~/.veracium.db veracium-mcp
 ```
 
-> **Python and SQLite requirement.** Veracium needs Python 3.14 or newer, and it currently opens or creates a store
-> only on the one SQLite build it has been qualified on: SQLite 3.45.1 as packaged by Ubuntu 24.04. A Python 3.14
-> linked against that system SQLite runs, as GitHub's setup-python builds do; uv's, python.org's and Homebrew's 3.14
-> builds bundle a newer SQLite and refuse, even a fresh store. Ubuntu 24.04's own system Python is 3.12, below the
-> floor: `pip` there installs 0.26.1, the last release that supports it. On every other SQLite
-> build — including other 3.45.1 builds, since the check is on the exact build — it refuses to create a store AND
-> refuses to open an existing one, so moving to a Python whose SQLite differs leaves earlier stores unopenable
-> there until that build is supported. A version check can
-> only show that yours is refused: if `python -c "import sqlite3; print(sqlite3.sqlite_version)"` prints anything
-> but 3.45.1, it is; 3.45.1 is necessary, not sufficient. Wider SQLite support is planned.
+> **Python and SQLite requirement.** Veracium needs Python 3.14 or newer. It measures your Python's SQLite build on
+> every open instead of checking it against a list: the build must pass the feature probes and reproduce every accepted
+> schema version exactly. A build that passes opens as `verified`, with one `UnattestedBuildWarning` per process; one
+> the project's CI has also attested opens with no warning. The CI has attested 22 builds: SQLite 3.34.1 to 3.54.1 on
+> Linux (glibc and musl, x86_64 and arm64) and macOS (arm64), from uv, python.org, Homebrew, conda-forge,
+> setup-python, deadsnakes, pyenv, the official Docker images and the distributions' own Pythons. No Windows build is
+> attested yet. A build that fails is refused (`unsupported-sqlite`, naming the first failing check), for a new store
+> and an existing one alike. `veracium doctor` reports your build's status and lists the attested builds, with or
+> without a store. Ubuntu 24.04's own system Python is 3.12, below the floor: `pip` there installs 0.26.1, the last
+> release that supports it.
 
 (`veracium-mcp` is a stdio server meant to be launched by your MCP client —
 run `veracium-mcp --help` for a summary.)
