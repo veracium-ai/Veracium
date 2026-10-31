@@ -82,7 +82,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 117): "internal-invariant", ("asof/resolve.py", 122): "internal-invariant",
     ("asof/resolve.py", 181): "control-flow", ("asof/resolve.py", 206): "predicate-helper",
     ("compile.py", 208): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
-    ("doctor.py", 484): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
+    ("doctor.py", 488): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 60): "predicate-helper", ("graph.py", 75): "predicate-helper", ("graph.py", 241): "internal-invariant",
     ("graph.py", 920): "argument-check", ("grounding.py", 154): "control-flow",
     ("ingest.py", 183): "control-flow", ("ingest.py", 135): "argument-check",

@@ -1202,45 +1202,51 @@
   },
   {
    "kind": "RETURN_NONE",
-   "line": 165,
+   "line": 169,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 177,
+   "line": 181,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 185,
+   "line": 189,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 188,
+   "line": 192,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 195,
+   "line": 199,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 201,
+   "line": 205,
    "module": "doctor.py",
    "qualname": "_tables"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 484,
+   "line": 488,
    "module": "doctor.py",
    "qualname": "_check_sources.unsourced"
+  },
+  {
+   "kind": "FILTER_RETURN",
+   "line": 682,
+   "module": "doctor.py",
+   "qualname": "_attested_builds"
   },
   {
    "kind": "BOOL_RETURN",
@@ -6874,7 +6880,7 @@
  "summary": {
   "by_kind": {
    "BOOL_RETURN": 98,
-   "FILTER_RETURN": 59,
+   "FILTER_RETURN": 60,
    "RAISE": 666,
    "RETURN_FALSE": 109,
    "RETURN_NONE": 102
@@ -7031,7 +7037,7 @@
    },
    "doctor.py": {
     "BOOL_RETURN": 1,
-    "FILTER_RETURN": 1,
+    "FILTER_RETURN": 2,
     "RAISE": 0,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 5
@@ -7282,7 +7288,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1034,
+  "total": 1035,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

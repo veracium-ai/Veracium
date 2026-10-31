@@ -5320,58 +5320,67 @@
   "line": 283,
   "statement": "return False"
  },
- "doctor.py:_open_snapshot:165:RETURN_NONE": {
+ "doctor.py:_attested_builds:682:FILTER_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "doctor.py:_attested_builds:FILTER_RETURN:1",
+  "line": 682,
+  "statement": "return [s for _, s in sorted(out)]"
+ },
+ "doctor.py:_open_snapshot:169:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:1",
-  "line": 165,
+  "line": 169,
   "statement": "return None"
  },
- "doctor.py:_open_snapshot:177:RETURN_NONE": {
+ "doctor.py:_open_snapshot:181:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:2",
-  "line": 177,
+  "line": 181,
   "statement": "return None"
  },
- "doctor.py:_open_snapshot:185:RETURN_NONE": {
+ "doctor.py:_open_snapshot:189:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:3",
-  "line": 185,
+  "line": 189,
   "statement": "return None"
  },
- "doctor.py:_open_snapshot:188:RETURN_NONE": {
+ "doctor.py:_open_snapshot:192:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:4",
-  "line": 188,
+  "line": 192,
   "statement": "return None"
  },
- "doctor.py:_open_snapshot:195:RETURN_NONE": {
+ "doctor.py:_open_snapshot:199:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:5",
-  "line": 195,
+  "line": 199,
   "statement": "return None"
  },
- "doctor.py:_tables:201:FILTER_RETURN": {
+ "doctor.py:_tables:205:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_tables:FILTER_RETURN:1",
-  "line": 201,
+  "line": 205,
   "statement": "return {r[0] for r in conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\")}"
  },
  "dryrun.py:_snapshot:89:FILTER_RETURN": {
@@ -9280,13 +9289,13 @@
   "line": 249,
   "statement": "return self._pending > 0"
  },
- "doctor.py:_check_sources.unsourced:484:BOOL_RETURN": {
+ "doctor.py:_check_sources.unsourced:488:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by doctor.py:_check_sources",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "doctor.py:_check_sources.unsourced:BOOL_RETURN:1",
-  "line": 484,
+  "line": 488,
   "statement": "return prov.get(\"author_of_evidence\") == \"third_party\" and not prov.get(\"source_id\")"
  },
  "dryrun.py:DryRun.usable:68:BOOL_RETURN": {
