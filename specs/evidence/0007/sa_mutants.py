@@ -205,8 +205,8 @@ MUTANTS = [
      [R("test_doctor_checks_the_sqlite_build_before_opening_any_store")], [], None,
      "doctor reports the SQLite status after opening a store"),
     ("sa9-verified-at-warn", "product", DOC,
-     [('        rep.add("runtime", "info", "this interpreter\'s SQLite is not an attested build;',
-       '        rep.add("runtime", "warn", "this interpreter\'s SQLite is not an attested build;')],
+     [('        rep.add("runtime", "info", f"this interpreter\'s {build} is not an attested build;',
+       '        rep.add("runtime", "warn", f"this interpreter\'s {build} is not an attested build;')],
      [R("test_doctor_reports_verified_at_info_and_refused_at_error[verified-info]")], [], None,
      "doctor reports a verified build at warn (doctor then exits 1 for every uv user)"),
     # ---- INV-SA11 (0013 §5f.4) ------------------------------------------------------------------------------------
