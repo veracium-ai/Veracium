@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 8b29e758ef4903fb4c0c5d540b3f8a47fc68497f
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 963551fa64162b2be60684c9fc2e189bdfd1be27
+# RE-PINNED 2026-10-31 the schema evidence recording the v0.28.0 tag (legacy_stores.json, one row; no code) landed in 963551fa64162b2be60684c9fc2e189bdfd1be27: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-10-31 doctor's attested-build listing and its store-less report (src/veracium/doctor.py, eea0e76 and 7aa69ca) landed in 8b29e758ef4903fb4c0c5d540b3f8a47fc68497f: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-10-30 0007 attestation run 8's records (src/veracium/store/evidence/sqlite_runtimes.json, data only) landed in e253c125bf5c1c0c019e003fb28a0e3a13695b53: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-10-29 the held minor release's batch (the source-revocation erasure, recall's two wordings, 0003 v17's within-episode rule) landed in 2f3899bed25f488ee9195b38786f2b6205802931: bodies byte-identical; the pin moves to it
