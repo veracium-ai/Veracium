@@ -142,6 +142,7 @@ class Report:
     checks_run: list = field(default_factory=list)
     findings: list = field(default_factory=list)
     attested_builds: list = field(default_factory=list)   # 0007 §4g.6 (v0.12): every current, unpoisoned record
+    attested_list_error: Optional[str] = None             # the escape's name when the list could not be read
 
     def add(self, check: str, level: str, message: str, ids=()) -> None:
         self.findings.append(Finding(check, level, message, sorted(set(ids))))
@@ -665,7 +666,8 @@ def _check_data_migration(rep: Report, conn, user: Optional[str], edges: dict) -
 def _attested_builds() -> list:
     """Each attested build, `SQLite <version> on <machine> <system> <libc> (<route> <image>, …)`, one per CURRENT record of an
     UNPOISONED artifact: attested_key's rule, so a poisoned or unreadable artifact lists nothing (it attests nothing).
-    Total: an escape lists nothing rather than failing the report."""
+    Total: an escape returns the exception's NAME instead of a list, so the report never says "no build is attested"
+    when the truth is that the listing failed."""
     try:
         records = sv.attestations()
         if sv.attestation_artifact_problems(records):
@@ -678,8 +680,8 @@ def _attested_builds() -> list:
             out.append((tuple(int(x) for x in r["sqlite_version"].split(".")),
                         f"SQLite {r['sqlite_version']} on {r['machine']} {r['system']} {r['libc']} ({routes})"))
         return [s for _, s in sorted(out)]
-    except Exception:  # noqa: BLE001 - a listing never fails the report
-        return []
+    except Exception as exc:  # noqa: BLE001 - a listing never fails the report; it names the escape instead
+        return type(exc).__name__
 
 
 def _check_runtime(rep: Report) -> None:
@@ -694,9 +696,11 @@ def _check_runtime(rep: Report) -> None:
              + " ".join(v if v else "(unreadable)" for v in st.platform))
     gaps = (f"; unreadable key field(s): {', '.join(st.unreadable)}, so it matches no attestation record"
             if st.unreadable else "")
-    rep.attested_builds = _attested_builds()
+    listed = _attested_builds()
+    rep.attested_builds = listed if isinstance(listed, list) else []
+    rep.attested_list_error = None if isinstance(listed, list) else listed
     if st.status == "refused":
-        rep.add("runtime", "error", f"this interpreter's SQLite cannot be verified for the store: {st.reason}{gaps}")
+        rep.add("runtime", "error", f"this interpreter's {build} cannot be verified for the store: {st.reason}{gaps}")
     elif st.status == "verified":
         rep.add("runtime", "info", f"this interpreter's {build} is not an attested build; it was verified on this run "
                 "(it reproduces every schema version and tells apart every near-miss)"
@@ -748,6 +752,8 @@ def diagnose(path: str, *, user: Optional[str] = None) -> Report:
 def _attested_lines(rep: Report) -> list:
     """The attested builds under the runtime line, every one (never MAX_IDS-truncated: the list is the remedy a
     refusal names)."""
+    if rep.attested_list_error:
+        return [f"      the attested builds could not be listed: {rep.attested_list_error}"]
     if not rep.attested_builds:
         return ["      no build is attested by this package"]
     return [f"      attested builds ({len(rep.attested_builds)}):"] + [f"        {b}" for b in rep.attested_builds]

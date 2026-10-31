@@ -889,11 +889,31 @@ def test_doctor_reports_the_build_with_no_store_for_every_status(monkeypatch, tm
     monkeypatch.setattr(sv, "runtime_status", lambda: st)
     rep = doctor.diagnose(str(tmp_path / "absent.db"))
     assert [f.level for f in rep.findings if f.check == "runtime"] == [level]
+    (msg,) = [f.message for f in rep.findings if f.check == "runtime"]
+    assert f"SQLite {st.sqlite_version} on " in msg, msg       # every status names the build (research n1: refused did not)
     assert not rep.readable and rep.exit_code == 2
     lines = doctor.render(rep).splitlines()
     rt = [i for i, ln in enumerate(lines) if ln.strip().startswith(f"{mark} runtime")]
     assert len(rt) == 1, lines
     assert lines[rt[0] + 1].strip().startswith(("attested builds (", "no build is attested")), lines
+
+
+def test_a_listing_that_raises_is_named_never_read_as_no_attested_build(monkeypatch):
+    """research n2 on eea0e76: an escape while listing must not print "no build is attested by this package", a false
+    sentence about the artifact; the report names the escape, and the status line is unaffected."""
+    from veracium import doctor
+    st = sv.runtime_status()
+    monkeypatch.setattr(sv, "runtime_status", lambda: st)
+    def boom():
+        raise RuntimeError("planted")
+    monkeypatch.setattr(sv, "attestations", boom)
+    rep = doctor.Report(db="x", readable=False)
+    doctor._check_runtime(rep)
+    text = doctor.render(rep)
+    assert "the attested builds could not be listed: RuntimeError" in text, text
+    assert "no build is attested" not in text and rep.attested_builds == [], text
+    assert doctor.to_json(rep)["attested_list_error"] == "RuntimeError"
+    assert len([f for f in rep.findings if f.check == "runtime"]) == 1
 
 
 def test_doctor_names_an_unreadable_key_field(monkeypatch):
