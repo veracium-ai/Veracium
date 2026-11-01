@@ -4456,13 +4456,13 @@
   "line": 91,
   "statement": "raise"
  },
- "proactive.py:assemble:360:RAISE": {
+ "proactive.py:assemble:364:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "proactive.py:assemble:RAISE:1",
-  "line": 360,
+  "line": 364,
   "statement": "raise ValueError(f\"item_cap_tokens below the minimum item allowance \""
  },
  "procedural_gate.py:norm_ws:49:RAISE": {

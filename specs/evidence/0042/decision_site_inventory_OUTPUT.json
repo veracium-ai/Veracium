@@ -2300,7 +2300,7 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 360,
+   "line": 364,
    "module": "proactive.py",
    "qualname": "assemble"
   },
