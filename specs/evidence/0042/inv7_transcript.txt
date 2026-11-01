@@ -1,16 +1,17 @@
-# generated 2026-11-01T06:22Z against veracium @ 93d5dcbd6a0f4ab696e76dee2c25ec6d8f86be5d
+# generated 2026-11-01T15:26Z against veracium @ c5974105dea180582511b7255b2c27830d153b44
 # the pin: tests/test_0042_inv7.py asserts this commit is an ancestor of HEAD with src/ unchanged since
-# the 0042 INV-7 run RE-MADE 2026-11-01 on the committed tree of 93d5dcb (src/ as of 93d5dcb). One change since the
-# previous run's pin (8c734305): src/veracium/proactive.py (621dc40, research's stage-2 B1: a contested line's slots
-# are its members' objects; `git diff --name-status 8c734305 93d5dcb -- src/` lists that one file). The four arms are
-# IDENTICAL over 831 compared tests, NEWLY non-reproducible: none; records 87558 in every arm (as at 8c734305); 832
-# tests ran in every arm; the registry is 226 ids, the off and uninstrumented arms' registries equal as sets; every
+# the 0042 INV-7 run RE-MADE 2026-11-01 on the committed tree of c597410 (src/ as of c597410). One change since the
+# previous run's pin (93d5dcbd): src/veracium/store/schema_version.py (c597410, the 0007 acceptance fold's FROZEN marker
+# above KEY_FIELDS, comment lines only; `git diff --name-status 93d5dcb c597410 -- src/` lists that one file). The four
+# arms are IDENTICAL over 831 compared tests, NEWLY non-reproducible: none; records 87558 in every arm (as at 93d5dcbd);
+# 832 tests ran in every arm; the registry is 226 ids, the off and uninstrumented arms' registries equal as sets; every
 # gate in verdict.json is true (the harness's own 21 gates, 21 true). Run on CI's own interpreter build
-# (actions/python-versions 3.14.7 for Ubuntu 24.04, SQLite 3.45.1) from the repository's .venv. The run it replaces
-# (on 8c734305, committed 7f95fc3) is in git history.
+# (actions/python-versions 3.14.7 for Ubuntu 24.04, SQLite 3.45.1) from the repository's .venv, on a 16-core host beside
+# a harness run capped at about 11 cores (26m26s, against 18m30s alone); INV-7 compares traces, not times. The run it
+# replaces (on 93d5dcbd, committed bcbc0a7) is in git history.
 # THE READER/SEED RECEIPT: specs/evidence/0042/reader_seed_receipt.py, re-run beside this run on the same executable at
-# 93d5dcb under PYTHONHASHSEED=0. Exit 0. Committed beside this transcript, specs/evidence/0042/reader_seed_receipt.json
-# (sha256 96efcbc0d550c0876585e3aa6f71b366a5e49010e8dc0d14e3a0c3e8e1550987); it differs from the 8c734305 receipt in ONE field, `identity.commit` (measured by a
+# c597410 under PYTHONHASHSEED=0. Exit 0. Committed beside this transcript, specs/evidence/0042/reader_seed_receipt.json
+# (sha256 070df784493b29a4f06cc856a0438be644b327c11e220b737cf18f6da1924751); it differs from the 93d5dcbd receipt in ONE field, `identity.commit` (measured by a
 # JSON diff).
 # TWIN DIGEST, added by dev AFTER the run (the harness does not emit one), bound by CONTENT:
 #   twin digest: c6b19e1e8d4b158bab93233b7becb50d4026db13d0bd9f9c4211c9b3ad790105   (69 files, CPython 3.14.7)
@@ -21,25 +22,28 @@
 #     python <dir>/specs/evidence/0042/inv7_uninstrument.py <dir>/src/veracium <dir>/twin
 #     python <dir>/specs/evidence/0042/twin_digest.py <dir>/twin
 #   equal across two derivations: the twin THIS RUN used and a clean git-archive export of the pin derived by the
-#   recipe above (diff -r: identical). It moved from e245210b... (69 files, 8c734305) in exactly one file (diff -rq),
-#   proactive.py, because the twin carries src/ verbatim apart from the census.
+#   recipe above (diff -r: identical). It is UNCHANGED from 93d5dcbd's (same digest): the derivation writes each module
+#   back without its comments (measured: the twin's schema_version.py holds no FROZEN line, and differs from the source
+#   of both trees), and src/ moved only by comment lines. The previous header's "the twin carries src/ verbatim apart
+#   from the census" was true of code and not of comments; this run is the first to tell them apart.
 # "UNINSTRUMENTED", MEASURED: census_code_entries 0 in the reference arm, beside a disabled census and a registry
 # equal to the off arm's as sets (226 ids, measured from this run's arms).
 # THE SITE EACH RUN IMPORTED (N-6): 8 runs, 1 distinct site_realized digest. Every arm asserts its hash seed is pinned
 # to 0 before it describes.
-# THE WHOLE-TRACE DIGESTS: this run the failing, off and uninstrumented arms' observer traces are equal byte for byte
-# (sha256 79a7bee5...), as are all four control runs', and their canonical digests are 1b4b012ccdd33d99, as at
-# 8c734305. The healthy arm's own run is 49e17292... (canonical fa28c1423448990e): the one test on the STANDING list
-# (the acceptance corpus's wall-clock-sensitive supersession batch) drew its variant in the healthy pair (the
-# harness's own bracket: [healthy]); its control run equals the others. INV-7's verdict rests on the per-test
-# comparison, which excludes that test by name; the whole traces are this run's observation, not a property claimed.
-# INV-7 compares the arms of ONE tree; it does not compare traces across trees.
+# THE WHOLE-TRACE DIGESTS: this run the healthy and failing arms' observer traces are equal byte for byte (sha256
+# 79a7bee5..., canonical 1b4b012ccdd33d99, the digest 93d5dcbd's failing, off and uninstrumented arms had); the off arm's
+# is 128ceb57... (canonical 74e9b1a7c5c1d009) and the uninstrumented arm's 0b0f9599... (canonical a7249aab778126c6).
+# Three control runs equal 79a7bee5...; failing-control is 6f4b7c94.... The one test on the STANDING list (the acceptance
+# corpus's wall-clock-sensitive supersession batch) drew its variant in the failing, off and uninstrumented control
+# pairs (the verdict's per-arm non_reproducible lists), more often than alone, as its stated cause predicts on a busier
+# host. INV-7's verdict rests on the per-test comparison, which excludes that test by name; the whole traces are this
+# run's observation, not a property claimed. INV-7 compares the arms of ONE tree; it does not compare traces across trees.
 # WHAT FOUR EQUAL TRACES DO NOT BIND (the INV-7 scope accepted at round 19): census code that rewrites the recording
 # is outside this comparison; the loud case is EXECUTED by specs/evidence/0042/trust_boundary_probe.py (its output,
-# trust_boundary_probe.txt, re-run at 93d5dcb: the forging run records 0; the clean run records 628, as at 8c734305).
+# trust_boundary_probe.txt, re-run at c597410: the forging run records 0; the clean run records 628, as at 93d5dcbd).
 INV-7 FOUR-ARM DECISION-TRACE DIFF — specs/0042
-HEAD 93d5dcbd6a0f4ab696e76dee2c25ec6d8f86be5d
-twin (uninstrumented): derived from HEAD 93d5dcbd6a0f4ab696e76dee2c25ec6d8f86be5d by inv7_uninstrument.py
+HEAD c5974105dea180582511b7255b2c27830d153b44
+twin (uninstrumented): derived from HEAD c5974105dea180582511b7255b2c27830d153b44 by inv7_uninstrument.py
 twin derivation: 226 declare_site preserved, bound to the REFERENCE census (accepted commit 5d835e1's census.py, sha256 69beb1bb2f058d97...), 409 fire() unwrapped, 221 consult blocks spliced, 4 census-enabled bypass blocks removed, across 33 modules; no census code ran in the reference arm beyond its import, the declarations and the observer's reads, and its registry equals the off arm's (asserted below)
 
 python 3.14.7; pytest -q -p no:randomly -p no:cacheprovider -p inv7_observer; PYTHONHASHSEED=0
@@ -48,32 +52,32 @@ in-process: the reference arm's census-entry count covers the pytest process; 6 
 profilers and tracers: 0 of 29 suites set one (static scan for `setprofile`, `settrace`, `cProfile`, `import profile`, `profile.run`); the census-entry hook is checked alive at the END of the run: none
 
 ARM              RECORDS     SHA256(observer trace)                                            PYTEST
-healthy              87558  49e17292ced8ad78df90413f16c05bc3dce5be7c3312ac95f396282ec9118fc3  832 passed, 2 warnings in 130.15s (0:02:10) (exit 0, 130.9s)
-failing              87558  79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca  832 passed, 2 warnings in 130.38s (0:02:10) (exit 0, 131.3s)
-off                  87558  79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca  832 passed, 2 warnings in 133.52s (0:02:13) (exit 0, 134.3s)
-uninstrumented       87558  79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca  832 passed, 2 warnings in 144.60s (0:02:24) (exit 0, 145.9s)
+healthy              87558  79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca  832 passed, 2 warnings in 209.56s (0:03:29) (exit 0, 210.6s)
+failing              87558  79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca  832 passed, 2 warnings in 191.71s (0:03:11) (exit 0, 192.9s)
+off                  87558  128ceb57028e6ea6e2c69b39d8d68d484690972e81341f65381d679e20248faf  832 passed, 2 warnings in 163.12s (0:02:43) (exit 0, 164.1s)
+uninstrumented       87558  0b0f9599e2d2864d3d1da282a267fc95e6fdb568906f64233b63a5b108e7844f  832 passed, 2 warnings in 186.25s (0:03:06) (exit 0, 187.7s)
 
 VERDICT: observer traces IDENTICAL across 4 arms over 831 tests (reference: uninstrumented; excluded by the STANDING list: 1; NEWLY non-reproducible this run: 0; control pairs run for failing, healthy, off, uninstrumented)
-CANONICAL DIGESTS (decoded records, dictionary-independent — R6-5(i)): healthy fa28c1423448990e; failing 1b4b012ccdd33d99; off 1b4b012ccdd33d99; uninstrumented 1b4b012ccdd33d99
+CANONICAL DIGESTS (decoded records, dictionary-independent — R6-5(i)): healthy 1b4b012ccdd33d99; failing 1b4b012ccdd33d99; off 74e9b1a7c5c1d009; uninstrumented a7249aab778126c6
   healthy: 831 tests compared, 0 differing, 0 not in both
   failing: 831 tests compared, 0 differing, 0 not in both
   off: 831 tests compared, 0 differing, 0 not in both
 
 EXCLUDED BY THE STANDING LIST (inv7_exclusions.STANDING: by name, with the cause; the arm(s) whose control pair sampled it THIS run in brackets, if any):
-  tests/eval/edge_events/test_0029_acceptance_corpus.py::test_acceptance_corpus_passes_100_percent  [healthy]
+  tests/eval/edge_events/test_0029_acceptance_corpus.py::test_acceptance_corpus_passes_100_percent  [failing, off, uninstrumented]
       cause: the acceptance corpus's supersession step is sensitive to the wall clock: a supersession batch (two upserts under one transaction) lands at a different scenario step between two runs of one arm — first sampled 2026-09-20 by the healthy arm's slower timing, then by the failing arm's control pair; the test agrees with itself in isolation and with the harness's suite prefix. The corpus runner accepts an injected clock and the acceptance test injects none (specs/0029's owner; the Dev queue carries the follow-up). Excluded until it does.
 NEWLY NON-REPRODUCIBLE THIS RUN (a control pair disagreed on a test NOT on the standing list — a finding; the exit refuses it):
   (none)
-control run healthy-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 130.79s (0:02:10)
-control run failing-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 129.95s (0:02:09)
-control run off-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 130.37s (0:02:10)
-control run uninstrumented-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 144.41s (0:02:24)
+control run healthy-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 209.31s (0:03:29)
+control run failing-control: records 87558, sha256 6f4b7c9431a1a788892b2b66fccdc177d173374b234a1acbbb86d8d8a32dbf75, 832 passed, 2 warnings in 218.26s (0:03:38)
+control run off-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 167.15s (0:02:47)
+control run uninstrumented-control: records 87558, sha256 79a7bee57c84b35fdde367c7fd85fd95816fe09cc6f0ccb459f67ab219d45cca, 832 passed, 2 warnings in 191.90s (0:03:11)
 
 CROSS-CHECKS:
   healthy: {"any_errors": false, "census_ids_not_in_declaration": [], "census_records": 7704, "ids_consulted": 186, "ids_fired": 96, "subsequence_holds": true, "subsequence_matched": 7648}
   failing: {"all_unmeasured": true, "census_ids_not_in_declaration": [], "census_records": 7704, "ids_with_errors": 186, "subsequence_holds": true, "subsequence_matched": 7648}
   off: {"census_enabled": false, "registry_size": 226}
-  uninstrumented: {"census_code_entries": 0, "census_code_entry_detail": [], "census_enabled": false, "registry_equals_off": true, "registry_size": 226, "veracium_file": "/tmp/claude-1000/-home-ubuntu-Dev-veracium/7ad7b38d-48d0-4b1f-8f39-0771cbbe3353/scratchpad/r28inv7/inv7/twin/src/veracium/__init__.py"}
+  uninstrumented: {"census_code_entries": 0, "census_code_entry_detail": [], "census_enabled": false, "registry_equals_off": true, "registry_size": 226, "veracium_file": "/tmp/claude-1000/-home-ubuntu-Dev-veracium/7ad7b38d-48d0-4b1f-8f39-0771cbbe3353/scratchpad/r29inv7/inv7/twin/src/veracium/__init__.py"}
   site_realized: {"distinct_digests": 1, "equal": true, "first_difference": null, "missing": [], "runs": 8}
 
 OBSERVED SYMBOLS: 130 wrapped of 137 declared; EXCLUDED (unreachable from outside, by name):
