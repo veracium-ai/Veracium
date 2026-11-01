@@ -1,0 +1,156 @@
+{
+ "body_sha256": "2faf2f94401fe2314cbb515eff0aa930a94ebe892ff29d011eddedd81aab3e4b",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_runtime_status.py::test_a_record_canonicalised_on_one_side_only_matches_nothing",
+    "tests/test_0007_runtime_status.py::test_each_key_field_separates_two_records_that_agree_on_every_other"
+   ],
+   "definition_sha256": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/schema_version.py",
+   "good": true,
+   "id": "NOOP-SA-R1-03-schema_version",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_runtime_status.py::test_a_record_canonicalised_on_one_side_only_matches_nothing",
+    "tests/test_0007_runtime_status.py::test_each_key_field_separates_two_records_that_agree_on_every_other"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def canonical_machine(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R1-03": [
+    "tests/test_0007_runtime_status.py::test_a_record_canonicalised_on_one_side_only_matches_nothing",
+    "tests/test_0007_runtime_status.py::test_each_key_field_separates_two_records_that_agree_on_every_other"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 2,
+    "ok": true,
+    "passed": 2
+   },
+   "last": {
+    "of": 2,
+    "ok": true,
+    "passed": 2
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
+  },
+  "definitions": {
+   "sa12-canonicalise-one-side": "577dff483540b89c56df5caa2fdcd2696477fa38aeeacd62ddaeb1a41786456a",
+   "sa12-drop-machine": "a1b7914b367b3c8c0048e851cc1297723f8c8d4e852ee1a14682df639e064c8b"
+  },
+  "digests": {
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/0007/sa_mutants.py": "01181277f49421388151f40541761d677c01be4591d6033f737ec77b4c20d896",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/schema_version.py": "e6cd98e7cd8f71acd09561069815363806509aeb4edb8c5c7dc58f68f115ad1c",
+   "tests/test_0007_runtime_status.py": "52d3ae22656bcf88108c358e897967b69df1c9e19affb92b4439863a72692d04"
+  },
+  "finding": "SA-R1-03",
+  "honest_nodes": [],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_runtime_status.py::test_each_key_field_separates_two_records_that_agree_on_every_other": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_runtime_status.py::test_each_key_field_separates_two_records_that_agree_on_every_other"
+   ],
+   "definition_sha256": "a1b7914b367b3c8c0048e851cc1297723f8c8d4e852ee1a14682df639e064c8b",
+   "file": "src/veracium/store/schema_version.py",
+   "finding": "SA-R1-03",
+   "good": true,
+   "honest": "n/a",
+   "honest_nodes": [],
+   "id": "sa12-drop-machine",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_runtime_status.py::test_each_key_field_separates_two_records_that_agree_on_every_other"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.67s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "machine dropped from the key"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_runtime_status.py::test_a_record_canonicalised_on_one_side_only_matches_nothing": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_runtime_status.py::test_a_record_canonicalised_on_one_side_only_matches_nothing"
+   ],
+   "definition_sha256": "577dff483540b89c56df5caa2fdcd2696477fa38aeeacd62ddaeb1a41786456a",
+   "file": "src/veracium/store/schema_version.py",
+   "finding": "SA-R1-03",
+   "good": true,
+   "honest": "n/a",
+   "honest_nodes": [],
+   "id": "sa12-canonicalise-one-side",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_runtime_status.py::test_a_record_canonicalised_on_one_side_only_matches_nothing"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.66s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the running build's machine is not canonicalised (a record's is)"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 2
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 2,
+  "killed": 2,
+  "rows": 2,
+  "seconds": 10
+ }
+}

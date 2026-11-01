@@ -1,0 +1,264 @@
+{
+ "body_sha256": "54f16200560fc3db8f08930b685673f7a8f072eed2bfd45828b2bdd98f3b2050",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_migrations_0013.py::test_a1_a_verified_build_migrates_and_its_row_says_verified",
+    "tests/test_migrations_0013.py::test_a5_a_refused_build_is_refused_after_consumption_and_the_store_is_unchanged",
+    "tests/test_migrations_0013.py::test_the_migration_runtime_gate_is_independent_of_0007s"
+   ],
+   "definition_sha256": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
+   "expected": "SURVIVED",
+   "file": "specs/migrations_0013.py",
+   "good": true,
+   "id": "NOOP-SA-R1-02-migrations_0013",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_migrations_0013.py::test_a1_a_verified_build_migrates_and_its_row_says_verified",
+    "tests/test_migrations_0013.py::test_a5_a_refused_build_is_refused_after_consumption_and_the_store_is_unchanged",
+    "tests/test_migrations_0013.py::test_the_migration_runtime_gate_is_independent_of_0007s"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _draft(': the bytes change, the behaviour does not"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]"
+   ],
+   "definition_sha256": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/schema_version.py",
+   "good": true,
+   "id": "NOOP-SA-R1-02-schema_version",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def runtime_status(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R1-02": [
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]",
+    "tests/test_migrations_0013.py::test_a1_a_verified_build_migrates_and_its_row_says_verified",
+    "tests/test_migrations_0013.py::test_a5_a_refused_build_is_refused_after_consumption_and_the_store_is_unchanged",
+    "tests/test_migrations_0013.py::test_the_migration_runtime_gate_is_independent_of_0007s"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 7,
+    "ok": true,
+    "passed": 7
+   },
+   "last": {
+    "of": 7,
+    "ok": true,
+    "passed": 7
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
+   "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
+  },
+  "definitions": {
+   "a1-require-a-record": "c263c6a85a82b6080bbef58ad66af1dfef2d0d7684431ec730203c8ed72a7e48",
+   "a3-runtime-status-alone": "897de5de24b2e04132b6e7922da129fdeaf2a56b96781561b5e029330199b897",
+   "a5-confinement-first": "2a37d4b7bb2c87c428a4630749b26b0bdb539850fc26278c3b432fa6e191711b",
+   "p1-runtime-supported-as-the-gate": "1846c29cb914114a6eee23f75a6c5a7c63564150400e6eea25b2199723302ba0"
+  },
+  "digests": {
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/0013/a_matrix_mutants.py": "48f361791274de79bbe0c1eb61d6821602fd630993f17881ac4c609c62d8bb45",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "specs/migrations_0013.py": "f23307db6fe1223b99af10036748f00974f7a13194c00899fb7ae55970a6d2bf",
+   "src/veracium/store/schema_version.py": "e6cd98e7cd8f71acd09561069815363806509aeb4edb8c5c7dc58f68f115ad1c",
+   "tests/test_0007_runtime_status.py": "52d3ae22656bcf88108c358e897967b69df1c9e19affb92b4439863a72692d04",
+   "tests/test_migrations_0013.py": "d84ddab02b8d163ea848271495d708f034760551d9e6fb7ea2f576c41dd5d650"
+  },
+  "finding": "SA-R1-02",
+  "honest_nodes": [
+   "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[attested]",
+   "tests/test_0007_runtime_status.py::test_p3_a_stamp_below_head_is_refused_by_revalidation_and_rolls_back[attested]",
+   "tests/test_migrations_0013.py::test_a2_the_attested_build_migrates_and_its_row_says_attested"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_migrations_0013.py::test_a1_a_verified_build_migrates_and_its_row_says_verified": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_migrations_0013.py::test_a1_a_verified_build_migrates_and_its_row_says_verified"
+   ],
+   "definition_sha256": "c263c6a85a82b6080bbef58ad66af1dfef2d0d7684431ec730203c8ed72a7e48",
+   "file": "specs/migrations_0013.py",
+   "finding": "SA-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrations_0013.py::test_a2_the_attested_build_migrates_and_its_row_says_attested"
+   ],
+   "id": "a1-require-a-record",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "model",
+   "named_cells": [
+    "tests/test_migrations_0013.py::test_a1_a_verified_build_migrates_and_its_row_says_verified"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.37s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_migrations_0013.py::test_the_migration_runtime_gate_is_independent_of_0007s": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_migrations_0013.py::test_the_migration_runtime_gate_is_independent_of_0007s"
+   ],
+   "definition_sha256": "897de5de24b2e04132b6e7922da129fdeaf2a56b96781561b5e029330199b897",
+   "file": "specs/migrations_0013.py",
+   "finding": "SA-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrations_0013.py::test_a2_the_attested_build_migrates_and_its_row_says_attested"
+   ],
+   "id": "a3-runtime-status-alone",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "model",
+   "named_cells": [
+    "tests/test_migrations_0013.py::test_the_migration_runtime_gate_is_independent_of_0007s"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.27s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_migrations_0013.py::test_a5_a_refused_build_is_refused_after_consumption_and_the_store_is_unchanged": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_migrations_0013.py::test_a5_a_refused_build_is_refused_after_consumption_and_the_store_is_unchanged"
+   ],
+   "definition_sha256": "2a37d4b7bb2c87c428a4630749b26b0bdb539850fc26278c3b432fa6e191711b",
+   "file": "specs/migrations_0013.py",
+   "finding": "SA-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrations_0013.py::test_a2_the_attested_build_migrates_and_its_row_says_attested"
+   ],
+   "id": "a5-confinement-first",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "model",
+   "named_cells": [
+    "tests/test_migrations_0013.py::test_a5_a_refused_build_is_refused_after_consumption_and_the_store_is_unchanged"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.22s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "confinement runs first and, when its probes pass, a refused build migrates"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]"
+   ],
+   "definition_sha256": "1846c29cb914114a6eee23f75a6c5a7c63564150400e6eea25b2199723302ba0",
+   "file": "src/veracium/store/schema_version.py",
+   "finding": "SA-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[attested]",
+    "tests/test_0007_runtime_status.py::test_p3_a_stamp_below_head_is_refused_by_revalidation_and_rolls_back[attested]"
+   ],
+   "id": "p1-runtime-supported-as-the-gate",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "model": 3,
+   "product": 1
+  },
+  "controls": 2,
+  "controls_good": 2,
+  "good": 4,
+  "killed": 4,
+  "rows": 4,
+  "seconds": 26
+ }
+}

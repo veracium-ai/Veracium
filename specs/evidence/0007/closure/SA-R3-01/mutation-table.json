@@ -1,0 +1,257 @@
+{
+ "body_sha256": "dc19f347ebfb35715c53741815a8c731dc18a121aa9f38d8b48be09d302649f2",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[text_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-positional]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[connect-factory]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[set-function]",
+    "tests/test_0013_sa10_gate.py::test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else"
+   ],
+   "definition_sha256": "2f108c8c5252acc1055d23401d2f059447456ea8cc805318b9be162b3fe37401",
+   "expected": "SURVIVED",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "good": true,
+   "id": "NOOP-SA-R3-01-sa10_gate",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[text_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-positional]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[connect-factory]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[set-function]",
+    "tests/test_0013_sa10_gate.py::test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def connect_args_problem(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R3-01": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[text_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-positional]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[connect-factory]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[set-function]",
+    "tests/test_0013_sa10_gate.py::test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 9,
+    "ok": true,
+    "passed": 9
+   },
+   "last": {
+    "of": 9,
+    "ok": true,
+    "passed": 9
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R3-01-sa10_gate": "2f108c8c5252acc1055d23401d2f059447456ea8cc805318b9be162b3fe37401"
+  },
+  "definitions": {
+   "sa-r3-01-connect-forwards-the-callers-arguments": "2aa712ccc8b8a2b5cd313179f4674a36784892b0e4ae2535752c8a6a3a7290f8",
+   "sa-r3-01-replay-runs-recorded-behaviour": "628536abf9b64ef8daaa7ee64ace71eb08a399ffddcacbb472a965d130b57ef9",
+   "sa-r3-01-set-values-unchecked": "272ce944ee734ae47e491cb80287b84cf23f3a62fb352e8ee7c481892116b4ea",
+   "sa-r3-01-the-seam-forwards-the-module": "90490432c98c07ec8f5df2c4902be14cb87b28ad61501bd8760c2818879b2d70"
+  },
+  "digests": {
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/0013/sa10_gate.py": "46a9440f48a0dc7ad1cac13cf421a0cac5e7dd02f798550ea62e403f6551e849",
+   "specs/evidence/0013/sa10_mutants.py": "de1baeb2c985e64125499c158cf9842b8cae3ba913d4f73e2c136d37c6e6ca2a",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0013_sa10_gate.py": "b8b69f6f1300dc2b1341aaa91a25a5181c509c35010448d7cabda36ba0de5481"
+  },
+  "finding": "SA-R3-01",
+  "honest_nodes": [
+   "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-Row]",
+   "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]",
+   "tests/test_0013_sa10_gate.py::test_parameters_are_recorded_by_value_and_replay_compares_every_outcome"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]": "expected-refusal-missing",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-positional]": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-positional]"
+   ],
+   "definition_sha256": "2aa712ccc8b8a2b5cd313179f4674a36784892b0e4ae2535752c8a6a3a7290f8",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R3-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-Row]"
+   ],
+   "id": "sa-r3-01-connect-forwards-the-callers-arguments",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]",
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-positional]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed, 2 warnings in 0.68s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the shipped connect: the caller's arguments, factory included, reach sqlite3.connect"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else"
+   ],
+   "definition_sha256": "90490432c98c07ec8f5df2c4902be14cb87b28ad61501bd8760c2818879b2d70",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R3-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[factory-keyword]"
+   ],
+   "id": "sa-r3-01-the-seam-forwards-the-module",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.59s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the shipped seam: every sqlite3 attribute but connect forwarded"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-function]": "expected-refusal-missing",
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[text_factory-function]": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[text_factory-function]"
+   ],
+   "definition_sha256": "272ce944ee734ae47e491cb80287b84cf23f3a62fb352e8ee7c481892116b4ea",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R3-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-Row]"
+   ],
+   "id": "sa-r3-01-set-values-unchecked",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[row_factory-function]",
+    "tests/test_0013_sa10_gate.py::test_a_settable_attribute_takes_only_its_closed_values[text_factory-function]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.63s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a settable attribute takes any value, a Python factory included"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[connect-factory]": "assertion",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[set-function]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[connect-factory]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[set-function]"
+   ],
+   "definition_sha256": "628536abf9b64ef8daaa7ee64ace71eb08a399ffddcacbb472a965d130b57ef9",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R3-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_parameters_are_recorded_by_value_and_replay_compares_every_outcome"
+   ],
+   "id": "sa-r3-01-replay-runs-recorded-behaviour",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[connect-factory]",
+    "tests/test_0013_sa10_gate.py::test_replay_never_runs_recorded_caller_behaviour[set-function]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.31s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "replay re-runs a recorded connect's arguments and a recorded set's value"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "gate": 4
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 4,
+  "killed": 4,
+  "rows": 4,
+  "seconds": 14
+ }
+}

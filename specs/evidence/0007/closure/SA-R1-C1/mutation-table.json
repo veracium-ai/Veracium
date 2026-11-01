@@ -1,0 +1,125 @@
+{
+ "body_sha256": "210e5d6672dc78c7ed09bb490bc805e6bc270aaf620405e3a56025770e34d343",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_sa_r1_c1_census_scopes.py::test_sa_r1_c1_the_two_censuses_keep_their_own_scope_and_counts"
+   ],
+   "definition_sha256": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b",
+   "expected": "SURVIVED",
+   "file": "specs/0013-store-migrations.md",
+   "good": true,
+   "id": "NOOP-SA-R1-C1-0013-store-migrations",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_sa_r1_c1_census_scopes.py::test_sa_r1_c1_the_two_censuses_keep_their_own_scope_and_counts"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'are two censuses, each with its own fixture scope (v0.12, C1):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R1-C1": [
+    "tests/test_0007_sa_r1_c1_census_scopes.py::test_sa_r1_c1_the_two_censuses_keep_their_own_scope_and_counts"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 1,
+    "ok": true,
+    "passed": 1
+   },
+   "last": {
+    "of": 1,
+    "ok": true,
+    "passed": 1
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
+  },
+  "definitions": {
+   "c1-the-two-censuses-folded-into-one": "f2b77a27d27e3a35573aa6d5bbad021c896f513bf66e5486343883c33224df4d"
+  },
+  "digests": {
+   "specs/0013-store-migrations.md": "9145941b721ad1a95b18a07f7e93b6a60742fa001a57daccaac10198bb03670d",
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0007_sa_r1_c1_census_scopes.py": "26aba8133c34430599d7e546f79b21068667ffb9336d6ce07ee27f3b45df3af3"
+  },
+  "finding": "SA-R1-C1",
+  "honest_nodes": [],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1,
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_sa_r1_c1_census_scopes.py::test_sa_r1_c1_the_two_censuses_keep_their_own_scope_and_counts": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_sa_r1_c1_census_scopes.py::test_sa_r1_c1_the_two_censuses_keep_their_own_scope_and_counts"
+   ],
+   "definition_sha256": "f2b77a27d27e3a35573aa6d5bbad021c896f513bf66e5486343883c33224df4d",
+   "file": "specs/0013-store-migrations.md",
+   "finding": "SA-R1-C1",
+   "good": true,
+   "honest": "n/a",
+   "honest_nodes": [],
+   "id": "c1-the-two-censuses-folded-into-one",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "text",
+   "named_cells": [
+    "tests/test_0007_sa_r1_c1_census_scopes.py::test_sa_r1_c1_the_two_censuses_keep_their_own_scope_and_counts"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.08s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the conflation round 1 named: one census carrying the step table's 432/1,685, its scope unstated, and the 48 PA1 fixtures' own scope and figures gone"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "text": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 2
+ }
+}

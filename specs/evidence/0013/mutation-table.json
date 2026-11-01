@@ -1,5 +1,5 @@
 {
- "body_sha256": "4ed4a2970fd814aa82bddce9c9c6d84c66c40c84fc0667b1cadb8636da3f9910",
+ "body_sha256": "4b7ddd59c01950bcc7c59f242d265bf060015d15a3c8f390fe212080aea068a1",
  "controls": [
   {
    "anchor_counts": [
@@ -62,7 +62,7 @@
    "cells_passed": 12,
    "honest_passed": 3
   },
-  "commit": "d087f6e7218fd66faed2ee0b43762019a4963c74",
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "9b2e6d22705682c38221fb8a0e1cbbef9bef7c2e4d6a4e5e204bd43024aa7685"
   },
@@ -90,7 +90,7 @@
    "specs/evidence/0013/steptable.py": "3bd0703a285479090d542883fecd10c1165eb4857dc70c7f4f0ef1c3a5cdab29",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "src/veracium/store/migration.py": "be5542418a560310b45af5555602b10f2e8cc6cb161730be45c6101495e6dc42",
-   "src/veracium/store/schema_version.py": "fd1ab13f51ea2b5d897d46e024a007ce71066253f3dd7760c8be0287fb994d5c",
+   "src/veracium/store/schema_version.py": "e6cd98e7cd8f71acd09561069815363806509aeb4edb8c5c7dc58f68f115ad1c",
    "tests/test_0013_pa1_campaign_cells.py": "0df0af6e7812e379fab5c64f8c72528f015a114baeee652bd83350f25ec961b5"
   },
   "finding": "0013-PA1",
@@ -104,33 +104,18 @@
   "spec": "0013",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "docs/api.md",
-   "specs/0003-supersession-authority.md",
-   "specs/0008-staleness-clearing.md",
-   "specs/0022-source-revocation.md",
-   "specs/0041-targeted-redaction.md",
-   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/closure_findings.py",
    "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0047/carrier_inventory.py",
-   "specs/evidence/mutation_protocol.py",
-   "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/authority.py",
-   "src/veracium/compile.py",
-   "src/veracium/dryrun.py",
-   "src/veracium/graph.py",
-   "src/veracium/ingest.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/prompts.py",
-   "src/veracium/schema.py",
-   "src/veracium/store/base.py",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
    "src/veracium/store/schema_version.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0025_enforcement.py",
-   "tests/test_0025_subject_grammar.py",
-   "tests/test_0047_rii01_wiki_bind.py"
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "perturbations": [
@@ -20338,7 +20323,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_legacy_row_in_isoformat_plus0000_form_migrates",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 6.33s",
+   "pytest": "1 failed, 11 passed in 2.28s",
    "what": "present keys compared as strings: a '+00:00' legacy value re-serialised as 'Z' falsely refuses"
   },
   {
@@ -20368,7 +20353,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_an_added_key_with_a_non_default_value_refuses_at_the_chain_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 7.20s",
+   "pytest": "1 failed, 11 passed in 2.22s",
    "what": "a key the dump added is accepted whatever its value"
   },
   {
@@ -20398,7 +20383,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_an_undeclared_raw_key_refuses_at_the_chain_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 5.62s",
+   "pytest": "1 failed, 11 passed in 2.23s",
    "what": "a raw key no model declares is dropped silently, outside the retired set (0016 D2)"
   },
   {
@@ -20443,7 +20428,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_an_undeclared_raw_key_refuses_at_the_chain_step",
    "outcome": "KILLED",
-   "pytest": "9 failed, 3 passed in 4.82s",
+   "pytest": "9 failed, 3 passed in 1.68s",
    "what": "the legacy row read through the model: its dropped keys and refilled defaults pass vacuously"
   },
   {
@@ -20486,7 +20471,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_missing_observed_at_is_filled_from_the_one_clock_read",
    "outcome": "KILLED",
-   "pytest": "8 failed, 4 passed in 5.74s",
+   "pytest": "8 failed, 4 passed in 1.63s",
    "what": "the clock re-read per row: the fill is not the recorded value"
   },
   {
@@ -20519,7 +20504,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_present_observed_at_is_kept",
    "outcome": "KILLED",
-   "pytest": "3 failed, 9 passed in 5.61s",
+   "pytest": "3 failed, 9 passed in 2.05s",
    "what": "a present observed_at overwritten with the migration's clock"
   },
   {
@@ -20549,7 +20534,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_stamp_refuses_at_the_stamp",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 5.64s",
+   "pytest": "1 failed, 11 passed in 2.25s",
    "what": "the stamp postcondition reads the value the step meant to write, not the database"
   },
   {
@@ -20580,7 +20565,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_store_identity_refuses_at_its_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 5.29s",
+   "pytest": "1 failed, 11 passed in 2.25s",
    "what": "the identity postcondition run once, at the end: it still names its step, after later steps wrote"
   },
   {
@@ -20610,7 +20595,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_stamp_refuses_at_the_stamp",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 5.41s",
+   "pytest": "1 failed, 11 passed in 2.32s",
    "what": "a failed postcondition commits the migration's writes before refusing"
   },
   {
@@ -20642,7 +20627,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_two_legacy_outcome_rows_both_convert",
    "outcome": "KILLED",
-   "pytest": "2 failed, 10 passed in 4.83s",
+   "pytest": "2 failed, 10 passed in 2.29s",
    "what": "research stage-2 F1: the step converts only the first legacy outcome row; a postcondition that took its outcome set from the step would find nothing to check"
   },
   {
@@ -20691,7 +20676,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_legacy_row_in_isoformat_plus0000_form_migrates",
    "outcome": "KILLED",
-   "pytest": "11 failed, 1 passed in 3.82s",
+   "pytest": "11 failed, 1 passed in 1.52s",
    "what": "research stage-2 F2: the step writes a row that is not JSON; the postcondition must refuse, never raise"
   },
   {
@@ -20725,7 +20710,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_outcome_chain_refuses_at_its_step",
    "outcome": "KILLED",
-   "pytest": "3 failed, 9 passed in 4.48s",
+   "pytest": "3 failed, 9 passed in 2.42s",
    "what": "the chain step's postcondition removed"
   },
   {
@@ -20755,7 +20740,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 4.74s",
+   "pytest": "1 failed, 11 passed in 2.27s",
    "what": "the wiki step's postcondition removed"
   },
   {
@@ -20785,7 +20770,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_store_identity_refuses_at_its_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 4.40s",
+   "pytest": "1 failed, 11 passed in 2.29s",
    "what": "the identity step's postcondition removed"
   },
   {
@@ -20815,7 +20800,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_baseline_event_refuses_at_its_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 4.40s",
+   "pytest": "1 failed, 11 passed in 2.36s",
    "what": "the baseline step's postcondition removed"
   },
   {
@@ -20845,7 +20830,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_store_epoch_refuses_at_its_step",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 3.89s",
+   "pytest": "1 failed, 11 passed in 2.34s",
    "what": "the epoch step's postcondition removed"
   },
   {
@@ -20875,7 +20860,7 @@
    "killer_failed": true,
    "killing_cell": "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_stamp_refuses_at_the_stamp",
    "outcome": "KILLED",
-   "pytest": "1 failed, 11 passed in 3.98s",
+   "pytest": "1 failed, 11 passed in 2.17s",
    "what": "the stamp's postcondition removed"
   }
  ],
@@ -20933,8 +20918,8 @@
   "perturbations_not_applicable": 109,
   "rows": 17,
   "seconds": {
-   "part_a": 544,
-   "total": 743
+   "part_a": 143,
+   "total": 220
   }
  }
 }

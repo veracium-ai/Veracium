@@ -282,6 +282,16 @@ def test_a_root_job_is_a_named_failure_before_anything_runs(tmp_path):
     assert "root" in r["reason"] and job.job_state_problem(1000) is None
 
 
+def test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host(tmp_path, monkeypatch):
+    """C1 (round 3), the reviewer's host: the process reports euid 0, and a synthetic case still reaches the behaviour
+    it tests, because `_decide` passes its euid explicitly. A helper that let the job read the host's euid would make
+    every synthetic case wrong-job-state there (the reviewer's 18 root-host failures)."""
+    import os
+    monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
+    assert job.job_state_problem(None) is not None                         # the host reads as root
+    assert _decide(tmp_path)["outcome"] == "evidence"
+
+
 @pytest.mark.parametrize("var,value", [
     ("PYTEST_ADDOPTS", "--deselect=tests/test_a.py::test_second"),        # the reviewer's SA-R3-02 route
     ("PYTEST_ADDOPTS", "-o python_functions=test_first"),                 # research's: collection itself shrinks
@@ -566,7 +576,9 @@ def _decided(tmp_path, monkeypatch, **kw):
     try:
         return _decide(tmp_path, modules=rule, **kw)
     except Exception as exc:  # noqa: BLE001 - the escape IS the defect under test
-        pytest.fail(f"decide raised {type(exc).__name__} (an escape, not a closed outcome): {exc}")
+        # an AssertionError, not pytest.fail: the mutation classifier (specs/evidence/mutation_kinds.py) reads a
+        # `Failed:` message as an unclassified failure, so the docstring's "by assertion" was true only in-process
+        raise AssertionError(f"decide raised {type(exc).__name__} (an escape, not a closed outcome): {exc}") from exc
 
 
 def _fifo_releaser(path, deadline=10.0):

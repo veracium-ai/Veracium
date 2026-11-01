@@ -84,6 +84,15 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 DIGEST_SCRIPT = HERE / "sa10_digest.py"
 
+# FROZEN at the SQLite attestation amendment's round 2 (2026-10-25; specs/reviews.py 0007 external round 16); its
+# implementation accepted at round 5 (2026-10-31). Round 2, verbatim: "Freeze the design on INV-SA1–INV-SA12, the
+# carrier-specific A1–A15 / P1–P3 matrix, and the closed write-classification contract in §4c, including N1–N12 and
+# C1–C3." (0013's A16 and N13–N15 were added at 0013 v35, after the freeze; they are not part of it.)
+# Round 2's I1 names THIS table: "the closed 33-action table".
+# THE GOVERNING RULE FORWARD, quoted from the banked verdicts, never paraphrased: "The remaining work is
+# implementation and its required mutant-backed acceptance checks, not another design round." (round 2) and
+# "Round 2's design acceptance remains in force." (round 5)
+# Adding, removing or re-classing a code below is reopening design review, not a constant edit.
 # ---- the closed action table (§5f.1), by NAME: the result codes SQLITE_ERROR..SQLITE_WARNING share the values 1-28,
 # and the module does not expose code 0 (SQLITE_COPY, obsolete), so a table built from the module's constants by value
 # would be neither closed nor complete. A code outside this table is refused by the default branch, never by a row.
@@ -115,6 +124,15 @@ SCHEMA_TABLE_NAMES = frozenset({"sqlite_master", "sqlite_schema", "sqlite_temp_m
 DDL_SITES = frozenset({("veracium/store/migration.py", "_apply_forward"),
                        ("veracium/store/schema_version.py", "_repair_drift")})
 
+# FROZEN at the SQLite attestation amendment's round 2 (2026-10-25; specs/reviews.py 0007 external round 16); its
+# implementation accepted at round 5 (2026-10-31). Round 2, verbatim: "Freeze the design on INV-SA1–INV-SA12, the
+# carrier-specific A1–A15 / P1–P3 matrix, and the closed write-classification contract in §4c, including N1–N12 and
+# C1–C3." (0013's A16 and N13–N15 were added at 0013 v35, after the freeze; they are not part of it.)
+# Round 2's I1 names THIS vocabulary: "Freeze the read pragma vocabulary by name and argument shape."
+# THE GOVERNING RULE FORWARD, quoted from the banked verdicts, never paraphrased: "The remaining work is
+# implementation and its required mutant-backed acceptance checks, not another design round." (round 2) and
+# "Round 2's design acceptance remains in force." (round 5)
+# Admitting a name or an argument shape below is reopening design review, not a constant edit.
 # ---- the pragma read vocabulary, frozen by name and argument shape, enumerated from the ladder at this pin (every
 # entry must be observed, so the list cannot outgrow the ladder silently). NONE: no argument; IDENT: one identifier.
 NONE, IDENT = "none", "ident"
@@ -527,6 +545,16 @@ class _Seam:
 
 
 # ---- classification -----------------------------------------------------------------------------------------------
+# FROZEN at the SQLite attestation amendment's round 2 (2026-10-25; specs/reviews.py 0007 external round 16); its
+# implementation accepted at round 5 (2026-10-31). Round 2, verbatim: "Freeze the design on INV-SA1–INV-SA12, the
+# carrier-specific A1–A15 / P1–P3 matrix, and the closed write-classification contract in §4c, including N1–N12 and
+# C1–C3." (0013's A16 and N13–N15 were added at 0013 v35, after the freeze; they are not part of it.)
+# §4c's class (b), as round 2 closed SA-R1-01: "§4c admits exact additive table/index constructors and exact repair
+# drops of rebuildable indexes." The (b2) drops below and the head-constructor rule (constructor_problems) are it.
+# THE GOVERNING RULE FORWARD, quoted from the banked verdicts, never paraphrased: "The remaining work is
+# implementation and its required mutant-backed acceptance checks, not another design round." (round 2) and
+# "Round 2's design acceptance remains in force." (round 5)
+# Widening either text class is reopening design review, not a constant edit.
 def text_classes():
     """The text classes from the tree's own constants: (a) ALTERS_* members, (b1) head table/index constructors,
     (b2) `DROP INDEX IF EXISTS <head rebuildable index>`."""

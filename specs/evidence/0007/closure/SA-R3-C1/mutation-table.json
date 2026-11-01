@@ -1,0 +1,123 @@
+{
+ "body_sha256": "74048111ce4036b9ad5b649ee152308a2ab2815d04b3adc2bff655f8b69383f6",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_attestation_jobs.py::test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host"
+   ],
+   "definition_sha256": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f",
+   "expected": "SURVIVED",
+   "file": "tests/test_0007_attestation_jobs.py",
+   "good": true,
+   "id": "NOOP-SA-R3-C1-test_0007_attestation_jobs",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_attestation_jobs.py::test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _decide(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R3-C1": [
+    "tests/test_0007_attestation_jobs.py::test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 2,
+    "ok": true,
+    "passed": 2
+   },
+   "last": {
+    "of": 2,
+    "ok": true,
+    "passed": 2
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
+  },
+  "definitions": {
+   "r3-c1-the-synthetic-euid-read-from-the-host": "d01aff964f611438563d001cef3fdf2055b01d5d8b76ad6d39644a6e2e115d7f"
+  },
+  "digests": {
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0007_attestation_jobs.py": "541d6cdf2f33379184f9e7849bd5029245635d955f800141b99b52f632ef2bc4"
+  },
+  "finding": "SA-R3-C1",
+  "honest_nodes": [
+   "tests/test_0007_attestation_jobs.py::test_a_root_job_is_a_named_failure_before_anything_runs"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_attestation_jobs.py::test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_attestation_jobs.py::test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host"
+   ],
+   "definition_sha256": "d01aff964f611438563d001cef3fdf2055b01d5d8b76ad6d39644a6e2e115d7f",
+   "file": "tests/test_0007_attestation_jobs.py",
+   "finding": "SA-R3-C1",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_attestation_jobs.py::test_a_root_job_is_a_named_failure_before_anything_runs"
+   ],
+   "id": "r3-c1-the-synthetic-euid-read-from-the-host",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "fixture",
+   "named_cells": [
+    "tests/test_0007_attestation_jobs.py::test_r3_c1_a_synthetic_case_reaches_its_outcome_on_a_root_host"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 3.29s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "fixture": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 23
+ }
+}

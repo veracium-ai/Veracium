@@ -29,7 +29,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SPECS = ROOT / "specs"
-TRACKED = ("0001", "0022", "0023", "0024", "0025", "0028", "0030", "0031", "0037", "0038", "0039", "0041", "0042", "0043")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3)
+TRACKED = ("0001", "0007", "0022", "0023", "0024", "0025", "0028", "0030", "0031", "0037", "0038", "0039", "0041", "0042", "0043")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3); 0007 at the SQLite attestation amendment's implementation-acceptance fold (2026-11-01)
 
 # Specs whose returned verdicts are recorded WITHOUT `raised`, on purpose, and why. A spec still in design review, or
 # design-accepted with implementation obligations, cannot declare its raised ids yet: every declared id needs a closure row (completeness), and

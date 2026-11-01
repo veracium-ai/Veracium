@@ -2928,6 +2928,10 @@ def test_new_closure_evidence_is_behavioral():
         # separate arc, whose closures will be behavioral. Growing this is a
         # visible diff.
         ("0037", "external"): 4,
+        # 0007 (2026-11-01, TRACKED entry at the SQLite attestation amendment's acceptance fold): rounds 1-14
+        # (2026-08) closed in their own disposition sections (§11-§24) before P4 existed, so their rows OPEN
+        # the section; the amendment's rounds 15-19 run pytest nodes, each killed by its closure mutants.
+        ("0007", "external"): 14,
     }
     # 0030 (2026-09-04, the joint arc's ledger written after acceptance):
     # its text-only closures are NOT prefix-shaped — design/prose findings

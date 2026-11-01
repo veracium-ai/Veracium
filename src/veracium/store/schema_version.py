@@ -1163,6 +1163,17 @@ reports as `x86_64`/`aarch64`. Every other value is its own key: `i686` is NOT `
 _MACHINE_RE = re.compile(r"[a-z0-9_]+")
 _SYSTEM_RE = re.compile(r"[A-Za-z0-9_]+")
 LIBC_TOKENS = frozenset({"glibc", "musl", "none"})
+# FROZEN at the SQLite attestation amendment's round 2 (2026-10-25; specs/reviews.py 0007 external round 16); its
+# implementation accepted at round 5 (2026-10-31). Round 2, verbatim: "Freeze the design on INV-SA1–INV-SA12, the
+# carrier-specific A1–A15 / P1–P3 matrix, and the closed write-classification contract in §4c, including N1–N12 and
+# C1–C3." (0013's A16 and N13–N15 were added at 0013 v35, after the freeze; they are not part of it.)
+# Round 2's I4 names THIS key and its canonicalisers (canonical_machine/_system/_libc/_platform below): "Use one
+# canonicalizer for process identity, record validation and the writer." Round 2 on SA-R1-03: "§4d includes measured
+# canonical `machine`, `system` and `libc` in the key used for matching and conflicts."
+# THE GOVERNING RULE FORWARD, quoted from the banked verdicts, never paraphrased: "The remaining work is
+# implementation and its required mutant-backed acceptance checks, not another design round." (round 2) and
+# "Round 2's design acceptance remains in force." (round 5)
+# Dropping a field, adding one, or canonicalising one side only is reopening design review, not a constant edit.
 KEY_FIELDS = ("sqlite_version", "source_id", "features", "compile_options_digest", "machine", "system", "libc")
 RUNTIME_STATUSES = ("attested", "verified", "refused")
 """THE status vocabulary (§4a), one source: production's INV-SA11 grammar is it minus `refused` (a refused build never

@@ -1,0 +1,131 @@
+{
+ "body_sha256": "4e19aa979ccbfca750866b2f5351b132838ccdd9416a1c3c8ef8c92f4cf86e16",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key[same-key-future]",
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_keeps_v19s_order"
+   ],
+   "definition_sha256": "a74b001695132d815610c332b022781c003d09d0a518b4ef2749e2eb3d59d99b",
+   "expected": "SURVIVED",
+   "file": "specs/attestation_writer.py",
+   "good": true,
+   "id": "NOOP-SA-R3-04-attestation_writer",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key[same-key-future]",
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_keeps_v19s_order"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def write_records(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R3-04": [
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key[same-key-future]",
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_keeps_v19s_order"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   },
+   "last": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R3-04-attestation_writer": "a74b001695132d815610c332b022781c003d09d0a518b4ef2749e2eb3d59d99b"
+  },
+  "definitions": {
+   "r3-04-fresh-checks-only-current-then-clears": "3632798b6fc7aa77632dd7b137edc471e0627d512b9bacaeb8fab88122a68038"
+  },
+  "digests": {
+   "specs/attestation_writer.py": "d4816be107b2b18fb7a6ec56a396bc8ed4639dab05195ff065aa2ee9157fd61b",
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0007_attestation_writer.py": "33b011f5e0054562f72d789dd7433c7ecc0e794902aae73de80ab9a94c7f4b19"
+  },
+  "finding": "SA-R3-04",
+  "honest_nodes": [
+   "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[valid-bootstrap-fresh]"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key[same-key-future]": "expected-refusal-missing",
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_keeps_v19s_order": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key[same-key-future]",
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_keeps_v19s_order"
+   ],
+   "definition_sha256": "3632798b6fc7aa77632dd7b137edc471e0627d512b9bacaeb8fab88122a68038",
+   "file": "specs/attestation_writer.py",
+   "finding": "SA-R3-04",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[valid-bootstrap-fresh]"
+   ],
+   "id": "r3-04-fresh-checks-only-current-then-clears",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_erases_no_future_or_malformed_record_of_any_key[same-key-future]",
+    "tests/test_0007_attestation_writer.py::test_real_a_fresh_write_keeps_v19s_order"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded fresh write: no future or malformed record refuses, and v19's order is never applied"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 7
+ }
+}

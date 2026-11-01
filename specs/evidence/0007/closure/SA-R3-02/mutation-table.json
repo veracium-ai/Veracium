@@ -1,0 +1,173 @@
+{
+ "body_sha256": "e4c10930213aa8f0fcf1708c0b8c21e9d3c7efb821f455abafe0f1a6a1f88c18",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTEST_ADDOPTS--o python_functions=test_first]",
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTHONPATH-/elsewhere]",
+    "tests/test_0007_attestation_jobs.py::test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset[missing]",
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[deselect]"
+   ],
+   "definition_sha256": "35783f075a00f832b18479d6ce4fbfbbd04b700c55c82b001805aea6040ffde9",
+   "expected": "SURVIVED",
+   "file": "specs/attestation_job.py",
+   "good": true,
+   "id": "NOOP-SA-R3-02-attestation_job",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTEST_ADDOPTS--o python_functions=test_first]",
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTHONPATH-/elsewhere]",
+    "tests/test_0007_attestation_jobs.py::test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset[missing]",
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[deselect]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def node_problems(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R3-02": [
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTEST_ADDOPTS--o python_functions=test_first]",
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTHONPATH-/elsewhere]",
+    "tests/test_0007_attestation_jobs.py::test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset[missing]",
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[deselect]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 5,
+    "ok": true,
+    "passed": 5
+   },
+   "last": {
+    "of": 5,
+    "ok": true,
+    "passed": 5
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R3-02-attestation_job": "35783f075a00f832b18479d6ce4fbfbbd04b700c55c82b001805aea6040ffde9"
+  },
+  "definitions": {
+   "r3-02-modules-compared-nodes-not": "79d397b779c71bfae32fcb8be235d3ff192e83011914f606a7c8b2741042d43f",
+   "r3-02-the-environment-not-checked": "22ec1c431225b30c8a85486ea5bdedd64db33b0ad97f72307ec33568d2694918"
+  },
+  "digests": {
+   "specs/attestation_job.py": "5560cfd4189d37aef663f06c2dfa1840e925d949db3963d5515e46c0dfdc82a6",
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0007_attestation_jobs.py": "541d6cdf2f33379184f9e7849bd5029245635d955f800141b99b52f632ef2bc4"
+  },
+  "finding": "SA-R3-02",
+  "honest_nodes": [
+   "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[control]"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_attestation_jobs.py::test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset[missing]": "assertion",
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[deselect]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_attestation_jobs.py::test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset[missing]",
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[deselect]"
+   ],
+   "definition_sha256": "79d397b779c71bfae32fcb8be235d3ff192e83011914f606a7c8b2741042d43f",
+   "file": "specs/attestation_job.py",
+   "finding": "SA-R3-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[control]"
+   ],
+   "id": "r3-02-modules-compared-nodes-not",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_attestation_jobs.py::test_the_junit_must_equal_the_invocations_own_collection_as_a_multiset[missing]",
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[deselect]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 11.72s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded rule: the JUnit's modules compared with the rule's, its nodes never compared with the invocation's own collection"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTEST_ADDOPTS--o python_functions=test_first]": "assertion",
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTHONPATH-/elsewhere]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTEST_ADDOPTS--o python_functions=test_first]",
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTHONPATH-/elsewhere]"
+   ],
+   "definition_sha256": "22ec1c431225b30c8a85486ea5bdedd64db33b0ad97f72307ec33568d2694918",
+   "file": "specs/attestation_job.py",
+   "finding": "SA-R3-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_attestation_jobs.py::test_the_real_suite_process_is_bound_by_its_collection_and_its_exit_status[control]"
+   ],
+   "id": "r3-02-the-environment-not-checked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTEST_ADDOPTS--o python_functions=test_first]",
+    "tests/test_0007_attestation_jobs.py::test_an_environment_that_shapes_pytest_refuses_the_job_before_anything_runs[PYTHONPATH-/elsewhere]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite (the reviewer's deselect route)"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 2
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 2,
+  "killed": 2,
+  "rows": 2,
+  "seconds": 68
+ }
+}

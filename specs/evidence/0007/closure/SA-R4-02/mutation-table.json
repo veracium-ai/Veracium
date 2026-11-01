@@ -1,0 +1,182 @@
+{
+ "body_sha256": "46a174f4d3ed08fd8c34c75c93b33b45075338534ddd4a1c593ca9e475247a88",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-bad-digest-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-extra-field-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-false-probe-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-missing-confinement-fresh]"
+   ],
+   "definition_sha256": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff",
+   "expected": "SURVIVED",
+   "file": "specs/attestation_writer.py",
+   "good": true,
+   "id": "NOOP-SA-R4-02-attestation_writer",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-bad-digest-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-extra-field-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-false-probe-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-missing-confinement-fresh]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def write_records(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R4-02": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-bad-digest-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-extra-field-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-false-probe-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-missing-confinement-fresh]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 6,
+    "ok": true,
+    "passed": 6
+   },
+   "last": {
+    "of": 6,
+    "ok": true,
+    "passed": 6
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
+  },
+  "definitions": {
+   "r4-02-per-record-validation-only": "788cb370ee6bf040a18bfb8550b47afd5a2db1a5249fd1621e8fe5ce4162b16f",
+   "r4-02-the-original-records-unvalidated": "53bd0823b900c61b2ef96da07603ba3a36400263ae737942a558d9170a70aa9f"
+  },
+  "digests": {
+   "specs/attestation_writer.py": "d4816be107b2b18fb7a6ec56a396bc8ed4639dab05195ff065aa2ee9157fd61b",
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0007_attestation_writer.py": "33b011f5e0054562f72d789dd7433c7ecc0e794902aae73de80ab9a94c7f4b19"
+  },
+  "finding": "SA-R4-02",
+  "honest_nodes": [
+   "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[valid-bootstrap-fresh]"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write": "expected-refusal-missing",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-bad-digest-fresh]": "expected-refusal-missing",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-extra-field-fresh]": "expected-refusal-missing",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-false-probe-fresh]": "expected-refusal-missing",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-missing-confinement-fresh]": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-bad-digest-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-extra-field-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-false-probe-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-missing-confinement-fresh]"
+   ],
+   "definition_sha256": "53bd0823b900c61b2ef96da07603ba3a36400263ae737942a558d9170a70aa9f",
+   "file": "specs/attestation_writer.py",
+   "finding": "SA-R4-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[valid-bootstrap-fresh]"
+   ],
+   "id": "r4-02-the-original-records-unvalidated",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-bad-digest-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-missing-confinement-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-false-probe-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[same-key-extra-field-fresh]",
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.07s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded fresh write: a same-key current record the production validator rejects is replaced, never refused"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write"
+   ],
+   "definition_sha256": "788cb370ee6bf040a18bfb8550b47afd5a2db1a5249fd1621e8fe5ce4162b16f",
+   "file": "specs/attestation_writer.py",
+   "finding": "SA-R4-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_the_reviewers_rows_in_both_modes[valid-bootstrap-fresh]"
+   ],
+   "id": "r4-02-per-record-validation-only",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0007_attestation_writer.py::test_r4_02_a_conflicting_duplicate_in_the_original_refuses_a_fresh_write"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "per-record validation without the artifact-level check: a conflicting duplicate passes"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 2
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 2,
+  "killed": 2,
+  "rows": 2,
+  "seconds": 10
+ }
+}

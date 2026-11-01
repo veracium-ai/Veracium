@@ -1,0 +1,236 @@
+{
+ "body_sha256": "e2249f081626c81ec2acae809db58003198b6c1ae094a1bab67406877e477a81",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0013_sa10_gate.py::test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused",
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement",
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ],
+   "definition_sha256": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20",
+   "expected": "SURVIVED",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "good": true,
+   "id": "NOOP-SA-R1-01-sa10_gate",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused",
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement",
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def constructor_problems(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "SA-R1-01": [
+    "tests/test_0013_sa10_gate.py::test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused",
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement",
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "control_definitions": {
+   "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
+  },
+  "definitions": {
+   "N1-site-admits-schema-writes": "d767478b922c3ac696ecdbc3c6d8a7682f094e080e2cee7931bcfe46aec18250",
+   "N2-b1-by-prefix": "d7fc00d5c88fab0087a0fffb4ebc4b702d63ff25ccb54383501f2f78537aeda3",
+   "N2-row-count-postcondition": "24576817687faf5334f0ba17f0ceef4dc18185d2ba1021dcd6026d5384b6a89e",
+   "N3-b2-every-index": "b119ec762d9a609b506556d715294373d70c855b79ded3ef8a077838cb7d70fb"
+  },
+  "digests": {
+   "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
+   "specs/evidence/0013/sa10_gate.py": "46a9440f48a0dc7ad1cac13cf421a0cac5e7dd02f798550ea62e403f6551e849",
+   "specs/evidence/0013/sa10_mutants.py": "de1baeb2c985e64125499c158cf9842b8cae3ba913d4f73e2c136d37c6e6ca2a",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0013_sa10_gate.py": "b8b69f6f1300dc2b1341aaa91a25a5181c509c35010448d7cabda36ba0de5481"
+  },
+  "finding": "SA-R1-01",
+  "honest_nodes": [
+   "tests/test_0013_sa10_gate.py::test_the_control_harness_is_green_without_a_channel[allowlist]"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0007",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/closure_findings.py",
+   "specs/evidence/0013/sa10_gate.py",
+   "specs/render_closure.py",
+   "specs/reviews.py",
+   "src/veracium/store/schema_version.py",
+   "tests/test_0007_attestation_jobs.py",
+   "tests/test_spec_gate.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused": "assertion",
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused",
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ],
+   "definition_sha256": "d767478b922c3ac696ecdbc3c6d8a7682f094e080e2cee7931bcfe46aec18250",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R1-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_the_control_harness_is_green_without_a_channel[allowlist]"
+   ],
+   "id": "N1-site-admits-schema-writes",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused",
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 1.36s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement"
+   ],
+   "definition_sha256": "d7fc00d5c88fab0087a0fffb4ebc4b702d63ff25ccb54383501f2f78537aeda3",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R1-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_the_control_harness_is_green_without_a_channel[allowlist]"
+   ],
+   "id": "N2-b1-by-prefix",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.06s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ],
+   "definition_sha256": "b119ec762d9a609b506556d715294373d70c855b79ded3ef8a077838cb7d70fb",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R1-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_the_control_harness_is_green_without_a_channel[allowlist]"
+   ],
+   "id": "N3-b2-every-index",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_n3_dropping_and_recreating_the_op_key_unique_index_is_refused_on_the_drop"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.97s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "N3: (b2) widened from the rebuildable indexes to every index"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement"
+   ],
+   "definition_sha256": "24576817687faf5334f0ba17f0ceef4dc18185d2ba1021dcd6026d5384b6a89e",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "SA-R1-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0013_sa10_gate.py::test_the_control_harness_is_green_without_a_channel[allowlist]"
+   ],
+   "id": "N2-row-count-postcondition",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0013_sa10_gate.py::test_n2_a_count_preserving_rebuild_is_refused_statement_by_statement"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.98s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "gate": 4
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 4,
+  "killed": 4,
+  "rows": 4,
+  "seconds": 23
+ }
+}

@@ -109,7 +109,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/sqlite.py", 4043): "control-flow", ("store/sqlite.py", 3116): "argument-check",
     ("store/revocation.py", 56): "predicate-helper", ("store/revocation.py", 110): "control-flow", ("store/revocation.py", 145): "control-flow",
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
-    ("store/schema_version.py", 1972): "argument-check", ("store/schema_version.py", 2146): "control-flow",
+    ("store/schema_version.py", 1983): "argument-check", ("store/schema_version.py", 2157): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
     ("mcp_server.py", 578): "cli-usage", ("mcp_server.py", 584): "cli-usage", ("mcp_server.py", 588): "cli-usage", ("mcp_server.py", 600): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
@@ -469,17 +469,17 @@ e("store/migration.py", 440, "store.migration.version", "0013", "§4", "refuse")
 e("store/migration.py", 496, "store.migration.version", "0013", "§4", "refuse")
 e("store/migration.py", 529, "store.migration.version", "0013", "§4", "refuse")
 e("store/sqlite.py", 3533, "store.notice.state-domain", "0041", "§11.6.6 (T4: the notice state's one writer)", "refuse")
-e("store/schema_version.py", 2005, "store.open.invalid-version", "0007", "§4a", "refuse")
-e("store/schema_version.py", 2077, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 2087, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 2103, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 2113, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 1992, "store.open.locked", "0007", "§4a", "refuse")
-e("store/schema_version.py", 2009, "store.open.newer", "0007", "§4a", "refuse")
-e("store/schema_version.py", 1979, "store.open.runtime-unsupported", "0007", "§4a-viii", "refuse")
-e("store/schema_version.py", 1891, "store.open.unaccepted-shape", "0007", "§4a-v", "refuse")
-e("store/schema_version.py", 1898, "store.open.unaccepted-shape", "0007", "§4a-v", "refuse")
-e("store/schema_version.py", 1906, "store.open.unaccepted-shape", "0007", "§4a-v", "refuse")
+e("store/schema_version.py", 2016, "store.open.invalid-version", "0007", "§4a", "refuse")
+e("store/schema_version.py", 2088, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2098, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2114, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2124, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2003, "store.open.locked", "0007", "§4a", "refuse")
+e("store/schema_version.py", 2020, "store.open.newer", "0007", "§4a", "refuse")
+e("store/schema_version.py", 1990, "store.open.runtime-unsupported", "0007", "§4a-viii", "refuse")
+e("store/schema_version.py", 1902, "store.open.unaccepted-shape", "0007", "§4a-v", "refuse")
+e("store/schema_version.py", 1909, "store.open.unaccepted-shape", "0007", "§4a-v", "refuse")
+e("store/schema_version.py", 1917, "store.open.unaccepted-shape", "0007", "§4a-v", "refuse")
 e("store/sqlite.py", 2446, "store.outcome.context-ref", "0009", "§4c", "refuse")
 e("store/sqlite.py", 2374, "store.read.input-claimed", "0010", "§4b", "withhold")
 e("store/sqlite.py", 2371, "store.read.output-not-visible", "0010", "§4b", "withhold")
@@ -511,7 +511,7 @@ e("store/revocation.py", 345, "store.revocation.revoke-reason-not-registered", "
 e("store/revocation_sweep.py", 360, "store.revocation.self-linkage", "0022", "§4c", "refuse")
 e("store/revocation_sweep.py", 232, "store.revocation.source-not-revocable", "0022", "I13", "refuse")
 e("store/revocation.py", 73, "store.revocation.unknown-state", "0022", "R5-1", "refuse")
-e("store/schema_version.py", 1599, "store.runtime-refused", "0007", "§4g.6 4a (attested / verified / refused, by measurement; both gates' one decision)", "refuse")
+e("store/schema_version.py", 1610, "store.runtime-refused", "0007", "§4g.6 4a (attested / verified / refused, by measurement; both gates' one decision)", "refuse")
 e("store/sqlite.py", 1303, "store.supersession.absorb-acted", "0047", "§4e INV-R17 (a plan absorbing an acted prior is stale)", "refuse")
 e("store/sqlite.py", 1674, "store.supersession.integrity", "0014", "§4b", "refuse")
 e("store/sqlite.py", 1692, "store.supersession.integrity", "0014", "§4b", "refuse")
