@@ -1718,7 +1718,7 @@
    "group": "R-II r2 V1 (c, d: the held basetemp and the sqlite error names)"
   }
  ],
- "pin_digest": "453e588c3a8988590a022d9ea57fb8d2b0c36151bca527a6f758d3a2450264ae",
+ "pin_digest": "5c37ae492c0648a23d804ab00a1cbdfdafb90bb9fe58ddb23617ef5b45e55963",
  "rows": [
   {
    "anchor_count": 1,
@@ -12190,11 +12190,13 @@
    "anchor_count": 1,
    "cell_kinds": {
     "tests/test_0047_t10b_read.py::test_r6_the_latest_challenge_is_by_written_at_then_id": "assertion",
+    "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[1200]": "assertion",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[4000]": "assertion",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[400]": "assertion"
    },
    "cells_failed": [
     "tests/test_0047_t10b_read.py::test_r6_the_latest_challenge_is_by_written_at_then_id",
+    "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[1200]",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[4000]",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[400]"
    ],
