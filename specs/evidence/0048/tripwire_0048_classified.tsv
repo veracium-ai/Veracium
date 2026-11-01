@@ -211,6 +211,7 @@ other-object	src/veracium/llm/anthropic.py	getattr	text = "".join(b.text for b i
 other-object	src/veracium/mcp_server.py	getattr	return {"ok": False, "refusal": getattr(exc, "reason", "malformed"),
 other-object	src/veracium/mcp_server.py	getattr	return {"ok": False, "refusal": getattr(exc, "reason", "malformed"),
 other-object	src/veracium/proactive.py	getattr	_cap = getattr(config, "item_cap_tokens", 512)
+edges-text	src/veracium/proactive.py	str:edges	__slots__ = ("id", "edges")
 other-object	src/veracium/proactive.py	getattr	cap = getattr(config, "item_cap_tokens", 512)
 other-object	src/veracium/proactive.py	getattr	getattr(config, "group_heading_allowance_tokens", 48))
 other-object	src/veracium/proactive.py	getattr	getattr(unit, "id", repr(unit)))) # ONE item, typed

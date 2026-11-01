@@ -13,7 +13,7 @@ import json
 import pathlib
 import sqlite3
 import tempfile
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -22,7 +22,7 @@ from veracium.prompts import EXTRACT_PROMPT
 from veracium.schema import Disclosure, Edge, Provenance
 
 U = "u"
-DAY = lambda n: (date.today() + timedelta(days=n)).isoformat()                      # noqa: E731
+DAY = lambda n: (datetime.now(timezone.utc).date() + timedelta(days=n)).isoformat()  # noqa: E731 (the briefing's UTC today)
 D1, D2, FAR = DAY(2), DAY(4), DAY(30)
 RULE = ("- A dated obligation the user states (an appointment, a deadline, a due date,\n"
         "  a renewal, a scheduled event) is ONE triple whose SUBJECT is the obligation\n"
@@ -336,7 +336,6 @@ def _chain_store(d):
                 [("user", "deadline", f"lease renewal on {FAR}")],
                 [("user", "located_at", "Boston")], [("user", "located_at", "Denver")],
                 [("dentist appointment", "deadline", D1)], [("haircut appointment", "deadline", D2)])
-    from datetime import datetime, timezone
     old = _edge("e-old", "lease renewal", DAY(20)).model_copy(update={
         "invalidated_at": datetime.now(timezone.utc), "invalidation_reason": "superseded"})
     m.store.add_edge(old)

@@ -1263,7 +1263,8 @@ deltas below. Not folded: its review brief and version history.
   so this batch's one regeneration covers §4c-v.6a alone.
 - **§4c's level.** Report-only means `info` on every outcome: a `warn` makes `veracium doctor` exit 1, and no
   migration removes these chains, so every affected store would fail the doctor permanently.
-- The briefing's deltas (the subject named on a plain line; 0012 I10d's no-new-reach) are 0012 §4c-v's.
+- The briefing's deltas (the subject named on a plain line; 0012's no-new-reach rule for contested material) are
+  0012 §4c-v's.
 
 ### 4c-v.1 Why (the amendment's §1)
 
