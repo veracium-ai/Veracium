@@ -217,13 +217,69 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             _clamped_ids.add(("edge", e.id))       # TYPE-tagged (R-impl6-2): an Edge
         return out                                 # and an Episode may share an id
 
-    def _subject_counted(e):
-        # 0003/obligations §4b (research S1-4(a)): the subject is extracted text, clamped and counted as the object is
+    _flag_of: dict = {}        # a commitment-tier edge's due/overdue flag, kept until its line is composed
+    _marked: dict = {}         # a lone contested member's mark (filled by the contested block below)
+    _unit_parts: dict = {}     # a contested unit's (subject, relation, members), for recomposition
+
+    def _commit_line(e, line_cap):
+        # 0003/obligations §4b + 0012 I10a (research's stage-1 NEW 1 on ea88c72): the WHOLE line (relation, the
+        # subject clamped at item_cap//8 (S1-4(a)), the object, the due/overdue flag and a lone member's mark) is held
+        # to `line_cap`; the object gets what the rest leaves. Used at composition (item_cap_tokens) and on the
+        # first-item path (the remaining budget). None when even a minimal object cannot fit: dropped, never cut.
+        # ONE clamped item per edge, registered only for a line that is returned.
         s = _commitment_subject(e)
-        out = _clamp(s, max(16, _cap // 8)) if s else s
-        if out != s:
-            _clamped_ids.add(("edge", e.id))
-        return out
+        s_out = _clamp(s, max(16, _cap // 8)) if s else s
+        head, tail = f"{e.relation}: {s_out}", _flag_of[e.id] + _marked.get(e.id, "")
+        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))
+        while content >= 16:
+            o = _clamp(e.object, content)
+            line = head + o + tail
+            if _est0(line) <= line_cap:
+                if s_out != s or o != e.object:
+                    _clamped_ids.add(("edge", e.id))
+                return line
+            content -= _est0(line) - line_cap
+        return None
+
+    def _contested_line(unit, line_cap):
+        # 0012 §4c-v.3 (N1: research's stage 2 on 6d10dc6, stage 1 on ea88c72): ONE function of a line cap, used at
+        # composition (item_cap_tokens) and on the first-item path (the remaining budget). The framing always ends
+        # the line; the nearest-due slots are kept and the rest named "or K more" (K = distinct values not shown); at
+        # least one slot, clamped if it must be; a unit whose framed form cannot hold one slot returns None (dropped
+        # and counted, never cut). Each slot is the member's clamped OBJECT (B1), in nearest-due order, distinct
+        # values once. ONE clamped item when anything is clamped or elided.
+        subject, relation, ms = _unit_parts[unit.id]
+        label = _clamp(subject, max(16, _cap // 8))
+        order = sorted(ms, key=lambda m: (min(_dates_in(m.object + " " + m.note)), m.object, m.id))
+        slots = list(dict.fromkeys(_obj(m) for m in order))
+        head, tail = f"{relation}: {label} — CONTESTED: ", " (unconfirmed which is current)"
+
+        def _body(shown, k):
+            if k:
+                return ", ".join(shown) + f" or {k} more"
+            return shown[0] if len(shown) == 1 else ", ".join(shown[:-1]) + " or " + shown[-1]
+
+        line = None
+        for n in range(len(slots), 0, -1):         # the nearest n slots, n falling: the farthest go first
+            cand = head + _body(slots[:n], len(slots) - n) + tail
+            if _est0(cand) <= line_cap:
+                line, k, first = cand, len(slots) - n, slots[0]
+                break
+        if line is None:                           # one slot, clamped to what the framing leaves
+            k = len(slots) - 1
+            content = line_cap - _est0(head + _body([""], k) + tail)
+            while content >= 16:
+                first = _clamp(order[0].object, content)
+                cand = head + _body([first], k) + tail
+                if _est0(cand) <= line_cap:
+                    line = cand
+                    break
+                content -= _est0(cand) - line_cap
+            if line is None:
+                return None
+        if label != subject or k or first != slots[0] or any(_obj(m) != m.object for m in ms):
+            _clamped_ids.add(("contested", unit.id))      # ONE item, however many of its parts were clamped
+        return line
 
     for e in surfaced:
         if not e.assertable:
@@ -251,7 +307,8 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             # demote to the variants tier.
             d = min(due)
             flag = f" (OVERDUE — was due {d})" if d < today else f" (due {d})"
-            commitments.append((f"{e.relation}: {_subject_counted(e)}{_obj_counted(e)}{flag}", e))
+            _flag_of[e.id] = flag
+            commitments.append((None, e))          # composed below, once its mark is known (NEW 1)
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
@@ -272,7 +329,6 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         _surf = {e.id for e in surfaced if e.assertable}
         _flagged = {e.id for e in surfaced if e.assertable and e.needs_confirmation}
         _grouped: set = set()
-        _marked: dict = {}
         _units = []
         for _subject, _relation, _ids in contested:
             _ms = [_tier[i] for i in _ids if i in _tier and i not in _grouped]
@@ -285,20 +341,18 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             _grouped.update(m.id for m in _ms)
             # each member's OBJECT (clamped), never only the date its object or note carries (research's stage-2 B1:
             # "Berlin until D1" / "Paris from D2" read as two dates for Alice); in nearest-due order, distinct values
-            # once. Under §4c-v.6a's form the object IS the bare date, so that line is unchanged.
+            # once. Under §4c-v.6a's form the object IS the bare date, so that line is unchanged. Composed by
+            # _contested_line, held to item_cap_tokens (N1).
             _unit = _ContestedCommitment(_ms)
-            _slots = list(dict.fromkeys(_obj(m) for m in sorted(
-                _ms, key=lambda m: (min(_dates_in(m.object + " " + m.note)), m.object, m.id))))
-            _when = _slots[0] if len(_slots) == 1 else ", ".join(_slots[:-1]) + " or " + _slots[-1]
-            _label = _clamp(_subject, max(16, _cap // 8))
-            if _label != _subject or any(_obj(m) != m.object for m in _ms):
-                _clamped_ids.add(("contested", _unit.id))      # ONE item, however many of its parts were clamped
-            _units.append((f"{_relation}: {_label} — CONTESTED: {_when} (unconfirmed which is current)", _unit))
-        commitments = [(line + _marked.get(e.id, ""), e) for line, e in commitments]
+            _unit_parts[_unit.id] = (_subject, _relation, _ms)
+            _units.append((_contested_line(_unit, _cap), _unit))
         if _grouped:
             commitments = [p for p in commitments if p[1].id not in _grouped] + _units
             current = [p for p in current if p[1].id not in _grouped]
             variants = [p for p in variants if p[1].id not in _grouped]
+    # every plain commitment line is composed ONCE, here, with its mark (NEW 1). A grouped member is never composed,
+    # so its subject/object clamps are never counted: the group line is the one item (N2, R-impl4-4's exact count).
+    commitments = [((_commit_line(e, _cap) if e.id in _flag_of else line), e) for line, e in commitments]
 
     recents: list[tuple[str, Episode]] = []
     _redacted_episodes = store.redacted_targets(user_id, "episode")
@@ -382,6 +436,9 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     if token_budget is None:
         for header, items in sections:
             for line, unit in items:
+                if line is None:                   # framed form cannot fit its cap: dropped, never cut
+                    dropped[header] += 1
+                    continue
                 admitted[header].append(line)
                 _select(unit)
     else:
@@ -406,22 +463,32 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                     reverse=True)
             header_cost = est(header) + 1
             for line, unit in items:
+                if line is None:                   # framed form cannot fit item_cap_tokens: dropped, never cut
+                    dropped[header] += 1
+                    continue
                 cost = est(line) + 1 + (header_cost if not admitted[header] else 0)
                 if cost > remaining:
                     if not first_admitted and remaining > header_cost + 24:
-                        if isinstance(unit, Edge):
-                            # RECOMPOSE with tighter content — a whole-line tail clamp
-                            # would sever the end-positioned due/confirm framing (I10c)
-                            tight = _obj(unit, max(8, remaining - header_cost - 32))
-                            line = line.replace(_obj(unit), tight, 1) \
-                                if _obj(unit) in line else _ci(line, remaining - header_cost - 1)
+                        if header == "## DATED COMMITMENTS":
+                            # 0012 §4c-v.3 (N1, NEW 1): RECOMPOSED at the remaining budget by the line's own composer,
+                            # which keeps the framing at the end and registers its own clamp; never a tail clamp
+                            line = (_contested_line if isinstance(unit, _ContestedCommitment) else _commit_line)(
+                                unit, remaining - header_cost - 1)
+                            if line is None:
+                                dropped[header] += 1
+                                continue
                         else:
-                            line = _ci(line, remaining - header_cost - 1)
+                            if isinstance(unit, Edge):
+                                # RECOMPOSE with tighter content — a whole-line tail clamp
+                                # would sever the end-positioned due/confirm framing (I10c)
+                                tight = _obj(unit, max(8, remaining - header_cost - 32))
+                                line = line.replace(_obj(unit), tight, 1) \
+                                    if _obj(unit) in line else _ci(line, remaining - header_cost - 1)
+                            else:
+                                line = _ci(line, remaining - header_cost - 1)
+                            _clamped_ids.add(("edge" if isinstance(unit, Edge) else "episode",
+                                              getattr(unit, "id", repr(unit))))   # ONE item, typed
                         cost = est(line) + 1 + header_cost
-                        _clamped_ids.add(
-                            ("edge" if isinstance(unit, Edge) else
-                             "contested" if isinstance(unit, _ContestedCommitment) else "episode",
-                             getattr(unit, "id", repr(unit))))   # ONE item, typed
                         if cost > remaining:
                             dropped[header] += 1
                             continue

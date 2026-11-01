@@ -117,6 +117,8 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("schema.py", 659): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
     ("schema.py", 686): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1
     ("schema.py", 1451): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
+    ("proactive.py", 242): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
+    ("proactive.py", 279): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",

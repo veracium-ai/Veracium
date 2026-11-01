@@ -10,6 +10,7 @@ is the config default (7 days), so every date is relative to today.
 """
 
 import json
+import re
 import pathlib
 import sqlite3
 import tempfile
@@ -206,6 +207,129 @@ def test_an_oversized_subject_is_clamped_and_counted():
         line = _commitments(m)[0]
         assert len(line) < 1000 and big not in line and line.endswith(f"(due {D1})"), line
         assert r.truncated, r.context
+
+
+# ---- the N1–N4 batch (research's stage 2 on 6d10dc6, 4910a8b9; stage 1 on ea88c72, d3d22dd5) -----------------------
+TAIL = " (unconfirmed which is current)"
+MARK = " (contested — unconfirmed which date is current)"
+
+
+def _clamped(ctx):
+    """The I10a figure the report line states (0 when no report line: nothing was dropped or clamped)."""
+    found = re.findall(r"/ (\d+) clamped\]", ctx)
+    assert len(found) <= 1, ctx
+    return int(found[0]) if found else 0
+
+
+def _cap(m, line):
+    return m._est_tokens(line) <= m.config.item_cap_tokens
+
+
+def _many(d, n, subject="dentist appointment"):
+    """n refused reschedules of one obligation, each overdue (dated before today): one contested group of n."""
+    llm = Scripted(*[[(subject, "deadline", DAY(-n - 1 + i))] for i in range(n)])
+    m = Memory(llm=llm, config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
+    for i in range(n):
+        m.remember(U, f"USER: I have a {subject} on {DAY(-n - 1 + i)}.", date=DAY(-n - 1 + i),
+                   context=EvidenceContext.direct())
+    return m
+
+
+def test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing():
+    """0012 §4c-v.3 (N1): at the floor budget a 70-member group line is RECOMPOSED, never tail-clamped. The framing
+    ends the line, the nearest dates are kept whole and in order, the rest are named "or K more" (K the distinct
+    values not shown), every member is still returned, and the line is ONE clamped item."""
+    with tempfile.TemporaryDirectory() as d:
+        m = _many(d, 70)
+        r = m.recall(U, token_budget=256)
+        line = next(ln for ln in r.context.splitlines() if "CONTESTED" in ln)
+        assert line.endswith(TAIL) and "content truncated" not in line, line
+        body = line.split(" — CONTESTED: ", 1)[1][:-len(TAIL)]
+        shown, k = body.rsplit(" or ", 1)
+        k = int(k.removesuffix(" more"))
+        shown = shown.split(", ")
+        assert shown == [DAY(-71 + i) for i in range(len(shown))] and len(shown) + k == 70, line
+        assert len([e for e in r.edges if e.relation == "deadline"]) == 70
+        assert _clamped(r.context) == 1, r.context
+
+
+def test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap():
+    """N1 (research's B1 re-check at e4bbdc4): two 2,400-char objects made a ~3,790-char line, never item-capped."""
+    o1, o2 = f"{D1} " + "a" * 2400, f"{D2} " + "b" * 2400
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [("lease renewal", "deadline", o1)], [("lease renewal", "deadline", o2)])
+        r = m.recall(U)
+        line = next(ln for ln in r.context.splitlines() if "CONTESTED" in ln)
+        assert _cap(m, line) and line.startswith(f"deadline: lease renewal — CONTESTED: {D1} a") and \
+            line.endswith(" or 1 more" + TAIL), line
+        assert _clamped(r.context) == 1, r.context
+
+
+def test_n1_k_counts_the_distinct_values_not_shown_not_the_members():
+    """Two members whose objects clamp to one slot are one value: K counts what the line does not show."""
+    o1, o2, o3 = f"{D1} " + "a" * 3000 + "1", f"{D1} " + "a" * 3000 + "2", f"{D2} " + "c" * 400
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, *[[("lease renewal", "deadline", o)] for o in (o1, o2, o3)])
+        line = next(ln for ln in m.recall(U).context.splitlines() if "CONTESTED" in ln)
+        assert _cap(m, line) and line.endswith(" or 1 more" + TAIL), line
+
+
+def test_new1_a_plain_commitment_line_is_held_to_the_item_cap():
+    """Research's stage-1 NEW 1: the object's cap (item_cap−48) sat on top of the subject's (item_cap//8), so a
+    420-char subject and a 3,000-char object rendered 536 tokens against 512. The whole line is held to the cap,
+    framing intact, one clamped item."""
+    sub, obj = "dentist appointment " + "x" * 400, f"{D1} " + "o" * 2989
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [(sub, "deadline", obj)])
+        r = m.recall(U)
+        line = _commitments(m)[0]
+        assert _cap(m, line) and line.endswith(f"(due {D1})"), (m._est_tokens(line), line[-80:])
+        assert _clamped(r.context) == 1, r.context
+
+
+def test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark():
+    """The lone member's mark is part of the line it is held to (it was appended after composition)."""
+    sub, obj = "dentist appointment " + "x" * 400, f"{D1} " + "o" * 2989
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [(sub, "deadline", obj)], [(sub, "deadline", FAR)])
+        line = _commitments(m)[0]
+        assert _cap(m, line) and line.endswith(f"(due {D1}){MARK}"), (m._est_tokens(line), line[-80:])
+
+
+def test_n2_a_clamped_group_is_one_clamped_item():
+    """N2 (R-impl4-4: EXACT per clamped item): a grouped member's composed line is discarded, so its clamps are not
+    counted; the group line is the one item."""
+    big = "dentist appointment " + "x" * 400
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [(big, "deadline", D1)], [(big, "deadline", D2)])
+        assert len(_rows(m)) == 1
+        assert _clamped(m.recall(U).context) == 1
+
+
+def test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items():
+    """N2's control (research): removing grouped members' clamps must not remove another line's."""
+    big, other = "dentist appointment " + "x" * 400, "haircut appointment " + "y" * 400
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [(big, "deadline", D1)], [(big, "deadline", D2)], [(other, "deadline", D1)])
+        assert len(_commitments(m)) == 2
+        assert _clamped(m.recall(U).context) == 2
+
+
+def test_n3_a_group_sorts_at_its_nearest_due_date():
+    """0012 §4c-v's Order rule (N3, R3): a group is ONE commitment at its NEAREST due date."""
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [("dentist appointment", "deadline", D1)], [("dentist appointment", "deadline", DAY(5))],
+                    [("haircut appointment", "deadline", D2)])
+        assert _commitments(m) == [_contested("dentist appointment", D1, DAY(5)), _plain("haircut appointment", D2)]
+
+
+def test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first():
+    """0012 I10b's tie (N3, R4): observed_at DESC, a group's observation its newest member's."""
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [("dentist appointment", "deadline", D1)], [("dentist appointment", "deadline", DAY(5))],
+                    [("haircut appointment", "deadline", D1)], [("haircut appointment", "deadline", DAY(6))])
+        assert _commitments(m) == [_contested("haircut appointment", D1, DAY(6)),
+                                   _contested("dentist appointment", D1, DAY(5))]
 
 
 # ---- §4b, INV-OB4: the contested predicate IS the refusal-scoped one ------------------------------------------------

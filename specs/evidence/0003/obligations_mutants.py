@@ -63,6 +63,15 @@ OB6 = C("test_ob6_the_obligation_rule_reaches_the_extractor")
 DIRECT = C("test_a_direct_assemble_with_no_contested_argument_renders_per_edge")
 B1_OBJ = C("test_b1_a_contested_line_keeps_each_members_object")
 B1_DEADLINE = C("test_b1_a_contested_deadline_keeps_its_time_and_place")
+N1_FLOOR = C("test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing")
+N1_OVERSIZED = C("test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap")
+N1_K = C("test_n1_k_counts_the_distinct_values_not_shown_not_the_members")
+NEW1 = C("test_new1_a_plain_commitment_line_is_held_to_the_item_cap")
+NEW1_MARK = C("test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark")
+N2 = C("test_n2_a_clamped_group_is_one_clamped_item")
+N2_CONTROL = C("test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items")
+N3_ORDER = C("test_n3_a_group_sorts_at_its_nearest_due_date")
+N3_TIE = C("test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first")
 
 _SUBJECT_AXIS = '            elif (subject_class(edge.user_id, prior.subject) == "OTHER"\n'
 _CARRIER = "            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups])"
@@ -104,20 +113,64 @@ MUTANTS = [
      [OB9, OB8], [OB3], None, "the mark on a lone member whose partner is withheld or fenced (content of a "
                                "challenged or fenced member's existence volunteered)"),
     ("B1-slots-are-dates-only", "product", X,
-     [("            _slots = list(dict.fromkeys(_obj(m) for m in sorted(\n",
-       "            _slots = list(dict.fromkeys(str(min(_dates_in(m.object + \" \" + m.note))) for m in sorted(\n")],
+     [("        slots = list(dict.fromkeys(_obj(m) for m in order))\n",
+       "        slots = list(dict.fromkeys(str(min(_dates_in(m.object + \" \" + m.note))) for m in order))\n")],
      [B1_OBJ, B1_DEADLINE], [OB3], None, "a contested line names only each member's date, dropping its object "
                                         "(research's stage-2 B1)"),
     ("S1-4-subject-dropped", "product", X,
      [('    return "" if e.subject == "user" else f"{e.subject} — "\n', '    return ""\n')],
      [NAMES], [USER_SAME], None, "the plain line drops a non-user subject (the obligation's name)"),
     ("S1-4a-subject-clamp-uncounted", "product", X,
-     [("        if out != s:\n            _clamped_ids.add((\"edge\", e.id))\n        return out\n",
-       "        return out\n")],
+     [("                if s_out != s or o != e.object:\n", "                if o != e.object:\n")],
      [CLAMP], [NAMES], None, "an oversized subject clamped without the I10a signal"),
     ("S1-4b-withheld-subject-rendered", "product", X,
      [("    _edges = [e for e in _edges if not snap.withheld(e)]\n", "")],
      [WITHHELD_NAME, OB9], [NAMES], None, "a withheld commitment's subject rendered (0047 withholding skipped)"),
+    # ---- the N1–N4 batch (research's stage 2 on 6d10dc6, 4910a8b9; stage 1 on ea88c72, d3d22dd5) ----------------
+    ("N1-first-item-tail-clamp", "product", X,
+     [("                            line = (_contested_line if isinstance(unit, _ContestedCommitment) else _commit_line)(\n",
+       "                            line = ((lambda u, c: _ci(line, c)) if isinstance(unit, _ContestedCommitment) else _commit_line)(\n")],
+     [N1_FLOOR], [N1_OVERSIZED], None, "the superseded first-item path: a group line tail-clamped at the remaining "
+                                       "budget, cutting a date and its framing (N1)"),
+    ("N1-farthest-slots-kept", "product", X,
+     [("            cand = head + _body(slots[:n], len(slots) - n) + tail\n",
+       "            cand = head + _body(slots[len(slots) - n:], len(slots) - n) + tail\n")],
+     [N1_FLOOR], [OB3], None, "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"),
+    ("N1-K-counts-members", "product", X,
+     [("            cand = head + _body(slots[:n], len(slots) - n) + tail\n",
+       "            cand = head + _body(slots[:n], len(ms) - n) + tail\n")],
+     [N1_K], [N1_FLOOR], None, "K counts the members not shown, not the distinct values (research's stage 1)"),
+    ("NEW1-object-cap-ignores-the-line", "product", X,
+     [("        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
+       "        content = max(16, _cap - 48)\n"),
+      ("            if _est0(line) <= line_cap:\n                if s_out != s or o != e.object:\n",
+       "            if True:\n                if s_out != s or o != e.object:\n")],
+     [NEW1, NEW1_MARK], [CLAMP], None, "the superseded plain line: the object capped at item_cap−48 on top of the "
+                                       "subject's own cap, the line unchecked (research's stage-1 NEW 1)"),
+    ("NEW1-mark-outside-the-cap", "product", X,
+     [("        head, tail = f\"{e.relation}: {s_out}\", _flag_of[e.id] + _marked.get(e.id, \"\")\n",
+       "        head, tail = f\"{e.relation}: {s_out}\", _flag_of[e.id]\n"),
+      ("                    _clamped_ids.add((\"edge\", e.id))\n                return line\n",
+       "                    _clamped_ids.add((\"edge\", e.id))\n                return line + _marked.get(e.id, \"\")\n")],
+     [NEW1_MARK], [OUTSIDE], None, "the lone member's mark appended after the line is held to the cap (NEW 1)"),
+    ("N2-grouped-members-composed", "product", X,
+     [("            _unit = _ContestedCommitment(_ms)\n",
+       "            for _m in _ms:\n                _commit_line(_m, _cap)\n            _unit = _ContestedCommitment(_ms)\n")],
+     [N2, N2_CONTROL], [OB3], None, "the superseded count: each grouped member's discarded line still registers "
+                                    "its clamps (N2, R-impl4-4)"),
+    ("R3-group-order-latest", "product", X,
+     [("            return (min(ds) if ds else today,\n                    -max(m.provenance",
+       "            return (max(ds) if ds else today,\n                    -max(m.provenance")],
+     [N3_ORDER], [OB3], None, "a group sorts at its LATEST due date (research's stage-2 R3)"),
+    ("R4-group-tie-reversed", "product", X,
+     [("                    -max(m.provenance.observed_at.timestamp() for m in e.edges)",
+       "                    max(m.provenance.observed_at.timestamp() for m in e.edges)")],
+     [N3_TIE], [OB3], None, "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"),
+    ("R5-group-clamp-uncounted", "product", X,
+     [("        if label != subject or k or first != slots[0] or any(_obj(m) != m.object for m in ms):\n"
+       "            _clamped_ids.add((\"contested\", unit.id))",
+       "        if False:\n            pass")],
+     [N2, N1_OVERSIZED], [OB3], None, "a clamped or elided group line without the I10a signal (research's stage-2 R5)"),
     ("OB5-non-user-subjects-counted", "product", D,
      [('        if (prior is not None and prior.get("subject") == "user" and d.get("subject") == "user"\n',
        "        if (prior is not None\n")],

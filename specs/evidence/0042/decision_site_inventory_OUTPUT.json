@@ -2298,9 +2298,21 @@
    "qualname": "assemble._eligible"
   },
   {
+   "kind": "RETURN_NONE",
+   "line": 242,
+   "module": "proactive.py",
+   "qualname": "assemble._commit_line"
+  },
+  {
+   "kind": "RETURN_NONE",
+   "line": 279,
+   "module": "proactive.py",
+   "qualname": "assemble._contested_line"
+  },
+  {
    "bare": false,
    "kind": "RAISE",
-   "line": 364,
+   "line": 418,
    "module": "proactive.py",
    "qualname": "assemble"
   },
@@ -6883,7 +6895,7 @@
    "FILTER_RETURN": 60,
    "RAISE": 666,
    "RETURN_FALSE": 109,
-   "RETURN_NONE": 102
+   "RETURN_NONE": 104
   },
   "kinds": [
    "RAISE",
@@ -7124,7 +7136,7 @@
     "FILTER_RETURN": 0,
     "RAISE": 1,
     "RETURN_FALSE": 1,
-    "RETURN_NONE": 0
+    "RETURN_NONE": 2
    },
    "procedural_gate.py": {
     "BOOL_RETURN": 5,
@@ -7288,7 +7300,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1035,
+  "total": 1037,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

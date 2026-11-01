@@ -1,5 +1,5 @@
 {
- "body_sha256": "3e8f37b17eaf534300f1797bc9f2ff54729b75ac0fbd79e17405950597695d21",
+ "body_sha256": "d9028163a37c31f6dcbeec35eb4afdfa6f7aaa5a67d247c76af3aa8e83fb0b27",
  "controls": [
   {
    "anchor_counts": [
@@ -70,13 +70,22 @@
     "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
     "tests/test_0003_obligations.py::test_b1_a_contested_deadline_keeps_its_time_and_place",
     "tests/test_0003_obligations.py::test_b1_a_contested_line_keeps_each_members_object",
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members",
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item",
+    "tests/test_0003_obligations.py::test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items",
+    "tests/test_0003_obligations.py::test_n3_a_group_sorts_at_its_nearest_due_date",
+    "tests/test_0003_obligations.py::test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first",
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark",
+    "tests/test_0003_obligations.py::test_new1_a_plain_commitment_line_is_held_to_the_item_cap",
     "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
     "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
     "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
     "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
    ],
-   "definition_sha256": "617fc6446243a6ff6402df3a8412adf9099049ada1f88b584060d27581793d4f",
+   "definition_sha256": "b9a48e584ab12da1203d274927e4d215953c115fb6e3df6d3c373f6085c58fbf",
    "expected": "SURVIVED",
    "file": "src/veracium/proactive.py",
    "good": true,
@@ -91,6 +100,15 @@
     "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
     "tests/test_0003_obligations.py::test_b1_a_contested_deadline_keeps_its_time_and_place",
     "tests/test_0003_obligations.py::test_b1_a_contested_line_keeps_each_members_object",
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members",
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item",
+    "tests/test_0003_obligations.py::test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items",
+    "tests/test_0003_obligations.py::test_n3_a_group_sorts_at_its_nearest_due_date",
+    "tests/test_0003_obligations.py::test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first",
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark",
+    "tests/test_0003_obligations.py::test_new1_a_plain_commitment_line_is_held_to_the_item_cap",
     "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
     "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
@@ -182,6 +200,15 @@
     "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
     "tests/test_0003_obligations.py::test_b1_a_contested_deadline_keeps_its_time_and_place",
     "tests/test_0003_obligations.py::test_b1_a_contested_line_keeps_each_members_object",
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members",
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item",
+    "tests/test_0003_obligations.py::test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items",
+    "tests/test_0003_obligations.py::test_n3_a_group_sorts_at_its_nearest_due_date",
+    "tests/test_0003_obligations.py::test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first",
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark",
+    "tests/test_0003_obligations.py::test_new1_a_plain_commitment_line_is_held_to_the_item_cap",
     "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
     "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
@@ -194,30 +221,36 @@
   },
   "clean": {
    "first": {
-    "of": 16,
+    "of": 25,
     "ok": true,
-    "passed": 16
+    "passed": 25
    },
    "last": {
-    "of": 16,
+    "of": 25,
     "ok": true,
-    "passed": 16
+    "passed": 25
    }
   },
-  "commit": "621dc40481f4bad340225de4bde83d50ebca9adc",
+  "commit": "ea88c72a87bc72b478903921786c27dc843b1655",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
    "NOOP-__init__": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
    "NOOP-doctor": "ca69b4ab7aed219543de99f8c18135def799fca683cfdc05b80a2f6bc42e5058",
    "NOOP-graph": "95575cf004acdfd0bc01efb568690fa58f7d2c95a848fa5ce254aa9c0cadf939",
-   "NOOP-proactive": "617fc6446243a6ff6402df3a8412adf9099049ada1f88b584060d27581793d4f",
+   "NOOP-proactive": "b9a48e584ab12da1203d274927e4d215953c115fb6e3df6d3c373f6085c58fbf",
    "NOOP-prompts": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6"
   },
   "definitions": {
-   "B1-slots-are-dates-only": "e3fb8fc92ae90f78dc6d5ee77f2679df5eee907192c38ef7daa72465157f2023",
+   "B1-slots-are-dates-only": "049df3f9212a6edda52db8d4299302a781c85c3a1eef98b7e300f2a1ddd3ebc8",
    "I10d-every-commitment-marked": "02b6b07c0d9e538d070fbaa8ddf810db3cba22e56ce9a727b8106792f8dda6a4",
    "I10d-lone-member-unmarked": "9678bbe0efc485ebd98d73bcf788d837fd5bbd6b141fe2a976bf5f8249f22130",
    "I10d-out-of-window-member-named": "80e570f81c2244ca54b5aba07df473d237b34a1b0a85a2d722eb3c072903d4d7",
+   "N1-K-counts-members": "e25307d85c116fc79ec00365d900f25df60c25fc65419365f78b5a91c0217230",
+   "N1-farthest-slots-kept": "8427c3dd4aded3cbbf6409299450fdff402a7b75241d43ec4b511535a3b2507f",
+   "N1-first-item-tail-clamp": "fd7109eeb333f024d7abf144bd5b59b1752851f8d85687ffa85c77dc1e655926",
+   "N2-grouped-members-composed": "75e77ca47e93ccbf363f41ae98350f25381734ede73b23b525c18c274f69ba8b",
+   "NEW1-mark-outside-the-cap": "d5a8dbcdbf8218123085a76c19df0c2682193d362265e3c357185dc40c1b9423",
+   "NEW1-object-cap-ignores-the-line": "a59f468b08f7941cddf4bc2320055afd727669d7e6102b9f7572e128efffdbe0",
    "OB2-subject-axis-bypassed-for-deadline": "dae5e0c681cbf1a7053dce43060c657397c61cfc32f138ae65b11f3d243603d0",
    "OB3-member-also-rendered-plain": "d08e2b12d0a43c2b90c3802b9ae8cce8c6bff0ae3e9d645d7ab7f9512171ed18",
    "OB3-no-briefing-carrier": "980a945f835ac7c41d48d7b30061aec542f0230292641f323d743627d3d59485",
@@ -226,25 +259,32 @@
    "OB5-non-user-subjects-counted": "3e092985b7aea871c22aad217d77c5df5429ea1c3b330de43b1f053a1caf960f",
    "OB6-rule-not-sent": "ae21aee3eaa017b7a776b8b48bb68f85ec14862e3ea25a4a0b200418c5743537",
    "OB9-group-built-before-withholding": "5606b17e3d092214a37e5e19b0df8d61670be88f43e1ca3d0f08b81a665148a1",
+   "R3-group-order-latest": "09cdb5887606bba6c262dae0d7e468b7f618c88edd2c78f4421cfe1366e7cf68",
+   "R4-group-tie-reversed": "cbba79f50975020aa990705528767a31ecc8aa54e81afcbc780bca2abd5af65e",
+   "R5-group-clamp-uncounted": "038f097321ef9cb5d3f7253d87c4a7a3bcd49e3d6c5bf5fc9b939dccaa7b5e4f",
    "S1-4-subject-dropped": "e713b30a98e36494d0e311bf535d40a2f71a98c97e18bbc95505d6ab4b8acab4",
-   "S1-4a-subject-clamp-uncounted": "9c2bae41ef479f752148148404d701eeb5e570fac4be11ad66865c0034d91bdb",
+   "S1-4a-subject-clamp-uncounted": "a6a9a0ae58fbd7ea9d589d9c5ecc2e92c27a30e3bcdff5d80c69001d3ee58895",
    "S1-4b-withheld-subject-rendered": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077"
   },
   "digests": {
-   "specs/evidence/0003/obligations_mutants.py": "02a3ac03a4be20e44530e0bd16a1ea6dd1e60b32649f4adb9e560440029f6fa9",
+   "specs/evidence/0003/obligations_mutants.py": "85d8ead83afa22f02e91965d0548fe7979afb6eb493d049c04344595b0e94afa",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "5a6ef467caefc2ef02aece526fd60ce6ae39b0323395217ae2790ba872a3cae5",
    "src/veracium/doctor.py": "b8b8901cb9f5181d6cd87b67c2ab0059b755e583d97db11b6071ddf21c0deb45",
    "src/veracium/graph.py": "cc5bfdeab09d38375386bcb89157a68c1100b55a28dda9f30550a189e86138d4",
-   "src/veracium/proactive.py": "b1f028f9c4100e6cc6828ab5dee58c69a80e7af88177fd3b41250797c6bc8c3c",
+   "src/veracium/proactive.py": "687cb305f02bf800e56574779c6c624c684e6a03505bc36f2f1c4650b3d60132",
    "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
-   "tests/test_0003_obligations.py": "22a18939ea9b917f478afb1b8f50cbd4a8b3571a9850dea68ff06500d1087c4c"
+   "tests/test_0003_obligations.py": "cbb775b970e9a9c755ae4acee7cde01dfdd075d038ff8395326ae23d1c90613c"
   },
   "finding": "obligations",
   "honest_nodes": [
+   "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user",
    "tests/test_0003_obligations.py::test_a_subject_user_commitment_renders_byte_identical_to_before",
+   "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
+   "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
+   "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
   ],
@@ -252,7 +292,11 @@
   "python": "3.14.7",
   "spec": "0003",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0003/obligations_mutants.py",
+   "src/veracium/proactive.py",
+   "tests/test_0003_obligations.py"
+  ]
  },
  "rows": [
   {
@@ -286,7 +330,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.78s",
+   "pytest": "2 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's one-episode case is still caught by 0003 \u00a74c-iv's within-episode net, so it is not named)"
@@ -328,7 +372,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.90s",
+   "pytest": "4 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "today's per-edge rendering: the briefing path builds no contested groups"
@@ -364,7 +408,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.73s",
+   "pytest": "2 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member rendered plain as well as in the group line"
@@ -397,7 +441,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "a second predicate: any two active values of one key are a contest"
@@ -430,7 +474,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the contested line built over the store's edges, before 0047's withholding"
@@ -463,7 +507,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "an out-of-window member named in the contested line: new reach (0012 I10d)"
@@ -499,7 +543,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a lone tier member whose partner sits outside the tier renders as settled"
@@ -535,7 +579,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the mark on a lone member whose partner is withheld or fenced (content of a challenged or fenced member's existence volunteered)"
@@ -553,7 +597,7 @@
     "tests/test_0003_obligations.py::test_b1_a_contested_deadline_keeps_its_time_and_place",
     "tests/test_0003_obligations.py::test_b1_a_contested_line_keeps_each_members_object"
    ],
-   "definition_sha256": "e3fb8fc92ae90f78dc6d5ee77f2679df5eee907192c38ef7daa72465157f2023",
+   "definition_sha256": "049df3f9212a6edda52db8d4299302a781c85c3a1eef98b7e300f2a1ddd3ebc8",
    "file": "src/veracium/proactive.py",
    "finding": "obligations",
    "good": true,
@@ -571,7 +615,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.69s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested line names only each member's date, dropping its object (research's stage-2 B1)"
@@ -604,7 +648,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the plain line drops a non-user subject (the obligation's name)"
@@ -620,7 +664,7 @@
    "cells_failed": [
     "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted"
    ],
-   "definition_sha256": "9c2bae41ef479f752148148404d701eeb5e570fac4be11ad66865c0034d91bdb",
+   "definition_sha256": "a6a9a0ae58fbd7ea9d589d9c5ecc2e92c27a30e3bcdff5d80c69001d3ee58895",
    "file": "src/veracium/proactive.py",
    "finding": "obligations",
    "good": true,
@@ -637,7 +681,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "an oversized subject clamped without the I10a signal"
@@ -673,10 +717,318 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.69s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld commitment's subject rendered (0047 withholding skipped)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
+   ],
+   "definition_sha256": "fd7109eeb333f024d7abf144bd5b59b1752851f8d85687ffa85c77dc1e655926",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap"
+   ],
+   "id": "N1-first-item-tail-clamp",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.00s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded first-item path: a group line tail-clamped at the remaining budget, cutting a date and its framing (N1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
+   ],
+   "definition_sha256": "8427c3dd4aded3cbbf6409299450fdff402a7b75241d43ec4b511535a3b2507f",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "N1-farthest-slots-kept",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.96s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members"
+   ],
+   "definition_sha256": "e25307d85c116fc79ec00365d900f25df60c25fc65419365f78b5a91c0217230",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
+   ],
+   "id": "N1-K-counts-members",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.70s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "K counts the members not shown, not the distinct values (research's stage 1)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark": "assertion",
+    "tests/test_0003_obligations.py::test_new1_a_plain_commitment_line_is_held_to_the_item_cap": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark",
+    "tests/test_0003_obligations.py::test_new1_a_plain_commitment_line_is_held_to_the_item_cap"
+   ],
+   "definition_sha256": "a59f468b08f7941cddf4bc2320055afd727669d7e6102b9f7572e128efffdbe0",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted"
+   ],
+   "id": "NEW1-object-cap-ignores-the-line",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_new1_a_plain_commitment_line_is_held_to_the_item_cap",
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.78s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded plain line: the object capped at item_cap\u221248 on top of the subject's own cap, the line unchecked (research's stage-1 NEW 1)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark"
+   ],
+   "definition_sha256": "d5a8dbcdbf8218123085a76c19df0c2682193d362265e3c357185dc40c1b9423",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner"
+   ],
+   "id": "NEW1-mark-outside-the-cap",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.80s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the lone member's mark appended after the line is held to the cap (NEW 1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item": "assertion",
+    "tests/test_0003_obligations.py::test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item",
+    "tests/test_0003_obligations.py::test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items"
+   ],
+   "definition_sha256": "75e77ca47e93ccbf363f41ae98350f25381734ede73b23b525c18c274f69ba8b",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "N2-grouped-members-composed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item",
+    "tests/test_0003_obligations.py::test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the superseded count: each grouped member's discarded line still registers its clamps (N2, R-impl4-4)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n3_a_group_sorts_at_its_nearest_due_date": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n3_a_group_sorts_at_its_nearest_due_date"
+   ],
+   "definition_sha256": "09cdb5887606bba6c262dae0d7e468b7f618c88edd2c78f4421cfe1366e7cf68",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "R3-group-order-latest",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n3_a_group_sorts_at_its_nearest_due_date"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.79s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a group sorts at its LATEST due date (research's stage-2 R3)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first"
+   ],
+   "definition_sha256": "cbba79f50975020aa990705528767a31ecc8aa54e81afcbc780bca2abd5af65e",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "R4-group-tie-reversed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.67s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap": "assertion",
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item"
+   ],
+   "definition_sha256": "038f097321ef9cb5d3f7253d87c4a7a3bcd49e3d6c5bf5fc9b939dccaa7b5e4f",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "R5-group-clamp-uncounted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item",
+    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a clamped or elided group line without the I10a signal (research's stage-2 R5)"
   },
   {
    "anchor_counts": [
@@ -706,7 +1058,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes a non-user subject's chain"
@@ -739,7 +1091,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes another relation's chain (located_at)"
@@ -773,7 +1125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the extraction rule in a constant the extractor is never sent"
@@ -781,13 +1133,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 15
+   "product": 24
   },
   "controls": 6,
   "controls_good": 6,
-  "good": 15,
-  "killed": 15,
-  "rows": 15,
-  "seconds": 55
+  "good": 24,
+  "killed": 24,
+  "rows": 24,
+  "seconds": 89
  }
 }
