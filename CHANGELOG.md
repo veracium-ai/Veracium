@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- **Fixed: a user can hold more than one deadline** (0.28.0's known limitation; specs/0003 v18 §4c-v, 0012 v18
+  §4c-v, amendment `0003/obligations`, adopted before external review on the owner's word and to be reviewed with the
+  trust-tools amendment). The extractor stored every commitment as the user's `deadline`, a single-valued relation,
+  so each new one retired the last ("the dentist on the 12th", then "a haircut on the 20th", kept only the haircut).
+  It now stores each dated obligation under its own name ("dentist appointment") with an ISO date, and a stated date
+  with no year as the next such date on or after the day it was said. Measured at the reference provider's distill
+  model (`claude-haiku-4-5`), n=3 on each of six probes: every rate 3/3 (both appointments kept; ISO dates; the right
+  year across a year boundary; no day invented for "sometime in November" or "in three weeks"; a past appointment
+  never moved a year out). It is a prompt rule, so another extractor's rate is its own.
+- **Changed: the session-start briefing renders a contested commitment once.** A reschedule of a named commitment
+  is not applied (the two dates stay, contested, settled by `correct()`); the briefing now shows it as one line,
+  `deadline: dentist appointment — CONTESTED: <A> or <B> (unconfirmed which is current)`, where it listed both dates
+  as separate commitments. A rescheduled date outside the briefing's window does not appear (contested material gets
+  no new reach), and the date left alone is marked `(contested — …)`. Every dated briefing line whose subject is not
+  `user` now names its subject; a subject-`user` line is unchanged.
+- **Added: `veracium doctor` reports, at `info`, each `deadline`/`scope` fact with subject `user` that a later one
+  retired** (the `obligations` check, count `obligation_chain_retired`). Stores written before this release keep
+  those chains: no migration can tell a real reschedule from the defect, so the doctor names them and changes
+  nothing.
+
 - **Fixed (SA-R5-C1, 0.28.0's known limitation): the attestation job reads an unsupported XML encoding in its child's
   JUnit output to its named `suite-mismatch` refusal.** A JUnit file declaring a codec that does not exist
   (`encoding="UTF-9"`) or is not a text encoding (`base64_codec`) made `specs/attestation_job.py`'s `decide` raise

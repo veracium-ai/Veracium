@@ -151,7 +151,7 @@ Spec-Status: accepted
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v17 — ACCEPTED 2026-08-10** — *round 14: "Approved for acceptance… bin (a) is empty." v17 = reviewed v16 + the §12 Review closure + the status flip, no contract change.* v16 — *round-13 folded: the single bin-(a) item — I10k's list gains `0003`'s preserved registry + policy-version bindings, its test the custom-registry case (R13-1, carrier alignment only).* v15 — *round-12 (the first BOUNDARY round — protocol ACCEPTED) folded: the four bin-(a) consistency defects emptied (legacy/malformed alignment; the mechanical heading sub-cap + updated I10e/I10i + completed `0003` amendment; registry-preserving cache matrix; §7a completeness) + the bin-(b) obligation recorded.* v14 — *round-11 folded: the complete-packing 0003 amendment (R11-1), the mechanical allowance + framing-field classification + K validation (R11-2), the exact cache-effect matrix (R11-3, I10k), the provider-free stale-cache CLI path (R11-4, I10l), the frozen introspection schema (R11-5).* v13 — *round-10 folded: budget-aware contested packing (I10i), cache-identity binding via the bumped policy digest (I10k), the frozen marker grammar (I10j), introspect narrowed to cached-marker-only (§7a carriers).* v12 — *round-9 folded: the within-group contested bound as a `0003` §7b carrier (I10i), bounded-width counts + share classification (R9-2), the sentinel-authoritative marker (I10j), the introspect claim corrected to a §8 limit (R9-4).* v11 — *round-8 folded: envelope-derived per-surface floors (I10e), precedence↔order alignment + partition preservation (I10f), the marker serialization rule, the signature change WITHDRAWN, import-time network guard.* v10 — *round-7 amendments folded: budget floors + cap semantics (I10e), claim-flag priority restored (I10h), category precedence (I10f), envelope reservation (I10g), in-body wiki markers replacing the phantom compile record; §7b-ii behaviour-change carriers. v9:* *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
+| **Version** | **v18 — 2026-11-01: the briefing half of amendment `0003/obligations` (v0.2, sha16 `3bd8b748612a1fb9`), ADOPTED BEFORE EXTERNAL REVIEW** (the owner: *"Ship, then review"*; it rides the trust-tools amendment's review with 0003 v18). Folded as §4c-v: the briefing builds its contested groups with `Memory._build_contested` and renders a contested commitment once; a non-`user` subject is named on a dated line; declared deltas: the subject named (research S1-4) and I10d's no-new-reach narrowing "both dates" to the dates in the commitment tier, the lone member marked content-free. I10d itself is unchanged. **Prior: v17 — ACCEPTED 2026-08-10** — *round 14: "Approved for acceptance… bin (a) is empty." v17 = reviewed v16 + the §12 Review closure + the status flip, no contract change.* v16 — *round-13 folded: the single bin-(a) item — I10k's list gains `0003`'s preserved registry + policy-version bindings, its test the custom-registry case (R13-1, carrier alignment only).* v15 — *round-12 (the first BOUNDARY round — protocol ACCEPTED) folded: the four bin-(a) consistency defects emptied (legacy/malformed alignment; the mechanical heading sub-cap + updated I10e/I10i + completed `0003` amendment; registry-preserving cache matrix; §7a completeness) + the bin-(b) obligation recorded.* v14 — *round-11 folded: the complete-packing 0003 amendment (R11-1), the mechanical allowance + framing-field classification + K validation (R11-2), the exact cache-effect matrix (R11-3, I10k), the provider-free stale-cache CLI path (R11-4, I10l), the frozen introspection schema (R11-5).* v13 — *round-10 folded: budget-aware contested packing (I10i), cache-identity binding via the bumped policy digest (I10k), the frozen marker grammar (I10j), introspect narrowed to cached-marker-only (§7a carriers).* v12 — *round-9 folded: the within-group contested bound as a `0003` §7b carrier (I10i), bounded-width counts + share classification (R9-2), the sentinel-authoritative marker (I10j), the introspect claim corrected to a §8 limit (R9-4).* v11 — *round-8 folded: envelope-derived per-surface floors (I10e), precedence↔order alignment + partition preservation (I10f), the marker serialization rule, the signature change WITHDRAWN, import-time network guard.* v10 — *round-7 amendments folded: budget floors + cap semantics (I10e), claim-flag priority restored (I10h), category precedence (I10f), envelope reservation (I10g), in-body wiki markers replacing the phantom compile record; §7b-ii behaviour-change carriers. v9:* *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0008`'s deferred liveness scope. **`0008` does not depend on this.** |
 | **Internal reviewers** | research — the O-Q1/O-Q2/O-Q3 ruling round (2026-08-08, `proposals/0012-rulings.md`; recorded in `specs/reviews.py`) |
 | **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5: R4-2/3/4 CLOSED, budget architecture affirmed; return on I10 mechanics** (R5-1…R5-4) → v8. **Round 6: R5s substantially CLOSED; return on 4 cross-carrier gaps** (R6-1…R6-4) → v9. **Round 7: R6-1/R6-4 coherent; return on 5 I10-machinery gaps** (R7-1…R7-5) → v10. **Round 8: suite independently REPRODUCED (kill-switch armed); return on 5 gaps** (R8-1…R8-5) → v11. **Round 9: R8-2/4/5 CLOSED; return on 4 framing/marker gaps** (R9-1…R9-4) → v12. **Round 10: R9-2 CLOSED; return on 4 gaps** (R10-1…R10-4) → v13. **Round 11: return on 5 blockers** (R11-1…R11-5) → v14. **Round 12: the BOUNDARY PROTOCOL ACCEPTED; 4 bin-(a) + 1 bin-(b)** (R12-1…R12-4) → v15. **Round 13: ONE bin-(a) remainder** (R13-1) → v16. **Round 14 (2026-08-10): APPROVED FOR ACCEPTANCE — bin (a) empty.** All dev-verified (ledger: `specs/reviews.py`; full per-round table: §12) |
@@ -658,6 +658,74 @@ member that carries information any consumer reads.** The v6 contract:
 - **Cross-class same-value still renders BOTH** — the O-Q2 ruling's own example (*"stated by
   you (Jan); also reported by a third party (Aug)"*): cross-class corroboration is informative;
   same-key repetition is not.
+
+## 4c-v. The briefing renders a contested commitment once (v18, amendment `0003/obligations` §4b)
+
+> **The rule this section adds:** the session-start briefing builds its contested groups with
+> `Memory._build_contested` (0011 §4c's refusal-scoped predicate, unchanged) and renders a contested commitment ONCE
+> in DATED COMMITMENTS; a commitment whose subject is not `user` names its subject. The amendment's other half (the
+> obligation's subject, the doctor count) is 0003 §4c-v, where the rulings and the declared deltas from v0.2 are
+> stated; the two deltas that are this section's follow.
+
+**Declared deltas from the amendment's v0.2 §4b** (the adoption's two-seat reads, 2026-11-01):
+- **The subject is named (research S1-4).** Under 0003 §4c-v.6a the obligation's name is the SUBJECT and the object
+  is the bare date, and a DATED COMMITMENTS line rendered `<relation>: <object> (due D)`, so v0.2's "renders PLAIN,
+  exactly as today" would have read `deadline: 2026-11-05 (due 2026-11-05)`. Every dated line whose subject is not
+  `user` now renders `<relation>: <subject> — <object> (due D)`, not only §4c-v.6a's obligations (a dated
+  `person:` edge dropped its subject before); a subject-`user` line is byte-identical to before. The subject is
+  clamped and counted as the object is (I10a), and passes every disclosure rule the object does, since it renders
+  only on a member the briefing already surfaced. The other sections still drop a non-`user` subject; that predates
+  this and is a NEXT-ROUND row.
+- **No new reach (I10d), so "both dates" narrows.** v0.2 (and the owner's 2026-10-29 description of (A): "once,
+  marked contested, with both dates") would have named a member's date wherever the contest put it. I10d gives
+  contested material NO NEW REACH: a member enters the briefing only through an ordinary category. So the line names
+  only members in the commitment tier; a rescheduled date outside the window (or undated) never appears, and the
+  member left alone in the tier is MARKED instead. Both dates render whenever both are in the window.
+
+1. **The carrier.** `Memory._proactive` calls `_build_contested(user_id, [], view)`: no query selection, so only
+   MENTIONABLE members are exposed and a fenced challenger is content-free linkage (round-10 A); under a principal,
+   0020 §4c N-2 applies as on the query path (a cross-scope member is linkage, an unresolved one is dropped). Only
+   EXPOSED ids reach `proactive.assemble`, whose `contested` argument they are. The briefing's `Recall.contested`
+   stays empty: the marker exists in the rendered text only, and a consumer of `Recall.edges` sees the members with
+   nothing structural marking the contest (a NEXT-ROUND row).
+2. **Members are what the briefing surfaced and the commitment tier admitted**: the lens, redaction, procedural
+   exclusion, 0047's withholding (proactive is PROACTIVE in 0047's census, so a challenged member is withheld before
+   anything is counted), collapse and the ungrounded filter have all run, and the member is assertable, unflagged and
+   carries an ISO date overdue or within `proactive_deadline_window_days`. A flagged member renders in CONFIRM WHEN
+   NATURAL (I10f).
+3. **Two or more such members** render as ONE line, `deadline: <subject> — CONTESTED: <A> or <B> (unconfirmed which
+   is current)` (`<A>, <B> or <C>` for more), dates ascending, with no due/overdue flag on any date: the line already
+   says none is confirmed. Its members render nowhere else. It is ONE budget unit: admitted or dropped together,
+   counted once, every member returned in `Recall.edges`.
+4. **One such member** renders plain. It is MARKED when a partner the briefing surfaced (visible to the principal,
+   not redacted, not withheld, assertable) sits outside the tier: ` (contested — see CONFIRM)` when that partner is
+   flagged, since it renders there; ` (contested — unconfirmed which date is current)` otherwise. **The mark is
+   content-free by rule** (research C3): it names no date, object, count or attribution of any other member, so no
+   later wording may add one. A partner that is withheld, fenced, redacted, cross-scope or unresolved gives no mark
+   (0020 N-1: in the briefing, a partner the principal cannot see leaves the commitment exactly as if it did not
+   exist; stricter than N-2's query-path status, by choice).
+5. **None**: nothing renders, as before. A direct caller of `assemble` with no `contested` gets the per-edge
+   rendering.
+
+**Order:** the group sorts as one commitment at its nearest due date under I10b's nearest-due order; ties by the
+members' latest `observed_at` (descending), then the smallest edge id. 0003 §4c-iii's `contested_group_key` governs
+recall's CONTESTED block, not this section.
+
+**Reach (the amendment's §2c-ii):** it adds no member to any section and never volunteers a fenced challenger; the
+mark reports a status of an eligible member's own key, the same truth a query recall reports for it.
+
+| id | invariant | cell (`tests/test_0003_obligations.py`) | the mutant it kills |
+|---|---|---|---|
+| INV-OB3 | a contested commitment renders ONCE, marked, with its in-window dates, never also plain | `test_ob3_the_briefing_renders_a_contested_commitment_once` | the briefing path builds no groups; a member also rendered plain |
+| INV-OB10 | one message naming two dates for one obligation renders the same way | `test_ob10_one_episode_naming_two_dates_renders_once_contested` | no briefing carrier (with the subject axis skipped for `deadline`, 0003 §4c-iv's within-episode net still contests the pair, so that mutant does not reach it) |
+| INV-OB4 | the predicate IS the refusal-scoped one | `test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments` | any two active values of one key read as a contest |
+| INV-OB8 | only mentionable members count; a fenced challenger is never volunteered | `test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line` | holds at two layers (the carrier's exposed ids; `assemble`'s assertable filter): the double mutant, run by hand at adoption |
+| INV-OB9 | 0047's withholding applies per member before the count | `test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted` | the group built over the store's edges, before withholding |
+| I10d | an out-of-window member never appears; its partner is marked | `test_a_member_outside_the_window_never_appears_and_marks_its_partner` | the out-of-window date named; the lone member unmarked |
+| I10d, N-1 | a withheld, fenced, redacted, cross-scope or unresolved partner gives no mark | OB8, OB9, `test_c1_a_cross_scope_partner_gives_no_group_and_no_mark`, `test_c1_an_unresolved_partner_gives_no_mark`, `test_c2_a_redacted_partner_gives_no_mark`, `test_c2_a_redacted_partner_in_the_window_gives_no_group` | the mark on a withheld or fenced partner |
+| C3 | the mark is content-free | `test_c3_the_mark_names_no_date_object_count_or_attribution` | — (a fixed string) |
+| I10f | a flagged partner leaves its sibling marked "see CONFIRM" | `test_a_lone_member_whose_partner_is_flagged_is_marked_contested` | the lone member unmarked |
+| S1-4 | a non-`user` subject is named, clamped and counted; never a withheld one's | `test_a_plain_commitment_names_a_subject_other_than_user`, `test_an_oversized_subject_is_clamped_and_counted`, `test_a_withheld_commitments_subject_is_never_rendered`; byte-identity: `test_a_subject_user_commitment_renders_byte_identical_to_before` | the subject dropped; its clamp uncounted; withholding skipped |
 
 ## 5. Regime analysis — where does this behave differently?
 

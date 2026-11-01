@@ -89,7 +89,7 @@ Folds: 0044/0003-contested-order
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v17.1 — 2026-10-29: §4c-iv's three behaviour headings relabelled `4c-iv.6a`–`6c` (dev's held-release suite: `test_no_spec_has_a_duplicated_section_heading` found `##### 4a.`–`4c.` twice, the fold having kept the amendment's labels beside §4c-iii's), with the references to them inside §4c-iv. No other change. **Prior: v17 — THE WITHIN-EPISODE FOLD (amendment `0003/within-episode`, v0.5, sha16 `16fc86e955086217`), ADOPTED BEFORE EXTERNAL REVIEW.** The owner ruled *"Adopt now"* and *"Ship, then review w/ trust-tools"* (2026-10-29, dev session): it ships in the held release and rides the trust-tools amendment's external review. Folded as §4c-iv, labelled by the amendment's own section numbers; pointers added at §2, §4a and §6. Rides the same adoption: 0041 §2d-iii-bis row 60's reason (the amendment's Amends). Not folded: its review brief, open questions and version history. **Prior: v16 — THE CONTESTED-ORDER FOLD (amendment `0044/0003-contested-order`, v1.5, sha16 `b6c87fcbb74bafdf`).** Round 3 of the 0044 package APPROVED its design on INV-O1–O10 with its activation held to 0044's; round 4 accepted it with 0044 (verdict 2026-10-13), and the owner ruled “Accept now, fold next” (2026-10-14). Folded as §4c-iii, labelled by the amendment's own section numbers so its internal references still resolve; pointers added at §2, §4c-ii, §4e and §6. Its reach rows are restated at `af1e564`: rows 1–3 re-executed with identical output, rows 4–8 reading the same lines. Not folded: its review brief, open questions, checklist and version history. Prior: **v15 (ACCEPTED)** — *re-read before editing; quote the version you approve.* Round-12 acceptance: one same-commit deletion-pass correction (removed the stale round-9 "`correct()`/lifecycle need not invalidate" sentence that contradicted the round-10 symmetric resolution rule) + §11a heading fixed to the canonical `## Review closure` form + `Spec-Status: accepted`. No behaviour change. Narrow design approved 3–5, re-approved 6–10, architecture approved 11, **accepted 12; broad external architecture review CLOSED.** |
+| **Version** | **v18 — 2026-11-01: THE OBLIGATIONS FOLD (amendment `0003/obligations`, v0.2, sha16 `3bd8b748612a1fb9`), ADOPTED BEFORE EXTERNAL REVIEW.** The owner ruled *"Ship, then review"* (2026-11-01, dev session): it ships in the next release and rides the trust-tools amendment's external review, as v17 did. Folded as §4c-v, labelled by the amendment's own section numbers, with its declared deltas from v0.2 (§4a's wording, research S1-1/S1-2; §2's digest row; the doctor check at `info`); its briefing half is 0012 v18 §4c-v. **Prior: v17.1 — 2026-10-29: §4c-iv's three behaviour headings relabelled `4c-iv.6a`–`6c` (dev's held-release suite: `test_no_spec_has_a_duplicated_section_heading` found `##### 4a.`–`4c.` twice, the fold having kept the amendment's labels beside §4c-iii's), with the references to them inside §4c-iv. No other change. **Prior: v17 — THE WITHIN-EPISODE FOLD (amendment `0003/within-episode`, v0.5, sha16 `16fc86e955086217`), ADOPTED BEFORE EXTERNAL REVIEW.** The owner ruled *"Adopt now"* and *"Ship, then review w/ trust-tools"* (2026-10-29, dev session): it ships in the held release and rides the trust-tools amendment's external review. Folded as §4c-iv, labelled by the amendment's own section numbers; pointers added at §2, §4a and §6. Rides the same adoption: 0041 §2d-iii-bis row 60's reason (the amendment's Amends). Not folded: its review brief, open questions and version history. **Prior: v16 — THE CONTESTED-ORDER FOLD (amendment `0044/0003-contested-order`, v1.5, sha16 `b6c87fcbb74bafdf`).** Round 3 of the 0044 package APPROVED its design on INV-O1–O10 with its activation held to 0044's; round 4 accepted it with 0044 (verdict 2026-10-13), and the owner ruled “Accept now, fold next” (2026-10-14). Folded as §4c-iii, labelled by the amendment's own section numbers so its internal references still resolve; pointers added at §2, §4c-ii, §4e and §6. Its reach rows are restated at `af1e564`: rows 1–3 re-executed with identical output, rows 4–8 reading the same lines. Not folded: its review brief, open questions, checklist and version history. Prior: **v15 (ACCEPTED)** — *re-read before editing; quote the version you approve.* Round-12 acceptance: one same-commit deletion-pass correction (removed the stale round-9 "`correct()`/lifecycle need not invalidate" sentence that contradicted the round-10 symmetric resolution rule) + §11a heading fixed to the canonical `## Review closure` form + `Spec-Status: accepted`. No behaviour change. Narrow design approved 3–5, re-approved 6–10, architecture approved 11, **accepted 12; broad external architecture review CLOSED.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | complete — narrow design approved r3–r5, direction re-approved r6–r10, architecture approved r11, **APPROVED FOR ACCEPTANCE at r12 (broad review closed)**. Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
@@ -1233,6 +1233,154 @@ which are content-free.
   benchmark. No number is quoted across the change without saying which prompt it was measured under.
 - **No tense in the store.** The store never reads notes such as "previous residence"; a tense rule there would be a
   second, weaker parser of the same text.
+
+## 4c-v. An obligation's subject is the named thing (v18, amendment `0003/obligations`)
+
+> **The rules this section adds:** (1) the extraction prompt writes a dated obligation as ONE `deadline` triple whose
+> SUBJECT is the obligation itself and whose object is its ISO date (§4c-v.6a), so two obligations no longer share
+> the functional key `(user, deadline)`; (2) the doctor reports, content-free and report-only, the subject-`user`
+> `deadline`/`scope` chains written before (1) (§4c-v.6c). The briefing's half, a contested commitment rendered ONCE,
+> is 0012's and is folded there (0012 §4c-v). **Rulings** (the owner): *"(A) in the held release"*, *"Spec it now,
+> build later"* for (B), *"No migration; doctor reports it"*, *"With (A)"* for the ISO-only briefing (2026-10-29);
+> *"Release now; (A) next"* (2026-10-31); *"Ship, then review"* (2026-11-01, dev session): it ships in the next
+> release and rides the trust-tools amendment's external review, as §4c-iv did.
+
+Labelled by the amendment's own section numbers, prefixed `4c-v.`, so its references (§4c-v.6a–6c, INV-OB*) resolve
+here. Folded from the amendment at v0.2 (research, sha16 `3bd8b748612a1fb9`, commit 824309d4) with the declared
+deltas below. Not folded: its review brief and version history.
+
+**Declared deltas from v0.2** (each from the adoption's two-seat reads, 2026-11-01):
+- **§4a's wording (dev; research S1-1, S1-2).** v0.2's "the date as an ISO date copied from the DATE CONTEXT calendar"
+  could not cover the common case: the calendar holds this week and next only, and the dates rule keeps a date the
+  calendar does not hold as the text's words, so "November 12" from 10-29 would have stayed non-ISO. The rule now
+  writes a stated date with no year as the next such date on or after the event's day; the dates rule names the
+  exception (S1-1); a date with no stated day, or a relative date outside the calendar, keeps the text's words and is
+  never given a day (S1-2). The year clause is MEASURED: its first wording, "written with the year the event means",
+  gave the right year 1/3 on INV-OB7's year-boundary probe (twice 2025-01-05 for "January 5" said on 2025-12-20; that
+  run's file was overwritten, and `ob7-rates-superseded-wording.json` is a later, labelled re-measurement of the same
+  wording, also 1/3); the stated rule gives 3/3 (`ob7-rates.json`).
+- **§2's prompt-digest row.** v0.2 said one regeneration covers this rule and §4c-iv's; §4c-iv's shipped in 0.28.0,
+  so this batch's one regeneration covers §4c-v.6a alone.
+- **§4c's level.** Report-only means `info` on every outcome: a `warn` makes `veracium doctor` exit 1, and no
+  migration removes these chains, so every affected store would fail the doctor permanently.
+- The briefing's deltas (the subject named on a plain line; 0012 I10d's no-new-reach) are 0012 §4c-v's.
+
+### 4c-v.1 Why (the amendment's §1)
+
+`deadline` is functional ("a dated obligation for a named thing"), and the extractor wrote subject `user` with the
+thing in the object, so each new commitment superseded the last: "I have a dentist appointment on November 12." then
+"I have a haircut appointment on November 20." retired the first, 2/2 (research's free-roam, 00e3ae17; the control 0/2;
+reproduced by dev at `d087f6e` with a scripted extractor). With the named thing as subject the same probe keeps both.
+The briefing had two gaps: no contested marker (a refused reschedule listed the old date as a real commitment), and
+ISO dates only (a commitment stored as "November 12" never reached it).
+
+### 4c-v.2 Field contracts (the amendment's §2)
+
+| carrier | change |
+|---|---|
+| `veracium.prompts.EXTRACT_PROMPT` RULES | §4c-v.6a's rule, after the dates rule; the dates rule names its exception |
+| `veracium.doctor` | `_check_obligation_chains`, the `obligations` check and the `obligation_chain_retired` count (§4c-v.6c) |
+| the briefing (`Memory._proactive`, `proactive.assemble`) | 0012 §4c-v |
+| digests of the prompts module | ONE regeneration for §4c-v.6a (LongMemEval's `extract_prompt_sha`, the 0044 campaign definitions) |
+
+### 4c-v.3 Untrusted inputs (the amendment's §2c)
+
+| input | supplied by | treated as |
+|---|---|---|
+| the event text | the caller | data. The rule tells the extractor where to put the obligation's name; the text cannot change the rule |
+| the extractor's triples | a model | untrusted output. If it still writes subject `user`, today's one-per-user behaviour recurs (§4c-v.10); nothing in the store depends on the rule being followed |
+| a subject naming an obligation | the extractor | an opaque subject string: 0011 classifies it OTHER, so a user's self-assertion cannot retire it. No identity is derived from it, and nothing gates on its wording (0011 §3b) |
+
+### 4c-v.4 Assertions about reach (the amendment's §2c-ii)
+
+- §4c-v.6a reaches only what the extractor emits for a dated obligation. No other relation's subject rule changes.
+- The doctor check reads rows and writes nothing (it runs on the doctor's snapshot copy).
+- The measurements are about one extractor and the probes run, not every phrasing of an obligation.
+
+### 4c-v.5 Trust classes (the amendment's §3)
+
+| class of the episode | §4c-v.6a | a later restatement by the user (a reschedule) |
+|---|---|---|
+| `user` | applies | refused by 0011's subject axis (subject OTHER, user self-assertion): both dates active, one `supersession-authority-v2` row |
+| `system` | applies | the ladder decides, as today |
+| `third_party` | a claim about the user's obligations stays `third_party_claim` (the rule says so) | cannot retire a user-authored prior (the ladder) |
+| `assistant` (0001) | applies | the ladder decides |
+
+### 4c-v.6 Behaviour (the amendment's §4)
+
+##### 4c-v.6a. The obligation rule (the amendment's §4a)
+
+> - A dated obligation the user states (an appointment, a deadline, a due date, a renewal, a scheduled event) is ONE
+>   triple whose SUBJECT is the obligation itself ("dentist appointment", "Q3 report", "lease renewal"), relation
+>   `deadline`, and whose object is the date as an ISO date (YYYY-MM-DD): a weekday or "tomorrow" copied from the
+>   DATE CONTEXT calendar; a stated date with no year ("November 12") is the next such date on or after the day the
+>   event occurred, unless the event says which year. A date with no stated day ("sometime in November", "next
+>   month"), or a relative date the calendar does not hold ("in three weeks"), keeps the text's words: never give it
+>   a day. Never use the subject `user` for an obligation: the user has many. A
+>   third party's claim about the user's obligations is still a CLAIM under the rule above.
+
+and the dates rule ends "…exactly as written, except an obligation's date, written as above." Two obligations then
+coexist, having different functional keys; their ISO dates are what the briefing reads.
+
+**A reschedule** ("my dentist appointment moved to November 14") is refused by 0011's subject axis: both dates stay
+active, one row is recorded, a query recall reports the pair in `Recall.contested`, and the briefing renders the
+contest once (0012 §4c-v). One message naming two dates for one obligation is the same contest (the subject axis
+refuses before §4c-iv's within-episode rule, so its row is `supersession-authority-v2`). The user settles it by
+`correct()` through the ladder (0011 E5). (B), the obligation record (0052), is the design in which a reschedule
+applies.
+
+##### 4c-v.6b. The briefing (the amendment's §4b)
+
+Folded into 0012 as §4c-v.
+
+##### 4c-v.6c. The doctor count (the amendment's §4c; no migration)
+
+> A report-only check, content-free: per user, the number of `deadline` and `scope` edges with subject `user` retired
+> `superseded` by another edge with the same subject and relation. It reports the count, per user, and a line saying
+> such chains may hide earlier commitments; it changes nothing, at `info` on every outcome.
+
+No migration (the owner): a migration cannot tell a real reschedule from this defect.
+
+### 4c-v.7 Regimes (the amendment's §5)
+
+Ingest: §4c-v.6a. Read (the session-start briefing): 0012 §4c-v. Doctor: §4c-v.6c. Maintain: unchanged (expiry runs
+per edge, contested or not).
+
+### 4c-v.8 Invariants (the amendment's §6)
+
+Each check is shown red against its named mutant in `specs/evidence/0003/obligations_mutants.py` (its table:
+`specs/evidence/0003/obligations/mutation-table.json`), over the cells of `tests/test_0003_obligations.py`.
+
+| id | invariant | check | the mutant it kills |
+|---|---|---|---|
+| INV-OB1 | two obligations in the user's words coexist | `test_ob1_two_obligations_coexist` | — the extractor's choice, not a code edit; the defect's own cell `test_ob1_the_subject_user_form_is_the_defect_it_answers` stands beside it, and INV-OB7 measures the rate |
+| INV-OB2 | a reschedule is contested, never silently applied or lost | `test_ob2_a_reschedule_is_contested_with_one_refusal_row` | the subject axis skipped for `deadline` |
+| INV-OB3, OB4, OB8, OB9, OB10 | the briefing's | 0012 §4c-v | 0012 §4c-v |
+| INV-OB5 | the doctor count is exact and report-only | `test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing` (beside a `located_at` chain and a non-`user` deadline chain it must not count), `test_ob5_a_store_with_no_chain_reports_none` | a non-`user` subject counted; another relation counted. "A check that writes" is equivalent by construction: the doctor reads a snapshot copy |
+| INV-OB6 | the rule is in the prompt the extractor receives | `test_ob6_the_obligation_rule_reaches_the_extractor` (a capturing completer) | the rule in a constant the extractor is never sent |
+| INV-OB7 | the extractor follows §4c-v.6a at a measured rate | `specs/evidence/0003/obligations/ob7_rates.py` → `ob7-rates.json` (measured 2026-11-01 at the extractor pin `claude-haiku-4-5`, the reference provider's distill default: every rate 3/3 on all six probes, P6 included); at the pinned extractor, n=3 per probe, three rates reported per probe and never pooled: the ISO-object rate, the right-year rate (a late-December "January 5"), the no-fabrication rate (no stated day, or a relative date outside the calendar: an ISO object is the FAILURE), and the no-phantom rate (research S1-5: a PAST stated date never becomes a commitment after the event's day) | — an acceptance measurement, published as rates (research S1-3) |
+
+### 4c-v.9 Failure modes and reversibility (the amendment's §7)
+
+| failure | effect | reversible? |
+|---|---|---|
+| the extractor still writes subject `user` | one-per-user recurs for that commitment; the doctor count shows it | yes: restate the commitment |
+| a reschedule | contested, shown once with both dates | yes: `correct()`; or (B) later |
+| an obligation subject too generic ("appointment") | two different appointments share a key, and the second is refused (contested) | visible, not silent |
+
+### 4c-v.10 Claims and limits (the amendment's §8)
+
+- **Model-dependent**, like §4c-iv.6a: the fix is the extractor following a prompt rule, a measured rate (INV-OB7).
+  Whenever it does not, the store behaves as before, and the doctor count makes that visible afterwards.
+- **A reschedule is contested, not applied.** That is the stated cost of (A); (B) applies it.
+- **A date with no stated day stays the text's words** (S1-2), so such a commitment never reaches the ISO-only
+  briefing, and the doctor does not count it.
+- **A past appointment the user mentions is still stored as a `deadline`** (INV-OB7's P6: its date as written, not a
+  phantom a year out), so the briefing lists it as overdue until it ages out of the window. That predates §4c-v and is
+  not changed by it.
+- **Two genuinely distinct obligations under one name** ("dentist appointment" twice) share a key; (B) answers it.
+- **Existing stores keep their chains** (no migration); the doctor reports them.
+- **Benchmark figures across the change** are pre-change figures if measured before the release (§4c-iv.10).
 
 ## 4d. Keeping the edge is not keeping the fact
 

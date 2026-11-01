@@ -46,11 +46,27 @@ def _dates_in(text: str) -> list[_date]:
     return out
 
 
+class _ContestedCommitment:
+    """0003/obligations §4b: ONE DATED COMMITMENTS unit standing for a contested group's remaining members — admitted,
+    dropped and counted as one item, every member returned in `Recall.edges`."""
+    __slots__ = ("id", "edges")
+
+    def __init__(self, edges):
+        self.edges = edges
+        self.id = "contested:" + ",".join(sorted(e.id for e in edges))
+
+
+def _commitment_subject(e) -> str:
+    """0003/obligations §4b: under §4a an obligation's NAME is its subject and its object is the bare date, so a
+    DATED COMMITMENTS line names a subject other than `user`; a subject-`user` line is byte-identical to before."""
+    return "" if e.subject == "user" else f"{e.subject} — "
+
+
 def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
              token_budget: Optional[int] = None,
              est: Callable[[str], int] = lambda s: max(1, len(s) // 4),
              visible: Optional[Callable[[list], list]] = None,
-             snap=None) -> tuple[str, list[Edge], list[Episode], bool]:
+             snap=None, contested: Optional[list] = None) -> tuple[str, list[Edge], list[Episode], bool]:
     """Build the briefing. Returns (context, edges, episodes, truncated).
 
     `visible` (specs/0020 §4f) is the PRINCIPAL LENS: when a principal was
@@ -70,6 +86,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
       4. RECENT HISTORY — grounded interaction episodes from the last
          `proactive_recent_days` days (never outcome records, never
          third-party-influenced episodes).
+
+    `contested` (0003/obligations §4b): `(subject, relation, member ids)` for each refusal-scoped contested group,
+    from `Memory._build_contested` with no query selection, so only MENTIONABLE members are named. A group with at
+    least two members this briefing would surface (after the lens, redaction, 0047's withholding, collapse and the
+    flag) and at least one in the commitment tier renders ONCE in DATED COMMITMENTS, marked contested, naming every
+    remaining member's date; its members render nowhere else. Fewer than two: each renders as it would without it.
+    `None` (a direct caller) is today's per-edge rendering.
     """
     now = now or datetime.now(timezone.utc)
     today = now.date()
@@ -194,6 +217,14 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             _clamped_ids.add(("edge", e.id))       # TYPE-tagged (R-impl6-2): an Edge
         return out                                 # and an Episode may share an id
 
+    def _subject_counted(e):
+        # 0003/obligations §4b (research S1-4(a)): the subject is extracted text, clamped and counted as the object is
+        s = _commitment_subject(e)
+        out = _clamp(s, max(16, _cap // 8)) if s else s
+        if out != s:
+            _clamped_ids.add(("edge", e.id))
+        return out
+
     for e in surfaced:
         if not e.assertable:
             continue
@@ -220,7 +251,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             # demote to the variants tier.
             d = min(due)
             flag = f" (OVERDUE — was due {d})" if d < today else f" (due {d})"
-            commitments.append((f"{e.relation}: {_obj_counted(e)}{flag}", e))
+            commitments.append((f"{e.relation}: {_subject_counted(e)}{_obj_counted(e)}{flag}", e))
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
@@ -229,6 +260,41 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 (f"{e.relation}: {_obj_counted(e)} "
                  f"(since {since_dt.date()} — worth a follow-up)", e))
             seen.add(e.id)
+
+    # 0003/obligations §4b: a contested commitment renders ONCE. Members are what THIS briefing surfaced (so the lens,
+    # redaction, 0047's withholding, collapse and the ungrounded filter already ran) and that entered the commitment
+    # tier: 0012 I10d gives contested material NO NEW REACH, so an out-of-window or undated member never appears and a
+    # flagged one renders in CONFIRM WHEN NATURAL (I10f). Two such members render as ONE line naming their dates (no
+    # due/overdue flag: the line already says none is confirmed). One alone renders plain, MARKED when a partner this
+    # briefing surfaced sits outside the tier, so its date never reads as settled; the mark names no other content.
+    if contested:
+        _tier = {e.id: e for _, e in commitments}
+        _surf = {e.id for e in surfaced if e.assertable}
+        _flagged = {e.id for e in surfaced if e.assertable and e.needs_confirmation}
+        _grouped: set = set()
+        _marked: dict = {}
+        _units = []
+        for _subject, _relation, _ids in contested:
+            _ms = [_tier[i] for i in _ids if i in _tier and i not in _grouped]
+            _outside = [i for i in _ids if i in _surf and i not in _tier]
+            if len(_ms) == 1 and _outside:
+                _marked[_ms[0].id] = (" (contested — see CONFIRM)" if any(i in _flagged for i in _outside)
+                                      else " (contested — unconfirmed which date is current)")
+            if len(_ms) < 2:
+                continue
+            _grouped.update(m.id for m in _ms)
+            _slots = sorted({str(min(_dates_in(m.object + " " + m.note))) for m in _ms})
+            _when = _slots[0] if len(_slots) == 1 else ", ".join(_slots[:-1]) + " or " + _slots[-1]
+            _unit = _ContestedCommitment(_ms)
+            _label = _clamp(_subject, max(16, _cap // 8))
+            if _label != _subject:
+                _clamped_ids.add(("contested", _unit.id))
+            _units.append((f"{_relation}: {_label} — CONTESTED: {_when} (unconfirmed which is current)", _unit))
+        commitments = [(line + _marked.get(e.id, ""), e) for line, e in commitments]
+        if _grouped:
+            commitments = [p for p in commitments if p[1].id not in _grouped] + _units
+            current = [p for p in current if p[1].id not in _grouped]
+            variants = [p for p in variants if p[1].id not in _grouped]
 
     recents: list[tuple[str, Episode]] = []
     _redacted_episodes = store.redacted_targets(user_id, "episode")
@@ -257,6 +323,10 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
 
     def _due_key(pair):
         text, e = pair
+        if isinstance(e, _ContestedCommitment):    # 0003/obligations §4b: ONE commitment at its nearest due date
+            ds = [d for m in e.edges for d in _dates_in(m.object + " " + m.note)]
+            return (min(ds) if ds else today,
+                    -max(m.provenance.observed_at.timestamp() for m in e.edges), min(m.id for m in e.edges))
         ds = _dates_in(e.object + " " + e.note)
         # nearest due first; ties observed_at DESC then edge id (I10b, R-impl3-1)
         return (min(ds) if ds else today,
@@ -299,11 +369,17 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     sel_eps: list[Episode] = []
     admitted: dict[str, list[str]] = {h: [] for h, _ in sections}
     dropped: dict[str, int] = {h: 0 for h, _ in sections}
+    def _select(unit):
+        if isinstance(unit, _ContestedCommitment):
+            sel_edges.extend(unit.edges)
+        else:
+            (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+
     if token_budget is None:
         for header, items in sections:
             for line, unit in items:
                 admitted[header].append(line)
-                (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+                _select(unit)
     else:
         remaining = token_budget - REPORT_RESERVE
         precedence = ["## CONFIRM WHEN NATURAL", "## DATED COMMITMENTS",
@@ -339,7 +415,8 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                             line = _ci(line, remaining - header_cost - 1)
                         cost = est(line) + 1 + header_cost
                         _clamped_ids.add(
-                            ("edge" if isinstance(unit, Edge) else "episode",
+                            ("edge" if isinstance(unit, Edge) else
+                             "contested" if isinstance(unit, _ContestedCommitment) else "episode",
                              getattr(unit, "id", repr(unit))))   # ONE item, typed
                         if cost > remaining:
                             dropped[header] += 1
@@ -350,7 +427,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 admitted[header].append(line)
                 remaining -= cost
                 first_admitted = True
-                (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+                _select(unit)
         if admitted["## RECENT HISTORY"]:
             admitted["## RECENT HISTORY"].sort()           # render chronologically
             #                                                ([YYYY-MM-DD] prefix sorts)

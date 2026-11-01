@@ -573,6 +573,36 @@ def _check_procedural(rep: Report, edges: dict) -> None:
             shaped)
 
 
+OBLIGATION_RELATIONS = ("deadline", "scope")
+
+
+def _check_obligation_chains(rep: Report, edges: dict) -> None:
+    """0003/obligations §4c: per user, the `deadline` and `scope` edges with subject `user` retired `superseded` by
+    another edge of the same subject and relation. Before §4a the extractor wrote every obligation under subject
+    `user`, so each new one superseded the last; such a chain may hide earlier commitments, and no migration can tell
+    a real reschedule from that defect (the owner, 2026-10-29: no migration, the doctor reports it). Content-free and
+    report-only: `info` on every outcome, so a store that keeps its chains is never a failing doctor."""
+    rep.checks_run.append("obligations")
+    per_user: dict = {}
+    ids = []
+    for (u, eid), (_row, d) in edges.items():
+        prior = edges.get((u, d.get("supersedes")), (None, None))[1]      # a supersession is within one user
+        if (prior is not None and prior.get("subject") == "user" and d.get("subject") == "user"
+                and prior.get("relation") in OBLIGATION_RELATIONS and d.get("relation") == prior.get("relation")
+                and prior.get("invalidation_reason") == "superseded"):
+            per_user[u] = per_user.get(u, 0) + 1
+            ids.append(d["supersedes"])
+    rep.counts["obligation_chain_retired"] = len(ids)
+    if ids:
+        rep.add("obligations", "info",
+                f"{len(ids)} deadline/scope fact(s) with subject `user` retired by a later one of the same relation "
+                f"({', '.join(f'{u}: {n}' for u, n in sorted(per_user.items()))}): before 0003/obligations every "
+                f"commitment shared that one key, so such a chain may hide earlier commitments; nothing was changed",
+                sorted(ids))
+    else:
+        rep.add("obligations", "info", "no deadline/scope chain with subject `user`")
+
+
 def _check_revocation(rep: Report, store, users: list) -> None:
     """The reference sweep, called with NO proposed action, over each user's
     standing revocations: its effect list is the delta between the store as it
@@ -736,6 +766,7 @@ def diagnose(path: str, *, user: Optional[str] = None) -> Report:
             _check_journal(rep, conn, user, edges)
             _check_sources(rep, edges, episodes)
             _check_procedural(rep, edges)
+            _check_obligation_chains(rep, edges)
             _check_data_migration(rep, conn, user, edges)
             try:
                 _check_revocation(rep, store, rep.users)

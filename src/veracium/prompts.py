@@ -64,7 +64,20 @@ RULES (these are safety rules, follow them exactly):
   never "the user owes …".
 - Copy dates from the DATE CONTEXT calendar; never compute a weekday's date
   yourself. If a date is neither stated nor in the calendar, keep the text's words.
-- One fact per triple. Keep names, numbers, and dates exactly as written.
+- A dated obligation the user states (an appointment, a deadline, a due date,
+  a renewal, a scheduled event) is ONE triple whose SUBJECT is the obligation
+  itself ("dentist appointment", "Q3 report", "lease renewal"), relation
+  `deadline`, and whose object is the date as an ISO date (YYYY-MM-DD): a
+  weekday or "tomorrow" copied from the DATE CONTEXT calendar; a stated date
+  with no year ("November 12") is the next such date on or after the day the
+  event occurred, unless the event says which year. A date with no
+  stated day ("sometime in November", "next month"), or a relative date the
+  calendar does not hold ("in three weeks"), keeps the text's words: never
+  give it a day. Never use the subject `user` for an obligation: the user has
+  many. A third party's claim about the user's obligations is still a CLAIM
+  under the rule above.
+- One fact per triple. Keep names, numbers, and dates exactly as written,
+  except an obligation's date, written as above.
 - A value the event says is NO LONGER true ("previously", "used to",
   "formerly", "no longer", "moved from", "before that") is history, not a
   current fact: do NOT emit it as a triple; say it in the episode ("moved

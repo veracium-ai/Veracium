@@ -1,0 +1,401 @@
+{
+  "invariant": "INV-OB7",
+  "spec": "0003 \u00a74c-v",
+  "n": 3,
+  "extractor_pin": "claude-haiku-4-5 (veracium.llm.anthropic.DEFAULT_MODELS['distill'], the reference provider's distill default)",
+  "year_clause": "superseded: written with the year the event means",
+  "measured_at": "2026-11-01T00:17Z",
+  "probes": [
+    {
+      "probe": "P1-two-appointments",
+      "texts": [
+        [
+          "2026-10-29",
+          "USER: I have a dentist appointment on November 12."
+        ],
+        [
+          "2026-10-29",
+          "USER: I have a haircut appointment on November 20."
+        ]
+      ],
+      "expect": {
+        "iso": [
+          "2026-11-12",
+          "2026-11-20"
+        ],
+        "both_active": true
+      },
+      "rates": {
+        "subject_not_user": "3/3",
+        "iso_object": "3/3",
+        "both_active": "3/3"
+      },
+      "trials": [
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-11-12",
+              "active": true
+            },
+            {
+              "subject": "haircut appointment",
+              "object": "2026-11-20",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 2,
+            "subject_not_user": true,
+            "iso_object": true,
+            "both_active": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-11-12",
+              "active": true
+            },
+            {
+              "subject": "haircut appointment",
+              "object": "2026-11-20",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 2,
+            "subject_not_user": true,
+            "iso_object": true,
+            "both_active": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-11-12",
+              "active": true
+            },
+            {
+              "subject": "haircut appointment",
+              "object": "2026-11-20",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 2,
+            "subject_not_user": true,
+            "iso_object": true,
+            "both_active": true
+          }
+        }
+      ]
+    },
+    {
+      "probe": "P2-stated-date",
+      "texts": [
+        [
+          "2026-11-01",
+          "USER: My lease renewal is due November 30."
+        ]
+      ],
+      "expect": {
+        "iso": [
+          "2026-11-30"
+        ]
+      },
+      "rates": {
+        "subject_not_user": "3/3",
+        "iso_object": "3/3"
+      },
+      "trials": [
+        {
+          "edges": [
+            {
+              "subject": "lease renewal",
+              "object": "2026-11-30",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "iso_object": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "lease renewal",
+              "object": "2026-11-30",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "iso_object": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "lease renewal",
+              "object": "2026-11-30",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "iso_object": true
+          }
+        }
+      ]
+    },
+    {
+      "probe": "P3-right-year",
+      "texts": [
+        [
+          "2025-12-20",
+          "USER: I have a dentist appointment on January 5."
+        ]
+      ],
+      "expect": {
+        "iso": [
+          "2026-01-05"
+        ]
+      },
+      "rates": {
+        "subject_not_user": "3/3",
+        "iso_object": "1/3"
+      },
+      "trials": [
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-01-05",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "iso_object": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2025-01-05",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "iso_object": false
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2025-01-05",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "iso_object": false
+          }
+        }
+      ]
+    },
+    {
+      "probe": "P4-no-stated-day",
+      "texts": [
+        [
+          "2026-10-20",
+          "USER: I need to renew my passport sometime in November."
+        ]
+      ],
+      "expect": {
+        "no_fabrication": true
+      },
+      "rates": {
+        "subject_not_user": "3/3",
+        "no_fabrication": "3/3"
+      },
+      "trials": [
+        {
+          "edges": [
+            {
+              "subject": "passport renewal",
+              "object": "sometime in November",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_fabrication": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "passport renewal",
+              "object": "sometime in November",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_fabrication": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "passport renewal",
+              "object": "sometime in November 2026",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_fabrication": true
+          }
+        }
+      ]
+    },
+    {
+      "probe": "P5-relative-outside-calendar",
+      "texts": [
+        [
+          "2026-11-01",
+          "USER: My tax filing is due in three weeks."
+        ]
+      ],
+      "expect": {
+        "no_fabrication": true
+      },
+      "rates": {
+        "subject_not_user": "3/3",
+        "no_fabrication": "3/3"
+      },
+      "trials": [
+        {
+          "edges": [
+            {
+              "subject": "tax filing",
+              "object": "in three weeks",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_fabrication": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "tax filing",
+              "object": "in three weeks",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_fabrication": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "tax filing",
+              "object": "in three weeks",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_fabrication": true
+          }
+        }
+      ]
+    },
+    {
+      "probe": "P6-past-stated-date",
+      "texts": [
+        [
+          "2026-10-20",
+          "USER: I had my dentist appointment on October 12."
+        ]
+      ],
+      "expect": {
+        "no_phantom_after": "2026-10-20"
+      },
+      "rates": {
+        "subject_not_user": "3/3",
+        "no_phantom": "3/3"
+      },
+      "trials": [
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-10-12",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_phantom": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-10-12",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_phantom": true
+          }
+        },
+        {
+          "edges": [
+            {
+              "subject": "dentist appointment",
+              "object": "2026-10-12",
+              "active": true
+            }
+          ],
+          "score": {
+            "deadline_triples": 1,
+            "subject_not_user": true,
+            "no_phantom": true
+          }
+        }
+      ]
+    }
+  ]
+}

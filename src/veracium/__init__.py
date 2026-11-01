@@ -982,10 +982,14 @@ class Memory:
         # `view` is None and `assemble` runs exactly as it always has.
         view = self._scope_view(user_id, principal, filters)
         snap = self.store.challenge_snapshot(user_id)          # specs/0047 §4d: the call's ONE snapshot
+        # 0003/obligations §4b: the briefing's contested groups, by the ONE refusal-scoped construction and with no
+        # query selection, so only mentionable members are named; the briefing's Recall.contested stays empty
+        groups, _ = self._build_contested(user_id, [], view)
         context, edges, episodes, truncated = proactive.assemble(
             self.store, user_id, self.config,
             token_budget=token_budget, est=self._est_tokens,
-            visible=(view.lens if view is not None else None), snap=snap)
+            visible=(view.lens if view is not None else None), snap=snap,
+            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups])
         self._record("recall", {"wiki_used": False, "subgraph_edges": len(edges),
                                 "grounded_items": len(edges), "unverified_items": 0,
                                 "proactive": 1, "trimmed": 1 if truncated else 0},
