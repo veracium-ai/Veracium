@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ 963551fa64162b2be60684c9fc2e189bdfd1be27
+# generated 2026-09-12 against veracium @ 8c7343054b08337e7a503eb4875649b4b46edae6
+# RE-PINNED 2026-11-01 0003/obligations (the obligation rule, the briefing's contested carrier and rendering, the doctor's obligation-chain count: src/veracium/__init__.py, doctor.py, proactive.py, prompts.py) and its regenerations landed in 8c7343054b08337e7a503eb4875649b4b46edae6: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-10-31 the schema evidence recording the v0.28.0 tag (legacy_stores.json, one row; no code) landed in 963551fa64162b2be60684c9fc2e189bdfd1be27: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-10-31 doctor's attested-build listing and its store-less report (src/veracium/doctor.py, eea0e76 and 7aa69ca) landed in 8b29e758ef4903fb4c0c5d540b3f8a47fc68497f: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-10-30 0007 attestation run 8's records (src/veracium/store/evidence/sqlite_runtimes.json, data only) landed in e253c125bf5c1c0c019e003fb28a0e3a13695b53: bodies byte-identical; the pin moves to it
