@@ -1,0 +1,29 @@
+0003 §4c-v.10, the "February 29" limit (the 0003/obligations N1-N4 batch's N4): dev's re-run at ea88c72 of research's
+probe Y3 (research's stage 2 on 6d10dc6, 4910a8b9: 3/3 wrote 2026-02-28). A record of what was run and printed, nothing
+derived from it; the extractor is a model, so a re-run may draw differently.
+
+When:        2026-11-01, output file written 20:02:52 UTC
+Tree:        a `git archive ea88c72` export (src/veracium/proactive.py sha16 b1f028f9c4100e6c)
+Interpreter: CPython 3.14.7 in a throwaway venv, anthropic 2.3.0, pydantic 2.14.2; veracium from the export's src/
+Extractor:   specs/evidence/0003/obligations/ob7_rates.py's trial(): Memory.remember with AnthropicComplete(), a fresh
+             store per trial; distill model veracium.llm.anthropic.DEFAULT_MODELS["distill"] = claude-haiku-4-5
+Run from the export's root:
+
+    PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src:specs/evidence/0003/obligations <venv>/bin/python -c "
+    import veracium; print('veracium from', veracium.__file__)
+    from ob7_rates import trial
+    for i in range(3):
+        t = trial([('2025-11-01', 'USER: My lease renewal is due February 29.')])
+        print([(e['subject'], e['object'], e['active']) for e in t])
+    "
+
+Printed, one line per trial (subject, object, active), verbatim; the store-open SQLite warning lines are omitted:
+
+[('lease renewal', '2025-02-29', True)]
+[('lease renewal', '2026-02-28', True)]
+[('lease renewal', '2026-02-28', True)]
+
+So 2/3 wrote 2026-02-28 (a day never said) and 1/3 wrote 2025-02-29 (not a calendar date). Every one of these objects
+is UNGROUNDED for that event text and session date: 0045's grounding resolves "February 29" only to a real leap day
+within +-366 days of the session, and none lies within 366 days of 2025-11-01 (research's stage 1 on ea88c72,
+d3d22dd5; re-run by dev). So the briefing volunteers none of them.
