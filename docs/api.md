@@ -221,6 +221,13 @@ disclosure gates it: only `MENTIONABLE` facts appear — `use_only` material and
 quarantined claims are never volunteered unprompted (`Recall.unverified` is
 always empty in this mode). Deterministic and LLM-free. Windows are
 configurable (`proactive_deadline_window_days`, `proactive_recent_days`).
+A dated line names its subject when that is not `user` (`deadline: dentist
+appointment — 2026-11-12 (due 2026-11-12)`). A commitment whose reschedule was
+refused renders ONCE, `deadline: <subject> — CONTESTED: <A> or <B> (unconfirmed
+which is current)`, over the dates in the window; a contested date outside it
+never appears, and the one left alone is marked `(contested — …)` with no other
+content (specs/0012 §4c-v). The marker is text only: `Recall.contested` stays
+empty in this mode.
 
 Entity matching is **token-exact, not fuzzy**: the query's tokens are matched
 against subject/object tokens, so `"covetrus"` does not match a subject token
@@ -488,7 +495,11 @@ cannot be told apart there) and `procedural_shaped`
 (declarative records whose `note` matches research's census marker screen, a
 screen result and never a count of procedures; notes only, never `summary`;
 informational, it cannot fail the build) — there to notice an extractor that starts producing procedure-shaped
-notes or hosts feeding procedures down the declarative path; and, for every
+notes or hosts feeding procedures down the declarative path; the `obligations` count
+(`obligation_chain_retired`, specs/0003 §4c-v): per user, the `deadline`/`scope`
+facts with subject `user` that a later one retired — before 0003/obligations
+every commitment shared that one key, so such a chain may hide earlier
+commitments; informational, and nothing migrates it; and, for every
 standing revocation (specs/0022), the reference sweep run over the store as it
 is with no proposed action — a pending effect means the revocation is not
 applied. Rebuildable
