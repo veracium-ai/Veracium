@@ -1,0 +1,750 @@
+{
+ "body_sha256": "d8a7f1d986e63fef807b9c5c3e41c272d3227a9a7c0dcc9bc63f56efb9825f1f",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "definition_sha256": "95575cf004acdfd0bc01efb568690fa58f7d2c95a848fa5ce254aa9c0cadf939",
+   "expected": "SURVIVED",
+   "file": "src/veracium/graph.py",
+   "good": true,
+   "id": "NOOP-graph",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/graph.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "definition_sha256": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
+   "expected": "SURVIVED",
+   "file": "src/veracium/__init__.py",
+   "good": true,
+   "id": "NOOP-__init__",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/__init__.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user",
+    "tests/test_0003_obligations.py::test_a_withheld_commitments_subject_is_never_rendered",
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
+    "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
+    "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "definition_sha256": "1f9488919d4c7d2dd19b5b9790346dbdda6fd2c19992af873a242d6b47efd951",
+   "expected": "SURVIVED",
+   "file": "src/veracium/proactive.py",
+   "good": true,
+   "id": "NOOP-proactive",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user",
+    "tests/test_0003_obligations.py::test_a_withheld_commitments_subject_is_never_rendered",
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
+    "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
+    "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/proactive.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing"
+   ],
+   "definition_sha256": "ca69b4ab7aed219543de99f8c18135def799fca683cfdc05b80a2f6bc42e5058",
+   "expected": "SURVIVED",
+   "file": "src/veracium/doctor.py",
+   "good": true,
+   "id": "NOOP-doctor",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/doctor.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+   ],
+   "definition_sha256": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6",
+   "expected": "SURVIVED",
+   "file": "src/veracium/prompts.py",
+   "good": true,
+   "id": "NOOP-prompts",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/prompts.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once": "other: TypeError"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "cells_passed": [],
+   "definition_sha256": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
+   "expected": "UNCLASSIFIED",
+   "file": "src/veracium/proactive.py",
+   "good": true,
+   "id": "CTRL-unrelated-TypeError",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "outcome": "UNCLASSIFIED",
+   "what": "an UNRELATED TypeError in assemble: every cell fails for no reason a row names"
+  }
+ ],
+ "header": {
+  "cells": {
+   "obligations": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user",
+    "tests/test_0003_obligations.py::test_a_withheld_commitments_subject_is_never_rendered",
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
+    "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing",
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor",
+    "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 14,
+    "ok": true,
+    "passed": 14
+   },
+   "last": {
+    "of": 14,
+    "ok": true,
+    "passed": 14
+   }
+  },
+  "commit": "734433ba92dddb7e6aa6264bd97709ff80b74a01",
+  "control_definitions": {
+   "CTRL-unrelated-TypeError": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
+   "NOOP-__init__": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
+   "NOOP-doctor": "ca69b4ab7aed219543de99f8c18135def799fca683cfdc05b80a2f6bc42e5058",
+   "NOOP-graph": "95575cf004acdfd0bc01efb568690fa58f7d2c95a848fa5ce254aa9c0cadf939",
+   "NOOP-proactive": "1f9488919d4c7d2dd19b5b9790346dbdda6fd2c19992af873a242d6b47efd951",
+   "NOOP-prompts": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6"
+  },
+  "definitions": {
+   "I10d-every-commitment-marked": "02b6b07c0d9e538d070fbaa8ddf810db3cba22e56ce9a727b8106792f8dda6a4",
+   "I10d-lone-member-unmarked": "9678bbe0efc485ebd98d73bcf788d837fd5bbd6b141fe2a976bf5f8249f22130",
+   "I10d-out-of-window-member-named": "80e570f81c2244ca54b5aba07df473d237b34a1b0a85a2d722eb3c072903d4d7",
+   "OB2-subject-axis-bypassed-for-deadline": "dae5e0c681cbf1a7053dce43060c657397c61cfc32f138ae65b11f3d243603d0",
+   "OB3-member-also-rendered-plain": "d08e2b12d0a43c2b90c3802b9ae8cce8c6bff0ae3e9d645d7ab7f9512171ed18",
+   "OB3-no-briefing-carrier": "980a945f835ac7c41d48d7b30061aec542f0230292641f323d743627d3d59485",
+   "OB4-any-two-distinct-values": "ecbdf5a868a2ee70d9293e5e04bcc15df27c3cbc3e410d28abbd13d3969b5fcf",
+   "OB5-every-relation-counted": "cebee1d275328be58b5993bd34c0f9c9070a10cc808a320b579c5f50f8888161",
+   "OB5-non-user-subjects-counted": "3e092985b7aea871c22aad217d77c5df5429ea1c3b330de43b1f053a1caf960f",
+   "OB6-rule-not-sent": "ae21aee3eaa017b7a776b8b48bb68f85ec14862e3ea25a4a0b200418c5743537",
+   "OB9-group-built-before-withholding": "5606b17e3d092214a37e5e19b0df8d61670be88f43e1ca3d0f08b81a665148a1",
+   "S1-4-subject-dropped": "e713b30a98e36494d0e311bf535d40a2f71a98c97e18bbc95505d6ab4b8acab4",
+   "S1-4a-subject-clamp-uncounted": "9c2bae41ef479f752148148404d701eeb5e570fac4be11ad66865c0034d91bdb",
+   "S1-4b-withheld-subject-rendered": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077"
+  },
+  "digests": {
+   "specs/evidence/0003/obligations_mutants.py": "3f170ea4e2fb4bd9e470577248650a6d613a31b84abb5de440bba2761e6658e3",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/__init__.py": "5a6ef467caefc2ef02aece526fd60ce6ae39b0323395217ae2790ba872a3cae5",
+   "src/veracium/doctor.py": "b8b8901cb9f5181d6cd87b67c2ab0059b755e583d97db11b6071ddf21c0deb45",
+   "src/veracium/graph.py": "cc5bfdeab09d38375386bcb89157a68c1100b55a28dda9f30550a189e86138d4",
+   "src/veracium/proactive.py": "21e617f97576cdc183871f3d6a37f714651c19e879390039a8991217bc6a1b43",
+   "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
+   "tests/test_0003_obligations.py": "c2588f540d09ecb741631fa6aa73d5d2e5b79879c9dcfdf7b75cd64388cdf38b"
+  },
+  "finding": "obligations",
+  "honest_nodes": [
+   "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user",
+   "tests/test_0003_obligations.py::test_a_subject_user_commitment_renders_byte_identical_to_before",
+   "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
+   "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0003",
+  "sqlite": "3.45.1",
+  "tracked_changes": []
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row": "assertion",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "definition_sha256": "dae5e0c681cbf1a7053dce43060c657397c61cfc32f138ae65b11f3d243603d0",
+   "file": "src/veracium/graph.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "id": "OB2-subject-axis-bypassed-for-deadline",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's one-episode case is still caught by 0003 \u00a74c-iv's within-episode net, so it is not named)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested": "assertion",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner": "assertion",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested": "assertion",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "definition_sha256": "980a945f835ac7c41d48d7b30061aec542f0230292641f323d743627d3d59485",
+   "file": "src/veracium/__init__.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "id": "OB3-no-briefing-carrier",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 0.98s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "today's per-edge rendering: the briefing path builds no contested groups"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested": "assertion",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested",
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "definition_sha256": "d08e2b12d0a43c2b90c3802b9ae8cce8c6bff0ae3e9d645d7ab7f9512171ed18",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "id": "OB3-member-also-rendered-plain",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
+    "tests/test_0003_obligations.py::test_ob10_one_episode_naming_two_dates_renders_once_contested"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a contested member rendered plain as well as in the group line"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments"
+   ],
+   "definition_sha256": "ecbdf5a868a2ee70d9293e5e04bcc15df27c3cbc3e410d28abbd13d3969b5fcf",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "OB4-any-two-distinct-values",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.66s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a second predicate: any two active values of one key are a contest"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "definition_sha256": "5606b17e3d092214a37e5e19b0df8d61670be88f43e1ca3d0f08b81a665148a1",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "OB9-group-built-before-withholding",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.62s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the contested line built over the store's edges, before 0047's withholding"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner"
+   ],
+   "definition_sha256": "80e570f81c2244ca54b5aba07df473d237b34a1b0a85a2d722eb3c072903d4d7",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "I10d-out-of-window-member-named",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an out-of-window member named in the contested line: new reach (0012 I10d)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested": "assertion",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested",
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner"
+   ],
+   "definition_sha256": "9678bbe0efc485ebd98d73bcf788d837fd5bbd6b141fe2a976bf5f8249f22130",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "I10d-lone-member-unmarked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_a_member_outside_the_window_never_appears_and_marks_its_partner",
+    "tests/test_0003_obligations.py::test_a_lone_member_whose_partner_is_flagged_is_marked_contested"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.69s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a lone tier member whose partner sits outside the tier renders as settled"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line": "assertion",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "definition_sha256": "02b6b07c0d9e538d070fbaa8ddf810db3cba22e56ce9a727b8106792f8dda6a4",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "I10d-every-commitment-marked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted",
+    "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.72s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the mark on a lone member whose partner is withheld or fenced (content of a challenged or fenced member's existence volunteered)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "definition_sha256": "e713b30a98e36494d0e311bf535d40a2f71a98c97e18bbc95505d6ab4b8acab4",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_subject_user_commitment_renders_byte_identical_to_before"
+   ],
+   "id": "S1-4-subject-dropped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the plain line drops a non-user subject (the obligation's name)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted"
+   ],
+   "definition_sha256": "9c2bae41ef479f752148148404d701eeb5e570fac4be11ad66865c0034d91bdb",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "id": "S1-4a-subject-clamp-uncounted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.60s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an oversized subject clamped without the I10a signal"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_a_withheld_commitments_subject_is_never_rendered": "assertion",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_a_withheld_commitments_subject_is_never_rendered",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "definition_sha256": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "id": "S1-4b-withheld-subject-rendered",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_a_withheld_commitments_subject_is_never_rendered",
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.67s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a withheld commitment's subject rendered (0047 withholding skipped)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing"
+   ],
+   "definition_sha256": "3e092985b7aea871c22aad217d77c5df5429ea1c3b330de43b1f053a1caf960f",
+   "file": "src/veracium/doctor.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+   ],
+   "id": "OB5-non-user-subjects-counted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the doctor count includes a non-user subject's chain"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing"
+   ],
+   "definition_sha256": "cebee1d275328be58b5993bd34c0f9c9070a10cc808a320b579c5f50f8888161",
+   "file": "src/veracium/doctor.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+   ],
+   "id": "OB5-every-relation-counted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.75s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the doctor count includes another relation's chain (located_at)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+   ],
+   "definition_sha256": "ae21aee3eaa017b7a776b8b48bb68f85ec14862e3ea25a4a0b200418c5743537",
+   "file": "src/veracium/prompts.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user"
+   ],
+   "id": "OB6-rule-not-sent",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.54s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the extraction rule in a constant the extractor is never sent"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 14
+  },
+  "controls": 6,
+  "controls_good": 6,
+  "good": 14,
+  "killed": 14,
+  "rows": 14,
+  "seconds": 54
+ }
+}
