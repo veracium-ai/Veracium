@@ -164,6 +164,26 @@ def test_a_group_with_no_member_in_the_window_renders_nothing():
         assert "## DATED COMMITMENTS" not in m.recall(U).context
 
 
+# ---- §4b, research's stage-2 B1: a contested line names each member's OBJECT, not only a date ---------------------
+def test_b1_a_contested_line_keeps_each_members_object():
+    """A contested group of any functional relation renders each member's object (clamped), not the date the object
+    or note happens to carry: "Berlin until D1" vs "Paris from D2" must not read as two dates for Alice."""
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [("person:alice", "located_at", f"Berlin until {D1}")], [("person:alice", "located_at", f"Paris from {D2}")])
+        assert len(_rows(m)) == 1, _rows(m)
+        ctx = m.recall(U).context
+        assert "Berlin" in ctx and "Paris" in ctx, ctx
+        line = next(ln for ln in ctx.splitlines() if "CONTESTED" in ln)
+        assert line == f"located_at: person:alice — CONTESTED: Berlin until {D1} or Paris from {D2} (unconfirmed which is current)", line
+
+
+def test_b1_a_contested_deadline_keeps_its_time_and_place():
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [("dentist appointment", "deadline", f"{D1} at 3pm with Dr. Lee")],
+                    [("dentist appointment", "deadline", f"{D2} at 9am with Dr. Patel")])
+        assert _commitments(m) == [_contested("dentist appointment", f"{D1} at 3pm with Dr. Lee", f"{D2} at 9am with Dr. Patel")]
+
+
 # ---- §4b, the plain line names its subject (research S1-4) -----------------------------------------------------------
 def test_a_plain_commitment_names_a_subject_other_than_user():
     with tempfile.TemporaryDirectory() as d:

@@ -283,12 +283,16 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             if len(_ms) < 2:
                 continue
             _grouped.update(m.id for m in _ms)
-            _slots = sorted({str(min(_dates_in(m.object + " " + m.note))) for m in _ms})
-            _when = _slots[0] if len(_slots) == 1 else ", ".join(_slots[:-1]) + " or " + _slots[-1]
+            # each member's OBJECT (clamped), never only the date its object or note carries (research's stage-2 B1:
+            # "Berlin until D1" / "Paris from D2" read as two dates for Alice); in nearest-due order, distinct values
+            # once. Under §4c-v.6a's form the object IS the bare date, so that line is unchanged.
             _unit = _ContestedCommitment(_ms)
+            _slots = list(dict.fromkeys(_obj(m) for m in sorted(
+                _ms, key=lambda m: (min(_dates_in(m.object + " " + m.note)), m.object, m.id))))
+            _when = _slots[0] if len(_slots) == 1 else ", ".join(_slots[:-1]) + " or " + _slots[-1]
             _label = _clamp(_subject, max(16, _cap // 8))
-            if _label != _subject:
-                _clamped_ids.add(("contested", _unit.id))
+            if _label != _subject or any(_obj(m) != m.object for m in _ms):
+                _clamped_ids.add(("contested", _unit.id))      # ONE item, however many of its parts were clamped
             _units.append((f"{_relation}: {_label} — CONTESTED: {_when} (unconfirmed which is current)", _unit))
         commitments = [(line + _marked.get(e.id, ""), e) for line, e in commitments]
         if _grouped:

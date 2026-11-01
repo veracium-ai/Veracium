@@ -61,6 +61,8 @@ FLAGGED = C("test_a_lone_member_whose_partner_is_flagged_is_marked_contested")
 OB5 = C("test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing")
 OB6 = C("test_ob6_the_obligation_rule_reaches_the_extractor")
 DIRECT = C("test_a_direct_assemble_with_no_contested_argument_renders_per_edge")
+B1_OBJ = C("test_b1_a_contested_line_keeps_each_members_object")
+B1_DEADLINE = C("test_b1_a_contested_deadline_keeps_its_time_and_place")
 
 _SUBJECT_AXIS = '            elif (subject_class(edge.user_id, prior.subject) == "OTHER"\n'
 _CARRIER = "            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups])"
@@ -101,6 +103,11 @@ MUTANTS = [
      [("            if len(_ms) == 1 and _outside:\n", "            if len(_ms) == 1:\n")],
      [OB9, OB8], [OB3], None, "the mark on a lone member whose partner is withheld or fenced (content of a "
                                "challenged or fenced member's existence volunteered)"),
+    ("B1-slots-are-dates-only", "product", X,
+     [("            _slots = list(dict.fromkeys(_obj(m) for m in sorted(\n",
+       "            _slots = list(dict.fromkeys(str(min(_dates_in(m.object + \" \" + m.note))) for m in sorted(\n")],
+     [B1_OBJ, B1_DEADLINE], [OB3], None, "a contested line names only each member's date, dropping its object "
+                                        "(research's stage-2 B1)"),
     ("S1-4-subject-dropped", "product", X,
      [('    return "" if e.subject == "user" else f"{e.subject} — "\n', '    return ""\n')],
      [NAMES], [USER_SAME], None, "the plain line drops a non-user subject (the obligation's name)"),

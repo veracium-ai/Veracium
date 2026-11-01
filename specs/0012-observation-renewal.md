@@ -676,6 +676,10 @@ member that carries information any consumer reads.** The v6 contract:
   clamped and counted as the object is (I10a), and passes every disclosure rule the object does, since it renders
   only on a member the briefing already surfaced. The other sections still drop a non-`user` subject; that predates
   this and is a NEXT-ROUND row.
+- **Each slot is the member's object (research's stage-2 B1, on 6d10dc6).** As first landed the line named only
+  each member's earliest date, and grouping applies to every functional relation, so "Alice located_at Berlin until
+  D1" against "Paris from D2" rendered `located_at: person:alice — CONTESTED: D1 or D2`, and two appointments lost
+  their time and doctor. Reproduced (two cells red at 6d10dc6), then fixed: the slots are the clamped objects.
 - **No new reach (I10d), so "both dates" narrows.** v0.2 (and the owner's 2026-10-29 description of (A): "once,
   marked contested, with both dates") would have named a member's date wherever the contest put it. I10d gives
   contested material NO NEW REACH: a member enters the briefing only through an ordinary category. So the line names
@@ -693,9 +697,11 @@ member that carries information any consumer reads.** The v6 contract:
    anything is counted), collapse and the ungrounded filter have all run, and the member is assertable, unflagged and
    carries an ISO date overdue or within `proactive_deadline_window_days`. A flagged member renders in CONFIRM WHEN
    NATURAL (I10f).
-3. **Two or more such members** render as ONE line, `deadline: <subject> — CONTESTED: <A> or <B> (unconfirmed which
-   is current)` (`<A>, <B> or <C>` for more), dates ascending, with no due/overdue flag on any date: the line already
-   says none is confirmed. Its members render nowhere else. It is ONE budget unit: admitted or dropped together,
+3. **Two or more such members** render as ONE line, `<relation>: <subject> — CONTESTED: <A> or <B> (unconfirmed
+   which is current)` (`<A>, <B> or <C>` for more), where each slot is a member's OBJECT, clamped as a plain line's
+   is, in nearest-due order, a repeated value once; no due/overdue flag on any: the line already says none is
+   confirmed. Under 0003 §4c-v.6a's form the object is the bare ISO date, so the slots read as dates. Its members
+   render nowhere else. It is ONE budget unit: admitted or dropped together,
    counted once, every member returned in `Recall.edges`.
 4. **One such member** renders plain. It is MARKED when a partner the briefing surfaced (visible to the principal,
    not redacted, not withheld, assertable) sits outside the tier: ` (contested — see CONFIRM)` when that partner is
@@ -723,6 +729,7 @@ mark reports a status of an eligible member's own key, the same truth a query re
 | INV-OB9 | 0047's withholding applies per member before the count | `test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted` | the group built over the store's edges, before withholding |
 | I10d | an out-of-window member never appears; its partner is marked | `test_a_member_outside_the_window_never_appears_and_marks_its_partner` | the out-of-window date named; the lone member unmarked |
 | I10d, N-1 | a withheld, fenced, redacted, cross-scope or unresolved partner gives no mark | OB8, OB9, `test_c1_a_cross_scope_partner_gives_no_group_and_no_mark`, `test_c1_an_unresolved_partner_gives_no_mark`, `test_c2_a_redacted_partner_gives_no_mark`, `test_c2_a_redacted_partner_in_the_window_gives_no_group` | the mark on a withheld or fenced partner |
+| B1 | a contested line names each member's object, for any relation | `test_b1_a_contested_line_keeps_each_members_object`, `test_b1_a_contested_deadline_keeps_its_time_and_place` | the slots reduced to dates |
 | C3 | the mark is content-free | `test_c3_the_mark_names_no_date_object_count_or_attribution` | — (a fixed string) |
 | I10f | a flagged partner leaves its sibling marked "see CONFIRM" | `test_a_lone_member_whose_partner_is_flagged_is_marked_contested` | the lone member unmarked |
 | S1-4 | a non-`user` subject is named, clamped and counted; never a withheld one's | `test_a_plain_commitment_names_a_subject_other_than_user`, `test_an_oversized_subject_is_clamped_and_counted`, `test_a_withheld_commitments_subject_is_never_rendered`; byte-identity: `test_a_subject_user_commitment_renders_byte_identical_to_before` | the subject dropped; its clamp uncounted; withholding skipped |
