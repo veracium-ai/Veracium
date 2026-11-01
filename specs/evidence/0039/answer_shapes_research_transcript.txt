@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ c5974105dea180582511b7255b2c27830d153b44
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 53b7655ccde254b4e4906034aa8e3defbd7b495d
+# RE-PINNED 2026-11-01 the 0003/obligations N1-N3 + NEW 1 fix (src/veracium/proactive.py: the commitment and contested-line composers) landed in 53b7655ccde254b4e4906034aa8e3defbd7b495d: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-01 the 0007 acceptance fold (src/veracium/store/schema_version.py: the FROZEN marker above KEY_FIELDS, comment lines only) landed in c5974105dea180582511b7255b2c27830d153b44: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-01 research's stage-2 B1 fix (src/veracium/proactive.py: a contested line's slots are its members' objects) and its regenerations landed in 93d5dcbd6a0f4ab696e76dee2c25ec6d8f86be5d: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-01 0003/obligations (the obligation rule, the briefing's contested carrier and rendering, the doctor's obligation-chain count: src/veracium/__init__.py, doctor.py, proactive.py, prompts.py) and its regenerations landed in 8c7343054b08337e7a503eb4875649b4b46edae6: bodies byte-identical; the pin moves to it
