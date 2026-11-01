@@ -15,7 +15,7 @@ is the number that decides what can be built.
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-17 | 1 | 18 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-09-11 | 2 | 8 | 2 | 0 | 10 | 8/10 |
-| **0003** | supersession authority | `accepted` | 2026-10-29 | 1 | 12 | 0 | 0 | 0 | — |
+| **0003** | supersession authority | `accepted` | 2026-11-01 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-10-24 | 1 | 3 | 2 | 0 | 1 | 1/1 |
 | **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-09-14 | 1 | 5 | 1 | 0 | 0 | — |
@@ -24,7 +24,7 @@ is the number that decides what can be built.
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-10-24 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
 | **0011** | subject-scoped entitlement | `accepted` | 2026-09-08 | 2 | 19 | 0 | 0 | 1 | 1/1 |
-| **0012** | who may renew a fact's currency | `accepted` | 2026-09-19 | 1 | 14 | 0 | 0 | 1 | 1/1 |
+| **0012** | who may renew a fact's currency | `accepted` | 2026-11-01 | 1 | 14 | 0 | 0 | 1 | 1/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-10-28 | 1 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-10-06 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
