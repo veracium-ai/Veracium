@@ -2310,6 +2310,71 @@ class Memory:
         self._record("forget", {"edges": r["edges"], "episodes": r["episodes"]}, user_id)
         return r
 
+    # -- specs/0022 §4g: source revocation, the HOST API (library only: no CLI verb, no MCP tool — R14) ---------------
+    def revoke_source(self, user_id: str, origin: Optional[str], source_id: str, reason: str, *,
+                      dry_run: bool = False) -> dict:
+        """Revoke a source this host no longer trusts, for one user (specs/0022). Every record that came from it is
+        retired or recomputed from the evidence that survives it; nothing is deleted, and `unrevoke_source` reverses
+        it by the same computation. `origin=None` means THIS store's own records (0006 §4 rule 6); pass a foreign
+        origin as it is stored on an imported record. `reason` is one of
+        `redaction.SOURCE_REVOCATION_REASONS`. Returns the completeness statement (§4c: the records affected, by
+        completeness class, and whether the sweep was `complete`); `dry_run=True` returns the identical statement
+        and writes nothing (§4e). A record with no `source_id` has no source identity and is not revocable by
+        source. Not exposed over MCP or the CLI: a revocation is a trust decision, and a surface the model can
+        reach is one it can be talked into (§3b)."""
+        return self._source_revocation(user_id, origin, source_id, reason, "revoke", dry_run)
+
+    def unrevoke_source(self, user_id: str, origin: Optional[str], source_id: str, reason: str, *,
+                        dry_run: bool = False) -> dict:
+        """Lift a revocation (specs/0022 §4f): appends a lifting row and recomputes every affected record's state from
+        the new standing set, so a record another standing revocation still condemns stays retired. `reason` is one
+        of `redaction.SOURCE_LIFT_REASONS`. Returns the completeness statement; `dry_run=True` writes nothing."""
+        return self._source_revocation(user_id, origin, source_id, reason, "lift", dry_run)
+
+    def source_revocations(self, user_id: str) -> dict:
+        """The operator's audit view of one user's revocations (specs/0022 §4g): `standing`, the identity digests
+        revoked now (latest action per digest, by append order alone, §4a), and `history`, every revoke and lift
+        row in append order (`seq`, `identity_digest`, `action`, `at`, `reason`)."""
+        from .store import revocation as _rv
+        if not isinstance(self.store, SqliteStore):
+            raise NotImplementedError(f"{type(self.store).__name__} does not support source revocation "
+                                      f"(specs/0022 is implemented by SqliteStore)")
+        history = _rv.revocation_history(self.store, user_id)
+        return {"standing": sorted(self.store.standing_revocations(user_id)), "history": history}
+
+    def _source_revocation(self, user_id: str, origin: Optional[str], source_id: str, reason: str,
+                           action: str, dry_run: bool) -> dict:
+        from .store import revocation as _rv
+        from .store.revocation_sweep import KIND_SYNTHESIZED, digest_of
+        if not isinstance(self.store, SqliteStore):
+            raise NotImplementedError(f"{type(self.store).__name__} does not support source revocation "
+                                      f"(specs/0022 is implemented by SqliteStore)")
+        if not isinstance(dry_run, bool):
+            raise TypeError(f"dry_run must be a bool, got {dry_run!r}")
+        digest = digest_of(origin, source_id, self.store.local_origin())
+        if digest is None:
+            raise ValueError("source_id is required: a record with no source_id has no source identity and is not "
+                             "revocable by source (specs/0006's absence rule, specs/0022 §4g)")
+        statement = _rv.revoke_source(self.store, user_id, digest, action, reason, _rv._iso_z(utcnow()),
+                                      dry_run=dry_run)
+        if not dry_run:
+            # specs/0022 §7a / Q6: ONE audit event per revocation and per lift — the durable record of the statement.
+            # Content-free by construction: the digest, the action, the class counts, `complete`, and the effect
+            # counts with the synthesized retirements split out (§4c); never a record id, a reason or any text.
+            retired = [e for e in statement["effects"] if e["verb"] == "retire"]
+            self._record("unrevoke_source" if action == "lift" else "revoke_source", {
+                "identity_digest": digest,
+                "action": action,
+                "complete": statement["complete"],
+                **{k.replace("-", "_"): v for k, v in statement["counts"].items()},
+                "retired": len(retired),
+                "retired_synthesized": sum(1 for e in retired
+                                           if statement["kinds"].get(f"{e['type']}:{e['id']}") == KIND_SYNTHESIZED),
+                "recomputed": sum(1 for e in statement["effects"] if e["verb"] == "recompute"),
+                "reinstated": sum(1 for e in statement["effects"] if e["verb"] == "reinstate"),
+            }, user_id)
+        return statement
+
     # -- specs/0041 §4a: targeted redaction (tranche 3) -----------------------
     def redact(self, user_id: str, *, edge_id: Optional[str] = None, episode_id: Optional[str] = None,
                reason: str):

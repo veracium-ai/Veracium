@@ -74,7 +74,8 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("__init__.py", 948): "control-flow", ("__init__.py", 1592): "control-flow", ("__init__.py", 1733): "control-flow",
     ("__init__.py", 1755): "control-flow", ("__init__.py", 1804): "control-flow", ("__init__.py", 1811): "control-flow",
     ("__init__.py", 1822): "control-flow", ("__init__.py", 1829): "control-flow", ("__init__.py", 1858): "control-flow",
-    ("__init__.py", 1884): "control-flow", ("__init__.py", 2268): "internal-invariant", ("__init__.py", 2356): "control-flow",
+    ("__init__.py", 1884): "control-flow", ("__init__.py", 2268): "internal-invariant", ("__init__.py", 2421): "control-flow",
+    ("__init__.py", 2340): "internal-invariant", ("__init__.py", 2350): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
     ("__init__.py", 305): "internal-invariant", ("__init__.py", 312): "internal-invariant",
     ("__init__.py", 1032): "internal-invariant", ("__init__.py", 1036): "internal-invariant", ("__init__.py", 1040): "internal-invariant",
     ("__init__.py", 1047): "internal-invariant", ("__init__.py", 1049): "internal-invariant",
@@ -116,8 +117,8 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("compile.py", 412): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
     ("proactive.py", 242): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
     ("proactive.py", 279): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
-    ("schema.py", 679): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
     ("schema.py", 625): "predicate-helper",   # 0.29.0 B1+B2: schema.py:is_obligation:BOOL_RETURN:1 (consumed by the backstop and _lexical_scored)
+    ("schema.py", 679): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
     ("schema.py", 706): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1
     ("schema.py", 1471): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
 }
@@ -510,7 +511,7 @@ e("store/sqlite.py", 1080, "store.reply.shape", "0047", "§4b the closed request
 e("store/sqlite.py", 1094, "store.reply.unknown-edge", "0047", "§2c INV-R9", "refuse")
 e("store/revocation.py", 140, "store.revocation.integrity", "0022", "§4c", "refuse")
 e("store/revocation.py", 139, "store.revocation.ordinal-collision", "0022", "§4c", "refuse")
-e("store/revocation.py", 345, "store.revocation.revoke-reason-not-registered", "0041", "§11.2 D1 (revoke)", "refuse")
+e("store/revocation.py", 355, "store.revocation.revoke-reason-not-registered", "0041", "§11.2 D1 (revoke)", "refuse")
 e("store/revocation_sweep.py", 360, "store.revocation.self-linkage", "0022", "§4c", "refuse")
 e("store/revocation_sweep.py", 232, "store.revocation.source-not-revocable", "0022", "I13", "refuse")
 e("store/revocation.py", 73, "store.revocation.unknown-state", "0022", "R5-1", "refuse")

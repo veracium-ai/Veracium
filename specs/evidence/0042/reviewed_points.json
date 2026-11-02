@@ -3619,14 +3619,14 @@
   "line": 139,
   "statement": "raise _SITE_REVOCATION_ORDINAL.fire(OrdinalCollision(str(e))) from e"
  },
- "store/revocation.py:revoke_source:345:RAISE": {
+ "store/revocation.py:revoke_source:355:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0041 §11.2 D1 (revoke) (refuse) through site store.revocation.revoke-reason-not-registered",
   "reviewer": "dev",
   "site": "store.revocation.revoke-reason-not-registered",
   "class": "enforcement",
   "key": "store/revocation.py:revoke_source:RAISE:1",
-  "line": 345,
+  "line": 355,
   "statement": "raise _SITE_REVOKE_REASON.fire(ValueError("
  },
  "store/revocation_sweep.py:validate_contribution_row:360:RAISE": {
@@ -4077,6 +4077,24 @@
   "key": "__init__.py:Memory._recall:RAISE:6",
   "line": 1054,
   "statement": "raise TypeError(\"policy must be a veracium.PolicyLane\")"
+ },
+ "__init__.py:Memory._source_revocation:2353:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "__init__.py:Memory._source_revocation:RAISE:2",
+  "line": 2353,
+  "statement": "raise TypeError(f\"dry_run must be a bool, got {dry_run!r}\")"
+ },
+ "__init__.py:Memory._source_revocation:2356:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "__init__.py:Memory._source_revocation:RAISE:3",
+  "line": 2356,
+  "statement": "raise ValueError(\"source_id is required: a record with no source_id has no source identity and is not \""
  },
  "__init__.py:Memory.describe_procedures:827:RAISE": {
   "decision": "not",
@@ -5167,13 +5185,13 @@
   "line": 1755,
   "statement": "raise"
  },
- "__init__.py:Memory.policy_receipts:2356:FILTER_RETURN": {
+ "__init__.py:Memory.policy_receipts:2421:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.policy_receipts:FILTER_RETURN:1",
-  "line": 2356,
+  "line": 2421,
   "statement": "return [receipt_from_row(r) for r in self.store.policy_receipts(user_id, limit=limit)]"
  },
  "__init__.py:Memory.recall:948:RAISE": {
@@ -6121,6 +6139,15 @@
   "line": 1049,
   "statement": "raise ValueError(\"group_heading_allowance_tokens < 16 (I10e, surface build)\")"
  },
+ "__init__.py:Memory._source_revocation:2350:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "__init__.py:Memory._source_revocation:RAISE:1",
+  "line": 2350,
+  "statement": "raise NotImplementedError(f\"{type(self.store).__name__} does not support source revocation \""
+ },
  "__init__.py:Memory.correct:2268:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
@@ -6129,6 +6156,15 @@
   "key": "__init__.py:Memory.correct:RAISE:3",
   "line": 2268,
   "statement": "raise RuntimeError("
+ },
+ "__init__.py:Memory.source_revocations:2340:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "__init__.py:Memory.source_revocations:RAISE:1",
+  "line": 2340,
+  "statement": "raise NotImplementedError(f\"{type(self.store).__name__} does not support source revocation \""
  },
  "__init__.py:receipt_from_row:305:RAISE": {
   "decision": "not",
@@ -8020,31 +8056,40 @@
   "line": 1373,
   "statement": "raise"
  },
- "store/revocation.py:_apply_statement_effect:297:RAISE": {
+ "store/revocation.py:_apply_statement_effect:307:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/revocation.py:_apply_statement_effect:RAISE:1",
-  "line": 297,
+  "line": 307,
   "statement": "raise RevocationEffectError("
  },
- "store/revocation.py:redact_revocation_reasons:312:RAISE": {
+ "store/revocation.py:redact_revocation_reasons:322:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/revocation.py:redact_revocation_reasons:RAISE:1",
-  "line": 312,
+  "line": 322,
   "statement": "raise RuntimeError(\"redact_revocation_reasons runs only inside a redaction's open write transaction \""
  },
- "store/revocation.py:revocation_reason_marked:325:BOOL_RETURN": {
+ "store/revocation.py:revocation_history:260:FILTER_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "store/revocation.py:revocation_history:FILTER_RETURN:1",
+  "line": 260,
+  "statement": "return [dict(zip((\"seq\", \"identity_digest\", \"action\", \"at\", \"reason\"), row))"
+ },
+ "store/revocation.py:revocation_reason_marked:335:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/revocation.py:revocation_reason_marked:BOOL_RETURN:1",
-  "line": 325,
+  "line": 335,
   "statement": "return conn.execute(\"SELECT 1 FROM source_revocations WHERE user_id=? AND identity_digest=? AND reason=? LIMIT 1\","
  },
  "store/revocation_sweep.py:_bounded:174:RAISE": {

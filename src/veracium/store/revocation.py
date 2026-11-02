@@ -253,6 +253,16 @@ def project_store(store, user_id: str) -> dict:
             "records": records, "ledger": ledger, "revocations": revs}
 
 
+def revocation_history(store, user_id: str) -> list:
+    """0022 §4g's audit view: every revoke and lift row of one user, in append order (`seq`, the only order, §4a).
+    A read: `revocation_operation` stays the sole writer of the table."""
+    with store._lock:
+        return [dict(zip(("seq", "identity_digest", "action", "at", "reason"), row))
+                for row in store._conn.execute(
+                    "SELECT seq, identity_digest, action, at, reason FROM source_revocations "
+                    "WHERE user_id=? ORDER BY seq", (user_id,))]
+
+
 def would_retire_if_active(store, user_id: str, edge_ids) -> frozenset:
     """specs/0044 §4f step 2 (INV-A11): the edges among `edge_ids` that the revocation sweep's OWN predicate would
     retire were they active — the standing set and its contribution-derived basis, evaluated over the user's records

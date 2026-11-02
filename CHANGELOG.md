@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Added: `Memory.revoke_source`, `Memory.unrevoke_source` and `Memory.source_revocations`** (specs/0022 §4g and
+  §7a, accepted; promised by its public-surface inventory and never shipped). A host can now revoke a source it no
+  longer trusts, for one user, with one call: `revoke_source(user_id, origin, source_id, reason, *, dry_run=False)`.
+  `origin=None` means the store's own records; pass a foreign origin as it is stored on an imported record. It
+  returns the completeness statement (the records affected, by completeness class, and whether the sweep was
+  `complete`); `dry_run=True` returns the identical statement and writes nothing. `unrevoke_source` lifts it by the
+  same computation, so a record another standing revocation still condemns stays retired. `source_revocations(user_id)`
+  returns the standing digests and the append-only history. Each committed revocation or lift writes one content-free
+  audit event (`revoke_source` / `unrevoke_source`: the digest, the action, the class counts, `complete`, and the
+  retired, synthesized-retired, recomputed and reinstated counts), and nothing to telemetry. Library only: no CLI verb
+  and no MCP tool (§3b). The machinery itself (`veracium.store.revocation.revoke_source`) has shipped since 0.13.0;
+  these are the host methods over it.
+
 ## 0.29.0 — 2026-11-02
 
 **A user can now hold more than one deadline.** 0.28.0's extractor stored every commitment as the user's

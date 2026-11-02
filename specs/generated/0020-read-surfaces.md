@@ -5,7 +5,7 @@
 
 # specs/0020 §4f — public read-surface manifest
 
-**37 public surfaces** — every public method of `Memory` plus every public
+**40 public surfaces** — every public method of `Memory` plus every public
 `*_impl` in `mcp_server` — enumerated by **parsing the AST**, not by reading
 the spec's prose inventory. **5 of them return record objects.**
 
@@ -58,9 +58,12 @@ and 0020's claim is about the surfaces named here.
 | `Memory.remember` | no | none | ingest counters | WRITE path. 0020 changes no write, no lifecycle transition (§3); identity partitioning at write/maintain is 0021's. |
 | `Memory.reply` | no | none | `{reply_id, edge_id, kind, target, written_at, correlation_id, replayed}` | WRITE path (host-only, never MCP; specs/0047 §4a): appends one reply; ids, a closed kind and a time leave, never the reply's text or the fact's content. |
 | `Memory.report_error` | no | none | bool | Diagnostics channel, consent-gated; no record set. |
+| `Memory.revoke_source` | no | none | the completeness statement (specs/0022 §4c): the target digest, the standing flag, the affected record IDS with their completeness class and kind, the retire/recompute/reinstate effects (ids and recomputed trust-field values), the class counts, `complete`, and the ledger row the commit appends (digest, action, reason, at); never record content | AN OPERATOR SURFACE BY DECISION (specs/0022 §3b, R14): a trust decision about a source, for ONE user, made by the host through the library only — no CLI verb, no MCP tool. A WRITE that returns a statement, `redact`'s shape; the statement names record ids for the caller's own user, which the operator can already enumerate through `introspect` and `export_memory` (§3b: nothing becomes visible to anyone new). No principal narrows it: a revocation is store-state for every principal, and under 0020 a scoped principal sees strictly less after it. |
 | `Memory.self_check` | no | none | content-free pass/fail counters | Runs against a THROWAWAY store; touches neither this store nor any principal. |
+| `Memory.source_revocations` | no | none | one user's standing identity digests and the append-only revoke/lift history (seq, digest, action, at, reason); digests and closed values, never record content or record ids | AN OPERATOR SURFACE BY DECISION (specs/0022 §4g): the operator's audit view of its own revocations, in `policy_receipts`' class. Reads one user's rows. Host API only, never MCP. |
 | `Memory.telemetry_preview` | no | none | the aggregate a flush would send | Content-free; no records. |
 | `Memory.undo_restoration` | no | none | `{undone, undone_at, correlation_id, replayed, already_undone}` | WRITE path (host-only, never MCP; specs/0044 §4i): retires one restored value again; ids and a time leave, no record content. |
+| `Memory.unrevoke_source` | no | none | the completeness statement, exactly `revoke_source`'s | AN OPERATOR SURFACE BY DECISION, `revoke_source`'s class (specs/0022 §4f): the lift, the same computation over the new standing set. Host API only, never MCP. |
 | `mcp_server.answer_impl` | no | `principal=` **threaded** | the answer string over MCP | Passes the host's principal through to `Memory.answer`; no new MCP field (as above). |
 | `mcp_server.describe_procedures_impl` | **yes** | `principal=` **threaded** | `DescribeResult` as JSON | Passes `principal` through to `Memory.describe_procedures` (the served tool binds the deployment's user and no principal, as `recall` does); no new MCP field. |
 | `mcp_server.maintain_impl` | no | none | the maintenance report | MAINTAIN path over MCP; policy is read-side only. |

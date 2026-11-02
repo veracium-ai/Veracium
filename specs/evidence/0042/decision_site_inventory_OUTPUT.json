@@ -315,8 +315,36 @@
    "qualname": "Memory.correct"
   },
   {
-   "kind": "FILTER_RETURN",
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2340,
+   "module": "__init__.py",
+   "qualname": "Memory.source_revocations"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2350,
+   "module": "__init__.py",
+   "qualname": "Memory._source_revocation"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2353,
+   "module": "__init__.py",
+   "qualname": "Memory._source_revocation"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
    "line": 2356,
+   "module": "__init__.py",
+   "qualname": "Memory._source_revocation"
+  },
+  {
+   "kind": "FILTER_RETURN",
+   "line": 2421,
    "module": "__init__.py",
    "qualname": "Memory.policy_receipts"
   },
@@ -4746,29 +4774,35 @@
    "qualname": "revocation_operation"
   },
   {
+   "kind": "FILTER_RETURN",
+   "line": 260,
+   "module": "store/revocation.py",
+   "qualname": "revocation_history"
+  },
+  {
    "bare": false,
    "kind": "RAISE",
-   "line": 297,
+   "line": 307,
    "module": "store/revocation.py",
    "qualname": "_apply_statement_effect"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 312,
+   "line": 322,
    "module": "store/revocation.py",
    "qualname": "redact_revocation_reasons"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 325,
+   "line": 335,
    "module": "store/revocation.py",
    "qualname": "revocation_reason_marked"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 345,
+   "line": 355,
    "module": "store/revocation.py",
    "qualname": "revoke_source"
   },
@@ -6904,8 +6938,8 @@
  "summary": {
   "by_kind": {
    "BOOL_RETURN": 100,
-   "FILTER_RETURN": 60,
-   "RAISE": 666,
+   "FILTER_RETURN": 61,
+   "RAISE": 670,
    "RETURN_FALSE": 109,
    "RETURN_NONE": 104
   },
@@ -6922,7 +6956,7 @@
    "__init__.py": {
     "BOOL_RETURN": 0,
     "FILTER_RETURN": 3,
-    "RAISE": 38,
+    "RAISE": 42,
     "RETURN_FALSE": 2,
     "RETURN_NONE": 4
    },
@@ -7278,7 +7312,7 @@
    },
    "store/revocation.py": {
     "BOOL_RETURN": 2,
-    "FILTER_RETURN": 0,
+    "FILTER_RETURN": 1,
     "RAISE": 8,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 0
@@ -7312,7 +7346,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1039,
+  "total": 1044,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

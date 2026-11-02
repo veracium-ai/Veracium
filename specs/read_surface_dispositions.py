@@ -151,6 +151,31 @@ DISPOSITIONS: dict[str, dict] = {
                     "returns a receipt; scoped to `user_id` with ONE refusal for an unknown id and another "
                     "user's (the existence of another user's notice is not disclosed). Host API only, never MCP."),
 
+    "Memory.revoke_source": dict(
+        returns_records=False, principal="none",
+        carriers="the completeness statement (specs/0022 §4c): the target digest, the standing flag, the affected "
+                 "record IDS with their completeness class and kind, the retire/recompute/reinstate effects (ids "
+                 "and recomputed trust-field values), the class counts, `complete`, and the ledger row the commit "
+                 "appends (digest, action, reason, at); never record content",
+        disposition="AN OPERATOR SURFACE BY DECISION (specs/0022 §3b, R14): a trust decision about a source, for "
+                    "ONE user, made by the host through the library only — no CLI verb, no MCP tool. A WRITE that "
+                    "returns a statement, `redact`'s shape; the statement names record ids for the caller's own "
+                    "user, which the operator can already enumerate through `introspect` and `export_memory` "
+                    "(§3b: nothing becomes visible to anyone new). No principal narrows it: a revocation is "
+                    "store-state for every principal, and under 0020 a scoped principal sees strictly less after "
+                    "it."),
+    "Memory.unrevoke_source": dict(
+        returns_records=False, principal="none",
+        carriers="the completeness statement, exactly `revoke_source`'s",
+        disposition="AN OPERATOR SURFACE BY DECISION, `revoke_source`'s class (specs/0022 §4f): the lift, the same "
+                    "computation over the new standing set. Host API only, never MCP."),
+    "Memory.source_revocations": dict(
+        returns_records=False, principal="none",
+        carriers="one user's standing identity digests and the append-only revoke/lift history (seq, digest, "
+                 "action, at, reason); digests and closed values, never record content or record ids",
+        disposition="AN OPERATOR SURFACE BY DECISION (specs/0022 §4g): the operator's audit view of its own "
+                    "revocations, in `policy_receipts`' class. Reads one user's rows. Host API only, never MCP."),
+
     "Memory.pending_notices": dict(
         returns_records=False, principal="none",
         carriers="per pending notice: its id, the target's kind and id, the pending reason, the CLAIMED "
