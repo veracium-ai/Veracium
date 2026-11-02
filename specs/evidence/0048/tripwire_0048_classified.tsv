@@ -3,10 +3,12 @@
 # still matches. tests/test_0048_evidence.py compares these rows, as a multiset, with the tripwire's --sites output:
 # a new hit, or an edit to a hit's line, fails until it is classified here. Written at 1e80d4c by dev, after reading
 # every site; research samples the classifications. The verb trigger (`str:sql-write`) and the
-# last three classes were added with it, research's stage 2b.
+# last three classes were added with it, research's stage 2b. 2026-11-02 (research, on dev's 0048 implementation
+# draft): the lines §4A-§4D edit reclassified; class `validated-write` added for §4B's decayed stamp.
 #
 # Classes (closed; the test refuses any other):
-#   census-writer               a token of one of the five confidence writers census_0048 counts (§2c-ii row 8):
+#   census-writer               a token of one of the confidence writers census_0048 counts (§2c-ii row 8: five at
+#                               0048's pin; four once §4B builds the decayed stamp by validation):
 #                               the model_copy call, or its `confidence` key and value
 #   edge-json-writer            one of the seven edge json writers census_0048 counts (§2c-ii row 8)
 #   copy-other-fields           model_copy whose update names no `confidence` (or a deep copy with no update);
@@ -22,7 +24,8 @@
 #   other-object                the trigger names something that is not a Provenance: getattr on a config, client or
 #                               record attribute; `copy` as a local path; object.__setattr__ inside the __init__ of a
 #                               non-pydantic immutable class (PolicyLane, EvidenceContext, SuccessorLookup), and those
-#                               classes' refusing __setattr__
+#                               classes' refusing __setattr__; MemoryConfig's validating __setattr__ (0048 §4A), which
+#                               census_0048 resolves by property; getattr on a store class for its expiry_transition
 #   edges-sql-not-a-json-write  SQL that reads, defines or deletes edges, writing no json; the `"edges" if … else
 #                               "episodes"` table selectors feed SELECTs only, and the one in _redact_in_txn is
 #                               assigned and never read
@@ -34,13 +37,13 @@
 #                               receipts, redactions, embeddings, the wiki, counters, identity)
 #   verb-as-text                `update`, `insert` or `replace` as a word that is not SQL: prose, a word list, an
 #                               operation name, a codec's error handler
+#   validated-write             a Provenance whose `confidence` is set through `Provenance.model_validate`, so
+#                               pydantic checks the bound (0048 §4B's decayed stamp in the §4D transition), and the
+#                               line computing the value it validates
 census-writer	src/veracium/graph.py	confidence	"confidence": max(incoming.provenance.confidence,
 census-writer	src/veracium/graph.py	confidence	prior.provenance.confidence),
 census-writer	src/veracium/graph.py	model_copy	incoming.provenance = incoming.provenance.model_copy(update={
 census-writer	src/veracium/graph.py	str:confidence	"confidence": max(incoming.provenance.confidence,
-census-writer	src/veracium/lifecycle.py	confidence	"confidence": e.provenance.confidence * config.decay_factor})
-census-writer	src/veracium/lifecycle.py	model_copy	e.provenance = e.provenance.model_copy(update={
-census-writer	src/veracium/lifecycle.py	str:confidence	"confidence": e.provenance.confidence * config.decay_factor})
 census-writer	src/veracium/store/sqlite.py	confidence	"confidence": (min(e.provenance.confidence for e in inputs)
 census-writer	src/veracium/store/sqlite.py	confidence	"confidence": max(edge.provenance.confidence, 0.9)})
 census-writer	src/veracium/store/sqlite.py	confidence	if inputs else base.confidence),
@@ -246,7 +249,6 @@ read	src/veracium/contribution.py	str:confidence	or sprov.get("confidence") != p
 read	src/veracium/contribution.py	str:confidence	or sprov.get("confidence") != pre.get("confidence")
 read	src/veracium/graph.py	confidence	"confidence": incoming.provenance.confidence,
 read	src/veracium/graph.py	str:confidence	"confidence": incoming.provenance.confidence,
-read	src/veracium/lifecycle.py	confidence	if e.provenance.confidence < config.confidence_floor:
 read	src/veracium/store/revocation.py	confidence	"confidence": float(e.provenance.confidence),
 read	src/veracium/store/revocation.py	confidence	"confidence": float(ep.provenance.confidence),
 read	src/veracium/store/revocation.py	str:confidence	"confidence": float(e.provenance.confidence),
@@ -333,3 +335,11 @@ edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	"SELECT c.edge
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	f"INSERT INTO replies({self._REPLY_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,?,?,'local',?)",
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE replies SET text=? WHERE user_id=? AND edge_id=? AND text IS NOT NULL",
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE replies SET request_digest=? WHERE user_id=? AND edge_id=?",
+field-name	src/veracium/config.py	str:confidence	f"lower a fact's confidence, never raise it)")
+other-object	src/veracium/config.py	__setattr__	def __setattr__(self, name, value):
+other-object	src/veracium/config.py	__setattr__	object.__setattr__(self, name, value)
+other-object	src/veracium/lifecycle.py	getattr	impl = getattr(store, "expiry_transition", None)
+other-object	src/veracium/lifecycle.py	getattr	if impl is None or getattr(impl, "__func__", None) is Store.expiry_transition:
+edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	row = self._conn.execute("SELECT json, active FROM edges WHERE id=? AND user_id=?",
+validated-write	src/veracium/store/sqlite.py	confidence	decayed = e.provenance.confidence * decay_factor
+validated-write	src/veracium/store/sqlite.py	str:confidence	e.provenance = Provenance.model_validate({**e.provenance.model_dump(), "confidence": decayed})

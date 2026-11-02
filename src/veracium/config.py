@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -12,6 +13,25 @@ def _default_lifetimes() -> dict[Volatility, Optional[int]]:
     """Expected lifetime in days per volatility class (None = never expires)."""
     return {Volatility.PERMANENT: None, Volatility.DURABLE: 730,
             Volatility.SLOW: 120, Volatility.TRANSIENT: 7, Volatility.EPHEMERAL: 1}
+
+
+#: specs/0048 §4A: the two decay bounds, validated by ONE function at construction, on assignment and at
+#: `lifecycle.expire()`'s entry (for any config object, duck-typed included).
+DECAY_BOUNDS = ("decay_factor", "confidence_floor")
+
+
+def validate_decay_bound(name: str, value) -> float:
+    """specs/0048 §4A: `value` must be a real number (`int` or `float`; a `bool` is refused explicitly), finite, with
+    0.0 <= value <= 1.0 — integers and both inclusive endpoints accepted. Refuses with ValueError naming the field and
+    the value; returns the value unchanged. Per field: there is no cross-field rule (a decayed fact below the floor is
+    invalidated, at any pair), so construction can validate each field as the dataclass sets it."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{name} must be a real number in [0, 1] (int or float, not bool), got {value!r} "
+                         f"(specs/0048 §4A)")
+    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+        raise ValueError(f"{name} must be in [0, 1] and finite, got {value!r} (specs/0048 §4A: maintenance may "
+                         f"lower a fact's confidence, never raise it)")
+    return value
 
 
 @dataclass
@@ -146,6 +166,13 @@ class MemoryConfig:
     # Memory in the same process constructed with False does not turn it off (it never touched it).
     # Off, every enforcement point is a no-op and the census reports DISABLED per declared id.
     census_enabled: bool = False
+
+    def __setattr__(self, name, value):
+        # specs/0048 §4A / §10 Q4 (resolved): the two decay bounds hold on assignment as at construction — validated
+        # BEFORE setting, so a refused assignment keeps the old value. Every other field assigns as before.
+        if name in DECAY_BOUNDS:
+            validate_decay_bound(name, value)
+        object.__setattr__(self, name, value)
 
     def __post_init__(self):
         from .budgets import MIN_ITEM_ALLOWANCE, validate_budget

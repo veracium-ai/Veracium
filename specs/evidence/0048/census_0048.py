@@ -15,6 +15,9 @@
    Every other route that writes a field without validation is UNRESOLVED too: `model_copy(**kw)`, pydantic's
    `.copy(update=…)`, `copy.replace` / `__replace__`, a called `getattr(x, <one of those, or a non-literal name>)`,
    `setattr` / `object.__setattr__` naming `confidence` or a non-literal name, and any store into `__dict__`.
+   ONE such call resolves BY PROPERTY (0048 implementation, 2026-11-02): `object.__setattr__(self, ...)` inside the
+   `__setattr__` of a class with no bases, no keywords and no decorator but the stdlib `dataclass` (matched by its
+   import), that nothing in src/veracium subclasses, `self` never rebound (`_own_setattr_class`). It is printed as resolved; a host subclass outside src is the stated residual.
    (Stage 2, research 2026-10-11: v1 missed all of these, each planted on 1e80d4c, each executed and writing 2.0.)
 2. EDGE JSON WRITERS: every string in src/veracium (constants, f-string parts, implicit and `+` concatenations of
    constants), whitespace-normalised and case-insensitive, that INSERTs or REPLACEs INTO `edges` (any `OR` clause,
@@ -87,16 +90,128 @@ def _local_literal_keys(fn, name, call):
     return keys if seen else None
 
 
-provenance_replaced = []
+def _names_used_as_a_base():
+    """Every name that appears anywhere in a class's bases or keywords (a metaclass included), or in the bases argument
+    of `type(name, bases, ns)` / `types.new_class(name, bases)`, anywhere under src/veracium. Matched by NAME, never by
+    resolved identity, so a collision can only make a class look subclassed (UNRESOLVED), never the reverse."""
+    names = set()
+    for f in sorted(src.rglob("*.py")):
+        for m in ast.walk(ast.parse(f.read_text())):
+            if isinstance(m, ast.ClassDef):
+                exprs = m.bases + [k.value for k in m.keywords]
+            elif (isinstance(m, ast.Call) and len(m.args) >= 2
+                  and (getattr(m.func, "id", None) == "type" or getattr(m.func, "attr", None) == "new_class")):
+                exprs = [m.args[1]]
+            else:
+                continue
+            for x in exprs:
+                for y in ast.walk(x):
+                    if isinstance(y, ast.Name):
+                        names.add(y.id)
+                    elif isinstance(y, ast.Attribute):
+                        names.add(y.attr)
+    return names
+
+
+_USED_AS_BASE = _names_used_as_a_base()
+
+
+def _module_bindings(tree):
+    """{name: [how it is bound at any level of this module]}: ("from", module, name) for `from M import n [as a]`,
+    ("import", module) for `import M [as a]`, and ("other",) for every other binding (an assignment, a def, a class, a
+    loop or `with` target, a walrus, a `global`), so a name bound twice can be refused."""
+    out = {}
+    for m in ast.walk(tree):
+        if isinstance(m, ast.ImportFrom):
+            for x in m.names:
+                out.setdefault(x.asname or x.name, []).append(("from", m.module or "", x.name))
+        elif isinstance(m, ast.Import):
+            for x in m.names:
+                out.setdefault(x.asname or x.name.split(".")[0], []).append(("import", x.name if x.asname else x.name.split(".")[0]))
+        elif isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            out.setdefault(m.name, []).append(("other",))
+        elif isinstance(m, ast.Name) and isinstance(m.ctx, (ast.Store, ast.Del)):
+            out.setdefault(m.id, []).append(("other",))
+        elif isinstance(m, ast.Global):
+            for n in m.names:
+                out.setdefault(n, []).append(("other",))
+    return out
+
+
+def _stdlib_dataclass_decorator(d):
+    """True only for the STANDARD LIBRARY's dataclass decorator, matched by how its name was IMPORTED in this module,
+    never by the bare name (dev, 2026-11-02: `pydantic.dataclasses.dataclass` returns a validated model, and a name
+    imported from pydantic.dataclasses reads `dataclass` too):
+      - `dataclass` (or its alias), bound in this module ONLY by `from dataclasses import dataclass [as …]`;
+      - `<d>.dataclass`, where `<d>` is bound ONLY by `import dataclasses [as d]`;
+      - a Call of either with keyword arguments only.
+    Anything else, an unknown decorator included, is not a plain class's own attribute protocol."""
+    if isinstance(d, ast.Call):
+        if d.args or any(k.arg is None for k in d.keywords):
+            return False
+        d = d.func
+    if isinstance(d, ast.Name):
+        return bindings.get(d.id) == [("from", "dataclasses", "dataclass")]
+    if isinstance(d, ast.Attribute) and d.attr == "dataclass" and isinstance(d.value, ast.Name):
+        return bindings.get(d.value.id) == [("import", "dataclasses")]
+    return False
+
+
+def _own_setattr_class(call):
+    """Resolution BY PROPERTY (0048 implementation, dev's MemoryConfig.__setattr__): `object.__setattr__(self, <any>,
+    <any>)` cannot write a pydantic field when ALL of these hold, and then the name of its class is returned, else None:
+      - the call's receiver argument is the name `self`, the first parameter of the function it sits in;
+      - that function is named `__setattr__` and is defined DIRECTLY in a class body (not nested in another function);
+      - the class has no bases and no keywords (so no BaseModel, and no metaclass, pydantic's included);
+      - its decorators are none, or only the standard library's `dataclass` matched by its import
+        (`_stdlib_dataclass_decorator`): a decorator can return a pydantic model;
+      - no class in src/veracium names it as a base, and no `type()`/`new_class` call names it in its bases;
+      - `self` is never rebound in that function.
+    Then `self` is an instance of that plain class, or of a subclass defined OUTSIDE src/veracium (a host's), which is
+    the residual this rule states: a host class combining it with a pydantic model."""
+    fn = parent.get(id(call))
+    if fn is None or fn.name != "__setattr__" or id(fn) not in class_of:
+        return None
+    cls = class_of[id(fn)]
+    if cls.bases or cls.keywords or cls.name in _USED_AS_BASE:
+        return None
+    if not all(_stdlib_dataclass_decorator(d) for d in cls.decorator_list):
+        return None                                       # a decorator may return a model (dev, 2026-11-02)
+    if not (isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name)
+            and call.func.value.id == "object" and call.args and isinstance(call.args[0], ast.Name)):
+        return None
+    params = fn.args.posonlyargs + fn.args.args
+    if not params or params[0].arg != "self" or call.args[0].id != "self":
+        return None
+    for m in ast.walk(fn):
+        targets = (m.targets if isinstance(m, ast.Assign) else [m.target] if isinstance(m, (
+            ast.AugAssign, ast.AnnAssign, ast.NamedExpr, ast.For, ast.AsyncFor, ast.comprehension)) else
+            [m.optional_vars] if isinstance(m, ast.withitem) and m.optional_vars is not None else
+            m.targets if isinstance(m, ast.Delete) else [])
+        if any(isinstance(y, ast.Name) and y.id == "self" for t in targets for y in ast.walk(t)):
+            return None
+        if isinstance(m, (ast.Global, ast.Nonlocal)) and "self" in m.names:
+            return None
+        if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) and m is not fn:
+            return None                                   # a nested scope could close over a rebinding: stay strict
+    return cls.name
+
+
+provenance_replaced, own_setattr = [], []
 UNVALIDATED = ("model_copy", "copy", "model_construct", "__replace__")
 for f in sorted(src.rglob("*.py")):
     rel = f.relative_to(root).as_posix()
     tree = ast.parse(f.read_text(), filename=rel)
-    parent = {}
+    parent, class_of = {}, {}
+    bindings = _module_bindings(tree)
     for fn in ast.walk(tree):                           # breadth-first: an inner function overwrites its outer one
         if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
             for m in ast.walk(fn):
                 parent[id(m)] = fn
+        if isinstance(fn, ast.ClassDef):
+            for m in fn.body:
+                if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    class_of[id(m)] = fn
     copy_replace = {x.asname or x.name for m in ast.walk(tree) if isinstance(m, ast.ImportFrom) and m.module == "copy"
                     for x in m.names if x.name == "replace"}
     for n in ast.walk(tree):
@@ -110,8 +225,13 @@ for f in sorted(src.rglob("*.py")):
         fn_, name = n.func, getattr(n.func, "attr", getattr(n.func, "id", None))
         if name in ("setattr", "__setattr__"):
             a = n.args[1] if len(n.args) > 1 else None
-            if not (isinstance(a, ast.Constant) and a.value != "confidence"):
-                unresolved.append({"site": site, "why": f"`{name}` naming `confidence` or a non-literal field"})
+            if isinstance(a, ast.Constant) and a.value != "confidence":
+                continue
+            own = _own_setattr_class(n)
+            if own is not None:
+                own_setattr.append({"site": site, "class": own})
+                continue
+            unresolved.append({"site": site, "why": f"`{name}` naming `confidence` or a non-literal field"})
             continue
         if isinstance(fn_, ast.Call) and getattr(fn_.func, "id", None) == "getattr":
             a = fn_.args[1] if len(fn_.args) > 1 else None
@@ -195,7 +315,7 @@ unresolved = list({u["site"]: u for u in unresolved}.values())
 
 writers = [c for c in copies if "confidence_line" in c]
 out = {"tree": str(root), "model_copy_with_update": len(copies), "confidence_writers": writers,
-       "provenance_replaced": provenance_replaced,
+       "provenance_replaced": provenance_replaced, "own_setattr_resolved": own_setattr,
        "edge_json_writers": edge_sql, "unresolved": unresolved}
 if "--json" in sys.argv:
     print(json.dumps(out, indent=1))
@@ -207,6 +327,8 @@ else:
     print(f"model_copy sites replacing the whole `provenance` (confidence carried in the new value): {len(provenance_replaced)}")
     for r in provenance_replaced:
         print(f"  {r['site']:42} <- {r['value']}")
+    for o in own_setattr:
+        print(f"  resolved by property: {o['site']} object.__setattr__(self, ...) in {o['class']}.__setattr__ (a base-less class nothing in src subclasses)")
     for c in copies:
         if "resolved" in c:
             print(f"  resolved: {c['site']} {c['resolved']} keys {c['keys']}")

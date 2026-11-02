@@ -861,13 +861,32 @@ Close the underlying store.
 | `max_recent_episodes` | `12` | recent episodes included in recall. |
 | `wiki_recompile_after_writes` | `8` | recompile the curated wiki after this many writes. **`0` disables the wiki** → recall renders the subgraph directly (no read-time LLM call). |
 | `volatility_lifetime_days` | permanent=∞, durable=730, slow=120, transient=7, ephemeral=1 | expected lifetime per volatility class. |
-| `decay_factor` / `confidence_floor` | `0.5` / `0.3` | confidence decay and cutoff for DECAY facts. |
+| `decay_factor` / `confidence_floor` | `0.5` / `0.3` | confidence decay and cutoff for DECAY facts. Each must be a real number in [0, 1] (`int` or `float`; not a `bool`, NaN or ±inf): refused with `ValueError` at construction, on assignment (the field keeps its old value), and at `maintain()`/`expire()`'s entry for any config object (specs/0048). |
 | `consolidate_after_days` | `30` | episodes older than this are consolidation candidates. |
 | `consolidate_min_batch` | `8` | minimum cold episodes before consolidation runs. |
 | `scope_groups` | `None` | **scoped recall (spec 0020)**: `{group_name: [veracium.scope.Identity, ...]}`, the host's read-side scope policy. `None` disables the feature (a `principal=` at recall is then refused, never silently served unscoped); `{}` is the valid configured-empty state (each principal sees its own identity plus shared records). Validated when the config and the `Memory` are built — a malformed policy raises at load, never mid-recall. Read-side only: it governs what recall *shows*, never what maintenance *merges*. |
 | `cross_scope_visible` | `False` | whether records outside the principal's group are visible at all. When `True` they are visible but fenced as third-party testimony — never assertable, never volunteered proactively. |
 | `census_enabled` | `False` | the exercised-guarantees census (specs/0042): **opt-in, default off**. `True` turns the process-wide switch on at construction; every enforcement point then counts how often it was consulted and how often it fired, and `veracium.census.census(declaration)` reports one of six statuses per declared id (`DISABLED` · `UNDECLARED` · `UNMEASURED` · `UNREACHED` · `UNEXERCISED` · `EXERCISED`). Observation only: a site never alters a decision, and a report carries ids and integers, never content. Off, every site is a no-op and the report reads `DISABLED` per id. |
 | `contested_render_share` | `0.5` | the CONTESTED FUNCTIONAL FACTS block's share of the recall budget. Before this cap the block had first claim on the whole budget and could starve the ranked detail lines that carry an answer; the first group line is still unconditional (the higher-authority prior is never dropped) and the rest of the budget goes to detail. `1.0` reproduces the pre-cap behaviour. It cannot reach carriers inside a contested group, which are removed from detail by construction. When the block is cut, it is cut from the END of an order that keeps the most-preserved groups: groups (in the block and in `Recall.contested`) are listed by the authority of the fact each preserves, then the closest contention first, then the most visible members, then `(subject, relation)` (specs/0003 §4c-iii). |
+
+- **Rows already written out of range** (specs/0048 §10 Q2; a manual fix, by decision). No shipped
+  configuration writes them: the shipped expiry table maps no class to `ExpiryBehavior.DECAY`. A host that EDITED
+  `schema.DEFAULT_EXPIRY` to map one, with a `decay_factor` above 1 or NaN, under a release before 0.30.0, can hold
+  edges whose stored confidence is above 1 or `null`; every read of that user's edges then raises pydantic's
+  `ValidationError` ("Input should be less than or equal to 1" or "Input should be a valid number"). 0.30.0 refuses
+  new ones; it does not repair old ones. To repair, with every process stopped (the offline-migration rule) and a
+  backup of the file taken first, set each such edge's confidence to the value you want it to hold, for example:
+
+  ```sql
+  UPDATE edges SET json = json_set(json, '$.provenance.confidence', 1.0)
+   WHERE json_extract(json, '$.provenance.confidence') > 1
+      OR json_extract(json, '$.provenance.confidence') IS NULL;
+  ```
+
+  This edits the current rows only. The store's change journal (specs/0029) keeps the state each write recorded, so
+  an as-of read at a time before the repair can still meet the old value; the repair is not journalled and `doctor`
+  does not report it. Choose the value yourself: 1.0 above restores the highest confidence, not the one the fact had
+  before the misconfigured run.
 
 - **`require_source_id`** (`True`; specs/0006 §4 rule 9): when `True` (the default), `remember`
   refuses, before any write, third-party-authored evidence and declared third-party-

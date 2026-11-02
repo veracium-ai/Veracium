@@ -10,8 +10,13 @@ write; B commits an operation; A resumes. The pause is deterministic (events), n
   lapse     TRANSIENT -> LAPSE (the SHIPPED table)   B confirm()s; A lapses the fact B just confirmed
   decay     SLOW -> DECAY (mapped for the probe)     the round-1 reviewer's schedule: 0.9 -> B 0.45 -> B 0.225 -> A 0.45
 
-Each case prints the committed row before A resumes and after, and `LOST-UPDATE` when A's write undid B's committed
-state. The SERIAL controls run B, then A, with no overlap, and must print `kept`. Exit 0 always: this is evidence of the shipped behaviour at the pin, not a gate.
+Each case prints the committed row before A resumes and after, with a verdict: `kept` when B's committed state stands;
+`serial` when A changed it to exactly what the SERIAL order (B, then A) gives, which is the only correct change (the
+decay case after 0048 §4D: B's 0.225 decays to 0.1125); `LOST-UPDATE` otherwise, A's write undoing B's committed state.
+Each overlapping case computes its own serial result on a separate file to judge by. The printed SERIAL controls run
+B, then A, with no overlap: `kept` for confirm and lapse (nothing is due), `CHANGED` for decay (A decays B's result).
+Exit 0 always: this is evidence, not a gate. At the 0048 pin every overlapping case prints `LOST-UPDATE`; with §4D,
+confirm, confirm95 and lapse print `kept` and decay prints `serial` (2026-11-02, the verdict made fixed-aware).
 """
 import datetime as dt
 import json
@@ -42,7 +47,7 @@ def _row(m):
             "observed": e.provenance.observed_at.date().isoformat(), "invalidated": e.invalidated_at is not None}
 
 
-def case(name, volatility, observed, conf, b_ops, cfg=None, serial=False):
+def case(name, volatility, observed, conf, b_ops, cfg=None, serial=False, quiet=False):
     db = DIR / f"{name}.db"
     for p in DIR.glob(f"{name}.db*"):
         p.unlink()
@@ -58,8 +63,9 @@ def case(name, volatility, observed, conf, b_ops, cfg=None, serial=False):
         before = _row(B)
         r = expire(A.store, U, A.config)
         after = _row(B)
-        print(f"{name:8} SERIAL B {before}\n{'':8} then A {r} -> {after}  {'kept' if after == before else 'CHANGED'}")
-        return
+        if not quiet:
+            print(f"{name:8} SERIAL B {before}\n{'':8} then A {r} -> {after}  {'kept' if after == before else 'CHANGED'}")
+        return after
     read, go, out = threading.Event(), threading.Event(), {}
     real = A.store.edges
 
@@ -80,8 +86,9 @@ def case(name, volatility, observed, conf, b_ops, cfg=None, serial=False):
     t.join(10)
     A.store.edges = real
     after = _row(B)
-    lost = after != before
-    print(f"{name:8} B committed {before}\n{'':8} A {out.get('A')} -> {after}  {'LOST-UPDATE' if lost else 'kept'}")
+    ser = case(name + "-serial", volatility, observed, conf, b_ops, cfg=cfg, serial=True, quiet=True)
+    verdict = "kept" if after == before else "serial" if after == ser else "LOST-UPDATE"
+    print(f"{name:8} B committed {before}\n{'':8} A {out.get('A')} -> {after}  {verdict}")
 
 
 now = dt.datetime.now(dt.timezone.utc)
@@ -102,5 +109,8 @@ try:
     case("decay", S.Volatility.SLOW, dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc), 0.9,
          [lambda B: expire(B.store, U, B.config), lambda B: expire(B.store, U, B.config)],
          cfg={"decay_factor": 0.5, "confidence_floor": 0.0})
+    case("decay", S.Volatility.SLOW, dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc), 0.9,
+         [lambda B: expire(B.store, U, B.config), lambda B: expire(B.store, U, B.config)],
+         cfg={"decay_factor": 0.5, "confidence_floor": 0.0}, serial=True)
 finally:
     S.DEFAULT_EXPIRY[S.Volatility.SLOW] = saved

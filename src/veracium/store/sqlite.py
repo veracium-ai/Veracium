@@ -23,7 +23,8 @@ from pydantic import ValidationError
 from ..authority import DRAFTED_RULE_VERSIONS, RULE_VERSION, scope_fingerprint
 from .. import redaction as _redaction
 from ..attestation import declarative_grounding
-from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
+from ..schema import (ExpiryBehavior,   # specs/0048 §4D
+                      ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
                       Confirmation, ConfirmationActor, ConfirmationCallPath, REPLY_KINDS, Reply, ReplyActor,
                       reply_request_digest,
                       Disclosure, Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft, QUARANTINE_RELATION,
@@ -246,6 +247,19 @@ def _reply_shape_problem(kind: str, text, target) -> Optional[str]:
     except UnicodeEncodeError:
         return "the text does not encode as UTF-8 (a lone surrogate)"
     return None
+
+
+def _validated_edge_json(edge: Edge) -> str:
+    """specs/0048 §4C: the ONE serialiser every write of the edges table's `json` column binds. It re-validates the
+    edge FROM ITS DUMPED DATA (`Edge.model_validate(edge.model_dump())`: an instance is not revalidation, since a
+    nested model can be built unvalidated with `model_construct`), so an edge violating a declared bound — a
+    confidence outside [0, 1], a NaN — refuses (pydantic's ValidationError, a ValueError) BEFORE any SQL runs and
+    nothing is written. It returns the edge's own serialisation, the bytes every writer bound before this helper
+    existed: the journal, the record digests and the INV-7 twin hash what they hashed (research's N1, zero drift by
+    construction). `tests/test_0048_decay_bounds.py::test_every_edge_write_goes_through_the_validating_serialiser`
+    holds every writer to it."""
+    Edge.model_validate(edge.model_dump())
+    return edge.model_dump_json()
 
 
 class SqliteStore(Store):
@@ -792,7 +806,7 @@ class SqliteStore(Store):
                             f"different producer ({pp.get('producer')!r} → {edge.provenance.producer!r}) — "
                             f"the producer stamp is inherited across a supersession "
                             f"(specs/0037 v23 §4a-iii, V-PRODUCER-INHERITED); nothing written"), "supersedes-producer")
-            new_json = edge.model_dump_json()
+            new_json = _validated_edge_json(edge)
             self._conn.execute(
                 "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
                 "VALUES(?,?,?,?,?,?,?,?)",
@@ -952,7 +966,7 @@ class SqliteStore(Store):
             actor_v = ConfirmationActor(actor).value
             call_v = ConfirmationCallPath(call_path).value
             try:
-                new_json = edge.model_dump_json()
+                new_json = _validated_edge_json(edge)
                 self._conn.execute("UPDATE edges SET json=? WHERE id=?",
                                    (new_json, edge_id))
                 self._journal_edge_write(user_id, edge_id, new_json, row[0])
@@ -1343,7 +1357,7 @@ class SqliteStore(Store):
         edge.invalidated_at = as_utc_required(at)
         self._refuse_redacted_reason(reason, f"edge {edge_id!r}", "edge-invalidate")
         edge.invalidation_reason = reason
-        new_json = edge.model_dump_json()
+        new_json = _validated_edge_json(edge)
         self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
                            (new_json, edge_id))
         # specs/0029 §4b: the site-determined kind (the SOLE active=0 writer);
@@ -1402,7 +1416,7 @@ class SqliteStore(Store):
         # IS the reinstatement; the column mirrors it
         edge.invalidated_at = None
         edge.invalidation_reason = None
-        new_json = edge.model_dump_json()
+        new_json = _validated_edge_json(edge)
         self._conn.execute("UPDATE edges SET active=1, json=? WHERE id=?",
                            (new_json, edge_id))
         self._journal_edge_write(row[1], edge_id, new_json, row[0], kind="reinstated",
@@ -1452,7 +1466,7 @@ class SqliteStore(Store):
         edge.provenance = edge.provenance.model_copy(update={          # frozen Provenance (0037 v23)
             "observed_at": _parse(values["observed_at"]),
             "confidence": float(values["confidence"])})
-        new_json = edge.model_dump_json()
+        new_json = _validated_edge_json(edge)
         self._conn.execute("UPDATE edges SET json=? WHERE id=?",
                            (new_json, edge_id))
         # the fourth site (0030 R1-4): digest-invisible, full-state-visible
@@ -1466,6 +1480,57 @@ class SqliteStore(Store):
             "SELECT 1 FROM supersession_refusals WHERE user_id=? AND "
             "(prior_edge_id=? OR incoming_edge_id=?) LIMIT 1",
             (user_id, edge_id, edge_id)).fetchone() is not None
+
+    def expiry_transition(self, user_id: str, edge_id: str, *, now, lifetimes, behaviors, decay_factor: float,
+                          confidence_floor: float) -> Optional[str]:
+        """specs/0048 §4D: ONE edge's expiry, decided from its CURRENT row inside one write transaction
+        (`BEGIN IMMEDIATE`, or the caller's open one): an operation that committed first is seen, one that commits
+        later sees this result, so the outcome is that of some serial order (N4h). Returns what was written:
+        `"lapsed"`, `"decayed"` (below the floor: retired, its stored confidence unchanged — the shipped meaning,
+        R2-02), `"flagged"`, `"decay-retained"` (a decayed copy written, NOT counted by `expire()`), or None (absent,
+        inactive, attested-redacted, not due on the current row, no lifetime, or already flagged: no write, not
+        counted). The policy — lifetimes, the behaviour table, the two bounds — is the caller's captured, validated values (§4B). Writes go through the same bodies as
+        `add_edge` / `invalidate_edge` (0029's journal, 0041's refusals, 0004's wiki drop, C's serialiser)."""
+        with self._lock, self._write_txn():
+            row = self._conn.execute("SELECT json, active FROM edges WHERE id=? AND user_id=?",
+                                     (edge_id, user_id)).fetchone()
+            if row is None or not row[1]:
+                return None
+            # specs/0041 round 10's skip, MOVED INSIDE the transaction: a redaction committed after expire()'s
+            # listing is seen here, and the transition is skipped rather than refused by the write path
+            if edge_id in self.redacted_targets(user_id, "edge"):
+                return None
+            e = Edge.model_validate_json(row[0])
+            lifetime = lifetimes.get(e.volatility)
+            # liveness ages against observed_at (when we last recorded this), not valid_from — on the CURRENT row
+            if lifetime is None or (now - e.provenance.observed_at).days <= lifetime:
+                return None
+            behavior = behaviors[e.volatility]
+            if behavior == ExpiryBehavior.LAPSE:
+                self._invalidate_edge_row(edge_id, now, "lapsed")
+                outcome = "lapsed"
+            elif behavior == ExpiryBehavior.DECAY:
+                decayed = e.provenance.confidence * decay_factor
+                if decayed < confidence_floor:
+                    self._invalidate_edge_row(edge_id, now, "decayed")     # stored confidence unchanged (N4i)
+                    outcome = "decayed"
+                else:
+                    # §4B's defence in depth: the decayed stamp is built VALIDATED (frozen Provenance, 0037 v23)
+                    e.provenance = Provenance.model_validate({**e.provenance.model_dump(), "confidence": decayed})
+                    self._upsert_edge_row(e)
+                    outcome = "decay-retained"
+            else:  # CONFIRM — never silently dropped; surfaced as possibly-stale
+                if e.needs_confirmation:
+                    return None
+                e.needs_confirmation = True
+                self._upsert_edge_row(e)
+                outcome = "flagged"
+            self._bump(user_id)
+            # invalidate_edge's 0003 §4c-ii drop, for the two retiring outcomes: ending a refusal contention is a
+            # derived-view resolution event
+            if outcome in ("lapsed", "decayed") and self._edge_in_refusal(user_id, edge_id):
+                self._conn.execute("DELETE FROM wiki WHERE user_id=?", (user_id,))
+            return outcome
 
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None:
         with self._lock, self._write_txn():
@@ -2731,7 +2796,7 @@ class SqliteStore(Store):
                                         f"nothing imported (specs/0041 §4b-ii, INV-11; §4g)"), "arrival-outside-attestation")
                         prior = self._conn.execute(
                             "SELECT json FROM edges WHERE id=?", (edge.id,)).fetchone()
-                        new_json = edge.model_dump_json()
+                        new_json = _validated_edge_json(edge)
                         self._conn.execute(
                             "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
                             "VALUES(?,?,?,?,?,?,?,?)",
@@ -3815,9 +3880,10 @@ class SqliteStore(Store):
         fields = sorted(set(treated) | set(_redaction.already_treated(kind, before)) | set(fields_hint or []))
         event_ref = None
         if kind == "edge":
+            edge_json = _validated_edge_json(model_after)   # specs/0048 §4C: the same bytes as new_json, validated
             self._conn.execute(
                 "UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
-                (new_json, model_after.subject, model_after.relation, model_after.object,
+                (edge_json, model_after.subject, model_after.relation, model_after.object,
                  int(model_after.quarantined), target_id))
             # the side tables (rows 7, 21/23, 59/64) and the oracle (INV-7)
             n = self._conn.execute("UPDATE confirmations SET request_digest=? WHERE user_id=? AND edge_id=?",

@@ -237,4 +237,11 @@ COMBINING_SITES = {
         False, why="drops the wiki CACHE for the user (the edge row itself "
                    "is written by _invalidate_edge_row); a cache "
                    "invalidation combines nothing"),
+    # specs/0048 §4D: expire()'s per-edge transition, decided from ONE edge's own current row (its writes go through
+    # _invalidate_edge_row / _upsert_edge_row, registered above)
+    (_STORE, "expiry_transition"): SiteSpec(
+        False, why="drops the wiki CACHE for the user when a retirement "
+                   "ends a refusal contention, as invalidate_edge does; "
+                   "the edge is decided from its own row alone, so a "
+                   "cache invalidation combines nothing"),
 }

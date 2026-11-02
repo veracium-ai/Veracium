@@ -92,6 +92,8 @@ CLASSIFIED = {
     ("__init__.py", "Memory.dispute"): ("INTERNAL", "a WRITE of an act episode naming the value as the act's object, never asserting it (0047 v1.4 ruling); an episode naming a challenged value does not carry the challenge (0047 §8, NOT claimed)"),
     ("__init__.py", "Memory.record_outcome"): ("INTERNAL", "a write of an outcome act episode naming the value, never asserting it (0047 v1.4 ruling)"),
     ("store/sqlite.py", "SqliteStore._upsert_edge_row"): ("INTERNAL", "store write"),
+    ("store/sqlite.py", "SqliteStore.expiry_transition"): ("INTERNAL", "store write"),   # specs/0048 §4D
+    ("store/sqlite.py", "_validated_edge_json"): ("INTERNAL", "store write"),   # specs/0048 §4C: the edges-json serialiser
     # R-II round 2's RII-R2-01: the ONE projection of what a compiled wiki may assert, compared, never rendered
     ("schema.py", "assertion_view"): ("INTERNAL", "the wiki's assertion view (RII-R2-01): compared by the store's eviction and recall's bind, never rendered"),
     ("store/sqlite.py", "SqliteStore.apply_supersession_plan"): ("INTERNAL", "store write"),
@@ -105,11 +107,8 @@ CLASSIFIED = {
     ("store/sqlite.py", "SqliteStore._logical_request_digest._dump"): ("INTERNAL", "serialises a plan for its replay digest; never rendered"),
     ("store/sqlite.py", "SqliteStore._abandon"): ("INTERNAL", "store write"),
     ("store/sqlite.py", "SqliteStore._claim_inputs"): ("INTERNAL", "store write"),
-    ("store/sqlite.py", "SqliteStore._invalidate_edge_row"): ("INTERNAL", "store write"),
     ("store/sqlite.py", "SqliteStore._logical_request_digest"): ("INTERNAL", "a digest"),
     ("store/sqlite.py", "SqliteStore._outcome_digest_v2"): ("INTERNAL", "a digest"),
-    ("store/sqlite.py", "SqliteStore._recompute_edge_row"): ("INTERNAL", "store write"),
-    ("store/sqlite.py", "SqliteStore._reinstate_edge_row"): ("INTERNAL", "store write"),
     ("store/sqlite.py", "SqliteStore._reinstate_episode_row"): ("INTERNAL", "store write"),
     ("store/sqlite.py", "SqliteStore._retire_episode_row"): ("INTERNAL", "store write"),
     ("store/sqlite.py", "SqliteStore.add_episode"): ("INTERNAL", "store write"),

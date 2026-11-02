@@ -10,7 +10,12 @@ on exit.
 Each case prints REPRODUCED or NOT REPRODUCED with the observed value; exit 1 if any expected reproduction failed.
 R1-01..R1-03 concern the proposed design's gaps, so at the pin they reproduce as the SHIPPED behaviour the design
 inherits (no factor check, a read outside the write, a prefix of writes before a raise). R1-04 is a census + an
-adjacent episode path."""
+adjacent episode path.
+
+On a tree with 0048 §4 (2026-11-02, made fixed-aware): an `expire()` that REFUSES is recorded, not raised (`run`), so
+each case reports NOT REPRODUCED with the refusal named, and R1-02's pause also hooks the §4D store transition
+(`expiry_transition`), so the race is attempted on the fixed path rather than skipped. The episode carrier (R1-04,
+outside 0048's scope by the owner's Q6 ruling) and the float fixed point still reproduce there."""
 # Mutation-Matrix: tests/test_0048_evidence.py::test_pin_repro_reports_a_planted_fix_as_not_reproduced
 import ast, os, pathlib, sys, tempfile, types
 from datetime import datetime, timedelta, timezone
@@ -47,14 +52,26 @@ def cfg(factor, floor):
                                  confidence_floor=floor)
 
 
+def run(store, config):
+    """expire() on a fixed tree refuses a malformed policy at entry: record the refusal's name, never raise it."""
+    try:
+        lifecycle.expire(store, "u", config, now=NOW)
+        return None
+    except (ValueError, TypeError, NotImplementedError) as ex:
+        return type(ex).__name__
+
+
 def conf_of(st, eid):
     (e,) = [x for x in st.edges("u", active_only=False) if x.id == eid]
     return e.provenance.confidence, e.active, e.invalidation_reason
 
 
-DECAY_SLOW = dict(lifecycle.DEFAULT_EXPIRY)
-DECAY_SLOW[Volatility.SLOW] = ExpiryBehavior.DECAY
-lifecycle.DEFAULT_EXPIRY = DECAY_SLOW            # the host activation the design protects (shipped maps 0 of 5)
+# the host activation the design protects (shipped maps 0 of 5): an IN-PLACE edit of the exported, mutable
+# `schema.DEFAULT_EXPIRY` (0048 §1, §2c), the one dict both the shipped `expire()` and the §4D store transition read.
+# (Until 2026-11-02 this REBOUND `lifecycle.DEFAULT_EXPIRY` to a copy; the §4D transition does not read that name.)
+from veracium import schema as _schema
+assert lifecycle.DEFAULT_EXPIRY is _schema.DEFAULT_EXPIRY
+_schema.DEFAULT_EXPIRY[Volatility.SLOW] = ExpiryBehavior.DECAY
 
 
 def fresh(*edges):
@@ -67,22 +84,22 @@ def fresh(*edges):
 
 # --- R1-01: nothing checks the FACTOR; an in-range product is accepted even when it is an increase -------------
 st, _ = fresh(edge("s", Volatility.SLOW, 0.3))
-lifecycle.expire(st, "u", cfg(2.0, 0.0), now=NOW)
+ref = run(st, cfg(2.0, 0.0))
 c, active, _ = conf_of(st, "s")
-report("R1-01 factor 2.0 on 0.3", active and c > 0.3, f"persisted confidence {c} (was 0.3), active={active}")
+report("R1-01 factor 2.0 on 0.3", active and c > 0.3, f"persisted confidence {c} (was 0.3), active={active}, refused={ref}")
 st, _ = fresh(edge("s", Volatility.SLOW, 0.9))
-lifecycle.expire(st, "u", cfg(0.5, 2.0), now=NOW)
+ref = run(st, cfg(0.5, 2.0))
 c, active, why = conf_of(st, "s")
 report("R1-01 floor 2.0 (the second numeric field)", not active and why == "decayed",
-       f"a valid decay 0.9*0.5 invalidated by an out-of-range floor: active={active} reason={why}")
+       f"a valid decay 0.9*0.5 invalidated by an out-of-range floor: active={active} reason={why}, refused={ref}")
 st, _ = fresh(edge("s", Volatility.SLOW, 0.9))
-lifecycle.expire(st, "u", cfg(0.5, float("nan")), now=NOW)
+ref = run(st, cfg(0.5, float("nan")))
 c, active, _ = conf_of(st, "s")
-report("R1-01 floor NaN", active, f"NaN floor completes without refusal: confidence {c}, active={active}")
+report("R1-01 floor NaN", active and ref is None, f"NaN floor completes without refusal: confidence {c}, active={active}, refused={ref}")
 st, _ = fresh(edge("s", Volatility.SLOW, 0.9))
-lifecycle.expire(st, "u", cfg(True, 0.0), now=NOW)
+ref = run(st, cfg(True, 0.0))
 c, active, _ = conf_of(st, "s")
-report("R1-01 Boolean factor", active and c == 0.9, f"factor True accepted, confidence {c}")
+report("R1-01 Boolean factor", active and c == 0.9 and ref is None, f"factor True accepted, confidence {c}, refused={ref}")
 
 # --- R1-02: the read is outside the write; a stale decay overwrites a LOWER committed confidence -----------------
 st_a, path = fresh(edge("s", Volatility.SLOW, 0.9))
@@ -96,13 +113,18 @@ class PausingStore:
         self._i = inner; self._fired = False
     def __getattr__(self, n):
         return getattr(self._i, n)
-    def add_edge(self, e):
+    def _b_runs(self, what):
         if not self._fired:
             self._fired = True
-            seen.append(("A computed", e.provenance.confidence))
+            seen.append(what)
             lifecycle.expire(st_b, "u", cfg(0.5, 0.0), now=NOW); seen.append(("B run 1", conf_of(st_b, "s")[0]))
             lifecycle.expire(st_b, "u", cfg(0.5, 0.0), now=NOW); seen.append(("B run 2", conf_of(st_b, "s")[0]))
+    def add_edge(self, e):                        # the shipped path: A's stale write-back
+        self._b_runs(("A computed", e.provenance.confidence))
         return self._i.add_edge(e)
+    def expiry_transition(self, *a, **k):         # the 0048 §4D path: B runs before A's transition reads its row
+        self._b_runs(("A listed", None))
+        return self._i.expiry_transition(*a, **k)
 
 
 lifecycle.expire(PausingStore(st_a), "u", cfg(0.5, 0.0), now=NOW)

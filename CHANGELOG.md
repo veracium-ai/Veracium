@@ -15,6 +15,30 @@
   and no MCP tool (§3b). The machinery itself (`veracium.store.revocation.revoke_source`) has shipped since 0.13.0;
   these are the host methods over it.
 
+- **Fixed: maintenance can no longer raise a fact's confidence, and expiry no longer undoes a concurrent
+  `confirm()`** (specs/0048, its design accepted at external round 2). Three changes:
+  - `MemoryConfig` refuses `decay_factor` and `confidence_floor` outside [0, 1], and NaN, ±inf and booleans, with
+    `ValueError` naming the field, at construction and on assignment (a refused assignment keeps the old value);
+    `maintain()`/`expire()` validate both at entry for any config object, before any edge is read, so a bad policy
+    writes nothing. Before this, factor 2.0 on a fact at confidence 0.3 stored 0.6, and at 0.9 stored 1.8, after
+    which every read of that user's edges raised.
+  - The store refuses to write an edge that violates a declared bound (a confidence outside [0, 1] or NaN), before
+    any SQL runs, on every path that writes an edge.
+  - Expiry decides each fact from its CURRENT stored state, inside one write transaction per fact. Before this,
+    `maintain()` decided from a listing taken before its writes, so a `confirm()` that landed in between was reverted
+    (the fact flagged again, its confirmation date rolled back), a fact confirmed a moment earlier could lapse, and
+    a DECAY run could write back a stale, higher confidence over one another run had committed (measured: 0.45
+    over 0.225). Counts and stored results are
+    unchanged otherwise: `decayed` still counts decay-triggered retirements only, a fact decayed below the floor is
+    retired with its confidence unchanged, and lapsed/decayed retirements keep the compiled wiki, as before.
+  **Who should take this:** hosts that run `maintain()` alongside user operations, set either bound, or map a
+  volatility class to `ExpiryBehavior.DECAY` (with the shipped expiry table the decay path is not reached).
+  **Who must act:** a host with its OWN `Store` implementation must add `expiry_transition` (its contract is on
+  `veracium.store.base.Store.expiry_transition`); `maintain()` on a store without it raises `NotImplementedError`
+  naming the method, and runs no expiry, rather than falling back to the unsafe path. A host that stored
+  out-of-range confidences under an earlier release (only possible with DECAY mapped and a factor above 1 or NaN):
+  see "Rows already written out of range" in `docs/api.md`; this release does not repair them.
+
 ## 0.29.0 — 2026-11-02
 
 **A user can now hold more than one deadline.** 0.28.0's extractor stored every commitment as the user's

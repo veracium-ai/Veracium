@@ -36,7 +36,9 @@ def _regions() -> dict[str, str]:
     committed = [f for f in FINDINGS if f["implementation"] == "committed"]
     releases = sorted({f["release"] for f in shipped if f["release"]})
 
-    ids = lambda fs: ', '.join(f"`{f['id']}`" for f in fs)
+    # an empty set renders "none": the first time 0002 had no open finding (the 0048 implementation, 2026-11-02),
+    # the join printed "**Open:** ."
+    ids = lambda fs: ', '.join(f"`{f['id']}`" for f in fs) or "none"
 
     rows = []
     for f in FINDINGS:
@@ -92,7 +94,7 @@ def _regions() -> dict[str, str]:
     # ledger called N4-decay open.
     OPS = [
         ("`lifecycle.expire()` — LAPSE", None, "invalidates only; ages against `observed_at`"),
-        ("`lifecycle.expire()` — DECAY", "N4-decay", "`confidence *= decay_factor`"),
+        ("`lifecycle.expire()` — DECAY", "N4-decay", "`confidence × decay_factor`, the factor validated in [0, 1] at entry and decided from the current row (specs/0048)"),
         ("`lifecycle.expire()` — CONFIRM", None, "sets `needs_confirmation = True`; narrowing"),
         ("`lifecycle.consolidate()`", "M1", "provenance across the whole set"),
         ("`lifecycle.consolidate()` — provenance fields", "N9b-provenance", "`source_type` / `evidence_ref`"),

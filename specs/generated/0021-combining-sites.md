@@ -5,7 +5,7 @@
 
 # specs/0021 §3 — combining-site manifest
 
-**35 record-mutating code paths**, enumerated by **parsing the store's SQL**
+**36 record-mutating code paths**, enumerated by **parsing the store's SQL**
 rather than by reading the spec's prose matrix. **11 of them COMBINE**:
 they write a record derived from, or mutate a record because of, MORE THAN
 ONE existing record — the definition §3 gives the registry.
@@ -68,6 +68,7 @@ outside the boundary by construction.
 | `src/veracium/store/sqlite.py` | `delete_claimed_inputs_if_current` | `DELETE FROM episodes` | **yes** | consolidation | deletes the N inputs because the M outputs are durable — the combination's other half, and PERMANENT (§7: there is no un-consolidate) |
 | `src/veracium/store/sqlite.py` | `delete_episode` | `DELETE FROM episodes` | no | — | removes one record |
 | `src/veracium/store/sqlite.py` | `discard_wiki` | `DELETE FROM wiki` | no | — | deletes the one wiki row a withheld compile published, conditional on it (RII-R2-01 D2); derives nothing from any record |
+| `src/veracium/store/sqlite.py` | `expiry_transition` | `DELETE FROM wiki` | no | — | drops the wiki CACHE for the user when a retirement ends a refusal contention, as invalidate_edge does; the edge is decided from its own row alone, so a cache invalidation combines nothing |
 | `src/veracium/store/sqlite.py` | `forget_user` | `DELETE FROM edge_event` · `DELETE FROM {}` | no | — | 0009 erasure — drops the tenant's tables wholesale (ledger included), which moots membership rather than deriving it |
 | `src/veracium/store/sqlite.py` | `invalidate_edge` | `DELETE FROM wiki` | no | — | drops the wiki CACHE for the user (the edge row itself is written by _invalidate_edge_row); a cache invalidation combines nothing |
 | `src/veracium/store/sqlite.py` | `set_wiki` | `INSERT OR REPLACE INTO wiki` | **yes** | wiki-compilation | v1: the store-wide compile is UNCHANGED, and the wiki never reaches a principal-bearing response (0020 §4d excludes it). Per-scope compilation is the recorded widening (Q2), not a silent one |

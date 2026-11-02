@@ -5,9 +5,9 @@
 
 # specs/0002 — store-mutator call-site manifest
 
-**32 call sites** across **20 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
+**29 call sites** across **21 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
 
-**31 clean · 0 fixed · 1 open · 0 moved · 0 open and moved** — 31 of 32 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
+**29 clean · 0 fixed · 0 open · 0 moved · 0 open and moved** — 29 of 29 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
 
 **Identity is `(file, scope, mutator, fingerprint)`.** The fingerprint is a hash of the call's normalised expression and its enclosing control-flow context — **what the call is, not where it sits**. Moving a call keeps its verdict; swapping two different calls invalidates both. **Line numbers are informational.**
 
@@ -35,19 +35,16 @@
 | `src/veracium/ingest.py:394` | `ingest_event()` | `add_episode` | `836c8cca9da2` | `clean` | write-time | episode provenance (unparseable placeholder; disclosure set at birth) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
 | `src/veracium/ingest.py:707` | `ingest_event()` | `add_episode` | `070f62e813fd` | `clean` | write-time | episode provenance (disclosure set at birth); its id is the edges' `src` (specs/0045 §2) | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
 | `src/veracium/ingest.py:822` | `ingest_event()` | `add_edge` | `74ca6d95a054` | `clean` | write-time | a procedural record: `record_kind="procedural"`, `basis="stated"` DERIVED from a quote verified against the event text; the event's provenance otherwise | act | clean — written only when the model's quote is a verbatim span of a user-authored event (V-EXTRACTOR-QUOTE-GATED); never rendered | `test_a_quoted_user_routine_is_recorded_as_a_procedure_and_never_rendered` · `test_a_procedural_emission_without_a_verifying_user_quote_is_refused_and_counted` |
-| `src/veracium/lifecycle.py:67` | `expire()` | `invalidate_edge` | `52f316b93ba6` | `clean` | maintain-time | `active`, reason `lapsed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/lifecycle.py:75` | `expire()` | `invalidate_edge` | `b832f3d50c54` | `clean` | maintain-time | `active`, reason `decayed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/lifecycle.py:78` | `expire()` | `add_edge` | `c544c8e1440e` | `open` | maintain-time | **`confidence *= decay_factor`** | none | 🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d | 🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** [N4-decay] |
-| `src/veracium/lifecycle.py:87` | `expire()` | `add_edge` | `81f568fbb65f` | `clean` | maintain-time | `needs_confirmation = True` | none | clean — narrows; flags, never clears | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/lifecycle.py:123` | `_recover()` | `delete_claimed_inputs_if_current` | `49d3539863c9` | `clean` | maintain-time | recovery idempotent re-delete | act | clean — specs/0010 X2: there is no durable 'some inputs deleted' state; the re-delete is idempotent | `test_recovery_finalises_after_committed_delete` |
-| `src/veracium/lifecycle.py:124` | `_recover()` | `transition_consolidation_if_current` | `6e0ea1c3cdf2` | `clean` | maintain-time | recovery roll-forward finalize | act | clean — specs/0010 X2/X13: an OUTPUTS_DURABLE op recovered by idempotent re-delete + finalize, never a re-consolidation | `test_recovery_finalises_after_committed_delete` |
-| `src/veracium/lifecycle.py:127` | `_recover()` | `abandon_consolidation_if_current` | `3796d339c301` | `clean` | maintain-time | recovery cleanup of an expired pre-cutover op | act | clean — specs/0010 X7/X15: abandons only an EXPIRED-lease op (never a live peer), cleanup-complete before any new fence | `test_takeover_of_expired_generating_cleans_first` · `test_a_live_lease_is_not_preempted` |
-| `src/veracium/lifecycle.py:245` | `_consolidate_pool()` | `create_or_takeover_consolidation` | `2cd7f2e21d07` | `clean` | maintain-time | claims the whole cold batch (`claimed_by`/`operation_id` on each input) | act | clean — specs/0010 X4/X11: the batch is claimed atomically or not at all; a contended/stale set skips the pass, mutating nothing | `test_concurrent_consolidation_claims_all_or_nothing` · `test_partial_claim_is_impossible` |
-| `src/veracium/lifecycle.py:259` | `_consolidate_pool()` | `transition_consolidation_if_current` | `794f909d27fe` | `clean` | maintain-time | advances state (CLAIMED→GENERATING) | act | clean — specs/0010 §4b-ii: owner+live-lease guarded | `test_every_read_sees_exactly_one_representation` |
-| `src/veracium/lifecycle.py:262` | `_consolidate_pool()` | `write_consolidation_output_if_current` | `e29e4b146e16` | `clean` | maintain-time | writes each provisional output; store BINDS lineage=claimed set and DERIVES the trust floor (X23) | act | clean — specs/0010 X1/X8/X12/X23: outputs are durable BEFORE any delete, carry the whole batch as lineage, and take the whole-set-minimum trust (the old M1/0.4.4 logic, moved to the fenced write) | `test_output_trust_is_the_whole_set_minimum` · `test_lineage_is_the_whole_batch` |
-| `src/veracium/lifecycle.py:267` | `_consolidate_pool()` | `transition_consolidation_if_current` | `3beca39c4c1b` | `clean` | maintain-time | the visibility cutover (GENERATING→OUTPUTS_DURABLE) | act | clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return | `test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output` |
-| `src/veracium/lifecycle.py:273` | `_consolidate_pool()` | `delete_claimed_inputs_if_current` | `a11557d9871c` | `clean` | maintain-time | deletes the claimed inputs AFTER outputs are durable | act | clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover | `test_every_read_sees_exactly_one_representation` |
-| `src/veracium/lifecycle.py:274` | `_consolidate_pool()` | `transition_consolidation_if_current` | `f6fbe5aada28` | `clean` | maintain-time | finalizes (OUTPUTS_DURABLE→FINALIZED) | act | clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs | `test_finalize_refuses_before_inputs_deleted` |
+| `src/veracium/lifecycle.py:73` | `expire()` | `expiry_transition` | `4609f1b2d716` | `clean` | maintain-time | `active` (reasons `lapsed`, `decayed`), `confidence` (DECAY: × a validated factor in [0, 1]), `needs_confirmation = True` | none | clean — narrows: confidence never rises (N4), a decay below the floor retires with its confidence unchanged (N4i), the flag is set never cleared; decided from the CURRENT row (N4h) | `test_no_maintenance_op_raises_confidence` · `test_expiry_is_decided_from_the_current_row` · `test_decay_keeps_the_shipped_result` · `test_config_bounds_are_validated` |
+| `src/veracium/lifecycle.py:111` | `_recover()` | `delete_claimed_inputs_if_current` | `49d3539863c9` | `clean` | maintain-time | recovery idempotent re-delete | act | clean — specs/0010 X2: there is no durable 'some inputs deleted' state; the re-delete is idempotent | `test_recovery_finalises_after_committed_delete` |
+| `src/veracium/lifecycle.py:112` | `_recover()` | `transition_consolidation_if_current` | `6e0ea1c3cdf2` | `clean` | maintain-time | recovery roll-forward finalize | act | clean — specs/0010 X2/X13: an OUTPUTS_DURABLE op recovered by idempotent re-delete + finalize, never a re-consolidation | `test_recovery_finalises_after_committed_delete` |
+| `src/veracium/lifecycle.py:115` | `_recover()` | `abandon_consolidation_if_current` | `3796d339c301` | `clean` | maintain-time | recovery cleanup of an expired pre-cutover op | act | clean — specs/0010 X7/X15: abandons only an EXPIRED-lease op (never a live peer), cleanup-complete before any new fence | `test_takeover_of_expired_generating_cleans_first` · `test_a_live_lease_is_not_preempted` |
+| `src/veracium/lifecycle.py:233` | `_consolidate_pool()` | `create_or_takeover_consolidation` | `2cd7f2e21d07` | `clean` | maintain-time | claims the whole cold batch (`claimed_by`/`operation_id` on each input) | act | clean — specs/0010 X4/X11: the batch is claimed atomically or not at all; a contended/stale set skips the pass, mutating nothing | `test_concurrent_consolidation_claims_all_or_nothing` · `test_partial_claim_is_impossible` |
+| `src/veracium/lifecycle.py:247` | `_consolidate_pool()` | `transition_consolidation_if_current` | `794f909d27fe` | `clean` | maintain-time | advances state (CLAIMED→GENERATING) | act | clean — specs/0010 §4b-ii: owner+live-lease guarded | `test_every_read_sees_exactly_one_representation` |
+| `src/veracium/lifecycle.py:250` | `_consolidate_pool()` | `write_consolidation_output_if_current` | `e29e4b146e16` | `clean` | maintain-time | writes each provisional output; store BINDS lineage=claimed set and DERIVES the trust floor (X23) | act | clean — specs/0010 X1/X8/X12/X23: outputs are durable BEFORE any delete, carry the whole batch as lineage, and take the whole-set-minimum trust (the old M1/0.4.4 logic, moved to the fenced write) | `test_output_trust_is_the_whole_set_minimum` · `test_lineage_is_the_whole_batch` |
+| `src/veracium/lifecycle.py:255` | `_consolidate_pool()` | `transition_consolidation_if_current` | `3beca39c4c1b` | `clean` | maintain-time | the visibility cutover (GENERATING→OUTPUTS_DURABLE) | act | clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return | `test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output` |
+| `src/veracium/lifecycle.py:261` | `_consolidate_pool()` | `delete_claimed_inputs_if_current` | `a11557d9871c` | `clean` | maintain-time | deletes the claimed inputs AFTER outputs are durable | act | clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover | `test_every_read_sees_exactly_one_representation` |
+| `src/veracium/lifecycle.py:262` | `_consolidate_pool()` | `transition_consolidation_if_current` | `f6fbe5aada28` | `clean` | maintain-time | finalizes (OUTPUTS_DURABLE→FINALIZED) | act | clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs | `test_finalize_refuses_before_inputs_deleted` |
 | `src/veracium/portability.py:2131` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `982326a4b277` | `clean` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **specs/0005 (ACCEPTED, implemented) CLOSED the residual M6 cap concern: every default import applies the unconditional three-lever trust cap (author/derived_from → THIRD_PARTY, disclosure floored USE_ONLY) on the validated records BEFORE this commit primitive ever sees them; `restore=True` is the operator's explicit, closed-bool opt-out, mutually exclusive with the remap.** | test_default_import_caps_every_record · test_handwritten_export_cannot_evade_the_cap · test_every_import_caps_by_default [M6-import closed] |
 
 ## Canonical context
@@ -181,92 +178,71 @@ e1ecd66351bd
   call:    store.add_edge(edge)
   context: for(row in parsed)>if(row.get('procedural'))
 
-52f316b93ba6
-  file:    src/veracium/lifecycle.py:67
+4609f1b2d716
+  file:    src/veracium/lifecycle.py:73
   scope:   expire()
-  mutator: invalidate_edge
-  call:    store.invalidate_edge(e.id, now, 'lapsed')
-  context: for(e in store.edges(user_id, active_only=True))>if(behavior == ExpiryBehavior.LAPSE)
-
-b832f3d50c54
-  file:    src/veracium/lifecycle.py:75
-  scope:   expire()
-  mutator: invalidate_edge
-  call:    store.invalidate_edge(e.id, now, 'decayed')
-  context: for(e in store.edges(user_id, active_only=True))>else-of-if(behavior == ExpiryBehavior.LAPSE)>if(behavior == ExpiryBehavior.DECAY)>if(e.provenance.confidence < config.confidence_floor)
-
-c544c8e1440e
-  file:    src/veracium/lifecycle.py:78
-  scope:   expire()
-  mutator: add_edge
-  call:    store.add_edge(e)
-  context: for(e in store.edges(user_id, active_only=True))>else-of-if(behavior == ExpiryBehavior.LAPSE)>if(behavior == ExpiryBehavior.DECAY)>else-of-if(e.provenance.confidence < config.confidence_floor)>try
-
-81f568fbb65f
-  file:    src/veracium/lifecycle.py:87
-  scope:   expire()
-  mutator: add_edge
-  call:    store.add_edge(e)
-  context: for(e in store.edges(user_id, active_only=True))>else-of-if(behavior == ExpiryBehavior.LAPSE)>else-of-if(behavior == ExpiryBehavior.DECAY)>if(not e.needs_confirmation)>try
+  mutator: expiry_transition
+  call:    store.expiry_transition(user_id, e.id, now=now, lifetimes=lifetimes, behaviors=behaviors, decay_factor=decay_factor, confidence_floor=confidence_floor)
+  context: for(e in store.edges(user_id, active_only=True))
 
 49d3539863c9
-  file:    src/veracium/lifecycle.py:123
+  file:    src/veracium/lifecycle.py:111
   scope:   _recover()
   mutator: delete_claimed_inputs_if_current
   call:    store.delete_claimed_inputs_if_current(op.operation_id, op.fence)
   context: for(op in store.pending_consolidations(user_id))>if(op.state is _S.OUTPUTS_DURABLE)
 
 6e0ea1c3cdf2
-  file:    src/veracium/lifecycle.py:124
+  file:    src/veracium/lifecycle.py:112
   scope:   _recover()
   mutator: transition_consolidation_if_current
   call:    store.transition_consolidation_if_current(op.operation_id, op.fence, None, _S.FINALIZED)
   context: for(op in store.pending_consolidations(user_id))>if(op.state is _S.OUTPUTS_DURABLE)
 
 3796d339c301
-  file:    src/veracium/lifecycle.py:127
+  file:    src/veracium/lifecycle.py:115
   scope:   _recover()
   mutator: abandon_consolidation_if_current
   call:    store.abandon_consolidation_if_current(op.operation_id, op.fence)
   context: for(op in store.pending_consolidations(user_id))>else-of-if(op.state is _S.OUTPUTS_DURABLE)
 
 2cd7f2e21d07
-  file:    src/veracium/lifecycle.py:245
+  file:    src/veracium/lifecycle.py:233
   scope:   _consolidate_pool()
   mutator: create_or_takeover_consolidation
   call:    store.create_or_takeover_consolidation(user_id, [e.id for e in cold], owner, lease)
   context: try
 
 794f909d27fe
-  file:    src/veracium/lifecycle.py:259
+  file:    src/veracium/lifecycle.py:247
   scope:   _consolidate_pool()
   mutator: transition_consolidation_if_current
   call:    store.transition_consolidation_if_current(op.operation_id, op.fence, owner, ConsolidationState.GENERATING)
   context: try
 
 e29e4b146e16
-  file:    src/veracium/lifecycle.py:262
+  file:    src/veracium/lifecycle.py:250
   scope:   _consolidate_pool()
   mutator: write_consolidation_output_if_current
   call:    store.write_consolidation_output_if_current(op.operation_id, op.fence, owner, ConsolidationOutputDraft(summary=str(r['summary']), date_start=str(r['date']), date_end=str(r['date'])))
   context: try>for(r in new)
 
 3beca39c4c1b
-  file:    src/veracium/lifecycle.py:267
+  file:    src/veracium/lifecycle.py:255
   scope:   _consolidate_pool()
   mutator: transition_consolidation_if_current
   call:    store.transition_consolidation_if_current(op.operation_id, op.fence, owner, ConsolidationState.OUTPUTS_DURABLE)
   context: try
 
 a11557d9871c
-  file:    src/veracium/lifecycle.py:273
+  file:    src/veracium/lifecycle.py:261
   scope:   _consolidate_pool()
   mutator: delete_claimed_inputs_if_current
   call:    store.delete_claimed_inputs_if_current(op.operation_id, op.fence)
   context: try
 
 f6fbe5aada28
-  file:    src/veracium/lifecycle.py:274
+  file:    src/veracium/lifecycle.py:262
   scope:   _consolidate_pool()
   mutator: transition_consolidation_if_current
   call:    store.transition_consolidation_if_current(op.operation_id, op.fence, owner, ConsolidationState.FINALIZED)

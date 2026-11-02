@@ -33,64 +33,52 @@ from .schema import (DEFAULT_EXPIRY, Disclosure, Episode, EvidenceAuthor, Expiry
                      utcnow)
 
 
-def _attested_now(store, user_id: str, e) -> bool:
-    """specs/0041 round 10: a redaction landing between expire's read and its write-back is REFUSED by the write path
-    (an attested target); expiry SKIPS that edge instead of failing the run — decided by a FRESH read of the
-    attestation record, so any other refusal still raises. Each write-back keeps its own call site (and the audit
-    its own verdict for it): only the refusal handling is shared."""
-    return e.id in store.redacted_targets(user_id, "edge")
-
-
 def expire(store, user_id: str, config, *, now: Optional[datetime] = None) -> dict:
-    """Apply volatility-driven expiry to `user_id`'s active edges. Idempotent."""
+    """Apply volatility-driven expiry to `user_id`'s active edges. Idempotent.
+
+    specs/0048 §4B: the policy (`decay_factor`, `confidence_floor`, `volatility_lifetime_days`) is read from `config`
+    ONCE, at entry, before any edge is read, and the two bounds are validated there by the one validator
+    (`config.validate_decay_bound`), and the behaviour table is read from this module's `DEFAULT_EXPIRY` — for every config object, `MemoryConfig` or duck-typed, whatever any edge's
+    confidence is, and on an empty store: a malformed policy refuses with ValueError and nothing is written (N4d).
+    §4D: each due candidate is then applied through the store's `expiry_transition`, which re-reads the edge and
+    decides from its CURRENT row inside one write transaction (N4h); a store without it refuses here, before any
+    edge is read (the owner's ruling, 2026-11-02). A later ordinary failure keeps the per-edge prefix: transitions
+    already committed stay committed, and the error propagates (N4d-prefix). The counts keep the shipped meaning
+    (R2-02, N4i): `decayed` counts decay-triggered invalidations only, never a retained decay."""
+    from .config import validate_decay_bound
+    from .store.base import Store
+    decay_factor = validate_decay_bound("decay_factor", config.decay_factor)
+    confidence_floor = validate_decay_bound("confidence_floor", config.confidence_floor)
+    lifetimes = dict(config.volatility_lifetime_days)      # copied at entry: the config's dict is mutable (N3)
+    # the behaviour table, read from THIS module's name at entry, as the shipped expire() read it: a host that edits
+    # schema.DEFAULT_EXPIRY in place, and one that rebinds lifecycle.DEFAULT_EXPIRY, both reach the transition
+    # (research's F2, 2026-11-02); copied, like the lifetimes
+    behaviors = dict(DEFAULT_EXPIRY)
+    # the method the store actually RESOLVES (a delegating wrapper's included: its __getattr__ reaches the inner
+    # store's), refused when absent or when it is the Store base's refusing default — asked of the resolved method,
+    # never of the wrapper's class (research, 2026-11-02: Wrapper(non-overriding subclass) escaped a class lookup).
+    # Residual: a __getattr__ returning a callable with no __func__ passes here and is refused at its first call.
+    impl = getattr(store, "expiry_transition", None)
+    if impl is None or getattr(impl, "__func__", None) is Store.expiry_transition:
+        raise NotImplementedError(
+            f"{type(store).__name__} has no expiry_transition: specs/0048 §4D decides expiry from each edge's current "
+            f"row inside one write transaction, and expire() runs no expiry on a store without it")
     now = now or utcnow()
     lapsed = decayed = flagged = 0
-    # specs/0041 round 10 (found in sweep E): an ATTESTED-redacted edge is skipped at the read. Expiry writes the
-    # edge back (decay, the confirm flag), and the write path rightly refuses an attested target — so before this, ONE
-    # redacted aged edge made every maintain() raise, permanently, and the edges after it were never processed.
-    redacted = store.redacted_targets(user_id, "edge")
     for e in store.edges(user_id, active_only=True):
-        if e.id in redacted:
+        lifetime = lifetimes.get(e.volatility)
+        # the LISTING picks candidates; the transition decides on the row as committed when it runs
+        if lifetime is None or (now - e.provenance.observed_at).days <= lifetime:
             continue
-        lifetime = config.volatility_lifetime_days.get(e.volatility)
-        if lifetime is None:
-            continue
-        # liveness ages against observed_at (when we last recorded this),
-        # NOT valid_from (when the fact became true) — a fact stated years ago
-        # and restated yesterday is live; one recorded once and never again is
-        # the one that should lapse
-        age_days = (now - e.provenance.observed_at).days
-        if age_days <= lifetime:
-            continue
-        behavior = DEFAULT_EXPIRY[e.volatility]
-        if behavior == ExpiryBehavior.LAPSE:
-            store.invalidate_edge(e.id, now, "lapsed"); lapsed += 1
-        elif behavior == ExpiryBehavior.DECAY:
-            # frozen Provenance (specs/0037 v23): decay REPLACES the stamp
-            # with a copy — the eighth mutation site, an augmented assignment
-            # the seven-site count missed (found by the AST sweep, not a grep)
-            e.provenance = e.provenance.model_copy(update={
-                "confidence": e.provenance.confidence * config.decay_factor})
-            if e.provenance.confidence < config.confidence_floor:
-                store.invalidate_edge(e.id, now, "decayed"); decayed += 1
-            else:
-                try:
-                    store.add_edge(e)
-                except ValueError:
-                    if _attested_now(store, user_id, e):
-                        continue
-                    raise
-        else:  # CONFIRM — never silently dropped; surfaced as possibly-stale
-            if not e.needs_confirmation:
-                e.needs_confirmation = True
-                try:
-                    store.add_edge(e); flagged += 1
-                except ValueError:
-                    if _attested_now(store, user_id, e):
-                        continue
-                    raise
+        outcome = store.expiry_transition(user_id, e.id, now=now, lifetimes=lifetimes, behaviors=behaviors,
+                                          decay_factor=decay_factor, confidence_floor=confidence_floor)
+        if outcome == "lapsed":
+            lapsed += 1
+        elif outcome == "decayed":
+            decayed += 1
+        elif outcome == "flagged":
+            flagged += 1
     return {"lapsed": lapsed, "decayed": decayed, "flagged_for_confirmation": flagged}
-
 
 CONSOLIDATE_SYSTEM = (
     "You compact an AI assistant's old interaction history into fewer, denser "

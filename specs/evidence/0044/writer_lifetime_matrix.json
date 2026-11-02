@@ -5,6 +5,7 @@
     "store/data_migration.py:undo_restoration",
     "store/revocation.py:_apply_statement_effect",
     "store/sqlite.py:SqliteStore.apply_supersession_plan",
+    "store/sqlite.py:SqliteStore.expiry_transition",
     "store/sqlite.py:SqliteStore.invalidate_edge"
    ],
    "_recompute_edge_row": [
@@ -21,7 +22,8 @@
    ],
    "_upsert_edge_row": [
     "store/sqlite.py:SqliteStore.add_edge",
-    "store/sqlite.py:SqliteStore.apply_supersession_plan"
+    "store/sqlite.py:SqliteStore.apply_supersession_plan",
+    "store/sqlite.py:SqliteStore.expiry_transition"
    ],
    "commit_outcome_import_plan": [
     "portability.py:_preflight_and_commit"

@@ -149,13 +149,17 @@ def test_E_expire_control_an_unredacted_aged_edge_still_expires(tmp_path):
 
 
 def test_E_expire_any_other_refusal_still_raises(tmp_path, monkeypatch):
-    """The skip is decided by a FRESH attestation read: a write-back refused for another reason is not swallowed."""
+    """The skip is decided by a FRESH attestation read: a write-back refused for another reason is not swallowed.
+    specs/0048 §4D moved expiry's write into the store's transition (`expiry_transition`), which writes through
+    `_upsert_edge_row`, the body `add_edge` wraps, so the refusal is injected there; the 0041 skip itself now lives
+    inside that transaction and no `except ValueError` remains to swallow anything (test_0048_decay_bounds.py::
+    test_an_unrelated_write_refusal_inside_the_transition_still_raises holds the same property on its own fixture)."""
     m = tt._mem(tmp_path)
     _aged(m, "e-1", "Porto")
 
     def refuse(_e):
         raise ValueError("refused for an unrelated reason")
-    monkeypatch.setattr(m.store, "add_edge", refuse)
+    monkeypatch.setattr(m.store, "_upsert_edge_row", refuse)
     with pytest.raises(ValueError, match="unrelated"):
         m.maintain(U, consolidate=False)
 

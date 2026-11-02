@@ -265,6 +265,26 @@ class Store(ABC):
         guess about one it cannot read."""
         return frozenset()
 
+    # --- specs/0048 §4D (the expiry transition) ------------------------------
+    @store_mutator
+    def expiry_transition(self, user_id: str, edge_id: str, *, now, lifetimes, behaviors, decay_factor: float,
+                          confidence_floor: float) -> Optional[str]:
+        """ONE edge's expiry, decided from the edge's CURRENT stored state inside one write transaction, so a
+        `maintain()` that overlaps another write to the same edge (a user's `confirm()`, a redaction, another
+        expiry) decides from what that write committed (specs/0048 §4D, N4h). Returns `"lapsed"`, `"decayed"`,
+        `"flagged"`, `"decay-retained"` or None (nothing written).
+
+        CONTRACT FOR OTHER BACKENDS: read the row by `(edge_id, user_id)` and decide AND write under one
+        transaction that excludes other writers of the row; absent, inactive or attested-redacted → None; due-ness
+        from the current row's volatility and `observed_at` against `lifetimes` and `now`; the behaviour from
+        `behaviors` (the caller's copy of the expiry table); DECAY below `confidence_floor` retires the row with its stored confidence
+        unchanged; never a whole-row write-back of a copy read outside the transaction. The default REFUSES:
+        `lifecycle.expire()` checks for it at entry and runs no expiry on a store without it (the owner's ruling,
+        2026-11-02, "Refuse, name it"), rather than falling back to the listing-then-write path 0048 removes."""
+        raise NotImplementedError(
+            f"{type(self).__name__}.expiry_transition is not implemented: specs/0048 §4D decides expiry from the "
+            f"edge's current row inside one write transaction, and this store does not provide it")
+
     # -- edges -------------------------------------------------------------
     @store_mutator
     @abstractmethod

@@ -121,18 +121,17 @@ DISPOSITIONS = {
     "clean — written only when the model's quote is a verbatim span of a user-authored event (V-EXTRACTOR-QUOTE-GATED); never rendered", "`test_a_quoted_user_routine_is_recorded_as_a_procedure_and_never_rendered` · `test_a_procedural_emission_without_a_verifying_user_quote_is_refused_and_counted`"),
 
  # -- maintenance ------------------------------------------------------------
- ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"):
-   (M, "`active`, reason `lapsed`", "none", "clean — narrows", "`test_expiry_lapse_confirm_and_reinforcement`"),
- ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"):
-   (M, "`active`, reason `decayed`", "none", "clean — narrows", "`test_expiry_lapse_confirm_and_reinforcement`"),
- # 0041 round 10: both expire write-backs are now inside a try (a redaction landing in the read-to-write gap is
- # skipped by a fresh attestation read); each keeps its own site and its own verdict, re-keyed, unchanged
- ("src/veracium/lifecycle.py", "expire", "add_edge", "c544c8e1440e"):
-   (M, "**`confidence *= decay_factor`**", "none",
-    "🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d",
-    "🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** [N4-decay]"),
- ("src/veracium/lifecycle.py", "expire", "add_edge", "81f568fbb65f"):
-   (M, "`needs_confirmation = True`", "none", "clean — narrows; flags, never clears", "`test_expiry_lapse_confirm_and_reinforcement`"),
+ # specs/0048 §4D (implemented 2026-11-02): expire()'s four write sites (the LAPSE and decay invalidations, the
+ # decay write-back that was 🔴 OPEN here as external review item 8 / [N4-decay], and the CONFIRM flag) are ONE store
+ # transition, decided from the edge's current row inside one write transaction, the policy validated at expire()'s
+ # entry (§4A–B) and every edge write through the validating serialiser (§4C). The OPEN row is CLOSED by it.
+ ("src/veracium/lifecycle.py", "expire", "expiry_transition", "4609f1b2d716"):
+   (M, "`active` (reasons `lapsed`, `decayed`), `confidence` (DECAY: × a validated factor in [0, 1]), "
+       "`needs_confirmation = True`", "none",
+    "clean — narrows: confidence never rises (N4), a decay below the floor retires with its confidence unchanged "
+    "(N4i), the flag is set never cleared; decided from the CURRENT row (N4h)",
+    "`test_no_maintenance_op_raises_confidence` · `test_expiry_is_decided_from_the_current_row` · "
+    "`test_decay_keeps_the_shipped_result` · `test_config_bounds_are_validated`"),
  # specs/0010 (ACCEPTED) — consolidate() rewritten onto the crash-safe state machine:
  # write-before-delete (X1), all-or-nothing claim (X4), roll-forward recovery (X2), the
  # trust floor now DERIVED in the store (X23). The former total-loss delete-before-write
@@ -218,10 +217,7 @@ STATES = {
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "070f62e813fd"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "836c8cca9da2"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_edge", "74ca6d95a054"): "clean",
-  ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",
-  ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
-  ("src/veracium/lifecycle.py", "expire", "add_edge", "c544c8e1440e"): "open",
-  ("src/veracium/lifecycle.py", "expire", "add_edge", "81f568fbb65f"): "clean",
+  ("src/veracium/lifecycle.py", "expire", "expiry_transition", "4609f1b2d716"): "clean",
   ("src/veracium/lifecycle.py", "_consolidate_pool", "create_or_takeover_consolidation", "2cd7f2e21d07"): "clean",
   ("src/veracium/lifecycle.py", "_consolidate_pool", "write_consolidation_output_if_current", "e29e4b146e16"): "clean",
   ("src/veracium/lifecycle.py", "_consolidate_pool", "transition_consolidation_if_current", "794f909d27fe"): "clean",

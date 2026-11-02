@@ -43,9 +43,9 @@ Each cell: `observed` (the inputs that produced it, by running them) or not obse
 
 | ruling key | callers (AST over src/veracium) | callers seen in the run |
 |---|---|---|
-| `_upsert_edge_row` | store/sqlite.py:SqliteStore.add_edge, store/sqlite.py:SqliteStore.apply_supersession_plan | store/sqlite.py:SqliteStore.add_edge |
+| `_upsert_edge_row` | store/sqlite.py:SqliteStore.add_edge, store/sqlite.py:SqliteStore.apply_supersession_plan, store/sqlite.py:SqliteStore.expiry_transition | store/sqlite.py:SqliteStore.add_edge |
 | `confirm_edge` | __init__.py:Memory.confirm | __init__.py:Memory.confirm |
-| `_invalidate_edge_row` | store/data_migration.py:undo_restoration, store/revocation.py:_apply_statement_effect, store/sqlite.py:SqliteStore.apply_supersession_plan, store/sqlite.py:SqliteStore.invalidate_edge | store/data_migration.py:undo_restoration, store/revocation.py:_apply_statement_effect, store/sqlite.py:SqliteStore.invalidate_edge |
+| `_invalidate_edge_row` | store/data_migration.py:undo_restoration, store/revocation.py:_apply_statement_effect, store/sqlite.py:SqliteStore.apply_supersession_plan, store/sqlite.py:SqliteStore.expiry_transition, store/sqlite.py:SqliteStore.invalidate_edge | store/data_migration.py:undo_restoration, store/revocation.py:_apply_statement_effect, store/sqlite.py:SqliteStore.invalidate_edge |
 | `_reinstate_edge_row` | store/data_migration.py:convert_rows, store/revocation.py:_apply_statement_effect | store/data_migration.py:convert_rows, store/revocation.py:_apply_statement_effect |
 | `_recompute_edge_row` | store/revocation.py:_apply_statement_effect | — |
 | `commit_outcome_import_plan` | portability.py:_preflight_and_commit | portability.py:_preflight_and_commit |

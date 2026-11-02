@@ -1,5 +1,5 @@
 {
- "body_sha256": "750eeefacdf1bfe0949f029cae180e847eb05927eaf08cc4873343a21fcf978e",
+ "body_sha256": "40635cde3e629b79b826ed5edcbf80864f8d266feace185f3f6a22b95c790ec6",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "1e7dab661b3775deb5fd57f3fb54646d76e8fd47",
+  "commit": "f96a63291a9122ce62697bf39976ec04b398d930",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -64,7 +64,7 @@
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "specs/skip_inventory.py": "cb103c861f82254b974647616913d2907e5dd5b74f1f2849702189c0c96b968b",
+   "specs/skip_inventory.py": "ac6b10fb83fb9adde631672b633e88020a2a63eadb6a3c6409a1b541c45ec584",
    "tests/test_spec_gate.py": "5fb8dfd736f3af26dfea7700a2c5d910ec9bc50bb26a66fe7084ee61752e0dfc"
   },
   "finding": "SA-R1-C2",
@@ -76,11 +76,42 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0021-scope-under-maintenance.md",
-   "specs/0023-non-revival-under-maintenance.md",
+   "CHANGELOG.md",
+   "docs/api.md",
+   "specs/0002-maintenance-provenance-invariant.md",
+   "specs/0048-decay-never-raises-confidence.md",
    "specs/STATUS.md",
-   "specs/render_index.py",
-   "tests/test_spec_gate.py"
+   "specs/audit_dispositions.py",
+   "specs/citation_debt.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0044/writer_lifetime_matrix.json",
+   "specs/evidence/0044/writer_lifetime_matrix.md",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/evidence/0048/census_0048.py",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0048/implementation_mutants.py",
+   "specs/evidence/0048/pin_repro.py",
+   "specs/evidence/0048/probe_expire_lost_update.py",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/findings.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/generated/0021-combining-sites.md",
+   "specs/render_status.py",
+   "specs/skip_inventory.py",
+   "src/veracium/combining.py",
+   "src/veracium/config.py",
+   "src/veracium/lifecycle.py",
+   "src/veracium/store/base.py",
+   "src/veracium/store/sqlite.py",
+   "tests/test_0041_round10_readers.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0048_evidence.py",
+   "tests/test_0048_implementation_mutants.py"
   ]
  },
  "rows": [
@@ -119,7 +150,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.63s",
+   "pytest": "2 failed in 2.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -155,7 +186,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.66s",
+   "pytest": "2 failed in 2.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -170,6 +201,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 68
+  "seconds": 71
  }
 }
