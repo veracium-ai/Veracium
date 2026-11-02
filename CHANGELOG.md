@@ -1,6 +1,63 @@
 # Changelog
 
-## Unreleased
+## 0.29.0 — 2026-11-02
+
+**A user can now hold more than one deadline.** 0.28.0's extractor stored every commitment as the user's
+`deadline`, a single-valued relation, so each new one retired the last ("the dentist on the 12th", then "a haircut
+on the 20th", kept only the haircut; 0.28.0's stated known limitation). This release stores each dated obligation
+under its own name with an ISO date, and the session-start briefing lists them side by side. When a commitment is
+rescheduled, the briefing shows it once, marked contested, until a correction (`correct()`) settles which date
+holds. Store schema stays 16 and the export format stays 14: a 0.28.0 store opens as it is.
+
+**Who should take this release:** anyone whose users mention more than one appointment, deadline or due date, and
+anyone who reads the briefing's DATED COMMITMENTS. No fix in this release is on the trust surface, but the trust
+surface around a commitment changes, and it keeps what 0.28.0 had:
+- **A date only the assistant said is not volunteered**, in an event whose turns are labelled by speaker (an
+  unlabelled event is the user's own text, and the backstop does not apply, as in 0.28.0). 0051's speaker backstop
+  now judges a user's dated obligation, in either form, on its date alone, by the same date resolution grounding uses,
+  once over the user's text and once over the assistant's: the fact is stored use-only when the assistant's words give
+  the date and the user's do not. So a date the assistant states in words ("It is on November 4.") is caught, which
+  0.28.0's token match missed; and a date the user said in words that the assistant echoed as an ISO date is no longer
+  restricted, where 0.28.0 restricted it. `remember()`'s `speaker_restricted` count moves with it: it now counts the
+  first case and no longer the second. Another party's deadline (`person:alice`) is judged as any entity fact is, as
+  before.
+- **A recall with any query can reach a commitment**, ranked by its overlap with the query, as a subject-`user` fact
+  is ("what do I have coming up?" finds it).
+
+**Who must act (BREAKING for two kinds of consumer code):**
+- Code that reads a user's commitments as edges with subject `user` and relation `deadline`. A commitment extracted
+  by this release has the obligation as its subject (`dentist appointment` `deadline` `2026-11-12`), so a
+  `subject == "user"` filter no longer finds it; select `relation == "deadline"` over the user's edges instead.
+  Facts already stored keep the form they were written in.
+- Code that parses the briefing's DATED COMMITMENTS text. A line whose subject is not `user` now names it
+  (`deadline: dentist appointment — 2026-11-04 (due 2026-11-04)`), and a contested commitment is one line (below).
+  A subject-`user` line is byte-identical to 0.28.0.
+
+A store created by 0.26.x or earlier still needs the offline migration described under 0.27.0 ("Before you upgrade
+from 0.26.1", `veracium.store.migration.migrate_store`), as under 0.28.0.
+
+**Known limitations.**
+- **A reschedule is contested, not applied** (0.28.0 applied it: the later date retired the earlier). "The dentist
+  moved to the 14th" leaves both dates current, because the user's statement cannot retire a fact whose subject is not
+  the user (specs/0011 E2); the briefing shows them as one contested line until `correct()` settles which one holds.
+  For the same reason, the user's own statement no longer retires a date a third party gave for the user's obligation:
+  it stays contested.
+- **The queryless briefing names a contested commitment in its text only.** Its `Recall.contested` stays empty; a
+  recall with a query carries the group there as before.
+- **Many reschedules of one commitment grow the refusal record quadratically:** n restatements of one key write
+  n(n−1)/2 supersession-refusal rows (measured: 70 reschedules wrote 2,415 rows). The briefing still renders one line.
+- **"February 29", said when no leap-year February 29 lies within 366 days, is not volunteered.** For "My lease
+  renewal is due February 29." said on 2025-11-01, the reference extractor (`claude-haiku-4-5`) wrote `2026-02-28`, a
+  day never said, or `2025-02-29`, not a calendar date. Neither is grounded by the text, and the briefing never
+  volunteers an ungrounded fact. Once a real leap day is within 366 days, that date alone grounds.
+- **A date with no stated day keeps its words** ("sometime in November"), so it never reaches DATED COMMITMENTS. One
+  the extractor marks transient or ephemeral is listed under CURRENT CONTEXT as any undated current fact is, without
+  its name: `deadline: sometime in November (since 2026-11-01 — worth a follow-up)`.
+- **Stores written before this release keep their retired chains.** No migration can tell a real reschedule from the
+  defect, so `veracium doctor` counts them (below) and changes nothing.
+- **No Windows build is attested** (unchanged from 0.28.0).
+
+**The obligations change (specs/0003 v18–v18.2 §4c-v, 0012 v18–v18.1 §4c-v, 0051 v0.5 §4b, 0027 v15.2 §4).**
 
 - **Fixed: a user can hold more than one deadline** (0.28.0's known limitation; specs/0003 v18 §4c-v, 0012 v18
   §4c-v, amendment `0003/obligations`, adopted before external review on the owner's word and to be reviewed with the
@@ -13,14 +70,30 @@
   never moved a year out). It is a prompt rule, so another extractor's rate is its own.
 - **Changed: the session-start briefing renders a contested commitment once.** A reschedule of a named commitment
   is not applied (the two dates stay, contested, settled by `correct()`); the briefing now shows it as one line,
-  `deadline: dentist appointment — CONTESTED: <A> or <B> (unconfirmed which is current)`, where it listed both dates
-  as separate commitments. A rescheduled date outside the briefing's window does not appear (contested material gets
-  no new reach), and the date left alone is marked `(contested — …)`. Every dated briefing line whose subject is not
-  `user` now names its subject; a subject-`user` line is unchanged.
+  `deadline: dentist appointment — CONTESTED: 2026-11-04 or 2026-11-06 (unconfirmed which is current)`, naming each
+  member's value as stored (`Berlin until <date> or Paris from <date>` for a moved `located_at`), where 0.28.0
+  applied the reschedule (the later date retired the earlier). A rescheduled date outside the briefing's window does
+  not appear (contested material gets no new reach), and the date left alone is marked `(contested — unconfirmed which
+  date is current)`, or `(contested — see CONFIRM)` when its partner is listed under CONFIRM WHEN NATURAL. A
+  contested line sorts at its nearest due date, and lines tied on that date put the most recently observed first.
+  Every dated briefing line whose subject is not `user` now names its subject; a subject-`user` line is unchanged.
+- **Every DATED COMMITMENTS line is held to `item_cap_tokens` (default 512) with its framing intact.** A long subject
+  or value is shortened inside the line, never cut at its end. A contested line with more values than fit keeps the
+  nearest whole and names the rest, `…, 2026-10-26 or 5 more (unconfirmed which is current)` (measured: 70
+  reschedules of one commitment at the floor `token_budget=256`), where K counts distinct values not shown. A line
+  that cannot fit at all is dropped and counted in the budget report line, never truncated, and a shortened contested
+  line counts as one clamped item.
+- **Changed: a user's dated obligation keeps a subject-`user` fact's two protections in its new form** (specs/0003
+  v18.2 §4c-v.6d). `schema.is_obligation` names it: relation `deadline` and a subject that is neither `user` nor an
+  entity reference (`person:…`, `org:…`). The speaker backstop judges such a `deadline`, and one with subject `user`,
+  on its date by grounding over the user's turns and the other speakers' separately (specs/0051 v0.5 §4b), and the
+  lexical lane admits it for every query at the subject-`user` base, `1 + 2·overlap` (specs/0027 v15.2 §4).
 - **Added: `veracium doctor` reports, at `info`, each `deadline`/`scope` fact with subject `user` that a later one
   retired** (the `obligations` check, count `obligation_chain_retired`). Stores written before this release keep
   those chains: no migration can tell a real reschedule from the defect, so the doctor names them and changes
   nothing.
+
+**The project's CI tooling.**
 
 - **Fixed (SA-R5-C1, 0.28.0's known limitation): the attestation job reads an unsupported XML encoding in its child's
   JUnit output to its named `suite-mismatch` refusal.** A JUnit file declaring a codec that does not exist
