@@ -1,5 +1,5 @@
 {
- "body_sha256": "8c4cbd3193d07e83a651e3793d2234c6aacf6e4a665ac52437e3b9fa6b741310",
+ "body_sha256": "750eeefacdf1bfe0949f029cae180e847eb05927eaf08cc4873343a21fcf978e",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "3bef4325a793ae1f595c6a9575a7d6289e6ceeb5",
+  "commit": "1e7dab661b3775deb5fd57f3fb54646d76e8fd47",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -65,7 +65,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "specs/skip_inventory.py": "cb103c861f82254b974647616913d2907e5dd5b74f1f2849702189c0c96b968b",
-   "tests/test_spec_gate.py": "15ba4ea1bf83eccda5922362fdf1796fdf7b865c1bad89914b8c097549f2cac7"
+   "tests/test_spec_gate.py": "5fb8dfd736f3af26dfea7700a2c5d910ec9bc50bb26a66fe7084ee61752e0dfc"
   },
   "finding": "SA-R1-C2",
   "honest_nodes": [
@@ -76,6 +76,8 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "specs/0021-scope-under-maintenance.md",
+   "specs/0023-non-revival-under-maintenance.md",
    "specs/STATUS.md",
    "specs/render_index.py",
    "tests/test_spec_gate.py"
@@ -117,7 +119,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.50s",
+   "pytest": "2 failed in 2.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -153,7 +155,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.51s",
+   "pytest": "2 failed in 2.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -168,6 +170,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 63
+  "seconds": 68
  }
 }

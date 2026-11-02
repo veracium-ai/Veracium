@@ -33,9 +33,9 @@ is the number that decides what can be built.
 | **0018** | the release-migration orchestrator | `accepted` | 2026-11-01 | 1 | 4 | 0 | 0 | 0 | — |
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-10-14 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 2 | 0 | 0 | — |
-| **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-20 | 1 | 14 | 3 | 0 | 0 | — |
+| **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-11-02 | 1 | 14 | 2 | 0 | 0 | — |
 | **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-10-29 | 4 | 21 | 5 | 0 | 0 | — |
-| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-09-17 | 3 | 21 | 2 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-11-02 | 3 | 21 | 1 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-09-17 | 2 | 24 | 3 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-10-21 | 2 | 24 | 2 | 0 | 0 | — |
 | **0026** | label/value agreement check | `accepted` | 2026-09-08 | 14 | 12 | 2 | 0 | 0 | — |

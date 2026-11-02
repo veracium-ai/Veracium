@@ -273,10 +273,9 @@ half, not the visibility half. TWO residuals, stated: absorptions that
 predate the 0014 ledger itself (pre-v0.7.0 events) left no rows and no
 links, so their survivors resolve by own identity — a fixed, shrinking
 legacy class; and a chain whose intermediate record was PRUNED before
-the closure runs is unwalkable → UNRESOLVED (fail-closed, not silent)). **The ENFORCEMENT upgrade is recorded
-(Q4): a store-version bump refusing pre-0021 writers — it rides the 0018
-D2 breaking window (SCHEMA v8) rather than minting its own break; until a
-release takes it, W1 carries the operational narrowing in its own text.**
+the closure runs is unwalkable → UNRESOLVED (fail-closed, not silent)). **The ENFORCEMENT is in force, and Q4 is CLOSED (2026-11-02, research, from dev's spec-table review).** This spec's write half shipped in 0.12.0, one release after the D2 window it pointed to (0.11.0, SCHEMA v8), so Q4 never rode it, and during 0.12.x a 0.11.x process could still open the same store. The next store-version change did the work instead: 0.13.0 moved the store to SCHEMA v9. A build refuses a store below its own version until 0013's offline migration has run (`PackageConsistencyError`: "no migration hook installed"), and refuses a store above it (`StoreVersionError`, reason `newer`, 0007 §4; the open check in `src/veracium/store/schema_version.py`, present at `v0.11.0` and `v0.12.0`). Executed on 2026-11-02 over fresh stores made by 0.11.0, 0.12.0, 0.13.0 and 0.29.0, each opened by the other three (research's probe, in the research repo's evidence-0021-0023-enforcement-close-2026-11-02 folder). So a build that is at most v8 cannot open a store that a 0.13.0-or-later build has opened, and every later version change keeps that true: since 0.13.0 no pre-0021 build (0.11.x and earlier) can open a store a current build uses. The narrowing still binds three cases, stated: (i) a v8 deployment that mixes 0.12.x builds with older ones; (ii) a process holding the store open across a migration, which 0013/0018 exclude only by the host's quiescence attestation; (iii) any future open path that admits a store newer than the build (a forward-compatible or read-only open), which would reopen the window and must re-decide this question.
+
+> *Prior (to 2026-11-02): **The ENFORCEMENT upgrade is recorded (Q4): a store-version bump refusing pre-0021 writers — it rides the 0018 D2 breaking window (SCHEMA v8) rather than minting its own break; until a release takes it, W1 carries the operational narrowing in its own text.***
 
 ## 5. Regime analysis
 
@@ -289,7 +288,7 @@ release takes it, W1 carries the operational narrowing in its own text.**
 | legacy/imported/recovered derivatives | UNRESOLVED: excluded from every pool, invisible to scoped principals (0020), visible unscoped; remedy = re-derivation/restatement |
 | repeated cross-scope restatement of one value | parallel per-scope edges; no merge, no laundering; the D-extension cross-principal probe measures exactly this |
 | pool B's LLM call raises mid-run | A's commit stands (permanent); B reports "failed" with the error; C/D run anyway; the schema carries all four (R2-5) |
-| a pre-0021 process consolidates during a rolling upgrade | its global merge produces a mixed derivative → UNRESOLVED at read (fail-closed); the partition half of W1 is narrowed per §4d until every writer upgrades |
+| a pre-0021 process consolidates during a rolling upgrade | its global merge produces a mixed derivative → UNRESOLVED at read (fail-closed); the partition half of W1 is narrowed per §4d until every writer upgrades. **Since 0.13.0 such a process cannot open a store a current build uses (2026-11-02, §4d)**; the row stands for §4d's three residual cases |
 | a pre-0021 process ABSORBS during the window (R3-3) | the survivor carries cross-digest absorption rows → UNRESOLVED at read; pre-0014 absorptions (no rows) are the stated residual |
 | a CHAIN of pre-0021 absorptions (A→B→C, the R7-1 cell) | the direct row alone reads own-scope — the read-side CLOSURE walks the chain and finds A's foreign digest → UNRESOLVED; an unwalkable or cyclic chain → UNRESOLVED; post-0021 writes are flattened so the chain shape cannot recur |
 | eight identity-less cold records | ONE pool under the reserved `pool:unidentified` key; today's threshold semantics; today's top-level return values (R3-4) |
@@ -405,7 +404,7 @@ restrict-only holds, but a correctness wart), name it.
 | Q1 | cross-scope merge: refusal vs intersection | RESOLVED for v1: refusal; intersection is the recorded widening |
 | Q2 | per-scope wiki compilation | DEFERRED, cost-gated (0020 §4d) |
 | Q3 | membership materialization at export (FORMAT change) | DEFERRED — recorded widening; would move imported derivatives out of UNRESOLVED |
-| Q4 | mixed-version ENFORCEMENT: the pre-0021-writer refusal bump | DEFERRED to the 0018 D2 breaking window (SCHEMA v8) — until then W1 carries the §4d operational narrowing |
+| Q4 | mixed-version ENFORCEMENT: the pre-0021-writer refusal bump | **CLOSED 2026-11-02: in force since 0.13.0 (SCHEMA v9), by the store's refusal of a newer store, not by a bump of its own (§4d, with the three residual cases).** *Prior: DEFERRED to the 0018 D2 breaking window (SCHEMA v8) — until then W1 carries the §4d operational narrowing* |
 
 ## Review closure
 
@@ -511,5 +510,5 @@ the benchmark harness; a simulated leak probe measures the simulation);
 shipped path prunes an absorbed edge — their born-closed and pre-prune halves
 ARE covered; **W17** is carried by the shipped evidence program
 `specs/evidence/0020/ledger_plan_harness.py`, which extracts the real DDL from
-a live store, rather than by a weaker pytest copy. Q1–Q4 remain open as
-recorded widenings, Q4 still riding the 0018 D2 window.
+a live store, rather than by a weaker pytest copy. Q1–Q3 remain as recorded; Q4 is CLOSED (2026-11-02, §4d: in force since
+0.13.0). *Prior: Q1–Q4 remain open as recorded widenings, Q4 still riding the 0018 D2 window.*

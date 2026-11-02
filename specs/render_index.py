@@ -133,6 +133,13 @@ def row_state(row: QuestionRow) -> tuple:
     # spec carrying the phrase.
     if row.strike or re.search(r"\b(?:resolved|moved|ruled|ratified|watch|scoped elsewhere)\b", low):
         return False, False
+    # "closed" (2026-11-02, adopting research's 0021 Q4 / 0023 Q3 closures, written `**CLOSED 2026-11-02: …` and
+    # `` **`closed` 2026-11-02: … `` in the state/class cell; 0037 Q5's class cell already read `closed`): it counts
+    # ONLY where the row's LAST cell — its disposition — BEGINS with it. As a word anywhere it would close 0022 Q8 and
+    # 0037 Q4, two open rows whose prose says "fail-closed"; and "closed-form" is not a disposition.
+    last = row.line.rstrip().rstrip("|").rsplit("|", 1)[-1].lower()
+    if re.match(r"^[\s*`_]*closed(?![\w-])", last):
+        return False, False
     return True, "blocking" in low
 
 

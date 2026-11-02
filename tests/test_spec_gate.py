@@ -609,6 +609,36 @@ def test_a_skip_word_inside_a_longer_word_does_not_close_a_question():
     assert render_index._questions(body) == (2, 1)
 
 
+def test_closed_counts_only_as_the_disposition_cells_first_word():
+    """"closed" closes a question row only where the row's LAST cell begins with it (0021 Q4's `**CLOSED …`, 0023
+    Q3's `` **`closed` …``, 0037 Q5's bare `closed`). Prose that says "fail-closed", a last cell that says "not closed
+    yet", and "closed-form" in that cell do not close a row; the tree's two open rows that say "fail-closed" (0022
+    Q8, 0037 Q4) stay open."""
+    import sys, pathlib, importlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import render_index
+    importlib.reload(render_index)
+    head = "## 10. Open questions\n\n| # | question | state |\n|---|---|---|\n"
+    cells = [
+        ("| Q1 | a question | **CLOSED 2026-11-02: in force since 0.13.0** |", 0),
+        ("| Q1 | a question | **`closed` 2026-11-02: in force** |", 0),
+        ("| Q1 | a question | closed |", 0),
+        ("| Q1 | is the gate fail-closed? | deferred |", 1),
+        ("| Q1 | a question | not closed yet |", 1),
+        ("| Q1 | a question | closed-form answer pending |", 1),
+        ("| Q1 | a question | `deferred` — the closed vocabulary grows later |", 1),
+        ("| Q1 | closed: a word in the question cell | deferred |", 1),
+    ]
+    wrong = [(ln, want, render_index._questions(head + ln + "\n")[0]) for ln, want in cells
+             if render_index._questions(head + ln + "\n")[0] != want]
+    assert not wrong, wrong
+    for num, qid in (("0022", "Q8"), ("0037", "Q4")):
+        (f,) = sorted((root / "specs").glob(f"{num}-*.md"))
+        (row,) = [r for r in render_index.question_rows(f.read_text()) if r.qid == qid]
+        assert render_index.row_state(row)[0], (num, qid, "an open row that says fail-closed was closed")
+
+
 def test_outside_ledger_note_states_only_the_round_the_acceptance_names():
     """STATUS.md's 'Rounds recorded outside the ledger' note, attacked by form. Its first rule took the first
     "round N" anywhere in the Decision cell, so 0051 (accepted on the owner's word; external review owed) read
