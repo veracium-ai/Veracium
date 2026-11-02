@@ -1718,7 +1718,7 @@
    "group": "R-II r2 V1 (c, d: the held basetemp and the sqlite error names)"
   }
  ],
- "pin_digest": "fcf00fc945b3a1ae5a5c841f528d3b23871fe1b4419bc99364fc213dbf882552",
+ "pin_digest": "cb209f0205105bd9359d11d71f37e901b441d9e5892e03d58917cd0693bbea3d",
  "rows": [
   {
    "anchor_count": 1,
@@ -4495,7 +4495,6 @@
     "tests/test_rii_r2_01_writer_inventory.py::test_a_same_id_replacement_of_a_drawn_edge[cached-before_snapshot-quarantine]": "assertion",
     "tests/test_rii_r2_01_writer_inventory.py::test_a_same_id_replacement_of_a_drawn_edge[cached-before_snapshot-retire]": "assertion",
     "tests/test_rii_r2_01_writer_inventory.py::test_a_same_id_replacement_of_a_drawn_edge[cached-before_snapshot-use_only]": "assertion",
-    "tests/test_rii_r2_01_writer_inventory.py::test_an_unreadable_replacement_is_written_as_before_and_evicts": "assertion",
     "tests/test_rii_r2_01_writer_inventory.py::test_every_mutation_class_evicts_iff_it_moves_a_view[edge-challenged-twin-key-change]": "assertion",
     "tests/test_rii_r2_01_writer_inventory.py::test_every_mutation_class_evicts_iff_it_moves_a_view[edge-same-id-author_of_evidence]": "assertion",
     "tests/test_rii_r2_01_writer_inventory.py::test_every_mutation_class_evicts_iff_it_moves_a_view[edge-same-id-derived_from]": "assertion",
@@ -4522,7 +4521,6 @@
     "tests/test_rii_r2_01_writer_inventory.py::test_a_same_id_replacement_of_a_drawn_edge[cached-before_snapshot-quarantine]",
     "tests/test_rii_r2_01_writer_inventory.py::test_a_same_id_replacement_of_a_drawn_edge[cached-before_snapshot-retire]",
     "tests/test_rii_r2_01_writer_inventory.py::test_a_same_id_replacement_of_a_drawn_edge[cached-before_snapshot-use_only]",
-    "tests/test_rii_r2_01_writer_inventory.py::test_an_unreadable_replacement_is_written_as_before_and_evicts",
     "tests/test_rii_r2_01_writer_inventory.py::test_every_mutation_class_evicts_iff_it_moves_a_view[edge-challenged-twin-key-change]",
     "tests/test_rii_r2_01_writer_inventory.py::test_every_mutation_class_evicts_iff_it_moves_a_view[edge-same-id-author_of_evidence]",
     "tests/test_rii_r2_01_writer_inventory.py::test_every_mutation_class_evicts_iff_it_moves_a_view[edge-same-id-derived_from]",
@@ -12191,13 +12189,11 @@
    "cell_kinds": {
     "tests/test_0047_t10b_read.py::test_r6_the_latest_challenge_is_by_written_at_then_id": "assertion",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[1200]": "assertion",
-    "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[4000]": "assertion",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[400]": "assertion"
    },
    "cells_failed": [
     "tests/test_0047_t10b_read.py::test_r6_the_latest_challenge_is_by_written_at_then_id",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[1200]",
-    "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[4000]",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[400]"
    ],
    "def_digest": "98166ddc1422c40de244a70614d724aeff249611d9a9f52df3cfa60a6b379568",
