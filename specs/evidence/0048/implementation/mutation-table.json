@@ -1,5 +1,5 @@
 {
- "body_sha256": "ee4d6a150c6a3ad7fd444ddfaa12a81163346087313b025d446b50fb053a21da",
+ "body_sha256": "3357a684cfa3a128e0a7785e322568806b0f617070db09d1ed12e471b7092b59",
  "controls": [
   {
    "anchor_counts": [
@@ -99,9 +99,13 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[invalidated]",
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]",
     "tests/test_0048_decay_bounds.py::test_a_host_that_rebinds_lifecycles_table_is_honoured",
     "tests/test_0048_decay_bounds.py::test_a_legacy_serialisation_is_processed_not_skipped",
     "tests/test_0048_decay_bounds.py::test_a_redaction_after_the_listing_is_seen_inside_the_transition",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]",
@@ -110,7 +114,7 @@
     "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
     "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge"
    ],
-   "definition_sha256": "f44846382b36bc60e5ba6c33a9abcb357eb9155136920bf7c69d284c29cad511",
+   "definition_sha256": "ff2dbd93d05f859a14458502042c27456f7a2a2b342b8ea9665fc77bbe857a41",
    "expected": "SURVIVED",
    "file": "src/veracium/store/sqlite.py",
    "good": true,
@@ -118,9 +122,13 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[invalidated]",
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]",
     "tests/test_0048_decay_bounds.py::test_a_host_that_rebinds_lifecycles_table_is_honoured",
     "tests/test_0048_decay_bounds.py::test_a_legacy_serialisation_is_processed_not_skipped",
     "tests/test_0048_decay_bounds.py::test_a_redaction_after_the_listing_is_seen_inside_the_transition",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]",
@@ -186,11 +194,15 @@
  "header": {
   "cells": {
    "implementation": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[invalidated]",
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]",
     "tests/test_0048_decay_bounds.py::test_a_delegating_wrapper_store_is_not_refused",
     "tests/test_0048_decay_bounds.py::test_a_host_that_rebinds_lifecycles_table_is_honoured",
     "tests/test_0048_decay_bounds.py::test_a_legacy_serialisation_is_processed_not_skipped",
     "tests/test_0048_decay_bounds.py::test_a_redaction_after_the_listing_is_seen_inside_the_transition",
     "tests/test_0048_decay_bounds.py::test_a_store_without_the_transition_refuses_at_entry",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
     "tests/test_0048_decay_bounds.py::test_a_wrapper_around_a_store_without_the_transition_refuses_at_entry",
     "tests/test_0048_decay_bounds.py::test_an_unrelated_write_refusal_inside_the_transition_still_raises",
     "tests/test_0048_decay_bounds.py::test_boundary_configs_are_still_valid[0.0-decay_factor]",
@@ -225,25 +237,28 @@
   },
   "clean": {
    "first": {
-    "of": 36,
+    "of": 42,
     "ok": true,
-    "passed": 36
+    "passed": 42
    },
    "last": {
-    "of": 36,
+    "of": 42,
     "ok": true,
-    "passed": 36
+    "passed": 42
    }
   },
-  "commit": "f96a63291a9122ce62697bf39976ec04b398d930",
+  "commit": "af3bf334ff0645bae6f6e06dc75e1588bf11e295",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "d7bc1479be4f412c9fbd20b3cbd2e4d4e6568c2e9903136c7be56c4ed4ea2ce0",
    "NOOP-config": "c59f1671e6c6eaa682070dc4f2d70d4e27c77e355322627ce54d3f2e6e3d543f",
    "NOOP-graph": "fa8947b4bafdcd2654bbf8d27dcbd92ca1ef6e7ce88e5023069df291495bb3dc",
    "NOOP-lifecycle": "4ec17284ab8694f07cd02144a2d4c4f299ab5993967bdda491bcbad1811f8ea5",
-   "NOOP-sqlite": "f44846382b36bc60e5ba6c33a9abcb357eb9155136920bf7c69d284c29cad511"
+   "NOOP-sqlite": "ff2dbd93d05f859a14458502042c27456f7a2a2b342b8ea9665fc77bbe857a41"
   },
   "definitions": {
+   "D-a-bump-on-a-no-op": "07ade57215b57150975ffc06f8f7c3303f7467167370f250d0d9c109b32388c6",
+   "D-an-inactive-row-transitioned": "1ec8bbcc926270d6f73f3e7393a75e1b7426f7d895d6054ad7ab2dcdb14ddc95",
+   "D-the-bump-skipped": "15750c35f8cc37412b4712a25c42ddd367f993553d67af8dea2695f578f2ca6c",
    "D1-the-redaction-check-outside-the-transaction": "8c158238ea190310781e1f47abdc4661bf90d6c8e778e160a888f9fbe16555a6",
    "F2-the-store-modules-table": "3f47bdbeeb11df8f215bb0bc8278e40c560798a4cc04c92bce906d697e7c0ec4",
    "N3-lifetimes-read-live": "afdf0aaa6fa886e8369055940f33f00409ff396042a0b2cbe20aec45dbeeb07f",
@@ -276,7 +291,7 @@
   },
   "digests": {
    "specs/evidence/0048/census_0048.py": "77f2ac19dd9430a8b8e08f6e674f68072a81ad16a7188877ff67f9db036bcf96",
-   "specs/evidence/0048/implementation_mutants.py": "72ceb9f60ea4385761d7f2d1cc1277df491d7fe7be524daca1e7a43cbced0cb2",
+   "specs/evidence/0048/implementation_mutants.py": "0bb05eafeb3fe4a81f6e409497ca36268cd0a722374c5baa362e5882d5822786",
    "specs/evidence/0048/tripwire_0048.py": "286efeb2795906f3ac8b76dcb4be018eb437c7e840f0fa27513220f11ded5368",
    "specs/evidence/0048/tripwire_0048_classified.tsv": "4fe46e84c935b9119e50984c79db503e7a1f6fc95d3a2470ec41a42bc93796be",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
@@ -286,11 +301,13 @@
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
    "src/veracium/store/base.py": "f7edf09fc217dbe772448cc2a38518a382fb6b6f689c9b13719d290ad9e4dcee",
    "src/veracium/store/sqlite.py": "c32cdc4f5a6f3598f72567dbba360cb62e97012f27fd1b79ab9d90447ea303f3",
-   "tests/test_0048_decay_bounds.py": "9426f4d2abfe4b3696e7516861416a4189d8eb51f904c5a14d2586d7059f871f",
+   "tests/test_0048_decay_bounds.py": "3496e2c9f3cd18b3f3cbd612b3fb65713b807a1deaec53877683ddad2cd20e1a",
    "tests/test_0048_evidence.py": "5fe2651f885453e1aa159e444a9dce53bfa3b4efad41c42a0bc1caeb782625e9"
   },
   "finding": "implementation",
   "honest_nodes": [
+   "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made transient]",
+   "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[not due]",
    "tests/test_0048_decay_bounds.py::test_boundary_configs_are_still_valid[0.0-decay_factor]",
    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[1.5-decay_factor]",
    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
@@ -307,42 +324,9 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
-   "docs/api.md",
-   "specs/0002-maintenance-provenance-invariant.md",
-   "specs/0048-decay-never-raises-confidence.md",
-   "specs/STATUS.md",
-   "specs/audit_dispositions.py",
-   "specs/citation_debt.py",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0044/writer_lifetime_matrix.json",
-   "specs/evidence/0044/writer_lifetime_matrix.md",
-   "specs/evidence/0047/carrier_inventory.py",
-   "specs/evidence/0048/census_0048.py",
    "specs/evidence/0048/implementation/mutation-table.json",
    "specs/evidence/0048/implementation_mutants.py",
-   "specs/evidence/0048/pin_repro.py",
-   "specs/evidence/0048/probe_expire_lost_update.py",
-   "specs/evidence/0048/tripwire_0048_classified.tsv",
-   "specs/findings.py",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/generated/0021-combining-sites.md",
-   "specs/render_status.py",
-   "specs/skip_inventory.py",
-   "src/veracium/combining.py",
-   "src/veracium/config.py",
-   "src/veracium/lifecycle.py",
-   "src/veracium/store/base.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0041_round10_readers.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0048_evidence.py",
-   "tests/test_0048_implementation_mutants.py"
+   "tests/test_0048_decay_bounds.py"
   ]
  },
  "rows": [
@@ -413,7 +397,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.52s",
+   "pytest": "2 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "the bounds validated at construction only: `c.decay_factor = 2.0` is accepted"
@@ -446,7 +430,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the value set before it is validated: a refused assignment loses the old value"
@@ -482,7 +466,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.54s",
+   "pytest": "2 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "an exclusive bound: the endpoints 0 and 1 are refused"
@@ -518,7 +502,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.52s",
+   "pytest": "2 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "a NaN-blind comparison: nan is accepted"
@@ -554,7 +538,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.51s",
+   "pytest": "2 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "no explicit refusal of a bool: True reads as 1"
@@ -590,7 +574,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.66s",
+   "pytest": "2 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -626,7 +610,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.64s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"
@@ -700,7 +684,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.68s",
+   "pytest": "2 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "a retained decay counted as `decayed` (R2-02)"
@@ -733,7 +717,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a store without `expiry_transition` is not refused at entry (the owner's ruling, \"Refuse, name it\")"
@@ -799,7 +783,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "the capability read asks the wrapper's class, not the resolved method: Wrapper(a non-overriding subclass) escapes the refusal at entry (research, 2026-11-02)"
@@ -832,7 +816,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "a ValueError from the transition swallowed (the shipped `except ValueError` shape)"
@@ -865,7 +849,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the lifetimes dict read live: a host's mid-run edit changes the run"
@@ -904,7 +888,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.40s",
+   "pytest": "3 failed in 1.36s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the shipped expire() body, deciding from its listing and writing the copy back"
@@ -937,7 +921,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the transition reads the store module's import of the table, not expire()'s copy (research's F2)"
@@ -970,7 +954,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the store helper serialises without validating"
@@ -1003,7 +987,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the helper accepts an instance without revalidating its nested data"
@@ -1036,7 +1020,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the sole active=0 writer binds its own dump, not the helper's"
@@ -1069,7 +1053,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer calls the helper and ignores its return value"
@@ -1103,7 +1087,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on (confidence, activity) as read: confirm() on 0.95 changes neither, and is reverted"
@@ -1137,7 +1121,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "a predicate binding the read model re-serialised: a legacy row's bytes never match and it is skipped"
@@ -1171,7 +1155,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"
@@ -1207,7 +1191,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.66s",
+   "pytest": "2 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "below the floor, the decayed confidence stored before the retirement (R2-02)"
@@ -1240,7 +1224,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor comparison inclusive: a decay at the floor retires"
@@ -1273,10 +1257,112 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the 0041 skip not inside the transaction: a redaction after the listing makes the write path refuse"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[invalidated]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[invalidated]"
+   ],
+   "definition_sha256": "1ec8bbcc926270d6f73f3e7393a75e1b7426f7d895d6054ad7ab2dcdb14ddc95",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made transient]"
+   ],
+   "id": "D-an-inactive-row-transitioned",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[invalidated]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.54s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an INACTIVE current row is transitioned (an invalidation committed after the listing is flagged)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]"
+   ],
+   "definition_sha256": "15750c35f8cc37412b4712a25c42ddd367f993553d67af8dea2695f578f2ca6c",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[not due]"
+   ],
+   "id": "D-the-bump-skipped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.88s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a transition that writes does not bump the user's store version (the shipped writers bump)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]"
+   ],
+   "definition_sha256": "07ade57215b57150975ffc06f8f7c3303f7467167370f250d0d9c109b32388c6",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[not due]"
+   ],
+   "id": "D-a-bump-on-a-no-op",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.60s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the store version bumped before the transition knows it writes: a transition that writes nothing moves it"
   },
   {
    "anchor_counts": [
@@ -1306,7 +1392,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.71s",
+   "pytest": "1 failed in 2.93s",
    "reason": null,
    "reason_seen": null,
    "what": "a new copy site writing confidence, absent from the declared table"
@@ -1339,7 +1425,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer of a form the census does not see, its trigger tokens unclassified"
@@ -1347,13 +1433,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 29
+   "product": 32
   },
   "controls": 5,
   "controls_good": 5,
-  "good": 29,
-  "killed": 29,
-  "rows": 29,
-  "seconds": 99
+  "good": 32,
+  "killed": 32,
+  "rows": 32,
+  "seconds": 108
  }
 }

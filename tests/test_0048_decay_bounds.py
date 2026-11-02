@@ -862,3 +862,176 @@ def test_declared_bounds_hold_on_every_write_path(tmp_path):
                                                "declared but gone": sorted(set(DECLARED) - set(sites))}
     assert "UNRESOLVED: 0" in r.stdout and "edge json writers in store/sqlite.py: 7" in r.stdout, r.stdout
     assert "lifecycle.py" not in r.stdout.split("edge json writers")[0], "no unvalidated decay copy remains"
+
+
+# ---- the round-2 verdict's implementation controls, against the actual store ------------------------------------------
+
+def _shipped_expire(store, user_id, config, now):
+    """THE SHIPPED expire() body (91219d0, before §4), kept here as the REFERENCE the implementation must equal when
+    nothing overlaps: same counts, same stored state, same journal kinds, same store version, same wiki. (The round-2
+    verdict: "Include a small old/new behavior table" and "assert the side effects as well as the edge JSON".)"""
+    lapsed = decayed = flagged = 0
+    redacted = store.redacted_targets(user_id, "edge")
+    for e in store.edges(user_id, active_only=True):
+        if e.id in redacted:
+            continue
+        lifetime = config.volatility_lifetime_days.get(e.volatility)
+        if lifetime is None or (now - e.provenance.observed_at).days <= lifetime:
+            continue
+        behavior = S.DEFAULT_EXPIRY[e.volatility]
+        if behavior == S.ExpiryBehavior.LAPSE:
+            store.invalidate_edge(e.id, now, "lapsed"); lapsed += 1
+        elif behavior == S.ExpiryBehavior.DECAY:
+            e.provenance = e.provenance.model_copy(update={"confidence": e.provenance.confidence * config.decay_factor})
+            if e.provenance.confidence < config.confidence_floor:
+                store.invalidate_edge(e.id, now, "decayed"); decayed += 1
+            else:
+                store.add_edge(e)
+        elif not e.needs_confirmation:
+            e.needs_confirmation = True
+            store.add_edge(e); flagged += 1
+    return {"lapsed": lapsed, "decayed": decayed, "flagged_for_confirmation": flagged}
+
+
+def _effects(store):
+    """Everything a transition can touch, as data: each edge's state, the journal's (edge, kind, reason) rows in order,
+    the user's store version, and whether a compiled wiki is cached."""
+    edges = {e.id: (e.active, e.invalidation_reason, round(e.provenance.confidence, 9), e.needs_confirmation)
+             for e in store.edges(U, active_only=False, include_quarantined=True)}
+    journal = [(ev.edge_id, ev.kind, ev.reason) for ev in store.edge_events(U)]
+    return edges, journal, store.store_version(U), store.get_wiki(U) is not None
+
+
+SIDE_CASES = {
+    # name: (volatility, confidence, DECAY mapped, policy)
+    "lapse": (S.Volatility.TRANSIENT, 0.9, False, (0.5, 0.3)),
+    "flag": (S.Volatility.SLOW, 0.9, False, (0.5, 0.3)),
+    "decay retained": (S.Volatility.SLOW, 0.9, True, (0.5, 0.3)),
+    "decay below the floor": (S.Volatility.SLOW, 0.9, True, (0.5, 0.5)),
+    "not due": (S.Volatility.PERMANENT, 0.9, False, (0.5, 0.3)),
+}
+
+
+@pytest.mark.parametrize("case", list(SIDE_CASES))
+def test_a_transitions_side_effects_equal_the_shipped_paths(tmp_path, monkeypatch, case):
+    """With nothing overlapping, every outcome's side effects equal the shipped path's, measured on twin stores: the
+    returned counts, each edge's stored state, the journal rows (kind and reason), the user's store version (one bump
+    per write) and the compiled wiki (kept on lapsed/decayed, 0004 W3). The old/new table for R2-02's two cases is
+    the `decay retained` and `decay below the floor` rows."""
+    vol, conf, mapped, (factor, floor) = SIDE_CASES[case]
+    if mapped:
+        monkeypatch.setitem(S.DEFAULT_EXPIRY, S.Volatility.SLOW, S.ExpiryBehavior.DECAY)
+    results = []
+    for arm, run in (("shipped", _shipped_expire), ("0048", lambda s, u, c, now: expire(s, u, c, now=now))):
+        s = SqliteStore(str(tmp_path / f"{arm}.db"))
+        s.add_edge(_edge("e", vol, conf))
+        s.set_wiki(U, "cached", s.store_version(U))
+        before = s.store_version(U)
+        out = run(s, U, Duck(factor, floor), NOW)
+        edges, journal, version, wiki = _effects(s)
+        results.append((out, edges, journal, version - before, wiki))
+    assert results[0] == results[1], {"shipped": results[0], "0048": results[1]}
+
+
+def _between(store, change, seen):
+    """Wrap the store's listing so `change(store)` runs after it, before any transition; `seen["version"]` is the
+    user's store version once the change has committed (so a transition's own bump can be told from the change's)."""
+    real = store.edges
+
+    def listing(*a, **k):
+        r = list(real(*a, **k))
+        change(store)
+        seen["version"] = store.store_version(U)
+        return r
+    store.edges = listing
+    return real
+
+
+BETWEEN = {
+    # name: (the change made between listing and transition, expected counts, expected (active, reason, flagged))
+    "deleted": (lambda s: s.forget_user(U), {"lapsed": 0, "decayed": 0, "flagged_for_confirmation": 0}, None),
+    "invalidated": (lambda s: s.invalidate_edge("e", NOW, "disputed"),
+                    {"lapsed": 0, "decayed": 0, "flagged_for_confirmation": 0}, (False, "disputed", False)),
+    "made permanent": ("permanent", {"lapsed": 0, "decayed": 0, "flagged_for_confirmation": 0}, (True, None, False)),
+    "made transient": ("transient", {"lapsed": 1, "decayed": 0, "flagged_for_confirmation": 0}, (False, "lapsed", False)),
+}
+
+
+@pytest.mark.parametrize("name", list(BETWEEN))
+def test_a_change_between_listing_and_transition_is_decided_on_the_current_row(tmp_path, name):
+    """The round-2 verdict's no-op and current-volatility controls, on the actual store: a SLOW (CONFIRM) edge, listed
+    as due, is DELETED, INVALIDATED or made PERMANENT before its transition runs → no write, no count; made TRANSIENT →
+    LAPSE applies from the current row (never the listed CONFIRM)."""
+    s = SqliteStore(str(tmp_path / "between.db"))
+    s.add_edge(_edge("e", S.Volatility.SLOW, 0.9))
+    change, counts, state = BETWEEN[name]
+    real = s.edges
+    if isinstance(change, str):
+        vol = S.Volatility.PERMANENT if change == "permanent" else S.Volatility.TRANSIENT
+
+        def change(st, vol=vol):
+            (e,) = [x for x in real(U, active_only=False) if x.id == "e"]
+            st.add_edge(e.model_copy(update={"volatility": vol}))
+    seen = {}
+    _between(s, change, seen)
+    out = expire(s, U, MemoryConfig(), now=NOW)
+    s.edges = real
+    assert out == counts, out
+    rows = [e for e in s.edges(U, active_only=False, include_quarantined=True) if e.id == "e"]
+    if state is None:
+        assert rows == []
+    else:
+        (e,) = rows
+        assert (e.active, e.invalidation_reason, e.needs_confirmation) == state
+    if counts == {"lapsed": 0, "decayed": 0, "flagged_for_confirmation": 0}:
+        journal_after_change = [ev for ev in s.edge_events(U) if ev.reason in ("lapsed", "decayed")]
+        assert journal_after_change == [], "a no-op transition journalled a retirement"
+        assert s.store_version(U) == seen["version"], "a transition that wrote nothing moved the store version"
+    else:
+        assert s.store_version(U) == seen["version"] + 1, "a writing transition bumps exactly once"
+
+
+def test_a_policy_changed_during_the_first_transition_does_not_reach_the_second(tmp_path, decay_mapped):
+    """The verdict's configuration control: all three policy values are changed while the FIRST transition runs; the
+    second edge still decays under the policy captured at entry."""
+    s = SqliteStore(str(tmp_path / "policy.db"))
+    s.add_edge(_edge("a", S.Volatility.SLOW, 0.8))
+    s.add_edge(_edge("b", S.Volatility.SLOW, 0.8))
+    cfg = MemoryConfig()
+    real = s.expiry_transition
+    calls = []
+
+    def first_changes_the_policy(*a, **k):
+        out = real(*a, **k)
+        if not calls:
+            cfg.decay_factor, cfg.confidence_floor = 1.0, 0.9
+            cfg.volatility_lifetime_days[S.Volatility.SLOW] = None
+        calls.append(out)
+        return out
+    s.expiry_transition = first_changes_the_policy
+    out = _expire_valid(s, cfg, now=NOW)
+    assert calls == ["decay-retained", "decay-retained"] and out["decayed"] == 0, (calls, out)
+    assert [round(e.provenance.confidence, 9) for e in s.edges(U)] == [0.4, 0.4]
+
+
+def test_a_failing_transition_rolls_back_its_journal_and_its_bump(tmp_path, monkeypatch):
+    """N4d-prefix's side effects: the failing edge leaves no journal row and no store-version bump; the committed one
+    keeps both."""
+    s = SqliteStore(str(tmp_path / "rollback.db"))
+    s.add_edge(_edge("e1", S.Volatility.SLOW, 0.6))
+    s.add_edge(_edge("e2", S.Volatility.SLOW, 0.6))
+    before_v, before_j = s.store_version(U), len(s.edge_events(U))
+    real, calls = s._upsert_edge_row, []
+
+    def failing(edge):
+        calls.append(edge.id)
+        real(edge)                                   # the write happens, then the transaction is made to fail
+        if len(calls) == 2:
+            raise RuntimeError("injected store failure after the write")
+    monkeypatch.setattr(s, "_upsert_edge_row", failing)
+    _refuses(RuntimeError, lambda: expire(s, U, MemoryConfig(), now=NOW))
+    monkeypatch.undo()
+    assert s.store_version(U) == before_v + 1, "only the committed transition bumps"
+    events = s.edge_events(U)[before_j:]
+    assert [ev.edge_id for ev in events] == ["e1"], [(ev.edge_id, ev.kind) for ev in events]
+    assert _row(s, "e2").needs_confirmation is False
