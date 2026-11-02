@@ -609,6 +609,54 @@ def test_a_skip_word_inside_a_longer_word_does_not_close_a_question():
     assert render_index._questions(body) == (2, 1)
 
 
+def test_outside_ledger_note_states_only_the_round_the_acceptance_names():
+    """STATUS.md's 'Rounds recorded outside the ledger' note, attacked by form. Its first rule took the first
+    "round N" anywhere in the Decision cell, so 0051 (accepted on the owner's word; external review owed) read
+    "accepted at external round 2" from "R-II round 2 carries it to the external reviewer"; and 0032, whose header
+    says "owner-accepted, no external round", read "… or a gap". Each cell: a header form and the note it must give."""
+    import sys, pathlib, importlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import render_index
+    importlib.reload(render_index)
+
+    def hdr(**cells):
+        return "".join(f"| **{k}** | {v} |\n" for k, v in cells.items())
+
+    D, E, A = "Decision + date", "External review", "Acceptance"
+    ROUND9 = "accepted at external round 9"
+    OWED = "records its external review as owed"
+    NOEXT = "owner-accepted with no external round"
+    GAP = "or a gap"
+    cells = [
+        ("0027-form", {D: "ACCEPTED — externally, round 9, 2026-08-31 (\"ACCEPT\")"}, ROUND9),
+        ("lowercase-external", {D: "accepted externally at round 9"}, ROUND9),
+        ("0051-form", {D: "v0.4 ACCEPTED 2026-10-22 on the owner's word (\"accept\"); R-II round 2 carries it to the"
+                          " external reviewer", E: "**owed** — a full spec"}, OWED),
+        ("0051-form-no-review-cell", {D: "v0.4 ACCEPTED on the owner's word (x); R-II round 2 carries it to the "
+                                         "external reviewer"}, GAP),
+        ("internal-round", {D: "ACCEPTED at internal round 3"}, GAP),
+        ("round-after-a-semicolon", {D: "ACCEPTED on the owner's word; external review round 4 pending"}, GAP),
+        ("round-inside-parentheses", {D: "ACCEPTED (external round 4 is owed)"}, GAP),
+        ("owed-inside-a-word", {E: "allowed to ride the R-II package"}, GAP),
+        ("0032-form", {A: "owner-accepted, no external round — F6 does not demand one"}, NOEXT),
+        ("no-header", {}, GAP),
+    ]
+    wrong = []
+    for name, c, want in cells:
+        note = render_index.outside_ledger_note("9999", hdr(**c))
+        others = [w for w in (ROUND9, OWED, NOEXT, GAP) if w != want]
+        if want not in note or any(o in note for o in others) or ("round 2" in note) or ("round 4" in note):
+            wrong.append((name, note))
+    assert not wrong, wrong
+
+    # The tree's own three: the note each spec's header supports.
+    for num, want in (("0027", ROUND9), ("0032", NOEXT), ("0051", OWED)):
+        (f,) = sorted((root / "specs").glob(f"{num}-*.md"))
+        note = render_index.outside_ledger_note(num, f.read_text())
+        assert want in note, (num, note)
+
+
 def test_render_index_question_rows_mutation_matrix():
     """render_index.py's question-row rule, attacked by form. Its first grammar needed a bold id and so saw no row of
     54 in 16 specs (0044's blocking Q8 among them); lint_rulings.py carried the same grammar. Each cell below is a

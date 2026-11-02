@@ -70,7 +70,7 @@ own count and rows, never the cross-spec total, so a spec joining the set or
 closing a finding rewrites no other spec's text.
 
 **Rounds recorded outside the ledger** — so a `0` in *ext* is not read as
-"never reviewed": **0027** — accepted at external round 9 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec; **0029** — its rounds are housed in **0030**'s ledger (one ledger for the joint review stream; each row names its target); **0032** — no rounds in `specs/reviews.py` and no round named in its header (owner-accepted under PROCESS §4a's second path, or a gap); **0051** — accepted at external round 2 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec.
+"never reviewed": **0027** — accepted at external round 9 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec; **0029** — its rounds are housed in **0030**'s ledger (one ledger for the joint review stream; each row names its target); **0032** — owner-accepted with no external round, per its own header (PROCESS §4a's second path); **0051** — accepted, and its own header records its external review as owed (no round of it is in `specs/reviews.py`).
 A `draft` spec under the hand-assembled seal shows `0` here until acceptance:
 that protocol writes its `specs/reviews.py` rows and one closure row per
 finding AT the acceptance fold (0037, 0038, 0039), and until then the spec's

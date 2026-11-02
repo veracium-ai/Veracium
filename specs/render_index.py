@@ -136,6 +136,39 @@ def row_state(row: QuestionRow) -> tuple:
     return True, "blocking" in low
 
 
+def _header_cell(body: str, name: str) -> str:
+    """The text of the header row `| **<name>** | … |`, or '' when the spec has no such row."""
+    m = re.search(r"^\| \*\*" + re.escape(name) + r"\*\* \|(.*)\|", body, re.M)
+    return m.group(1) if m else ""
+
+
+# "accepted at external round N" is a claim, so the round must be the one the ACCEPTANCE names: ACCEPTED, then
+# "external"/"externally", then "round N", in one clause (no `;`, `(` or `)` between). The first form took the first
+# "round N" anywhere in the Decision cell, and so stated 0051 "accepted at external round 2" from "R-II round 2 carries
+# it to the external reviewer" in a cell recording an owner's-word acceptance (found auditing STATUS.md, 2026-11-02).
+EXTERNAL_ACCEPTANCE = re.compile(r"\bACCEPTED\b[^;()|]*?\bexternal(?:ly)?\b[^;()|]*?\bround (\d+)", re.I)
+
+
+def outside_ledger_note(num: str, body: str) -> str:
+    """The note for an accepted spec with no external round in specs/reviews.py, read from its OWN header cells:
+    an external acceptance round, else an external review the header records as owed, else an owner acceptance the
+    header says had no external round, else the unresolved form."""
+    dec = _header_cell(body, "Decision + date")
+    m = EXTERNAL_ACCEPTANCE.search(dec)
+    if m:
+        return (f"**{num}** — accepted at external round {m.group(1)} per its own header; those rounds predate "
+                f"`specs/reviews.py` and are recorded in the spec")
+    if re.search(r"\bowed\b", _header_cell(body, "External review"), re.I):
+        return (f"**{num}** — accepted, and its own header records its external review as owed (no round of it is "
+                f"in `specs/reviews.py`)")
+    if any(re.search(r"\bno external round\b", _header_cell(body, c), re.I)
+           for c in ("Acceptance", "Decision + date", "External review")):
+        return (f"**{num}** — owner-accepted with no external round, per its own header (PROCESS §4a's second "
+                f"path)")
+    return (f"**{num}** — no rounds in `specs/reviews.py` and no round named in its header (owner-accepted under "
+            f"PROCESS §4a's second path, or a gap)")
+
+
 def _questions(body: str):
     """(open, blocking) — counts of row_state over question_rows."""
     open_q = blocking = 0
@@ -158,7 +191,8 @@ def render() -> str:
     # joint review stream, each row naming its target) — a structural fact
     # like TRACKED, not a typed count. A spec accepted before the ledger
     # existed names its acceptance round only in its own header; the note
-    # reads "round N" back from that cell rather than typing a number.
+    # reads it back from that cell (outside_ledger_note) rather than typing
+    # a number, and only a round the ACCEPTANCE names counts.
     LEDGER_HOUSED_IN = {"0029": "0030"}
     outside_ledger = []
     for f in sorted(SPECS.glob("[0-9][0-9][0-9][0-9]-*.md")):
@@ -193,17 +227,7 @@ def render() -> str:
                     f"**{num}** — its rounds are housed in **{LEDGER_HOUSED_IN[num]}**'s "
                     f"ledger (one ledger for the joint review stream; each row names its target)")
             else:
-                dec = re.search(r"^\| \*\*Decision \+ date\*\* \|(.*)\|", body, re.M)
-                m = re.search(r"round (\d+)", dec.group(1)) if dec else None
-                if m:
-                    outside_ledger.append(
-                        f"**{num}** — accepted at external round {m.group(1)} per its own "
-                        f"header; those rounds predate `specs/reviews.py` and are recorded "
-                        f"in the spec")
-                else:
-                    outside_ledger.append(
-                        f"**{num}** — no rounds in `specs/reviews.py` and no round named in "
-                        f"its header (owner-accepted under PROCESS §4a's second path, or a gap)")
+                outside_ledger.append(outside_ledger_note(num, body))
         rows.append(f"| **{num}** | {title} | `{st}` | {_updated(f)} | {internal} | "
                     f"{external} | {open_q} | {flag}{blocking} | {len(owned)} | {code} |")
 
