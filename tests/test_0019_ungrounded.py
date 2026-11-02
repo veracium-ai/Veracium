@@ -159,7 +159,13 @@ def test_ungrounded_grants_nothing():
                        # places the marker after the object on every branch, as graph.py
                        # does — a MARKER surface the 0045-0047 round-1 reviewer found
                        # missing (R1-05's witness); no branch keys anything on the flag.
-                       "resolve.py"}, (
+                       "resolve.py",
+                       # the speaker backstop (0051 v0.5 §4b, the 0.29.0 blocker B1, 2026-11-02): `_date_restricts`
+                       # CALLS the predicate `grounding.ungrounded` over the user's turns and over the other speakers'
+                       # turns, separately, to judge a user's dated obligation; it never reads the stored flag. It only
+                       # RESTRICTS (MENTIONABLE -> USE_ONLY, a date only another speaker grounds), never grants:
+                       # WITHHOLDING-side, U2's class.
+                       "speaker_backstop.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
         f"trust/authority/staleness key)")
