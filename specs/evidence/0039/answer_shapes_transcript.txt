@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ f0324b24f05fff1072e28b2f93e298a86f842cd9
+# generated 2026-09-12 against veracium @ d8b00bc7285da3629ec5bd9a95c9e3bfe6169307
+# RE-PINNED 2026-11-02 the schema evidence recording the v0.29.0 tag (legacy_stores.json, one row; no code) landed in d8b00bc7285da3629ec5bd9a95c9e3bfe6169307: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-02 the 0.29.0 blockers B1+B2 (src/veracium/graph.py, ingest.py, schema.py, speaker_backstop.py: the speaker backstop judges a user's dated obligation on its date by grounding per side; an obligation is eligible for any query) landed in f0324b24f05fff1072e28b2f93e298a86f842cd9: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-01 the 0003/obligations N1-N3 + NEW 1 fix (src/veracium/proactive.py: the commitment and contested-line composers) landed in 53b7655ccde254b4e4906034aa8e3defbd7b495d: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-01 the 0007 acceptance fold (src/veracium/store/schema_version.py: the FROZEN marker above KEY_FIELDS, comment lines only) landed in c5974105dea180582511b7255b2c27830d153b44: bodies byte-identical; the pin moves to it
