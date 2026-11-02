@@ -541,6 +541,10 @@ EVICTING_WRITERS = {
                             "(RII-R2-01); any other is kept for the call, as a write during the compile is (0041 §4e)",
     "invalidate_edge": "a content change: one that changes schema.assertion_view withholds the body by the view clause "
                             "(RII-R2-01); any other is kept for the call, as a write during the compile is (0041 §4e)",
+    "expiry_transition": "a content change (specs/0048 §4D: a lapse, a decayed retirement, a retained decay or the "
+                         "confirm flag, through _invalidate_edge_row / _upsert_edge_row): one that changes "
+                         "schema.assertion_view withholds the body by the view clause (RII-R2-01); any other is kept "
+                         "for the call (0041 §4e)",
     "apply_supersession_plan": "a content change: one that changes schema.assertion_view withholds the body by the "
                                "view clause (RII-R2-01); any other is kept for the call (0041 §4e)",
     "_evict_wiki_on_view_change": "RII-R2-01: every edge write (via _journal_edge_write) and every episode write that "

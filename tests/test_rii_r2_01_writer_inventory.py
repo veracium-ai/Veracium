@@ -363,6 +363,10 @@ def test_the_procedural_stamp_cannot_move_under_a_same_id_write(cached, upd):
 READ = "read"
 WRITERS = {
     "add_edge": [k for k in CELLS if k.startswith("edge-")],
+    # specs/0048 §4D: expiry's per-edge transition writes through _invalidate_edge_row / _upsert_edge_row (each
+    # evicting by the view rule) and drops the wiki on a retirement that ends a refusal contention, as invalidate_edge
+    "expiry_transition": ["tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths",
+                          "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result"],
     "add_episode": [k for k in CELLS if k.startswith("episode-")],
     "invalidate_edge": [k for k in CELLS if k.startswith("invalidate-")],
     "confirm_edge": ["confirm-edge"],
@@ -812,13 +816,18 @@ def test_the_snapshot_reads_only_view_fields(tmp_path, role):
         s.close()
 
 
-def test_an_unreadable_replacement_is_written_as_before_and_evicts(cached):
-    """The eviction never changes what a writer may store: a replacement row the model cannot read back (0048's
-    out-of-range confidence, written through an unvalidated copy) is written exactly as the store wrote it before
-    RII-R2-01, and the wiki is dropped, because the row's view is unknown (fail-closed for the cache only)."""
+def test_an_out_of_range_replacement_is_refused_before_any_write_and_the_wiki_stays(cached):
+    """INVERTED by specs/0048 §4C (the round-2 verdict: "replace or invert the baseline reproduction tests that
+    intentionally assert today's defects"). Before 0048 this cell pinned that the eviction never changed what a writer
+    may store: a replacement row the model cannot read back (an out-of-range confidence, built through an unvalidated
+    copy) was WRITTEN, and the wiki dropped because the row's view was unknown. 0048's validating serialiser now
+    refuses that row before any SQL runs, so nothing is written and the cached wiki stays: the eviction still adds no
+    rule of its own about what may be stored; 0048 is the rule."""
     e = _edge()
     bad = e.model_copy(update={"provenance": e.provenance.model_copy(update={"confidence": 1.8})})
-    cached.add_edge(bad)                                         # not refused here
-    stored = cached._conn.execute("SELECT json FROM edges WHERE id=?", ("e-loc",)).fetchone()[0]
-    assert stored == bad.model_dump_json()
-    assert cached.get_wiki(U) is None
+    before = cached._conn.execute("SELECT json FROM edges WHERE id=?", ("e-loc",)).fetchone()
+    with pytest.raises(ValueError):
+        cached.add_edge(bad)
+    after = cached._conn.execute("SELECT json FROM edges WHERE id=?", ("e-loc",)).fetchone()
+    assert after == before, "an out-of-range replacement reached the table"
+    assert cached.get_wiki(U) is not None, "a refused write evicted the wiki"
