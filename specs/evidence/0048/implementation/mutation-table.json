@@ -1,5 +1,5 @@
 {
- "body_sha256": "3357a684cfa3a128e0a7785e322568806b0f617070db09d1ed12e471b7092b59",
+ "body_sha256": "7bdc9c8fd524f9d2f1e9592cf5f8f01838cdfcc100065c36bf95fe7008c031b8",
  "controls": [
   {
    "anchor_counts": [
@@ -104,6 +104,12 @@
     "tests/test_0048_decay_bounds.py::test_a_host_that_rebinds_lifecycles_table_is_honoured",
     "tests/test_0048_decay_bounds.py::test_a_legacy_serialisation_is_processed_not_skipped",
     "tests/test_0048_decay_bounds.py::test_a_redaction_after_the_listing_is_seen_inside_the_transition",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay retained-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[flag-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]",
     "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
     "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
@@ -112,9 +118,10 @@
     "tests/test_0048_decay_bounds.py::test_every_edge_write_goes_through_the_validating_serialiser",
     "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm95]",
     "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
-    "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge"
+    "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge",
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[exactly the lifetime]"
    ],
-   "definition_sha256": "ff2dbd93d05f859a14458502042c27456f7a2a2b342b8ea9665fc77bbe857a41",
+   "definition_sha256": "d9761c83aaa8ac1845be4fd4053b77bf6102192c4657d932ace79a488804f3cb",
    "expected": "SURVIVED",
    "file": "src/veracium/store/sqlite.py",
    "good": true,
@@ -127,6 +134,12 @@
     "tests/test_0048_decay_bounds.py::test_a_host_that_rebinds_lifecycles_table_is_honoured",
     "tests/test_0048_decay_bounds.py::test_a_legacy_serialisation_is_processed_not_skipped",
     "tests/test_0048_decay_bounds.py::test_a_redaction_after_the_listing_is_seen_inside_the_transition",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay retained-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[flag-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]",
     "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
     "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
     "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
@@ -135,7 +148,8 @@
     "tests/test_0048_decay_bounds.py::test_every_edge_write_goes_through_the_validating_serialiser",
     "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm95]",
     "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
-    "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge"
+    "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge",
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[exactly the lifetime]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
@@ -201,6 +215,12 @@
     "tests/test_0048_decay_bounds.py::test_a_legacy_serialisation_is_processed_not_skipped",
     "tests/test_0048_decay_bounds.py::test_a_redaction_after_the_listing_is_seen_inside_the_transition",
     "tests/test_0048_decay_bounds.py::test_a_store_without_the_transition_refuses_at_entry",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay retained-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[flag-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]",
     "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[decay retained]",
     "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[flag]",
     "tests/test_0048_decay_bounds.py::test_a_wrapper_around_a_store_without_the_transition_refuses_at_entry",
@@ -232,33 +252,38 @@
     "tests/test_0048_decay_bounds.py::test_lapse_and_confirm_keep_their_shipped_counts",
     "tests/test_0048_decay_bounds.py::test_the_lifetimes_are_copied_at_entry",
     "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge",
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[exactly the lifetime]",
     "tests/test_0048_evidence.py::test_every_tripwire_hit_on_this_tree_is_classified"
    ]
   },
   "clean": {
    "first": {
-    "of": 42,
+    "of": 51,
     "ok": true,
-    "passed": 42
+    "passed": 51
    },
    "last": {
-    "of": 42,
+    "of": 51,
     "ok": true,
-    "passed": 42
+    "passed": 51
    }
   },
-  "commit": "af3bf334ff0645bae6f6e06dc75e1588bf11e295",
+  "commit": "574f1304b1ae77408cfb3e8e71826b71c6fac2fd",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "d7bc1479be4f412c9fbd20b3cbd2e4d4e6568c2e9903136c7be56c4ed4ea2ce0",
    "NOOP-config": "c59f1671e6c6eaa682070dc4f2d70d4e27c77e355322627ce54d3f2e6e3d543f",
    "NOOP-graph": "fa8947b4bafdcd2654bbf8d27dcbd92ca1ef6e7ce88e5023069df291495bb3dc",
    "NOOP-lifecycle": "4ec17284ab8694f07cd02144a2d4c4f299ab5993967bdda491bcbad1811f8ea5",
-   "NOOP-sqlite": "ff2dbd93d05f859a14458502042c27456f7a2a2b342b8ea9665fc77bbe857a41"
+   "NOOP-sqlite": "d9761c83aaa8ac1845be4fd4053b77bf6102192c4657d932ace79a488804f3cb"
   },
   "definitions": {
    "D-a-bump-on-a-no-op": "07ade57215b57150975ffc06f8f7c3303f7467167370f250d0d9c109b32388c6",
    "D-an-inactive-row-transitioned": "1ec8bbcc926270d6f73f3e7393a75e1b7426f7d895d6054ad7ab2dcdb14ddc95",
+   "D-due-boundary-exclusive": "e8c9b76b90f5f27d3a6d087e0e326e117ee4f7e18d73e4865b20e8cc9931f007",
    "D-the-bump-skipped": "15750c35f8cc37412b4712a25c42ddd367f993553d67af8dea2695f578f2ca6c",
+   "D-wiki-drop-on-lapse-only": "a677622ea0e57afae80bf66561dfc7db0bb4093ad27df86d0d552b179b7c520a",
+   "D-wiki-drop-outcome-blind": "3c7b6f3de55ba285d8ea752bc9bc9bdf7171570425238b2445a945f3360032de",
+   "D-wiki-drop-removed": "449d406fbb1d806d55812fefd07b42eaa731f478fe3b8b1335e2602509458070",
    "D1-the-redaction-check-outside-the-transaction": "8c158238ea190310781e1f47abdc4661bf90d6c8e778e160a888f9fbe16555a6",
    "F2-the-store-modules-table": "3f47bdbeeb11df8f215bb0bc8278e40c560798a4cc04c92bce906d697e7c0ec4",
    "N3-lifetimes-read-live": "afdf0aaa6fa886e8369055940f33f00409ff396042a0b2cbe20aec45dbeeb07f",
@@ -291,7 +316,7 @@
   },
   "digests": {
    "specs/evidence/0048/census_0048.py": "77f2ac19dd9430a8b8e08f6e674f68072a81ad16a7188877ff67f9db036bcf96",
-   "specs/evidence/0048/implementation_mutants.py": "0bb05eafeb3fe4a81f6e409497ca36268cd0a722374c5baa362e5882d5822786",
+   "specs/evidence/0048/implementation_mutants.py": "968cdef61e72d084fc1d34e7bfc71cb153d4d4c0e28f404d774904ec86a452dc",
    "specs/evidence/0048/tripwire_0048.py": "286efeb2795906f3ac8b76dcb4be018eb437c7e840f0fa27513220f11ded5368",
    "specs/evidence/0048/tripwire_0048_classified.tsv": "4fe46e84c935b9119e50984c79db503e7a1f6fc95d3a2470ec41a42bc93796be",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
@@ -301,12 +326,14 @@
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
    "src/veracium/store/base.py": "f7edf09fc217dbe772448cc2a38518a382fb6b6f689c9b13719d290ad9e4dcee",
    "src/veracium/store/sqlite.py": "c32cdc4f5a6f3598f72567dbba360cb62e97012f27fd1b79ab9d90447ea303f3",
-   "tests/test_0048_decay_bounds.py": "3496e2c9f3cd18b3f3cbd612b3fb65713b807a1deaec53877683ddad2cd20e1a",
+   "tests/test_0048_decay_bounds.py": "a6cd34314e1bb4b2db873ef6f8630616c9cb6478f0d5926c0f634c839d768e7c",
    "tests/test_0048_evidence.py": "5fe2651f885453e1aa159e444a9dce53bfa3b4efad41c42a0bc1caeb782625e9"
   },
   "finding": "implementation",
   "honest_nodes": [
    "tests/test_0048_decay_bounds.py::test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made transient]",
+   "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]",
+   "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[not due-prior]",
    "tests/test_0048_decay_bounds.py::test_a_transitions_side_effects_equal_the_shipped_paths[not due]",
    "tests/test_0048_decay_bounds.py::test_boundary_configs_are_still_valid[0.0-decay_factor]",
    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[1.5-decay_factor]",
@@ -317,14 +344,14 @@
    "tests/test_0048_decay_bounds.py::test_factor_is_validated_whatever_the_confidence[2.0-0.3]",
    "tests/test_0048_decay_bounds.py::test_lapse_and_confirm_keep_their_shipped_counts",
    "tests/test_0048_decay_bounds.py::test_other_fields_still_assign",
-   "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge"
+   "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge",
+   "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[one day past it]"
   ],
   "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0048/implementation/mutation-table.json",
    "specs/evidence/0048/implementation_mutants.py",
    "tests/test_0048_decay_bounds.py"
   ]
@@ -361,7 +388,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.53s",
+   "pytest": "2 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the bounds validated on assignment only: construction accepts 2.0"
@@ -397,7 +424,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.54s",
+   "pytest": "2 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the bounds validated at construction only: `c.decay_factor = 2.0` is accepted"
@@ -430,7 +457,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.50s",
    "reason": null,
    "reason_seen": null,
    "what": "the value set before it is validated: a refused assignment loses the old value"
@@ -466,7 +493,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.60s",
+   "pytest": "2 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "an exclusive bound: the endpoints 0 and 1 are refused"
@@ -538,7 +565,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.59s",
+   "pytest": "2 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "no explicit refusal of a bool: True reads as 1"
@@ -574,7 +601,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -610,7 +637,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.71s",
+   "pytest": "2 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"
@@ -648,7 +675,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.66s",
+   "pytest": "2 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the validation moved back inside the DECAY branch: the TRANSIENT edge listed first is lapsed before the refusal"
@@ -684,7 +711,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.69s",
+   "pytest": "2 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "a retained decay counted as `decayed` (R2-02)"
@@ -717,7 +744,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "a store without `expiry_transition` is not refused at entry (the owner's ruling, \"Refuse, name it\")"
@@ -750,7 +777,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the capability read on the CLASS alone: a delegating wrapper (its __getattr__ reaches the inner store's transition) is refused (found by 0021's fault matrix, 2026-11-02)"
@@ -783,7 +810,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the capability read asks the wrapper's class, not the resolved method: Wrapper(a non-overriding subclass) escapes the refusal at entry (research, 2026-11-02)"
@@ -816,7 +843,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "a ValueError from the transition swallowed (the shipped `except ValueError` shape)"
@@ -849,7 +876,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the lifetimes dict read live: a host's mid-run edit changes the run"
@@ -888,7 +915,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.36s",
+   "pytest": "3 failed in 1.39s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the shipped expire() body, deciding from its listing and writing the copy back"
@@ -921,7 +948,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "the transition reads the store module's import of the table, not expire()'s copy (research's F2)"
@@ -954,7 +981,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the store helper serialises without validating"
@@ -987,7 +1014,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "the helper accepts an instance without revalidating its nested data"
@@ -1053,7 +1080,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer calls the helper and ignores its return value"
@@ -1087,7 +1114,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on (confidence, activity) as read: confirm() on 0.95 changes neither, and is reverted"
@@ -1121,7 +1148,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "a predicate binding the read model re-serialised: a legacy row's bytes never match and it is skipped"
@@ -1155,7 +1182,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"
@@ -1191,7 +1218,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.68s",
+   "pytest": "2 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "below the floor, the decayed confidence stored before the retirement (R2-02)"
@@ -1224,7 +1251,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor comparison inclusive: a decay at the floor retires"
@@ -1257,7 +1284,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the 0041 skip not inside the transaction: a redaction after the listing makes the write path refuse"
@@ -1290,7 +1317,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "an INACTIVE current row is transitioned (an invalidation committed after the listing is flagged)"
@@ -1326,7 +1353,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.88s",
+   "pytest": "2 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a transition that writes does not bump the user's store version (the shipped writers bump)"
@@ -1359,10 +1386,154 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the store version bumped before the transition knows it writes: a transition that writes nothing moves it"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-incoming]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]"
+   ],
+   "definition_sha256": "a677622ea0e57afae80bf66561dfc7db0bb4093ad27df86d0d552b179b7c520a",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]"
+   ],
+   "id": "D-wiki-drop-on-lapse-only",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-incoming]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a decay that retires an edge in a refusal keeps the wiki: 0003 \u00a74c-ii's resolution event missed (research's stage-2 mark on 574f130)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-incoming]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]"
+   ],
+   "definition_sha256": "449d406fbb1d806d55812fefd07b42eaa731f478fe3b8b1335e2602509458070",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[not due-prior]"
+   ],
+   "id": "D-wiki-drop-removed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay below the floor-prior]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.91s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "no retiring transition drops the wiki (research's stage-2 mark on 574f130)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay retained-incoming]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[flag-prior]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay retained-incoming]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[flag-prior]"
+   ],
+   "definition_sha256": "3c7b6f3de55ba285d8ea752bc9bc9bdf7171570425238b2445a945f3360032de",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[lapse-prior]"
+   ],
+   "id": "D-wiki-drop-outcome-blind",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[flag-prior]",
+    "tests/test_0048_decay_bounds.py::test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects[decay retained-incoming]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.78s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the drop applied to every writing outcome: a flag or a retained decay of an edge in a refusal drops the wiki (the next mutant of the drop's guard)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[exactly the lifetime]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[exactly the lifetime]"
+   ],
+   "definition_sha256": "e8c9b76b90f5f27d3a6d087e0e326e117ee4f7e18d73e4865b20e8cc9931f007",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[one day past it]"
+   ],
+   "id": "D-due-boundary-exclusive",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[exactly the lifetime]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.56s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the transition's due-ness exclusive: an edge exactly `lifetime` days old on its current row is transitioned (equivalent through expire(), whose listing skips it; research's stage-2 survivor)"
   },
   {
    "anchor_counts": [
@@ -1392,7 +1563,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.93s",
+   "pytest": "1 failed in 2.50s",
    "reason": null,
    "reason_seen": null,
    "what": "a new copy site writing confidence, absent from the declared table"
@@ -1425,7 +1596,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer of a form the census does not see, its trigger tokens unclassified"
@@ -1433,13 +1604,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 32
+   "product": 36
   },
   "controls": 5,
   "controls_good": 5,
-  "good": 32,
-  "killed": 32,
-  "rows": 32,
-  "seconds": 108
+  "good": 36,
+  "killed": 36,
+  "rows": 36,
+  "seconds": 113
  }
 }

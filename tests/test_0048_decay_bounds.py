@@ -1035,3 +1035,65 @@ def test_a_failing_transition_rolls_back_its_journal_and_its_bump(tmp_path, monk
     events = s.edge_events(U)[before_j:]
     assert [ev.edge_id for ev in events] == ["e1"], [(ev.edge_id, ev.kind) for ev in events]
     assert _row(s, "e2").needs_confirmation is False
+
+
+# ---- research's stage-2 mark on 574f130: the transition's own 0003 §4c-ii wiki drop, held by a cell -------------------
+
+def _in_refusal(store, eid, role):
+    """A durable refusal record naming `eid` as its PRIOR or its INCOMING edge (0003 §4c-ii: either makes the edge a
+    possible member of a live refusal contention); `role` None writes none."""
+    if role is None:
+        return
+    prior, incoming = (eid, "e-other") if role == "prior" else ("e-other", eid)
+    at = NOW.isoformat()
+    store._conn.execute(
+        "INSERT INTO supersession_refusals(refusal_id, user_id, prior_edge_id, incoming_edge_id, relation, "
+        "prior_effective, incoming_effective, rule_version, created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+        (f"rf-{eid}-{role}", U, prior, incoming, "works_on", at, at, 1, at))
+    store._conn.commit()
+
+
+RETIRING = {"lapse", "decay below the floor"}
+
+
+@pytest.mark.parametrize("role", ["prior", "incoming"])
+@pytest.mark.parametrize("case", list(SIDE_CASES))
+def test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects(tmp_path, monkeypatch, case, role):
+    """The transition repeats invalidate_edge's 0003 §4c-ii rule (research's stage-2 mark: no cell held it): an outcome
+    that RETIRES an edge in a refusal (`lapsed`, and `decayed` below the floor) ends a contention and drops the wiki;
+    an outcome that keeps the edge (a flag, a retained decay) and an edge not due keep it. Measured on twin stores
+    against the shipped path, every effect `_effects` reads, and the wiki also asserted by name, for the edge as the
+    refusal's prior and as its incoming side."""
+    vol, conf, mapped, (factor, floor) = SIDE_CASES[case]
+    if mapped:
+        monkeypatch.setitem(S.DEFAULT_EXPIRY, S.Volatility.SLOW, S.ExpiryBehavior.DECAY)
+    results = []
+    for arm, run in (("shipped", _shipped_expire), ("0048", lambda s, u, c, now: expire(s, u, c, now=now))):
+        s = SqliteStore(str(tmp_path / f"{arm}.db"))
+        s.add_edge(_edge("e", vol, conf))
+        _in_refusal(s, "e", role)
+        s.set_wiki(U, "cached", s.store_version(U))
+        before = s.store_version(U)
+        out = run(s, U, Duck(factor, floor), NOW)
+        edges, journal, version, wiki = _effects(s)
+        results.append((out, edges, journal, version - before, wiki))
+    assert results[1][4] is (case not in RETIRING), (case, role, "wiki cached" if results[1][4] else "wiki dropped")
+    assert results[0] == results[1], {"shipped": results[0], "0048": results[1]}
+
+
+@pytest.mark.parametrize("age", ["exactly the lifetime", "one day past it"])
+def test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary(tmp_path, age):
+    """A DIRECT call (research's stage-2 survivor: through expire() the listing applies the same skip, so an
+    exclusive `<` in the transition is invisible there): an edge exactly `lifetime` days old on its current row is not
+    due (None, nothing written, the store version unmoved); one day past it is."""
+    lifetimes = dict(MemoryConfig().volatility_lifetime_days)
+    days = lifetimes[S.Volatility.TRANSIENT] + (0 if age == "exactly the lifetime" else 1)
+    s = SqliteStore(str(tmp_path / "boundary.db"))
+    s.add_edge(_edge("e", S.Volatility.TRANSIENT, 0.9, observed=NOW - dt.timedelta(days=days)))
+    before = s.store_version(U)
+    out = s.expiry_transition(U, "e", now=NOW, lifetimes=lifetimes, behaviors=dict(S.DEFAULT_EXPIRY),
+                              decay_factor=0.5, confidence_floor=0.3)
+    if age == "exactly the lifetime":
+        assert (out, _row(s, "e").active, s.store_version(U)) == (None, True, before), out
+    else:
+        assert (out, _row(s, "e").active, s.store_version(U)) == ("lapsed", False, before + 1), out

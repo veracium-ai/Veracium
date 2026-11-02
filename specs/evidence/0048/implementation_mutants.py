@@ -57,6 +57,9 @@ OUT_OF_BOUND = C("test_the_store_refuses_an_out_of_bound_edge")
 GATE = C("test_every_edge_write_goes_through_the_validating_serialiser")
 DECLARED = C("test_declared_bounds_hold_on_every_write_path")
 TRIPWIRE = f"{EVT}::test_every_tripwire_hit_on_this_tree_is_classified"
+REFUSAL_FX = lambda case, role: C(f"test_a_transition_of_an_edge_in_a_refusal_has_the_shipped_side_effects"  # noqa: E731
+                                  f"[{case}-{role}]")
+DUE_AT = lambda age: C(f"test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary[{age}]")  # noqa: E731
 
 _SET = "        if name in DECAY_BOUNDS:\n            validate_decay_bound(name, value)\n"
 _V = '    decay_factor = validate_decay_bound("decay_factor", config.decay_factor)\n'
@@ -96,6 +99,9 @@ _STALE = '            _stale = (getattr(self, "_listed", {}).get(edge_id), 1)\n'
 _DECAY_RETIRE = '                    self._invalidate_edge_row(edge_id, now, "decayed")     # stored confidence unchanged (N4i)\n'
 _INV_WRITER = "        edge.invalidation_reason = reason\n        new_json = _validated_edge_json(edge)\n"
 _NEW_IMPORT = "\nimport re\n"
+_WIKI = '            if outcome in ("lapsed", "decayed") and self._edge_in_refusal(user_id, edge_id):\n'
+_DUE = ("            if lifetime is None or (now - e.provenance.observed_at).days <= lifetime:\n"
+        "                return None\n")
 
 # (id, kind, file, [(anchor, replacement)], named cells, honest nodes, reason or None, what)
 MUTANTS = [
@@ -243,6 +249,27 @@ MUTANTS = [
      [C("test_a_change_between_listing_and_transition_is_decided_on_the_current_row[made permanent]")],
      [C("test_a_transitions_side_effects_equal_the_shipped_paths[not due]")], None,
      "the store version bumped before the transition knows it writes: a transition that writes nothing moves it"),
+    ("D-wiki-drop-on-lapse-only", "product", SQ,
+     [(_WIKI, '            if outcome == "lapsed" and self._edge_in_refusal(user_id, edge_id):\n')],
+     [REFUSAL_FX("decay below the floor", "prior"), REFUSAL_FX("decay below the floor", "incoming")],
+     [REFUSAL_FX("lapse", "prior")], None,
+     "a decay that retires an edge in a refusal keeps the wiki: 0003 §4c-ii's resolution event missed (research's "
+     "stage-2 mark on 574f130)"),
+    ("D-wiki-drop-removed", "product", SQ,
+     [(_WIKI, "            if False and self._edge_in_refusal(user_id, edge_id):\n")],
+     [REFUSAL_FX("lapse", "prior"), REFUSAL_FX("lapse", "incoming"), REFUSAL_FX("decay below the floor", "prior")],
+     [REFUSAL_FX("not due", "prior")], None,
+     "no retiring transition drops the wiki (research's stage-2 mark on 574f130)"),
+    ("D-wiki-drop-outcome-blind", "product", SQ,
+     [(_WIKI, "            if self._edge_in_refusal(user_id, edge_id):\n")],
+     [REFUSAL_FX("flag", "prior"), REFUSAL_FX("decay retained", "incoming")], [REFUSAL_FX("lapse", "prior")], None,
+     "the drop applied to every writing outcome: a flag or a retained decay of an edge in a refusal drops the wiki "
+     "(the next mutant of the drop's guard)"),
+    ("D-due-boundary-exclusive", "product", SQ,
+     [(_DUE, _DUE.replace("<= lifetime", "< lifetime"))],
+     [DUE_AT("exactly the lifetime")], [DUE_AT("one day past it")], None,
+     "the transition's due-ness exclusive: an edge exactly `lifetime` days old on its current row is transitioned "
+     "(equivalent through expire(), whose listing skips it; research's stage-2 survivor)"),
     ("N4c-iii-a-copy-site-not-declared", "product", G,
      [(_NEW_IMPORT, "\ndef _planted_raise(p):\n    return p.model_copy(update={\"confidence\": p.confidence * 2.0})\n"
                     + _NEW_IMPORT)],
