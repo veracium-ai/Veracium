@@ -787,7 +787,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # disclosure): a USER-effective declarative triple whose every non-`user` side the event shows only in a
         # turn it labels for a non-user speaker gets the class ASSISTANT authorship would have given it
         speaker_restricted = (user_effective and not row.get("procedural") and disclosure == Disclosure.MENTIONABLE
-                              and _speaker_backstop.speaker_restricts(row["subject"], obj, event_text))
+                              and _speaker_backstop.speaker_restricts(row["subject"], obj, event_text,
+                                                                       relation=relation, session_date=date))
         if speaker_restricted:
             disclosure = Disclosure.USE_ONLY
         agr = agreement.derive_record(note_str, obj, disclosure,

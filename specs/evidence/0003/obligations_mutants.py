@@ -40,9 +40,12 @@ M = "src/veracium/__init__.py"
 X = "src/veracium/proactive.py"
 D = "src/veracium/doctor.py"
 P = "src/veracium/prompts.py"
+SB = "src/veracium/speaker_backstop.py"
+S = "src/veracium/schema.py"
+I = "src/veracium/ingest.py"   # noqa: E741
 T = "tests/test_0003_obligations.py"
 SUBJECT = "obligations"
-DIGESTED = (G, M, X, D, P, T, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
+DIGESTED = (G, M, X, D, P, SB, S, I, T, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
 
 C = lambda name: f"{T}::{name}"                                                       # noqa: E731
 OB2 = C("test_ob2_a_reschedule_is_contested_with_one_refusal_row")
@@ -72,6 +75,19 @@ N2 = C("test_n2_a_clamped_group_is_one_clamped_item")
 N2_CONTROL = C("test_n2_a_group_beside_a_clamped_plain_commitment_is_two_clamped_items")
 N3_ORDER = C("test_n3_a_group_sorts_at_its_nearest_due_date")
 N3_TIE = C("test_n3_groups_tied_on_their_nearest_date_sort_newest_observation_first")
+B1_ROW = lambda row, form: C(                                                         # noqa: E731
+    f"test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[{row}-{form}]")
+B1_E2E = lambda row: C(f"test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[{row}]")  # noqa: E731
+B1_USER = C("test_b1_a_user_stated_date_under_a_named_obligation_is_volunteered")
+B1_OTHER_PARTY = C("test_b1_another_partys_deadline_keeps_the_every_side_rule")
+B1_ENTITY = C("test_b1_a_non_obligation_triple_keeps_both_its_sides_judged")
+B2_GENERIC = lambda form: C(f"test_b2_a_generic_query_reaches_a_commitment_in_either_form[{form}]")    # noqa: E731
+B2_ASOF = lambda form: C(f"test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[{form}]")      # noqa: E731
+B2_ENTITY = lambda i: C(f"test_b2_an_entity_edge_still_needs_a_token_match[{i}]")                    # noqa: E731
+B2_RANK = C("test_b2_an_obligation_ranks_as_a_subject_user_fact_does")
+IS_OB = lambda i: C(f"test_is_obligation_over_its_domain[{i}]")                      # noqa: E731
+XCHK = lambda i: C(f"test_is_obligation_and_subject_class_name_one_user[{i}]")       # noqa: E731
+UN, NA = "subject-user", "subject-named"
 
 _SUBJECT_AXIS = '            elif (subject_class(edge.user_id, prior.subject) == "OTHER"\n'
 _CARRIER = "            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups])"
@@ -183,6 +199,70 @@ MUTANTS = [
      [(_RULE, ""), ("\ndef date_context(", '\nOBLIGATION_RULE = """- A dated obligation the user states ..."""\n\n\n'
                                           'def date_context(')],
      [OB6], [NAMES], None, "the extraction rule in a constant the extractor is never sent"),
+    # the 0.29.0 release blockers B1+B2 (research's notes read on fc9cc15, 1eb722a9; the owner: "Hold; fix B1+B2
+    # first (Recommended)"): the obligation form keeps the speaker backstop and the lexical eligibility 0.28.0's
+    # subject-`user` form had
+    ("B1-token-rule-kept", "product", SB,
+     [("    if (relation == OBLIGATION_RELATION and session_date is not None\n",
+       "    if (False and relation == OBLIGATION_RELATION and session_date is not None\n")],
+     [B1_ROW("user-words-assistant-echoes-iso", UN), B1_ROW("assistant-only-iso", NA),
+      B1_ROW("assistant-only-words", UN), B1_ROW("assistant-only-words", NA),
+      B1_E2E("assistant-only-iso"), B1_E2E("assistant-only-words")],
+     [B1_ROW("user-words-assistant-words", UN), B1_ROW("user-words-assistant-words", NA), B1_USER], None,
+     "an obligation is judged by 0051's every-side token rule (the pre-fix backstop: B1)"),
+    ("B1-whole-event-grounding", "product", SB,
+     [("    return (grounding.ungrounded(obj, user_text, session_date)\n",
+       "    return (grounding.ungrounded(obj, user_text + \"\\n\" + other_text, session_date)\n")],
+     [B1_ROW("assistant-only-iso", UN), B1_ROW("assistant-only-iso", NA),
+      B1_ROW("assistant-only-words", UN), B1_ROW("assistant-only-words", NA)],
+     [B1_ROW("user-words-assistant-echoes-iso", UN), B1_USER], None,
+     "the user side is grounded over the WHOLE event, so the assistant's words ground it"),
+    ("B1-user-condition-alone", "product", SB,
+     [("            and not grounding.ungrounded(obj, other_text, session_date))\n", ")\n")],
+     [B1_ROW("in-no-turn", UN), B1_ROW("in-no-turn", NA)],
+     [B1_ROW("assistant-only-words", NA), B1_USER], None,
+     "a date no side grounds is restricted (the non-user condition dropped)"),
+    ("B1-subject-user-form-excluded", "product", SB,
+     [("            and (str(subject).strip().casefold() == \"user\" or is_obligation(subject, relation))):\n",
+       "            and is_obligation(subject, relation)):\n")],
+     [B1_ROW("user-words-assistant-echoes-iso", UN), B1_ROW("assistant-only-words", UN)],
+     [B1_ROW("assistant-only-words", NA)], None, "only the named form is judged by its date; subject `user` keeps tokens"),
+    ("B1-caller-drops-the-relation", "product", I,
+     [("relation=relation, session_date=date))", "session_date=date))")],
+     [B1_ROW("assistant-only-iso", NA), B1_ROW("assistant-only-words", NA), B1_ROW("assistant-only-words", UN)],
+     [B1_ROW("user-words-assistant-words", NA)], None, "ingest calls the backstop without the relation"),
+    ("B1-caller-drops-the-date", "product", I,
+     [("relation=relation, session_date=date))", "relation=relation))")],
+     [B1_ROW("assistant-only-iso", NA), B1_ROW("assistant-only-words", NA), B1_ROW("assistant-only-words", UN)],
+     [B1_ROW("user-words-assistant-words", NA)], None, "ingest calls the backstop without the session date"),
+    ("B2-scorer-drops-the-obligation", "product", G,
+     [("        if e.subject == \"user\" or is_obligation(e.subject, e.relation):\n",
+       "        if e.subject == \"user\":\n")],
+     [B2_GENERIC(NA), B2_ASOF(NA), B2_RANK], [B2_GENERIC(UN), B2_ENTITY("entity")], None,
+     "an obligation must match a query word to enter (B2, the pre-fix rule)"),
+    ("B2-obligation-takes-the-entity-base", "product", G,
+     [("        if e.subject == \"user\" or is_obligation(e.subject, e.relation):\n"
+       "            base = 1 + 2 * overlap      # eligible always; ranked by relevance\n",
+       "        if e.subject == \"user\":\n"
+       "            base = 1 + 2 * overlap      # eligible always; ranked by relevance\n"
+       "        elif is_obligation(e.subject, e.relation):\n"
+       "            base = 3 * overlap\n")],
+     [B2_GENERIC(NA), B2_ASOF(NA), B2_RANK], [B2_GENERIC(UN)], None, "an obligation is scored as an entity edge"),
+    ("PRED-every-relation", "product", S,
+     [("    return relation == OBLIGATION_RELATION and s != \"user\" and not _KIND_PREFIX.match(s)\n",
+       "    return s != \"user\" and not _KIND_PREFIX.match(s)\n")],
+     [IS_OB("located_at"), IS_OB("scope"), IS_OB("Deadline")], [B2_GENERIC(NA)], None,
+     "any relation with a named subject is an obligation"),
+    ("PRED-entity-ref-included", "product", S,
+     [("    return relation == OBLIGATION_RELATION and s != \"user\" and not _KIND_PREFIX.match(s)\n",
+       "    return relation == OBLIGATION_RELATION and s != \"user\"\n")],
+     [IS_OB("person-ref"), IS_OB("org-ref"), IS_OB("Person-ref"), XCHK("person-ref"),
+      B2_ENTITY("another-partys-deadline"), B1_OTHER_PARTY], [B2_GENERIC(NA), B1_ENTITY], None,
+     "another party's deadline (person:alice) is read as the user's obligation (research 8b0de7d2)"),
+    ("PRED-case-sensitive", "product", S,
+     [("    s = str(subject).strip().casefold()\n", "    s = str(subject)\n")],
+     [IS_OB("User"), IS_OB("padded-user"), IS_OB("Person-ref"), XCHK("User"), XCHK("padded-USER")],
+     [IS_OB("named")], None, "\"User\" is read as an obligation, not as the user (0011 E1 disagrees)"),
 ]
 
 
@@ -202,6 +282,9 @@ CONTROLS = [
     _noop(X, "def _commitment_subject(", _cells_of(X)),
     _noop(D, "def _check_obligation_chains(", _cells_of(D)),
     _noop(P, "def date_context(", _cells_of(P)),
+    _noop(SB, "def speaker_restricts(", _cells_of(SB)),
+    _noop(S, "def is_obligation(", _cells_of(S)),
+    _noop(I, "        speaker_restricted = (user_effective", _cells_of(I)),
     ("CTRL-unrelated-TypeError", X,
      [("    if contested:\n        _tier =",
        '    raise TypeError("an unrelated execution failure (classifier negative control)")\n'
@@ -211,7 +294,8 @@ CONTROLS = [
 
 SUBJECT_P = _protocol.Subject(
     spec="0003", finding=SUBJECT, table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
-    import_modules=("veracium.graph", "veracium", "veracium.proactive", "veracium.doctor", "veracium.prompts"),
+    import_modules=("veracium.graph", "veracium", "veracium.proactive", "veracium.doctor", "veracium.prompts",
+                    "veracium.speaker_backstop", "veracium.schema", "veracium.ingest"),
     import_specs=(), cells_files=(T,), kinds=("product",))
 
 definition_sha = _protocol.definition_sha

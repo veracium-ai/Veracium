@@ -359,24 +359,24 @@
   "line": 297,
   "statement": "return _SITE_ABSORB_UNRESOLVED.fire(False, \"unresolved\")"
  },
- "graph.py:collapse_for_render:1388:FILTER_RETURN": {
+ "graph.py:collapse_for_render:1390:FILTER_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0012 §4c (withhold) through site graph.collapse-for-render",
   "reviewer": "dev",
   "site": "graph.collapse-for-render",
   "class": "enforcement",
   "key": "graph.py:collapse_for_render:FILTER_RETURN:1",
-  "line": 1388,
+  "line": 1390,
   "statement": "return _SITE_COLLAPSE_FOR_RENDER.fire(([e for e in edges if e.id not in suppressed], info), \"withhold\", declined=bool(suppressed))"
  },
- "graph.py:_kept_by_acts:1313:BOOL_RETURN": {
+ "graph.py:_kept_by_acts:1315:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0047 §4e (collapse never hides a member carrying an act, nor one behind a withheld survivor) (withhold) through site graph.collapse.acted",
   "reviewer": "dev",
   "site": "graph.collapse.acted",
   "class": "enforcement",
   "key": "graph.py:_kept_by_acts:BOOL_RETURN:1",
-  "line": 1313,
+  "line": 1315,
   "statement": "return _SITE_COLLAPSE_ACTED.fire(snap is not None and (m.id in snap.acted or snap.withheld(survivor)"
  },
  "graph.py:plan_correction:368:RAISE": {
@@ -399,25 +399,15 @@
   "line": 380,
   "statement": "raise _SITE_CORRECTION_PRIOR_INACTIVE.fire(ValueError("
  },
- "graph.py:semantic_duplicate_of:859:RETURN_FALSE": {
+ "graph.py:semantic_duplicate_of:861:RETURN_FALSE": {
   "decision": "enforcement",
   "reason": "enforces 0012 §4c (withhold) through site graph.semantic-duplicate.keep",
   "reviewer": "dev",
   "site": "graph.semantic-duplicate.keep",
   "class": "enforcement",
   "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:1",
-  "line": 859,
+  "line": 861,
   "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"inactive\")"
- },
- "graph.py:semantic_duplicate_of:865:RETURN_FALSE": {
-  "decision": "enforcement",
-  "reason": "enforces 0012 §4c (withhold) through site graph.semantic-duplicate.keep",
-  "reviewer": "dev",
-  "site": "graph.semantic-duplicate.keep",
-  "class": "enforcement",
-  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:2",
-  "line": 865,
-  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"envelope\")"
  },
  "graph.py:semantic_duplicate_of:867:RETURN_FALSE": {
   "decision": "enforcement",
@@ -425,9 +415,9 @@
   "reviewer": "dev",
   "site": "graph.semantic-duplicate.keep",
   "class": "enforcement",
-  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:3",
+  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:2",
   "line": 867,
-  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"value\")"
+  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"envelope\")"
  },
  "graph.py:semantic_duplicate_of:869:RETURN_FALSE": {
   "decision": "enforcement",
@@ -435,9 +425,9 @@
   "reviewer": "dev",
   "site": "graph.semantic-duplicate.keep",
   "class": "enforcement",
-  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:4",
+  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:3",
   "line": 869,
-  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"not-strictly-redundant\")"
+  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"value\")"
  },
  "graph.py:semantic_duplicate_of:871:RETURN_FALSE": {
   "decision": "enforcement",
@@ -445,9 +435,9 @@
   "reviewer": "dev",
   "site": "graph.semantic-duplicate.keep",
   "class": "enforcement",
-  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:5",
+  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:4",
   "line": 871,
-  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"flag-carrier\")"
+  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"not-strictly-redundant\")"
  },
  "graph.py:semantic_duplicate_of:873:RETURN_FALSE": {
   "decision": "enforcement",
@@ -455,8 +445,18 @@
   "reviewer": "dev",
   "site": "graph.semantic-duplicate.keep",
   "class": "enforcement",
-  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:6",
+  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:5",
   "line": 873,
+  "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"flag-carrier\")"
+ },
+ "graph.py:semantic_duplicate_of:875:RETURN_FALSE": {
+  "decision": "enforcement",
+  "reason": "enforces 0012 §4c (withhold) through site graph.semantic-duplicate.keep",
+  "reviewer": "dev",
+  "site": "graph.semantic-duplicate.keep",
+  "class": "enforcement",
+  "key": "graph.py:semantic_duplicate_of:RETURN_FALSE:6",
+  "line": 875,
   "statement": "return _SITE_SEMDUP_KEEP.fire(False, \"grounding-carrier\")"
  },
  "graph.py:_build_supersession_plan._src_revoked:439:RETURN_FALSE": {
@@ -479,14 +479,14 @@
   "line": 443,
   "statement": "return _SITE_SRC_REVOKED.fire(d is not None and d in standing, \"revoked\")"
  },
- "graph.py:_strictly_redundant:1231:BOOL_RETURN": {
+ "graph.py:_strictly_redundant:1233:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0012 §4c (withhold) through site graph.strictly-redundant",
   "reviewer": "dev",
   "site": "graph.strictly-redundant",
   "class": "enforcement",
   "key": "graph.py:_strictly_redundant:BOOL_RETURN:1",
-  "line": 1231,
+  "line": 1233,
   "statement": "return (_SITE_STRICTLY_REDUNDANT.fire((m.note == \"\" or m.note == survivor.note)"
  },
  "graph.py:apply_supersession:194:RAISE": {
@@ -1659,94 +1659,94 @@
   "line": 101,
   "statement": "raise _SITE_RESERVED_SHADOWED.fire(RegistryError("
  },
- "schema.py:Edge.assertable:976:BOOL_RETURN": {
+ "schema.py:Edge.assertable:996:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0001 §4 (withhold) through site schema.edge.assertable",
   "reviewer": "dev",
   "site": "schema.edge.assertable",
   "class": "enforcement",
   "key": "schema.py:Edge.assertable:BOOL_RETURN:1",
-  "line": 976,
+  "line": 996,
   "statement": "return ok                                     # ONE return: the same exit statement in every arm (INV-7)"
  },
- "schema.py:Edge.quarantined:922:BOOL_RETURN": {
+ "schema.py:Edge.quarantined:942:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0001 §4 (quarantine) through site schema.edge.quarantined",
   "reviewer": "dev",
   "site": "schema.edge.quarantined",
   "class": "enforcement",
   "key": "schema.py:Edge.quarantined:BOOL_RETURN:1",
-  "line": 922,
+  "line": 942,
   "statement": "return q                                        # ONE return: the exit statement is the same in every arm (INV-7)"
  },
- "schema.py:Edge.use_only:934:BOOL_RETURN": {
+ "schema.py:Edge.use_only:954:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0001 §4 (withhold) through site schema.edge.use-only",
   "reviewer": "dev",
   "site": "schema.edge.use-only",
   "class": "enforcement",
   "key": "schema.py:Edge.use_only:BOOL_RETURN:1",
-  "line": 934,
+  "line": 954,
   "statement": "return u                                     # ONE return: the same exit statement in every arm (INV-7)"
  },
- "schema.py:Edge.valid_now:958:BOOL_RETURN": {
+ "schema.py:Edge.valid_now:978:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0028 S2 (withhold) through site schema.edge.valid-now",
   "reviewer": "dev",
   "site": "schema.edge.valid-now",
   "class": "enforcement",
   "key": "schema.py:Edge.valid_now:BOOL_RETURN:1",
-  "line": 958,
+  "line": 978,
   "statement": "return v                                      # ONE return: the same exit statement in every arm (INV-7)"
  },
- "schema.py:Episode.active:1057:BOOL_RETURN": {
+ "schema.py:Episode.active:1077:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0022 §4b-ii (withhold) through site schema.episode.active",
   "reviewer": "dev",
   "site": "schema.episode.active",
   "class": "enforcement",
   "key": "schema.py:Episode.active:BOOL_RETURN:1",
-  "line": 1057,
+  "line": 1077,
   "statement": "return _SITE_EPISODE_ACTIVE.fire(self.retired_reason is None)"
  },
- "schema.py:Episode.assertable:1076:BOOL_RETURN": {
+ "schema.py:Episode.assertable:1096:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0001 §4 (withhold) through site schema.episode.assertable",
   "reviewer": "dev",
   "site": "schema.episode.assertable",
   "class": "enforcement",
   "key": "schema.py:Episode.assertable:BOOL_RETURN:1",
-  "line": 1076,
+  "line": 1096,
   "statement": "return _SITE_EPISODE_ASSERTABLE.fire((self.active and not self.quarantined and not self.use_only"
  },
- "schema.py:Episode.quarantined:1039:BOOL_RETURN": {
+ "schema.py:Episode.quarantined:1059:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0001 §4 (quarantine) through site schema.episode.quarantined",
   "reviewer": "dev",
   "site": "schema.episode.quarantined",
   "class": "enforcement",
   "key": "schema.py:Episode.quarantined:BOOL_RETURN:1",
-  "line": 1039,
+  "line": 1059,
   "statement": "return _SITE_EPISODE_QUARANTINED.fire(self.provenance.disclosure == Disclosure.QUARANTINED)"
  },
- "schema.py:Episode.use_only:1050:BOOL_RETURN": {
+ "schema.py:Episode.use_only:1070:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0001 §4 (withhold) through site schema.episode.use-only",
   "reviewer": "dev",
   "site": "schema.episode.use-only",
   "class": "enforcement",
   "key": "schema.py:Episode.use_only:BOOL_RETURN:1",
-  "line": 1050,
+  "line": 1070,
   "statement": "return _SITE_EPISODE_USE_ONLY.fire((self.provenance.disclosure == Disclosure.USE_ONLY"
  },
- "schema.py:Episode.valid_now:1084:BOOL_RETURN": {
+ "schema.py:Episode.valid_now:1104:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0028 S2 (withhold) through site schema.episode.valid-now",
   "reviewer": "dev",
   "site": "schema.episode.valid-now",
   "class": "enforcement",
   "key": "schema.py:Episode.valid_now:BOOL_RETURN:1",
-  "line": 1084,
+  "line": 1104,
   "statement": "return _SITE_EPISODE_VALID_NOW.fire(self.date[:10] <= utcnow().date().isoformat())"
  },
  "scope_linkage.py:derive_absorbed_by:535:RAISE": {
@@ -4339,13 +4339,13 @@
   "line": 78,
   "statement": "raise ValueError("
  },
- "graph.py:fused_subgraph:920:RAISE": {
+ "graph.py:fused_subgraph:922:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "graph.py:fused_subgraph:RAISE:1",
-  "line": 920,
+  "line": 922,
   "statement": "raise ValueError(f\"policy_rank[{eid!r}] must be an int >= 1, got {rank!r}\")"
  },
  "ingest.py:_event_dt:129:RAISE": {
@@ -4663,175 +4663,175 @@
   "line": 71,
   "statement": "raise RegistryError(f\"key {k!r} != Relation.name {v.name!r} — \""
  },
- "schema.py:AgreementRecord._direction_closed:439:RAISE": {
+ "schema.py:AgreementRecord._direction_closed:440:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:AgreementRecord._direction_closed:RAISE:1",
-  "line": 439,
+  "line": 440,
   "statement": "raise ValueError(f\"direction {v!r} outside the closed set \""
  },
- "schema.py:AgreementRecord._lexicon_pattern:448:RAISE": {
+ "schema.py:AgreementRecord._lexicon_pattern:449:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:AgreementRecord._lexicon_pattern:RAISE:1",
-  "line": 448,
+  "line": 449,
   "statement": "raise ValueError(f\"lexicon version {v!r} does not match the \""
  },
- "schema.py:AgreementRecord._markers_closed:428:RAISE": {
+ "schema.py:AgreementRecord._markers_closed:429:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:AgreementRecord._markers_closed:RAISE:1",
-  "line": 428,
+  "line": 429,
   "statement": "raise ValueError(f\"markers[{i}] length {len(tok)} \""
  },
- "schema.py:AgreementRecord._markers_closed:431:RAISE": {
+ "schema.py:AgreementRecord._markers_closed:432:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:AgreementRecord._markers_closed:RAISE:2",
-  "line": 431,
+  "line": 432,
   "statement": "raise ValueError(f\"markers[{i}] duplicates {tok!r}\")"
  },
- "schema.py:Edge._grounding_axis_is_well_formed:865:RAISE": {
+ "schema.py:Edge._grounding_axis_is_well_formed:885:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:Edge._grounding_axis_is_well_formed:RAISE:1",
-  "line": 865,
+  "line": 885,
   "statement": "raise ValueError(f\"attv {self.attv!r} is outside its grammar (specs/0045 §2c)\")"
  },
- "schema.py:Edge._grounding_axis_is_well_formed:867:RAISE": {
+ "schema.py:Edge._grounding_axis_is_well_formed:887:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:Edge._grounding_axis_is_well_formed:RAISE:2",
-  "line": 867,
+  "line": 887,
   "statement": "raise ValueError(\"attv and src are written only with att (specs/0045 §2)\")"
  },
- "schema.py:Edge._grounding_axis_is_well_formed:869:RAISE": {
+ "schema.py:Edge._grounding_axis_is_well_formed:889:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:Edge._grounding_axis_is_well_formed:RAISE:3",
-  "line": 869,
+  "line": 889,
   "statement": "raise ValueError(\"a procedural edge carries no att, src or attv (specs/0045 §4c, INV-G12)\")"
  },
- "schema.py:EvidenceContext.__init__:320:RAISE": {
+ "schema.py:EvidenceContext.__init__:321:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:EvidenceContext.__init__:RAISE:1",
-  "line": 320,
+  "line": 321,
   "statement": "raise ValueError("
  },
- "schema.py:EvidenceContext.__init__:328:RAISE": {
+ "schema.py:EvidenceContext.__init__:329:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:EvidenceContext.__init__:RAISE:2",
-  "line": 328,
+  "line": 329,
   "statement": "raise TypeError("
  },
- "schema.py:EvidenceContext.__init__:332:RAISE": {
+ "schema.py:EvidenceContext.__init__:333:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:EvidenceContext.__init__:RAISE:3",
-  "line": 332,
+  "line": 333,
   "statement": "raise ValueError("
  },
- "schema.py:EvidenceContext.__init__:337:RAISE": {
+ "schema.py:EvidenceContext.__init__:338:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:EvidenceContext.__init__:RAISE:4",
-  "line": 337,
+  "line": 338,
   "statement": "raise ValueError("
  },
- "schema.py:EvidenceContext.__init__:342:RAISE": {
+ "schema.py:EvidenceContext.__init__:343:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:EvidenceContext.__init__:RAISE:5",
-  "line": 342,
+  "line": 343,
   "statement": "raise ValueError("
  },
- "schema.py:EvidenceContext.__init__:347:RAISE": {
+ "schema.py:EvidenceContext.__init__:348:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:EvidenceContext.__init__:RAISE:6",
-  "line": 347,
+  "line": 348,
   "statement": "raise TypeError("
  },
- "schema.py:Provenance._producer_only_on_procedural:253:RAISE": {
+ "schema.py:Provenance._producer_only_on_procedural:254:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:Provenance._producer_only_on_procedural:RAISE:1",
-  "line": 253,
+  "line": 254,
   "statement": "raise ValueError(\"producer is set only on a procedural record \""
  },
- "schema.py:Relation._arity_and_functional_agree:528:RAISE": {
+ "schema.py:Relation._arity_and_functional_agree:529:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:Relation._arity_and_functional_agree:RAISE:1",
-  "line": 528,
+  "line": 529,
   "statement": "raise ValueError(f\"relation {data.get('name')!r} declares functional={data['functional']!r} and \""
  },
- "schema.py:SuccessorLookup.__init__:787:RAISE": {
+ "schema.py:SuccessorLookup.__init__:807:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:SuccessorLookup.__init__:RAISE:1",
-  "line": 787,
+  "line": 807,
   "statement": "raise TypeError(f\"disposition must be a SuccessorDisposition, got {disposition!r}\")"
  },
- "schema.py:as_utc_required:52:RAISE": {
+ "schema.py:as_utc_required:53:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:as_utc_required:RAISE:1",
-  "line": 52,
+  "line": 53,
   "statement": "raise TypeError(f\"a datetime is required, got {type(value).__name__}\")"
  },
- "schema.py:as_utc_required:56:RAISE": {
+ "schema.py:as_utc_required:57:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:as_utc_required:RAISE:2",
-  "line": 56,
+  "line": 57,
   "statement": "raise TypeError(f\"a datetime is required, got {type(value).__name__}\")"
  },
- "schema.py:validate_correlation_id:132:RAISE": {
+ "schema.py:validate_correlation_id:133:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "schema.py:validate_correlation_id:RAISE:1",
-  "line": 132,
+  "line": 133,
   "statement": "raise ValueError("
  },
  "scope.py:Identity.__post_init__:154:RAISE": {
@@ -5392,13 +5392,13 @@
   "line": 89,
   "statement": "return edges, n_episodes"
  },
- "graph.py:_stage4_and_5:1084:FILTER_RETURN": {
+ "graph.py:_stage4_and_5:1086:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "graph.py:_stage4_and_5:FILTER_RETURN:1",
-  "line": 1084,
+  "line": 1086,
   "statement": "return _permute_contention_groups(ordered, relations), reserved_ids"
  },
  "graph.py:_tokens:671:FILTER_RETURN": {
@@ -5410,31 +5410,31 @@
   "line": 671,
   "statement": "return {_stem(w) for w in re.findall(r\"[a-z0-9]+\", text.lower())"
  },
- "graph.py:_within_episode_drafts:1243:FILTER_RETURN": {
+ "graph.py:_within_episode_drafts:1245:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "graph.py:_within_episode_drafts:FILTER_RETURN:1",
-  "line": 1243,
+  "line": 1245,
   "statement": "return [SupersessionRefusalDraft(prior_edge_id=p.id, incoming_edge_id=incoming.id, relation=incoming.relation,"
  },
- "graph.py:fused_subgraph._order:941:FILTER_RETURN": {
+ "graph.py:fused_subgraph._order:943:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "graph.py:fused_subgraph._order:FILTER_RETURN:1",
-  "line": 941,
+  "line": 943,
   "statement": "return sorted(score, key=lambda i: (-score[i], -by_id[i].provenance.observed_at.timestamp(), i))"
  },
- "graph.py:within_episode_order:1281:FILTER_RETURN": {
+ "graph.py:within_episode_order:1283:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "graph.py:within_episode_order:FILTER_RETURN:1",
-  "line": 1281,
+  "line": 1283,
   "statement": "return ordered, len(contested)"
  },
  "grounding.py:resolution_set:154:FILTER_RETURN": {
@@ -5671,13 +5671,13 @@
   "line": 369,
   "statement": "return None"
  },
- "schema.py:as_utc_optional:64:RETURN_NONE": {
+ "schema.py:as_utc_optional:65:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "schema.py:as_utc_optional:RETURN_NONE:1",
-  "line": 64,
+  "line": 65,
   "statement": "return None"
  },
  "scope.py:_group_of_digest:690:RETURN_NONE": {
@@ -6553,67 +6553,67 @@
   "line": 62,
   "statement": "raise EmptyCompletion("
  },
- "schema.py:<module>:723:RAISE": {
+ "schema.py:<module>:743:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:<module>:RAISE:1",
-  "line": 723,
+  "line": 743,
   "statement": "raise ImportError("
  },
- "schema.py:<module>:728:RAISE": {
+ "schema.py:<module>:748:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:<module>:RAISE:2",
-  "line": 728,
+  "line": 748,
   "statement": "raise ImportError(\"AS_OF_DISPOSITION carries a value outside the three closed dispositions\")"
  },
- "schema.py:<module>:751:RAISE": {
+ "schema.py:<module>:771:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:<module>:RAISE:3",
-  "line": 751,
+  "line": 771,
   "statement": "raise ImportError("
  },
- "schema.py:<module>:756:RAISE": {
+ "schema.py:<module>:776:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:<module>:RAISE:4",
-  "line": 756,
+  "line": 776,
   "statement": "raise ImportError(\"NAMES_A_SUCCESSOR carries a value that is not a boolean\")"
  },
- "schema.py:EvidenceContext.__setattr__:356:RAISE": {
+ "schema.py:EvidenceContext.__setattr__:357:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:EvidenceContext.__setattr__:RAISE:1",
-  "line": 356,
+  "line": 357,
   "statement": "raise AttributeError(\"EvidenceContext is immutable\")"
  },
- "schema.py:SuccessorLookup.__setattr__:792:RAISE": {
+ "schema.py:SuccessorLookup.__setattr__:812:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:SuccessorLookup.__setattr__:RAISE:1",
-  "line": 792,
+  "line": 812,
   "statement": "raise AttributeError(\"SuccessorLookup is immutable\")"
  },
- "schema.py:_check_assertion_view_partition:1451:RAISE": {
+ "schema.py:_check_assertion_view_partition:1471:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "schema.py:_check_assertion_view_partition:RAISE:1",
-  "line": 1451,
+  "line": 1471,
   "statement": "raise ImportError("
  },
  "scope.py:_canonical_groups_ok:229:RETURN_FALSE": {
@@ -9165,7 +9165,7 @@
  },
  "attest_turns.py:user_text:118:RETURN_NONE": {
   "decision": "not",
-  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by attest_turns.py:attests",
+  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by attest_turns.py:attests, speaker_backstop.py:_date_restricts",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "attest_turns.py:user_text:RETURN_NONE:1",
@@ -9532,76 +9532,85 @@
   "line": 250,
   "statement": "return not ((set(would) & set(fields)) - _NOT_RECORD_CARRIERS)"
  },
- "schema.py:Edge.active:906:BOOL_RETURN": {
+ "schema.py:Edge.active:926:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by __init__.py:Memory._recall [site memory.recall.policy-with-as-of]; __init__.py:Memory.correct [site memory.correct.inactive-edge, memory.correct.procedural, memory.correct.refused]; __init__.py:Memory.dispute [site memory.dispute.inactive-edge]; gate.py:partition_parts [site gate.partition-parts]; graph.py:collapse_for_render [site graph.collapse-for-render]; graph.py:semantic_duplicate_of [site graph.semantic-duplicate.keep]; portability.py:_arity_preflight [site portability.import.arity-preflight]; schema.py:Edge.assertable [site schema.edge.assertable]; schema.py:Episode.assertable [site schema.episode.assertable]; store/sqlite.py:SqliteStore._redact_in_txn [site store.redact.disposition-changed, store.redact.input-claimed, store.redact.nothing-to-redact]; store/sqlite.py:SqliteStore._upsert_edge_row [site store.upsert.attested-redaction, store.upsert.immutable, store.upsert.invalidation-reason-not-registered, store.upsert.marker-introduced, store.upsert.relation-only-quarantine]; store/sqlite.py:SqliteStore.commit_outcome_import_plan [site store.import-plan, store.import.attested-redaction, store.import.episode-kind-not-recognised, store.import.notice-body-conflict, store.import.notice-record-unredacted, store.import.reason-not-registered, store.import.reserved-id]; and by __init__.py:Memory._build_contested, __init__.py:Memory._fit_to_budget, authority.py:scope_fingerprint, compile.py:_live_refusal_contention_edge_ids, graph.py:_lexical_scored, graph.py:_permute_contention_groups, graph.py:history_label, graph.py:render_edges, introspect.py:report, procedures.py:describe_outcome, selfcheck.py:_check_revocation, selfcheck.py:_check_supersession, store/migration.py:_arity_inventory_problems, store/revocation.py:_edge_record, why.py:find (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:Edge.active:BOOL_RETURN:1",
-  "line": 906,
+  "line": 926,
   "statement": "return self.invalidated_at is None"
  },
- "schema.py:EvidenceContext.__eq__:369:BOOL_RETURN": {
+ "schema.py:EvidenceContext.__eq__:370:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no product consumer — the language's == operator (record equality); no product decision consumes it",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:EvidenceContext.__eq__:BOOL_RETURN:1",
-  "line": 369,
+  "line": 370,
   "statement": "return (isinstance(other, EvidenceContext)"
  },
- "schema.py:Provenance.procedural:280:BOOL_RETURN": {
+ "schema.py:Provenance.procedural:281:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by ingest.py:ingest_event [site ingest.basis-via-remember, ingest.instructions-not-a-list, ingest.source-id-required]; store/sqlite.py:SqliteStore.add_reply [site store.reply.actor, store.reply.kind, store.reply.marker, store.reply.procedural-edge, store.reply.redacted-edge, store.reply.resolve-repeat, store.reply.resolve-target, store.reply.shape, store.reply.unknown-edge]; and by attestation.py:declarative_grounding, challenge.py:ChallengeSnapshot._withholders, schema.py:Edge._grounding_axis_is_well_formed, schema.py:is_procedural (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:Provenance.procedural:BOOL_RETURN:1",
-  "line": 280,
+  "line": 281,
   "statement": "return self.record_kind == \"procedural\" or self.basis is not None"
  },
- "schema.py:Provenance.third_party_influenced:287:BOOL_RETURN": {
+ "schema.py:Provenance.third_party_influenced:288:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by schema.py:Episode.use_only [site schema.episode.use-only]; and by store/sqlite.py:SqliteStore._derive_output_metadata (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:Provenance.third_party_influenced:BOOL_RETURN:1",
-  "line": 287,
+  "line": 288,
   "statement": "return (self.author_of_evidence == EvidenceAuthor.THIRD_PARTY"
  },
- "schema.py:SuccessorLookup.__eq__:797:BOOL_RETURN": {
+ "schema.py:SuccessorLookup.__eq__:817:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no product consumer — the language's == operator (record equality); no product decision consumes it",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:SuccessorLookup.__eq__:BOOL_RETURN:1",
-  "line": 797,
+  "line": 817,
   "statement": "return (self.disposition, self.successors) == (other.disposition, other.successors)"
  },
- "schema.py:assertion_view:686:RETURN_NONE": {
+ "schema.py:assertion_view:706:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:_unbound_by, store/sqlite.py:SqliteStore._evict_wiki_on_view_change",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:assertion_view:RETURN_NONE:1",
-  "line": 686,
+  "line": 706,
   "statement": "return None"
  },
- "schema.py:is_procedural_relation:597:BOOL_RETURN": {
+ "schema.py:is_obligation:625:BOOL_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by graph.py:_lexical_scored, speaker_backstop.py:speaker_restricts",
+  "reviewer": "dev",
+  "class": "predicate-helper",
+  "key": "schema.py:is_obligation:BOOL_RETURN:1",
+  "line": 625,
+  "statement": "return relation == OBLIGATION_RELATION and s != \"user\" and not _KIND_PREFIX.match(s)"
+ },
+ "schema.py:is_procedural_relation:598:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by ingest.py:ingest_event [site ingest.basis-via-remember, ingest.instructions-not-a-list, ingest.source-id-required]; portability.py:import_memory [site portability.import.agreement-invalid, portability.import.file, portability.import.origin-missing, portability.import.race-exhausted, portability.import.record, portability.import.restore-not-bool, portability.import.restore-with-user]; procedures.py:build_procedure_edge [site procedures.source-id-required]; and by portability.py:import_memory._signals (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:is_procedural_relation:BOOL_RETURN:1",
-  "line": 597,
+  "line": 598,
   "statement": "return r is not None and getattr(r, \"relation_kind\", \"declarative\") == \"procedural\""
  },
- "schema.py:wiki_drops_on:659:BOOL_RETURN": {
+ "schema.py:wiki_drops_on:679:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by schema.py:assertion_view, store/sqlite.py:SqliteStore._invalidate_edge_row",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "schema.py:wiki_drops_on:BOOL_RETURN:1",
-  "line": 659,
+  "line": 679,
   "statement": "return reason not in WIKI_RETAINING_REASONS"
  },
  "scope.py:is_legacy_derivative:387:BOOL_RETURN": {
@@ -9640,40 +9649,49 @@
   "line": 511,
   "statement": "return False"
  },
- "speaker_backstop.py:_occurs:41:BOOL_RETURN": {
+ "speaker_backstop.py:_date_restricts:58:BOOL_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by speaker_backstop.py:speaker_restricts",
+  "reviewer": "dev",
+  "class": "predicate-helper",
+  "key": "speaker_backstop.py:_date_restricts:BOOL_RETURN:1",
+  "line": 58,
+  "statement": "return (grounding.ungrounded(obj, user_text, session_date)"
+ },
+ "speaker_backstop.py:_occurs:47:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by attest_turns.py:only_in_non_user_turns, speaker_backstop.py:speaker_restricts",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "speaker_backstop.py:_occurs:BOOL_RETURN:1",
-  "line": 41,
+  "line": 47,
   "statement": "return n > 0 and any(toks[i:i + n] == value for i in range(len(toks) - n + 1))"
  },
- "speaker_backstop.py:_tokens:32:FILTER_RETURN": {
+ "speaker_backstop.py:_tokens:38:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by agreement.py:scan, attest_turns.py:_occurs, attest_turns.py:_side_tokens, graph.py:_lexical_scored, procedures.py:describe_procedures, procedures.py:describe_procedures._rel, speaker_backstop.py:_side, speaker_backstop.py:speaker_restricts",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "speaker_backstop.py:_tokens:FILTER_RETURN:1",
-  "line": 32,
+  "line": 38,
   "statement": "return [_stem(t) for t in _TOKEN.findall(attest_v3._norm_object(s.lower().replace(\"_\", \" \").replace(\"-\", \" \")))]"
  },
- "speaker_backstop.py:speaker_restricts:47:RETURN_FALSE": {
+ "speaker_backstop.py:speaker_restricts:66:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by ingest.py:ingest_event [site ingest.basis-via-remember, ingest.instructions-not-a-list, ingest.source-id-required]",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "speaker_backstop.py:speaker_restricts:RETURN_FALSE:1",
-  "line": 47,
+  "line": 66,
   "statement": "return False"
  },
- "speaker_backstop.py:speaker_restricts:51:RETURN_FALSE": {
+ "speaker_backstop.py:speaker_restricts:77:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by ingest.py:ingest_event [site ingest.basis-via-remember, ingest.instructions-not-a-list, ingest.source-id-required]",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "speaker_backstop.py:speaker_restricts:RETURN_FALSE:2",
-  "line": 51,
+  "line": 77,
   "statement": "return False"
  },
  "store/lifetime.py:same_retirement:59:BOOL_RETURN": {

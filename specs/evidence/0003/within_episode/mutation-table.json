@@ -1,5 +1,5 @@
 {
- "body_sha256": "323c0ba9b75814ddd13334a73562c8856f8318c1ddf7815faa1ac504af3fdd41",
+ "body_sha256": "b8f7a47f0087227fe5c3a2ebb3df48b90e2214117f61286d8b981ef83d7a348e",
  "controls": [
   {
    "anchor_counts": [
@@ -209,7 +209,7 @@
     "passed": 17
    }
   },
-  "commit": "809b5a5b7729968be0df01fae7abe56a090cc109",
+  "commit": "2088d0825c13277e31ea4213bd2ebf58f4648b4a",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "ae79327ed7f5b62d40f25c77d6ce0112554bedcc2141e0d1ce82b6764f658254",
    "NOOP-graph": "0279fb4a924c44bf08bdd266c57af3518fbd7277b0dcac1fe481a17d533b9506",
@@ -237,10 +237,10 @@
    "specs/evidence/0003/within_episode_mutants.py": "9d5357b44af9c9c19f54707de90689338c09924020be4c0b45c4afdb2c4900ae",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/graph.py": "cc5bfdeab09d38375386bcb89157a68c1100b55a28dda9f30550a189e86138d4",
-   "src/veracium/ingest.py": "b32fae65142aff6f2c15b0acc54a97f873671c97675caf514725c59224e4b6b8",
+   "src/veracium/graph.py": "2a328b107920979cf28cae4cdfc255915798157cd35035d88f63638f88a1c358",
+   "src/veracium/ingest.py": "85a8d7e57a0cc25fc419e22c4e2d2d01d6c12aa9a956639edbf11ff5f651a05e",
    "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
-   "src/veracium/schema.py": "936c1838943db7c0a997a61c6b1919c5a0d97c23fb1ebd8d3b77f4c73b6036da",
+   "src/veracium/schema.py": "e45299d399a9d50b0903c04ae2e16a2d36671a383476d2f8d1cc665d3440e6fa",
    "src/veracium/store/sqlite.py": "70106e5de0e99bdf88af55b16565e49d4de6cc7f0799bd8d473ec59d8bc88272",
    "tests/test_0003_within_episode.py": "869e49a51f9d330c8d91e3d33831df08a1019dad96437ad234342ab8306552f0"
   },
@@ -253,7 +253,21 @@
   "python": "3.14.7",
   "spec": "0003",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/graph.py",
+   "src/veracium/ingest.py",
+   "src/veracium/schema.py",
+   "src/veracium/speaker_backstop.py",
+   "tests/test_0003_obligations.py"
+  ]
  },
  "rows": [
   {
@@ -293,7 +307,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.90s",
+   "pytest": "4 failed in 2.15s",
    "reason": null,
    "reason_seen": null,
    "what": "per-edge supersession in emission order (the code before the amendment)"
@@ -329,7 +343,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.65s",
+   "pytest": "2 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the contest grouped by _value_key, not value_groups: a refinement reads as two values"
@@ -365,7 +379,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.68s",
+   "pytest": "2 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "the functional retire not withheld in a contested key"
@@ -399,7 +413,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "every functional key treated as contested (no supersession at all)"
@@ -444,7 +458,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 2.06s",
+   "pytest": "5 failed in 2.36s",
    "reason": null,
    "reason_seen": null,
    "what": "no within-episode refusal row is drafted"
@@ -477,7 +491,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the counter absent, not 0, on the unparseable path"
@@ -510,7 +524,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested key whose edges all reinforce records no row"
@@ -543,7 +557,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "a pair the ladder refused also drafted within-episode (two rows)"
@@ -577,7 +591,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the extraction rule in a constant the extractor is never sent"
@@ -610,7 +624,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.47s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the absent rule_version dumped as null (every ladder refusal's digest moves)"
@@ -643,7 +657,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "the store accepts a rule_version outside the closed set"
@@ -676,7 +690,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "absorption retires a differing-group edge in a contested key"
@@ -709,7 +723,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the contest decided over the episode's edges alone, not with the priors"
@@ -724,6 +738,6 @@
   "good": 13,
   "killed": 13,
   "rows": 13,
-  "seconds": 54
+  "seconds": 67
  }
 }

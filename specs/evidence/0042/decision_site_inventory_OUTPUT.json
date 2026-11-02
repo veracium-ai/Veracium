@@ -1375,13 +1375,7 @@
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 859,
-   "module": "graph.py",
-   "qualname": "semantic_duplicate_of"
-  },
-  {
-   "kind": "RETURN_FALSE",
-   "line": 865,
+   "line": 861,
    "module": "graph.py",
    "qualname": "semantic_duplicate_of"
   },
@@ -1410,51 +1404,57 @@
    "qualname": "semantic_duplicate_of"
   },
   {
+   "kind": "RETURN_FALSE",
+   "line": 875,
+   "module": "graph.py",
+   "qualname": "semantic_duplicate_of"
+  },
+  {
    "bare": false,
    "kind": "RAISE",
-   "line": 920,
+   "line": 922,
    "module": "graph.py",
    "qualname": "fused_subgraph"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 941,
+   "line": 943,
    "module": "graph.py",
    "qualname": "fused_subgraph._order"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1084,
+   "line": 1086,
    "module": "graph.py",
    "qualname": "_stage4_and_5"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1231,
+   "line": 1233,
    "module": "graph.py",
    "qualname": "_strictly_redundant"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1243,
+   "line": 1245,
    "module": "graph.py",
    "qualname": "_within_episode_drafts"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1281,
+   "line": 1283,
    "module": "graph.py",
    "qualname": "within_episode_order"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1313,
+   "line": 1315,
    "module": "graph.py",
    "qualname": "_kept_by_acts"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1388,
+   "line": 1390,
    "module": "graph.py",
    "qualname": "collapse_for_render"
   },
@@ -2703,290 +2703,296 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 52,
+   "line": 53,
    "module": "schema.py",
    "qualname": "as_utc_required"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 56,
+   "line": 57,
    "module": "schema.py",
    "qualname": "as_utc_required"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 64,
+   "line": 65,
    "module": "schema.py",
    "qualname": "as_utc_optional"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 132,
+   "line": 133,
    "module": "schema.py",
    "qualname": "validate_correlation_id"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 253,
+   "line": 254,
    "module": "schema.py",
    "qualname": "Provenance._producer_only_on_procedural"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 280,
+   "line": 281,
    "module": "schema.py",
    "qualname": "Provenance.procedural"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 287,
+   "line": 288,
    "module": "schema.py",
    "qualname": "Provenance.third_party_influenced"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 320,
+   "line": 321,
    "module": "schema.py",
    "qualname": "EvidenceContext.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 328,
+   "line": 329,
    "module": "schema.py",
    "qualname": "EvidenceContext.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 332,
+   "line": 333,
    "module": "schema.py",
    "qualname": "EvidenceContext.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 337,
+   "line": 338,
    "module": "schema.py",
    "qualname": "EvidenceContext.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 342,
+   "line": 343,
    "module": "schema.py",
    "qualname": "EvidenceContext.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 347,
+   "line": 348,
    "module": "schema.py",
    "qualname": "EvidenceContext.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 356,
+   "line": 357,
    "module": "schema.py",
    "qualname": "EvidenceContext.__setattr__"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 369,
+   "line": 370,
    "module": "schema.py",
    "qualname": "EvidenceContext.__eq__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 428,
+   "line": 429,
    "module": "schema.py",
    "qualname": "AgreementRecord._markers_closed"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 431,
+   "line": 432,
    "module": "schema.py",
    "qualname": "AgreementRecord._markers_closed"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 439,
+   "line": 440,
    "module": "schema.py",
    "qualname": "AgreementRecord._direction_closed"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 448,
+   "line": 449,
    "module": "schema.py",
    "qualname": "AgreementRecord._lexicon_pattern"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 528,
+   "line": 529,
    "module": "schema.py",
    "qualname": "Relation._arity_and_functional_agree"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 597,
+   "line": 598,
    "module": "schema.py",
    "qualname": "is_procedural_relation"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 659,
+   "line": 625,
+   "module": "schema.py",
+   "qualname": "is_obligation"
+  },
+  {
+   "kind": "BOOL_RETURN",
+   "line": 679,
    "module": "schema.py",
    "qualname": "wiki_drops_on"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 686,
+   "line": 706,
    "module": "schema.py",
    "qualname": "assertion_view"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 723,
+   "line": 743,
    "module": "schema.py",
    "qualname": "<module>"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 728,
+   "line": 748,
    "module": "schema.py",
    "qualname": "<module>"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 751,
+   "line": 771,
    "module": "schema.py",
    "qualname": "<module>"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 756,
+   "line": 776,
    "module": "schema.py",
    "qualname": "<module>"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 787,
+   "line": 807,
    "module": "schema.py",
    "qualname": "SuccessorLookup.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 792,
+   "line": 812,
    "module": "schema.py",
    "qualname": "SuccessorLookup.__setattr__"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 797,
+   "line": 817,
    "module": "schema.py",
    "qualname": "SuccessorLookup.__eq__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 865,
+   "line": 885,
    "module": "schema.py",
    "qualname": "Edge._grounding_axis_is_well_formed"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 867,
+   "line": 887,
    "module": "schema.py",
    "qualname": "Edge._grounding_axis_is_well_formed"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 869,
+   "line": 889,
    "module": "schema.py",
    "qualname": "Edge._grounding_axis_is_well_formed"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 906,
+   "line": 926,
    "module": "schema.py",
    "qualname": "Edge.active"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 922,
+   "line": 942,
    "module": "schema.py",
    "qualname": "Edge.quarantined"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 934,
+   "line": 954,
    "module": "schema.py",
    "qualname": "Edge.use_only"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 958,
+   "line": 978,
    "module": "schema.py",
    "qualname": "Edge.valid_now"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 976,
+   "line": 996,
    "module": "schema.py",
    "qualname": "Edge.assertable"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1039,
+   "line": 1059,
    "module": "schema.py",
    "qualname": "Episode.quarantined"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1050,
+   "line": 1070,
    "module": "schema.py",
    "qualname": "Episode.use_only"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1057,
+   "line": 1077,
    "module": "schema.py",
    "qualname": "Episode.active"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1076,
+   "line": 1096,
    "module": "schema.py",
    "qualname": "Episode.assertable"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1084,
+   "line": 1104,
    "module": "schema.py",
    "qualname": "Episode.valid_now"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1451,
+   "line": 1471,
    "module": "schema.py",
    "qualname": "_check_assertion_view_partition"
   },
@@ -3620,25 +3626,31 @@
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 32,
+   "line": 38,
    "module": "speaker_backstop.py",
    "qualname": "_tokens"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 41,
+   "line": 47,
    "module": "speaker_backstop.py",
    "qualname": "_occurs"
   },
   {
+   "kind": "BOOL_RETURN",
+   "line": 58,
+   "module": "speaker_backstop.py",
+   "qualname": "_date_restricts"
+  },
+  {
    "kind": "RETURN_FALSE",
-   "line": 47,
+   "line": 66,
    "module": "speaker_backstop.py",
    "qualname": "speaker_restricts"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 51,
+   "line": 77,
    "module": "speaker_backstop.py",
    "qualname": "speaker_restricts"
   },
@@ -6891,7 +6903,7 @@
  ],
  "summary": {
   "by_kind": {
-   "BOOL_RETURN": 98,
+   "BOOL_RETURN": 100,
    "FILTER_RETURN": 60,
    "RAISE": 666,
    "RETURN_FALSE": 109,
@@ -7167,7 +7179,7 @@
     "RETURN_NONE": 0
    },
    "schema.py": {
-    "BOOL_RETURN": 16,
+    "BOOL_RETURN": 17,
     "FILTER_RETURN": 0,
     "RAISE": 26,
     "RETURN_FALSE": 0,
@@ -7209,7 +7221,7 @@
     "RETURN_NONE": 1
    },
    "speaker_backstop.py": {
-    "BOOL_RETURN": 1,
+    "BOOL_RETURN": 2,
     "FILTER_RETURN": 1,
     "RAISE": 0,
     "RETURN_FALSE": 2,
@@ -7300,7 +7312,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1037,
+  "total": 1039,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

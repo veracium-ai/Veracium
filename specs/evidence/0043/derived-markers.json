@@ -35,7 +35,7 @@
    ]
   }
  },
- "body_sha256": "61c9eee57f3e69cea21105a2c7c9d291f49af48f18515abd0a4f3c194345d2fe",
+ "body_sha256": "56b15f1f6f1a35548a7603837380d78e75a90a251fbe44fb3493011d358c8b2a",
  "prose": {
   "graph.py:_ORIGIN_LABELS": [
    "assistant-generated",
@@ -56,7 +56,7 @@
  },
  "sources": {
   "specs/evidence/0043/examiner_projection.py": "20e377208c8eef24eb27da34a546fb7e1005946f3d5970a22297aca6f07cc3c2",
-  "src/veracium/graph.py": "cc5bfdeab09d38375386bcb89157a68c1100b55a28dda9f30550a189e86138d4",
+  "src/veracium/graph.py": "2a328b107920979cf28cae4cdfc255915798157cd35035d88f63638f88a1c358",
   "src/veracium/introspect.py": "d12bd5c314a1c63bd8d801633114e38a5233315a2313126fb20baae4f43eb0d9"
  }
 }

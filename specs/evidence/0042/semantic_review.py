@@ -84,7 +84,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("compile.py", 208): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
     ("doctor.py", 488): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 60): "predicate-helper", ("graph.py", 75): "predicate-helper", ("graph.py", 241): "internal-invariant",
-    ("graph.py", 920): "argument-check", ("grounding.py", 154): "control-flow",
+    ("graph.py", 922): "argument-check", ("grounding.py", 154): "control-flow",
     ("ingest.py", 183): "control-flow", ("ingest.py", 135): "argument-check",
     ("lifecycle.py", 208): "control-flow", ("lifecycle.py", 354): "control-flow",
     ("portability.py", 1017): "control-flow",
@@ -93,10 +93,10 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("scope.py", 234): "internal-invariant", ("scope.py", 387): "predicate-helper", ("scope.py", 596): "control-flow", ("scope.py", 690): "control-flow",
     ("scope_linkage.py", 115): "control-flow", ("scope_linkage.py", 126): "control-flow", ("scope_linkage.py", 510): "predicate-helper",
     ("scope_linkage.py", 511): "predicate-helper", ("scope_linkage.py", 532): "control-flow",
-    ("schema.py", 64): "control-flow", ("schema.py", 280): "predicate-helper", ("schema.py", 287): "predicate-helper",
-    ("schema.py", 369): "predicate-helper", ("schema.py", 597): "predicate-helper", ("schema.py", 723): "internal-invariant",
-    ("schema.py", 728): "internal-invariant", ("schema.py", 751): "internal-invariant", ("schema.py", 756): "internal-invariant",
-    ("schema.py", 797): "predicate-helper", ("schema.py", 906): "predicate-helper", ("schema.py", 356): "internal-invariant", ("schema.py", 792): "internal-invariant",
+    ("schema.py", 65): "control-flow", ("schema.py", 281): "predicate-helper", ("schema.py", 288): "predicate-helper",
+    ("schema.py", 370): "predicate-helper", ("schema.py", 598): "predicate-helper", ("schema.py", 743): "internal-invariant",
+    ("schema.py", 748): "internal-invariant", ("schema.py", 771): "internal-invariant", ("schema.py", 776): "internal-invariant",
+    ("schema.py", 817): "predicate-helper", ("schema.py", 926): "predicate-helper", ("schema.py", 357): "internal-invariant", ("schema.py", 812): "internal-invariant",
     ("store/sqlite.py", 282): "control-flow", ("store/sqlite.py", 359): "control-flow", ("store/sqlite.py", 439): "control-flow",
     ("store/sqlite.py", 535): "control-flow", ("store/sqlite.py", 618): "control-flow", ("store/sqlite.py", 1003): "control-flow",
     ("store/sqlite.py", 1333): "control-flow", ("store/sqlite.py", 1378): "control-flow", ("store/sqlite.py", 1449): "control-flow",
@@ -114,11 +114,12 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("mcp_server.py", 578): "cli-usage", ("mcp_server.py", 584): "cli-usage", ("mcp_server.py", 588): "cli-usage", ("mcp_server.py", 600): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
     ("compile.py", 412): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
-    ("schema.py", 659): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
-    ("schema.py", 686): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1
-    ("schema.py", 1451): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
     ("proactive.py", 242): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
     ("proactive.py", 279): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
+    ("schema.py", 679): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
+    ("schema.py", 625): "predicate-helper",   # 0.29.0 B1+B2: schema.py:is_obligation:BOOL_RETURN:1 (consumed by the backstop and _lexical_scored)
+    ("schema.py", 706): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1
+    ("schema.py", 1471): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
@@ -183,19 +184,19 @@ e("gate.py", 122, "gate.scoped-assertable.third-party-shaped", "0020", "§4a", "
 e("graph.py", 300, "graph.absorption.cross-scope", "0020", "§4a-iii", "withhold")
 e("graph.py", 302, "graph.absorption.no-flattening-plan", "0021", "§4a", "withhold")
 e("graph.py", 297, "graph.absorption.scope-unresolved", "0020", "§4a-iii", "withhold")
-e("graph.py", 1388, "graph.collapse-for-render", "0012", "§4c", "withhold")
-e("graph.py", 1313, "graph.collapse.acted", "0047", "§4e (collapse never hides a member carrying an act, nor one behind a withheld survivor)", "withhold")
+e("graph.py", 1390, "graph.collapse-for-render", "0012", "§4c", "withhold")
+e("graph.py", 1315, "graph.collapse.acted", "0047", "§4e (collapse never hides a member carrying an act, nor one behind a withheld survivor)", "withhold")
 e("graph.py", 368, "graph.correction.identity-mismatch", "0011", "§4b", "refuse")
 e("graph.py", 380, "graph.correction.prior-not-active", "0011", "§4b", "refuse")
-e("graph.py", 859, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 865, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 861, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
 e("graph.py", 867, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
 e("graph.py", 869, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
 e("graph.py", 871, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
 e("graph.py", 873, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 875, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
 e("graph.py", 439, "graph.src-revoked", "0022", "§4a", "withhold")
 e("graph.py", 443, "graph.src-revoked", "0022", "§4a", "withhold")
-e("graph.py", 1231, "graph.strictly-redundant", "0012", "§4c", "withhold")
+e("graph.py", 1233, "graph.strictly-redundant", "0012", "§4c", "withhold")
 e("graph.py", 194, "graph.supersession.receipt-boundary", "0014", "R10", "refuse")
 e("graph.py", 220, "graph.supersession.replay-mismatch", "0014", "§4b", "refuse")
 e("grounding.py", 243, "grounding.ungrounded", "0019", "§4", "downgrade")
@@ -313,15 +314,15 @@ e("registry.py", 82, "registry.arity-refused", "0044", "§2c INV-A3/A10", "refus
 e("registry.py", 85, "registry.arity-refused", "0044", "§2c INV-A3/A10", "refuse")
 e("registry.py", 91, "registry.empty-refused", "0025", "§4b-iv X5", "refuse")
 e("registry.py", 101, "registry.reserved-shadowed", "0025", "§4b-iv", "refuse")
-e("schema.py", 976, "schema.edge.assertable", "0001", "§4", "withhold")
-e("schema.py", 922, "schema.edge.quarantined", "0001", "§4", "quarantine")
-e("schema.py", 934, "schema.edge.use-only", "0001", "§4", "withhold")
-e("schema.py", 958, "schema.edge.valid-now", "0028", "S2", "withhold")
-e("schema.py", 1057, "schema.episode.active", "0022", "§4b-ii", "withhold")
-e("schema.py", 1076, "schema.episode.assertable", "0001", "§4", "withhold")
-e("schema.py", 1039, "schema.episode.quarantined", "0001", "§4", "quarantine")
-e("schema.py", 1050, "schema.episode.use-only", "0001", "§4", "withhold")
-e("schema.py", 1084, "schema.episode.valid-now", "0028", "S2", "withhold")
+e("schema.py", 996, "schema.edge.assertable", "0001", "§4", "withhold")
+e("schema.py", 942, "schema.edge.quarantined", "0001", "§4", "quarantine")
+e("schema.py", 954, "schema.edge.use-only", "0001", "§4", "withhold")
+e("schema.py", 978, "schema.edge.valid-now", "0028", "S2", "withhold")
+e("schema.py", 1077, "schema.episode.active", "0022", "§4b-ii", "withhold")
+e("schema.py", 1096, "schema.episode.assertable", "0001", "§4", "withhold")
+e("schema.py", 1059, "schema.episode.quarantined", "0001", "§4", "quarantine")
+e("schema.py", 1070, "schema.episode.use-only", "0001", "§4", "withhold")
+e("schema.py", 1104, "schema.episode.valid-now", "0028", "S2", "withhold")
 e("scope_linkage.py", 535, "scope-linkage.export.ambiguous-absorber", "0020", "§4a-iii", "refuse")
 e("scope_linkage.py", 458, "scope-linkage.import.rows", "0020", "R6-2", "refuse")
 e("scope_linkage.py", 478, "scope-linkage.import.rows", "0020", "R6-2", "refuse")

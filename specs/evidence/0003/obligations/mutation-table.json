@@ -1,5 +1,5 @@
 {
- "body_sha256": "d9028163a37c31f6dcbeec35eb4afdfa6f7aaa5a67d247c76af3aa8e83fb0b27",
+ "body_sha256": "f64ae8c40f74ada9fea5c7597b270f40def49914eba515deff692eb0fd168a43",
  "controls": [
   {
    "anchor_counts": [
@@ -9,10 +9,13 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does",
     "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
    ],
-   "definition_sha256": "95575cf004acdfd0bc01efb568690fa58f7d2c95a848fa5ce254aa9c0cadf939",
+   "definition_sha256": "4bf98c64479db258f52a368b1d23819d9cd4da7d940ec1b790574a29d141313a",
    "expected": "SURVIVED",
    "file": "src/veracium/graph.py",
    "good": true,
@@ -20,6 +23,9 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does",
     "tests/test_0003_obligations.py::test_ob2_a_reschedule_is_contested_with_one_refusal_row",
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
    ],
@@ -168,6 +174,119 @@
    "anchor_counts": [
     1
    ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-iso]",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-words]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]"
+   ],
+   "definition_sha256": "d2755f18b194e753532ff07893429aa1da7d46cdf8351fc16c91d753dd26d6ab",
+   "expected": "SURVIVED",
+   "file": "src/veracium/speaker_backstop.py",
+   "good": true,
+   "id": "NOOP-speaker_backstop",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-iso]",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-words]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/speaker_backstop.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_b1_another_partys_deadline_keeps_the_every_side_rule",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[another-partys-deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[padded-USER]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[located_at]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[org-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[padded-user]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[scope]"
+   ],
+   "definition_sha256": "1711618aea900e51c28f872a7b205e39293c660e9a6a38e6c635b01b15a31130",
+   "expected": "SURVIVED",
+   "file": "src/veracium/schema.py",
+   "good": true,
+   "id": "NOOP-schema",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_another_partys_deadline_keeps_the_every_side_rule",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[another-partys-deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[padded-USER]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[located_at]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[org-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[padded-user]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[scope]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/schema.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "definition_sha256": "fc9bac9661db8565cb32dc6b2fe24f9191fccac9641c9909a04b62c57423a0de",
+   "expected": "SURVIVED",
+   "file": "src/veracium/ingest.py",
+   "good": true,
+   "id": "NOOP-ingest",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/ingest.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
    "cell_kinds": {
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once": "other: TypeError"
    },
@@ -200,6 +319,31 @@
     "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
     "tests/test_0003_obligations.py::test_b1_a_contested_deadline_keeps_its_time_and_place",
     "tests/test_0003_obligations.py::test_b1_a_contested_line_keeps_each_members_object",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-iso]",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-words]",
+    "tests/test_0003_obligations.py::test_b1_another_partys_deadline_keeps_the_every_side_rule",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[another-partys-deadline]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[padded-USER]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[located_at]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[org-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[padded-user]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[scope]",
     "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
     "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
     "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members",
@@ -221,27 +365,38 @@
   },
   "clean": {
    "first": {
-    "of": 25,
+    "of": 57,
     "ok": true,
-    "passed": 25
+    "passed": 57
    },
    "last": {
-    "of": 25,
+    "of": 57,
     "ok": true,
-    "passed": 25
+    "passed": 57
    }
   },
-  "commit": "ea88c72a87bc72b478903921786c27dc843b1655",
+  "commit": "2088d0825c13277e31ea4213bd2ebf58f4648b4a",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
    "NOOP-__init__": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
    "NOOP-doctor": "ca69b4ab7aed219543de99f8c18135def799fca683cfdc05b80a2f6bc42e5058",
-   "NOOP-graph": "95575cf004acdfd0bc01efb568690fa58f7d2c95a848fa5ce254aa9c0cadf939",
+   "NOOP-graph": "4bf98c64479db258f52a368b1d23819d9cd4da7d940ec1b790574a29d141313a",
+   "NOOP-ingest": "fc9bac9661db8565cb32dc6b2fe24f9191fccac9641c9909a04b62c57423a0de",
    "NOOP-proactive": "b9a48e584ab12da1203d274927e4d215953c115fb6e3df6d3c373f6085c58fbf",
-   "NOOP-prompts": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6"
+   "NOOP-prompts": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6",
+   "NOOP-schema": "1711618aea900e51c28f872a7b205e39293c660e9a6a38e6c635b01b15a31130",
+   "NOOP-speaker_backstop": "d2755f18b194e753532ff07893429aa1da7d46cdf8351fc16c91d753dd26d6ab"
   },
   "definitions": {
+   "B1-caller-drops-the-date": "cb834ccb3bd53dafa7516a2a9e017eae95a82c3569deb9e19bd947642b8d6957",
+   "B1-caller-drops-the-relation": "148edfd0ee146a33e067230124a793b3deb4e066551f820e2e8007175e8e56ae",
    "B1-slots-are-dates-only": "049df3f9212a6edda52db8d4299302a781c85c3a1eef98b7e300f2a1ddd3ebc8",
+   "B1-subject-user-form-excluded": "08c50322f4fc40f5bb6fd702dd0757f3c0c63d559f49a0d3f219c596e9440d02",
+   "B1-token-rule-kept": "d0050f2e56a4d6de1764eff262f4d940f646b3b2e70093996c037d78925e050f",
+   "B1-user-condition-alone": "552b169a9a38908eacf0bad2d0b776aa55c272a46c2247b1c90aff8d0fe04d4b",
+   "B1-whole-event-grounding": "18d83038a3213dfe381acedb98a468f7661660482e57301788280c77a176f887",
+   "B2-obligation-takes-the-entity-base": "6bb7ccb1279c4785d8947d9596b9bac90b4c646285c1a6a04b86648446d9fd52",
+   "B2-scorer-drops-the-obligation": "bf07588e4513527facc1b34f07c2ad77d430f084a0a954372b5e1133d4db0bef",
    "I10d-every-commitment-marked": "02b6b07c0d9e538d070fbaa8ddf810db3cba22e56ce9a727b8106792f8dda6a4",
    "I10d-lone-member-unmarked": "9678bbe0efc485ebd98d73bcf788d837fd5bbd6b141fe2a976bf5f8249f22130",
    "I10d-out-of-window-member-named": "80e570f81c2244ca54b5aba07df473d237b34a1b0a85a2d722eb3c072903d4d7",
@@ -259,6 +414,9 @@
    "OB5-non-user-subjects-counted": "3e092985b7aea871c22aad217d77c5df5429ea1c3b330de43b1f053a1caf960f",
    "OB6-rule-not-sent": "ae21aee3eaa017b7a776b8b48bb68f85ec14862e3ea25a4a0b200418c5743537",
    "OB9-group-built-before-withholding": "5606b17e3d092214a37e5e19b0df8d61670be88f43e1ca3d0f08b81a665148a1",
+   "PRED-case-sensitive": "af75d6f4481470a8b1c4a8c34ba89e38f10a2cd0dd1ddcbe27b2f4571a786b0f",
+   "PRED-entity-ref-included": "35737808b6a932ab8f87b1af6a042c3dee20ef3067e5d66bbb2db15cb775e540",
+   "PRED-every-relation": "494137122c5325c2ccd2247d229fbf317b67e8aa178037aec62eacde9c93a444",
    "R3-group-order-latest": "09cdb5887606bba6c262dae0d7e468b7f618c88edd2c78f4421cfe1366e7cf68",
    "R4-group-tie-reversed": "cbba79f50975020aa990705528767a31ecc8aa54e81afcbc780bca2abd5af65e",
    "R5-group-clamp-uncounted": "038f097321ef9cb5d3f7253d87c4a7a3bcd49e3d6c5bf5fc9b939dccaa7b5e4f",
@@ -267,15 +425,18 @@
    "S1-4b-withheld-subject-rendered": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077"
   },
   "digests": {
-   "specs/evidence/0003/obligations_mutants.py": "85d8ead83afa22f02e91965d0548fe7979afb6eb493d049c04344595b0e94afa",
+   "specs/evidence/0003/obligations_mutants.py": "24df240c8b2d238ef8e21e63ab4335b28cd11c0b22f05beab016beb17ddcec7b",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "5a6ef467caefc2ef02aece526fd60ce6ae39b0323395217ae2790ba872a3cae5",
    "src/veracium/doctor.py": "b8b8901cb9f5181d6cd87b67c2ab0059b755e583d97db11b6071ddf21c0deb45",
-   "src/veracium/graph.py": "cc5bfdeab09d38375386bcb89157a68c1100b55a28dda9f30550a189e86138d4",
+   "src/veracium/graph.py": "2a328b107920979cf28cae4cdfc255915798157cd35035d88f63638f88a1c358",
+   "src/veracium/ingest.py": "85a8d7e57a0cc25fc419e22c4e2d2d01d6c12aa9a956639edbf11ff5f651a05e",
    "src/veracium/proactive.py": "687cb305f02bf800e56574779c6c624c684e6a03505bc36f2f1c4650b3d60132",
    "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
-   "tests/test_0003_obligations.py": "cbb775b970e9a9c755ae4acee7cde01dfdd075d038ff8395326ae23d1c90613c"
+   "src/veracium/schema.py": "e45299d399a9d50b0903c04ae2e16a2d36671a383476d2f8d1cc665d3440e6fa",
+   "src/veracium/speaker_backstop.py": "63e802da9f0e1761a9d40719d6fc681ecf7b4e47c5ac9263d972d16d524b392c",
+   "tests/test_0003_obligations.py": "48e3bb2f4ff7a4b358667f3a31fed30778be16deab88052f881cd9dcf709711b"
   },
   "finding": "obligations",
   "honest_nodes": [
@@ -283,6 +444,16 @@
    "tests/test_0003_obligations.py::test_a_plain_commitment_names_a_subject_other_than_user",
    "tests/test_0003_obligations.py::test_a_subject_user_commitment_renders_byte_identical_to_before",
    "tests/test_0003_obligations.py::test_an_oversized_subject_is_clamped_and_counted",
+   "tests/test_0003_obligations.py::test_b1_a_non_obligation_triple_keeps_both_its_sides_judged",
+   "tests/test_0003_obligations.py::test_b1_a_user_stated_date_under_a_named_obligation_is_volunteered",
+   "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+   "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]",
+   "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-words-subject-named]",
+   "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-words-subject-user]",
+   "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+   "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-user]",
+   "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[entity]",
+   "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[named]",
    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
@@ -294,7 +465,10 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations_mutants.py",
-   "src/veracium/proactive.py",
+   "src/veracium/graph.py",
+   "src/veracium/ingest.py",
+   "src/veracium/schema.py",
+   "src/veracium/speaker_backstop.py",
    "tests/test_0003_obligations.py"
   ]
  },
@@ -330,7 +504,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 1.31s",
    "reason": null,
    "reason_seen": null,
    "what": "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's one-episode case is still caught by 0003 \u00a74c-iv's within-episode net, so it is not named)"
@@ -372,7 +546,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.98s",
+   "pytest": "4 failed in 1.70s",
    "reason": null,
    "reason_seen": null,
    "what": "today's per-edge rendering: the briefing path builds no contested groups"
@@ -408,7 +582,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member rendered plain as well as in the group line"
@@ -441,7 +615,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 1.40s",
    "reason": null,
    "reason_seen": null,
    "what": "a second predicate: any two active values of one key are a contest"
@@ -474,7 +648,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "the contested line built over the store's edges, before 0047's withholding"
@@ -507,7 +681,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 1.33s",
    "reason": null,
    "reason_seen": null,
    "what": "an out-of-window member named in the contested line: new reach (0012 I10d)"
@@ -543,7 +717,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.71s",
+   "pytest": "2 failed in 1.38s",
    "reason": null,
    "reason_seen": null,
    "what": "a lone tier member whose partner sits outside the tier renders as settled"
@@ -579,7 +753,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.71s",
+   "pytest": "2 failed in 1.34s",
    "reason": null,
    "reason_seen": null,
    "what": "the mark on a lone member whose partner is withheld or fenced (content of a challenged or fenced member's existence volunteered)"
@@ -615,7 +789,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 1.33s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested line names only each member's date, dropping its object (research's stage-2 B1)"
@@ -648,7 +822,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 1.36s",
    "reason": null,
    "reason_seen": null,
    "what": "the plain line drops a non-user subject (the obligation's name)"
@@ -681,7 +855,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "an oversized subject clamped without the I10a signal"
@@ -717,7 +891,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 1.34s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld commitment's subject rendered (0047 withholding skipped)"
@@ -750,7 +924,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded first-item path: a group line tail-clamped at the remaining budget, cutting a date and its framing (N1)"
@@ -783,7 +957,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 2.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"
@@ -816,7 +990,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.70s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "K counts the members not shown, not the distinct values (research's stage 1)"
@@ -853,7 +1027,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.78s",
+   "pytest": "2 failed in 1.29s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded plain line: the object capped at item_cap\u221248 on top of the subject's own cap, the line unchecked (research's stage-1 NEW 1)"
@@ -887,7 +1061,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the lone member's mark appended after the line is held to the cap (NEW 1)"
@@ -923,7 +1097,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded count: each grouped member's discarded line still registers its clamps (N2, R-impl4-4)"
@@ -956,7 +1130,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.79s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "a group sorts at its LATEST due date (research's stage-2 R3)"
@@ -989,7 +1163,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"
@@ -1025,7 +1199,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped or elided group line without the I10a signal (research's stage-2 R5)"
@@ -1058,7 +1232,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 1.19s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes a non-user subject's chain"
@@ -1091,7 +1265,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes another relation's chain (located_at)"
@@ -1125,21 +1299,477 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the extraction rule in a constant the extractor is never sent"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-iso]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-words]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-iso]",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-words]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]"
+   ],
+   "definition_sha256": "d0050f2e56a4d6de1764eff262f4d940f646b3b2e70093996c037d78925e050f",
+   "file": "src/veracium/speaker_backstop.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_a_user_stated_date_under_a_named_obligation_is_volunteered"
+   ],
+   "id": "B1-token-rule-kept",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-iso]",
+    "tests/test_0003_obligations.py::test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered[assistant-only-words]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "6 failed in 1.33s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an obligation is judged by 0051's every-side token rule (the pre-fix backstop: B1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-user]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "definition_sha256": "18d83038a3213dfe381acedb98a468f7661660482e57301788280c77a176f887",
+   "file": "src/veracium/speaker_backstop.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_a_user_stated_date_under_a_named_obligation_is_volunteered"
+   ],
+   "id": "B1-whole-event-grounding",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 1.29s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the user side is grounded over the WHOLE event, so the assistant's words ground it"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-user]"
+   ],
+   "definition_sha256": "552b169a9a38908eacf0bad2d0b776aa55c272a46c2247b1c90aff8d0fe04d4b",
+   "file": "src/veracium/speaker_backstop.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_a_user_stated_date_under_a_named_obligation_is_volunteered"
+   ],
+   "id": "B1-user-condition-alone",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[in-no-turn-subject-named]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.99s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a date no side grounds is restricted (the non-user condition dropped)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]"
+   ],
+   "definition_sha256": "08c50322f4fc40f5bb6fd702dd0757f3c0c63d559f49a0d3f219c596e9440d02",
+   "file": "src/veracium/speaker_backstop.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]"
+   ],
+   "id": "B1-subject-user-form-excluded",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-echoes-iso-subject-user]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 1.25s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "only the named form is judged by its date; subject `user` keeps tokens"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "definition_sha256": "148edfd0ee146a33e067230124a793b3deb4e066551f820e2e8007175e8e56ae",
+   "file": "src/veracium/ingest.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-words-subject-named]"
+   ],
+   "id": "B1-caller-drops-the-relation",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.31s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "ingest calls the backstop without the relation"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "definition_sha256": "cb834ccb3bd53dafa7516a2a9e017eae95a82c3569deb9e19bd947642b8d6957",
+   "file": "src/veracium/ingest.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[user-words-assistant-words-subject-named]"
+   ],
+   "id": "B1-caller-drops-the-date",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-iso-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-named]",
+    "tests/test_0003_obligations.py::test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side[assistant-only-words-subject-user]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.10s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "ingest calls the backstop without the session date"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does"
+   ],
+   "definition_sha256": "bf07588e4513527facc1b34f07c2ad77d430f084a0a954372b5e1133d4db0bef",
+   "file": "src/veracium/graph.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-user]",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[entity]"
+   ],
+   "id": "B2-scorer-drops-the-obligation",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.21s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an obligation must match a query word to enter (B2, the pre-fix rule)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]": "assertion",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does"
+   ],
+   "definition_sha256": "6bb7ccb1279c4785d8947d9596b9bac90b4c646285c1a6a04b86648446d9fd52",
+   "file": "src/veracium/graph.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-user]"
+   ],
+   "id": "B2-obligation-takes-the-entity-base",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_as_of_recall_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b2_an_obligation_ranks_as_a_subject_user_fact_does"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.28s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an obligation is scored as an entity edge"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Deadline]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[located_at]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[scope]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[located_at]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[scope]"
+   ],
+   "definition_sha256": "494137122c5325c2ccd2247d229fbf317b67e8aa178037aec62eacde9c93a444",
+   "file": "src/veracium/schema.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]"
+   ],
+   "id": "PRED-every-relation",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[located_at]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[scope]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Deadline]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.87s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "any relation with a named subject is an obligation"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_b1_another_partys_deadline_keeps_the_every_side_rule": "assertion",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[another-partys-deadline]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[person-ref]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[org-ref]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[person-ref]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_b1_another_partys_deadline_keeps_the_every_side_rule",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[another-partys-deadline]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[org-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[person-ref]"
+   ],
+   "definition_sha256": "35737808b6a932ab8f87b1af6a042c3dee20ef3067e5d66bbb2db15cb775e540",
+   "file": "src/veracium/schema.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_b2_a_generic_query_reaches_a_commitment_in_either_form[subject-named]",
+    "tests/test_0003_obligations.py::test_b1_a_non_obligation_triple_keeps_both_its_sides_judged"
+   ],
+   "id": "PRED-entity-ref-included",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[org-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[person-ref]",
+    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[another-partys-deadline]",
+    "tests/test_0003_obligations.py::test_b1_another_partys_deadline_keeps_the_every_side_rule"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "6 failed in 1.36s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "another party's deadline (person:alice) is read as the user's obligation (research 8b0de7d2)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[User]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[padded-USER]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[User]": "assertion",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[padded-user]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[padded-USER]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[padded-user]"
+   ],
+   "definition_sha256": "af75d6f4481470a8b1c4a8c34ba89e38f10a2cd0dd1ddcbe27b2f4571a786b0f",
+   "file": "src/veracium/schema.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[named]"
+   ],
+   "id": "PRED-case-sensitive",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[padded-user]",
+    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[Person-ref]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[User]",
+    "tests/test_0003_obligations.py::test_is_obligation_and_subject_class_name_one_user[padded-USER]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.02s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "\"User\" is read as an obligation, not as the user (0011 E1 disagrees)"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 24
+   "product": 35
   },
-  "controls": 6,
-  "controls_good": 6,
-  "good": 24,
-  "killed": 24,
-  "rows": 24,
-  "seconds": 89
+  "controls": 9,
+  "controls_good": 9,
+  "good": 35,
+  "killed": 35,
+  "rows": 35,
+  "seconds": 195
  }
 }

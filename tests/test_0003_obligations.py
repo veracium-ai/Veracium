@@ -525,3 +525,155 @@ def test_a_direct_assemble_with_no_contested_argument_renders_per_edge():
         m, _ = _mem(d, *RESCHEDULE)
         ctx = proactive.assemble(m.store, U, m.config)[0]
         assert _plain("dentist appointment", D1) in ctx and _plain("dentist appointment", D2) in ctx, ctx
+
+
+# ---- the 0.29.0 release blockers B1+B2 (research's notes read on fc9cc15, 1eb722a9; stage 1 on 2088d08, 8b0de7d2; the
+# owner, 2026-11-02: "Hold; fix B1+B2 first (Recommended)"): the user's dated obligation, in either form, is judged by
+# the speaker backstop on its DATE by 0045's resolution per side, and is eligible for any query ----------------------
+FORMS = {"subject-user": "user", "subject-named": "dentist appointment"}
+
+
+def _words(iso):
+    d = datetime.fromisoformat(iso)
+    return f"{d.strftime('%B')} {d.day}"
+
+
+# research's four rows (8b0de7d2): (event, restricted?) — the extractor writes the ISO date whatever words were said
+ROWS = {
+    "user-words-assistant-echoes-iso": ("USER: My dentist appointment is on {w}.\nASSISTANT: Noted: {d}.", False),
+    "user-words-assistant-words": ("USER: My dentist appointment is on {w}.\nASSISTANT: Noted, {w}th.", False),
+    "assistant-only-iso": ("USER: When is my dentist appointment?\nASSISTANT: Your dentist appointment is on {d}.", True),
+    "assistant-only-words": ("USER: When is my dentist appointment?\nASSISTANT: It is on {w}.", True),
+    # neither side says it: not restricted here (it is ungrounded, and never volunteered: 0045 §4b)
+    "in-no-turn": ("USER: When is my dentist appointment?\nASSISTANT: Let me check your calendar.", False),
+}
+USER_STATES = "USER: My dentist appointment is on {d}.\nASSISTANT: Noted."
+
+
+def _one(d, subject, relation, obj, text):
+    """ONE scripted triple from ONE event, so the extractor's form is the only variable (research's probe shape)."""
+    llm = Scripted([(subject, relation, obj)])
+    m = Memory(llm=llm, config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
+    res = m.remember(U, text, date=DAY(-1), context=EvidenceContext.direct())
+    return m, res
+
+
+def _row(row):
+    text, want = ROWS[row]
+    return text.format(d=D1, w=_words(D1)), want
+
+
+@pytest.mark.parametrize("form", list(FORMS))
+@pytest.mark.parametrize("row", list(ROWS))
+def test_b1_the_backstop_judges_an_obligations_date_by_grounding_per_side(row, form):
+    """B1: restricted exactly when the assistant's words ground the date and the user's do not, in BOTH forms. At
+    2088d08 the named form was never restricted (the user said its name) and the subject-`user` form matched tokens:
+    it missed "It is on November 4." and restricted the user's "November 4" echoed as an ISO date."""
+    text, want = _row(row)
+    with tempfile.TemporaryDirectory() as d:
+        m, res = _one(d, FORMS[form], "deadline", D1, text)
+        [e] = _deadlines(m)
+        assert res["speaker_restricted"] == int(want), (row, form, res)
+        assert e.provenance.disclosure == (Disclosure.USE_ONLY if want else Disclosure.MENTIONABLE), (row, form, e)
+        if row == "in-no-turn":
+            assert e.ungrounded and D1 not in m.recall(U).context, (e, m.recall(U).context)
+
+
+@pytest.mark.parametrize("row", ["assistant-only-iso", "assistant-only-words"])
+def test_b1_an_assistant_only_date_under_a_named_obligation_is_not_volunteered(row):
+    """End to end: the briefing never volunteers it as the user's commitment, and a recall marks its origin."""
+    text, _want = _row(row)
+    with tempfile.TemporaryDirectory() as d:
+        m, _res = _one(d, "dentist appointment", "deadline", D1, text)
+        assert D1 not in m.recall(U).context, m.recall(U).context
+        line = [ln for ln in m.recall(U, "when is the dentist?").context.splitlines() if D1 in ln]
+        assert len(line) == 1 and "[unverified-origin; unconfirmed]" in line[0], line
+
+
+def test_b1_a_user_stated_date_under_a_named_obligation_is_volunteered():
+    with tempfile.TemporaryDirectory() as d:
+        m, res = _one(d, "dentist appointment", "deadline", D1, USER_STATES.format(d=D1))
+        assert res["speaker_restricted"] == 0 and _commitments(m) == [_plain("dentist appointment", D1)], res
+
+
+def test_b1_another_partys_deadline_keeps_the_every_side_rule():
+    """`person:alice`'s deadline is not the user's obligation (schema.is_obligation's `kind:` exclusion, research
+    8b0de7d2): its subject is a side, as for any entity triple, so the user saying "Alice" leaves it unrestricted,
+    as before this batch (0051 §4b, unchanged here; the general case is its own row)."""
+    with tempfile.TemporaryDirectory() as d:
+        m, res = _one(d, "person:alice", "deadline", D1,
+                      f"USER: When is Alice's thesis due?\nASSISTANT: Alice's thesis is due {D1}.")
+        assert res["speaker_restricted"] == 0, res
+
+
+def test_b1_a_non_obligation_triple_keeps_both_its_sides_judged():
+    with tempfile.TemporaryDirectory() as d:
+        m, res = _one(d, "person:alice", "located_at", "Berlin",
+                      "USER: Where does Alice live these days?\nASSISTANT: Alice lives in Berlin.")
+        assert res["speaker_restricted"] == 0, res
+
+
+@pytest.mark.parametrize("form", list(FORMS))
+def test_b2_a_generic_query_reaches_a_commitment_in_either_form(form):
+    """B2: 0.28.0's subject-`user` commitment was eligible for every query (ranked by overlap); the named form must be
+    too, or "what do I have coming up?" loses every commitment the extractor names."""
+    with tempfile.TemporaryDirectory() as d:
+        m, _res = _one(d, FORMS[form], "deadline", D1, USER_STATES.format(d=D1))
+        assert D1 in m.recall(U, "what do I have coming up?").context
+
+
+@pytest.mark.parametrize("form", list(FORMS))
+def test_b2_an_as_of_recall_reaches_a_commitment_in_either_form(form):
+    """_lexical_scored's third caller (asof/recall.py, research 8b0de7d2)."""
+    with tempfile.TemporaryDirectory() as d:
+        m, _res = _one(d, FORMS[form], "deadline", D1, USER_STATES.format(d=D1))
+        assert D1 in m.recall(U, "what do I have coming up?", as_of=datetime.now(timezone.utc)).context
+
+
+@pytest.mark.parametrize("subject,relation,obj,text,query,match", [
+    ("person:alice", "located_at", "Berlin", "USER: Alice lives in Berlin.", "where does alice live?", "Berlin"),
+    ("person:alice", "deadline", D1, f"USER: Alice's thesis is due {D1}.", "when is alice's thesis due?", D1)],
+    ids=["entity", "another-partys-deadline"])
+def test_b2_an_entity_edge_still_needs_a_token_match(subject, relation, obj, text, query, match):
+    with tempfile.TemporaryDirectory() as d:
+        m, _res = _one(d, subject, relation, obj, text)
+        assert match not in m.recall(U, "what do I have coming up?").context
+        assert match in m.recall(U, query).context
+
+
+def test_b2_an_obligation_ranks_as_a_subject_user_fact_does():
+    """The scorer gives a named commitment the subject-`user` base at every overlap, 1 + 2*overlap (+1 active), where an
+    entity edge takes 3*overlap and needs a match to enter at all."""
+    from veracium import graph
+    for q in ("what do I have coming up?", "when is the dentist appointment?", "dentist appointment deadline"):
+        for subject in FORMS.values():
+            with tempfile.TemporaryDirectory() as d:
+                m, _res = _one(d, subject, "deadline", D1, USER_STATES.format(d=D1))
+                scored, _rel, _by = graph._lexical_scored(m.store, U, q)
+                assert len(scored) == 1, (q, subject, scored)
+                [(b, ov, e)] = scored
+                assert e.active and b == 1 + 2 * ov + 1, (q, subject, b, ov)
+
+
+@pytest.mark.parametrize("subject,relation,want", [
+    ("dentist appointment", "deadline", True), ("Q3 report", "deadline", True),
+    ("user", "deadline", False), ("User", "deadline", False), (" user ", "deadline", False),
+    ("person:alice", "deadline", False), ("org:acme", "deadline", False), ("Person:Alice", "deadline", False),
+    ("dentist appointment", "located_at", False), ("dentist appointment", "scope", False),
+    ("dentist appointment", "Deadline", False), ("person:alice", "third_party_claim", False)],
+    ids=["named", "q3", "user", "User", "padded-user", "person-ref", "org-ref", "Person-ref", "located_at", "scope",
+         "Deadline", "claim"])
+def test_is_obligation_over_its_domain(subject, relation, want):
+    from veracium.schema import is_obligation
+    assert is_obligation(subject, relation) is want
+
+
+@pytest.mark.parametrize("subject", ["user", "User", " USER ", "dentist appointment", "users", "", "person:alice"],
+                         ids=["user", "User", "padded-USER", "named", "users", "empty", "person-ref"])
+def test_is_obligation_and_subject_class_name_one_user(subject):
+    """Two carriers of "is this the user?": an obligation's subject is one graph.subject_class calls OTHER (0011 E1),
+    so the two can never disagree about the user; an entity ref is OTHER and not an obligation."""
+    from veracium.graph import subject_class
+    from veracium.schema import is_obligation
+    other = subject_class(U, subject) == "OTHER"
+    assert is_obligation(subject, "deadline") == (other and not subject.startswith("person:")), (subject, other)

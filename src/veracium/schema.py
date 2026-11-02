@@ -15,6 +15,7 @@ from __future__ import annotations
 from . import census as _census
 from .census import declare_site
 
+import re
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Literal, Optional
@@ -603,6 +604,25 @@ def is_procedural(record) -> bool:
     Total over Edges and Episodes (an episode's stamp is always absent)."""
     prov = getattr(record, "provenance", None)
     return bool(prov is not None and prov.procedural)
+
+
+# The relation the extractor writes a dated obligation under (specs/0003 §4c-v). NOT doctor.OBLIGATION_RELATIONS
+# (`deadline` and `scope`, the chains the doctor counts): `scope`'s object is not a date, and the two are different
+# predicates under one word (research's stage-1 read, 8b0de7d2).
+OBLIGATION_RELATION = "deadline"
+_KIND_PREFIX = re.compile(r"^[a-z][a-z_]*:")        # an entity ref (person:, org:), as the extractor writes other parties
+
+
+def is_obligation(subject, relation) -> bool:
+    """specs/0003 §4c-v's obligation FORM: a `deadline` triple whose subject is neither the user nor an entity ref,
+    i.e. the user's dated obligation named for itself ("dentist appointment"), where 0.28.0's extractor wrote subject
+    `user`. "Not the user" is graph.subject_class's OTHER (0011 §4a E1: whole-string str().strip().casefold()
+    equality with "user"), so "User" is the user; a `kind:`-prefixed subject ("person:alice") is ANOTHER party's
+    deadline, never the user's (research 8b0de7d2). The ONE test by which recall's lexical eligibility treats an
+    obligation as the user's own fact, as it treated the subject-`user` form, and by which the speaker backstop judges
+    its date (the 0.29.0 release blockers B1+B2, research 1eb722a9)."""
+    s = str(subject).strip().casefold()
+    return relation == OBLIGATION_RELATION and s != "user" and not _KIND_PREFIX.match(s)
 
 # specs/0025 (accepted v13) — the reserved registry members, module constants
 # on the QUARANTINE_RELATION pattern. `unclassified` is the NON-FUNCTIONAL

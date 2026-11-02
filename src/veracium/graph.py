@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Optional
 
 from . import authority
-from .schema import is_procedural
+from .schema import is_obligation, is_procedural
 from .schema import (DEFAULT_RELATIONS, ContributionDraft, Edge, EvidenceAuthor,
                      Relation, SupersessionPlan, SupersessionRefusalDraft)
 from .store.base import (PLAN_STALE, ReceiptSchemaBoundaryError,
@@ -748,7 +748,9 @@ def _lexical_scored(store, user_id: str, query: str, view=None, *, candidates=No
         overlap = len(_tokens(f"{e.subject} {e.relation} {e.object} {e.note}") & q)
         if overlap:
             relevant_ids.add(e.id)
-        if e.subject == "user":
+        # an obligation (schema.is_obligation) is the user's own fact named for itself: eligible as the
+        # subject-`user` form was in 0.28.0 (the 0.29.0 release blocker B2), so no form gains or loses reach
+        if e.subject == "user" or is_obligation(e.subject, e.relation):
             base = 1 + 2 * overlap      # eligible always; ranked by relevance
         else:
             base = 3 * overlap          # entity edges must match to enter at all
