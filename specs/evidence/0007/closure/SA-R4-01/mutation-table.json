@@ -1,5 +1,5 @@
 {
- "body_sha256": "d4b0efc86016829a127495882cc1588203f39b4a99f77a06dca81050d5e16db2",
+ "body_sha256": "af624934f5cd412a89cd61464f44b8523e1f9ef4380ad37cd1ccd7a7a1b13e12",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -77,13 +77,28 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/closure_findings.py",
-   "specs/evidence/0013/sa10_gate.py",
-   "specs/render_closure.py",
-   "specs/reviews.py",
+   "CHANGELOG.md",
+   "specs/0007-store-schema-versioning.md",
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0007/sa_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/doctor.py",
    "src/veracium/store/schema_version.py",
-   "tests/test_0007_attestation_jobs.py",
-   "tests/test_spec_gate.py"
+   "tests/test_0007_doctor_nearest.py",
+   "tests/test_doctor_cli.py"
   ]
  },
  "rows": [
@@ -118,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 8.69s",
+   "pytest": "2 failed in 8.06s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -151,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 8.13s",
+   "pytest": "1 failed in 7.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -184,7 +199,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 8.50s",
+   "pytest": "1 failed in 7.70s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -199,6 +214,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 155
+  "seconds": 140
  }
 }

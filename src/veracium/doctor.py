@@ -23,7 +23,7 @@ third class — a linter with its own opener would be a new site owed the
 factory — so the doctor goes through the one blessed door and lets its typed
 refusals (below head, above head, unstamped, not a database) BECOME the
 findings. Then SQLite's own `quick_check`, then every table it knows. It
-repairs nothing and never will: `veracium migrate` is the version path, and a
+repairs nothing and never will: offline migration is the version path, and a
 dangling reference is a fact an operator must see before anyone rewrites a
 row (specs/0009: outcome history is append-only; specs/0022: retirement is a
 recorded action, never a silent edit).
@@ -102,7 +102,9 @@ The checks, each named in the output:
                 is opened (specs/0007 §4g), whether or not a store exists:
                 attested or verified (info), or refused (error, naming the
                 failing step), naming any unreadable key field; then the
-                list of attested builds, each with its machine, system and libc
+                list of attested builds, each with its source id's last 12,
+                machine, system and libc; on a verified build, the nearest
+                attested record of its version and the fields that differ
 
 Exit codes: 0 clean, 1 findings, 2 the file could not be read at all.
 """
@@ -143,6 +145,12 @@ class Report:
     findings: list = field(default_factory=list)
     attested_builds: list = field(default_factory=list)   # 0007 §4g.6 (v0.12): every current, unpoisoned record
     attested_list_error: Optional[str] = None             # the escape's name when the list could not be read
+    # 0007 v24.1 §4e (INV-SA13): on a `verified` build, the nearest attested record of the SAME SQLite version and the
+    # key fields that differ — {"build": <its attested_builds string>, "differs": [field, …]}; None otherwise
+    nearest_attested: Optional[dict] = None
+    # the human-readable form of that line (or "no attested build has …"), rendered under the listing; NOT a JSON
+    # field: to_json drops it, so --json adds `nearest_attested` alone (v24.1)
+    nearest_line: Optional[str] = field(default=None, repr=False)
 
     def add(self, check: str, level: str, message: str, ids=()) -> None:
         self.findings.append(Finding(check, level, message, sorted(set(ids))))
@@ -179,13 +187,19 @@ def _open_snapshot(rep: Report, path: str, tmpdir: str):
         rep.user_version = int(m.group(1) or m.group(2)) if m else None
         rep.add("version", "error", f"the store constructor refuses this file: {ex}")
         return None
-    except sv.PackageConsistencyError as ex:           # stamped below head
+    except sv.PackageConsistencyError as ex:           # stamped below head, or the package itself is broken
         rep.readable = True
         rep.checks_run.append("version")
         m = _FOUND.search(str(ex))
         rep.user_version = int(m.group(1) or m.group(2)) if m else None
-        rep.add("version", "error", f"below this build's head — migrate offline first "
-                f"(`veracium migrate --db X --i-have-quiesced --backup REF`): {ex}")
+        if rep.user_version is not None and 0 < rep.user_version < sv.SCHEMA_VERSION:
+            # the refusal names the remedy that works on this store (migrate_store; the CLI from HEAD-1 alone, the
+            # owner's ruling 2026-11-02, "Steps + interim fix") — one carrier, so the two cannot disagree
+            rep.add("version", "error", f"below this build's head: {ex}")
+        else:
+            # the constructor's other two PackageConsistencyErrors are about the PACKAGE, not the store's version
+            rep.add("version", "error", f"this package's schema evidence is inconsistent (not a property of the "
+                    f"store): {ex}")
         return None
     except sqlite3.DatabaseError as ex:
         rep.add("file", "error", f"not a readable SQLite database: {ex}")
@@ -693,11 +707,19 @@ def _check_data_migration(rep: Report, conn, user: Optional[str], edges: dict) -
         rep.add("data-migration", "warn", f"{len(ids)} retired value(s) {PRE_PLAN_WARNING}", ids)
 
 
-def _attested_builds() -> list:
-    """Each attested build, `SQLite <version> on <machine> <system> <libc> (<route> <image>, …)`, one per CURRENT record of an
-    UNPOISONED artifact: attested_key's rule, so a poisoned or unreadable artifact lists nothing (it attests nothing).
-    Total: an escape returns the exception's NAME instead of a list, so the report never says "no build is attested"
-    when the truth is that the listing failed."""
+#: 0007 v24.1 (INV-SA13): the key fields the nearest-record line compares — EVERY key field but the version, in key
+#: order (the version is equal by construction: only records of the running build's version are candidates).
+#: `features` and `compile_options_digest` are compared and named, never rendered.
+NEAREST_FIELDS = tuple(f for f in sv.KEY_FIELDS if f != "sqlite_version")
+
+
+def _attested_records():
+    """Each attested build as (its listing string, its record), one per CURRENT record of an UNPOISONED artifact,
+    sorted by version: attested_key's rule, so a poisoned or unreadable artifact lists nothing (it attests nothing).
+    The string is `SQLite <version> (<source id, last 12>) on <machine> <system> <libc> (<route> <image>, …)` — the
+    source-id part is the warning's own form (0007 v24.1 §4e), so two records that differ only in source identity no
+    longer print alike. Total: an escape returns the exception's NAME instead of a list, so the report never says "no
+    build is attested" when the truth is that the listing failed."""
     try:
         records = sv.attestations()
         if sv.attestation_artifact_problems(records):
@@ -707,11 +729,37 @@ def _attested_builds() -> list:
             if sv.attestation_revision(r) != "current":
                 continue
             routes = ", ".join(sorted({f"{p['route']} {p['runner_image']}" for p in r["provenance"]}))
-            out.append((tuple(int(x) for x in r["sqlite_version"].split(".")),
-                        f"SQLite {r['sqlite_version']} on {r['machine']} {r['system']} {r['libc']} ({routes})"))
-        return [s for _, s in sorted(out)]
+            out.append((tuple(int(x) for x in r["sqlite_version"].split(".")), r["source_id"][-12:],
+                        f"SQLite {r['sqlite_version']} ({r['source_id'][-12:]}) on {r['machine']} {r['system']} "
+                        f"{r['libc']} ({routes})", r))
+        return [(s, r) for *_, s, r in sorted(out, key=lambda x: (x[0], x[2]))]   # the shipped order: version, then text
     except Exception as exc:  # noqa: BLE001 - a listing never fails the report; it names the escape instead
         return type(exc).__name__
+
+
+def _nearest(st, listed) -> tuple:
+    """0007 v24.1 (INV-SA13): (the nearest record's listing string and the differing fields, or None) among the LISTED
+    records of the running build's SQLite version — fewest differing fields among NEAREST_FIELDS (every key field but
+    the version), a field the running build could not read counting as differing (never as matching), a tie to the
+    first in the listing's own order.
+    `(None, None)` when no listed record has the version."""
+    # the running build's key as the attested predicate reads it (attestation_key: features as a fixed-order tuple of
+    # exact bools); when a field is unreadable the key is None, and the fields still read are compared, the rest differ
+    if st.key is not None:
+        running = dict(zip(sv.KEY_FIELDS, st.key))
+    else:
+        running = {"source_id": st.source_id, "machine": st.platform[0], "system": st.platform[1],
+                   "libc": st.platform[2]}
+    best = None
+    for s, r in listed:
+        if r["sqlite_version"] != st.sqlite_version:
+            continue
+        rk = sv.attestation_key(r)
+        rec = dict(zip(sv.KEY_FIELDS, rk)) if rk is not None else {}
+        differs = [f for f in NEAREST_FIELDS if running.get(f) is None or rec.get(f) is None or running[f] != rec[f]]
+        if best is None or len(differs) < len(best[1]):
+            best = (s, differs)
+    return best if best is not None else (None, None)
 
 
 def _check_runtime(rep: Report) -> None:
@@ -726,9 +774,17 @@ def _check_runtime(rep: Report) -> None:
              + " ".join(v if v else "(unreadable)" for v in st.platform))
     gaps = (f"; unreadable key field(s): {', '.join(st.unreadable)}, so it matches no attestation record"
             if st.unreadable else "")
-    listed = _attested_builds()
-    rep.attested_builds = listed if isinstance(listed, list) else []
+    listed = _attested_records()
+    rep.attested_builds = [s for s, _ in listed] if isinstance(listed, list) else []
     rep.attested_list_error = None if isinstance(listed, list) else listed
+    if st.status == "verified" and isinstance(listed, list) and listed:
+        s, differs = _nearest(st, listed)
+        if s is None:
+            rep.nearest_line = f"no attested build has SQLite {st.sqlite_version}"
+        else:
+            rep.nearest_attested = {"build": s, "differs": differs}
+            rep.nearest_line = (f"nearest attested build of SQLite {st.sqlite_version}: {s} — this build differs in "
+                                 + (", ".join(differs) if differs else "no compared field"))
     if st.status == "refused":
         rep.add("runtime", "error", f"this interpreter's {build} cannot be verified for the store: {st.reason}{gaps}")
     elif st.status == "verified":
@@ -787,7 +843,9 @@ def _attested_lines(rep: Report) -> list:
         return [f"      the attested builds could not be listed: {rep.attested_list_error}"]
     if not rep.attested_builds:
         return ["      no build is attested by this package"]
-    return [f"      attested builds ({len(rep.attested_builds)}):"] + [f"        {b}" for b in rep.attested_builds]
+    near = rep.nearest_line
+    return ([f"      attested builds ({len(rep.attested_builds)}):"] + [f"        {b}" for b in rep.attested_builds]
+            + ([f"      {near}"] if near else []))
 
 
 def render(rep: Report) -> str:
@@ -830,5 +888,6 @@ def render(rep: Report) -> str:
 
 def to_json(rep: Report) -> dict:
     d = asdict(rep)
+    d.pop("nearest_line")                  # rendering only; the JSON carries `nearest_attested` (0007 v24.1)
     d["exit_code"] = rep.exit_code
     return d

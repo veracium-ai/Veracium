@@ -1,5 +1,5 @@
 {
- "body_sha256": "54f16200560fc3db8f08930b685673f7a8f072eed2bfd45828b2bdd98f3b2050",
+ "body_sha256": "6e6c6f72cff06fa2361a6cc31e9c60aff049653cefaa94e24d2e8853b488adf3",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 7
    }
   },
-  "commit": "e4bbdc4da47e98ba6d1ea9d60c0bc1ff03fec78d",
+  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
   "control_definitions": {
    "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
    "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
@@ -90,7 +90,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "specs/migrations_0013.py": "f23307db6fe1223b99af10036748f00974f7a13194c00899fb7ae55970a6d2bf",
-   "src/veracium/store/schema_version.py": "e6cd98e7cd8f71acd09561069815363806509aeb4edb8c5c7dc58f68f115ad1c",
+   "src/veracium/store/schema_version.py": "11b330314aa5ec69d4aaccc3bf2e91749738e762bb21576159b54130ecbe0021",
    "tests/test_0007_runtime_status.py": "52d3ae22656bcf88108c358e897967b69df1c9e19affb92b4439863a72692d04",
    "tests/test_migrations_0013.py": "d84ddab02b8d163ea848271495d708f034760551d9e6fb7ea2f576c41dd5d650"
   },
@@ -105,13 +105,19 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/closure_findings.py",
-   "specs/evidence/0013/sa10_gate.py",
-   "specs/render_closure.py",
-   "specs/reviews.py",
+   "CHANGELOG.md",
+   "specs/0007-store-schema-versioning.md",
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0007/sa_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/doctor.py",
    "src/veracium/store/schema_version.py",
-   "tests/test_0007_attestation_jobs.py",
-   "tests/test_spec_gate.py"
+   "tests/test_0007_doctor_nearest.py",
+   "tests/test_doctor_cli.py"
   ]
  },
  "rows": [
@@ -143,7 +149,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.37s",
+   "pytest": "1 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -176,7 +182,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.27s",
+   "pytest": "1 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -209,7 +215,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.22s",
+   "pytest": "1 failed in 1.23s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -243,7 +249,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -259,6 +265,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 26
+  "seconds": 23
  }
 }

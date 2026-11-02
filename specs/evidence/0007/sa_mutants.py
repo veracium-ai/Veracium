@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Mutation-Matrix: tests/test_0007_sa_mutants.py::test_the_table_check_refuses_each_tampered_table
-"""INV-SA1–INV-SA12's mutation table (0007 §4g.8 and 0013 §5f.4; 0007 I6): every mutant the spec names, demonstrated.
+"""INV-SA1–INV-SA13's mutation table (0007 §4g.8 and 0013 §5f.4; 0007 I6): every mutant the spec names, demonstrated.
 
 §4g.8's Gate: "each row is a PRODUCT test at implementation, demonstrated red against its mutant". The mutants are the
 spec's own PHRASES: each invariant's "mutant that must fail" cell, cut at its first sentence end and split on ";" at
@@ -45,10 +45,11 @@ SVT = "tests/test_store_versioning.py"
 SM = "tests/test_schema_model.py"
 JOBS = "tests/test_0007_attestation_jobs.py"
 WRITER = "tests/test_0007_attestation_writer.py"
+NEAR = "tests/test_0007_doctor_nearest.py"   # INV-SA13 (0007 v24.1)
 SPEC_0007 = "specs/0007-store-schema-versioning.md"
 SPEC_0013 = "specs/0013-store-migrations.md"
 SUBJECT = "INV-SA1-SA12"
-DIGESTED = (SV, NM, DOC, REL, MIG, SE, SI, RS, SVT, SM, JOBS, WRITER, SPEC_0007, SPEC_0013,
+DIGESTED = (SV, NM, DOC, REL, MIG, SE, SI, RS, SVT, SM, JOBS, WRITER, NEAR, SPEC_0007, SPEC_0013,
             "specs/evidence/0013/sa10_gate.py", "specs/evidence/0013/pa1_campaign.py", "tests/test_0013_sa10_gate.py",
             "tests/test_0013_pa1_campaign_cells.py",
             "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
@@ -315,6 +316,41 @@ MUTANTS += [
      [P1("verified")], [], None, "a verified build revalidates without the stamp requirement"),
 ]
 
+N = lambda name: f"{NEAR}::{name}"                                                  # noqa: E731
+MUTANTS += [
+    # ---- INV-SA13 (0007 v24.1: doctor names what it compares) -------------------------------------------------------
+    ("sa13-omit-the-source-id-part", "product", DOC,
+     [("f\"SQLite {r['sqlite_version']} ({r['source_id'][-12:]}) on {r['machine']} {r['system']} \"",
+       "f\"SQLite {r['sqlite_version']} on {r['machine']} {r['system']} \"")],
+     [N("test_every_listed_build_carries_its_source_ids_last_12")], [], None, "the listing omits the source-id part"),
+    ("sa13-an-unreadable-field-matches", "product", DOC,
+     [("if running.get(f) is None or rec.get(f) is None or running[f] != rec[f]]",
+       "if running.get(f) is not None and rec.get(f) is not None and running[f] != rec[f]]")],
+     [N("test_an_unreadable_field_differs_never_matches")], [], None, "an unreadable field counted as matching"),
+    ("sa13-a-record-of-another-version", "product", DOC,
+     [('        if r["sqlite_version"] != st.sqlite_version:\n            continue\n', "")],
+     [N("test_a_record_of_another_version_is_never_named")], [], None, "a record of another SQLite version is a candidate"),
+    ("sa13-a-tie-by-the-artifacts-order", "product", DOC,
+     [('    for s, r in listed:\n        if r["sqlite_version"]',
+       '    for s, r in sorted(listed, key=lambda x: sv.attestations().index(x[1])):\n        if r["sqlite_version"]')],
+     [N("test_a_tie_goes_to_the_first_in_the_listings_own_order")], [], None,
+     "a tie broken by the artifact's order instead of the listing's"),
+    ("sa13-a-record-named-when-none-has-the-version", "product", DOC,
+     [("    return best if best is not None else (None, None)",
+       "    return best if best is not None else (listed[0][0], list(NEAREST_FIELDS))")],
+     [N("test_no_record_is_named_when_none_has_the_version")], [], None, "a record named when none has the version"),
+    ("sa13-the-line-on-an-attested-build", "product", DOC,
+     [('    if st.status == "verified" and isinstance(listed, list) and listed:',
+       '    if st.status != "refused" and isinstance(listed, list) and listed:')],
+     [N("test_an_attested_or_refused_build_gets_no_such_line[attested]")], [], None,
+     "the nearest line emitted on an attested build"),
+    ("sa13-the-comparison-omits-a-key-field", "product", DOC,
+     [('NEAREST_FIELDS = tuple(f for f in sv.KEY_FIELDS if f != "sqlite_version")',
+       'NEAREST_FIELDS = tuple(f for f in sv.KEY_FIELDS if f in ("source_id", "machine", "system", "libc"))')],
+     [N("test_every_key_field_is_compared_and_none_rendered")], [], None,
+     "the comparison omits a key field (the compile-options digest and the feature probes)"),
+]
+
 # (id, file, [(anchor, replacement)], named cells, what, the outcome the classifier must give)
 CONTROLS = [
     ("CTRL-unrelated-TypeError", SV,
@@ -421,6 +457,13 @@ CARRIERS = {
     ("INV-SA12", 9): ("mutant", "sa12-canonicalise-one-side"),
     ("INV-SA12", 10): ("mutant", "sa12-widen-the-alias-map"),
     ("INV-SA12", 11): ("mutant", "sa12-unreadable-matches"),
+    ("INV-SA13", 0): ("mutant", "sa13-omit-the-source-id-part"),
+    ("INV-SA13", 1): ("mutant", "sa13-an-unreadable-field-matches"),
+    ("INV-SA13", 2): ("mutant", "sa13-a-record-of-another-version"),
+    ("INV-SA13", 3): ("mutant", "sa13-a-tie-by-the-artifacts-order"),
+    ("INV-SA13", 4): ("mutant", "sa13-a-record-named-when-none-has-the-version"),
+    ("INV-SA13", 5): ("mutant", "sa13-the-line-on-an-attested-build"),
+    ("INV-SA13", 6): ("mutant", "sa13-the-comparison-omits-a-key-field"),
     # ---- INV-SA10 (0013 §5f.4), research's scope ruling: one carrier per phrase -------------------------------------
     ("INV-SA10", 0): ("cite", f"{SA10_TABLE}::tree-unmapped-write"),
     ("INV-SA10", 1): ("cite", f"{SA10_TABLE}::tree-unreached-write"),
@@ -555,7 +598,7 @@ SUBJECT_P = _protocol.Subject(
     spec="0007", finding=SUBJECT, table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium.store.schema_version", "veracium.store.migration", "veracium.store.release_migration",
                     "veracium.doctor", "veracium.store.near_misses"),
-    import_specs=(SE, GATE_FILE), cells_files=(RS, SVT, SM, JOBS, WRITER, PA1_CELLS, SA10_CELLS),
+    import_specs=(SE, GATE_FILE), cells_files=(RS, SVT, SM, JOBS, WRITER, NEAR, PA1_CELLS, SA10_CELLS),
     kinds=("product",))
 
 

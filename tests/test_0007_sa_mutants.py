@@ -10,6 +10,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import re
 import pathlib
 import sys
 
@@ -34,7 +35,12 @@ def test_every_spec_mutant_phrase_has_exactly_one_carrier():
     """The complement check: the phrases §4g.8 and 0013 §5f.4 name EQUAL the carriers' keys, and each carrier
     resolves. Read from the spec's bytes and the matrices' ASTs, never from a list typed beside them."""
     ph = sm.phrases()
-    assert len(ph) >= 45 and {k[0] for k in ph} == {f"INV-SA{i}" for i in range(1, 13)}, sorted({k[0] for k in ph})
+    # the invariant set is DERIVED from the two specs' own INV-SA rows (0007 §4g.8 and 0013 §5f.4), never typed: a
+    # hand range read INV-SA13 (0007 v24.1) as an extra phrase set
+    rows = set()
+    for spec in ("0007-store-schema-versioning.md", "0013-store-migrations.md"):
+        rows |= set(re.findall(r"^\| \*\*(INV-SA\d+)\*\*", (ROOT / "specs" / spec).read_text(), re.M))
+    assert len(ph) >= 45 and {k[0] for k in ph} == rows, (sorted({k[0] for k in ph}), sorted(rows))
     assert sm.carrier_problems() == []
 
 

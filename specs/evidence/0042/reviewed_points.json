@@ -3249,44 +3249,44 @@
   "line": 2016,
   "statement": "raise _SITE_OPEN_INVALID_VERSION.fire(StoreVersionError(spath, found, SCHEMA_VERSION,"
  },
- "store/schema_version.py:open_versioned:2088:RAISE": {
+ "store/schema_version.py:open_versioned:2096:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0007 §4h (refuse) through site store.open.legacy",
   "reviewer": "dev",
   "site": "store.open.legacy",
   "class": "enforcement",
   "key": "store/schema_version.py:open_versioned:RAISE:9",
-  "line": 2088,
+  "line": 2096,
   "statement": "raise _SITE_OPEN_LEGACY.fire(StoreVersionError("
  },
- "store/schema_version.py:open_versioned:2098:RAISE": {
+ "store/schema_version.py:open_versioned:2106:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0007 §4h (refuse) through site store.open.legacy",
   "reviewer": "dev",
   "site": "store.open.legacy",
   "class": "enforcement",
   "key": "store/schema_version.py:open_versioned:RAISE:10",
-  "line": 2098,
+  "line": 2106,
   "statement": "raise _SITE_OPEN_LEGACY.fire(StoreVersionError("
  },
- "store/schema_version.py:open_versioned:2114:RAISE": {
+ "store/schema_version.py:open_versioned:2122:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0007 §4h (refuse) through site store.open.legacy",
   "reviewer": "dev",
   "site": "store.open.legacy",
   "class": "enforcement",
   "key": "store/schema_version.py:open_versioned:RAISE:11",
-  "line": 2114,
+  "line": 2122,
   "statement": "raise _SITE_OPEN_LEGACY.fire(StoreVersionError("
  },
- "store/schema_version.py:open_versioned:2124:RAISE": {
+ "store/schema_version.py:open_versioned:2132:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0007 §4h (refuse) through site store.open.legacy",
   "reviewer": "dev",
   "site": "store.open.legacy",
   "class": "enforcement",
   "key": "store/schema_version.py:open_versioned:RAISE:12",
-  "line": 2124,
+  "line": 2132,
   "statement": "raise _SITE_OPEN_LEGACY.fire(StoreVersionError("
  },
  "store/schema_version.py:open_versioned:2003:RAISE": {
@@ -5329,31 +5329,22 @@
   "line": 283,
   "statement": "return False"
  },
- "doctor.py:_attested_builds:712:FILTER_RETURN": {
+ "doctor.py:_attested_records:735:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
-  "key": "doctor.py:_attested_builds:FILTER_RETURN:1",
-  "line": 712,
-  "statement": "return [s for _, s in sorted(out)]"
+  "key": "doctor.py:_attested_records:FILTER_RETURN:1",
+  "line": 735,
+  "statement": "return [(s, r) for *_, s, r in sorted(out, key=lambda x: (x[0], x[2]))]   # the shipped order: version, then text"
  },
- "doctor.py:_open_snapshot:169:RETURN_NONE": {
+ "doctor.py:_open_snapshot:177:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:1",
-  "line": 169,
-  "statement": "return None"
- },
- "doctor.py:_open_snapshot:181:RETURN_NONE": {
-  "decision": "not",
-  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
-  "reviewer": "dev",
-  "class": "control-flow",
-  "key": "doctor.py:_open_snapshot:RETURN_NONE:2",
-  "line": 181,
+  "line": 177,
   "statement": "return None"
  },
  "doctor.py:_open_snapshot:189:RETURN_NONE": {
@@ -5361,35 +5352,44 @@
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
-  "key": "doctor.py:_open_snapshot:RETURN_NONE:3",
+  "key": "doctor.py:_open_snapshot:RETURN_NONE:2",
   "line": 189,
   "statement": "return None"
  },
- "doctor.py:_open_snapshot:192:RETURN_NONE": {
+ "doctor.py:_open_snapshot:203:RETURN_NONE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "doctor.py:_open_snapshot:RETURN_NONE:3",
+  "line": 203,
+  "statement": "return None"
+ },
+ "doctor.py:_open_snapshot:206:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:4",
-  "line": 192,
+  "line": 206,
   "statement": "return None"
  },
- "doctor.py:_open_snapshot:199:RETURN_NONE": {
+ "doctor.py:_open_snapshot:213:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_open_snapshot:RETURN_NONE:5",
-  "line": 199,
+  "line": 213,
   "statement": "return None"
  },
- "doctor.py:_tables:205:FILTER_RETURN": {
+ "doctor.py:_tables:219:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "doctor.py:_tables:FILTER_RETURN:1",
-  "line": 205,
+  "line": 219,
   "statement": "return {r[0] for r in conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\")}"
  },
  "dryrun.py:_snapshot:89:FILTER_RETURN": {
@@ -5806,13 +5806,13 @@
   "line": 192,
   "statement": "return None"
  },
- "store/schema_version.py:open_versioned:2157:RAISE": {
+ "store/schema_version.py:open_versioned:2165:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "store/schema_version.py:open_versioned:RAISE:13",
-  "line": 2157,
+  "line": 2165,
   "statement": "raise"
  },
  "store/sqlite.py:SqliteStore.__init__:296:RAISE": {
@@ -8704,22 +8704,13 @@
   "line": 1152,
   "statement": "return problems"
  },
- "store/schema_version.py:open_versioned:2044:RAISE": {
+ "store/schema_version.py:open_versioned:2048:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/schema_version.py:open_versioned:RAISE:6",
-  "line": 2044,
-  "statement": "raise PackageConsistencyError("
- },
- "store/schema_version.py:open_versioned:2063:RAISE": {
-  "decision": "not",
-  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
-  "reviewer": "dev",
-  "class": "internal-invariant",
-  "key": "store/schema_version.py:open_versioned:RAISE:7",
-  "line": 2063,
+  "line": 2048,
   "statement": "raise PackageConsistencyError("
  },
  "store/schema_version.py:open_versioned:2071:RAISE": {
@@ -8727,17 +8718,26 @@
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
-  "key": "store/schema_version.py:open_versioned:RAISE:8",
+  "key": "store/schema_version.py:open_versioned:RAISE:7",
   "line": 2071,
   "statement": "raise PackageConsistencyError("
  },
- "store/schema_version.py:open_versioned:2166:RAISE": {
+ "store/schema_version.py:open_versioned:2079:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "store/schema_version.py:open_versioned:RAISE:8",
+  "line": 2079,
+  "statement": "raise PackageConsistencyError("
+ },
+ "store/schema_version.py:open_versioned:2174:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/schema_version.py:open_versioned:RAISE:14",
-  "line": 2166,
+  "line": 2174,
   "statement": "raise PostCommitAuditError(spath, committed_event.adoption_id,"
  },
  "store/schema_version.py:rebuildable_keys:856:FILTER_RETURN": {
@@ -9397,13 +9397,13 @@
   "line": 249,
   "statement": "return self._pending > 0"
  },
- "doctor.py:_check_sources.unsourced:488:BOOL_RETURN": {
+ "doctor.py:_check_sources.unsourced:502:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by doctor.py:_check_sources",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "doctor.py:_check_sources.unsourced:BOOL_RETURN:1",
-  "line": 488,
+  "line": 502,
   "statement": "return prov.get(\"author_of_evidence\") == \"third_party\" and not prov.get(\"source_id\")"
  },
  "dryrun.py:DryRun.usable:68:BOOL_RETURN": {

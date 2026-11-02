@@ -39,6 +39,27 @@
   out-of-range confidences under an earlier release (only possible with DECAY mapped and a factor above 1 or NaN):
   see "Rows already written out of range" in `docs/api.md`; this release does not repair them.
 
+- **Changed: `veracium doctor` names what it compares between this build and the attested ones** (specs/0007
+  v24.1 §4e, INV-SA13; found by Marketing re-verifying 0.28.0). Each listed attested build now carries its SQLite
+  source id's last 12 characters, the warning's own form (`SQLite 3.53.1 (e4e6475127e9) on x86_64 Linux glibc (uv
+  ubuntu-24.04)`), so two builds of one version no longer print alike. On a `verified` build, doctor adds one line
+  naming the nearest attested build of the same SQLite version and the key fields in which this build differs
+  (fewest differing among every key field but the version: source id, the feature probes, the compile-options
+  digest, machine, system and libc; an unreadable field counts as differing; the probes and the digest are named,
+  never printed), or saying that no attested build has its version. Two attested builds that differ only in their
+  feature probes or compile options still print alike in the list; the line is what names that difference. Status, level, exit code and the matching rule are unchanged. **For
+  `--json` consumers:** the `attested_builds` strings gain the source-id part (0.28.0 added the key; its strings
+  change), and a new key, `nearest_attested`, is `null` or `{"build": <one attested_builds string>, "differs":
+  [<field names>]}`.
+- **Fixed: the messages for a store below this release's schema name a route that works** (the owner's ruling
+  "Steps + interim fix", pending specs/0018's adjacent-rungs amendment). The store's open refusal said "no migration
+  hook installed", and `veracium doctor` told every below-head store to run `veracium migrate --db X
+  --i-have-quiesced --backup REF`, which refuses every store a release has written below head (it migrates only
+  from v15, and no release shipped v15). Both now say: stop every process using the file, back it up, then run
+  `veracium.store.migration.migrate_store(path)`, which applies every step to the current version in one call; the
+  `veracium migrate` command migrates only a v15 store in this release. Doctor also no longer labels the
+  constructor's two package-consistency errors (its own evidence disagreeing with its schema) as a below-head store.
+
 ## 0.29.0 — 2026-11-02
 
 **A user can now hold more than one deadline.** 0.28.0's extractor stored every commitment as the user's

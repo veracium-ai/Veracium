@@ -82,7 +82,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 117): "internal-invariant", ("asof/resolve.py", 122): "internal-invariant",
     ("asof/resolve.py", 181): "control-flow", ("asof/resolve.py", 206): "predicate-helper",
     ("compile.py", 208): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
-    ("doctor.py", 488): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
+    ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 60): "predicate-helper", ("graph.py", 75): "predicate-helper", ("graph.py", 241): "internal-invariant",
     ("graph.py", 922): "argument-check", ("grounding.py", 154): "control-flow",
     ("ingest.py", 183): "control-flow", ("ingest.py", 135): "argument-check",
@@ -109,7 +109,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/sqlite.py", 4109): "control-flow", ("store/sqlite.py", 3181): "argument-check",
     ("store/revocation.py", 56): "predicate-helper", ("store/revocation.py", 110): "control-flow", ("store/revocation.py", 145): "control-flow",
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
-    ("store/schema_version.py", 1983): "argument-check", ("store/schema_version.py", 2157): "control-flow",
+    ("store/schema_version.py", 1983): "argument-check", ("store/schema_version.py", 2165): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
     ("mcp_server.py", 578): "cli-usage", ("mcp_server.py", 584): "cli-usage", ("mcp_server.py", 588): "cli-usage", ("mcp_server.py", 600): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
@@ -476,10 +476,10 @@ e("store/migration.py", 496, "store.migration.version", "0013", "§4", "refuse")
 e("store/migration.py", 529, "store.migration.version", "0013", "§4", "refuse")
 e("store/sqlite.py", 3598, "store.notice.state-domain", "0041", "§11.6.6 (T4: the notice state's one writer)", "refuse")
 e("store/schema_version.py", 2016, "store.open.invalid-version", "0007", "§4a", "refuse")
-e("store/schema_version.py", 2088, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 2098, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 2114, "store.open.legacy", "0007", "§4h", "refuse")
-e("store/schema_version.py", 2124, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2096, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2106, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2122, "store.open.legacy", "0007", "§4h", "refuse")
+e("store/schema_version.py", 2132, "store.open.legacy", "0007", "§4h", "refuse")
 e("store/schema_version.py", 2003, "store.open.locked", "0007", "§4a", "refuse")
 e("store/schema_version.py", 2020, "store.open.newer", "0007", "§4a", "refuse")
 e("store/schema_version.py", 1990, "store.open.runtime-unsupported", "0007", "§4a-viii", "refuse")

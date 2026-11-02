@@ -153,14 +153,50 @@ def test_a_non_database_file_is_reported_not_crashed():
         assert any("not a readable SQLite database" in m or "quick_check" in m for m in _messages(rep, "file"))
 
 
+@pytest.mark.parametrize("below", [1, 14, "head-1"])
+def test_the_below_head_remedy_names_only_routes_that_work(below):
+    """The owner's ruling (2026-11-02, "Steps + interim fix"): until 0018's adjacent-rungs amendment lands, the CLI mints
+    from HEAD-1 alone, so the open refusal and doctor name `migrate_store` for every below-head store and name the CLI
+    for HEAD-1 only — never `veracium migrate --db …` as the remedy for a store it refuses (v14, 0.26.x's, among them)."""
+    from veracium.store.sqlite import SqliteStore
+    v = sv.SCHEMA_VERSION - 1 if below == "head-1" else below
+    with tempfile.TemporaryDirectory() as d:
+        db = _seed(f"{d}/t.db")
+        _plant(db, f"PRAGMA user_version = {v}")
+        msgs = _messages(doctor.diagnose(db), "version")
+        try:
+            SqliteStore(db, allow_adopt=False)
+            raise AssertionError("a below-head store opened")
+        except sv.PackageConsistencyError as ex:
+            refusal = str(ex)
+    for text in [refusal] + msgs:
+        assert "migrate_store(path)" in text and "back it up" in text, text
+        assert f"migrates only a v{sv.SCHEMA_VERSION - 1} store" in text, text
+        assert "--db" not in text and "no migration hook" not in text, text
+
+
+def test_a_package_consistency_error_is_not_labelled_below_head(monkeypatch):
+    """The constructor's two other PackageConsistencyErrors are about the package, not the store's version: doctor
+    labels them so, never with the below-head remedy."""
+    from veracium.store import sqlite as SQ
+
+    def broken(*a, **k):
+        raise sv.PackageConsistencyError("constructor output is not in the accepted manifest set — the package's "
+                                         "evidence artifacts disagree with its schema registry")
+    with tempfile.TemporaryDirectory() as d:
+        db = _seed(f"{d}/t.db")
+        monkeypatch.setattr(SQ.SqliteStore, "__init__", broken)
+        msgs = _messages(doctor.diagnose(db), "version")
+    assert msgs and all("below this build's head" not in m and "schema evidence is inconsistent" in m for m in msgs), msgs
+
+
 def test_a_below_head_store_is_reported_without_opening_the_store_class():
     with tempfile.TemporaryDirectory() as d:
         db = _seed(f"{d}/t.db")
         _plant(db, f"PRAGMA user_version = {sv.SCHEMA_VERSION - 1}")
         rep = doctor.diagnose(db)
         assert rep.readable and rep.user_version == sv.SCHEMA_VERSION - 1 and rep.exit_code == 1
-        assert any("below this build's head" in m and "migrating forward is specs/0013's contract" in m
-                   for m in _messages(rep, "version"))
+        assert any("below this build's head" in m and "migrate_store(path)" in m for m in _messages(rep, "version"))
         assert any("skipped: the constructor refused the snapshot" in m for m in _messages(rep, "revocation"))
         # the two other refusals the constructor can give, reported the same way
         for pragma, needle, version in (("PRAGMA user_version = 0", "foreign-shape (found=0", 0),

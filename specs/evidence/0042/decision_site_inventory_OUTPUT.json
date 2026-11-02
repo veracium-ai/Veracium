@@ -1244,13 +1244,7 @@
   },
   {
    "kind": "RETURN_NONE",
-   "line": 169,
-   "module": "doctor.py",
-   "qualname": "_open_snapshot"
-  },
-  {
-   "kind": "RETURN_NONE",
-   "line": 181,
+   "line": 177,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
@@ -1262,33 +1256,39 @@
   },
   {
    "kind": "RETURN_NONE",
-   "line": 192,
+   "line": 203,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 199,
+   "line": 206,
+   "module": "doctor.py",
+   "qualname": "_open_snapshot"
+  },
+  {
+   "kind": "RETURN_NONE",
+   "line": 213,
    "module": "doctor.py",
    "qualname": "_open_snapshot"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 205,
+   "line": 219,
    "module": "doctor.py",
    "qualname": "_tables"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 488,
+   "line": 502,
    "module": "doctor.py",
    "qualname": "_check_sources.unsourced"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 712,
+   "line": 735,
    "module": "doctor.py",
-   "qualname": "_attested_builds"
+   "qualname": "_attested_records"
   },
   {
    "kind": "BOOL_RETURN",
@@ -5397,14 +5397,7 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2044,
-   "module": "store/schema_version.py",
-   "qualname": "open_versioned"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 2063,
+   "line": 2048,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
@@ -5418,42 +5411,49 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2088,
+   "line": 2079,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2098,
+   "line": 2096,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2114,
+   "line": 2106,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2124,
+   "line": 2122,
+   "module": "store/schema_version.py",
+   "qualname": "open_versioned"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2132,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 2157,
+   "line": 2165,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2166,
+   "line": 2174,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },

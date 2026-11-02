@@ -2041,11 +2041,19 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                     # hook the row is a package-consistency impossibility —
                     # unreachable while SCHEMA_VERSION == 1 — not a store property.
                     if older is None:
+                        # the remedy names only routes that work on this store (the owner's
+                        # ruling, 2026-11-02, "Steps + interim fix": until 0018's adjacent-rungs
+                        # amendment lands, the CLI mints from HEAD-1 alone, so it is named
+                        # for that base only)
                         raise PackageConsistencyError(
                             f"store {spath!r} is stamped v{found} and this build "
-                            f"is v{SCHEMA_VERSION} with no migration hook "
-                            f"installed; migrating forward is specs/0013's "
-                            f"contract")
+                            f"is v{SCHEMA_VERSION}: opening does not migrate (specs/0013). "
+                            f"Migrate it offline first: stop every process using the file, "
+                            f"back it up, then run "
+                            f"veracium.store.migration.migrate_store(path), which applies "
+                            f"every step to v{SCHEMA_VERSION} in one call. The `veracium "
+                            f"migrate` command migrates only a v{SCHEMA_VERSION - 1} store in "
+                            f"this release")
                     older(conn, spath, found, objs, found, runtime=status)
                     _validated_current(conn, spath, found, require_stamp=True)
                     result = OpenResult("migrated", store_changed=True,
