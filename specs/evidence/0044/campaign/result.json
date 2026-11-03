@@ -1718,7 +1718,7 @@
    "group": "R-II r2 V1 (c, d: the held basetemp and the sqlite error names)"
   }
  ],
- "pin_digest": "63b3c7e7abf1de79dc9bedf06e7cf9c6df05852743c40fbdb0ca86f27961d744",
+ "pin_digest": "f4a6a1292a3b1b901fba2e717f23625d90327e7762258f73f7520ada9b0c349f",
  "rows": [
   {
    "anchor_count": 1,
@@ -1958,7 +1958,7 @@
     "tests/test_0041_notice_state.py::test_io_ii_3_every_application_reaches_the_full_record_fixed_point[confirm_notice-edge]",
     "tests/test_0041_notice_state.py::test_io_ii_3_every_application_reaches_the_full_record_fixed_point[restore-edge]"
    ],
-   "def_digest": "718f2b680e67f8fdc31ec7161d580e882b94873f15690eb31be3ccd66911d732",
+   "def_digest": "29ba55abad10ae3092143f0511e20f25adfb7560f15541948cff840bc7855011",
    "file": "src/veracium/store/sqlite.py",
    "group": "R-A read, B4/B5: IO-II-3 at T4's states, and RR4",
    "kill_kind": "assertion",
@@ -12189,11 +12189,13 @@
    "cell_kinds": {
     "tests/test_0047_t10b_read.py::test_r6_the_latest_challenge_is_by_written_at_then_id": "assertion",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[1200]": "assertion",
+    "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[4000]": "assertion",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[400]": "assertion"
    },
    "cells_failed": [
     "tests/test_0047_t10b_read.py::test_r6_the_latest_challenge_is_by_written_at_then_id",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[1200]",
+    "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[4000]",
     "tests/test_0047_t10b_read.py::test_r6_the_open_count_and_the_withheld_count_do_not_depend_on_the_budget[400]"
    ],
    "def_digest": "98166ddc1422c40de244a70614d724aeff249611d9a9f52df3cfa60a6b379568",
