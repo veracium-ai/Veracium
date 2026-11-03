@@ -734,6 +734,10 @@ def _binders(tree, name):
 
 _CLASSIFIER = []
 _CLASSIFIED = {}
+# research's stage-1b catch (2026-11-03): a trigger's body writes are reported only when a statement that FIRES it is
+# prepared, never at CREATE TRIGGER, so a trigger or a view is refused as such, wherever it is created
+_TRIGGER_OR_VIEW = {sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TRIGGER, sqlite3.SQLITE_CREATE_VIEW,
+                    sqlite3.SQLITE_CREATE_TEMP_VIEW}
 
 
 def _sqlite_classify(sql: str) -> set:
@@ -770,6 +774,8 @@ def _sqlite_classify(sql: str) -> set:
                 c.execute("ROLLBACK")
         tags = set()
         for action, a1, a2, db in seen:
+            if action in _TRIGGER_OR_VIEW:
+                tags.add("trigger-or-view")
             if action == sqlite3.SQLITE_INSERT and a1 == "edges":
                 tags.add("edges-insert")
             elif action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json":
@@ -911,6 +917,15 @@ def _gate(source: str, others: dict | None = None) -> list:
                 and id(n) not in sql_args and _sqlite_classify(n.value) & {"edges-insert", "edges-json-update"}):
             bad.append(f"{at(n)}: an edges json write outside a write-method call ({q.get(id(n), '<module>')}): "
                        f"{' '.join(n.value.split())[:70]}")
+    # 5b'. no trigger or view is created by any literal in src/ — SQLite reads a trigger's body writes only when a
+    # statement fires it, so a trigger rewriting edges.json after a correct write is invisible to 5b (research)
+    for rel, text in [("veracium/store/sqlite.py", source)] + sorted(others.items()):
+        t3 = tree if text is source else ast.parse(text)
+        for n in ast.walk(t3):
+            if (isinstance(n, ast.Constant) and isinstance(n.value, str) and "create" in n.value.lower()
+                    and ("trigger" in n.value.lower() or "view" in n.value.lower())
+                    and "trigger-or-view" in _sqlite_classify(n.value)):
+                bad.append(f"{rel} {at(n)}: a trigger or view created: {' '.join(n.value.split())[:70]}")
     # 5c. the dynamic-table domain, frozen with its listed entry
     if _act_tables_in(source) != ACT_TABLES:
         bad.append(f"_ACT_COLUMNS reaches {sorted(_act_tables_in(source))}, not the frozen {sorted(ACT_TABLES)}")
@@ -1053,6 +1068,10 @@ GATE_MUTANTS = {
     "a second connection": (_INV, '        sqlite3.connect(self._path).execute("UPDATE edges SET active=0, json=? '
                                   'WHERE id=?", (edge.model_dump_json(), edge_id))'),
 }
+GATE_MUTANTS["a trigger rewriting edges.json after a correct write"] = (
+    _INV, _INV + '\n        self._conn.execute("CREATE TRIGGER IF NOT EXISTS lift AFTER INSERT ON edge_event BEGIN '
+                 "UPDATE edges SET json = json_set(json, '$.provenance.confidence', 1.8) WHERE id = NEW.edge_id; END\")")
+GATE_MUTANTS["a temporary view"] = (_INV, _INV + '\n        self._conn.execute("CREATE TEMP VIEW v AS SELECT json FROM edges")')
 # appended to the END of sqlite.py's text (class-level attacks)
 EOF_MUTANTS = {
     "a class-attribute reassignment": "\nSqliteStore._write_edge_row = SqliteStore._journal_edge_write\n",
@@ -1061,6 +1080,9 @@ EOF_MUTANTS = {
 }
 # the mutants the gate reads OUTSIDE sqlite.py's text: a same-named method on a class in another src module
 OTHER_MUTANTS = {
+    "a trigger created in another module": {"veracium/_planted.py": 'def plant(c):\n    c.execute("CREATE TRIGGER t AFTER '
+                                            'INSERT ON edge_event BEGIN UPDATE edges SET json = json WHERE id = '
+                                            'NEW.edge_id; END")\n'},
     "a class elsewhere defines the write method": {"veracium/_planted.py": "class X:\n    def _write_edge_row(self):\n        pass\n"},
     "an attribute assignment elsewhere": {"veracium/_planted.py": "import veracium.store.sqlite as s\n"
                                                                   "s.SqliteStore._journal_edge_write = None\n"},
@@ -1295,9 +1317,10 @@ def _outside_the_write_method(action, a1, a2):
 
 @pytest.fixture(autouse=True)
 def _edges_write_tripwire(monkeypatch):
-    """Every store this module opens carries an authorizer that DENIES an edges INSERT or edges.json UPDATE prepared
-    from a stack without the write method's code object (and records it), so every executed path in these cells and
-    the N4c fixtures is checked at runtime, beside the static gate."""
+    """Every store this module opens carries an authorizer that DENIES (and records) an edges INSERT or edges.json
+    UPDATE prepared from a stack without the write method's code object, ANY such write a trigger makes, and the
+    creation of any trigger or view; its connection keeps no statement cache, so every execution is re-prepared and
+    seen. Every executed path in these cells and the N4c fixtures is checked at runtime, beside the static gate."""
     hits = []
     real_init = SqliteStore.__init__
 
@@ -1305,12 +1328,19 @@ def _edges_write_tripwire(monkeypatch):
         real_init(self, *a, **k)
 
         def auth(action, a1, a2, db, trigger):
-            if trigger is None and _outside_the_write_method(action, a1, a2):
-                hits.append((action, a1, a2))
+            edges_write = ((action == sqlite3.SQLITE_INSERT and a1 == "edges")
+                           or (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json"))
+            if (action in _TRIGGER_OR_VIEW or (trigger is not None and edges_write)
+                    or (trigger is None and _outside_the_write_method(action, a1, a2))):
+                hits.append((action, a1, a2, trigger))
                 return sqlite3.SQLITE_DENY
             return sqlite3.SQLITE_OK
         self._conn.set_authorizer(auth)
     monkeypatch.setattr(SqliteStore, "__init__", init)
+    # NO statement cache on the store's connection: the authorizer runs at PREPARE, and a cached statement is not
+    # re-prepared, so a same-text bypass after a legitimate write would run unseen (research's stage-1b catch)
+    real_connect = sqlite3.connect
+    monkeypatch.setattr(sqlite3, "connect", lambda *a, **k: real_connect(*a, **{"cached_statements": 0, **k}))
     yield hits
     assert hits == [], f"an edges json write outside the write method: {hits}"
 
@@ -1619,3 +1649,35 @@ def test_the_transition_itself_decides_due_ness_at_the_lifetime_boundary(tmp_pat
         assert (out, _row(s, "e").active, s.store_version(U)) == (None, True, before), out
     else:
         assert (out, _row(s, "e").active, s.store_version(U)) == ("lapsed", False, before + 1), out
+
+
+def test_the_head_schema_creates_no_trigger_and_no_view():
+    """The pin the trigger rule rests on: the head schema has no trigger and no view (so a trigger's writes could only
+    come from code the gate refuses), and no src/ module holds trigger or view DDL."""
+    from veracium.store import schema_version as _sv
+    c = sqlite3.connect(":memory:")
+    c.execute("BEGIN")
+    _sv.create(c, _sv.SCHEMA_VERSION)
+    c.execute("COMMIT")
+    assert c.execute("SELECT type, name FROM sqlite_master WHERE type IN ('trigger', 'view')").fetchall() == []
+    for p in sorted(SRC.rglob("*.py")):
+        assert not re.search(r"(?i)\bcreate\s+(temp(orary)?\s+)?(trigger|view)\b", p.read_text()), p
+
+
+def test_the_tripwire_sees_a_trigger_and_a_cached_same_text_bypass(tmp_path, _edges_write_tripwire):
+    """The tripwire's controls for research's two catches: creating a trigger on the store's connection is DENIED; and
+    after a legitimate write has prepared a statement text, a DIRECT execute of that same text is still denied — the
+    connection keeps no cache, so it is re-prepared and seen."""
+    s = SqliteStore(str(tmp_path / "tw2.db"))
+    s.add_edge(_edge("c", S.Volatility.SLOW, 0.5))
+    with pytest.raises(sqlite3.DatabaseError):
+        s._conn.execute("CREATE TRIGGER lift AFTER INSERT ON edge_event BEGIN UPDATE edges SET json = json "
+                        "WHERE id = NEW.edge_id; END")
+    e = _row(s, "c")
+    prior = sqlite3.connect(str(tmp_path / "tw2.db")).execute("SELECT json FROM edges WHERE id='c'").fetchone()[0]
+    with s._write_txn():                    # the legitimate write prepares the statement text first
+        s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, ("c",), user_id=U, edge_id="c", prior=prior)
+    with pytest.raises(sqlite3.DatabaseError):
+        s._conn.execute("UPDATE edges SET json=? WHERE id=?", ("{}", "c"))
+    assert len(_edges_write_tripwire) == 2, _edges_write_tripwire
+    _edges_write_tripwire.clear()

@@ -474,7 +474,9 @@ def _s6_mutant_rows():
 
 def test_contract_harness_0048_counts_only_a_refusal_as_a_kill(tmp_path):
     """contract_harness_0048.py's mutation matrix. On the tree it runs exactly §6's mutant rows (by row text and killing
-    cell, both ways; the per-writer bypass row once per model writer, so two more MUTANT lines than rows), kills every
+    cell, both ways; a row with several instances — R3-01's helper bodies, the per-writer bypass, the connection forms,
+    the helper-or-journal row, R3-02's reviewer forms, the write method's own forms — runs once per instance, so the
+    MUTANT lines exceed the rows by the sum below), kills every
     one and passes every control. Then three planted copies of the harness: a mutation that changes nothing must
     SURVIVE; a mutation that only crashes the model must read CRASHED, never KILLED (a crash is not the cell's refusal);
     a model line moved under a mutant's anchor must stop the run as a HARNESS ERROR. Each exits non-zero."""
@@ -483,22 +485,25 @@ def test_contract_harness_0048_counts_only_a_refusal_as_a_kill(tmp_path):
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr
     mutants = [ln.split(" | ") for ln in r.stdout.splitlines() if ln.startswith("MUTANT ")]
     assert {(m[1], m[2]) for m in mutants} == want, {(m[1], m[2]) for m in mutants} ^ want
-    n = len(want) + 2 + 8          # the per-writer bypass row x3 (+2); the unresolved-connection-form row x9 (+8), R2-01
+    n = len(want) + 2 + 3 + 8 + 1 + 6 + 22   # per-row instances beyond one: R3-01's helper bodies x3 (+2); the per-writer
+    # bypass row x4 (+3); the unresolved-connection-form row x9 (+8, R2-01); the helper-or-journal row x2 (+1); R3-02's
+    # reviewer forms x7 (+6); the (v4.2) write method's own forms x23 (+22)
     assert len(mutants) == n and all(m[0] == "MUTANT KILLED" for m in mutants), [m[:3] for m in mutants]
     tally = re.findall(r"^TALLY: mutants (\d+)/(\d+) killed; controls (\d+)/(\d+) pass$", r.stdout, re.M)
     assert tally and tally[0][0] == tally[0][1] == str(n) and tally[0][2] == tally[0][3] and int(tally[0][3]) > 0, tally
     assert n_rows == len(want) + 2, "the N4c complement is no longer exactly two rows: restate the harness's docstring"
 
     src = (EV / "contract_harness_0048.py").read_text()
-    anchor = '"    return Edge.model_validate(e.model_dump()).model_dump_json()\\n", "    return e.model_dump_json()\\n"'
+    anchor = ('"    captured = e.model_dump_json()\\n    Edge.model_validate_json(captured)\\n    return captured\\n", '
+              '"    return e.model_dump_json()\\n"')
     assert src.count(anchor) == 1, "the mutator's anchor moved: re-anchor this test"
     planted = {
         "no-op": src.replace(anchor, anchor.split(", ")[0] + ", " + anchor.split(", ")[0]),
         "crash": src.replace(anchor, anchor.split(", ")[0] + ", \"    raise RuntimeError('a crash, not a refusal')\\n\""),
     }
-    model_line = "    return Edge.model_validate(e.model_dump()).model_dump_json()\n"
+    model_line = "    Edge.model_validate_json(captured)\n"
     assert src.count(model_line) == 1, "the model line moved: re-anchor this test"
-    planted["drift"] = src.replace(model_line, "    return Edge.model_validate(e.model_dump()).model_dump_json()  # moved\n")
+    planted["drift"] = src.replace(model_line, "    Edge.model_validate_json(captured)  # moved\n")
     out = {}
     for name, text in planted.items():
         f = tmp_path / f"harness_{name}.py"
