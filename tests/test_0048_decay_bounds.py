@@ -1445,6 +1445,24 @@ def _guarded_identity_problems():
         if code is None or pathlib.Path(code.co_filename).resolve() != pathlib.Path(SQ.__file__).resolve() \
                 or code.co_firstlineno != line:
             probs.append(f"{name}: not the store module's own definition at L{line} ({have.get(name)!r})")
+    # BY CONTENT (research's stage 2, S2-04): a filename and a first line are metadata a replacement can copy onto its
+    # own code (`f.__code__ = _w.__code__.replace(co_filename=…, co_firstlineno=…)`). Each live code object must EQUAL
+    # the one a fresh compile of the store module's source gives under the same qualname — CPython's code equality
+    # compares the bytecode, the constants, the names and the line table.
+    fresh = {}
+    stack = [compile(SQLITE.read_text(), SQ.__file__, "exec")]
+    while stack:
+        c = stack.pop()
+        fresh.setdefault(c.co_qualname, c)
+        stack.extend(k for k in c.co_consts if hasattr(k, "co_qualname"))
+    for name in sorted(want):
+        code = getattr(have.get(name), "__code__", None)
+        if code is not None and code != fresh.get(code.co_qualname):
+            probs.append(f"{name}: its code is not the store module's source, compiled ({code.co_qualname})")
+    # WHAT THIS BINDS, AND THE RESIDUAL (research): the guarded objects' code equals their source. It does not bind
+    # what that code references at run time — the module's `json` or `Edge`, the connection object — which in-process
+    # code can still rebind; identity inside one interpreter is not a closable domain (the 0007 lesson). The row
+    # invariants are the route-independent layer; in-bound, journaled, wrong bytes would need a behavioural oracle.
     return probs
 
 
@@ -1899,3 +1917,24 @@ def test_the_tripwire_denies_a_forged_journal_and_a_rename(tmp_path, _edges_writ
         s._conn.execute("ALTER TABLE edges RENAME TO edges_x")
     assert len(_edges_write_tripwire) == 2, _edges_write_tripwire
     _edges_write_tripwire.clear()
+
+
+def test_the_identity_check_compares_code_by_content():
+    """Research's stage 2, S2-04: a replacement that keeps the real function object and swaps its __code__ for one
+    carrying the original's filename, first line, name and qualname passes a metadata check; the content check — each
+    live code object equal to a fresh compile of the store module's source — names it."""
+    real = SqliteStore.__dict__[METHOD]
+
+    def _w(self, sql, before, edge, after, *, user_id, edge_id, prior, kind=None, reason=None, defer=False):
+        return None
+    forged = _w.__code__.replace(co_filename=real.__code__.co_filename, co_firstlineno=real.__code__.co_firstlineno,
+                                 co_name=real.__code__.co_name, co_qualname=real.__code__.co_qualname)
+    assert _guarded_identity_problems() == []
+    saved = real.__code__
+    try:
+        real.__code__ = forged
+        probs = _guarded_identity_problems()
+    finally:
+        real.__code__ = saved
+    assert probs and all("compiled" in x for x in probs) and any(METHOD in x for x in probs), probs
+    assert _guarded_identity_problems() == []

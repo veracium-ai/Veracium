@@ -38,7 +38,9 @@ NAMES = {"confidence", "model_copy", "model_construct", "construct", "copy", "__
          # serialisation round trips restore state without validation (stage 2b: a pickle round trip with the
          # float's bytes swapped stores 2.0, and carries none of the names above)
          "pickle", "copyreg", "shelve", "marshal", "deepcopy", "__setstate__", "__getstate__", "__reduce__",
-         "__reduce_ex__"}
+         "__reduce_ex__",
+         # 0048 round 4 (research's stage 2, S2-04): a code object swapped onto a guarded function
+         "__code__"}
 WORDS = re.compile(r"\b(confidence|edges)\b")
 VERBS = re.compile(r"\b(update|insert|replace)\b", re.I)
 
