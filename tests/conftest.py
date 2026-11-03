@@ -154,6 +154,10 @@ def pytest_runtest_makereport(item, call):
     JUnit property (`sqlite_error`) and a report section, so the next readonly-database failure says which one it is."""
     outcome = yield
     rep = outcome.get_result()
+    if rep.when == "call":
+        # 0048 round 4: the edges-write tripwire's teardown checks a cell's stores only when the cell itself PASSED —
+        # a failed cell has already detected its defect, and a second report would turn a kill into an error
+        item._0048_call_failed = rep.failed
     if call.excinfo is not None:
         for name, errname, msg in sqlite_error_names(call.excinfo.value):
             rep.user_properties.append(("sqlite_error", f"{name} {errname} {msg}"))

@@ -590,7 +590,8 @@ CLOSED_SQL = {
     "UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
 }
 # the frozen bodies (ast.dump without positions, sha256). An edit of either refuses until the digest is re-reviewed.
-FROZEN = {METHOD: "a188aa4c5166525dd305b32f88182168968e05ee76276927642cd3bf20482db0", DEFERRED: "f34451a125834bb07a97daad6febc2b328674410162d77f18867ad95c1b7f2d8"}
+FROZEN = {METHOD: "a188aa4c5166525dd305b32f88182168968e05ee76276927642cd3bf20482db0", DEFERRED: "f34451a125834bb07a97daad6febc2b328674410162d77f18867ad95c1b7f2d8",
+          HELPER: "135b1ee93136505fff98d067a0513316f795866f5d8c6353caade25cb7e2e86a"}   # research's stage 2 (S2-03): the helper's single capture is frozen with the rest
 # the dynamic-rebinding routes refused anywhere in sqlite.py (the existing receiver rule's list, plus the module routes)
 DYNAMIC_NAMES = {"getattr", "setattr", "delattr", "vars", "eval", "exec", "globals", "locals", "compile", "__import__",
                  "reload"}
@@ -601,87 +602,87 @@ SQL_CALLS = ("execute", "executemany", "executescript")
 # `sql`, whose callers' literals are the closed set above. A new or changed non-literal site refuses until listed.
 NONLITERAL = {
     ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'):
-        "f'PRAGMA busy_timeout = {int(busy_timeout_ms)}'",
+        (1, "f'PRAGMA busy_timeout = {int(busy_timeout_ms)}'"),
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'):
-        'f"SELECT {\', \'.join(cols)} FROM {table} WHERE {where} ORDER BY id"',
+        (1, 'f"SELECT {\', \'.join(cols)} FROM {table} WHERE {where} ORDER BY id"'),
     ('SqliteStore._attested_by_another_owner', 'eb2ba4c3290426945f64f55e532238461d5d9d44a5ee085a4f52645c927eeb3a'):
-        "f'SELECT 1 FROM redactions WHERE target_kind=? AND target_id=? AND user_id<>? AND {_APPLIE",
+        (1, "f'SELECT 1 FROM redactions WHERE target_kind=? AND target_id=? AND user_id<>? AND {_APPLIE"),
     ('SqliteStore._attested_fields', 'b4446c6ae88d8497d190f8f13a92911f81cf0e25a5c0df840c605cad4633adbf'):
-        "'SELECT fields FROM redactions WHERE target_kind=? AND target_id=?' + owner_sql + ('' if c",
+        (1, "'SELECT fields FROM redactions WHERE target_kind=? AND target_id=?' + owner_sql + ('' if c"),
     ('SqliteStore._completed_attestation', 'ac4cc2426e52d922b8ed28e84effe37c30011850f64dd4452e744ad48eb150ab'):
-        "f'SELECT 1 FROM redactions WHERE user_id=? AND target_kind=? AND target_id=? AND {_APPLIED",
+        (1, "f'SELECT 1 FROM redactions WHERE user_id=? AND target_kind=? AND target_id=? AND {_APPLIED"),
     ('SqliteStore._confirm_replay', '0fbc4fa0d37e8071b0b5d73055918b6efd7b50a9f1fe40d6c3d3b079ac40816c'):
-        "f'SELECT {_COLS} FROM confirmations WHERE id=? AND user_id=?'",
+        (1, "f'SELECT {_COLS} FROM confirmations WHERE id=? AND user_id=?'"),
     ('SqliteStore._id_reserved', '39865061523d15e9bada3bba4afb270b89f19e430857060a14b8a6ae6efac59d'):
-        'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops"',
+        (1, 'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops"'),
     ('SqliteStore._load_op', '27d008897c48b8c107eb9520ec542b393921f9e25847f9c51fedc2edfb07af6d'):
-        'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops WHERE operation_id=?"',
+        (1, 'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops WHERE operation_id=?"'),
     ('SqliteStore._ops_for_user', '2f505a5bb0ddb655bf46fa2ba3b0e786f2db13e1241afb349d9eb3adba2c4902'):
-        'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops WHERE user_id=?"',
+        (1, 'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops WHERE user_id=?"'),
     ('SqliteStore._redact_in_txn', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'):
-        "f'SELECT {self.RECORD_COLS} FROM redactions WHERE id=?'",
+        (1, "f'SELECT {self.RECORD_COLS} FROM redactions WHERE id=?'"),
     ('SqliteStore._redaction_record', 'c2aa0c6f503ee77f2f03c4cd951b3745a4d865b0e283306c915c53d5fbb16e05'):
-        "f'SELECT {self.RECORD_COLS} FROM redactions WHERE user_id=? AND target_kind=? AND target_i",
+        (1, "f'SELECT {self.RECORD_COLS} FROM redactions WHERE user_id=? AND target_kind=? AND target_i"),
     ('SqliteStore._reply_replay', 'ebab35174f4bd03a186cdddb45260a877bf8623edb94965487f0a205325d2eac'):
-        "f'SELECT {self._REPLY_COLS} FROM replies WHERE id=? AND user_id=?'",
+        (1, "f'SELECT {self._REPLY_COLS} FROM replies WHERE id=? AND user_id=?'"),
     ('SqliteStore._source_redacted', '29a9ff461c9d9dce95085ee23caaf9cf3005b1caa65b04eaaa213d5db57baa50'):
-        'f"SELECT json FROM episodes WHERE user_id=? AND id IN ({\',\'.join(\'?\' * len(redacted))})"',
+        (1, 'f"SELECT json FROM episodes WHERE user_id=? AND id IN ({\',\'.join(\'?\' * len(redacted))})"'),
     ('SqliteStore._surviving_derived', '3d9f2c553d81b34f9e0c3dae13bdce09ed08cd1a45de42c73e1c810fdaef9421'):
-        "f'SELECT json FROM {table} WHERE id=? AND user_id=?'",
+        (1, "f'SELECT json FROM {table} WHERE id=? AND user_id=?'"),
     ('SqliteStore._write_edge_row', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
-        'sql',
+        (1, 'sql'),
     ('SqliteStore._write_op', 'b0447a31f610348c07a0930af4ffe437a4178a7e2f7cdc52d11e2e5d8753060b'):
-        'f"INSERT OR REPLACE INTO consolidation_ops({\', \'.join(self._OP_COLS)}) VALUES(?,?,?,?,?,?,',
+        (1, 'f"INSERT OR REPLACE INTO consolidation_ops({\', \'.join(self._OP_COLS)}) VALUES(?,?,?,?,?,?,'),
     ('SqliteStore.acted_edge_ids', 'b4820e17f1261cb74f4605d69f700b538e78998cf1b5c347ff27fcff8c8b43e3'):
-        "f'SELECT edge_id FROM confirmations WHERE user_id=? AND edge_id IN ({q}) UNION SELECT edge",
+        (1, "f'SELECT edge_id FROM confirmations WHERE user_id=? AND edge_id IN ({q}) UNION SELECT edge"),
     ('SqliteStore.active_challenges', '7aae11eef304bd121d26fa2bfe8557573f7bad633b1f0ac29ea9852f41560577'):
-        'f"SELECT {self._REPLY_COLS} FROM replies WHERE user_id=? AND edge_id=? AND kind=\'challenge',
+        (1, 'f"SELECT {self._REPLY_COLS} FROM replies WHERE user_id=? AND edge_id=? AND kind=\'challenge'),
     ('SqliteStore.add_reply', 'a2022f06b808b3a462a935471067cafc7535c753122add6c146aa954827fa400'):
-        'f"INSERT INTO replies({self._REPLY_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,?,?,\'loc',
+        (1, 'f"INSERT INTO replies({self._REPLY_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,?,?,\'loc'),
     ('SqliteStore.commit_outcome_import_plan', '03827958ec7b7072aefe89448678674c9fc02886e4c4edb1311a054d9d8f4a2d'):
-        "f'SELECT user_id, target_kind, target_id, {self.RECORD_COLS} FROM redactions WHERE source_",
+        (1, "f'SELECT user_id, target_kind, target_id, {self.RECORD_COLS} FROM redactions WHERE source_"),
     ('SqliteStore.commit_outcome_import_plan', '25a68e8dfc53a69efba960f40b99fc74fd55430b7a5d678e75be6ac3347e56eb'):
-        'f"INSERT INTO migration_outcome({\', \'.join(self._OUTCOME_COLUMNS)}) VALUES({\',\'.join(\'?\' *',
+        (1, 'f"INSERT INTO migration_outcome({\', \'.join(self._OUTCOME_COLUMNS)}) VALUES({\',\'.join(\'?\' *'),
     ('SqliteStore.commit_outcome_import_plan', '70905b22342c93513fc74ea1d16e4f11233b00789a3dd9f73bc874dac57eebc9'):
-        "f'SELECT user_id, json FROM {tbl} WHERE id=?'",
+        (2, "f'SELECT user_id, json FROM {tbl} WHERE id=?'"),
     ('SqliteStore.commit_outcome_import_plan', 'add6a203baf74ebdf25588d537da098d28d3d62b1dd80390be8daa6599b1fb04'):
-        'f"SELECT {\', \'.join(self._OUTCOME_COLUMNS)} FROM migration_outcome WHERE outcome_uid=?"',
+        (1, 'f"SELECT {\', \'.join(self._OUTCOME_COLUMNS)} FROM migration_outcome WHERE outcome_uid=?"'),
     ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'):
-        'f"SELECT user_id, json FROM {(\'edges\' if k == \'edge\' else \'episodes\')} WHERE id=?"',
+        (1, 'f"SELECT user_id, json FROM {(\'edges\' if k == \'edge\' else \'episodes\')} WHERE id=?"'),
     ('SqliteStore.commit_outcome_import_plan', 'e09d8261753337dde680071ab5bdc7e6175a5754f49b43053debc68f25e57da4'):
-        'f"INSERT INTO {a[\'table\']}({\', \'.join(cols)}) VALUES({\',\'.join(\'?\' * len(cols))})"',
+        (1, 'f"INSERT INTO {a[\'table\']}({\', \'.join(cols)}) VALUES({\',\'.join(\'?\' * len(cols))})"'),
     ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'):
-        'f"INSERT INTO confirmations({_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,\'local\',?)"',
+        (1, 'f"INSERT INTO confirmations({_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,\'local\',?)"'),
     ('SqliteStore.confirm_notice', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'):
-        "f'SELECT {self.RECORD_COLS} FROM redactions WHERE id=?'",
+        (1, "f'SELECT {self.RECORD_COLS} FROM redactions WHERE id=?'"),
     ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'):
-        "f'SELECT user_id, json FROM {table} WHERE id=?'",
+        (1, "f'SELECT user_id, json FROM {table} WHERE id=?'"),
     ('SqliteStore.confirmations_for', '6de03e078785d11fe4b34b9c39000a308103c9a26815b350347938403fc4eea6'):
-        "f'SELECT {_COLS} FROM confirmations WHERE user_id=? AND edge_id=? ORDER BY confirmed_at DE",
+        (1, "f'SELECT {_COLS} FROM confirmations WHERE user_id=? AND edge_id=? ORDER BY confirmed_at DE"),
     ('SqliteStore.contributions', 'c1a33b453a06fc1a588f12603f9d30098c211b2f378a5aa76edf0dfc0c49e6ef'):
-        "f'SELECT {self._CONTRIB_COLS} FROM contribution_ledger WHERE user_id=? AND survivor_type=?",
+        (1, "f'SELECT {self._CONTRIB_COLS} FROM contribution_ledger WHERE user_id=? AND survivor_type=?"),
     ('SqliteStore.contributors_of_source', 'ff79d44b37b3604e5d6ef605c9bec3381dec33cb8f91d45a207c030863ae2a27'):
-        "f'SELECT {self._CONTRIB_COLS} FROM contribution_ledger WHERE user_id=? AND identity_digest",
+        (1, "f'SELECT {self._CONTRIB_COLS} FROM contribution_ledger WHERE user_id=? AND identity_digest"),
     ('SqliteStore.edge_events', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'):
-        'q',
+        (1, 'q'),
     ('SqliteStore.edges', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'):
-        'q',
+        (1, 'q'),
     ('SqliteStore.forget_user', '99b754925b96f9575742044fee438d82476f53a86a23cd0dd138a323fc044add'):
-        "f'DELETE FROM {table} WHERE user_id=?'",
+        (1, "f'DELETE FROM {table} WHERE user_id=?'"),
     ('SqliteStore.migration_outcomes', 'e8e50718b302ae192e9d7ec4f38f340869dceab25ea51999b09d66a1041cf291'):
-        "f'SELECT {cols} FROM migration_outcome WHERE user_id=? ORDER BY edge_id, plan_id'",
+        (1, "f'SELECT {cols} FROM migration_outcome WHERE user_id=? ORDER BY edge_id, plan_id'"),
     ('SqliteStore.migration_outcomes_by_uid', '0af9489795fdbff7246fc9b15f70bf20e45f07abc5cdb64638b5a4e429a4e3a4'):
-        'f"SELECT {cols} FROM migration_outcome WHERE outcome_uid IN ({\',\'.join(\'?\' * len(ids))})"',
+        (1, 'f"SELECT {cols} FROM migration_outcome WHERE outcome_uid IN ({\',\'.join(\'?\' * len(ids))})"'),
     ('SqliteStore.policy_receipts', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
-        'sql',
+        (1, 'sql'),
     ('SqliteStore.redact', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'):
-        "f'SELECT user_id, json FROM {table} WHERE id=?'",
+        (1, "f'SELECT user_id, json FROM {table} WHERE id=?'"),
     ('SqliteStore.redacted_targets', '6f6166079c03b2f9ad0b61e4d8ba0e1882ed1b32d1d221f124d45d4b67c39af6'):
-        "f'SELECT DISTINCT target_id FROM redactions WHERE user_id=? AND target_kind=? AND {_APPLIE",
+        (1, "f'SELECT DISTINCT target_id FROM redactions WHERE user_id=? AND target_kind=? AND {_APPLIE"),
     ('SqliteStore.replies_for', '0e50f0c8b250ce20c7dcb393bdcbfc6c910b7099e5eb19b7c5a02ef0c64833d6'):
-        "f'SELECT {self._REPLY_COLS} FROM replies WHERE user_id=? AND edge_id=? ORDER BY written_at",
+        (1, "f'SELECT {self._REPLY_COLS} FROM replies WHERE user_id=? AND edge_id=? ORDER BY written_at"),
     ('SqliteStore.transition_consolidation_if_current', '5126e0419cd211f8dc948a7d1276927164e8eab4a076c2c872d1addc70fe9f09'):
-        "'SELECT COUNT(*) FROM episodes WHERE user_id=? AND id IN ({})'.format(','.join('?' * len(o",
+        (1, "'SELECT COUNT(*) FROM episodes WHERE user_id=? AND id IN ({})'.format(','.join('?' * len(o"),
 }
 # the one dynamic-table INSERT among them reaches only these tables (the domain is frozen with the entry)
 ACT_TABLES = {"confirmations", "replies"}
@@ -776,6 +777,8 @@ def _sqlite_classify(sql: str) -> set:
         for action, a1, a2, db in seen:
             if action in _TRIGGER_OR_VIEW:
                 tags.add("trigger-or-view")
+            if action in (sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_DROP_TABLE) and "edges" in (a1, a2):
+                tags.add("trigger-or-view")      # research's stage 2, S2-01: renaming edges routes a write around it
             if action == sqlite3.SQLITE_INSERT and a1 == "edges":
                 tags.add("edges-insert")
             elif action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json":
@@ -797,7 +800,7 @@ def _gate(source: str, others: dict | None = None) -> list:
     mod = {n.name: n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
     # 1. the frozen bodies
     for name, want in FROZEN.items():
-        node = defs.get(name) if name == METHOD else mod.get(name)
+        node = defs.get(name) if name == METHOD else mod.get(name)   # the helper and the deferred journal: module level
         if node is None:
             bad.append(f"{name}: not defined where the gate expects it")
         elif _digest(node) != want:
@@ -832,6 +835,8 @@ def _gate(source: str, others: dict | None = None) -> list:
     for n in ast.walk(tree):
         if isinstance(n, ast.Name) and n.id in DYNAMIC_NAMES:
             bad.append(f"{at(n)}: dynamic access `{n.id}` in the store module")
+        if isinstance(n, ast.Attribute) and n.attr in DYNAMIC_NAMES:      # `builtins.setattr` (research's stage 2)
+            bad.append(f"{at(n)}: dynamic access `.{n.attr}` in the store module")
         if isinstance(n, ast.Attribute) and n.attr in DYNAMIC_ATTRS:
             bad.append(f"{at(n)}: dynamic access `{n.attr}` in the store module")
     # 3. method names are what they say, across src/ (research's read, item 1): no attribute assignment or deletion of
@@ -848,6 +853,11 @@ def _gate(source: str, others: dict | None = None) -> list:
                 for x in ast.walk(tg):
                     if isinstance(x, ast.Attribute) and x.attr in GUARDED:
                         bad.append(f"{rel} {at(n)}: `{x.attr}` assigned or deleted as an attribute")
+            # research's stage 2, S2-02: `setattr(SqliteStore, "_write_edge_row", …)` from another module
+            if (isinstance(n, ast.Call) and (getattr(n.func, "id", None) in ("setattr", "delattr")
+                                             or getattr(n.func, "attr", None) in ("setattr", "delattr"))
+                    and len(n.args) >= 2 and isinstance(n.args[1], ast.Constant) and n.args[1].value in GUARDED):
+                bad.append(f"{rel} {at(n)}: `{n.args[1].value}` rebound by setattr/delattr")
             if isinstance(n, ast.ClassDef) and not (rel.endswith("store/sqlite.py") and n.name == "SqliteStore"):
                 for m in n.body:
                     if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and m.name in (METHOD, JOURNAL):
@@ -922,15 +932,16 @@ def _gate(source: str, others: dict | None = None) -> list:
     for rel, text in [("veracium/store/sqlite.py", source)] + sorted(others.items()):
         t3 = tree if text is source else ast.parse(text)
         for n in ast.walk(t3):
-            if (isinstance(n, ast.Constant) and isinstance(n.value, str) and "create" in n.value.lower()
-                    and ("trigger" in n.value.lower() or "view" in n.value.lower())
+            low = n.value.lower() if isinstance(n, ast.Constant) and isinstance(n.value, str) else ""
+            if (any(w in low for w in ("trigger", "view", "alter", "drop"))
                     and "trigger-or-view" in _sqlite_classify(n.value)):
-                bad.append(f"{rel} {at(n)}: a trigger or view created: {' '.join(n.value.split())[:70]}")
+                bad.append(f"{rel} {at(n)}: a trigger or view created, or edges altered or dropped: "
+                           f"{' '.join(n.value.split())[:70]}")
     # 5c. the dynamic-table domain, frozen with its listed entry
     if _act_tables_in(source) != ACT_TABLES:
         bad.append(f"_ACT_COLUMNS reaches {sorted(_act_tables_in(source))}, not the frozen {sorted(ACT_TABLES)}")
     # 5. SQL: every execute/executemany/executescript on ANY receiver
-    seen_nonlit = set()
+    seen_nonlit = {}
     for n in ast.walk(tree):
         if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in SQL_CALLS):
             continue
@@ -950,10 +961,12 @@ def _gate(source: str, others: dict | None = None) -> list:
         key = (where, _digest(a0))
         if key not in NONLITERAL:
             bad.append(f"{at(n)}: a non-literal SQL site not in the reviewed list ({where}): {ast.unparse(a0)[:80]}")
-        seen_nonlit.add(key)
-    stale = set(NONLITERAL) - seen_nonlit
-    if stale:
-        bad.append(f"non-literal list entries no longer present (stale): {sorted(stale)}")
+        seen_nonlit[key] = seen_nonlit.get(key, 0) + 1
+    # COUNTED (research's stage 2): a second site with an identical expression in the same function is not admitted
+    # by the first one's entry
+    for key, (count, _text) in NONLITERAL.items():
+        if seen_nonlit.get(key, 0) != count:
+            bad.append(f"non-literal site {key} occurs {seen_nonlit.get(key, 0)} time(s), the reviewed list says {count}")
     return bad
 
 
@@ -1071,6 +1084,19 @@ GATE_MUTANTS = {
 GATE_MUTANTS["a trigger rewriting edges.json after a correct write"] = (
     _INV, _INV + '\n        self._conn.execute("CREATE TRIGGER IF NOT EXISTS lift AFTER INSERT ON edge_event BEGIN '
                  "UPDATE edges SET json = json_set(json, '$.provenance.confidence', 1.8) WHERE id = NEW.edge_id; END\")")
+GATE_MUTANTS["a rename route around the edges table (research's S2-01)"] = (
+    _INV, _INV + '\n        self._conn.execute("ALTER TABLE edges RENAME TO edges_x")\n'
+                 '        self._conn.execute("UPDATE edges_x SET json=? WHERE id=?", (edge.model_dump_json(), edge_id))\n'
+                 '        self._conn.execute("ALTER TABLE edges_x RENAME TO edges")')
+GATE_MUTANTS["builtins.setattr in the store module"] = (
+    _INV, _INV + '\n        import builtins\n        builtins.setattr(edge, "id", edge_id)')
+GATE_MUTANTS["a second identical non-literal site"] = (
+    '                self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))\n',
+    '                self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))\n'
+    '                self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))\n')
+GATE_MUTANTS["an edit inside the helper (research's S2-03)"] = (
+    '    Edge.model_validate_json(captured)\n    return captured\n',
+    '    Edge.model_validate_json(captured)\n    captured = captured\n    return captured\n')
 GATE_MUTANTS["a temporary view"] = (_INV, _INV + '\n        self._conn.execute("CREATE TEMP VIEW v AS SELECT json FROM edges")')
 # appended to the END of sqlite.py's text (class-level attacks)
 EOF_MUTANTS = {
@@ -1080,6 +1106,9 @@ EOF_MUTANTS = {
 }
 # the mutants the gate reads OUTSIDE sqlite.py's text: a same-named method on a class in another src module
 OTHER_MUTANTS = {
+    "setattr of the write method from another module (research's S2-02)": {
+        "veracium/_planted.py": "from veracium.store.sqlite import SqliteStore\n"
+                                "setattr(SqliteStore, '_write_edge_row', lambda *a, **k: None)\n"},
     "a trigger created in another module": {"veracium/_planted.py": 'def plant(c):\n    c.execute("CREATE TRIGGER t AFTER '
                                             'INSERT ON edge_event BEGIN UPDATE edges SET json = json WHERE id = '
                                             'NEW.edge_id; END")\n'},
@@ -1168,13 +1197,34 @@ def _capture_unvalidated(edge):                 # one observation, never validat
     return edge.model_dump_json()
 
 
+def _capture_validate_the_object(edge):         # research's stage-2 M4: capture, but validate the OBJECT's dump
+    captured = edge.model_dump_json()
+    Edge.model_validate(edge.model_dump())
+    return captured
+
+
+def _capture_validate_a_copy(edge):             # research's stage-2 M6: capture, validate a deep copy's dump
+    captured = edge.model_dump_json()
+    Edge.model_validate(edge.model_copy(deep=True).model_dump())
+    return captured
+
+
 R3_01_MUTANTS = {"two observations (round 3's body)": _two_observations,
                  "validate the capture, return a fresh dump": _validate_then_redump,
-                 "capture without validating": _capture_unvalidated}
+                 "capture without validating": _capture_unvalidated,
+                 "capture, validate the object's dump (research's M4)": _capture_validate_the_object,
+                 "capture, validate a deep copy's dump (research's M6)": _capture_validate_a_copy}
 
 
 def _r3_01_cell(tmp_path, monkeypatch, helper=None):
-    """Returns (refused_before, stored_confidence, read_ok) for one run of the reviewer's schedule through add_edge."""
+    """Returns (refused_before, stored_confidence, read_ok, fired) for one run of the reviewer's schedule through
+    add_edge. Its hooks live in their OWN MonkeyPatch context, so undoing them never undoes the tripwire's patches."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    with pytest.MonkeyPatch.context() as mp:
+        return _r3_01_run(tmp_path, mp, helper)
+
+
+def _r3_01_run(tmp_path, monkeypatch, helper):
     if helper is not None:
         monkeypatch.setattr(SQ, HELPER, helper)
     s = SqliteStore(str(tmp_path / "r301.db"))
@@ -1187,10 +1237,10 @@ def _r3_01_cell(tmp_path, monkeypatch, helper=None):
         refused = True
     e = _edge("race", S.Volatility.SLOW, 0.8)
     vj, vo, fired = _swap_after_validation(e, 1.8)
-    monkeypatch.setattr(Edge, "model_validate_json", vj)
-    monkeypatch.setattr(Edge, "model_validate", vo)
-    s.add_edge(e)
-    monkeypatch.undo()
+    with pytest.MonkeyPatch.context() as hooks:
+        hooks.setattr(Edge, "model_validate_json", vj)
+        hooks.setattr(Edge, "model_validate", vo)
+        s.add_edge(e)
     stored = json.loads(sqlite3.connect(str(tmp_path / "r301.db")).execute(
         "SELECT json FROM edges WHERE id='race'").fetchone()[0])["provenance"]["confidence"]
     try:
@@ -1201,19 +1251,61 @@ def _r3_01_cell(tmp_path, monkeypatch, helper=None):
     return refused, stored, read_ok, bool(fired)
 
 
+def _mirror_cell(tmp_path, monkeypatch, helper=None):
+    """Research's stage-2 MIRROR schedule: the edge carries an unvalidated 1.8 when the helper serialises it, and a
+    second thread repairs it to 0.8 right after that serialisation. Returns (refused, stored confidence or None,
+    fired). The hook fires only for a dump made by whatever is CURRENTLY bound as the helper."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    with pytest.MonkeyPatch.context() as mp:
+        if helper is not None:
+            mp.setattr(SQ, HELPER, helper)
+        s = SqliteStore(str(tmp_path / "mirror.db"))
+        e = _edge("mir", S.Volatility.SLOW, 0.8)
+        e.provenance = Provenance.model_construct(**{**dict(e.provenance), "confidence": 1.8})
+        real, fired = Edge.model_dump_json, []
+
+        def dump(self, *a, **k):
+            out = real(self, *a, **k)
+            if self is e and not fired and sys._getframe(1).f_code is SQ.__dict__[HELPER].__code__:
+                fired.append(1)
+                th = threading.Thread(target=lambda: setattr(e, "provenance",
+                                                             e.provenance.model_copy(update={"confidence": 0.8})))
+                th.start()
+                th.join()
+            return out
+        with pytest.MonkeyPatch.context() as hooks:
+            hooks.setattr(Edge, "model_dump_json", dump)
+            try:
+                s.add_edge(e)
+                refused = False
+            except ValueError:
+                refused = True
+    row = sqlite3.connect(str(tmp_path / "mirror.db")).execute("SELECT json FROM edges WHERE id='mir'").fetchone()
+    return refused, (json.loads(row[0])["provenance"]["confidence"] if row else None), bool(fired)
+
+
 def test_the_store_binds_the_bytes_it_validated(tmp_path, monkeypatch):
     """N4f (b), round 3's R3-01: the helper serialises ONCE and validates and returns those bytes. Under the reviewer's
     schedule — validation succeeds, then another thread replaces the caller's Edge provenance with an unvalidated 1.8
-    — the store commits the 0.8 it validated and reads back; an already-invalid input is still refused."""
-    assert _r3_01_cell(tmp_path, monkeypatch) == (True, 0.8, True, True)
+    — the store commits the 0.8 it validated and reads back; an already-invalid input is still refused. Under the
+    MIRROR schedule (research's stage 2) — an unvalidated 1.8 at the serialisation, repaired to 0.8 right after — the
+    store refuses and writes nothing: the bytes validated are the bytes captured."""
+    assert _r3_01_cell(tmp_path / "a", monkeypatch) == (True, 0.8, True, True)
+    assert _mirror_cell(tmp_path / "b", monkeypatch) == (True, None, True)
 
 
 @pytest.mark.parametrize("name", list(R3_01_MUTANTS))
 def test_the_store_binds_the_bytes_it_validated_kills_each_mutant(tmp_path, monkeypatch, name):
-    """Each superseded or weakened helper body fails the regression above (the superseded implementation is the
-    mutant): two observations and a fresh re-dump commit 1.8; a capture never validated admits the invalid input."""
-    got = _r3_01_cell(tmp_path, monkeypatch, R3_01_MUTANTS[name])
-    assert got != (True, 0.8, True, True), f"{name}: the regression passed a defective helper ({got})"
+    """Each superseded or weakened helper body fails the regression above under at least one of its two schedules
+    (the superseded implementation is the mutant): two observations and a fresh re-dump commit 1.8 under the
+    reviewer's; a capture never validated admits the invalid input; validating the OBJECT's dump, or a copy's, stores
+    1.8 under the mirror (research's M4 and M6)."""
+    a = _r3_01_cell(tmp_path / "a", monkeypatch, R3_01_MUTANTS[name])
+    b = _mirror_cell(tmp_path / "b", monkeypatch, R3_01_MUTANTS[name])
+    assert (a, b) != ((True, 0.8, True, True), (True, None, True)), f"{name}: both schedules passed it ({a}, {b})"
+
+
+test_the_store_binds_the_bytes_it_validated_kills_each_mutant.plants_defects = True   # its mutants store 1.8
 
 
 def test_the_redaction_journals_the_bytes_it_stored(tmp_path):
@@ -1296,42 +1388,115 @@ def test_a_deferred_journal_never_swallows_an_exception(tmp_path, monkeypatch):
     assert _a_failing_side_write(tmp_path / "mutant") != (True, True), "the swallowing mutant passed"
 
 
+test_a_deferred_journal_never_swallows_an_exception.plants_defects = True   # its mutant commits a row with no journal
+
+
 def _row_json(tmp_path, eid):
     return sqlite3.connect(str(tmp_path / "dj.db")).execute("SELECT json FROM edges WHERE id=?", (eid,)).fetchone()[0]
 
 
 # ---- the runtime tripwire (tests only): an edges json write prepared outside the write method's frame ----------------
 
+def _in_frames(codes) -> bool:
+    f = sys._getframe(2)
+    while f is not None:
+        if f.f_code in codes:
+            return True
+        f = f.f_back
+    return False
+
+
+_TAKEN = {}                                                 # the guarded code objects, taken ONCE (research's S2-02)
+
+
 def _outside_the_write_method(action, a1, a2):
     if not ((action == sqlite3.SQLITE_INSERT and a1 == "edges")
             or (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json")):
         return False
-    code = SqliteStore._write_edge_row.__code__            # BY CODE IDENTITY, never by name
-    f = sys._getframe(1)
-    while f is not None:
-        if f.f_code is code:
-            return False
-        f = f.f_back
-    return True
+    return not _in_frames({_TAKEN["write"]})               # BY CODE IDENTITY, taken at setup, never by name
+
+
+def _journal_forged(action, a1):
+    """An edge_event INSERT prepared from neither the journal writer nor the v13 baseline journal (the only two
+    callers of append_event in src/): a forged journal would let a write pass the row-equals-journal invariant."""
+    return action == sqlite3.SQLITE_INSERT and a1 == "edge_event" and not _in_frames({_TAKEN["journal"],
+                                                                                      _TAKEN["baselines"]})
+
+
+def _guarded_identity_problems():
+    """Research's stage 2, S2-02: the four guarded objects are THE SOURCE'S OWN — each code object's file is the store
+    module and its first line is its `def` in that file's AST — so a replacement installed by setattr from elsewhere
+    (or any rebinding the static gate cannot see) is named before the cell runs."""
+    tree = ast.parse(SQLITE.read_text())
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore")
+    dj = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == DEFERRED)
+    want = {(f"SqliteStore.{n.name}"): n.lineno for n in cls.body if isinstance(n, ast.FunctionDef) and n.name in (METHOD, JOURNAL)}
+    want[HELPER] = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == HELPER).lineno
+    want.update({f"{DEFERRED}.{n.name}": n.lineno for n in dj.body if isinstance(n, ast.FunctionDef)})
+    have = {f"SqliteStore.{m}": SqliteStore.__dict__.get(m) for m in (METHOD, JOURNAL)}
+    have[HELPER] = SQ.__dict__.get(HELPER)
+    djc = SQ.__dict__.get(DEFERRED)
+    if not (isinstance(djc, type) and djc.__module__ == SQ.__name__):
+        return [f"{DEFERRED} is not the store module's own class: {djc!r}"]
+    have.update({f"{DEFERRED}.{m}": djc.__dict__.get(m) for m in ("__init__", "__enter__", "emit", "__exit__")})
+    probs = []
+    for name, line in sorted(want.items()):
+        code = getattr(have.get(name), "__code__", None)
+        if code is None or pathlib.Path(code.co_filename).resolve() != pathlib.Path(SQ.__file__).resolve() \
+                or code.co_firstlineno != line:
+            probs.append(f"{name}: not the store module's own definition at L{line} ({have.get(name)!r})")
+    return probs
+
+
+def _store_invariant_problems(path):
+    """Research's stage 2: route-independent comparisons over a store a cell left, whatever route wrote it —
+    (1) every edges row validates as an Edge; (2) every edges row equals the state of its last edge_event (an
+    unjournaled write, in bound or not, shows here)."""
+    if not pathlib.Path(path).exists():
+        return []
+    c = sqlite3.connect(path)
+    try:
+        if not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='edge_event'").fetchone():
+            return []
+        out = []
+        for eid, uid, js in c.execute("SELECT id, user_id, json FROM edges"):
+            try:
+                Edge.model_validate_json(js)
+            except ValueError as ex:
+                out.append(f"{path}: edge {eid!r} does not validate ({str(ex).splitlines()[0][:80]})")
+            last = c.execute("SELECT state FROM edge_event WHERE user_id=? AND edge_id=? ORDER BY seq DESC LIMIT 1",
+                             (uid, eid)).fetchone()
+            if last is None or last[0] != js:
+                out.append(f"{path}: edge {eid!r}'s row is not its last journaled state")
+        return out
+    finally:
+        c.close()
 
 
 @pytest.fixture(autouse=True)
-def _edges_write_tripwire(monkeypatch):
+def _edges_write_tripwire(monkeypatch, request):
     """Every store this module opens carries an authorizer that DENIES (and records) an edges INSERT or edges.json
     UPDATE prepared from a stack without the write method's code object, ANY such write a trigger makes, and the
     creation of any trigger or view; its connection keeps no statement cache, so every execution is re-prepared and
     seen. Every executed path in these cells and the N4c fixtures is checked at runtime, beside the static gate."""
-    hits = []
+    assert _guarded_identity_problems() == [], _guarded_identity_problems()
+    from veracium.store import edge_events as _ee
+    _TAKEN.update(write=SqliteStore.__dict__[METHOD].__code__, journal=SqliteStore.__dict__[JOURNAL].__code__,
+                  baselines=_ee.journal_baselines.__code__)
+    hits, paths = [], []
     real_init = SqliteStore.__init__
 
     def init(self, *a, **k):
         real_init(self, *a, **k)
+        paths.append(self._path)
 
         def auth(action, a1, a2, db, trigger):
             edges_write = ((action == sqlite3.SQLITE_INSERT and a1 == "edges")
                            or (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json"))
             if (action in _TRIGGER_OR_VIEW or (trigger is not None and edges_write)
-                    or (trigger is None and _outside_the_write_method(action, a1, a2))):
+                    or (action in (sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_DROP_TABLE) and "edges" in (a1, a2))
+                    or (trigger is None and _outside_the_write_method(action, a1, a2))
+                    or (trigger is None and _journal_forged(action, a1))):
                 hits.append((action, a1, a2, trigger))
                 return sqlite3.SQLITE_DENY
             return sqlite3.SQLITE_OK
@@ -1343,6 +1508,10 @@ def _edges_write_tripwire(monkeypatch):
     monkeypatch.setattr(sqlite3, "connect", lambda *a, **k: real_connect(*a, **{"cached_statements": 0, **k}))
     yield hits
     assert hits == [], f"an edges json write outside the write method: {hits}"
+    if not (getattr(request.function, "plants_defects", False)      # a cell that stores a defect ON PURPOSE says so
+            or getattr(request.node, "_0048_call_failed", False)):    # a failed cell has already detected its defect
+        probs = [x for path in dict.fromkeys(paths) for x in _store_invariant_problems(path)]
+        assert probs == [], probs
 
 
 def test_the_tripwire_refuses_a_write_outside_the_method_and_a_same_named_function(tmp_path, _edges_write_tripwire):
@@ -1679,5 +1848,54 @@ def test_the_tripwire_sees_a_trigger_and_a_cached_same_text_bypass(tmp_path, _ed
         s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, ("c",), user_id=U, edge_id="c", prior=prior)
     with pytest.raises(sqlite3.DatabaseError):
         s._conn.execute("UPDATE edges SET json=? WHERE id=?", ("{}", "c"))
+    assert len(_edges_write_tripwire) == 2, _edges_write_tripwire
+    _edges_write_tripwire.clear()
+
+
+def test_the_identity_check_names_a_replaced_write_method():
+    """Research's stage 2, S2-02, at runtime: a write method (or helper, or journal writer) replaced by setattr is
+    named by the setup-time identity check; the source's own objects pass it."""
+    assert _guarded_identity_problems() == []
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(SqliteStore, METHOD, lambda *a, **k: None)
+        assert any(METHOD in x for x in _guarded_identity_problems())
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(SQ, HELPER, lambda e: e.model_dump_json())
+        assert any(HELPER in x for x in _guarded_identity_problems())
+
+
+def test_the_row_invariants_name_an_out_of_bound_and_an_unjournaled_write(tmp_path):
+    """The route-independent comparisons (research's stage 2) on rows planted through a SEPARATE connection, so no
+    route the authorizer knows is involved: an out-of-bound confidence fails (1); an IN-bound unjournaled rewrite
+    fails (2); the honest store passes both."""
+    s = SqliteStore(str(tmp_path / "inv.db"))
+    s.add_edge(_edge("i", S.Volatility.SLOW, 0.5))
+    s.add_edge(_edge("j", S.Volatility.SLOW, 0.5))
+    assert _store_invariant_problems(str(tmp_path / "inv.db")) == []
+    with contextlib.closing(sqlite3.connect(str(tmp_path / "inv.db"))) as raw:
+        for eid, conf in (("i", 1.8), ("j", 0.25)):
+            js = json.loads(raw.execute("SELECT json FROM edges WHERE id=?", (eid,)).fetchone()[0])
+            js["provenance"]["confidence"] = conf
+            raw.execute("UPDATE edges SET json=? WHERE id=?", (json.dumps(js), eid))
+        raw.commit()
+    probs = _store_invariant_problems(str(tmp_path / "inv.db"))
+    assert any("'i' does not validate" in x for x in probs) and any("'j'" in x and "journaled" in x for x in probs), probs
+
+
+test_the_row_invariants_name_an_out_of_bound_and_an_unjournaled_write.plants_defects = True
+
+
+def test_the_tripwire_denies_a_forged_journal_and_a_rename(tmp_path, _edges_write_tripwire):
+    """An edge_event INSERT from outside the journal writer (a forged journal would satisfy the row invariant) and an
+    ALTER TABLE renaming edges (research's S2-01 route) are DENIED on the store's connection."""
+    from veracium.store import edge_events as _ee
+    s = SqliteStore(str(tmp_path / "fj.db"))
+    s.add_edge(_edge("f", S.Volatility.SLOW, 0.5))
+    with pytest.raises(sqlite3.DatabaseError):
+        with s._write_txn():
+            _ee.append_event(s._conn, user_id=U, seq=99, txn=99, edge_id="f", kind="mutated", reason=None,
+                             state="{}", recorded_at=NOW.isoformat())
+    with pytest.raises(sqlite3.DatabaseError):
+        s._conn.execute("ALTER TABLE edges RENAME TO edges_x")
     assert len(_edges_write_tripwire) == 2, _edges_write_tripwire
     _edges_write_tripwire.clear()
