@@ -97,7 +97,13 @@ _READ = ('            row = self._conn.execute("SELECT json, active FROM edges W
          '                                     (edge_id, user_id)).fetchone()\n')
 _STALE = '            _stale = (getattr(self, "_listed", {}).get(edge_id), 1)\n'
 _DECAY_RETIRE = '                    self._invalidate_edge_row(edge_id, now, "decayed")     # stored confidence unchanged (N4i)\n'
-_INV_WRITER = "        edge.invalidation_reason = reason\n        new_json = _validated_edge_json(edge)\n"
+_INV_WRITER = ('        self._write_edge_row("UPDATE edges SET active=0, json=? WHERE id=?", (), edge, (edge_id,),\n'
+               '                             user_id=row[1], edge_id=edge_id, prior=row[0], kind="invalidated", reason=reason)\n')
+_INV_DIRECT = ('        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?", ({dump}, edge_id))\n'
+               '        self._journal_edge_write(row[1], edge_id, {dump}, row[0], kind="invalidated", reason=reason)\n')
+_HELPER = "    captured = edge.model_dump_json()\n    Edge.model_validate_json(captured)\n    return captured\n"
+_INT_FIRST = "    if (isinstance(value, int) and not 0 <= value <= 1) or not math.isfinite(value)"
+_EXIT_RAISE = "        if exc_type is None and state != \"emitted\":\n"
 _NEW_IMPORT = "\nimport re\n"
 _WIKI = '            if outcome in ("lapsed", "decayed") and self._edge_in_refusal(user_id, edge_id):\n'
 _DUE = ("            if lifetime is None or (now - e.provenance.observed_at).days <= lifetime:\n"
@@ -123,9 +129,15 @@ MUTANTS = [
      [BOUNDARY("0.0", "decay_factor"), BOUNDARY("1", "confidence_floor")], [VALIDATED("1.5", "decay_factor")], None,
      "an exclusive bound: the endpoints 0 and 1 are refused"),
     ("N4b-nan-blind-comparison", "product", CFG,
-     [("if not math.isfinite(value) or not 0.0 <= value <= 1.0:", "if value < 0.0 or value > 1.0:")],
+     [("    if (isinstance(value, int) and not 0 <= value <= 1) or not math.isfinite(value) or not 0.0 <= value <= 1.0:",
+       "    if (isinstance(value, int) and not 0 <= value <= 1) or value < 0.0 or value > 1.0:")],
      [VALIDATED("nan", "decay_factor"), VALIDATED("nan", "confidence_floor")], [VALIDATED("1.5", "decay_factor")],
      None, "a NaN-blind comparison: nan is accepted"),
+    ("R3-03-float-first", "product", CFG,
+     [(_INT_FIRST, "    if not math.isfinite(value) or (isinstance(value, int) and not 0 <= value <= 1)")],
+     [VALIDATED("+10**400", "decay_factor"), VALIDATED("-10**400", "confidence_floor"),
+      ASSIGN("+10**400", "confidence_floor"), REFUSAL("+10**400", "0.3")], [VALIDATED("1.5", "decay_factor")], None,
+     "the float conversion first again: 10**400 raises OverflowError, not the ValueError naming the field (R3-03)"),
     ("N4b-bool-accepted", "product", CFG,
      [("if isinstance(value, bool) or not isinstance(value, (int, float)):", "if not isinstance(value, (int, float)):")],
      [VALIDATED("True", "decay_factor"), VALIDATED("False", "confidence_floor")], [VALIDATED("1.5", "decay_factor")],
@@ -185,18 +197,39 @@ MUTANTS = [
      [C("test_a_host_that_rebinds_lifecycles_table_is_honoured")], [N4I("retained")], None,
      "the transition reads the store module's import of the table, not expire()'s copy (research's F2)"),
     ("N4f-helper-does-not-validate", "product", SQ,
-     [("    Edge.model_validate(edge.model_dump())\n    return edge.model_dump_json()\n", "    return edge.model_dump_json()\n")],
+     [(_HELPER, "    return edge.model_dump_json()\n")],
      [OUT_OF_BOUND], [GATE], None, "the store helper serialises without validating"),
     ("N4f-helper-trusts-the-instance", "product", SQ,
-     [("    Edge.model_validate(edge.model_dump())\n", "    Edge.model_validate(edge)\n")],
+     [("    Edge.model_validate_json(captured)\n", "    Edge.model_validate(edge)\n")],
      [OUT_OF_BOUND], [GATE], None, "the helper accepts an instance without revalidating its nested data"),
     ("N4f-a-writer-bypasses-the-helper", "product", SQ,
-     [(_INV_WRITER, "        edge.invalidation_reason = reason\n        new_json = edge.model_dump_json()\n")],
+     [(_INV_WRITER, _INV_DIRECT.format(dump="edge.model_dump_json()"))],
      [GATE], [OUT_OF_BOUND], None, "the sole active=0 writer binds its own dump, not the helper's"),
     ("N4f-the-helpers-return-ignored", "product", SQ,
-     [(_INV_WRITER, "        edge.invalidation_reason = reason\n        _validated_edge_json(edge)\n"
-                    "        new_json = edge.model_dump_json()\n")],
+     [(_INV_WRITER, "        _validated_edge_json(edge)\n" + _INV_DIRECT.format(dump="edge.model_dump_json()"))],
      [GATE], [OUT_OF_BOUND], None, "a writer calls the helper and ignores its return value"),
+    ("R3-01-two-observations", "product", SQ,
+     [(_HELPER, "    Edge.model_validate(edge.model_dump())\n    return edge.model_dump_json()\n")],
+     [C("test_the_store_binds_the_bytes_it_validated")], [OUT_OF_BOUND], None,
+     "THE SUPERSEDED IMPLEMENTATION (round 3's body): one observation validated, another serialised (R3-01)"),
+    ("R3-01-validate-the-capture-return-a-fresh-dump", "product", SQ,
+     [(_HELPER, "    captured = edge.model_dump_json()\n    Edge.model_validate_json(captured)\n"
+                "    return edge.model_dump_json()\n")],
+     [C("test_the_store_binds_the_bytes_it_validated")], [OUT_OF_BOUND], None,
+     "the capture validated, a second dump returned: the bytes bound are not the bytes checked"),
+    ("N4f-deferred-journal-swallows-an-exception", "product", SQ,
+     [("            raise RuntimeError(f\"the edge row {self._edge_id!r} was written and its journal never emitted — refusing, \"\n"
+       "                               f\"so the write transaction rolls back (specs/0048 §4C; specs/0029 §4b)\")\n"
+       "        return False\n",
+       "            raise RuntimeError(f\"the edge row {self._edge_id!r} was written and its journal never emitted — refusing, \"\n"
+       "                               f\"so the write transaction rolls back (specs/0048 §4C; specs/0029 §4b)\")\n"
+       "        return True\n")],
+     [C("test_a_deferred_journal_never_swallows_an_exception"), GATE], [OUT_OF_BOUND], None,
+     "the deferred journal's __exit__ suppresses: a failed side-table write commits a row with no journal"),
+    ("N4f-deferred-journal-unemitted-allowed", "product", SQ,
+     [(_EXIT_RAISE, "        if False:\n")],
+     [C("test_a_deferred_journal_left_unemitted_rolls_the_write_back"), GATE], [OUT_OF_BOUND], None,
+     "leaving the deferred block without emit is allowed: a row commits with no journal"),
     ("N4h-conditional-on-confidence-and-activity", "product", SQ,
      [(_EDGES_RET, _STASH),
       (_READ, _READ + _STALE + "            if row is not None and _stale[0] is not None:\n"

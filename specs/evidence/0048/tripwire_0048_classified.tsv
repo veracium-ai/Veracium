@@ -5,6 +5,8 @@
 # every site; research samples the classifications. The verb trigger (`str:sql-write`) and the
 # last three classes were added with it, research's stage 2b. 2026-11-02 (research, on dev's 0048 implementation
 # draft): the lines §4A-§4D edit reclassified; class `validated-write` added for §4B's decayed stamp.
+# 2026-11-03 (dev, 0048 round 4, R3-02 (a′)): the seven json writers' statements now ride `self._write_edge_row(…)` calls, the one write
+# site, instead of `self._conn.execute(…)`; the 8 affected rows keep their class (edge-json-writer: census_0048 still counts 7 writers by their SQL).
 #
 # Classes (closed; the test refuses any other):
 #   census-writer               a token of one of the confidence writers census_0048 counts (§2c-ii row 8: five at
@@ -72,18 +74,18 @@ copy-other-fields	src/veracium/store/sqlite.py	model_copy	self._write_op(op.mode
 declaration	src/veracium/schema.py	confidence	confidence: float = Field(default=0.9, ge=0.0, le=1.0)
 edge-json-writer	src/veracium/store/sqlite.py	str:edges	"INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
 edge-json-writer	src/veracium/store/sqlite.py	str:edges	"INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
-edge-json-writer	src/veracium/store/sqlite.py	str:edges	"UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._conn.execute("UPDATE edges SET active=1, json=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._conn.execute("UPDATE edges SET json=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._conn.execute("UPDATE edges SET json=? WHERE id=?",
+edge-json-writer	src/veracium/store/sqlite.py	str:edges	"UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?", (), model_after,
+edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._write_edge_row("UPDATE edges SET active=0, json=? WHERE id=?", (), edge, (edge_id,),
+edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._write_edge_row("UPDATE edges SET active=1, json=? WHERE id=?", (), edge, (edge_id,),
+edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),
+edge-json-writer	src/veracium/store/sqlite.py	str:edges	self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),
 edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	"INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
 edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	"INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
-edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	"UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._conn.execute("UPDATE edges SET active=1, json=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._conn.execute("UPDATE edges SET json=? WHERE id=?",
-edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._conn.execute("UPDATE edges SET json=? WHERE id=?",
+edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	"UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?", (), model_after,
+edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._write_edge_row("UPDATE edges SET active=0, json=? WHERE id=?", (), edge, (edge_id,),
+edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._write_edge_row("UPDATE edges SET active=1, json=? WHERE id=?", (), edge, (edge_id,),
+edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),
+edge-json-writer	src/veracium/store/sqlite.py	str:sql-write	self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),
 edges-sql-not-a-json-write	src/veracium/doctor.py	str:edges	for r in conn.execute(f"SELECT id, user_id, active, quarantined, json FROM edges {where}", args):
 edges-sql-not-a-json-write	src/veracium/doctor.py	str:edges	users = [r[0] for r in conn.execute("SELECT DISTINCT user_id FROM edges UNION "
 edges-sql-not-a-json-write	src/veracium/store/current_state.py	str:edges	"SELECT json FROM edges WHERE user_id=? AND id=?", (user_id, edge_id)).fetchone()

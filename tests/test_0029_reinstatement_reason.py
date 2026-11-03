@@ -126,7 +126,12 @@ def test_reinstatement_reason_leaves_reconstruction_verbatim(tmp_path):
 # CENSUSED from the source, never listed by hand; the rulings below are the review, and a new site with no ruling fails.
 
 FORWARDER = ("store/sqlite.py", "SqliteStore._reinstate_edge_row")
-WRITER_RULINGS = {FORWARDER: "<forwarded to its censused callers>"}
+# 0048 round 4 (R3-02, (a′)): the edges json is written, and its event journaled, through ONE site. Its two bodies
+# PASS THROUGH their own `kind`/`reason` parameters to the choke point; the census reads the call sites that reach them
+# (a `_write_edge_row(…)` or `emit(…)` call carrying `kind=`) exactly as it read `_journal_edge_write(…)` calls before.
+PASS_THROUGH = {("store/sqlite.py", "SqliteStore._write_edge_row"), ("store/sqlite.py", "_DeferredJournal.emit")}
+WRITER_RULINGS = {FORWARDER: "<forwarded to its censused callers>",
+                  **{s: "<pass-through: kind and reason from the censused write sites>" for s in sorted(PASS_THROUGH)}}
 # research's T6 stage-1 read, F1: the reinstate writer FORWARDS its `reason` (required, keyword-only, no default), so
 # the census reads its CALLERS — each with a constant reason, ruled here; a non-constant or absent one is a finding.
 # 0044's restoration is `arity_reclassified`'s ONE caller (0029 v12 §4b-i point 3): `convert_rows`, §4f's steps 2–4,
@@ -170,9 +175,13 @@ def census(sources: dict):
             if isinstance(n, ast.Call):
                 name = n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", None)
                 kw = {k.arg: k.value for k in n.keywords}
-                if name == "_journal_edge_write" and "kind" in kw:
+                if name in ("_journal_edge_write", "_write_edge_row", "emit") and "kind" in kw:
                     k = kw["kind"]
-                    if not isinstance(k, ast.Constant):
+                    site = (rel, q.get(id(n), "<module>"))
+                    if (site in PASS_THROUGH and name == "_journal_edge_write" and isinstance(k, ast.Name)
+                            and k.id == "kind" and isinstance(kw.get("reason"), ast.Name) and kw["reason"].id == "reason"):
+                        writers[site] = "<pass-through: kind and reason from the censused write sites>"
+                    elif not isinstance(k, ast.Constant):
                         writers[(rel, q.get(id(n), "<module>"))] = "<non-constant kind>"
                     elif k.value == "reinstated":
                         r = kw.get("reason")

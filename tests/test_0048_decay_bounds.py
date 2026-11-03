@@ -9,13 +9,17 @@ tests/test_0048_evidence.py, rewritten to assert the fixed behaviour.
 from __future__ import annotations
 
 import ast
+import contextlib
 import datetime as dt
+import hashlib
 import json
 import math
 import pathlib
 import random
 import re
 import sqlite3
+import symtable
+import sys
 import threading
 
 import pytest
@@ -32,8 +36,14 @@ U = "u1"
 OLD = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 NOW = dt.datetime(2026, 11, 2, tzinfo=dt.timezone.utc)
 FIELDS = ("decay_factor", "confidence_floor")
+HUGE = 10 ** 400                       # 0048 round 3, R3-03: beyond float — `math.isfinite` raised OverflowError on it
 REJECTED = [1.5, -0.1, float("nan"), float("inf"), float("-inf"), True, False, "0.5", None,
-            math.nextafter(1.0, 2.0), math.nextafter(0.0, -1.0)]
+            math.nextafter(1.0, 2.0), math.nextafter(0.0, -1.0), HUGE, -HUGE]
+
+
+def _vid(v):
+    """A cell id: `repr(v)` — every existing id unchanged — except the two integers too long to print."""
+    return "+10**400" if v == HUGE else "-10**400" if v == -HUGE else repr(v)
 BOUNDARY = [0.0, 1.0, 0, 1]
 
 
@@ -109,12 +119,12 @@ def _row(store, eid):
 # ---- N4b, N4b′, N4b-assign: one validator, at construction and on assignment -----------------------------------------
 
 @pytest.mark.parametrize("field", FIELDS)
-@pytest.mark.parametrize("value", REJECTED, ids=repr)
+@pytest.mark.parametrize("value", REJECTED, ids=_vid)
 def test_config_bounds_are_validated(field, value):
     """N4b: both fields refuse >1, <0, NaN, ±inf, a bool, a string, None and the nearest floats beyond each bound,
-    with ValueError naming the field."""
-    with pytest.raises(ValueError, match=field):
-        MemoryConfig(**{field: value})
+    with ValueError naming the field. Asserted through `_refuses`, so another exception — round 3's OverflowError on
+    ±10**400 (R3-03) — fails by assertion, not as an escaping error."""
+    _refuses(ValueError, lambda: MemoryConfig(**{field: value}), match=field)
 
 
 @pytest.mark.parametrize("field", FIELDS)
@@ -132,13 +142,12 @@ def test_boundary_configs_are_still_valid(field, value):
 
 
 @pytest.mark.parametrize("field", FIELDS)
-@pytest.mark.parametrize("value", REJECTED, ids=repr)
+@pytest.mark.parametrize("value", REJECTED, ids=_vid)
 def test_config_bounds_hold_on_assignment(field, value):
     """N4b-assign: every value N4b refuses, assigned after construction, refuses, and the field keeps its old value."""
     c = MemoryConfig(decay_factor=0.25, confidence_floor=0.75)
     old = getattr(c, field)
-    with pytest.raises(ValueError, match=field):
-        setattr(c, field, value)
+    _refuses(ValueError, lambda: setattr(c, field, value), match=field)
     assert getattr(c, field) == old
 
 
@@ -163,7 +172,8 @@ def _mixed(tmp_path):
 
 
 @pytest.mark.parametrize("factor,floor", [(2.0, 0.3), (-1.0, 0.3), (float("nan"), 0.3), (True, 0.3), ("0.5", 0.3),
-                                          (0.5, 2.0), (0.5, -0.5), (0.5, float("nan"))], ids=repr)
+                                          (0.5, 2.0), (0.5, -0.5), (0.5, float("nan")),
+                                          (HUGE, 0.3), (-HUGE, 0.3), (0.5, HUGE), (0.5, -HUGE)], ids=_vid)
 def test_decay_config_refusal_writes_nothing(tmp_path, decay_mapped, factor, floor):
     """N4d: a malformed duck-typed policy refuses at entry with ValueError, and the complete store snapshot is
     byte-identical (every table; the counters and 0029's journal included). Then the same on an EMPTY store."""
@@ -444,8 +454,11 @@ def test_a_legacy_serialisation_is_processed_not_skipped(tmp_path):
     raw = json.loads(s._conn.execute("SELECT json FROM edges WHERE id='e'").fetchone()[0])
     reordered = json.dumps(dict(reversed(list(raw.items()))))
     assert reordered != json.dumps(raw)
-    s._conn.execute("UPDATE edges SET json=? WHERE id='e'", (reordered,))
-    s._conn.commit()
+    # planted through a SEPARATE connection, as an earlier release's own writer would have stored it — not through this
+    # store's connection, which the edges-write tripwire holds to the write method
+    with contextlib.closing(sqlite3.connect(str(tmp_path / "legacy.db"))) as other:
+        other.execute("UPDATE edges SET json=? WHERE id='e'", (reordered,))
+        other.commit()
     assert expire(s, U, MemoryConfig(), now=NOW)["flagged_for_confirmation"] == 1
     assert _row(s, "e").needs_confirmation is True
 
@@ -555,257 +568,766 @@ def test_the_store_refuses_an_out_of_bound_edge(tmp_path):
 
 
 SQLITE = ROOT / "src" / "veracium" / "store" / "sqlite.py"
+SRC = ROOT / "src"
 HELPER = "_validated_edge_json"
-# every edges write form in sqlite.py, normalised, -> the position of its json parameter (None: no json column)
-RECOGNISED = {
-    "insert or replace into edges(id,user_id,subject,relation,object,active,quarantined,json) values(?,?,?,?,?,?,?,?)": 7,
-    "update edges set json=? where id=?": 0,
-    "update edges set active=0, json=? where id=?": 0,
-    "update edges set active=1, json=? where id=?": 0,
-    "update edges set json=?, subject=?, relation=?, object=?, quarantined=? where id=?": 0,
+METHOD = "_write_edge_row"
+DEFERRED = "_DeferredJournal"
+JOURNAL = "_journal_edge_write"
+GUARDED = (HELPER, METHOD, DEFERRED, JOURNAL)
+# 0048 round 4 (R3-02, (a′)): THE edges-json writers — exactly these seven call the write method, and an eighth is a
+# reviewed addition (research's stage-1 read, item 5)
+WRITERS = {"SqliteStore._upsert_edge_row", "SqliteStore.confirm_edge", "SqliteStore._invalidate_edge_row",
+           "SqliteStore._reinstate_edge_row", "SqliteStore._recompute_edge_row",
+           "SqliteStore.commit_outcome_import_plan", "SqliteStore._redact_in_txn"}
+DEFER_SITE = "SqliteStore._redact_in_txn"
+# the CLOSED set of json-writing statements: each is classified by SQLite (below) as an edges INSERT or an UPDATE of
+# edges.json, and appears ONLY as the `sql` argument of a write-method call
+CLOSED_SQL = {
+    "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) VALUES(?,?,?,?,?,?,?,?)",
+    "UPDATE edges SET json=? WHERE id=?",
+    "UPDATE edges SET active=0, json=? WHERE id=?",
+    "UPDATE edges SET active=1, json=? WHERE id=?",
+    "UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
 }
-NON_WRITE_ATTRS = {"commit", "rollback", "close", "in_transaction"}   # resolved: none of them runs SQL text
-# THE BINDING INVENTORY: every reference to the connection the gate cannot resolve from the statement itself, with
-# its reason. Keyed (function, form). Its scope is store/sqlite.py ONLY: five other modules reach `store._conn`
-# (doctor, current_state, data_migration, migration, revocation), and the rglob token tripwire (N4c iv,
-# test_every_tripwire_hit_on_this_tree_is_classified) is what covers them — the receiver rule is not package-wide.
-INVENTORY = {
-    ("__init__", "arg:open_versioned"): "the 0007/0013 versioned open (DDL, the stamp, migrations); any edges write it "
-                                        "makes is outside this AST (sqlite.py only) and is the tripwire's",
-    ("_journal_edge_write", "arg:next_txn"): "store.edge_events: the 0029 journal's allocation read",
-    ("_journal_edge_write", "arg:mint_recorded_at"): "store.edge_events: the journal's clock mint",
-    ("_journal_edge_write", "arg:next_seq"): "store.edge_events: the journal's sequence read",
-    ("_journal_edge_write", "arg:append_event"): "store.edge_events: appends to edge_event, never to edges",
-    ("standing_revocations", "arg:_standing"): "store.revocation.standing_revocations: a SELECT on source_revocations",
-    ("_redact_in_txn", "arg:_redact_revocation_reasons"): "store.revocation: UPDATE source_revocations' reason column",
-    ("_redact_in_txn", "arg:_revocation_reason_marked"): "store.revocation: a SELECT on source_revocations",
-    ("forget_user", "sql:delete from {table}"): "the erasure loop over _ERASE_TABLES: a DELETE stores no value",
-    ("commit_outcome_import_plan", "sql:insert into {act table}"): "an act row into one of _ACT_COLUMNS' tables, "
-                                                                   "which are not edges (asserted below)",
+# the frozen bodies (ast.dump without positions, sha256). An edit of either refuses until the digest is re-reviewed.
+FROZEN = {METHOD: "a188aa4c5166525dd305b32f88182168968e05ee76276927642cd3bf20482db0", DEFERRED: "f34451a125834bb07a97daad6febc2b328674410162d77f18867ad95c1b7f2d8"}
+# the dynamic-rebinding routes refused anywhere in sqlite.py (the existing receiver rule's list, plus the module routes)
+DYNAMIC_NAMES = {"getattr", "setattr", "delattr", "vars", "eval", "exec", "globals", "locals", "compile", "__import__",
+                 "reload"}
+DYNAMIC_ATTRS = {"__dict__", "__getattribute__", "__setattr__", "__delattr__", "__class__", "__code__", "reload"}
+SQL_CALLS = ("execute", "executemany", "executescript")
+# every NON-literal SQL argument of an execute/executemany/executescript in sqlite.py, keyed (qualname, sha256 of the
+# expression's ast.dump) -> its static text, the reviewed reading: none writes edges.json except the write method's own
+# `sql`, whose callers' literals are the closed set above. A new or changed non-literal site refuses until listed.
+NONLITERAL = {
+    ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'):
+        "f'PRAGMA busy_timeout = {int(busy_timeout_ms)}'",
+    ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'):
+        'f"SELECT {\', \'.join(cols)} FROM {table} WHERE {where} ORDER BY id"',
+    ('SqliteStore._attested_by_another_owner', 'eb2ba4c3290426945f64f55e532238461d5d9d44a5ee085a4f52645c927eeb3a'):
+        "f'SELECT 1 FROM redactions WHERE target_kind=? AND target_id=? AND user_id<>? AND {_APPLIE",
+    ('SqliteStore._attested_fields', 'b4446c6ae88d8497d190f8f13a92911f81cf0e25a5c0df840c605cad4633adbf'):
+        "'SELECT fields FROM redactions WHERE target_kind=? AND target_id=?' + owner_sql + ('' if c",
+    ('SqliteStore._completed_attestation', 'ac4cc2426e52d922b8ed28e84effe37c30011850f64dd4452e744ad48eb150ab'):
+        "f'SELECT 1 FROM redactions WHERE user_id=? AND target_kind=? AND target_id=? AND {_APPLIED",
+    ('SqliteStore._confirm_replay', '0fbc4fa0d37e8071b0b5d73055918b6efd7b50a9f1fe40d6c3d3b079ac40816c'):
+        "f'SELECT {_COLS} FROM confirmations WHERE id=? AND user_id=?'",
+    ('SqliteStore._id_reserved', '39865061523d15e9bada3bba4afb270b89f19e430857060a14b8a6ae6efac59d'):
+        'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops"',
+    ('SqliteStore._load_op', '27d008897c48b8c107eb9520ec542b393921f9e25847f9c51fedc2edfb07af6d'):
+        'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops WHERE operation_id=?"',
+    ('SqliteStore._ops_for_user', '2f505a5bb0ddb655bf46fa2ba3b0e786f2db13e1241afb349d9eb3adba2c4902'):
+        'f"SELECT {\', \'.join(self._OP_COLS)} FROM consolidation_ops WHERE user_id=?"',
+    ('SqliteStore._redact_in_txn', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'):
+        "f'SELECT {self.RECORD_COLS} FROM redactions WHERE id=?'",
+    ('SqliteStore._redaction_record', 'c2aa0c6f503ee77f2f03c4cd951b3745a4d865b0e283306c915c53d5fbb16e05'):
+        "f'SELECT {self.RECORD_COLS} FROM redactions WHERE user_id=? AND target_kind=? AND target_i",
+    ('SqliteStore._reply_replay', 'ebab35174f4bd03a186cdddb45260a877bf8623edb94965487f0a205325d2eac'):
+        "f'SELECT {self._REPLY_COLS} FROM replies WHERE id=? AND user_id=?'",
+    ('SqliteStore._source_redacted', '29a9ff461c9d9dce95085ee23caaf9cf3005b1caa65b04eaaa213d5db57baa50'):
+        'f"SELECT json FROM episodes WHERE user_id=? AND id IN ({\',\'.join(\'?\' * len(redacted))})"',
+    ('SqliteStore._surviving_derived', '3d9f2c553d81b34f9e0c3dae13bdce09ed08cd1a45de42c73e1c810fdaef9421'):
+        "f'SELECT json FROM {table} WHERE id=? AND user_id=?'",
+    ('SqliteStore._write_edge_row', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
+        'sql',
+    ('SqliteStore._write_op', 'b0447a31f610348c07a0930af4ffe437a4178a7e2f7cdc52d11e2e5d8753060b'):
+        'f"INSERT OR REPLACE INTO consolidation_ops({\', \'.join(self._OP_COLS)}) VALUES(?,?,?,?,?,?,',
+    ('SqliteStore.acted_edge_ids', 'b4820e17f1261cb74f4605d69f700b538e78998cf1b5c347ff27fcff8c8b43e3'):
+        "f'SELECT edge_id FROM confirmations WHERE user_id=? AND edge_id IN ({q}) UNION SELECT edge",
+    ('SqliteStore.active_challenges', '7aae11eef304bd121d26fa2bfe8557573f7bad633b1f0ac29ea9852f41560577'):
+        'f"SELECT {self._REPLY_COLS} FROM replies WHERE user_id=? AND edge_id=? AND kind=\'challenge',
+    ('SqliteStore.add_reply', 'a2022f06b808b3a462a935471067cafc7535c753122add6c146aa954827fa400'):
+        'f"INSERT INTO replies({self._REPLY_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,?,?,\'loc',
+    ('SqliteStore.commit_outcome_import_plan', '03827958ec7b7072aefe89448678674c9fc02886e4c4edb1311a054d9d8f4a2d'):
+        "f'SELECT user_id, target_kind, target_id, {self.RECORD_COLS} FROM redactions WHERE source_",
+    ('SqliteStore.commit_outcome_import_plan', '25a68e8dfc53a69efba960f40b99fc74fd55430b7a5d678e75be6ac3347e56eb'):
+        'f"INSERT INTO migration_outcome({\', \'.join(self._OUTCOME_COLUMNS)}) VALUES({\',\'.join(\'?\' *',
+    ('SqliteStore.commit_outcome_import_plan', '70905b22342c93513fc74ea1d16e4f11233b00789a3dd9f73bc874dac57eebc9'):
+        "f'SELECT user_id, json FROM {tbl} WHERE id=?'",
+    ('SqliteStore.commit_outcome_import_plan', 'add6a203baf74ebdf25588d537da098d28d3d62b1dd80390be8daa6599b1fb04'):
+        'f"SELECT {\', \'.join(self._OUTCOME_COLUMNS)} FROM migration_outcome WHERE outcome_uid=?"',
+    ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'):
+        'f"SELECT user_id, json FROM {(\'edges\' if k == \'edge\' else \'episodes\')} WHERE id=?"',
+    ('SqliteStore.commit_outcome_import_plan', 'e09d8261753337dde680071ab5bdc7e6175a5754f49b43053debc68f25e57da4'):
+        'f"INSERT INTO {a[\'table\']}({\', \'.join(cols)}) VALUES({\',\'.join(\'?\' * len(cols))})"',
+    ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'):
+        'f"INSERT INTO confirmations({_COLS}, origin, act_seq) VALUES(?,?,?,?,?,?,?,?,\'local\',?)"',
+    ('SqliteStore.confirm_notice', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'):
+        "f'SELECT {self.RECORD_COLS} FROM redactions WHERE id=?'",
+    ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'):
+        "f'SELECT user_id, json FROM {table} WHERE id=?'",
+    ('SqliteStore.confirmations_for', '6de03e078785d11fe4b34b9c39000a308103c9a26815b350347938403fc4eea6'):
+        "f'SELECT {_COLS} FROM confirmations WHERE user_id=? AND edge_id=? ORDER BY confirmed_at DE",
+    ('SqliteStore.contributions', 'c1a33b453a06fc1a588f12603f9d30098c211b2f378a5aa76edf0dfc0c49e6ef'):
+        "f'SELECT {self._CONTRIB_COLS} FROM contribution_ledger WHERE user_id=? AND survivor_type=?",
+    ('SqliteStore.contributors_of_source', 'ff79d44b37b3604e5d6ef605c9bec3381dec33cb8f91d45a207c030863ae2a27'):
+        "f'SELECT {self._CONTRIB_COLS} FROM contribution_ledger WHERE user_id=? AND identity_digest",
+    ('SqliteStore.edge_events', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'):
+        'q',
+    ('SqliteStore.edges', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'):
+        'q',
+    ('SqliteStore.forget_user', '99b754925b96f9575742044fee438d82476f53a86a23cd0dd138a323fc044add'):
+        "f'DELETE FROM {table} WHERE user_id=?'",
+    ('SqliteStore.migration_outcomes', 'e8e50718b302ae192e9d7ec4f38f340869dceab25ea51999b09d66a1041cf291'):
+        "f'SELECT {cols} FROM migration_outcome WHERE user_id=? ORDER BY edge_id, plan_id'",
+    ('SqliteStore.migration_outcomes_by_uid', '0af9489795fdbff7246fc9b15f70bf20e45f07abc5cdb64638b5a4e429a4e3a4'):
+        'f"SELECT {cols} FROM migration_outcome WHERE outcome_uid IN ({\',\'.join(\'?\' * len(ids))})"',
+    ('SqliteStore.policy_receipts', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
+        'sql',
+    ('SqliteStore.redact', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'):
+        "f'SELECT user_id, json FROM {table} WHERE id=?'",
+    ('SqliteStore.redacted_targets', '6f6166079c03b2f9ad0b61e4d8ba0e1882ed1b32d1d221f124d45d4b67c39af6'):
+        "f'SELECT DISTINCT target_id FROM redactions WHERE user_id=? AND target_kind=? AND {_APPLIE",
+    ('SqliteStore.replies_for', '0e50f0c8b250ce20c7dcb393bdcbfc6c910b7099e5eb19b7c5a02ef0c64833d6'):
+        "f'SELECT {self._REPLY_COLS} FROM replies WHERE user_id=? AND edge_id=? ORDER BY written_at",
+    ('SqliteStore.transition_consolidation_if_current', '5126e0419cd211f8dc948a7d1276927164e8eab4a076c2c872d1addc70fe9f09'):
+        "'SELECT COUNT(*) FROM episodes WHERE user_id=? AND id IN ({})'.format(','.join('?' * len(o",
 }
-# the modules the inventory's callees live in, and the edges-write text none of them may hold
-CALLEE_MODULES = {"next_txn": "store/edge_events.py", "mint_recorded_at": "store/edge_events.py",
-                  "next_seq": "store/edge_events.py", "append_event": "store/edge_events.py",
-                  "_standing": "store/revocation.py", "_redact_revocation_reasons": "store/revocation.py",
-                  "_revocation_reason_marked": "store/revocation.py"}
+# the one dynamic-table INSERT among them reaches only these tables (the domain is frozen with the entry)
+ACT_TABLES = {"confirmations", "replies"}
 
 
-def _literal(node, assigns):
-    """The SQL text of a statement node, or None: a str constant; a + of resolvable parts; a JoinedStr's static text
-    with `{…}` for each formatted value; a `.format(…)` on a literal; a Name every assignment of which in the function
-    is resolvable (all the same leading verb). Anything else is unresolved."""
-    if isinstance(node, ast.Constant) and isinstance(node.value, str):
-        return node.value
-    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-        a = _literal(node.left, assigns)
-        return None if a is None else a + "{…}"
-    if isinstance(node, ast.JoinedStr):
-        return "".join(v.value if isinstance(v, ast.Constant) else "{…}" for v in node.values)
-    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "format":
-        return _literal(node.func.value, assigns)
-    if isinstance(node, ast.Name) and assigns.get(node.id):
-        heads = [v for kind, v in assigns[node.id] if kind == "set"]
-        tails = [v for kind, v in assigns[node.id] if kind == "aug"]
-        texts = [_literal(v, {}) for v in heads] + [_literal(v, {}) for v in tails]
-        if not heads or any(x is None for x in texts):
-            return None
-        tail = " {…}" if tails else ""
-        return ";".join(_literal(v, {}) + tail for v in heads)
-    return None
+def _qualnames(tree):
+    out = {}
+
+    def walk(node, prefix):
+        for ch in ast.iter_child_nodes(node):
+            if isinstance(ch, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                q = f"{prefix}.{ch.name}" if prefix else ch.name
+                for n in ast.walk(ch):
+                    out[id(n)] = q
+                walk(ch, q)
+            else:
+                walk(ch, prefix)
+    walk(tree, "")
+    return out
 
 
-def _gate(source: str) -> list:
-    """N4f (a) over sqlite.py's source: the problems, or []."""
-    tree = ast.parse(source)
-    parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+def _digest(node) -> str:
+    return hashlib.sha256(ast.dump(node, include_attributes=False).encode()).hexdigest()
 
-    def enclosing_fn(n):
-        while n in parent:
-            n = parent[n]
-            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                return n
-        return None
-    assigns_by_fn = {}
-    for fn in ast.walk(tree):
-        if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            a = {}
-            for n in ast.walk(fn):
-                if isinstance(n, ast.Assign):
-                    for t in n.targets:
-                        if isinstance(t, ast.Name):
-                            a.setdefault(t.id, []).append(("set", n.value))
-                elif isinstance(n, ast.AugAssign) and isinstance(n.target, ast.Name):
-                    a.setdefault(n.target.id, []).append(("aug", n.value))
-            assigns_by_fn[fn] = a
-    bad, used = [], set()
-    is_conn = lambda n: (isinstance(n, ast.Attribute) and n.attr == "_conn" and isinstance(n.value, ast.Name)
-                         and n.value.id == "self")
+
+def _binders(tree, name):
+    """Every node that BINDS `name` anywhere in the tree, in every statement form Python has."""
+    out = []
     for n in ast.walk(tree):
-        line = getattr(n, "lineno", "?")
-        if isinstance(n, ast.Name) and n.id in ("getattr", "setattr", "delattr", "vars", "eval", "exec"):
-            bad.append(f"L{line}: dynamic access `{n.id}` in the store module")
-        if isinstance(n, ast.Attribute) and n.attr in ("__dict__", "__getattribute__", "__setattr__"):
-            bad.append(f"L{line}: dynamic access `{n.attr}` in the store module")
-        if (isinstance(n, ast.Attribute) and n.attr == "connect" and isinstance(n.value, ast.Name)
-                and n.value.id == "sqlite3"):
-            fn = enclosing_fn(n)
-            asg = parent.get(parent.get(n))
-            if not (fn is not None and fn.name == "__init__" and isinstance(asg, ast.Assign)
-                    and any(is_conn(t) for t in asg.targets)):
-                bad.append(f"L{line}: a second sqlite3 connection")
-        if isinstance(n, ast.Attribute) and n.attr == "_conn" and not is_conn(n):
-            bad.append(f"L{line}: the connection reached through something other than `self`")
-        if not is_conn(n):
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and n.name == name:
+            out.append(n)
+        elif isinstance(n, ast.Name) and n.id == name and isinstance(n.ctx, (ast.Store, ast.Del)):
+            out.append(n)                  # Assign/AnnAssign/AugAssign/For/With/NamedExpr/comprehension/Delete targets
+        elif isinstance(n, ast.alias) and (n.asname or n.name.split(".")[0]) == name:
+            out.append(n)
+        elif isinstance(n, ast.arg) and n.arg == name:
+            out.append(n)
+        elif isinstance(n, ast.ExceptHandler) and n.name == name:
+            out.append(n)
+        elif isinstance(n, (ast.Global, ast.Nonlocal)) and name in n.names:
+            out.append(n)
+        elif isinstance(n, (ast.MatchAs, ast.MatchStar)) and n.name == name:
+            out.append(n)
+        elif isinstance(n, ast.MatchMapping) and n.rest == name:
+            out.append(n)
+        elif hasattr(ast, "TypeVar") and isinstance(n, (ast.TypeVar, ast.ParamSpec, ast.TypeVarTuple)) and n.name == name:
+            out.append(n)
+    return out
+
+
+_CLASSIFIER = []
+_CLASSIFIED = {}
+
+
+def _sqlite_classify(sql: str) -> set:
+    """SQLite's own reading of a statement, not a keyword: prepare it under an authorizer against an in-memory store at
+    the head schema and record each (action, table, column) — the prepare asks once per updated column, so every
+    callback is allowed and the statement runs inside a savepoint that is always rolled back. Returns the subset of
+    {"edges-insert", "edges-json-update"} the statement performs."""
+    if sql in _CLASSIFIED:
+        return set(_CLASSIFIED[sql])
+    if not _CLASSIFIER:
+        from veracium.store import schema_version as _sv
+        # NO statement cache: a cached statement is not re-prepared, so the authorizer would not be asked again
+        c0 = sqlite3.connect(":memory:", isolation_level=None, cached_statements=0)
+        c0.execute("BEGIN")
+        _sv.create(c0, _sv.SCHEMA_VERSION)
+        c0.execute("COMMIT")
+        _CLASSIFIER.append(c0)
+    c = _CLASSIFIER[0]
+    if True:
+        seen = []
+
+        def auth(action, a1, a2, db, trigger):
+            seen.append((action, a1, a2, db))     # SQLite asks once per updated COLUMN: every one must be seen
+            return sqlite3.SQLITE_OK
+        c.set_authorizer(auth)
+        c.execute("BEGIN")                       # an in-memory scratch store, and whatever ran is rolled back
+        try:
+            c.execute(sql)
+        except (sqlite3.DatabaseError, sqlite3.ProgrammingError):
+            pass                                  # unbound parameters stop it after the prepare the authorizer saw
+        finally:
+            c.set_authorizer(None)
+            if c.in_transaction:
+                c.execute("ROLLBACK")
+        tags = set()
+        for action, a1, a2, db in seen:
+            if action == sqlite3.SQLITE_INSERT and a1 == "edges":
+                tags.add("edges-insert")
+            elif action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json":
+                tags.add("edges-json-update")
+        _CLASSIFIED[sql] = frozenset(tags)
+        return tags
+
+
+def _gate(source: str, others: dict | None = None) -> list:
+    """N4f (a), round 4 (R3-02, (a′)), over sqlite.py's source: the problems, or []. `others` maps the OTHER src/
+    modules' relative paths to their source (for the attribute and class rules); None reads them from disk."""
+    tree = ast.parse(source)
+    q = _qualnames(tree)
+    parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+    bad = []
+    at = lambda n: f"L{getattr(n, 'lineno', '?')}"
+    cls = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore"]
+    defs = {n.name: n for n in (cls[0].body if cls else []) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    mod = {n.name: n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
+    # 1. the frozen bodies
+    for name, want in FROZEN.items():
+        node = defs.get(name) if name == METHOD else mod.get(name)
+        if node is None:
+            bad.append(f"{name}: not defined where the gate expects it")
+        elif _digest(node) != want:
+            bad.append(f"{name}: its body is not the frozen one (digest {_digest(node)[:16]}…) — re-review it")
+    # 2. the names: one binder each, never shadowed, never reached dynamically
+    for name in (HELPER, DEFERRED):
+        b = _binders(tree, name)
+        if len(b) != 1 or not isinstance(b[0], (ast.FunctionDef, ast.ClassDef)) or b[0] not in tree.body:
+            bad.append(f"{name}: bound {len(b)} time(s) in sqlite.py ({[at(x) for x in b]}) — exactly its one "
+                       f"module-level definition may bind it")
+    for name in (METHOD, JOURNAL):
+        b = _binders(tree, name)
+        if len(b) != 1 or b[0] is not defs.get(name):
+            bad.append(f"{name}: bound {len(b)} time(s) in sqlite.py ({[at(x) for x in b]}) — exactly its one def "
+                       f"in SqliteStore's class body may bind it")
+    table = symtable.symtable(source, "sqlite.py", "exec")
+
+    def scopes(t):
+        yield t
+        for ch in t.get_children():
+            yield from scopes(ch)
+    for t in scopes(table):
+        if t.get_type() == "module":
             continue
-        fn = enclosing_fn(n)
-        fname = fn.name if fn else "<module>"
-        p = parent[n]
-        if isinstance(p, ast.Assign) and n in p.targets:
-            if fname != "__init__":
-                bad.append(f"L{line}: the connection rebound in {fname}")
+        for name in (HELPER, DEFERRED):
+            try:
+                s = t.lookup(name)
+            except KeyError:
+                continue
+            if s.is_assigned() or s.is_local() or s.is_parameter() or s.is_imported():
+                bad.append(f"{name}: bound in the scope {t.get_name()!r} (symtable) — a shadow of the module's own")
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Name) and n.id in DYNAMIC_NAMES:
+            bad.append(f"{at(n)}: dynamic access `{n.id}` in the store module")
+        if isinstance(n, ast.Attribute) and n.attr in DYNAMIC_ATTRS:
+            bad.append(f"{at(n)}: dynamic access `{n.attr}` in the store module")
+    # 3. method names are what they say, across src/ (research's read, item 1): no attribute assignment or deletion of
+    # a guarded name on any receiver, and no class but SqliteStore defines the two methods
+    if others is None:
+        others = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py"))
+                  if p.resolve() != SQLITE.resolve()}
+    for rel, text in [("veracium/store/sqlite.py", source)] + sorted(others.items()):
+        t2 = tree if text is source else ast.parse(text)
+        for n in ast.walk(t2):
+            targets = (n.targets if isinstance(n, (ast.Assign, ast.Delete)) else
+                       [n.target] if isinstance(n, (ast.AnnAssign, ast.AugAssign)) else [])
+            for tg in targets:
+                for x in ast.walk(tg):
+                    if isinstance(x, ast.Attribute) and x.attr in GUARDED:
+                        bad.append(f"{rel} {at(n)}: `{x.attr}` assigned or deleted as an attribute")
+            if isinstance(n, ast.ClassDef) and not (rel.endswith("store/sqlite.py") and n.name == "SqliteStore"):
+                for m in n.body:
+                    if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and m.name in (METHOD, JOURNAL):
+                        bad.append(f"{rel} {at(m)}: class {n.name} defines {m.name} (only SqliteStore may)")
+    # 4. the call sites: who calls what
+    for n in ast.walk(tree):
+        if not isinstance(n, (ast.Name, ast.Attribute)):
             continue
-        if isinstance(p, ast.Attribute) and p.value is n:
-            call = parent.get(p)
-            called = isinstance(call, ast.Call) and call.func is p
-            if p.attr in NON_WRITE_ATTRS and (called or p.attr == "in_transaction"):
-                continue
-            if p.attr != "execute" or not called:
-                bad.append(f"L{line}: `self._conn.{p.attr}` in a form the gate does not resolve ({fname})")
-                continue
-            sql = _literal(call.args[0], assigns_by_fn.get(fn, {})) if call.args else None
-            if sql is None:
-                bad.append(f"L{line}: an execute whose SQL the gate cannot read ({fname})")
-                continue
-            for stmt in sql.split(";"):
-                norm = " ".join(stmt.lower().split())
-                verb = norm.split(" ", 1)[0] if norm else ""
-                READS = ("select", "pragma", "with", "begin", "commit", "rollback", "savepoint", "release", "end", "")
-                if verb in READS or not re.match(r"(insert|update|replace|delete)\b", norm):
-                    if verb not in READS:
-                        bad.append(f"L{line}: a statement of unknown verb ({fname}): {norm[:60]}")
-                    continue
-                m = re.match(r"(?:insert(?: or replace)? into|replace into|update|delete from)\s+([\w{}…]+)", norm)
-                table = m.group(1) if m else None
-                if table == "{…}":
-                    key = {"forget_user": "sql:delete from {table}",
-                           "commit_outcome_import_plan": "sql:insert into {act table}"}.get(fname)
-                    if key is None or (fname, key) not in INVENTORY:
-                        bad.append(f"L{line}: a write to a formatted table not in the inventory ({fname})")
-                    used.add((fname, key))
-                    continue
-                if table is None:
-                    bad.append(f"L{line}: a write whose table the gate cannot read ({fname}): {norm[:60]}")
-                    continue
-                if table != "edges":
-                    continue
-                if norm not in RECOGNISED:
-                    bad.append(f"L{line}: an edges write of an unrecognised form ({fname}): {norm[:70]}")
-                    continue
-                params = call.args[1] if len(call.args) > 1 else None
-                k = RECOGNISED[norm]
-                v = params.elts[k] if isinstance(params, ast.Tuple) and len(params.elts) > k else None
-                ok = isinstance(v, ast.Call) and isinstance(v.func, ast.Name) and v.func.id == HELPER
-                if isinstance(v, ast.Name):
-                    vals = assigns_by_fn.get(fn, {}).get(v.id, [])
-                    ok = bool(vals) and all(kind == "set" and isinstance(x, ast.Call) and isinstance(x.func, ast.Name)
-                                            and x.func.id == HELPER for kind, x in vals)
+        name = n.id if isinstance(n, ast.Name) else n.attr
+        if name not in GUARDED or (isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)):
+            continue
+        call = parent.get(n)
+        where = q.get(id(n), "<module>")
+        if not (isinstance(call, ast.Call) and call.func is n):
+            bad.append(f"{at(n)}: `{name}` referenced, not called ({where})")
+            continue
+        if name == HELPER and where != f"SqliteStore.{METHOD}":
+            bad.append(f"{at(n)}: the helper called outside the write method ({where})")
+        if name == JOURNAL and where not in (f"SqliteStore.{METHOD}", f"{DEFERRED}.emit"):
+            bad.append(f"{at(n)}: the journal writer called outside the write method ({where})")
+        if name == DEFERRED and where != f"SqliteStore.{METHOD}":
+            bad.append(f"{at(n)}: the deferred journal built outside the write method ({where})")
+        if name == METHOD:
+            if where not in WRITERS:
+                bad.append(f"{at(n)}: `{METHOD}` called from {where}, not one of the seven writers")
+            if not (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id == "self"):
+                bad.append(f"{at(n)}: `{METHOD}` reached through something other than `self` ({where})")
+            if len(call.args) != 4 or any(isinstance(a, ast.Starred) for a in call.args):
+                bad.append(f"{at(n)}: `{METHOD}` called with {len(call.args)} positional arguments, not 4 ({where})")
+            sql = call.args[0] if call.args else None
+            if not (isinstance(sql, ast.Constant) and isinstance(sql.value, str) and sql.value in CLOSED_SQL):
+                bad.append(f"{at(n)}: `{METHOD}`'s sql is not a literal of the closed set ({where})")
+            elif not (_sqlite_classify(sql.value) & {"edges-insert", "edges-json-update"}):
+                bad.append(f"{at(n)}: `{METHOD}`'s sql is not, by SQLite's reading, an edges json write ({where})")
+            kws = {k.arg: k.value for k in call.keywords}
+            if None in kws:
+                bad.append(f"{at(n)}: `{METHOD}` called with **kwargs ({where})")
+            d = kws.get("defer")
+            if d is not None:
+                w = parent.get(call)
+                ok = (where == DEFER_SITE and isinstance(d, ast.Constant) and d.value is True
+                      and isinstance(w, ast.withitem) and w.context_expr is call and isinstance(w.optional_vars, ast.Name))
                 if not ok:
-                    bad.append(f"L{line}: the edges json is not bound to {HELPER}(...)'s return value ({fname})")
+                    bad.append(f"{at(n)}: `defer=` other than the constant True at the one `with` site ({where})")
+    defer_sites = [n for n in ast.walk(tree) if isinstance(n, ast.keyword) and n.arg == "defer"]
+    if len(defer_sites) != 1:
+        bad.append(f"`defer=` appears {len(defer_sites)} times — exactly the redaction's one site may pass it")
+    called = {q.get(id(n)) for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+              and n.func.attr == METHOD}
+    if called != WRITERS:
+        bad.append(f"the writers calling `{METHOD}` are {sorted(c for c in called if c)}, not the seven")
+    # 5a. the connection itself (round 3's receiver rules, kept): one connection, reached only through `self`
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Attribute) and n.attr == "connect" and isinstance(n.value, ast.Name)
+                and n.value.id == "sqlite3" and q.get(id(n)) != "SqliteStore.__init__"):
+            bad.append(f"{at(n)}: a second sqlite3 connection ({q.get(id(n), '<module>')})")
+        if (isinstance(n, ast.Attribute) and n.attr == "_conn"
+                and not (isinstance(n.value, ast.Name) and n.value.id == "self")):
+            bad.append(f"{at(n)}: the connection reached through something other than `self`")
+    # 5b. every string constant that SQLite reads as an edges json write is the `sql` of a write-method call — so an
+    # alias of execute, the unbound Connection.execute, a cursor, a second connection or SQL held in a name cannot
+    # carry one (the R2-01 forms)
+    sql_args = {id(c.args[0]) for c in ast.walk(tree) if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)
+                and c.func.attr == METHOD and c.args}
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Constant) and isinstance(n.value, str) and "edges" in n.value.lower()
+                and id(n) not in sql_args and _sqlite_classify(n.value) & {"edges-insert", "edges-json-update"}):
+            bad.append(f"{at(n)}: an edges json write outside a write-method call ({q.get(id(n), '<module>')}): "
+                       f"{' '.join(n.value.split())[:70]}")
+    # 5c. the dynamic-table domain, frozen with its listed entry
+    if _act_tables_in(source) != ACT_TABLES:
+        bad.append(f"_ACT_COLUMNS reaches {sorted(_act_tables_in(source))}, not the frozen {sorted(ACT_TABLES)}")
+    # 5. SQL: every execute/executemany/executescript on ANY receiver
+    seen_nonlit = set()
+    for n in ast.walk(tree):
+        if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in SQL_CALLS):
             continue
-        if isinstance(p, ast.Call) and n in p.args:
-            callee = ast.unparse(p.func)
-            if (fname, f"arg:{callee}") in INVENTORY:
-                used.add((fname, f"arg:{callee}"))
-                continue
-            bad.append(f"L{line}: the connection passed to `{callee}`, not in the inventory ({fname})")
+        where = q.get(id(n), "<module>")
+        if not n.args:
+            bad.append(f"{at(n)}: `{n.func.attr}` with no SQL argument ({where})")
             continue
-        bad.append(f"L{line}: the connection reached in a form the gate does not resolve ({fname})")
-    stale = set(INVENTORY) - used
+        a0 = n.args[0]
+        if isinstance(a0, ast.Constant) and isinstance(a0.value, str):
+            tags = _sqlite_classify(a0.value)
+            if tags & {"edges-insert", "edges-json-update"}:
+                bad.append(f"{at(n)}: an edges json write executed directly, not through `{METHOD}` ({where}): "
+                           f"{' '.join(a0.value.split())[:70]}")
+            if n.func.attr == "executescript":
+                bad.append(f"{at(n)}: executescript in the store module ({where})")
+            continue
+        key = (where, _digest(a0))
+        if key not in NONLITERAL:
+            bad.append(f"{at(n)}: a non-literal SQL site not in the reviewed list ({where}): {ast.unparse(a0)[:80]}")
+        seen_nonlit.add(key)
+    stale = set(NONLITERAL) - seen_nonlit
     if stale:
-        bad.append(f"inventory entries no longer reached (stale): {sorted(stale)}")
+        bad.append(f"non-literal list entries no longer present (stale): {sorted(stale)}")
     return bad
 
 
+def _act_tables_in(source: str) -> set:
+    tree = ast.parse(source)
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "_ACT_COLUMNS" for t in n.targets)
+                and isinstance(n.value, ast.Dict)):
+            return {k.value for k in n.value.keys if isinstance(k, ast.Constant)}
+    return set()
+
+
 def test_every_edge_write_goes_through_the_validating_serialiser():
-    """N4f (a), R2-01's receiver rule over store/sqlite.py: every reference to `self._conn` is a direct `execute`
-    whose SQL the gate reads (a literal, a literal's static text, or a name bound only to literals), one of the
-    non-write connection attributes, the one assignment in `__init__`, or a binding-inventory entry with its reason;
-    every write of the edges table's `json` binds `_validated_edge_json(...)`'s return value (directly, or a name bound
-    ONLY to it in that function); any other form fails, whatever the method is called (an alias, `executemany`, a
-    cursor, `getattr`, the unbound method, the connection passed on, `__dict__`, a second connection). The inventory
-    is checked both ways: an entry nothing reaches is stale."""
+    """N4f (a), round 4 (R3-02, (a′)): every write of the edges table's json goes through the ONE frozen write method,
+    which binds the helper's captured bytes and journals the same bytes; exactly the seven writers call it, each with
+    a literal of the closed set that SQLite reads as an edges json write; the guarded names are bound once and never
+    shadowed (every binding form; symtable; attribute assignment anywhere in src/; no subclass override); no other
+    statement — literal or not, through any receiver — writes edges.json; every non-literal SQL site is reviewed."""
     assert _gate(SQLITE.read_text()) == []
-    # the gate SAW the seven writers (a gate that recognises nothing passes everything): the definition plus 7 calls
+    assert SqliteStore._ACT_COLUMNS.keys() == ACT_TABLES == _act_tables_in(SQLITE.read_text())
+    # the gate SAW them (a gate that recognises nothing passes everything)
     src = SQLITE.read_text()
-    norms = [" ".join(m.lower().split()) for m in re.findall(r'"((?:INSERT OR REPLACE INTO|UPDATE) edges[^"]*)"', src)]
-    assert src.count(f"{HELPER}(") == 8 and len(norms) == 7, (src.count(f"{HELPER}("), norms)
+    assert src.count(f"self.{METHOD}(") == 7 and src.count(f"{HELPER}(") == 2, (src.count(f"self.{METHOD}("),
+                                                                               src.count(f"{HELPER}("))
+    assert len(NONLITERAL) >= 40, len(NONLITERAL)
+    for sql in CLOSED_SQL:
+        assert _sqlite_classify(sql) & {"edges-insert", "edges-json-update"}, sql
+
+
+def test_sqlite_reads_the_reviewers_two_sql_forms_as_edges_writes():
+    """R3-02's SQL half: a leading keyword is not the reading. SQLite classifies a WITH-led UPDATE and a
+    schema-qualified one as the edges json writes they are; a plain SELECT on edges and a write to another table are
+    not; an UPDATE of another edges column is not a json write."""
+    assert _sqlite_classify("WITH unused AS (SELECT 1) UPDATE edges SET json=? WHERE id=?") == {"edges-json-update"}
+    assert _sqlite_classify("UPDATE main.edges SET json=? WHERE id=?") == {"edges-json-update"}
+    assert _sqlite_classify("INSERT INTO main.edges(id,user_id,subject,relation,object,active,quarantined,json) "
+                            "VALUES(?,?,?,?,?,?,?,?)") == {"edges-insert"}
+    assert _sqlite_classify("SELECT json FROM edges WHERE id=?") == set()
+    assert _sqlite_classify("UPDATE edges SET quarantined=? WHERE id=?") == set()
+    assert _sqlite_classify("UPDATE confirmations SET request_digest=? WHERE edge_id=?") == set()
 
 
 def test_the_inventorys_reasons_hold():
-    """The inventory's reasons are claims about other code, checked: the act tables are not edges, and no callee
-    module the inventory names holds an edges write."""
-    assert "edges" not in SqliteStore._ACT_COLUMNS
-    for mod in sorted(set(CALLEE_MODULES.values())):
-        text = (ROOT / "src" / "veracium" / mod).read_text()
-        assert not re.search(r"(?i)\b(insert(\s+or\s+replace)?\s+into|update)\s+edges\b", text), mod
+    """The reviewed lists' reasons are claims about other code, checked: the act tables are exactly the frozen domain,
+    and no OTHER src module holds an edges write (the write method is the package's one)."""
+    assert set(SqliteStore._ACT_COLUMNS) == ACT_TABLES
+    for p in sorted(SRC.rglob("*.py")):
+        if p.resolve() == SQLITE.resolve():
+            continue
+        assert not re.search(r"(?i)\b(insert(\s+or\s+replace)?\s+into|update)\s+(main\.)?edges\b", p.read_text()), p
 
 
-# the R2-01 forms (and the per-writer bypass and ignored-return rows) the gate must refuse: each an edit of sqlite.py's
-# text whose anchor must occur exactly once
-_W = '            new_json = _validated_edge_json(edge)\n            self._conn.execute(\n                "INSERT OR REPLACE INTO edges'
+# The mutants: each an edit of sqlite.py's text (anchors asserted to occur exactly once), refused by the gate. The
+# reviewer's seven forms are writers that BYPASS the write method; (a′)'s own attack the method, its names and its lists.
+_INV = ('        self._write_edge_row("UPDATE edges SET active=0, json=? WHERE id=?", (), edge, (edge_id,),\n'
+        '                             user_id=row[1], edge_id=edge_id, prior=row[0], kind="invalidated", reason=reason)')
+_BYPASS = ('        new_json = _validated_edge_json(edge)\n{rebind}'
+           '        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?", (new_json, edge_id))\n'
+           '        self._journal_edge_write(row[1], edge_id, new_json, row[0], kind="invalidated", reason=reason)')
 GATE_MUTANTS = {
-    "executemany": ('self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                    'self._conn.executemany("UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "an alias of execute": ('        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                            '        ex = self._conn.execute\n        ex("UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "getattr": ('self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                'getattr(self._conn, "execute")("UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "a cursor": ('self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                 'self._conn.cursor().execute("UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "SQL held in a variable": ('        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                               '        q = edge.relation and "UPDATE edges SET active=0, json=? WHERE id=?"\n'
-                               '        self._conn.execute(q,'),
-    "parameters held in a variable": ('        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",\n'
-                                      '                           (new_json, edge_id))',
-                                      '        args = (new_json, edge_id)\n'
-                                      '        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?", args)'),
-    "the unbound Connection.execute": ('self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                                       'sqlite3.Connection.execute(self._conn, "UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "a second connection": ('self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                            'sqlite3.connect(self._path).execute("UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "the instance __dict__": ('self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",',
-                              'self.__dict__["_conn"].execute("UPDATE edges SET active=0, json=? WHERE id=?",'),
-    "a writer bypasses the helper": ('        edge.invalidation_reason = reason\n        new_json = _validated_edge_json(edge)\n',
-                                     '        edge.invalidation_reason = reason\n        new_json = edge.model_dump_json()\n'),
-    "the helper called, its return ignored": (
-        '        edge.invalidation_reason = reason\n        new_json = _validated_edge_json(edge)\n',
-        '        edge.invalidation_reason = reason\n        _validated_edge_json(edge)\n        new_json = edge.model_dump_json()\n'),
-    "an inventory entry gone stale": ('        append_event(self._conn, user_id=user_id,',
-                                      '        append_event(None, user_id=user_id,'),
+    # the reviewer's seven (R3-02)
+    "annotated rebinding": (_INV, _BYPASS.format(rebind='        new_json: str = new_json.replace("0.8", "1.8")\n')),
+    "a loop target": (_INV, _BYPASS.format(rebind='        for new_json in (new_json.replace("0.8", "1.8"),):\n            pass\n')),
+    "unpacking": (_INV, _BYPASS.format(rebind='        new_json, _ = new_json.replace("0.8", "1.8"), None\n')),
+    "a named expression": (_INV, _BYPASS.format(rebind='        if (new_json := new_json.replace("0.8", "1.8")):\n            pass\n')),
+    "the helper shadowed by a lambda": (_INV, '        _validated_edge_json = lambda obj: obj.model_dump_json()\n' +
+                                        _BYPASS.format(rebind="")),
+    "a WITH-led write": (_INV, '        self._conn.execute("WITH unused AS (SELECT 1) UPDATE edges SET active=0, json=? '
+                               'WHERE id=?", (edge.model_dump_json(), edge_id))'),
+    "a schema-qualified write": (_INV, '        self._conn.execute("UPDATE main.edges SET active=0, json=? WHERE id=?", '
+                                       '(edge.model_dump_json(), edge_id))'),
+    # (a′)'s own
+    "an edit inside the write method": ('        captured = _validated_edge_json(edge)\n',
+                                        '        captured = _validated_edge_json(edge)\n        captured = captured\n'),
+    "a second helper call inside it": ('        if defer:\n            return _DeferredJournal(',
+                                       '        _validated_edge_json(edge)\n        if defer:\n            return _DeferredJournal('),
+    "journaling different bytes": ('        self._journal_edge_write(user_id, edge_id, captured, prior, kind=kind, reason=reason)',
+                                   '        self._journal_edge_write(user_id, edge_id, edge.model_dump_json(), prior, kind=kind, reason=reason)'),
+    "a writer journals for itself": (_INV, _INV + '\n        self._journal_edge_write(row[1], edge_id, "{}", row[0])'),
+    "the redaction journals its own dump": ('                pending.emit(kind="redacted", reason=reason)',
+                                            '                self._journal_edge_write(user_id, target_id, new_json, before_json, '
+                                            'kind="redacted", reason=reason)'),
+    "defer non-constant": ('prior=before_json, defer=True) as pending:', 'prior=before_json, defer=bool(kind)) as pending:'),
+    "defer through **kwargs": ('prior=before_json, defer=True) as pending:', 'prior=before_json, **{"defer": True}) as pending:'),
+    "a second defer site": (_INV, _INV.replace('reason=reason)', 'reason=reason, defer=True)')),
+    "an f-string edges write": (_INV, '        self._conn.execute(f"UPDATE {\'edges\'} SET active=0, json=? WHERE id=?", '
+                                      '(edge.model_dump_json(), edge_id))'),
+    "executescript": (_INV, _INV + '\n        self._conn.executescript("UPDATE edges SET json=\'{}\' WHERE 0")'),
+    "a non-literal site added unlisted": (_INV, _INV + '\n        self._conn.execute(" ".join(["SELECT", "1"]))'),
+    "an eighth writer": ('    def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:',
+                         '    def _eighth(self, edge):\n'
+                         '        self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge.id,),\n'
+                         '                             user_id=edge.user_id, edge_id=edge.id, prior=None)\n\n'
+                         '    def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:'),
+    "the write method reached unbound": (_INV, _INV.replace("self._write_edge_row(", "SqliteStore._write_edge_row(self, ")),
+    "an instance-attribute shadow": ('        self._path = str(path)\n',
+                                     '        self._path = str(path)\n        self._write_edge_row = lambda *a, **k: None\n'),
+    "the helper shadowed at module scope": ('class _DeferredJournal:\n',
+                                            '_validated_edge_json = _validated_edge_json\n\n\nclass _DeferredJournal:\n'),
+    "the act tables gain edges": ('    _ACT_COLUMNS = {\n', '    _ACT_COLUMNS = {\n        "edges": ("id",),\n'),
+    # round 3's R2-01 forms, kept (each now a bypass writer)
+    "executemany": (_INV, '        self._conn.executemany("UPDATE edges SET active=0, json=? WHERE id=?", '
+                          '[(edge.model_dump_json(), edge_id)])'),
+    "an alias of execute": (_INV, '        ex = self._conn.execute\n'
+                                  '        ex("UPDATE edges SET active=0, json=? WHERE id=?", (edge.model_dump_json(), edge_id))'),
+    "a cursor": (_INV, '        self._conn.cursor().execute("UPDATE edges SET active=0, json=? WHERE id=?", '
+                       '(edge.model_dump_json(), edge_id))'),
+    "SQL held in a name": (_INV, '        q = "UPDATE edges SET active=0, json=? WHERE id=?"\n'
+                                 '        self._conn.execute(q, (edge.model_dump_json(), edge_id))'),
+    "the unbound Connection.execute": (_INV, '        sqlite3.Connection.execute(self._conn, "UPDATE edges SET active=0, '
+                                             'json=? WHERE id=?", (edge.model_dump_json(), edge_id))'),
+    "a second connection": (_INV, '        sqlite3.connect(self._path).execute("UPDATE edges SET active=0, json=? '
+                                  'WHERE id=?", (edge.model_dump_json(), edge_id))'),
+}
+# appended to the END of sqlite.py's text (class-level attacks)
+EOF_MUTANTS = {
+    "a class-attribute reassignment": "\nSqliteStore._write_edge_row = SqliteStore._journal_edge_write\n",
+    "a subclass override": "\n\nclass _Shadow(SqliteStore):\n    def _write_edge_row(self, *a, **k):\n        return None\n",
+    "the deferred journal rebound": "\n_DeferredJournal = object\n",
+}
+# the mutants the gate reads OUTSIDE sqlite.py's text: a same-named method on a class in another src module
+OTHER_MUTANTS = {
+    "a class elsewhere defines the write method": {"veracium/_planted.py": "class X:\n    def _write_edge_row(self):\n        pass\n"},
+    "an attribute assignment elsewhere": {"veracium/_planted.py": "import veracium.store.sqlite as s\n"
+                                                                  "s.SqliteStore._journal_edge_write = None\n"},
 }
 
 
 @pytest.mark.parametrize("name", list(GATE_MUTANTS))
 def test_the_gate_refuses_each_unresolved_form(name):
-    """The gate's own matrix: each form, planted on a copy of sqlite.py's text, is refused (the honest text passes,
-    above). The per-writer bypass row runs once per writer in the next test."""
+    """The gate's own matrix (R2-01's forms kept; R3-02's seven; (a′)'s own): each planted on a copy of sqlite.py's
+    text is refused; the honest text passes (above)."""
     old, new = GATE_MUTANTS[name]
     src = SQLITE.read_text()
     assert src.count(old) == 1, f"{name}: the anchor occurs {src.count(old)} times — re-anchor it"
     assert _gate(src.replace(old, new)), f"{name}: the gate passed it"
 
 
-def test_each_writer_bypassing_the_helper_is_refused():
-    """§6's 'for each of the declared edge writers: that writer bypasses the helper' row, one planted copy per writer."""
+@pytest.mark.parametrize("name", list(EOF_MUTANTS))
+def test_the_gate_refuses_each_class_level_attack(name):
+    assert _gate(SQLITE.read_text() + EOF_MUTANTS[name]), f"{name}: the gate passed it"
+
+
+@pytest.mark.parametrize("name", list(OTHER_MUTANTS))
+def test_the_gate_reads_the_rest_of_src(name):
+    others = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py")) if p.resolve() != SQLITE.resolve()}
+    assert _gate(SQLITE.read_text(), others) == []
+    assert _gate(SQLITE.read_text(), {**others, **OTHER_MUTANTS[name]}), f"{name}: the gate passed it"
+
+
+def test_each_writer_bypassing_the_write_method_is_refused():
+    """§6's 'for each of the declared edge writers: that writer bypasses the write method' row, one planted copy per
+    writer: its call becomes a direct execute of the same literal with an unvalidated dump."""
     src = SQLITE.read_text()
-    sites = [m.start() for m in re.finditer(re.escape(f"{HELPER}(edge)") + "|" + re.escape(f"{HELPER}(model_after)"),
-                                            src)]
-    assert len(sites) == 7, len(sites)
-    for at in sites:
-        call_end = src.index(")", at) + 1
-        arg = src[at + len(HELPER) + 1:call_end - 1]
-        mutated = src[:at] + f"{arg}.model_dump_json()" + src[call_end:]
-        assert _gate(mutated), f"the bypass at offset {at} passed"
+    tree = ast.parse(src)
+    calls = [c for c in ast.walk(tree) if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)
+             and c.func.attr == METHOD]
+    assert len(calls) == 7, len(calls)
+    lines = src.split("\n")
+    for c in calls:
+        sql = c.args[0].value
+        start, end = c.lineno - 1, c.end_lineno - 1
+        ind = lines[start][:len(lines[start]) - len(lines[start].lstrip())]
+        stmt = f'{ind}self._conn.execute({sql!r}, ())'
+        if lines[start].lstrip().startswith("with "):
+            stmt = f"{ind}with contextlib.nullcontext() as pending:\n{ind}    self._conn.execute({sql!r}, ())"
+        mutated = "\n".join(lines[:start] + [stmt] + lines[end + 1:])
+        assert _gate(mutated), f"the bypass at L{c.lineno} passed"
+
+
+# ---- R3-01: the store binds the bytes it validated ------------------------------------------------------------------
+
+def _swap_after_validation(edge, bad_conf):
+    """A hook on the validators that, AFTER a validation succeeds, lets a second thread replace the caller's mutable
+    Edge's provenance (the unvalidated `model_copy` route C protects against), once — the reviewer's schedule."""
+    fired = []
+    real_json, real_obj = Edge.model_validate_json, Edge.model_validate
+
+    def mutate():
+        edge.provenance = edge.provenance.model_copy(update={"confidence": bad_conf})
+
+    def after(result):
+        if not fired:
+            fired.append(1)
+            t = threading.Thread(target=mutate)
+            t.start()
+            t.join()
+        return result
+    return (classmethod(lambda cls, *a, **k: after(real_json.__func__(cls, *a, **k))),
+            classmethod(lambda cls, *a, **k: after(real_obj.__func__(cls, *a, **k))), fired)
+
+
+def _two_observations(edge):                    # round 3's body: validate one dump, serialise another
+    Edge.model_validate(edge.model_dump())
+    return edge.model_dump_json()
+
+
+def _validate_then_redump(edge):                # validate the capture, return a FRESH dump
+    captured = edge.model_dump_json()
+    Edge.model_validate_json(captured)
+    return edge.model_dump_json()
+
+
+def _capture_unvalidated(edge):                 # one observation, never validated
+    return edge.model_dump_json()
+
+
+R3_01_MUTANTS = {"two observations (round 3's body)": _two_observations,
+                 "validate the capture, return a fresh dump": _validate_then_redump,
+                 "capture without validating": _capture_unvalidated}
+
+
+def _r3_01_cell(tmp_path, monkeypatch, helper=None):
+    """Returns (refused_before, stored_confidence, read_ok) for one run of the reviewer's schedule through add_edge."""
+    if helper is not None:
+        monkeypatch.setattr(SQ, HELPER, helper)
+    s = SqliteStore(str(tmp_path / "r301.db"))
+    pre = _edge("pre", S.Volatility.SLOW, 0.5)
+    pre.provenance = Provenance.model_construct(**{**dict(pre.provenance), "confidence": 1.8})
+    try:
+        s.add_edge(pre)
+        refused = False
+    except ValueError:
+        refused = True
+    e = _edge("race", S.Volatility.SLOW, 0.8)
+    vj, vo, fired = _swap_after_validation(e, 1.8)
+    monkeypatch.setattr(Edge, "model_validate_json", vj)
+    monkeypatch.setattr(Edge, "model_validate", vo)
+    s.add_edge(e)
+    monkeypatch.undo()
+    stored = json.loads(sqlite3.connect(str(tmp_path / "r301.db")).execute(
+        "SELECT json FROM edges WHERE id='race'").fetchone()[0])["provenance"]["confidence"]
+    try:
+        s.edges(U, active_only=False, include_quarantined=True)
+        read_ok = True
+    except ValueError:
+        read_ok = False
+    return refused, stored, read_ok, bool(fired)
+
+
+def test_the_store_binds_the_bytes_it_validated(tmp_path, monkeypatch):
+    """N4f (b), round 3's R3-01: the helper serialises ONCE and validates and returns those bytes. Under the reviewer's
+    schedule — validation succeeds, then another thread replaces the caller's Edge provenance with an unvalidated 1.8
+    — the store commits the 0.8 it validated and reads back; an already-invalid input is still refused."""
+    assert _r3_01_cell(tmp_path, monkeypatch) == (True, 0.8, True, True)
+
+
+@pytest.mark.parametrize("name", list(R3_01_MUTANTS))
+def test_the_store_binds_the_bytes_it_validated_kills_each_mutant(tmp_path, monkeypatch, name):
+    """Each superseded or weakened helper body fails the regression above (the superseded implementation is the
+    mutant): two observations and a fresh re-dump commit 1.8; a capture never validated admits the invalid input."""
+    got = _r3_01_cell(tmp_path, monkeypatch, R3_01_MUTANTS[name])
+    assert got != (True, 0.8, True, True), f"{name}: the regression passed a defective helper ({got})"
+
+
+def test_the_redaction_journals_the_bytes_it_stored(tmp_path):
+    """(a′)'s single capture in the one writer whose journal is DEFERRED past its tombstone: after a redaction, the
+    `redacted` event's state is byte-identical to the stored row's json (before round 4 the row bound the helper's
+    bytes and the journal a second dump of the same model — equal strings by measurement, now one value)."""
+    s = SqliteStore(str(tmp_path / "red.db"))
+    s.add_edge(_edge("r", S.Volatility.SLOW, 0.5))
+    s.redact(U, edge_id="r", reason="subject_request")
+    c = sqlite3.connect(str(tmp_path / "red.db"))
+    row = c.execute("SELECT json FROM edges WHERE id='r'").fetchone()[0]
+    ev = c.execute("SELECT state FROM edge_event WHERE edge_id='r' AND kind='redacted'").fetchall()
+    assert ev == [(row,)], (ev, row)
+
+
+# ---- (a′)'s deferred journal, by behaviour ---------------------------------------------------------------------------
+
+def _deferred(tmp_path):
+    """A store holding edge "d" at 0.5, and a CHANGED copy of it (0.6) to write — so a rolled-back write and a committed
+    one differ on disk."""
+    s = SqliteStore(str(tmp_path / "dj.db"))
+    s.add_edge(_edge("d", S.Volatility.SLOW, 0.5))
+    e = _row(s, "d")
+    return s, e.model_copy(update={"provenance": e.provenance.model_copy(update={"confidence": 0.6})})
+
+
+def _rows_and_events(where):
+    c = sqlite3.connect(str(where / "dj.db"))
+    return (c.execute("SELECT json FROM edges").fetchall(), c.execute("SELECT seq, kind, state FROM edge_event").fetchall())
+
+
+def test_a_deferred_journal_left_unemitted_rolls_the_write_back(tmp_path):
+    """Leaving the block without emit — fall-through or an early return — raises inside the transaction: the row write
+    is rolled back with it, so no row commits without its journal."""
+    s, e = _deferred(tmp_path)
+    before = _rows_and_events(tmp_path)
+
+    def early_return():
+        with s._write_txn():
+            with s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, ("d",), user_id=U, edge_id="d",
+                                   prior=None, defer=True):
+                return "left early"
+    _refuses(RuntimeError, early_return)
+    assert _rows_and_events(tmp_path) == before
+
+
+def test_a_deferred_journal_emits_once_and_only_inside_its_block(tmp_path):
+    s, e = _deferred(tmp_path)
+    with s._write_txn():
+        with s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, ("d",), user_id=U, edge_id="d",
+                               prior=_row_json(tmp_path, "d"), defer=True) as pending:
+            pending.emit()
+            _refuses(RuntimeError, lambda: pending.emit())
+    _refuses(RuntimeError, lambda: pending.emit())
+    _refuses(TypeError, lambda: s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, ("d",), user_id=U,
+                                                  edge_id="d", prior=None, defer=True, kind="mutated"))
+
+
+def _a_failing_side_write(where):
+    """(the exception propagated, the store unchanged) for a deferred write whose block raises before emit."""
+    where.mkdir()
+    s, e = _deferred(where)
+    before = _rows_and_events(where)
+    try:
+        with s._write_txn():
+            with s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, ("d",), user_id=U, edge_id="d",
+                                   prior=None, defer=True):
+                raise sqlite3.OperationalError("a side-table write failed")
+        raised = False
+    except sqlite3.OperationalError:
+        raised = True
+    return raised, _rows_and_events(where) == before
+
+
+def test_a_deferred_journal_never_swallows_an_exception(tmp_path, monkeypatch):
+    """An exception leaving the block is neither emitted for nor suppressed, so the transaction rolls the row back.
+    Mutant: `__exit__` returning True swallows a failed side-table write and commits a row with no journal."""
+    assert _a_failing_side_write(tmp_path / "honest") == (True, True)
+    monkeypatch.setattr(SQ._DeferredJournal, "__exit__", lambda self, *a: True)
+    assert _a_failing_side_write(tmp_path / "mutant") != (True, True), "the swallowing mutant passed"
+
+
+def _row_json(tmp_path, eid):
+    return sqlite3.connect(str(tmp_path / "dj.db")).execute("SELECT json FROM edges WHERE id=?", (eid,)).fetchone()[0]
+
+
+# ---- the runtime tripwire (tests only): an edges json write prepared outside the write method's frame ----------------
+
+def _outside_the_write_method(action, a1, a2):
+    if not ((action == sqlite3.SQLITE_INSERT and a1 == "edges")
+            or (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json")):
+        return False
+    code = SqliteStore._write_edge_row.__code__            # BY CODE IDENTITY, never by name
+    f = sys._getframe(1)
+    while f is not None:
+        if f.f_code is code:
+            return False
+        f = f.f_back
+    return True
+
+
+@pytest.fixture(autouse=True)
+def _edges_write_tripwire(monkeypatch):
+    """Every store this module opens carries an authorizer that DENIES an edges INSERT or edges.json UPDATE prepared
+    from a stack without the write method's code object (and records it), so every executed path in these cells and
+    the N4c fixtures is checked at runtime, beside the static gate."""
+    hits = []
+    real_init = SqliteStore.__init__
+
+    def init(self, *a, **k):
+        real_init(self, *a, **k)
+
+        def auth(action, a1, a2, db, trigger):
+            if trigger is None and _outside_the_write_method(action, a1, a2):
+                hits.append((action, a1, a2))
+                return sqlite3.SQLITE_DENY
+            return sqlite3.SQLITE_OK
+        self._conn.set_authorizer(auth)
+    monkeypatch.setattr(SqliteStore, "__init__", init)
+    yield hits
+    assert hits == [], f"an edges json write outside the write method: {hits}"
+
+
+def test_the_tripwire_refuses_a_write_outside_the_method_and_a_same_named_function(tmp_path, _edges_write_tripwire):
+    """The tripwire's own controls: a direct edges.json UPDATE on the store's connection is DENIED; so is one made
+    from a function that is merely NAMED `_write_edge_row`; the real method passes."""
+    s = SqliteStore(str(tmp_path / "tw.db"))
+    s.add_edge(_edge("t", S.Volatility.SLOW, 0.5))
+    with pytest.raises(sqlite3.DatabaseError):
+        s._conn.execute("UPDATE edges SET json=json WHERE id='t'")
+    ns = {}
+    exec("def _write_edge_row(c):\n    c.execute(\"UPDATE edges SET json=json WHERE id='t'\")\n", ns)
+    with pytest.raises(sqlite3.DatabaseError):
+        ns["_write_edge_row"](s._conn)
+    assert len(_edges_write_tripwire) == 2
+    _edges_write_tripwire.clear()
 
 
 # ---- N4c (i–iii): declared bounds hold on construction, assignment, and every census-visible writer ------------------

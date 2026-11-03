@@ -55,7 +55,7 @@ is the number that decides what can be built.
 | **0045** | the declarative grounding axis — was a fact STATED, or not shown to be? | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
 | **0046** | the correction receipt — a corrected fact names what still rests on it | `draft` | 2026-09-20 | 0 | 0 | 0 | 0 | 0 | — |
 | **0047** | the subject's right of reply — the record stands, and the reply travels with it | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
-| **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-02 | 0 | 2 | 2 | 0 | 0 | — |
+| **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-03 | 0 | 2 | 2 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per

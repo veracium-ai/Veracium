@@ -28,7 +28,9 @@ def validate_decay_bound(name: str, value) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a real number in [0, 1] (int or float, not bool), got {value!r} "
                          f"(specs/0048 §4A)")
-    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+    # 0048 round 3, R3-03: an int is compared EXACTLY, before anything converts it to float — `math.isfinite(10**400)`
+    # raises OverflowError, which is not the refusal this function names
+    if (isinstance(value, int) and not 0 <= value <= 1) or not math.isfinite(value) or not 0.0 <= value <= 1.0:
         raise ValueError(f"{name} must be in [0, 1] and finite, got {value!r} (specs/0048 §4A: maintenance may "
                          f"lower a fact's confidence, never raise it)")
     return value

@@ -257,9 +257,51 @@ def _validated_edge_json(edge: Edge) -> str:
     nothing is written. It returns the edge's own serialisation, the bytes every writer bound before this helper
     existed: the journal, the record digests and the INV-7 twin hash what they hashed (research's N1, zero drift by
     construction). `tests/test_0048_decay_bounds.py::test_every_edge_write_goes_through_the_validating_serialiser`
-    holds every writer to it."""
-    Edge.model_validate(edge.model_dump())
-    return edge.model_dump_json()
+    holds every writer to it.
+
+    ONE observation (0048 round 3, R3-01): the edge is serialised ONCE, those captured bytes are what is validated,
+    and those same bytes are returned. Validating `edge.model_dump()` and then serialising `edge` again read a mutable
+    object twice, so another thread replacing its provenance between the two could approve 0.8 and bind 1.8."""
+    captured = edge.model_dump_json()
+    Edge.model_validate_json(captured)
+    return captured
+
+
+class _DeferredJournal:
+    """specs/0048 §4C, round 4 (R3-02, (a′)): the ONE edge journal a writer emits LATER than its row write — the
+    redaction's, which must tombstone every prior event before journaling its own. Built only by
+    `SqliteStore._write_edge_row(..., defer=True)`, closed over the bytes that call bound into the row, and used only as
+    `with store._write_edge_row(..., defer=True) as pending:`. `emit(kind=, reason=)` journals THOSE bytes, once. Leaving
+    the block normally (fall-through or an early return) without having emitted RAISES, inside the write transaction,
+    so the batch rolls back and no row commits without its journal. An exception leaving the block is neither emitted
+    for nor suppressed: the transaction's own rollback runs. `emit` outside the block, or twice, refuses."""
+
+    __slots__ = ("_store", "_user_id", "_edge_id", "_captured", "_prior", "_state")
+
+    def __init__(self, store, user_id: str, edge_id: str, captured: str, prior: Optional[str]):
+        self._store, self._user_id, self._edge_id = store, user_id, edge_id
+        self._captured, self._prior, self._state = captured, prior, "built"
+
+    def __enter__(self):
+        if self._state != "built":
+            raise RuntimeError(f"the deferred journal for edge {self._edge_id!r} was entered twice")
+        self._state = "open"
+        return self
+
+    def emit(self, *, kind: Optional[str] = None, reason: Optional[str] = None):
+        if self._state != "open":
+            raise RuntimeError(f"the deferred journal for edge {self._edge_id!r} emitted outside its block, or twice "
+                               f"(state {self._state!r})")
+        self._state = "emitted"
+        return self._store._journal_edge_write(self._user_id, self._edge_id, self._captured, self._prior,
+                                               kind=kind, reason=reason)
+
+    def __exit__(self, exc_type, exc, tb):
+        state, self._state = self._state, "closed"
+        if exc_type is None and state != "emitted":
+            raise RuntimeError(f"the edge row {self._edge_id!r} was written and its journal never emitted — refusing, "
+                               f"so the write transaction rolls back (specs/0048 §4C; specs/0029 §4b)")
+        return False
 
 
 class SqliteStore(Store):
@@ -414,6 +456,23 @@ class SqliteStore(Store):
             moved = True
         if moved:
             self._conn.execute("DELETE FROM wiki WHERE user_id=?", (user_id,))
+
+    def _write_edge_row(self, sql: str, before: tuple, edge: Edge, after: tuple, *, user_id: str, edge_id: str,
+                        prior: Optional[str], kind: Optional[str] = None, reason: Optional[str] = None,
+                        defer: bool = False):
+        """specs/0048 §4C, round 4 (R3-02, (a′)): THE write of the edges table's `json` column. It captures the edge's
+        serialisation ONCE through `_validated_edge_json`, binds those bytes at the json position
+        (`(*before, captured, *after)`), and journals THE SAME bytes, so no writer ever holds the string a later line
+        could rebind. `defer=True` (the redaction alone) returns a `_DeferredJournal` over those bytes instead of
+        journaling now. `tests/test_0048_decay_bounds.py` freezes this body and holds every writer to it."""
+        if defer and (kind is not None or reason is not None):
+            raise TypeError("a deferred edge journal takes its kind and reason at emit(), not at the write")
+        captured = _validated_edge_json(edge)
+        self._conn.execute(sql, (*before, captured, *after))
+        if defer:
+            return _DeferredJournal(self, user_id, edge_id, captured, prior)
+        self._journal_edge_write(user_id, edge_id, captured, prior, kind=kind, reason=reason)
+        return None
 
     def _journal_edge_write(self, user_id: str, edge_id: str, new_json: str,
                             prior_json: Optional[str], *, kind: Optional[str] = None,
@@ -806,14 +865,12 @@ class SqliteStore(Store):
                             f"different producer ({pp.get('producer')!r} → {edge.provenance.producer!r}) — "
                             f"the producer stamp is inherited across a supersession "
                             f"(specs/0037 v23 §4a-iii, V-PRODUCER-INHERITED); nothing written"), "supersedes-producer")
-            new_json = _validated_edge_json(edge)
-            self._conn.execute(
+            self._write_edge_row(
                 "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
                 "VALUES(?,?,?,?,?,?,?,?)",
                 (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
-                 int(edge.active), int(edge.quarantined), new_json))
-            self._journal_edge_write(edge.user_id, edge.id, new_json,
-                                     prior[1] if prior is not None else None)
+                 int(edge.active), int(edge.quarantined)), edge, (),
+                user_id=edge.user_id, edge_id=edge.id, prior=prior[1] if prior is not None else None)
 
     @contextlib.contextmanager
     def atomic(self):
@@ -966,10 +1023,8 @@ class SqliteStore(Store):
             actor_v = ConfirmationActor(actor).value
             call_v = ConfirmationCallPath(call_path).value
             try:
-                new_json = _validated_edge_json(edge)
-                self._conn.execute("UPDATE edges SET json=? WHERE id=?",
-                                   (new_json, edge_id))
-                self._journal_edge_write(user_id, edge_id, new_json, row[0])
+                self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),
+                                     user_id=user_id, edge_id=edge_id, prior=row[0])
                 ep_json = Episode(id=ep_id, user_id=user_id,
                                   date=confirmed_at.date().isoformat(),
                                   summary=f"({actor_v}) confirmed "
@@ -1357,13 +1412,10 @@ class SqliteStore(Store):
         edge.invalidated_at = as_utc_required(at)
         self._refuse_redacted_reason(reason, f"edge {edge_id!r}", "edge-invalidate")
         edge.invalidation_reason = reason
-        new_json = _validated_edge_json(edge)
-        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
-                           (new_json, edge_id))
         # specs/0029 §4b: the site-determined kind (the SOLE active=0 writer);
         # an unregistered reason refuses the whole write here (V-KIND)
-        self._journal_edge_write(row[1], edge_id, new_json, row[0],
-                                 kind="invalidated", reason=reason)
+        self._write_edge_row("UPDATE edges SET active=0, json=? WHERE id=?", (), edge, (edge_id,),
+                             user_id=row[1], edge_id=edge_id, prior=row[0], kind="invalidated", reason=reason)
         # specs/0004 (W1/W2, internal R2): the wiki drop lives HERE, in the sole
         # active=0 writer, so every invalidation path — present and future —
         # inherits it by construction instead of having to remember it. The
@@ -1416,11 +1468,9 @@ class SqliteStore(Store):
         # IS the reinstatement; the column mirrors it
         edge.invalidated_at = None
         edge.invalidation_reason = None
-        new_json = _validated_edge_json(edge)
-        self._conn.execute("UPDATE edges SET active=1, json=? WHERE id=?",
-                           (new_json, edge_id))
-        self._journal_edge_write(row[1], edge_id, new_json, row[0], kind="reinstated",
-                                 reason=reason)   # specs/0029 v12: the caller's constant (censused per caller)
+        self._write_edge_row("UPDATE edges SET active=1, json=? WHERE id=?", (), edge, (edge_id,),
+                             user_id=row[1], edge_id=edge_id, prior=row[0], kind="reinstated",
+                             reason=reason)   # specs/0029 v12: the caller's constant (censused per caller)
         self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
 
     def _reinstate_episode_row(self, episode_id: str) -> None:
@@ -1466,11 +1516,9 @@ class SqliteStore(Store):
         edge.provenance = edge.provenance.model_copy(update={          # frozen Provenance (0037 v23)
             "observed_at": _parse(values["observed_at"]),
             "confidence": float(values["confidence"])})
-        new_json = _validated_edge_json(edge)
-        self._conn.execute("UPDATE edges SET json=? WHERE id=?",
-                           (new_json, edge_id))
         # the fourth site (0030 R1-4): digest-invisible, full-state-visible
-        self._journal_edge_write(row[1], edge_id, new_json, row[0])
+        self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),
+                             user_id=row[1], edge_id=edge_id, prior=row[0])
         self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
 
     def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:
@@ -2796,14 +2844,12 @@ class SqliteStore(Store):
                                         f"nothing imported (specs/0041 §4b-ii, INV-11; §4g)"), "arrival-outside-attestation")
                         prior = self._conn.execute(
                             "SELECT json FROM edges WHERE id=?", (edge.id,)).fetchone()
-                        new_json = _validated_edge_json(edge)
-                        self._conn.execute(
+                        self._write_edge_row(
                             "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
                             "VALUES(?,?,?,?,?,?,?,?)",
                             (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
-                             int(edge.active), int(edge.quarantined), new_json))
-                        self._journal_edge_write(user_id, edge.id, new_json,
-                                                 prior[0] if prior is not None else None)
+                             int(edge.active), int(edge.quarantined)), edge, (),
+                            user_id=user_id, edge_id=edge.id, prior=prior[0] if prior is not None else None)
                         if prior is None:
                             created.add(("edge", edge.id))
                     for ep in episodes:
@@ -3880,68 +3926,69 @@ class SqliteStore(Store):
         fields = sorted(set(treated) | set(_redaction.already_treated(kind, before)) | set(fields_hint or []))
         event_ref = None
         if kind == "edge":
-            edge_json = _validated_edge_json(model_after)   # specs/0048 §4C: the same bytes as new_json, validated
-            self._conn.execute(
-                "UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
-                (edge_json, model_after.subject, model_after.relation, model_after.object,
-                 int(model_after.quarantined), target_id))
-            # the side tables (rows 7, 21/23, 59/64) and the oracle (INV-7)
-            n = self._conn.execute("UPDATE confirmations SET request_digest=? WHERE user_id=? AND edge_id=?",
-                                   (_redaction.MARKER, user_id, target_id)).rowcount
-            if n:
-                fields.append("confirmations.request_digest")
-            # specs/0008 v7 §6g / 0041 §2d-iii-bis: every verb's registry row whose target is the edge — after it, a
-            # retry under that id is TERMINAL (`request_redacted`), never a replay
-            n = self._conn.execute("UPDATE request_registry SET request_digest=? WHERE user_id=? AND target_edge_id=?",
-                                   (_redaction.MARKER, user_id, target_id)).rowcount
-            if n:
-                fields.append("request_registry.request_digest")
-            # specs/0041 §11.6.2 (amendment `0047/0041-replies`, INV-RR2/RR5): every reply's TEXT and every reply's
-            # request DIGEST on the edge are REPLACED; the rows, kinds, targets, actors and positions are kept
-            # (append-only). A resolve's NULL text stays NULL. A row already at the marker is this carrier at its
-            # treated value, so it is attested too (the UPDATE counts matched rows, as for confirmations)
-            n = self._conn.execute("UPDATE replies SET text=? WHERE user_id=? AND edge_id=? AND text IS NOT NULL",
-                                   (_redaction.MARKER, user_id, target_id)).rowcount
-            if n:
-                fields.append("replies.text")
-            n = self._conn.execute("UPDATE replies SET request_digest=? WHERE user_id=? AND edge_id=?",
-                                   (_redaction.MARKER, user_id, target_id)).rowcount
-            if n:
-                fields.append("replies.request_digest")
-            # rows 21/23, joined by user, KIND and id in both absorption directions (round-9 R9-03): edges and
-            # episodes are independent id namespaces in this table, so a raw-id match cleared an unrelated
-            # episode's digests when an edge shared its id
-            n = self._conn.execute(
-                "UPDATE contribution_ledger SET identity_digest=NULL, evidence_ref_digest=NULL "
-                "WHERE user_id=? AND ((survivor_type='edge' AND survivor_id=?) "
-                "OR (contributor_type='edge' AND contributor_ref=?)) "
-                "AND (identity_digest IS NOT NULL OR evidence_ref_digest IS NOT NULL)",
-                (user_id, target_id, target_id)).rowcount
-            if n:
-                fields.extend(["contribution_ledger.identity_digest", "contribution_ledger.evidence_ref_digest"])
-            n = self._conn.execute(
-                "UPDATE supersession_refusals SET relation=? WHERE user_id=? AND (prior_edge_id=? OR incoming_edge_id=?) "
-                "AND relation<>?", (_redaction.MARKER, user_id, target_id, target_id, _redaction.MARKER)).rowcount
-            # round 14 (N13-01): a refusal row links TWO edges — either end matches — so a row the OTHER edge's
-            # redaction already marked never reached this union through the update's changed-row count. A row linked
-            # to this edge at either end and already AT the marker is this carrier at its treated value: attested, as
-            # the shared revocation row is (N12-02). `relation` is NOT NULL and REPLACE-treated, so the marker there is
-            # distinguishable from content — unlike the ledger's CLEAR digests (round 14's measured limit)
-            if n or self._conn.execute(
-                    "SELECT 1 FROM supersession_refusals WHERE user_id=? AND (prior_edge_id=? OR incoming_edge_id=?) "
-                    "AND relation=? LIMIT 1", (user_id, target_id, target_id, _redaction.MARKER)).fetchone():
-                fields.append("supersession_refusals.relation")
-            n = self._conn.execute("DELETE FROM edge_embedding WHERE user_id=? AND edge_id=?",
-                                   (user_id, target_id)).rowcount
-            if n:
-                fields.append("edge_embedding")
-            # §4c: tombstone every prior event, then the `redacted` event with the reason (INV-4); round 12 (R11-02):
-            # a prior state that still held a value is a carrier this redaction treated — recorded as bookkeeping
-            n = self._conn.execute("UPDATE edge_event SET state=? WHERE user_id=? AND edge_id=? AND state<>?",
-                                   (_redaction.MARKER, user_id, target_id, _redaction.MARKER)).rowcount
-            if n:
-                fields.append("journal.state")
-            self._journal_edge_write(user_id, target_id, new_json, before_json, kind="redacted", reason=reason)
+            # specs/0048 §4C round 4 (R3-02): ONE capture, bound into the row and journaled after the tombstone below —
+            # the row and the `redacted` event carry the same bytes (the edge branch journaled a second dump before)
+            with self._write_edge_row(
+                    "UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?", (), model_after,
+                    (model_after.subject, model_after.relation, model_after.object, int(model_after.quarantined), target_id),
+                    user_id=user_id, edge_id=target_id, prior=before_json, defer=True) as pending:
+                # the side tables (rows 7, 21/23, 59/64) and the oracle (INV-7)
+                n = self._conn.execute("UPDATE confirmations SET request_digest=? WHERE user_id=? AND edge_id=?",
+                                       (_redaction.MARKER, user_id, target_id)).rowcount
+                if n:
+                    fields.append("confirmations.request_digest")
+                # specs/0008 v7 §6g / 0041 §2d-iii-bis: every verb's registry row whose target is the edge — after it, a
+                # retry under that id is TERMINAL (`request_redacted`), never a replay
+                n = self._conn.execute("UPDATE request_registry SET request_digest=? WHERE user_id=? AND target_edge_id=?",
+                                       (_redaction.MARKER, user_id, target_id)).rowcount
+                if n:
+                    fields.append("request_registry.request_digest")
+                # specs/0041 §11.6.2 (amendment `0047/0041-replies`, INV-RR2/RR5): every reply's TEXT and every reply's
+                # request DIGEST on the edge are REPLACED; the rows, kinds, targets, actors and positions are kept
+                # (append-only). A resolve's NULL text stays NULL. A row already at the marker is this carrier at its
+                # treated value, so it is attested too (the UPDATE counts matched rows, as for confirmations)
+                n = self._conn.execute("UPDATE replies SET text=? WHERE user_id=? AND edge_id=? AND text IS NOT NULL",
+                                       (_redaction.MARKER, user_id, target_id)).rowcount
+                if n:
+                    fields.append("replies.text")
+                n = self._conn.execute("UPDATE replies SET request_digest=? WHERE user_id=? AND edge_id=?",
+                                       (_redaction.MARKER, user_id, target_id)).rowcount
+                if n:
+                    fields.append("replies.request_digest")
+                # rows 21/23, joined by user, KIND and id in both absorption directions (round-9 R9-03): edges and
+                # episodes are independent id namespaces in this table, so a raw-id match cleared an unrelated
+                # episode's digests when an edge shared its id
+                n = self._conn.execute(
+                    "UPDATE contribution_ledger SET identity_digest=NULL, evidence_ref_digest=NULL "
+                    "WHERE user_id=? AND ((survivor_type='edge' AND survivor_id=?) "
+                    "OR (contributor_type='edge' AND contributor_ref=?)) "
+                    "AND (identity_digest IS NOT NULL OR evidence_ref_digest IS NOT NULL)",
+                    (user_id, target_id, target_id)).rowcount
+                if n:
+                    fields.extend(["contribution_ledger.identity_digest", "contribution_ledger.evidence_ref_digest"])
+                n = self._conn.execute(
+                    "UPDATE supersession_refusals SET relation=? WHERE user_id=? AND (prior_edge_id=? OR incoming_edge_id=?) "
+                    "AND relation<>?", (_redaction.MARKER, user_id, target_id, target_id, _redaction.MARKER)).rowcount
+                # round 14 (N13-01): a refusal row links TWO edges — either end matches — so a row the OTHER edge's
+                # redaction already marked never reached this union through the update's changed-row count. A row linked
+                # to this edge at either end and already AT the marker is this carrier at its treated value: attested, as
+                # the shared revocation row is (N12-02). `relation` is NOT NULL and REPLACE-treated, so the marker there is
+                # distinguishable from content — unlike the ledger's CLEAR digests (round 14's measured limit)
+                if n or self._conn.execute(
+                        "SELECT 1 FROM supersession_refusals WHERE user_id=? AND (prior_edge_id=? OR incoming_edge_id=?) "
+                        "AND relation=? LIMIT 1", (user_id, target_id, target_id, _redaction.MARKER)).fetchone():
+                    fields.append("supersession_refusals.relation")
+                n = self._conn.execute("DELETE FROM edge_embedding WHERE user_id=? AND edge_id=?",
+                                       (user_id, target_id)).rowcount
+                if n:
+                    fields.append("edge_embedding")
+                # §4c: tombstone every prior event, then the `redacted` event with the reason (INV-4); round 12 (R11-02):
+                # a prior state that still held a value is a carrier this redaction treated — recorded as bookkeeping
+                n = self._conn.execute("UPDATE edge_event SET state=? WHERE user_id=? AND edge_id=? AND state<>?",
+                                       (_redaction.MARKER, user_id, target_id, _redaction.MARKER)).rowcount
+                if n:
+                    fields.append("journal.state")
+                pending.emit(kind="redacted", reason=reason)
             seq = self._conn.execute("SELECT MAX(seq) FROM edge_event WHERE user_id=? AND edge_id=?",
                                      (user_id, target_id)).fetchone()[0]
             event_ref = f"{user_id}:{seq}"

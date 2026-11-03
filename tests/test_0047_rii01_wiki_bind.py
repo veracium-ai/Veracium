@@ -454,6 +454,28 @@ def reply_writer_census(source: str):
     tree = ast.parse(source)
     tuples = _module_tuples(tree)
     writers, unresolved = {}, []
+    fns = [f for f in ast.walk(tree) if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))]
+
+    def by_callers(fn, name):
+        """0048 round 4: a SQL text that is a PARAMETER of `fn` is every argument the module's callers pass in that
+        position (`_write_edge_row`'s `sql`, whose callers pass literals) — resolved in each caller's own function;
+        a caller whose argument does not resolve, or no caller at all, leaves it unresolved (it refuses)."""
+        params = [a.arg for a in fn.args.args]
+        if name not in params:
+            return None
+        pos = params.index(name) - (1 if params and params[0] == "self" else 0)
+        out = []
+        for caller in fns:
+            for c in ast.walk(caller):
+                if (isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute) and c.func.attr == fn.name
+                        and len(c.args) > pos):
+                    cl = {f.target.id: f.iter.id for f in ast.walk(caller) if isinstance(f, ast.For)
+                          and isinstance(f.target, ast.Name) and isinstance(f.iter, ast.Name)}
+                    v = _sql_texts(caller, c.args[pos], cl, tuples)
+                    if v is None:
+                        return None
+                    out += v
+        return out or None
     for fn in ast.walk(tree):
         if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
@@ -465,6 +487,8 @@ def reply_writer_census(source: str):
                     and c.func.attr in ("execute", "executemany") and c.args):
                 continue
             texts = _sql_texts(fn, c.args[0], loops, tuples)
+            if texts is None and isinstance(c.args[0], ast.Name):
+                texts = by_callers(fn, c.args[0].id)
             if texts is None:
                 unresolved.append((fn.name, c.lineno))
                 continue
