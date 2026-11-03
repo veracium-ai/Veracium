@@ -287,12 +287,12 @@ GROUPS = [('T2 (0019 v7: the non-user refusal)',
   ['tests/test_0041_notice_state.py', 'tests/test_0008_request_registry.py'],
   [('B4 fixed point: the registry digest treated only when the notice names it',
     'src/veracium/store/sqlite.py',
-    '            n = self._conn.execute("UPDATE request_registry SET request_digest=? WHERE user_id=? AND '
+    '                n = self._conn.execute("UPDATE request_registry SET request_digest=? WHERE user_id=? AND '
     'target_edge_id=?",\n'
-    '                                   (_redaction.MARKER, user_id, target_id)).rowcount',
-    '            n = self._conn.execute("UPDATE request_registry SET request_digest=? WHERE user_id=? AND '
+    '                                       (_redaction.MARKER, user_id, target_id)).rowcount',
+    '                n = self._conn.execute("UPDATE request_registry SET request_digest=? WHERE user_id=? AND '
     'target_edge_id=? AND ?",\n'
-    '                                   (_redaction.MARKER, user_id, target_id, "request_registry.request_digest" in '
+    '                                       (_redaction.MARKER, user_id, target_id, "request_registry.request_digest" in '
     '(fields_hint or []))).rowcount'),
    ("B4 rollback: a notice state committed before the unit's refusal",
     'src/veracium/store/sqlite.py',
@@ -2963,7 +2963,7 @@ PROVENANCE = {"0008 C11 (retention, erasure and export: forget_user deletes the 
  '0051 (INV-S3, S6: the frozen grammar, binding cell deselected) :: the letters counted without their pair': {'reanchored': None,
                                                                                                               'source': 't0051_mutant_defs.py',
                                                                                                               'source_sha256': '43cbb15da17f2a67bcfa285e692a0b937bd286dd903c79055314b661b399e76c'},
- "R-A read, B4/B5: IO-II-3 at T4's states, and RR4 :: B4 fixed point: the registry digest treated only when the notice names it": {'reanchored': None,
+ "R-A read, B4/B5: IO-II-3 at T4's states, and RR4 :: B4 fixed point: the registry digest treated only when the notice names it": {'reanchored': "1860fec (0048 round 4, R3-02 (a′)) put the redaction's edge branch inside `with self._write_edge_row(..., defer=True) as pending:`, so the request_registry UPDATE is indented four more spaces; the anchor and its replacement follow it, and the mutant is unchanged in effect (the registry digest treated only when the notice names it)",
                                                                                                                                    'source': 'ra_mutant_defs.py',
                                                                                                                                    'source_sha256': '3964923cd20e00ddd6b68e8ce6ce62edd956e624bc80035a69b99822b2e5ffd6'},
  "R-A read, B4/B5: IO-II-3 at T4's states, and RR4 :: B4 kind: a notice's target weighed by id across kinds (binding)": {'reanchored': None,
