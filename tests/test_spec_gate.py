@@ -2774,6 +2774,32 @@ def _p1_binding_problems(root, artifact, test_file, test_name):
     return problems
 
 
+def _p1_sidecar_pointer(root, artifact, reviewed):
+    """P1's pointer for REVIEWED bytes (0018 v9's fold, research's design): a directory in `reviewed` may declare its
+    files' pointers in MUTATION-MATRIX.txt instead of an in-file comment, because editing reviewed bytes would change
+    what was verified. Admitted ONLY while the directory's SHA256SUMS hashes to its pinned value (so editing a file AND
+    its SUMS line re-chains nothing: the pin is outside the directory) and the file equals its SUMS line. Returns
+    ((test_file, test_name), None) or (None, the reason)."""
+    import hashlib, re
+    d = artifact.parent
+    rel = str(d.relative_to(root))
+    if rel not in reviewed:
+        return None, "not a reviewed-evidence directory"
+    sums = d / "SHA256SUMS"
+    if not sums.exists() or hashlib.sha256(sums.read_bytes()).hexdigest() != reviewed[rel]:
+        return None, f"{rel}/SHA256SUMS does not hash to its pinned value: the reviewed bytes moved"
+    lines = dict((m.group(2), m.group(1)) for m in re.finditer(r"^([0-9a-f]{64})  (?:\./)?(\S+)$", sums.read_text(), re.M))
+    if lines.get(artifact.name) != hashlib.sha256(artifact.read_bytes()).hexdigest():
+        return None, f"{artifact.name} does not equal its SHA256SUMS line"
+    side = d / "MUTATION-MATRIX.txt"
+    if not side.exists():
+        return None, "no MUTATION-MATRIX.txt"
+    m = re.search(rf"^{re.escape(artifact.name)}:\s*(tests/\S+?\.py)::(\w+)\s*$", side.read_text(), re.M)
+    if not m:
+        return None, f"MUTATION-MATRIX.txt names no matrix for {artifact.name}"
+    return (m.group(1), m.group(2)), None
+
+
 def test_every_evidence_artifact_declares_a_mutation_matrix():
     """P1 (adopted 2026-08-24; claim narrowed at PROCESS-M24-1): every
     checker declares and BINDS its mutation matrix — this gate enforces
@@ -2865,6 +2891,9 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
         root / "specs" / "evidence" / "0048" / "pin_repro.py",
         # ...and round 2's token tripwire, whose hits a classified snapshot compares: a new one fails the suite
         root / "specs" / "evidence" / "0048" / "tripwire_0048.py",
+        # specs/0018 v9 §4j (R2-03): the head-bound census's `--check` refuses any difference from its expectation — a
+        # checker whatever its name says; reviewed bytes, so its pointer is the directory's sidecar (REVIEWED_EVIDENCE)
+        root / "specs" / "evidence" / "0018-adjacent-rungs" / "dev-model" / "head_bound_census.py",
         # ...and round 2's contract harness, a model of §4 that exits 1 on a surviving or crashed mutant
         root / "specs" / "evidence" / "0048" / "contract_harness_0048.py",
         # the offline launcher's import preflight REFUSES an interpreter missing a measured module, and the list it
@@ -2897,6 +2926,18 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
         # spec-phrase complement
         root / "specs" / "evidence" / "0013" / "a_matrix_mutants.py",
     ]
+    # REVIEWED evidence, whose bytes must not be edited: directory -> the sha256 of its SHA256SUMS, pinned HERE (outside
+    # the directory, so a file and its SUMS line edited together cannot re-chain). A pin moves only by a visible edit to
+    # this table. The sidecar only ADDS a pointer: a checker in these directories with neither is refused as anywhere.
+    REVIEWED_EVIDENCE = {
+        # the round-3 sealed package 0018-adjacent-rungs-round3-review-package (sha256 95aa8f09…), its evidence/ byte for
+        # byte: the bytes the external reviewer reproduced
+        "specs/evidence/0018-adjacent-rungs/research-v0.3": "be51b7076f4df912c781227a2c878e07f1337d6a02473409c91ab9bc790b5243",
+        "specs/evidence/0018-adjacent-rungs/dev-model": "771ac9b4bcba4ec5a61625300c4c974a340e8ab33f58dc4d8a10a831dd3da313",
+        # closure/: bytes run by BOTH SEATS for the round-3 closure (veracium-research commits 617a17a3, 4bfedbdd and
+        # 657d4bc4), NOT an external round's package; the pin is its SUMS as of the fold commit
+        "specs/evidence/0018-adjacent-rungs/closure": "9f5ec7ff39f56c7929620d2f3b781ae58d8ae917a5423056fc3cc94d69091534",
+    }
     for f in EXPLICIT_ARTIFACTS:
         assert f.exists(), f"EXPLICIT_ARTIFACTS names a missing file: {f}"
     candidates = sorted(
@@ -2911,10 +2952,14 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
         text = f.read_text()
         m = re.search(r"^# Mutation-Matrix:\s*(tests/\S+?\.py)::(\w+)\s*$",
                       text, re.M)
-        assert m, (
-            f"{f.name} declares no `# Mutation-Matrix: tests/<file>.py::"
-            f"<test>` pointer — no unmutated checker ships (P1)")
-        tf, tname = m.group(1), m.group(2)
+        if m:
+            tf, tname = m.group(1), m.group(2)
+        else:
+            side, why = _p1_sidecar_pointer(root, f, REVIEWED_EVIDENCE)
+            assert side, (
+                f"{f.name} declares no `# Mutation-Matrix: tests/<file>.py::"
+                f"<test>` pointer — no unmutated checker ships (P1); sidecar: {why}")
+            tf, tname = side
         problems = _p1_binding_problems(root, f, tf, tname)
         assert not problems, f"{f.name}: " + "; ".join(problems)
 
@@ -2937,6 +2982,33 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
         assert probs, (
             "the planted unrelated-matrix mutant passed — the binding "
             "reads the file, not the test body (PROCESS-R23-1)")
+
+    # the reviewed-evidence sidecar's planted mutants (research, the 0018 v9 fold): M1 a file != its SUMS line; M2 a file
+    # AND its SUMS line edited together (the SUMS no longer hashes to its pin); M3 a checker in neither the sidecar nor
+    # an in-file pointer; M4 a sidecar test whose body never names the file. Each must refuse; the honest form must pass.
+    import hashlib
+    def plant(td, *, edit_file=False, edit_sums=False, side_names=True, test_names=True):
+        troot = pathlib.Path(td)
+        d = troot / "specs" / "evidence" / "x"; d.mkdir(parents=True)
+        (troot / "tests").mkdir()
+        art = d / "check_reviewed.py"; art.write_text("print('reviewed')\n")
+        sums = f"{hashlib.sha256(art.read_bytes()).hexdigest()}  check_reviewed.py\n"
+        (d / "SHA256SUMS").write_text(sums)
+        pin = {"specs/evidence/x": hashlib.sha256(sums.encode()).hexdigest()}
+        if edit_file:
+            art.write_text("print('edited')\n")
+        if edit_sums:
+            (d / "SHA256SUMS").write_text(f"{hashlib.sha256(art.read_bytes()).hexdigest()}  check_reviewed.py\n")
+        (d / "MUTATION-MATRIX.txt").write_text("check_reviewed.py: tests/test_y.py::test_m\n" if side_names else "other.py: tests/test_y.py::test_m\n")
+        (troot / "tests" / "test_y.py").write_text("def test_m():\n    " + ("'check_reviewed.py'" if test_names else "pass") + "\n")
+        side, why = _p1_sidecar_pointer(troot, art, pin)
+        return side and not _p1_binding_problems(troot, art, side[0], side[1])
+    for label, kw, want in (("honest", {}, True), ("M1 file edited", {"edit_file": True}, False),
+                            ("M2 file and SUMS re-chained", {"edit_file": True, "edit_sums": True}, False),
+                            ("M3 no sidecar line", {"side_names": False}, False),
+                            ("M4 an unrelated test", {"test_names": False}, False)):
+        with tempfile.TemporaryDirectory() as td:
+            assert bool(plant(td, **kw)) is want, f"reviewed-evidence sidecar {label}: admitted={not want}"
 
 
 def _p4_evidence_problem(evidence: str):

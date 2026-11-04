@@ -1,0 +1,3 @@
+{"open_versioned_sig": "(conn: 'sqlite3.Connection', path: 'str', *, allow_adopt: 'bool' = True, audit_sink=None, older=None, new=None, on_committed=None, on_rolled_back=None) -> 'OpenResult'"}
+{"case": "unstamped-v1", "hook_calls": [{"found": 0, "base": 1}], "escape": "RuntimeError", "reason": null, "msg": "cell5: hook reached; refusing so nothing is written", "stamp_after": 0}
+{"case": "stamped-v1", "hook_calls": [{"found": 1, "base": 1}], "escape": "RuntimeError", "reason": null, "msg": "cell5: hook reached; refusing so nothing is written", "stamp_after": 1}

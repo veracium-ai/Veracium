@@ -1,5 +1,5 @@
 {
- "body_sha256": "c16c900458490c0f3d36d3ac25ef00e8e14d8dc7f5356f20561377c836e20077",
+ "body_sha256": "7c6e49d7c201bc24035bf2051cf078650d6d06cd7c08f2ec46dfdd08d90af7a4",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 2
    }
   },
-  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
+  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
   "control_definitions": {
    "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
   },
@@ -69,20 +69,14 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/doctor.py",
-   "src/veracium/store/schema_version.py",
-   "tests/test_0007_doctor_nearest.py",
-   "tests/test_doctor_cli.py"
+   "tests/test_0026_relay_lexicon.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -112,7 +106,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "machine dropped from the key"
@@ -143,7 +137,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"

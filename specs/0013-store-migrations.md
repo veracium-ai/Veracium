@@ -2,7 +2,7 @@
 
 Spec-Status: accepted
 Spec-Requires: 0007[0013/0007-sqlite-attestation]
-Folds: 0013/0007-sqlite-attestation
+Folds: 0013/0007-sqlite-attestation, 0018-adjacent-rungs
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
@@ -34,7 +34,7 @@ Folds: 0013/0007-sqlite-attestation
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v38.2 — 2026-11-01: the amendment's implementation acceptance, recorded (0007 v24's acceptance fold).** The SQLite attestation amendment `0013/0007-sqlite-attestation` was IMPLEMENTATION ACCEPTED at its external round 5, 2026-10-31 (“round 2's frozen obligations I1–I7 are satisfied”). Its record and frozen surface are in 0007 v24 and 0007 `## Review closure`, and the Decision cell now says so. Nothing else changes; `Spec-Status` stays `accepted`. Prior: v38.1 — **v38.1 — 2026-10-28: the seam replaces one name, so a seamed module reaches `sqlite3` by that name only (research's stage 2 on the fix batch).** v38's closed surface was the seamed modules' global `sqlite3`, and its run-time-names cell read only attributes of that name. `import sqlite3 as _real` inside `migrate_store`, then a `_real.Connection(path)` write, reached the real module unseen by both; the complete gate still refused it, by replay, on 50 of 57 paths, the other 3 under rule 5's first limit. A cell now requires each seamed module to bind `sqlite3` exactly once, by a module-level unaliased `import sqlite3`, and INV-SA10's table gains the row. Nothing else changes. Prior: v38 — **v38 — 2026-10-28: the census's own input surface, as rules (the round-3 implementation verdict, SA-R3-01, banked at coordination `c1ea30b`; research's stage-1 read of its class).** The verdict measured a connection factory that writes before the census installs its callbacks, and that replay runs again: 57 of 57 paths passed with 53 changed stores. Rules 5 and 6 stated what the census records and what its connection wrapper admits, but not what `connect` accepts, what the module seam forwards, or what values a recorded set may carry; the code forwarded all three. §5f.1 rule 6 gains the census's input surface, each part a closed set refused and recorded outside it, and replay re-checks its record against the same sets. INV-SA10 gains the matching mutants. Rule 5's claim and its two stated limits are unchanged. Prior: v37 — **v37 — 2026-10-27: one callback sequence no executed statement owns (the owner's word, “Yes, build v37”).** The first branch run measured INV-SA10's gate refusing the CLEAN ladder on SQLite 3.34.1, 3.37.2, 3.40.0 and 3.40.1, because a table-valued pragma read reported `UPDATE` on `sqlite_master`. Research traced it to pre-3.41 SQLite asking the authorizer about `sqlite3_declare_vtab`'s nested, never-executed `UPDATE sqlite_master`, on a connection's first use of a pragma module. Nothing is written. §5f.1 now attributes exactly that six-callback sequence as bookkeeping, and only where the build's own probe reproduces it with nothing changed; replay equivalence is unchanged. INV-SA10 gains five mutants. Without this, four common distributions' builds could be `verified` but never attested. Prior: v36 — **v36 — 2026-10-26: two wording corrections found while implementing I3(b) (the 0013 model's runtime seam); no rule, invariant or outcome changes.** (1) §5e's v35 INV-SA11 annotation said it “changes none of its fields”, which read as forbidding the `runtime` field it locates. It now says none of the EXISTING fields, and that the model's row admits `refused`, since round 5 consumes the authority before the runtime gate refuses. (2) The M15 and M18 rows named three tests retired by v34 on lines that state their tests run, and the spec gate reads every backticked name on such a line. They now cite their replacements (A1, A10, A12 and A15) and mention the retired tests without backticks. §5f.3's retirement list still names all three. Prior: v35 — **v35 — 2026-10-26: five corrections found while implementing the SQLite attestation fold (0007 I1–I2), folded on the owner's word (2026-10-26, “Approve; fold now”). No outcome of the accepted design changes.** Each comes from research's stage-1 read of I1–I7 and was accepted by dev. (1) §5e: INV-SA11's key sits on the OPERATION row of the frozen durable model, and the events table's attempted row stays payload-free. (2) §5f.1: six gate-completeness cells, N13–N15 and W1–W3 (Connection methods that write with no authorizer callback, and the routes that hand back the real connection). They are demonstrated in INV-SA10's committed mutation table, which is now the carrier of every N-row's “demonstrated red against the gate mutant”. (3) §5f.1 rule 5: INV-SA10's “fails the suite” now rests on REPLAY EQUIVALENCE, not on proxy opacity. The claim is stated exactly, with its two limits. Recording read results is NEXT-ROUND, and the comparator's SQLite build is asserted by argv. Rule 6 records the closed allowlist kept as defence in depth, and the census seam's extension to `release_migration`. (4) §5f.3: the evidence validators refuse two accepted manifestations at one version that share an acceptance digest, so the authority keeps its frozen shape (A16). (5) The seven `schema_version.py` line citations are re-anchored as function plus line at `d427822`, the commit that deleted the module's dead duplicate definitions; the v34 numbers stay beside them. Rule 3 and INV-SA10's exact-one ownership also cite their demonstrating cells. Prior: v34 — **v34 — 2026-10-25: the SQLite attestation fold (amendment `0013/0007-sqlite-attestation`, v0.12.1, sha16 `134243c63b05845a`), its migration side.** Its design was accepted at its external round 2 (2026-10-25; verdict banked at coordination `2b84ab5`) and by the owner (2026-10-25T19:10Z). The new §5f carries it; §4f, §5c, §5e, M11, M12, M15, M18 and §8a item 2 are edited in place and point to it; the store-open side is 0007 §4g. Prior: **v33 — 2026-10-13: post-acceptance revision (internal finding 0013-PA1; no release changes behaviour; `Spec-Status` stays `accepted`). Every migration step's output is checked AT THE STEP (§4f).** A mutation campaign over the whole migration ladder (dev's instrument, research's identical re-run) found six steps whose output nothing checks, on any SQLite build: the version stamp, the `store_identity` and `store_epoch` mints, the v13 baseline journal, the v2→v3 outcome-chain conversion and the v3→v4 wiki cache drop. A wrong stamp makes `migrate_store` report `migrated` and commit a store the next open refuses. The unmutated ladder is correct; these are assurance gaps, not a wrong output in any release. §4f gives each step a postcondition checked inside the migration's transaction, before the next step; M117–M123 are the invariants, and the closure cells are the campaign's perturbations, each KILLED at its own step. The v2→v3 fill of a missing `observed_at` becomes ONE stated clock read per migration instead of a per-row side effect of loading the model. **Respun 2026-10-14 on dev's review (same version, not yet adopted):** "equal" is defined as equal AS THE DECLARED TYPE, since the dump reformats legitimate `+00:00` datetimes; the added keys are DERIVED from the models' constant defaults, 19 measured; the one released-then-removed field, `provenance.source_type`, is named as the only undeclared key the step may drop, under accepted 0016 D2 (M-Q6, closed by it); and a pre-step snapshot is the postcondition's own read. **Owner rulings, 2026-10-14 (Quentin, first-hand in the dev session):** PATH, “Fold on your word”: like the 0041 notice hotfix, internal finding 0013-PA1 is closed with a mutation table whose cells are the campaign's perturbations, each caught at its own step; it lands after review and suite, and is disclosed to the external reviewer in the next package that touches 0013 (the SQLite amendment's); external review of v33 was declined. M-Q5, “Keep the fill” (M-Q5, closed by it). Prior: v32 |
+| **Version** | **v39 — 2026-11-04: the adjacent-rungs fold's marked 0013 amendments (amendment `0018-adjacent-rungs`, v0.5.1, sha16 `bebe330d18206458`).** The new §5g carries its §4d-ii (the forward step with a target, one guarded entry table, `plan(b, t)`, the frozen preimage, I36's trace units) and §4d-iii (§5f.1 bound to the operation's target); §4f's stamp row and §5f.1's (b1), (b2) and PRAGMA row are edited in place and point to it; the amendment itself is 0018 §4j. Design accepted at its round 3 (closed internally on the owner's ruling); implementation acceptance outstanding (0018 `## Review closure`). Prior: **v38.2 — 2026-11-01: the amendment's implementation acceptance, recorded (0007 v24's acceptance fold).** The SQLite attestation amendment `0013/0007-sqlite-attestation` was IMPLEMENTATION ACCEPTED at its external round 5, 2026-10-31 (“round 2's frozen obligations I1–I7 are satisfied”). Its record and frozen surface are in 0007 v24 and 0007 `## Review closure`, and the Decision cell now says so. Nothing else changes; `Spec-Status` stays `accepted`. Prior: v38.1 — **v38.1 — 2026-10-28: the seam replaces one name, so a seamed module reaches `sqlite3` by that name only (research's stage 2 on the fix batch).** v38's closed surface was the seamed modules' global `sqlite3`, and its run-time-names cell read only attributes of that name. `import sqlite3 as _real` inside `migrate_store`, then a `_real.Connection(path)` write, reached the real module unseen by both; the complete gate still refused it, by replay, on 50 of 57 paths, the other 3 under rule 5's first limit. A cell now requires each seamed module to bind `sqlite3` exactly once, by a module-level unaliased `import sqlite3`, and INV-SA10's table gains the row. Nothing else changes. Prior: v38 — **v38 — 2026-10-28: the census's own input surface, as rules (the round-3 implementation verdict, SA-R3-01, banked at coordination `c1ea30b`; research's stage-1 read of its class).** The verdict measured a connection factory that writes before the census installs its callbacks, and that replay runs again: 57 of 57 paths passed with 53 changed stores. Rules 5 and 6 stated what the census records and what its connection wrapper admits, but not what `connect` accepts, what the module seam forwards, or what values a recorded set may carry; the code forwarded all three. §5f.1 rule 6 gains the census's input surface, each part a closed set refused and recorded outside it, and replay re-checks its record against the same sets. INV-SA10 gains the matching mutants. Rule 5's claim and its two stated limits are unchanged. Prior: v37 — **v37 — 2026-10-27: one callback sequence no executed statement owns (the owner's word, “Yes, build v37”).** The first branch run measured INV-SA10's gate refusing the CLEAN ladder on SQLite 3.34.1, 3.37.2, 3.40.0 and 3.40.1, because a table-valued pragma read reported `UPDATE` on `sqlite_master`. Research traced it to pre-3.41 SQLite asking the authorizer about `sqlite3_declare_vtab`'s nested, never-executed `UPDATE sqlite_master`, on a connection's first use of a pragma module. Nothing is written. §5f.1 now attributes exactly that six-callback sequence as bookkeeping, and only where the build's own probe reproduces it with nothing changed; replay equivalence is unchanged. INV-SA10 gains five mutants. Without this, four common distributions' builds could be `verified` but never attested. Prior: v36 — **v36 — 2026-10-26: two wording corrections found while implementing I3(b) (the 0013 model's runtime seam); no rule, invariant or outcome changes.** (1) §5e's v35 INV-SA11 annotation said it “changes none of its fields”, which read as forbidding the `runtime` field it locates. It now says none of the EXISTING fields, and that the model's row admits `refused`, since round 5 consumes the authority before the runtime gate refuses. (2) The M15 and M18 rows named three tests retired by v34 on lines that state their tests run, and the spec gate reads every backticked name on such a line. They now cite their replacements (A1, A10, A12 and A15) and mention the retired tests without backticks. §5f.3's retirement list still names all three. Prior: v35 — **v35 — 2026-10-26: five corrections found while implementing the SQLite attestation fold (0007 I1–I2), folded on the owner's word (2026-10-26, “Approve; fold now”). No outcome of the accepted design changes.** Each comes from research's stage-1 read of I1–I7 and was accepted by dev. (1) §5e: INV-SA11's key sits on the OPERATION row of the frozen durable model, and the events table's attempted row stays payload-free. (2) §5f.1: six gate-completeness cells, N13–N15 and W1–W3 (Connection methods that write with no authorizer callback, and the routes that hand back the real connection). They are demonstrated in INV-SA10's committed mutation table, which is now the carrier of every N-row's “demonstrated red against the gate mutant”. (3) §5f.1 rule 5: INV-SA10's “fails the suite” now rests on REPLAY EQUIVALENCE, not on proxy opacity. The claim is stated exactly, with its two limits. Recording read results is NEXT-ROUND, and the comparator's SQLite build is asserted by argv. Rule 6 records the closed allowlist kept as defence in depth, and the census seam's extension to `release_migration`. (4) §5f.3: the evidence validators refuse two accepted manifestations at one version that share an acceptance digest, so the authority keeps its frozen shape (A16). (5) The seven `schema_version.py` line citations are re-anchored as function plus line at `d427822`, the commit that deleted the module's dead duplicate definitions; the v34 numbers stay beside them. Rule 3 and INV-SA10's exact-one ownership also cite their demonstrating cells. Prior: v34 — **v34 — 2026-10-25: the SQLite attestation fold (amendment `0013/0007-sqlite-attestation`, v0.12.1, sha16 `134243c63b05845a`), its migration side.** Its design was accepted at its external round 2 (2026-10-25; verdict banked at coordination `2b84ab5`) and by the owner (2026-10-25T19:10Z). The new §5f carries it; §4f, §5c, §5e, M11, M12, M15, M18 and §8a item 2 are edited in place and point to it; the store-open side is 0007 §4g. Prior: **v33 — 2026-10-13: post-acceptance revision (internal finding 0013-PA1; no release changes behaviour; `Spec-Status` stays `accepted`). Every migration step's output is checked AT THE STEP (§4f).** A mutation campaign over the whole migration ladder (dev's instrument, research's identical re-run) found six steps whose output nothing checks, on any SQLite build: the version stamp, the `store_identity` and `store_epoch` mints, the v13 baseline journal, the v2→v3 outcome-chain conversion and the v3→v4 wiki cache drop. A wrong stamp makes `migrate_store` report `migrated` and commit a store the next open refuses. The unmutated ladder is correct; these are assurance gaps, not a wrong output in any release. §4f gives each step a postcondition checked inside the migration's transaction, before the next step; M117–M123 are the invariants, and the closure cells are the campaign's perturbations, each KILLED at its own step. The v2→v3 fill of a missing `observed_at` becomes ONE stated clock read per migration instead of a per-row side effect of loading the model. **Respun 2026-10-14 on dev's review (same version, not yet adopted):** "equal" is defined as equal AS THE DECLARED TYPE, since the dump reformats legitimate `+00:00` datetimes; the added keys are DERIVED from the models' constant defaults, 19 measured; the one released-then-removed field, `provenance.source_type`, is named as the only undeclared key the step may drop, under accepted 0016 D2 (M-Q6, closed by it); and a pre-step snapshot is the postcondition's own read. **Owner rulings, 2026-10-14 (Quentin, first-hand in the dev session):** PATH, “Fold on your word”: like the 0041 notice hotfix, internal finding 0013-PA1 is closed with a mutation table whose cells are the campaign's perturbations, each caught at its own step; it lands after review and suite, and is disclosed to the external reviewer in the next package that touches 0013 (the SQLite amendment's); external review of v33 was declined. M-Q5, “Keep the fill” (M-Q5, closed by it). Prior: v32 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -244,7 +244,7 @@ that snapshot is the check's own read, not a value the step kept.
 
 | step | code at `af1e564` | postcondition |
 |---|---|---|
-| **the stamp** | `PRAGMA user_version = SCHEMA_VERSION` (`_apply_forward`) | `PRAGMA user_version` reads back exactly `SCHEMA_VERSION`. The end-state check also requires it |
+| **the stamp** | `PRAGMA user_version = SCHEMA_VERSION` (`_apply_forward`) | `PRAGMA user_version` reads back exactly `SCHEMA_VERSION`. The end-state check also requires it · **v39:** the stamp is `t`, the operation's established target (§5g; amendment `0018-adjacent-rungs`) |
 | **`store_identity`** | `_mint_store_identity`: `INSERT OR IGNORE … VALUES(1, uuid4)` | exactly one row, `id = 1`, whose `origin` is a canonical UUIDv4 string. A row present before the step is unchanged, byte for byte |
 | **`store_epoch`** | `mint_store_epoch`: `INSERT OR IGNORE … VALUES(1, now, schema_at)` | exactly one row, `id = 1`. If the step created it: `started_at` equals the migration's one clock read and `schema_at` the value passed. A row present before the step is unchanged |
 | **the v13 baseline** | `journal_baselines`: one `baseline` event per pre-existing edge row | the number of `baseline` events the step wrote equals the number of `edges` rows; for every edge row, exactly one such event whose `edge_id` is its id, whose `state` is byte-equal to the row's `json`, whose `reason` is NULL and whose `recorded_at` is the migration's one clock read; within each user, one `txn` and contiguous `seq` |
@@ -879,6 +879,8 @@ frozen contract rather than designing one.
 
 ### 5f.1 What a `verified` build may do with a store (the amendment's §4c)
 
+> **v39 (amendment `0018-adjacent-rungs`; §5g.2):** (b1), (b2) and the PRAGMA row below bind to the target `t` established for the operation, edited in place; the path inventory (`gate_paths()`) covers every base `1 ≤ b ≤ HEAD−1`, the unstamped legacy fixtures and drift repair at an intermediate `t`; the direct library route keeps its head-bound entries and checks.
+
 **Everything an `attested` build may do**: create, open, adopt an unstamped legacy store (0007 §4a-iv), and migrate
 (0013). Each of these is already checked against the accepted evidence at the moment it happens:
 - **create** writes the constructor that verification just reproduced;
@@ -1026,15 +1028,18 @@ frozen contract rather than designing one.
   right, never whether the rows are there. So class (b) is no longer "DDL that revalidation would catch". It is a
   closed list of statement texts whose effects are schema-only by construction, **decided per statement, never by the
   site that issues it**:
-  - **(b1) additive creation.** The text is byte-equal to the head constructor DDL `SCHEMAS[SCHEMA_VERSION][k].ddl` of
-    a typed key `k` whose kind is **table or index**. The gate asserts two properties of every head constructor: each
+  - **(b1) additive creation.** The text is byte-equal to the constructor DDL `SCHEMAS[t][k].ddl` of a typed key `k` whose kind is
+    **table or index**, where `t` is the target established for the operation: `SCHEMA_VERSION` for
+    `migrate_store` and the direct library route, and the authority's `to_version` for a release rung (v39, §5g.2).
+    The gate takes `t` from the fixture's declared base (`b+1`), never from what the code under test wrote. The gate
+    asserts two properties of every constructor of every `t` it admits: each
     table constructor is a plain `CREATE TABLE … (…)`, never `AS SELECT`; and none carries `IF NOT EXISTS` (at
     `58dd7f6`, 0 of 50). Such a statement cannot lose or produce a row. SQLite refuses a CREATE for a name that
     exists, so it can only create an absent, hence empty, table, or an index, which holds no application row. A UNIQUE
     index that cannot build refuses the migration, which is fail-closed, not data loss. The only way to make an
     existing name absent is a statement outside this list.
-  - **(b2) rebuildable-index repair.** The text is exactly `DROP INDEX IF EXISTS <name>`, where `<name>` is a head
-    index whose policy is `rebuildable`. The schema validator already limits that policy to `REBUILDABLE_KINDS`,
+  - **(b2) rebuildable-index repair.** The text is exactly `DROP INDEX IF EXISTS <name>`, where `<name>` is an
+    index of `SCHEMAS[t]` whose policy is `rebuildable` (v39, §5g.2). The schema validator already limits that policy to `REBUILDABLE_KINDS`,
     because "repairing a {kind} would destroy data". Its recreate is a (b1) statement.
 
   **Other kinds are outside (b1), even when additive:** trigger, view and virtual table. A trigger created before a
@@ -1079,7 +1084,7 @@ frozen contract rather than designing one.
   | `INSERT`, `UPDATE`, `DELETE` naming a table other than `sqlite_master`, `sqlite_schema` or `sqlite_temp_master` | **row write.** It must map to exactly one named step. DROP TABLE also reports a `DELETE` naming the dropped table, so it is a row write as well |
   | `INSERT`, `UPDATE`, `DELETE` naming `sqlite_master`, `sqlite_schema` or `sqlite_temp_master` | **schema bookkeeping, legitimate only in a call whose action set also holds a schema-write action** (measured: CREATE INDEX reports `INSERT sqlite_master`; ALTER and DROP INDEX report `UPDATE`/`DELETE sqlite_master`). In any other call it is refused: a direct write to the schema table, **(v37)** except the pre-3.41 `declare_vtab` sequence below, under all three of its conditions |
   | `REINDEX` | legitimate only in a call that also holds `CREATE_INDEX` for the same name (CREATE INDEX reports it, measured); otherwise refused |
-  | `PRAGMA` | **the stamp** is exactly (`user_version`, the head version). Any other pragma must be on a closed read list, enumerated from the ladder at the pin, by name and argument shape; a read can carry an argument too (`table_info`, `t`). `writable_schema`, and any pragma not on the list, is refused |
+  | `PRAGMA` | **the stamp** is exactly (`user_version`, `t`), the operation's established target (v39, §5g.2). Any other pragma must be on a closed read list, enumerated from the ladder at the pin, by name and argument shape; a read can carry an argument too (`table_info`, `t`). `writable_schema`, and any pragma not on the list, is refused |
   | `TRANSACTION`, `SAVEPOINT` | the planner's own; not steps |
   | `READ`, `SELECT`, `FUNCTION`, `RECURSIVE` | reads |
   | `ATTACH`, `DETACH`, `ANALYZE`, `CREATE_VTABLE`, `DROP_VTABLE`, `CREATE_TRIGGER`, `DROP_TRIGGER`, `CREATE_VIEW`, `DROP_VIEW`, and every `CREATE_TEMP_*` and `DROP_TEMP_*` (eight codes) | **refused outright.** ANALYZE also reports `CREATE_TABLE sqlite_stat1`, so it would fall outside (b) anyway (measured) |
@@ -1432,6 +1437,134 @@ Each row is demonstrated red against the named mutant.
 | **INV-SA10** | **(v0.11; a COMMIT-TIME product test, replacing v0.2's runtime refusal, §4c)** over every campaign path, every write the migration ladder issues, **(v0.12) as SQLite's authorizer classifies it, attributed per call (§4c), never by its first word,** is either DDL in class (a) (byte-equal to a frozen `ALTERS_*` member, checked at its step) or in class (b) (§4c's closed list, decided per statement by its text, never by its site; every head table constructor plain and without `IF NOT EXISTS`), or maps to EXACTLY ONE named step whose postcondition is checked at the step inside the migration's transaction and whose campaign cells are each killed at that step; **(v0.11.1)** and every `execute`/`executemany`/`executescript` call site in every function the ladder's connection is used from (reads included; `open_versioned` excluded, §4c) is observed on at least one campaign path; `attested` and `verified` builds take the same ladder with the same checks, and a mismatch leaves the store unchanged; **(v35)** and no store content changes during a census path except by a recorded call, against any code that does not write to the instrument's own objects (§5f.1 rule 5, replay equivalence, with its two stated limits); **(v38)** and nothing reaches the real `sqlite3` from a seamed module except through the census: `connect`'s arguments, the module seam's attributes and a set's values are closed sets, refused and recorded outside them, and replay runs no recorded caller behaviour (§5f.1 rule 6) | add a ladder write that maps to no step (**measured: today's campaign passes it**, §4c); **(v0.11.1)** the same write behind a condition no fixture satisfies (dev's `mutant2-conditional`; the complement passes it, the site check refuses it); narrow the site scope to one module (it then refuses a correct tree: `unattested_marker_report`); a write that two steps' matchers both claim; delete one `_refuse_unless`; make one postcondition vacuous (its problems always empty); add a `STEP_*` name with no matcher; issue DDL from an undeclared site; skip the byte-match on an unattested build; commit before revalidating; let a `verified` build migrate along a different path or with fewer checks than an `attested` one; **(v35)** the mutants of §5f.1 rules 5 and 6 and of the N13–N15 and W1–W3 rows; **(v37)** attribute the `declare_vtab` sequence as bookkeeping on a build whose own probe does not reproduce it; accept it with a sixth column, another table, another database or a trigger argument; accept it on a second use on one connection; accept it outside a prepare; drop the probe's no-change check; **(v38)** forward the caller's `connect` arguments (a connection factory writes before the callbacks are installed, and replay repeats it); forward the module (`sqlite3.Connection(path)` writes with no census); accept any set value (a function as `row_factory` or `text_factory`); let replay run what it recorded; **(v38.1)** bind `sqlite3` a second time in a seamed module (`import sqlite3 as _real`: the seam never sees it). Demonstrated in INV-SA10's mutation table, `specs/evidence/0013/sa10/mutation-table.json` (§5f.1). Of this row's earlier mutants, the table carries: a ladder write that maps to no step (`tree-unmapped-write`); the same write behind a condition no fixture satisfies (`tree-unreached-write`); DDL from an undeclared site (`tree-undeclared-ddl`, `ddl-site-ignored`); and a write that two steps' matchers both claim (`exact-one-relaxed`; cell `tests/test_0013_sa10_gate.py::test_a_row_write_two_steps_both_claim_is_refused`). It also carries a write added to a `release_migration` function (`tree-release-migration-write`). The other mutants named here are not rows of that table. **(v38)** v38's are: the product mutations `tree-connect-factory-keyword`, `tree-connect-factory-positional`, `tree-direct-connection`, `tree-row-factory-function`, `tree-text-factory-function` and **(v38.1)** `tree-second-sqlite3-binding`, and the gate mutants `sa-r3-01-connect-forwards-the-callers-arguments`, `sa-r3-01-the-seam-forwards-the-module`, `sa-r3-01-set-values-unchecked` and `sa-r3-01-replay-runs-recorded-behaviour` |
 
 The amendment's **Gate** (0007 §4g.8) applies to both: each is a PRODUCT test at implementation, demonstrated red against its mutant.
+
+## 5g. The forward step with a target (v39, amendment `0018-adjacent-rungs`)
+
+> **What this section adds:** the marked 0013 amendments of the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; the amendment itself is 0018 §4j): the forward step takes a target `t`, its steps become one guarded entry table from which `plan(b, t)` is derived for every operation, and §5f.1's (b1), (b2) and stamp rules bind to the operation's established target. The clauses it amends are edited in place and point here: §4f's stamp row and §5f.1. **Within this section, a reference to the amendment's other sections (“§2a”, “§2c-ii”, “§4d-i”, “§4e-ii”, I33–I39, …) means the subsection labelled so in 0018 §4j (“§4d-i” in 0007 §4h).**
+
+### 5g.1 The forward step with a target, and the rung step declaration (the amendment's §4d-ii)
+
+> **Forward step with a target.** `_apply_forward(conn, base, target=SCHEMA_VERSION)`: every member of §2a's
+> derived set, the `SCHEMA_VERSION` references in the forward step's reach, is replaced by `target`. The
+> attempted/committed events are not `_apply_forward`'s: `migrate_store`'s hook builds them at head, unchanged, and the
+> rung entry's own hook builds a rung's with `(b, t)`. Lower bounds on `base` in a guard
+> are kept. `migrate_store` passes `SCHEMA_VERSION`, so its one-call base→head behaviour and 0013-PA1's postconditions
+> are unchanged.
+>
+> **One guarded entry table, from which every operation's plan is derived** (R2-02). The kernel's steps become one
+> ordered table, `FORWARD_ENTRIES`. Each entry carries its **guard** `(lo, v)` and its kind and fields (below). The
+> guard is the condition the pin's code already writes around the step, `lo ≤ base < v ≤ target`. At the pin three blocks
+> carry a real lower bound, `(4, 6)` (L378), `(6, 8)` (L406) and `(4, 10)` (L429); the other five have none (`lo` = 0).
+> A step nested under a further condition on `base` (e.g. the v16 `confirmations` ALTERs
+> under `base >= 2`, the `redactions` ALTERs under `base >= 15`) carries that bound as its own `lo`. The table's
+> entries are at STATEMENT granularity (dev's model reads 70 from the pin):
+> - **every refusal point is a `check` entry**, in source order: each `_refuse_unless` call site (the helper-carried
+>   `STEP_CHAINS` included), each repeated occurrence, **and the five ALTER-output byte checks that raise directly**
+>   (L385, L413, L438, L495, L528), which do not pass through `_refuse_unless`;
+> - **every ALTER is its own `alter` entry**: the five loops over the frozen `ALTERS_*` tuples (L380, L408, L433,
+>   L491, L524) are unrolled, one entry per statement in the tuple's order (3, 2, 1, 6 and 2; 14 on a walk from v1);
+> - **the one clock read is a `clock` entry** (L328, 0013 §4f B1's one read), first in every plan;
+> - **a read a check depends on is a `read` entry naming that check**: a capture taken before a step for a later
+>   comparison, or a read after it; a read that serves a data step or an ALTER belongs to that entry;
+> - local imports are not entries: they bind names and touch no store.
+>
+> **Kinds are DECLARED, never inferred from a run.** A data step on an empty store writes nothing (L339 on an empty v2
+> store), so a run cannot tell a `data` entry from a `read`; `FORWARD_ENTRIES` states each entry's kind.
+>
+> **`plan(b, t)`**, for an operation from base `b` to target `t`, is: the `clock` entry; the `add` entries for the objects of `SCHEMAS[t]`
+> whose typed key `SCHEMAS[b]` lacks, in `SCHEMAS[t]`'s order, each with `SCHEMAS[t]`'s constructor text; then every
+> table entry whose guard holds for `(b, t)`, in table order; then the `stamp` entry `t`. This is what the pin's
+> `_apply_forward` does today: `base_keys` comes from `SCHEMAS[base]` (L330) and every block is guarded by `base` and
+> the destination (L337–586). So the table encodes the existing control flow; it does not change what runs.
+>
+> **Both routes consume the same table:**
+> - **a rung** `b → b+1` executes `plan(b, b+1)`;
+> - **the direct route** (`migrate_store`, and `open_versioned` without a target) executes `plan(b, HEAD)` in ONE
+>   transaction, with **its existing contract unchanged**: one clock read, one final stamp at HEAD, the destination
+>   constructors, and the original base's lower bounds. The reviewer's witness is the closure check: at the pin a
+>   base-1 direct operation uses the v16 `confirmations` constructor, 0 ALTER calls, one clock read and only stamp 16,
+>   where the adjacent walk uses the v2 constructor, 14 ALTERs, 15 clock reads and stamps 2..16. Both stay as they are.
+>
+> There is no second, inline encoding of the steps for the direct route: one table, two derivations. A step that is
+> not in the table does not run on either route.
+>
+> **The digest hashes the adjacent projection.** A rung's `migration_digest` is SHA-256 over the preimage of
+> `plan(t−1, t)`, the plan of exactly that rung. The direct route's plan is not digested (it mints no
+> `MigrationAuthority`). Measured at the pin on a populated synthetic v2 walk (dev's model), the rung to v16's check
+> sequence is `[v16-act-counter, v16-registry-backfill, v16-act-columns, v16-act-counter, v16-notice-state,
+> v16-arity-era, v16-arity-edges-unchanged, v16-arity-inventory, v16-arity-edges-unchanged, v16-refusal-inventory,
+> v16-arity-edges-unchanged, stamp]` (two checks repeat), and the rung to v3's is `[v2-v3-outcome-chains, stamp]`.
+> These are the `_refuse_unless` sequences only; the rung to v16's plan also holds its two byte checks.
+>
+> **I36's trace units** (R2-02: a declared step and a data-dependent SQL trace are different units, so they are
+> compared separately):
+> 1. **The step-invocation trace.** The kernel records, in order, each entry it dispatches. For a completed operation
+>    the trace EQUALS `plan(b, t)`, entry for entry, a repeated check appearing once per occurrence. For a refused one
+>    it is a PREFIX of `plan(b, t)` ending at the refusing entry, and the transaction rolls back. A dispatch of an entry
+>    not in the plan, a missing entry, or a reordering fails.
+> 2. **SQL attribution.** Every SQL write the kernel issues is attributed to the entry active when it ran (the
+>    dispatcher sets the active entry; a connection seam records `(entry, statement)` per write), and must be
+>    admitted by that entry's KIND, as SQLite's authorizer classifies the statement, never by its text: an `add`
+>    issues one CREATE, of its own object; an `alter` issues one ALTER, of its own table, with its frozen text (the loops being unrolled); a
+>    `data` step issues **zero or more** DML writes (INSERT, UPDATE, DELETE) and never DDL or a PRAGMA (the reviewer
+>    measured 0, 1 and 2 `UPDATE episodes` on v2 fixtures with 0, 1 and 2 legacy rows); a `check`, a `read` and the
+>    `clock` issue none; the `stamp` issues the `user_version` PRAGMA alone. A write with no active entry, or not admitted by its entry's
+>    kind, fails. Without the kind rule a `data` entry could issue an ALTER that SA10 admits elsewhere in the same
+>    operation, and pass both.
+>
+>    **The table splits a pin block that mixes kinds into single-kind entries,** in the block's own order: the v16
+>    block, for one, interleaves ALTERs, backfills and checks. Attribution is what catches a mis-split, since a
+>    write then lands under an entry whose kind does not admit it.
+>
+> Neither unit replaces SA10. 0013 §5f.1's statement admission stays the independent gate on every write (§4d-iii);
+> attribution adds the binding to the declared entry.
+>
+> **The preimage, frozen.** A *segment* is its byte length as an 8-byte big-endian integer followed by the bytes (0018
+> §4b's framing). Text is UTF-8; an integer is its ASCII decimal, no sign, no leading zeros. The preimage is: the
+> segment `0018-rung-steps-v1`; the segment `b`; the segment `t`; the segment `N`, the number of entries; then each
+> entry as the segment `kind`, the segment `n` (its field count), and its `n` field segments. Kinds are closed, and an
+> unknown kind refuses:
+>
+> | kind | fields, in order |
+> |---|---|
+> | `add` | the object kind (`table` or `index`); the name; `SCHEMAS[t]`'s constructor text, byte-exact |
+> | `alter` | the statement text, byte-exact as executed |
+> | `data` | the value of the step's `STEP_*` constant |
+> | `check` | the value of the `STEP_*` constant `_refuse_unless` receives; a repeated check is a repeated entry. For a direct byte check: the site tag its raise carries, then the table it reads (two fields; the two v16 checks share the tag `v16-alter-path`) |
+> | `read` | the value of the `STEP_*` constant of the check it feeds, or the byte check's site tag |
+> | `clock` | none (n = 0) |
+> | `stamp` | `t` |
+>
+> `migration_digest` is SHA-256 over the preimage of `plan(t−1, t)`. The vector file gives each rung's entry list and
+> preimage (hex). A guard `(lo, v)` is not hashed: it decides membership in a plan, and the plan's entries are what a
+> rung's digest names.
+
+### 5g.2 0013 §5f.1 bound to the operation's target (the amendment's §4d-iii)
+
+Head equality becomes equality to **the target `t` established for the operation**. It is not widened to every
+historical constructor or every valid version. The exact edits to accepted 0013 §5f.1:
+
+> **(b1), old:** "The text is byte-equal to the head constructor DDL `SCHEMAS[SCHEMA_VERSION][k].ddl` of a typed key `k`
+> whose kind is **table or index**. The gate asserts two properties of every head constructor: …"
+>
+> **(b1), new:** "The text is byte-equal to the constructor DDL `SCHEMAS[t][k].ddl` of a typed key `k` whose kind is
+> **table or index**, where `t` is the target established for the operation: `SCHEMA_VERSION` for `migrate_store` and
+> the direct library route, and the authority's `to_version` for a release rung. The gate takes `t` from the fixture's
+> declared base (`b+1`), never from what the code under test wrote. The gate asserts two properties of every constructor
+> of every `t` it admits: …" (the rest unchanged)
+>
+> **(b2), old → new:** "a head index whose policy is `rebuildable`" → "an index of `SCHEMAS[t]` whose policy is
+> `rebuildable`".
+>
+> **PRAGMA row, old → new:** "**the stamp** is exactly (`user_version`, the head version)" → "**the stamp** is exactly
+> (`user_version`, `t`), the operation's established target".
+>
+> **The path inventory** (`gate_paths()`): the release entries cover every base `1 ≤ b ≤ HEAD−1` (not only
+> `HEAD−1`), the unstamped legacy fixtures, and drift repair at an intermediate `t`. The direct library route keeps its
+> head-bound entries and checks.
+
+The premise is §2c-ii row 3: every historical constructor already has the shape (b1) asserts, so binding to `SCHEMAS[t]`
+keeps the asserted shape at every target.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 

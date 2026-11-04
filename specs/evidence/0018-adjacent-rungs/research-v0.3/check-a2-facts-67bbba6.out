@@ -1,0 +1,5 @@
+A2 rows x rungs (1, 13, 14, 15): 56 checked, 0 with problems
+C1 (13,14) at 13->14: no problems
+C1 (13,14) at 14->15: ['a committed change is at version 15']
+controls refused: [True, True, True, True, True]
+pin MigrationResult (migrated, v14): refused: MigrationResult outside the 0018 §4e table: a committed change is at version 16

@@ -1,5 +1,5 @@
 {
- "body_sha256": "97e7dae7361af42941e176d4a588c878761fd0fbb0189d5d36a851b98713bda4",
+ "body_sha256": "91450718dbcc12dc4b549ca17f0a1666129f07fb0ec2606ced5b2c3218dad21f",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
+  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
   "control_definitions": {
    "NOOP-SA-R3-02-attestation_job": "35783f075a00f832b18479d6ce4fbfbbd04b700c55c82b001805aea6040ffde9"
   },
@@ -76,24 +76,18 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/doctor.py",
-   "src/veracium/store/schema_version.py",
-   "tests/test_0007_doctor_nearest.py",
-   "tests/test_doctor_cli.py"
+   "tests/test_0026_relay_lexicon.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -128,7 +122,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.38s",
+   "pytest": "2 failed in 10.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded rule: the JUnit's modules compared with the rule's, its nodes never compared with the invocation's own collection"
@@ -164,7 +158,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.75s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite (the reviewer's deselect route)"
@@ -179,6 +173,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 62
+  "seconds": 59
  }
 }

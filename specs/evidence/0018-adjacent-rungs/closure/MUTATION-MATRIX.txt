@@ -1,0 +1,1 @@
+check_row_map.py: tests/test_0018_adjacent_rungs_evidence.py::test_check_row_map_refuses_a_stale_row

@@ -2,16 +2,16 @@
 
 Spec-Status: accepted
 Spec-Requires: 0007[0013/0007-sqlite-attestation], 0013[0013/0007-sqlite-attestation], 0016
-Folds: 0044/0018-data-migration, 0013/0007-sqlite-attestation
+Folds: 0044/0018-data-migration, 0013/0007-sqlite-attestation, 0018-adjacent-rungs
 
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | **v8.1 — 2026-11-01: the amendment's implementation acceptance, recorded (0007 v24's acceptance fold).** The SQLite attestation amendment `0013/0007-sqlite-attestation` was IMPLEMENTATION ACCEPTED at its external round 5, 2026-10-31. Its record is in 0007 v24 and 0007 `## Review closure`, and the Decision cell now says so. Nothing else changes; `Spec-Status` stays `accepted`. Prior: **v8 — 2026-10-25: the SQLite attestation fold (amendment `0013/0007-sqlite-attestation`, v0.12.1, sha16 `134243c63b05845a`): the preflight's runtime case and the migration audit's sidecar writer (§4a), edited in place; the amendment itself is 0007 §4g and 0013 §5f.** Prior: **v7 — THE DATA-MIGRATION FOLD (amendment `0044/0018-data-migration`, v4, sha16 `c09a4aed2db848a9`).** Its design was accepted with 0044 at round 4 of the 0044 package (verdict 2026-10-13: I24–I32, with I13–I23 kept), and the owner ruled “Accept now, fold next” (2026-10-14). It adds a per-user data-migration operation BESIDE the release orchestrator, which it leaves untouched. Folded as §4i, labelled by the amendment's own section numbers so its internal references resolve; pointers added at §2, §6 and §8. Its reach rows are re-derived at `af1e564`. Not folded: its review brief, open questions and version history. Prior: **v6 (ACCEPTED)** — EXTERNAL ROUND 4: **APPROVED FOR ACCEPTANCE under the finite-acceptance rule; the frozen surface is I13–I23** (total preflight · the exact retry sequence · the result truth table · exact attestation · loud audit failures · reason-only resolution evidence · the CLI contract · the terminal-domain split · total routing · the fingerprint encoding · the closed readback carrier). v6 = v5 + the four same-commit CLOSURE OBLIGATIONS, each demonstrated in this revision: (1) the R3-2 sweep COMPLETED — the §2c cell's test clause now carries I18's two-condition expectation (the description half was fixed in v5, the test half still said "no authority"); (2) exactness made RECURSIVE — `ReadbackResult` requires `type(facts) is TerminalFacts` and invokes `TerminalFacts.problems(facts)` UNBOUND (the reviewer's dynamic-validator subclass probe is the named regression), and `PreflightResolution` exact-types every scalar before any comparison (`resolved_base=True` refuses; hostile `str` subclasses refuse) — I18/I23 extended; (3) read-level failure TOTALITY — `malformed(problems)` is the total read-failure arm (`read-failed: <class>` bounded entries; forced-read-failure regression), and the `ReadbackResult` row is IN §7a (v5 had put it in §2 while claiming §7a complete); (4) the R3-5 output sweep FINISHED — the false "store not accessed" clause removed (the preflight reads the manifest), and §4g/I19 enumerate the five package routes. The reviewer's verification: the corrected fingerprint EXECUTED and matched an independent encoder; the suite delta reconciled exactly; B3-1 closed. **Acceptance is ATOMIC with 0016 v18 (this commit flips both).** *(v5 history: external round 3 — 5+1 folded: the executable fingerprint via `identity(manifest())`, the swept §2c/I14 carriers, the constructed `ReadbackResult`, the pre-mint package route, the MCP gate-scope correction.)* |
+| **Version** | **v9 — 2026-11-04: the adjacent-rungs fold (amendment `0018-adjacent-rungs`, v0.5.1, sha16 `bebe330d18206458`).** Design accepted at round 3 (accepted-with-amendments, closed internally under PROCESS.md §4a on the owner's ruling); implementation acceptance outstanding — I33's populated fixtures, I36's declared plan descriptors and digest vectors, I39's SA10 campaign, the original-preservation checks; the owner schedules it. The new §4j carries the amendment; the 0019 rider's (B1), the 2026-09-18 diagnostic amendment, §4a, §4b, §4c, §4e, §4f, §4g, §4h and I13, I15 and I19 are edited in place and point to it; its marked 0007 and 0013 amendments are 0007 §4h and 0013 §5g; `## Review closure` carries its three rounds. Prior: **v8.1 — 2026-11-01: the amendment's implementation acceptance, recorded (0007 v24's acceptance fold).** The SQLite attestation amendment `0013/0007-sqlite-attestation` was IMPLEMENTATION ACCEPTED at its external round 5, 2026-10-31. Its record is in 0007 v24 and 0007 `## Review closure`, and the Decision cell now says so. Nothing else changes; `Spec-Status` stays `accepted`. Prior: **v8 — 2026-10-25: the SQLite attestation fold (amendment `0013/0007-sqlite-attestation`, v0.12.1, sha16 `134243c63b05845a`): the preflight's runtime case and the migration audit's sidecar writer (§4a), edited in place; the amendment itself is 0007 §4g and 0013 §5f.** Prior: **v7 — THE DATA-MIGRATION FOLD (amendment `0044/0018-data-migration`, v4, sha16 `c09a4aed2db848a9`).** Its design was accepted with 0044 at round 4 of the 0044 package (verdict 2026-10-13: I24–I32, with I13–I23 kept), and the owner ruled “Accept now, fold next” (2026-10-14). It adds a per-user data-migration operation BESIDE the release orchestrator, which it leaves untouched. Folded as §4i, labelled by the amendment's own section numbers so its internal references resolve; pointers added at §2, §6 and §8. Its reach rows are re-derived at `af1e564`. Not folded: its review brief, open questions and version history. Prior: **v6 (ACCEPTED)** — EXTERNAL ROUND 4: **APPROVED FOR ACCEPTANCE under the finite-acceptance rule; the frozen surface is I13–I23** (total preflight · the exact retry sequence · the result truth table · exact attestation · loud audit failures · reason-only resolution evidence · the CLI contract · the terminal-domain split · total routing · the fingerprint encoding · the closed readback carrier). v6 = v5 + the four same-commit CLOSURE OBLIGATIONS, each demonstrated in this revision: (1) the R3-2 sweep COMPLETED — the §2c cell's test clause now carries I18's two-condition expectation (the description half was fixed in v5, the test half still said "no authority"); (2) exactness made RECURSIVE — `ReadbackResult` requires `type(facts) is TerminalFacts` and invokes `TerminalFacts.problems(facts)` UNBOUND (the reviewer's dynamic-validator subclass probe is the named regression), and `PreflightResolution` exact-types every scalar before any comparison (`resolved_base=True` refuses; hostile `str` subclasses refuse) — I18/I23 extended; (3) read-level failure TOTALITY — `malformed(problems)` is the total read-failure arm (`read-failed: <class>` bounded entries; forced-read-failure regression), and the `ReadbackResult` row is IN §7a (v5 had put it in §2 while claiming §7a complete); (4) the R3-5 output sweep FINISHED — the false "store not accessed" clause removed (the preflight reads the manifest), and §4g/I19 enumerate the five package routes. The reviewer's verification: the corrected fingerprint EXECUTED and matched an independent encoder; the suite delta reconciled exactly; B3-1 closed. **Acceptance is ATOMIC with 0016 v18 (this commit flips both).** *(v5 history: external round 3 — 5+1 folded: the executable fingerprint via `identity(manifest())`, the swept §2c/I14 carriers, the constructed `ReadbackResult`, the pre-mint package route, the MCP gate-scope correction.)* |
 | **Status** | *narrative only — canonical is the `Spec-Status:` line* |
 | **Internal reviewers** | research — round 1 RETURNED + folded (v2); re-review CLEARED 2026-08-13. *(v2 history: F1 readback reconciliation — refined by external R1-4; F2 sections inlined; F3 the `PreflightResolution` §2c row + reason-labeling pin.)* |
 | **External review** | **ROUND 4: APPROVED FOR ACCEPTANCE** (2026-08-13, package `0018-v5-20260813T2202Z.tar.gz` sha `107e7720…`) — findings 3(int)/7/9+1/5+1/0; the four closure obligations folded same-commit with the flip |
-| **Decision + date** | **ACCEPTED 2026-08-13** — external round 4, under the finite-acceptance rule; the frozen surface is I13–I23; ATOMIC with `0016` v18 (commit `32faaa8`). *(Row filled 2026-08-22 — the audit also found this round's VERDICT was never recorded in `specs/reviews.py`; recorded now.)* **v7, 2026-10-14:** the amendment `0044/0018-data-migration`, accepted with 0044 at round 4, folded on the owner's ruling “Accept now, fold next”. · **v8: the amendment's design accepted** (its round 2, 2026-10-25, and the owner's word); implementation acceptance was outstanding until 0007 v24 (its obligations are in 0007 `## Review closure`; 0018's invariant ids are its own, so they are not repeated here) · **the amendment's IMPLEMENTATION ACCEPTED** at its external round 5, 2026-10-31 (recorded in 0007 v24) |
+| **Decision + date** | **ACCEPTED 2026-08-13** — external round 4, under the finite-acceptance rule; the frozen surface is I13–I23; ATOMIC with `0016` v18 (commit `32faaa8`). *(Row filled 2026-08-22 — the audit also found this round's VERDICT was never recorded in `specs/reviews.py`; recorded now.)* **v7, 2026-10-14:** the amendment `0044/0018-data-migration`, accepted with 0044 at round 4, folded on the owner's ruling “Accept now, fold next”. · **v8: the amendment's design accepted** (its round 2, 2026-10-25, and the owner's word); implementation acceptance was outstanding until 0007 v24 (its obligations are in 0007 `## Review closure`; 0018's invariant ids are its own, so they are not repeated here) · **the amendment's IMPLEMENTATION ACCEPTED** at its external round 5, 2026-10-31 (recorded in 0007 v24) · **v9: amendment `0018-adjacent-rungs`'s DESIGN ACCEPTED** (its external round 3, 2026-11-04, accepted with amendments, closed internally under PROCESS.md §4a on the owner's ruling; both seats ran every closure row, `## Review closure`); implementation acceptance outstanding (I33, I36, I39, the original-preservation checks) |
 | **Path** | full |
 
 ---
@@ -46,6 +46,8 @@ Folds: 0044/0018-data-migration, 0013/0007-sqlite-attestation
 > never store content, so the disclosure class is unchanged. Facts, outcome, exit
 > code and the §4e table are untouched. Tested exhaustively over every base
 > 1..HEAD-2 with the literal text kept as the mutant.
+>
+> **v9 (amendment `0018-adjacent-rungs`, §4j):** no cell produces `unsupported-base` at this head, and the derived diagnostic loses its only caller and is removed (§4j.6, 4a; §4j.3). The outcome and its row stay for a future floor.
 
 > **Amended by 0019 (same-commit with 0019's acceptance; sign-off granted
 > round 4, 2026-08-14).** (B1) §4a, final: the preflight intercepts
@@ -63,6 +65,8 @@ Folds: 0044/0018-data-migration, 0013/0007-sqlite-attestation
 > 0019's executable numeral sweep, whose output ships in the acceptance-flip
 > commit. The body text below is HISTORICAL as-frozen; this rider is the
 > operative numbering.
+>
+> **v9 (amendment `0018-adjacent-rungs`, §4j):** (B1)'s “resolved base **7** ALONE proceeds to minting” (HEAD−1 in the code) is superseded: every resolved base `b`, `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting `b → b+1` (§4j.6, 4a), and no cell produces `unsupported-base` at this head.
 
 ## 1. Problem and motivation
 
@@ -195,6 +199,8 @@ EVERYTHING except resolved base 6**:
 
 **v8 (amendment `0013/0007-sqlite-attestation`; 0007 §4g, 0013 §5f):** `unqualified-runtime` is a build whose `runtime_status()` is `refused`: the preflight's outcome is `unsupported-sqlite` only on `refused`, and an `attested` or `verified` build proceeds as above. The migration audit's sidecar writer copies the `attempted` event's additive key (INV-SA11, 0013 §5e).
 
+**v9 (amendment `0018-adjacent-rungs`; §4j.6, 4a):** the mint cell moves. Every resolved base `b` with `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting `b → b+1`; the CLI walks the rungs (§4j.6, 4g); no cell produces `unsupported-base` at this head. Every other cell above is unchanged.
+
 Every preflight interception creates ZERO authorities and ZERO 0013 audit
 rows. **Byte-identity holds for every preflight cell EXCEPT
 current-with-repair** (external R1-7): that one cell commits the
@@ -205,6 +211,8 @@ spec — 0013's existing below-head refusal governs it; only the orchestrator's
 preflight returns `unsupported-base`.
 
 ### 4b. `PreflightResolution` — the construction (external R1-2)
+
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4b):** `resolved_base ∈ {FIRST_MIGRATABLE … HEAD−1}`; its exact-type admission, the fingerprint and I18's reason-labeling-only pin are unchanged.
 
 The preflight's observation, as an immutable evidence carrier — and it exists
 **only where a store RESOLVED** (external R2-1: missing, unopenable, and
@@ -266,6 +274,8 @@ base 1–5). Every non-resolving cell short-circuits with NO
 
 ### 4c. The mint API and the bounded retry
 
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4c):** the mint re-observes the store and mints `b → b+1` for a store stamped `b` and accepted there, or unstamped and resolving to `b` through `legacy_base_versions()`; the retry sequence is unchanged and per rung.
+
 **`mint_release_authority(path, attestation, *, resolved: PreflightResolution)
 -> MigrationAuthority`**, raising **`MintError(reason)`** with the closed
 reason enum **{`source-missing`, `source-unaccepted`, `source-changed`}** (the
@@ -300,6 +310,8 @@ attestation passes VERBATIM into minting; the orchestrator never fabricates or
 defaults it.
 
 ### 4e. `MigrationResult` — the carrier and THE LITERAL TABLE (external R1-3)
+
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4e):** the result domain is the preflight rows, the no-record rows, and every delegated carrier lawful at SOME rung `(b, b+1)`; the exact binding lives in `RungReport` (§4j.6, 4e-iii). No cell produces the `unsupported-base` row at this head; the row stays for a future floor. A third, glossed `migration-source-missing` row is added (§4j.6, 4e-ii).
 
 Frozen fields: the `Outcome`-string label + `store_changed: Optional[bool]`,
 `transaction_committed: Optional[bool]`, `resulting_state: str` (0013's
@@ -359,6 +371,8 @@ False/False are this-operation facts and `unknown`/None honestly decline to
 assert the store's present state.
 
 ### 4f. Delegated-outcome routing, the readback, and the loud escapes (external R1-4/R1-6, revised R2-5/R2-6)
+
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4e-i and 4f):** the rules are unchanged, applied per rung at the minted endpoints `(b, t)` wherever this section says `(HEAD−1, HEAD)`.
 
 **`read_terminal(operation_id)`** (defined in the marked 0013 amendment,
 §4h) **RAISES NOTHING (external R2-5 — v3 required it to raise an exception
@@ -449,6 +463,8 @@ message and the CLI's stderr line label it `derived-from-outcome`.
 
 ### 4g. The CLI contract
 
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4g):** `veracium migrate` walks the rungs with a bound that holds by construction, per-rung reporting and one total recovery classifier (§4j.9); the flags, the usage exits and the attestation grammar are unchanged.
+
 `veracium migrate --db X --i-have-quiesced --backup REF` — flags, never
 prompts; both required for the migration path (missing → exit 2 with usage);
 an invalid `--backup` token → exit 2 with the grammar stated. Exit codes:
@@ -468,6 +484,8 @@ Reporting stays on the structured fields; `cli.py` and
 authority.
 
 ### 4h. The marked 0013/0007 amendments (land same-commit with the implementation)
+
+> **v9 (amendment `0018-adjacent-rungs`):** its own marked amendments are 0007 §4h (`open_versioned`'s migration target) and 0013 §5g (the forward step with a target; §5f.1 bound to the operation's target).
 
 > **Outcome vocabulary (revised by external R1-5 AND R2-4):** the returnable
 > vocabulary gains `unsupported-base` and `mint-contention`, produced ONLY by
@@ -774,6 +792,545 @@ owner's ruling); anything about the release orchestrator, which this does not ch
 single-value rule retired. To restore them and get a receipt listing each one, run `run_data_migration`. Until you do,
 those values stay hidden and `doctor` warns.”*
 
+## 4j. Adjacent rungs (v9, amendment `0018-adjacent-rungs`)
+
+> **What this section adds:** the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; design accepted at its external round 3, accepted with amendments, closed internally under PROCESS.md §4a on the owner's ruling, with both seats' closure runs in `## Review closure`): `veracium migrate` walks a released store to head one schema version per audited operation, each rung its own operation id, terminal record and clock read, under one operator attestation; recovery from a stopped walk is one total classifier (§4j.9). The clauses it amends are edited in place and point here: the 0019 rider's (B1), the 2026-09-18 diagnostic amendment, §4a, §4b, §4c, §4e, §4f, §4g, §4h and I13, I15 and I19 in §6. **Within this section, a reference to “§1”–“§8”, “§2a”, “§2c-ii”, “§3b”, “§4a”–“§4h” (and their “-i”, “-ii”, “-iii” parts) or “§7a”–“§7c” means the subsection labelled with that number here** (the amendment's own numbering, kept so its references resolve), **except that “§4d-i” means 0007 §4h and “§4d-ii” and “§4d-iii” mean 0013 §5g**, which carry the amendment's marked 0007 and 0013 amendments. The amendment's §9 (the reviewer's brief), §10 (its open questions, answered) and its reviewer checklist are not folded. A reference to 0018's own sections says “0018”.
+
+### 4j.1 What it amends (the amendment's header)
+
+| | |
+|---|---|
+| **Amends** | 0018 (accepted; frozen surface I13–I23): §4a's mint cell, §4b's accepted-base set, §4c's mint, §4e's result domain and its `unsupported-base` row, §4f's endpoints, §4g's CLI contract, I13, I15, I19. The 0019 rider's (B1) clause "resolved base 7 ALONE proceeds to minting" (HEAD−1 in the code). **Marked 0007 amendment:** `open_versioned` gains a migration target (§4d-i). **Marked 0013 amendments:** the forward step takes a target, and its steps become one declaration consumed by execution and the digest (§4d-ii); §5f.1's (b1), (b2) and stamp rules bind to the operation's target (§4d-iii). |
+| **Leaves unchanged** | accepted 0013's adjacency law (round 15, correction B: a migration is `n → n+1`); `TerminalFacts` and its `problems()`; `MigrationAuthority`'s shape; 0018 §4e's deference law, its no-record rows and the retry-unsafe `migration-audit-state-unknown`; I14, I16–I18 and I20–I23; the public `migrate_store`, which still goes base→head in one call; ordinary opening; the runtime gate. **Each "unchanged" is checked in §2a against the values this amendment moves, not asserted.** |
+| **Ruling** | Round-3 closure (the owner, first-hand, relayed by dev, 2026-11-04): **"Close internally (Recommended)"**: fix, both seats verify each closure row by running it, then dev sets the amendment accepted with a `## Review closure` section, with no round-4 dispatch. Round 3 (the owner, first-hand, 2026-11-03, ledger `72f7b19`): **"Amend for round 3, after 0048 r4 (Recommended)"**. R1-07 (the owner, first-hand, ledger `02d5787`): **"Migrating build only (Recommended)"**. The option the owner chose reads, verbatim (relayed by dev): *"Promise only that rerunning `migrate` with the same (or newer) build resumes and finishes. Don't promise an older release can read a half-walked store; the backup taken before the walk is the way back."* |
+
+### 4j.2 Why (the amendment's §1)
+
+`veracium migrate` (0018's orchestrator) mints an authority only for a store at **HEAD−1**. Today that is v15, and no
+release ever shipped v15. So the CLI refuses **every store a release wrote below head**:
+
+| releases | schema |
+|---|---|
+| 0.26.x | v14 |
+| 0.20–0.25 | v13 |
+| 0.18–0.19 | v12 |
+| 0.16–0.17 | v11 |
+| 0.14–0.15 | v10 |
+| 0.13 | v9 |
+| 0.11–0.12 | v8 |
+| 0.10 | v7 |
+| 0.7–0.9 | v6 |
+| 0.6 | v4 |
+| 0.5 | v3 |
+| 0.1–0.4.8 | v1, unstamped (`user_version` 0) |
+
+*Source:* `src/veracium/store/evidence/legacy_stores.json` for every row it records. For the eight releases whose
+entry is null there (v0.7–v0.9, v0.10, v0.14–v0.15, v0.16–v0.17; §4h), the version is each tag's own `SCHEMA_VERSION`,
+re-derived by dev from the tags.
+
+At the pin, the open refusal names the offline library call `migrate_store(path)` and names `veracium migrate` for a
+v{HEAD−1} store only; `doctor` relays that refusal verbatim (the 0.30.0 interim, dev `9e6c134`). So the operator is
+told a route that works, and the CLI still cannot serve these stores.
+
+Minting one authority from a released base straight to head produces a terminal record that accepted 0013's adjacency
+law refuses ("Round 15, correction B: the migration contract is ADJACENT single-step (n → n+1)", ported into
+`TerminalFacts.problems()`). **This amendment keeps the law and walks the rungs**: one audited operation per schema
+version, each with its own operation id, terminal record and clock read, under one operator attestation.
+
+**Round 2 (external, 2026-11-03) kept the approach and closed five of round 1's findings** (R1-01..R1-04, R1-07; R1-05 and R1-06 partly). It returned three: a committed error the walk did not count (R2-01), I36's trace units and the direct route's construction (R2-02), and three head-bound refusals §2a missed (R2-03). §9 maps each to its answer.
+
+**Round 1 (external, 2026-11-03) endorsed the approach and returned the contract.** Its seven findings, R1-01..R1-07,
+are answered in §9's table. Five of them ran an accepted rule that is bound to the value this amendment changes (the
+mint's fixed endpoints, or the head as destination) against the new contract. v0.3 therefore lists every such rule in
+§2a and states, for each, how it moves and which cell runs it.
+
+**Two pre-existing defects this amendment closes** (both found while building the round-1 model, both RUN by dev at
+the pin, both shipped since `1cab3a7d`, 2026-08-16, which 23 release tags from v0.11.0 contain). Each needs a false
+quiescence attestation or a racing writer, which accepted 0018's Limits already say the orchestrator cannot detect. So
+they are audit-honesty gaps under a violated precondition, not data defects:
+- **M1.** A v15 store swapped for an accepted, stamped v13 between the mint and the transaction is walked 13→16 and
+  ends `migrated`. **Its attempted event says `13 → 16`; its terminal record, result and readback say `15 → 16`.** The
+  delegated kernel is called without the authority, so nothing binds the transaction's source to the minted one.
+  Closed by §4d-i's source binding.
+- **M3.** A store deleted in the same window is re-created by `sqlite3.connect`, then built as a fresh v16 store (77
+  objects) and recorded `internal-error (True, True, destination, 16)` with no attempted event. Closed by §4e row 11a
+  (the rung opens without creating). Its sibling M2, an empty replacement created at head, is 0018's documented
+  narrowing (no `new=` seam in `migrate_store`) and is closed by §4e row 10.
+
+**Alternatives rejected:**
+- **One multi-version authority (option A).** It reopens a law 0013 closed on purpose, at round 15.
+- **The CLI calls `migrate_store` directly** (the pre-0018 contract). It drops the preflight, the attestation, the
+  authority and the terminal readback that 0016/0018 made the CLI's contract.
+- **Mint only from bases a shipped release names.** The release record carries no schema head for eight releases, and a
+  store interrupted mid-walk sits at an unreleased version (v15) that must still be resumable.
+
+### 4j.3 Field contracts (the amendment's §2)
+
+| carrier | today | after |
+|---|---|---|
+| the preflight's mint cell (§4a; the 0019 rider's (B1)) | resolved base HEAD−1 ALONE mints | **every resolved base `b`, `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy,** proceeds to mint `b → b+1` |
+| `mint_release_authority` (§4c) | mints only a store STAMPED `HEAD−1` | mints `b → b+1` for a store stamped `b` and accepted there, **or unstamped and resolving to `b` through `legacy_base_versions()`**, by its own observation (§4c) |
+| `PreflightResolution.resolved_base` (§4b) | ∈ {1 … HEAD−1} (the code; "{1…6}" in the frozen text) | unchanged set, exact-typed as before |
+| `MigrationAuthority` (§4c) | `(HEAD−1, HEAD)` | `(b, b+1)`. **The shape is unchanged; adjacency holds by construction** |
+| `MigrationAuthority.migration_digest` | hashes `[HEAD−1, HEAD, ALTERS_V7_TO_V8]` at every head | SHA-256 over the rung's **declared steps** in the frozen preimage grammar (§4d-ii) |
+| `MigrationResult` (§4e) | delegated rows validated at the fixed `(HEAD−1, HEAD)` | the domain is the preflight rows, the no-record rows, and every delegated carrier lawful at SOME rung `(b, b+1)`; the exact binding lives in `RungReport` |
+| **`RungReport`** (new, §4e-iii) | — | one rung's report: its kind, result, observed base and stamp, operation id and minted endpoints |
+| `run_release_migration` | one operation, HEAD−1 → HEAD | **one rung per call**, `b → b+1`; signature and public result unchanged; returns `run_release_rung(…).result` |
+| **`run_release_rung`** (new, package-private) | — | `run_release_rung(path, *, host_attestation, expect_base=None) -> RungReport` (§4e-iii) |
+| the `unsupported-base` outcome (§4e) | bases 1..HEAD−2 | **no cell produces it at this head**; the member, its row and its I20 exclusion stay for a future floor |
+| CLI `veracium migrate` (§4g) | one operation | **a walk** with a bound that holds by construction, per-rung reporting, and a recovery table; flags and exit classes unchanged |
+| `open_versioned` (0007, marked) | migrates an older store to HEAD | an optional `migrate_to` (§4d-i) |
+| the forward step and its steps (0013, marked) | diff to `SCHEMAS[HEAD]`; guards and stamp at HEAD; steps written inline | the same with target `t`; the steps become ONE guarded entry table, from which `plan(b, t)` is derived for every operation, direct or rung (§4d-ii) |
+| 0013 §5f.1 (b1), (b2), the stamp (marked) | bound to `SCHEMAS[SCHEMA_VERSION]` and the head stamp | bound to the target `t` established for the operation (§4d-iii) |
+
+**Consumers enumerated:** `grep -rn "run_release_migration\|_MINT_BASE\|_ladder_diagnostic\|_release_heads" src tests`
+(dev at implementation). `_ladder_diagnostic` and `_release_heads` lose their only caller and are removed; the release
+record keeps its other consumer, `legacy_base_versions()`.
+
+##### 2a. The accepted rules bound to the values this amendment moves
+
+This amendment turns two constants into per-operation values: the mint's endpoints `(HEAD−1, HEAD)` become `(b, b+1)`,
+and the kernel's destination HEAD becomes the target `t`. Every accepted rule bound to either is listed here, from a
+census at the pin (`grep -n "_MINT_BASE\|_HEAD"` over `src/veracium/store/release_migration.py`; `grep -n
+SCHEMA_VERSION` over `specs/evidence/0013/sa10_gate.py`; the 0013 text's head-bound phrases). A row is "moves" or
+"stays", with its reason and the cell that runs it.
+
+**The kernel's rows are a DERIVED set, not a list** (R2-03). Round 2 found three head-bound refusals that v0.3's
+hand-made rows omitted. The set is defined as **every reference to `SCHEMA_VERSION` in the forward step's REACH, by
+AST**: `_apply_forward`, the module functions it calls, and the constructors of the errors it raises, transitively,
+within `src/veracium/store/` (the Name and attribute forms, and any module-level alias of it). Every member moves
+to `t`. The reach matters: `MigrationPostconditionError` passes `SCHEMA_VERSION` itself (L63), and every refusing
+check reaches it through `_refuse_unless`, on every rung; a set scoped to `_apply_forward`'s own body would miss it
+(dev's stage-1 read of v0.4). Dev's generated census computes the set and refuses any difference from its committed
+expectation (cited below, with its digests). At the pin the members are: the base
+check and its raise (L321–324); the additive diff (L331); the eight step guards; the five ALTER-output byte-check
+raises (v6 L386–387, v8 L414–415, v10 L440–441, v16 L496–497 and L529–530); the stamp and its check (L587–590);
+and the postcondition error's L63. The other functions and classes in the reach carry none: 34 are reached across four store modules (`migration` 24,
+`schema_version` 4, `edge_events` 5, `lifetime` 1). **The census:** dev, head_bound_census.py (`4d9d4d22…`), its
+expectation head_bound_census.expected.json (`f2ab0596…`) and its plant matrix head_bound_census_matrix.py
+(`438eac8a…`), shipped in specs/evidence/0018-adjacent-rungs/dev-model/ and run against `tree/` at the pin: **21 references, equal to the
+expectation**, the 20 above in `_apply_forward` and L63; the matrix gives 12 of 12 cases as expected (nine plants
+refused, among them an import-as alias, a module alias's attribute, a reference in a reached helper of another store
+module and one in a raised error's base `__init__`; the honest tree and two controls pass). Research re-ran the
+census and its matrix on its own `git archive` export of the pin, with the same result. Its residual is named in its
+README: a string-built lookup is out of reach of an AST census. Its repository copy, with its matrix, is an
+implementation obligation under I33 (iii).
+
+**The rung's events are outside the set by construction.** The rung entry builds its attempted and committed events
+in its OWN `older` hook, with `(b, t)` (§4d-i); it does not reuse `migrate_store`'s hook. So `migrate_store`'s
+L822/L828/L838 are the direct route's and stay at head (the row below).
+
+| rule (at the pin) | where | disposition | run by |
+|---|---|---|---|
+| mint predicate `found == _MINT_BASE` | `release_migration.py` L915–916 | **moves**: any accepted base, stamped or legacy (§4c; R1-01) | model, A2 row 2 and A3 |
+| authority endpoints and `source_digest` at `_MINT_BASE` | L923–924 | **moves** to `(b, b+1)`, `digest(objs, b)` | model, C2 |
+| `_declared_migration_digest` `[_MINT_BASE, _HEAD, ALTERS_V7_TO_V8]` | L874–880 | **moves** to the declaration (§4d-ii; R1-06) | I36 vectors |
+| `MigrationResult` delegated check at `(_MINT_BASE, _HEAD)` | L761 | **moves** to "lawful at some rung" plus `RungReport`'s exact binding (§4e-iii; R1-03) | model, C1; facts check |
+| every `TerminalFacts(…, _MINT_BASE, _HEAD, …)` in `_kernel_call`, and `r.resulting_version == _HEAD` | L1151–1218 | **moves** to the minted `(b, t)` and `== t` | model, A2 |
+| the post-mint package escape's facts | L1283 | **moves** to `(b, t)` | I23 cell at a lower rung |
+| preflight `found == _HEAD` / `> _HEAD` cells | L1020–1034 | **stays**: the preflight judges the store against the BUILD's head; only a delegated rung is target-relative (§4e-ii) | model, C2 at HEAD |
+| `unsupported-base` and the ladder diagnostic | L976–991, L1056–1059 | **moves**: no cell produces it; the diagnostic is removed | I13′ |
+| `_MAX_UNSUPPORTED = _HEAD - 2`, the range `unsupported-base` carries | L71, used at L744–746 | **moves**: the range becomes the bases below `FIRST_MIGRATABLE`, empty at this head | I13′; I15′ |
+| `PreflightResolution`'s set `1 <= resolved_base <= _MINT_BASE` | L684–686 | **stays** by value (HEAD−1); bound to `_MINT_BASE` by name, so it is restated as `FIRST_MIGRATABLE … HEAD−1` | I22 cells unchanged |
+| the mint's refusal diagnostic "is not an accepted v{_MINT_BASE} migration source" | L938 | **moves** to the mint's own observed `b` | model, A3 |
+| kernel base check `base >= SCHEMA_VERSION`, and its raise (`SCHEMA_VERSION` as its expected-version argument, passed positionally, and "no migration path from base {base} to head {SCHEMA_VERSION}") | `migration.py` L321–324 | **moves** to `base >= t`, the raise's expected version and text to `t` | I33 |
+| additive diff against `SCHEMAS[SCHEMA_VERSION]` | L331 | **moves** to `SCHEMAS[t]` | I33 (shape probe) |
+| eight step guards `… <= SCHEMA_VERSION`, at L337, 348, 358, 378, 406, 429, 452 and 487 (three with a lower bound on `base`, e.g. L378 `4 <= base < 6 <= SCHEMA_VERSION`), and the step blocks they open | the blocks, L337–586 | **moves**: `SCHEMA_VERSION` is replaced by `t` in each guard, lower bounds kept | I33; §2c-ii row 1 |
+| the v6, v8 and v10 ALTER-output byte-check raises (`supersession_operations` against `ALTER_PATH_V6_SQL`; the v8 and v10 tables against `ALTER_PATH_V8_SQL` and the two accepted v10 forms), each passing `SCHEMA_VERSION` as its expected-version argument (**missed by v0.3; round 2, R2-03**) | `migration.py` L386–387, L414–415, L440–441 | **moves**: the expected version to `t`. Each fires only on a rung whose plan includes its ALTER (`t` = 6, 8, 10 on a walk); on a direct route to head it still says 16, as today | I33 (iii): a lower-target mismatch at 5→6, 7→8 and 9→10 reports expected 6, 8 and 10 |
+| the v16 block's two byte-check raises (the v15→v16 ALTER output of `confirmations` and `redactions` against the frozen `ALTER_PATH_V16_*_SQL`), each passing `SCHEMA_VERSION` as its expected-version argument | L496–497, L529–530 | **moves**: the expected version to `t`. They fire only at `t = 16` | I33 at the last rung |
+| the stamp and `STEP_STAMP` check | L587–590 | **moves** to `t` | E2 sequence 2 (the stamp is a `_refuse_unless` call) |
+| the attempted/committed events' `to_version` in `migrate_store`'s own hook | L822, L828, L838 | **stays** at head: they are `migrate_store`'s, which passes `SCHEMA_VERSION`. A rung's events are built by the rung entry's OWN `older` hook (§4d-i) with `(b, t)` | model, A2 row 2 (the attempted record says from 1) |
+| `MigrationPostconditionError`'s expected version (its constructor passes `SCHEMA_VERSION` itself; reached through `_refuse_unless` by every refusing check, on every rung) | L56–65, the reference at L63 | **moves** to `t` | I35; the census (in the reach) |
+| `open_versioned`'s expected version, accepted digests and `_validated_current` | `schema_version.py` L1924– | **moves** for the version and shape decisions only, when `migrate_to` is given (§4d-i) | model, A1 |
+| the runtime gate: `runtime_status()`, `attestation_revision()`, `verify_build()` | `schema_version.py` L1371, L1483, L1572 | **stays at the build's revision.** The target must not reach it (§4d-i; dev's model F1: patched, every below-head rung refused `unsupported-sqlite`) | I37 cell |
+| (b1) "byte-equal to the head constructor DDL `SCHEMAS[SCHEMA_VERSION][k].ddl`" | 0013 §5f.1; `sa10_gate.py` L562, L732 | **moves** to `SCHEMAS[t]` (§4d-iii; R1-02) | I39 |
+| (b2) rebuildable-index repair over the head's indexes | `sa10_gate.py` L864 | **moves** to `SCHEMAS[t]` | I39 |
+| PRAGMA row "the stamp is exactly (`user_version`, the head version)" | 0013 §5f.1; `sa10_gate.py` L949 | **moves** to `t` | I39 |
+| `gate_paths()` release entries `b == SCHEMA_VERSION − 1` only | `sa10_gate.py` L894 | **moves**: every release base, unstamped legacy fixtures, drift repair at an intermediate `t` | I39 |
+| 0018 I35's expected label `migration-failed` | v0.2.2 §6 | **moves** to `unsupported-migration` (accepted 0013 §4f, M123) | model, A2 row 12 |
+| §5's "an older build can open an interrupted store" | v0.2.2 §5 | **withdrawn** (R1-07; 0016's required `source_type`) | §8 claim |
+| `TerminalFacts.problems()` | L215–293 | **stays**: every §4e row's facts pass it at four rungs | facts check (56/56) |
+| 0018 §4e no-record rows, retry-unsafe text | §4e; `_NO_RECORD_DIAGNOSTICS`, L1119–1131 | **stays**, per rung | model, B rows 5–6 |
+| 0018 §4e's two `migration-source-missing` rows (nothing at the path → `missing`; an empty `user_version=0` file → `unaccepted`) | §4e | **stays**, and a THIRD glossed row is added: an accepted store at the wrong version, `unaccepted` meaning rejected as this operation's source (§4e-ii) | model, rows 7a, 8a, 10, 11a |
+
+### 4j.4 Untrusted inputs and reach (the amendment's §2c)
+
+Every row of 0018 §2c stands. The changed and new rows:
+
+| uncontrolled input | empty | malformed | unrecognised | adversarial | invariant that pins it |
+|---|---|---|---|---|---|
+| a stored database at any base `1 ≤ b ≤ HEAD−1`, stamped and accepted at `b`, **or unstamped and resolving to a `legacy_base_versions()` base** | — | shape not accepted at its stamp → `stamped-shape-mismatch`, unchanged | unstamped, matching no legacy base → `foreign-shape`, unchanged | a store stamped at a version no release shipped (v2, v5, v15) mints like any other: the authority is the accepted-shape evidence for `b`, never the release record | **I13′**, **I33** |
+| the store **between the mint and the rung's transaction** (another process, despite the attestation) | deleted → §4e row 11a: refused, nothing created (M3) | replaced by an empty database → row 10 (M2) | another accepted version below the source → row 7a; past the target → 7b; at the target → `current` at `t` (row 4) | swapped at the SAME version and shape: not visible. The transaction binds the base and shape, not the content (0018 Limits, unchanged) | **I38** |
+| an interrupted walk | — | — | — | the store sits at an intermediate version, stamped and accepted there; the next `migrate` resolves it as an ordinary base and resumes **with the migrating build or a newer one**. No partial rung exists: each rung is one transaction | **I35** |
+| the attestation, across rungs | — | as 0018 | — | **one** `MigrationAttestation` for the walk, re-admitted exact-type at every mint, never re-prompted or fabricated. It cannot expire: it carries exactly `quiesced` and `backup_ref`; the 15-minute window belongs to each rung's freshly minted authority | I16, **I34** |
+| `PreflightResolution` passed to the mint | — | refused exact-type, as 0018 | — | forged (any base) changes no mint decision either way: it labels a failure only (I18). Run by the model with forged bases 7, 15 and 2 against an eligible v13 and a refusing foreign store | I18 |
+| the path the rung entry opens without creating (§4d-i), as a SQLite URI | — | a path containing `?`, `#`, `%` or a space; a non-UTF-8 filename the platform supports | — | **a sibling whose name is the path's prefix up to `?` or `#`** (the reviewer's E2-01: an unencoded URI migrated the sibling and reported success). The URI carries the canonical path's filesystem bytes percent-encoded, so it names exactly that file; an open that fails is reported by §4e-ii's existing rows, never as `missing` unless nothing is at the path | **I38** |
+| `migrate_to` on `open_versioned` | `None` → today's behaviour | non-int, `bool`, `int` subclass → `TypeError`; out of `FIRST_MIGRATABLE+1 … HEAD` → `ValueError`; both before any store access | — | `t < HEAD` without the migration hook → `ValueError`, so no ordinary open reaches a below-head target | **I37** |
+
+`expect_base` is supplied only by the package's own CLI, never by a caller of the public API, so it is not an
+untrusted input; `run_release_rung` is package-private.
+
+##### 2c-ii. Assertions about reach — REQUIRED
+
+All at the pin, dev `67bbba69`, on `git archive` exports with CPython 3.14.7. **Rows 6–9 are model results, kept
+apart from product results:** the model runs the pin's real opening path, kernel, audit writers and validator, with a
+rung's target set by a process-local patch; it is not the implementation.
+
+| # | assertion | how established | result |
+|---|---|---|---|
+| 1 | every rung `b → b+1` from every base `1 ≤ b ≤ 15`, walked to v16, lands on a shape accepted at `b+1` | research, specs/evidence/0018-adjacent-rungs/research-67bbba6 (probe_rungs.py), empty stores built by `sv.create(conn, b)` | 120 of 120 rungs; 15 of 15 direct jumps; four controls as expected (three say no, one says yes). The reviewer reproduced it byte-for-byte |
+| 2 | accepted 0013 forbids a non-adjacent terminal record | `specs/migrations_0013.py` L915–918; `src/veracium/store/release_migration.py` L242–245 | "endpoints must be adjacent" in both |
+| 3 | every historical table/index constructor has the shape (b1) asserts of the head's | research, specs/evidence/0018-adjacent-rungs/research-v0.3 (probe_constructors.py) | 338 constructors over v1–v16, none with `IF NOT EXISTS`, `AS SELECT` or a non-plain `CREATE`; 23 `(version, table)` constructors differ from head's, the reviewer's four among them; a planted control is reported |
+| 4 | every §4e-ii row's facts are lawful | research, the same directory (check_a2_facts.py), the pin's `TerminalFacts.problems()` | 56 of 56 at rungs 1→2, 13→14, 14→15, 15→16; five controls refuse; the pin's `MigrationResult` refuses a lawful `(migrated, v14)` (R1-03 reproduced) |
+| 5 | `legacy_base_versions()` | research, at the pin | `{1}`, so §4e row 8b is unreachable at this head |
+| 6 | the reviewer's witnesses reproduce | dev, reviewer_probes.py from the inbox archive | round 1: 14 of 14 records equal theirs apart from the generated operation id. **Round 2** (dev, from the round-2 inbox archive, at the pin): 14 of 15 records of the reviewer's probe script equal after normalising, the fifteenth being the environment record; the reviewer's census-error probe 6 of 6 |
+| 7 | M1, M2, M3 at the pin | dev, probe_m1_m2.py; **round 2's E2-02:** its observer opened the path with SQLite after `os.remove`, recreating an empty file, so its M3 run repeated the empty-replacement case. The reviewer's corrected observer (`os.path.exists`, no open) independently confirms M3: the path is absent before delegation, and the pin creates a v16 store and returns committed `internal-error`. Dev's corrected probe replaces the round-2 pair, which is superseded with no digest | M1 and M2 as §1 states; M3: the path is absent immediately before delegation, then the pin creates a v16 store and returns committed `internal-error`, read back as a record. Dev's corrected probe probe_m1_m2.py (`5e035bae…`), output m1-m2-m3-67bbba6-r3.jsonl (`a19bcdd1…`; operation ids inside, compared after normalising them); its counter-control, round 2's observer kept byte-identical as probe_m1_m2.round2-observer.py (`2fae3653…`), re-run at the pin as m1-m2-m3-67bbba6-round2-observer.jsonl (`3d3d0daf…`), still reproduces the empty-replacement case: it sees the empty file it creates. Shipped in specs/evidence/0018-adjacent-rungs/dev-model/ |
+| 8 | the kernel routes an unstamped legacy store with objects to the hook | dev, cell5.py (`b395e57a…`), output cell5-67bbba6.jsonl (`408ffd5b…`), shipped in specs/evidence/0018-adjacent-rungs/dev-model/ | `older(…, found=0, base=1)`; a raising hook leaves stamp 0. Only the mint excludes the legacy store |
+| 9a | **this version's text, modelled (round 3)** | dev, model_v04.py (`1e97046e…`), output model-v04-run-67bbba6.jsonl (`6fe72245…`), against v0.4.1 with research's corrected absence rule; its records 2–77 (75 cells and the E2 check-sequence record) are round 2's model-v03 run, byte for byte. An earlier model_v04 pair, taken before that correction, is superseded with no digest; shipped in specs/evidence/0018-adjacent-rungs/dev-model/; deterministic (byte-identical from another work directory after its first line's source path) | **119 ok, 0 not ok, 2 inexpressible** (round 2's two E2 records). E2-01: five named-file cells, a non-UTF-8 name among them, each migrating exactly the named file; the three unencoded counter-controls fail as they should; a directory at the path is unopenable. Absence (§4d-i): a dangling symlink at preflight time is `missing` and nothing is minted; one swapped in after the mint is `store-unopenable` `(False, False, unknown, None)`; 0013 round 16 f5: a source vanishing between the `lstat` and the open, re-checked fresh, reads `missing`, and its mutant (no re-check) reads `store-unopenable` and is killed. P5: totality at 1→2, 13→14 and 15→16, printing the carriers `problems()` admits and refuses, each admitted one mapped to exactly one §7 row. R2-01: seven walk cells, five mutants killed, round 2's counting algorithm among them. R2-02: the guard table read from the pin's AST; the trace equals `plan(b, t)` with kind attribution (SQLite's authorizer, statement cache off) on all 29 routes the model walks; 0, 1 and 2 legacy rows give 0, 1 and 2 writes; the reviewer's direct-versus-adjacent witness (direct: the v16 constructor, 0 ALTERs, 1 clock read, stamp 16; adjacent: the v2 constructor, 14, 15, stamps 2..16); eight closure mutants, all detected. The model states its own bound: kinds are read from the declaration, and only populated fixtures exercise a data write |
+| 9 | round 2's tables, modelled (**superseded**) | dev, model_v03.py and its run model-v03-run-67bbba6.jsonl, against the tables' revision 3, shipped in round 2's package. **Not shipped in round 3: superseded by model_v04, whose records 2–77 (75 cells and the E2 check-sequence record) are v0.3's run, byte for byte** (row 9a); cited with no digest. **Deterministic:** the work directory and operation ids are normalised before any note is truncated, so a run from a different work directory reproduces it byte for byte. Three earlier runs are superseded and cited with no digest: one against revision 2 (67 ok, 6 not ok, F1–F3, 2 inexpressible), whose script was overwritten in place; and two against revision 3 with the same cell results as this, the first carrying local paths and live operation ids, the second truncating notes before normalising, so that its bytes depended on the work directory's length | **73 ok, 0 not ok, 2 inexpressible** (now implementation obligations, §6); the deleted-store cells give `(False, False, missing, None)` with no file on disk afterwards. Confirmed: §4d-i's argument rows; §4e-ii rows 1–5, 7a, 7b, 8a, 9, 10, 12 at three rungs; row 2 on a populated unstamped v1, a forced failure restoring stamp 0 and the data; I18 against forged resolutions; `RungReport` binding; walks from v13 (3 rungs), populated v1 (15), unstamped v1 (15), HEAD (0); a store moved down after rung 1 stopping with one mint; recovery rows 5–8; a pre-mint escape after two rungs carrying no id |
+
+**What these do not establish:**
+- **The implementation.** Rows 6–9 run the pin's code under a patched head. The target parameter, the rung entry and
+  the declaration do not exist yet.
+- **Release-authored populated stores.** Rows 1 and 3–4 read definitions or empty stores; row 9 used synthetic
+  populated stores. I33 owes fixtures written by each release's own code.
+- **The SA10 gate at an intermediate target.** It is head-bound at the pin; I39 is its implementation cell.
+
+### 4j.5 Trust classes, authorization and scope (the amendment's §3 and §3b)
+
+No new trust class: every caller is the operator who owns the file (0018 §3, unchanged). The walk adds no input that
+another principal supplies.
+
+##### 3b. Authorization and scope
+
+Unchanged from 0018 §3b, with one carrier fewer: `unsupported-base`'s diagnostic, which cited release tags, is no
+longer produced. Per-rung reporting carries versions, outcomes and operation ids, never store content.
+
+### 4j.6 Behaviour (the amendment's §4)
+
+##### 4a. The preflight (amends 0018 §4a and the 0019 rider's (B1))
+
+The preflight's matrix is unchanged except for one cell:
+- **every resolved base `b` with `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting
+  `b → b+1`.** `FIRST_MIGRATABLE` is 1 at this head (every version 1..16 has accepted-shape evidence in
+  `src/veracium/store/evidence/schema_versions.json`, and the kernel defines a step from each). A future head that drops
+  an old base raises it; bases below it then return `unsupported-base`, the only cell that can produce the outcome.
+- `current` (clean, and with repair), and every refusal cell, are as today. The preflight stays read-only: it never
+  stamps an unstamped store. It judges the store against the BUILD's head; only a delegated rung is target-relative.
+- The release record is not consulted.
+
+##### 4b. `PreflightResolution` (amends 0018 §4b)
+
+`resolved_base ∈ {FIRST_MIGRATABLE … HEAD−1}`. Its exact-type admission, the fingerprint and I18's reason-labeling-only
+pin are unchanged.
+
+##### 4c. The mint (amends 0018 §4c; R1-01)
+
+`mint_release_authority` re-observes the store itself and mints `from_version = b`, `to_version = b+1` when, **by its
+own observation**:
+- the store is stamped `b`, `1 ≤ b ≤ HEAD−1`, and `digest(objs, b) ∈ accepted_digests(b)`; or
+- it is unstamped, has objects, and `resolve(objs, version_records(), candidates=legacy_base_versions())` returns `b`,
+  `1 ≤ b ≤ HEAD−1`.
+
+`source_digest = digest(objs, b)`. **The resolved base, the raw stamp and the source facts:** the authority's
+`from_version`, the terminal record's `from_version` and the attempted event's source are all the RESOLVED base `b`
+(the pin's kernel already records the hook's `base`: `src/veracium/store/migration.py` L817–822); the raw stamp (0 for
+a legacy store) is reported only in `RungReport.source_stamp`.
+
+I18 is unchanged: `resolved` labels a failure and decides nothing. A forged `PreflightResolution` cannot make a refusing
+store mint, and cannot stop an eligible one. The retry sequence (three mints, re-resolution after the first two only)
+is unchanged and is per rung.
+
+The amendment's §4d (its marked 0007 and 0013 amendments) is 0007 §4h (§4d-i) and 0013 §5g (§4d-ii, §4d-iii).
+
+##### 4e. Results and routing (amends 0018 §4e and §4f)
+
+###### 4e-i. The laws, per rung
+
+0018 §4e's deference law is unchanged: a delegated carrier carries its terminal record's facts verbatim, and is valid
+iff those facts pass 0013's `problems()` **at the minted endpoints `(b, t)`**. Wherever 0018 §4f and the code use
+`(_MINT_BASE, _HEAD)`, a rung uses its minted `(b, t)` (§2a). The no-record rows, the retry-unsafe
+`migration-audit-state-unknown`, the readback routing and the loud escapes are unchanged, per rung.
+
+**The v0.2.2 sentence "`current` carries HEAD" is withdrawn.** A PREFLIGHT `current` carries HEAD. A DELEGATED `current`
+carries its record's `t`. They are told apart by `RungReport.kind`, never by the label (R1-04).
+
+###### 4e-ii. Inside one rung's transaction (`BEGIN IMMEDIATE`, authority `b → t`, `t = b+1 ≤ HEAD`)
+
+Facts are `TerminalFacts(outcome, b, t, changed, committed, state, version)`; every row's facts pass the pin's
+`problems()` at four rungs (§2c-ii row 4). "Existing" means 0013's own cell with endpoints `(b, t)`.
+
+| # | observed in the transaction | outcome | facts `(changed, committed, state, version)` |
+|---|---|---|---|
+| 1 | stamped `t−1`, accepted at `t−1` | the hook brings it to `t`; stamp, accepted digest and drift checked against `t` → `migrated` | `(True, True, destination, t)` |
+| 2 | **unstamped, with objects, resolving through `legacy_base_versions()` to `t−1`** (R1-01) | as row 1; the stamp written is `t` | `(True, True, destination, t)` |
+| 3 | stamped `t−1`, shape not accepted | `stamped-shape-mismatch` (existing) | `(False, False, unaccepted, None)` |
+| 4 | **stamped `t`, accepted, no drift** (another operation reached the target) | `current` | `(False, False, destination, t)` |
+| 5 | stamped `t`, accepted, rebuildable drift | repaired against `t` → `current` | `(True, True, destination, t)` |
+| 6 | stamped `t`, shape not accepted | `stamped-shape-mismatch` | `(False, False, unaccepted, None)` |
+| 7a | stamped `0 < found < t−1` | the hook refuses → `migration-source-missing` ("no accepted v{t−1} source where the authority attests one; observed v{found}"); nothing written | `(False, False, unaccepted, None)` |
+| 7b | stamped `t < found ≤ HEAD` (only when `t < HEAD`) | `newer`, diagnostic "v{found} is newer than this rung's target v{t}", scoped to the rung's target and never with an "install a newer build" remedy (round 2's answer); nothing written, never a backward step. The rerun's preflight reports `current` at HEAD when the store is there | `(False, False, unaccepted, None)` |
+| 8a | unstamped, resolving to a base other than `t−1` and `t` | the hook refuses → `migration-source-missing` | `(False, False, unaccepted, None)` |
+| 8b | unstamped, resolving to exactly `t` | **unreachable at this head**: resolution uses `legacy_base_versions()` = `{1}` and every `t ≥ 2`, so the store takes row 9. `allow_adopt=False` stays as a defence (it would be `adoption-refused`) | — (I15 and I37 assert unreachability) |
+| 9 | unstamped, resolving to nothing | `foreign-shape` (existing) | `(False, False, unaccepted, None)` |
+| 10 | unstamped with no objects (an empty replacement) | the `new=` hook refuses → `migration-source-missing` (closes M2) | `(False, False, unaccepted, None)` |
+| 11a | **nothing at the path** | opened without creating (`mode=rw`): refused at the open, nothing appears on disk → `migration-source-missing`, state `missing` as in the preflight's own row for nothing at the path (closes M3) | `(False, False, missing, None)` |
+| 11b | `found > HEAD`, `found < 0`, unopenable, locked, a refused runtime | existing | existing |
+| 12 | a step's postcondition fails inside the hook | `unsupported-migration` (0013 §4f, M123); rollback; the store keeps its original raw stamp (`t−1`, or 0 for an unstamped first rung) | `(False, False, unknown, None)` |
+
+**A third, glossed `migration-source-missing` row (marked amendment to 0018 §4e).** Accepted §4e has two rows under
+that label: nothing at the path (`missing`), and an existing, valid, empty `user_version=0` database (`unaccepted`,
+R2-3). Rows 11a and 10 are those two, verbatim. Rows 7a and 8a add a third:
+
+> | `migration-source-missing` (a store EXISTS at an accepted version other than the authority's source, observed
+> inside the rung's transaction) | False | False | `unaccepted` — **rejected as THIS operation's source**: the store
+> was read and may be valid at its own version, but it is not the `b` the authority attests | None |
+
+The diagnostic names the observed version ("observed v{found}"). The label stays 0013's returnable vocabulary, so
+`TerminalFacts`, the terminal domain and I15's oracle need no new member. `unaccepted` here means rejected as this
+operation's source, not rejected as a store; §4e's gloss on `source` (read-and-accepted) and `unaccepted`
+(read-and-rejected) is read relative to the operation.
+
+**What the transaction binds: the base and the shape, not the content.** A swap at the same version and shape (different
+rows) is not visible; `source_digest` digests the shape. That is accepted 0018's Limit under quiescence, unchanged. Row
+1 is not an identity binding.
+
+**Why rows 7 and 8 refuse rather than follow the store:** a store anywhere but `t−1` or `t` is outside what this
+authority attests; following it needs a different authority, and moving it backward is not a migration. The walk's next
+call re-observes the store, and the base expectation (§4e-iii) decides whether that is progress.
+
+###### 4e-iii. The operation context: `RungReport` and `run_release_rung` (R1-03)
+
+`run_release_rung(path, *, host_attestation, expect_base=None) -> RungReport` is package-private.
+`run_release_migration(path, *, host_attestation)` keeps its signature and public `MigrationResult`, and returns
+`run_release_rung(path, host_attestation=…).result`.
+
+`RungReport` is a `NamedTuple`, admitted by exact type, with a validating constructor:
+
+| field | type | `kind == "preflight"` | `kind == "delegated"` | `kind == "unexpected-base"` |
+|---|---|---|---|---|
+| `kind` | exact `str` | | | |
+| `result` | exactly `MigrationResult`, or `None` | a §4e preflight row (incl. `mint-contention`, `invalid-request`) | a delegated row | `None` |
+| `preflight_base` | `int` or `None` | the resolved base, or `None` when nothing resolved | the base this call's LAST resolution gave | the base it resolved |
+| `source_stamp` | `int` or `None` | the raw `user_version` read, or `None` | the same | the same |
+| `operation_id` | `str` (0013's token grammar) or `None` | `None` | the minted id | `None` |
+| `from_version`, `to_version` | `int` or `None` | `None` | the minted endpoints: adjacent, `FIRST_MIGRATABLE ≤ from < HEAD` | `None` |
+| `expected_base` | `int` or `None` | the argument | the argument | the argument; differs from `preflight_base` |
+
+**Binding.** A delegated `RungReport` is valid only if its result is a 0018 no-record row, or
+`TerminalFacts(result.outcome, from_version, to_version, …facts).problems()` is empty. The record binds to the MINTED
+endpoints, never to endpoints rebuilt from `resulting_version`: a lawful `(13, 14, migrated)` validates under `13 → 14`
+and fails under `14 → 15`.
+
+**`MigrationResult`'s domain** becomes: the preflight rows; the no-record rows; every delegated carrier lawful at SOME
+rung `(b, b+1)`, `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`. It is enumerable, so I15's oracle still enumerates it, and the pin's
+refusal of a lawful `(migrated, v14)` ("a committed change is at version 16") disappears.
+
+**`expect_base` is checked inside the rung entry, before any authority is used:** after the first resolution, after
+each retry re-resolution, and against the minted authority's `from_version` before delegation. A mismatch returns
+`unexpected-base`. An authority minted and not delegated is discarded: minting writes nothing, and the attempted insert
+is the consumption.
+
+**Escapes carry the context.** Every escape raised after a mint (`MigrationAuditWriteError`, `MigrationAuditReadError`,
+post-mint `PackageConsistencyError`) carries a validated `rung_context = (operation_id, from_version, to_version)`; a
+pre-mint `PackageConsistencyError` carries `rung_context = None`. No id is ever parsed out of a diagnostic.
+
+##### 4f. Routing (0018 §4f): unchanged in its rules, per rung, at the minted endpoints (§4e-i).
+
+##### 4g. The CLI contract (amends 0018 §4g)
+
+`veracium migrate --db X --i-have-quiesced --backup REF`. The flags, the usage exits and the attestation grammar are
+unchanged. The walk:
+
+```
+expect = None; committed = []
+loop:
+  rep = run_release_rung(path, host_attestation=A, expect_base=expect)   # the ONE attestation object, every call
+  preflight current (at HEAD, with or without repair)  -> print; exit 0      # the head-level check: the ONLY exit 0
+  preflight refusal, mint-contention included          -> §7 P1, P2, P4; exit 1
+  unexpected-base                                      -> §7 P3; exit 1
+  delegated:
+      if the record's facts are (True, True): committed.append(rep.operation_id)   # FIRST, whatever the outcome
+      if outcome in (migrated, current) and resulting_version == rep.to_version:
+          print "rung v{from} -> v{to}: {outcome} (operation {id})"
+          expect = rep.to_version; continue          # §7 U0: an unchanged current at t continues, uncounted
+      else                                         -> §7's classifier (N, C2, K, U); exit per 0018 §4g
+  escape:
+      if its validated facts are (True, True): committed.append(rung_context.operation_id)
+          # the facts it carries (E1), or a readback BOUND to the escape (E4), validated before counting
+                                                   -> §7 E1-E4; exit 3, with rung_context, or "pre-mint"
+```
+
+**The bound holds by construction, before any mutation.** `b₀` is the first report's `from_version` (that call's own
+resolution, not a second CLI observation). `expect` rises by exactly one per continued rung from `b₀+1`. When it
+reaches HEAD the next call can never mint: HEAD is not a mint base, and a mint cell at any other base is
+`unexpected-base`. So a walk makes at most `HEAD − b₀` rungs and no counter is needed. A rung that reports `migrated`
+without the next resolution reaching its `to_version` is the `unexpected-base` stop.
+
+**Counting comes before the continuation decision** (R2-01). An operation id enters `committed` when its validated
+facts are `(True, True)`, whatever its outcome, so a committed `internal-error` (accepted 0018 §4e retains
+`internal-error/True/True/destination/t`) is counted once and still STOPS the walk; counting never makes it a
+success. Each id is appended at most once: a report is either continued or stopped, never both.
+
+**One counting rule for every way a rung ends:** an operation id enters `committed` if and only if its validated facts
+are `(True, True)`. For a delegated report the facts are its record's; for an escape they are the facts it carries
+(`MigrationAuditWriteError`, §7 E1) or a readback bound to the escape (a post-mint `PackageConsistencyError`, §7 E4:
+a valid `package-inconsistent` record at the minted endpoints, per 0018 §4f(7), checked before counting). A store that advanced is counted however the walk ended. A `MigrationAuditReadError` (§7 E2) has no validated
+facts, so its id is not counted, and the last lines say that the store may be at `t` regardless.
+
+**The last lines** state how many rungs THIS walk committed, with their ids, counted by facts `(True, True)` and never by
+printed lines; the stopping row's action id and its prose (§7); whether a rerun is safe, from that row; and the
+store's version, or `unknown`, or (E2) a labelled derived state.
+
+The documented exits stay: **0** = the store is `current` at HEAD at the end · **1** = a refusal, or an
+`unexpected-base` stop · **2** = usage · **3** = a loud escape.
+
+**The carriers ruled to ride this amendment.** At the pin they are ONE carrier and its relay: the open refusal's text
+(`src/veracium/store/schema_version.py`, the "opening does not migrate" refusal) and `doctor`'s finding, which relays it
+verbatim. In the same commit as the CLI change, the refusal names `veracium migrate --db … --i-have-quiesced --backup
+REF` for every base `≥ FIRST_MIGRATABLE`, replacing the 0.30.0 interim text. `doctor` follows through the relay.
+
+##### 4h. Beside the amendment (not normative here)
+
+The release record's eight null `store_schema_version`/`digest` entries are filled by re-running the record's generator
+against those tags, never by hand. No mint rule reads the record; completing it is evidence hygiene, dev's to schedule.
+
+### 4j.7 Regimes (the amendment's §5)
+
+- **A released store below HEAD−1.** Before: `unsupported-base`, exit 1. After: a walk of `HEAD − b` rungs, exit 0.
+  0.26.x (v14) takes two rungs; 0.1–0.4.8 (v1, unstamped) takes fifteen.
+- **A HEAD−1 store:** one rung, the same operation as today, with the same facts. Its authority digest now names its own
+  steps.
+- **An interrupted walk:** the store is stamped and accepted at the last committed rung's version. **Where the
+  stopping rung's §7 row permits a rerun, rerunning `migrate` with the migrating build or a newer one resumes it**
+  (R1-07, as ruled). A known version alone does not permit it: §7's N2, N4, U1, U5, E3 and E4 prohibit a rerun until the record
+  is queried, the build repaired or the store restored, and C2, K, U3, U4, U7 and E2 ask for an inspection first
+  (R2-01, R3-01). **No claim is made that an older
+  release can read it:** the rung kernel uses the current record models, and the 2→3 conversion drops
+  `provenance.source_type`, which accepted 0016 records that pre-D2 readers require. The pre-walk backup is the way back.
+- **Clock reads across a walk.** A walk reads the clock once per rung, so the v2→v3 `observed_at` fill, the v13 store
+  epoch's `started_at` and the v16 registry's `written_at` carry their own rungs' values, where a one-call
+  `migrate_store` gives them one. 0013 §4f B1 holds per operation. **Each value equals its own operation's injected
+  clock read; no order or inequality across operations is required, since separate reads may be equal or move
+  backward** (the reviewer's precision note). The reader census (two readers of `started_at`, both per-operation,
+  `doctor.py` L238 and the `migration.py` postcondition at L458–460, checked at L764) is unchanged, and the reviewer
+  found the same two.
+- **Ordinary opening** is unchanged, including its two distinct refusals: a stamped below-head store raises
+  `PackageConsistencyError`; an unstamped resolved legacy store raises `StoreVersionError(reason='migration-required')`.
+- **Scale:** a walk of `n` rungs does `n` transactions where the library jump does one. Not measured, and stated.
+
+### 4j.8 Invariants (the amendment's §6)
+
+I14, I16–I18 and I20–I23 are unchanged. I13, I15 and I19 are restated; I33–I39 are new (0018 uses up to I32, §4i).
+
+| invariant | executable check | mutant that must fail |
+|---|---|---|
+| **I13′** the preflight matrix is total. Every resolved base `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, mints `b → b+1`; every other cell is as frozen I13; no cell produces `unsupported-base` at this head | `test_preflight_matrix_total`, re-parametrised over every base and the legacy unstamped v1 (each mints, endpoints asserted), plus every frozen non-mint cell | mint only from HEAD−1; mint `b → HEAD`; mint only a stamped store; consult the release record |
+| **I15′** the result domain | the independent oracle enumerates the widened `MigrationResult` domain (§4e-iii) and `RungReport`'s binding: a lawful record validates at its minted rung and fails at any other; row 8b's unreachability is asserted. **Admission is separate from validity** (round 3): the oracle admits by route, the ordinary delegated route admitting `TERMINAL_OUTCOMES` less the audit-only `package-inconsistent`, which only §7 E4 admits; a lawful septuple alone admits no label | validate at `(HEAD−1, HEAD)`; bind to endpoints rebuilt from `resulting_version`; admit `package-inconsistent` on the ordinary route |
+| **I33** every rung from every base lands on a shape accepted at `b+1`, passes its postconditions, and keeps its rows | `test_every_rung_from_every_base`. (i) The empty-store walk of §2c-ii row 1 through the implemented rung kernel. (ii) **Populated:** for each released base, fixtures written by that release's own code (a `git archive` of its tag; raw unstamped stores included; transformed tables populated; ALTER-derived starting shapes as well as fresh constructors), with the generator, source tag/commit, dependencies and hashes recorded; walked to head; rows compared with the direct jump of the same fixture, every column except the declared clock values, which each equal their own rung's clock read. (iii) **Every head-bound reference moves** (R2-03): the generated census of `SCHEMA_VERSION` references in the forward step's reach (§2a: `_apply_forward`, the functions it calls and the constructors of the errors it raises) equals its committed expectation; and with each frozen ALTER-output expectation deliberately mismatched at 5→6, 7→8 and 9→10, the refusal reports expected 6, 8 and 10 (and 16 at both v16 raises on the last rung) | the target ignored by the additive diff; a guard bound to HEAD; the stamp written as HEAD; **any one of the v6, v8 or v10 refusals left head-bound** (each its own mutant: the lower-target control reports 16) |
+| **I34** the CLI walk is bounded, bound to its expectation, and reported per rung | `tests/test_migrate_cli.py`: a v13 store walks three rungs, three distinct ids, three records, exit 0; a populated and an unstamped v1 walk fifteen; a store at HEAD makes none, exit 0; a store moved down between rungs stops with `unexpected-base` before a second mint; a row-4 `current` continues and is not counted; a pre-mint escape after two rungs prints no earlier id; one attestation object is admitted at every mint. **R2-01:** a lawful committed `internal-error` (`TerminalFacts("internal-error", 14, 15, True, True, "destination", 15)`) injected at rung 2 of a v13 walk STOPS the walk with §7 C2, and the final count lists rung 1's and rung 2's ids, each exactly once; the same for a committed `package-inconsistent` carrier; a `MigrationAuditWriteError` with committed facts is counted once; **R3-03:** a post-mint `PackageConsistencyError` whose readback is a valid `package-inconsistent` record at the minted rung with committed facts is counted once and prints its version as recorded; one whose readback has another outcome (e.g. `migrated`) or another lawful rung's endpoints adds no id and prints `unavailable (readback: …)`; an unchanged bound `package-inconsistent` adds no id; binding is checked before counting. **Row 7b:** a lower rung whose store a racing operation took to HEAD reports `newer` with the target-scoped diagnostic, and the rerun reports `current` | loop without the expectation; check it after the mint is delegated; count printed rungs; re-create the attestation per rung; **count only in the migrated/current branch** (the committed error drops out); count a committed error twice; continue past a committed error; **count a package escape's readback before checking that it is bound** (round 2's model accepted any readback of kind `record`) |
+| **I35** an interrupted walk resumes, and its recovery is ONE total classifier | (i) **The final classifier is one executable function** returning §7's action ids. The exhaustive oracle enumerates every carrier `problems()` admits at rungs 1→2, 13→14 and 15→16, restricted to the outcomes each route admits, plus the four no-record outcomes and every preflight outcome, and requires **exactly one action id** for each; it prints the count per row. (ii) **The reviewer's equal-input pairs** get one conservative action each: `migration-source-missing`/`unaccepted` from an accepted v12 replacement and from an empty replacement → U3 for both; `newer` from a v15 store and from a v17 store under 13→14 → U4 for both. (iii) **R3-02's pairs**: the same carried facts as an ordinary record and inside a `MigrationAuditWriteError` (committed `migrated`, committed `internal-error`, unchanged `unsupported-migration`) receive the same store-side action id, plus `audit-record-not-published` for the escape; exit 1 vs 3 as §7 says; committed facts counted once in both. (iv) A postcondition failure at rung 2 of a v13 walk (an injected fault) leaves stamp v14, accepted, rung 1's record intact, rung 2 `unsupported-migration` with no store change, action `no-rerun-this-build`; **with the fault removed** (the build repaired), the rerun walks v14 → v16. (v) An unknown-facts rung prints `unknown`, never the previous rung's version; `migration-audit-state-unknown` says "do not rerun before querying the operation id"; a `MigrationAuditReadError` prints its derived state as a state and the version as `unknown` | leave a partial rung; print the previous rung's version on unknown facts; promise that rerun repairs a missing record; print `derived_resulting_state` in the version column; offer a rerun because a version is known; **the superseded blanket-unchanged retry** (every unchanged carrier → rerun); **the same-build postcondition retry**; an audit-write escape receiving a weaker action than its carried facts' (round 2's row 8); a cause chosen for U3 or U4 from diagnostic prose; any admitted input with zero or two action ids |
+| **I36** a rung's `migration_digest` names its plan, and every operation executes exactly its plan | (i) per rung, the digest equals SHA-256 over the frozen preimage of `plan(t−1, t)`, checked against the vector file's preimages and entry lists. (ii) **The step-invocation trace** equals `plan(b, t)` for every completed operation, rung and direct, and is a prefix ending at the refusing entry for a refused one. (iii) **SQL attribution**: every write is attributed to its active entry and admitted by its declared kind, on populated v2 fixtures with 0, 1 and 2 legacy outcome rows (0, 1 and 2 writes under one `data` entry) and on I33's release-authored populated fixtures; an empty store alone cannot exercise a data write. (iv) **The direct route keeps its contract**: base 1 → 16 and v13 → 16 through `migrate_store` use the destination constructors, one clock read and one stamp, as at the pin (the reviewer's direct-versus-adjacent witness) | a helper-carried check dropped; one repeated v16 check dropped; two data steps swapped; the stamp check removed; a field encoded with a separator instead of its own segment; **an undeclared SQL write (no active entry); an undeclared dispatch; a nested check deleted; a direct route rebuilt as the concatenation of adjacent plans; a `data` entry issuing DDL or a PRAGMA; an ALTER moved under a neighbouring `data` entry (a mis-split); a direct byte check deleted; one statement of a frozen `ALTERS_*` tuple dropped; the clock read moved after the additive diff** |
+| **I37** ordinary opening, `migrate_store` and the runtime gate are unchanged | a v15 store opened with no target raises `PackageConsistencyError` and an unstamped legacy one `StoreVersionError(migration-required)`; `migrate_store` on a v13 store reaches v16 in ONE operation with one clock read (`tests/test_0013_pa1_postconditions.py` unchanged and green); `migrate_to=HEAD` equals `None` byte for byte, with and without the hook; every non-int, `bool` and out-of-range target, and `t < HEAD` without the hook, refuse before the store is touched; a below-head rung on an attested build has the same runtime status as at HEAD | default `migrate_to` to `found+1`; let an ordinary open migrate to a target; let the target reach `runtime_status()` |
+| **I38** a rung binds its source and never creates | at rungs 1→2, 13→14 and 15→16, the store changed between mint and transaction: to `t` (row 4), above `t` and to HEAD (7b), below the source (7a), unstamped elsewhere (8a), emptied (10), deleted (11a). Each gives its row's outcome and facts, the stamp unchanged, no attempted event, and nothing created on disk. M1 and M3 at the implementation give rows 7a and 11a. **E2-01:** for a store named with `?`, `#`, `%`, a space, and a supported non-UTF-8 name, each beside an accepted sibling whose name is its prefix, the rung migrates exactly the named file and leaves the sibling's bytes unchanged; an existing directory at the path is unopenable (row 11b), never `missing` | the binding put on `migrate_to` (the last rung unbound); `sqlite3.connect` without `mode=rw`; no `new=` hook; **the path interpolated into the URI unencoded; an `OperationalError` mapped to `missing`** |
+| **I39** the closed write rules bind to the operation's target | the SA10 gate (`specs/evidence/0013/sa10_gate.py`) over the extended path inventory: every release base, the legacy fixtures, drift repair at an intermediate `t`. A correct lower target passes | writing HEAD instead of `t`; another historical constructor; a stamp of any valid version but `t`; a release base dropped from the inventory; the direct route losing its head-bound checks |
+| **I19′** the CLI contract | as frozen I19 (flags, exits, the five exit-3 package routes), plus I34's walk cells | — |
+
+### 4j.9 Failure modes, recovery and reversibility (the amendment's §7)
+
+Each rung's failure modes are 0013's, inside one transaction; its loud escapes are 0018's, per rung. A walk is not one
+transaction: a walk that stops after `k` committed rungs has committed `k`.
+
+**Recovery is ONE total function, the final classifier** (R2-01, R3-01). Its inputs are structured and nothing else:
+the report's `kind` (`preflight`, `unexpected-base`, `delegated`) or the escape's type; the result's outcome; the
+validated record facts, if the route has any; for an escape, the facts it carries or a readback bound to it (E1, E4).
+**It never reads diagnostic prose.** It returns exactly one **action id** per input. The id is stable, and it is what
+the implementation and the model return and what the check-to-row map compares; the prose beside it explains the id.
+Where one structured input admits more than one cause (U3, U4), the action is a **conservative conditional**: stop,
+inspect, and correct the condition before a rerun. The classifier never claims which cause happened.
+
+**The fact classes** are keyed by `(store_changed, transaction_committed)` alone, never by a full septuple:
+*committed* = `(True, True)`, *unchanged* = `(False, False)`, *unknown* = `(None, None)`. `TerminalFacts.problems()`
+admits only these three (the two must be the same tri-state value), so every lawful carrier is in exactly one class;
+the state and version are data the row prints. **Admission is separate from validity:** the ordinary delegated route
+admits `TERMINAL_OUTCOMES` less the audit-only `package-inconsistent` (`_AUDIT_ONLY_OUTCOMES` at the pin), which only
+the post-mint package escape (E4) admits. A lawful septuple alone admits no label to any route.
+
+**Totality.** Every input reaches exactly one row: by kind first (P, N for the no-record outcomes, E for escapes), then
+by fact class (C, K, U), then, within *unchanged*, by outcome, ending in the U7 fallback, which takes every unchanged
+outcome no earlier row names, including any a later head adds. The exhaustive oracle enumerates every carrier
+`problems()` admits at the oracle's rungs, restricted to the outcomes each route admits, plus the four no-record
+outcomes (`_NO_RECORD_OUTCOMES` at the pin: `migration-audit-unavailable`, `migration-audit-state-unknown`,
+`migration-quiescence-required`, `migration-evidence-missing`) and every preflight outcome, and requires exactly one
+action id for each (I35).
+
+**Exits** stay as 0018 §4g: 0 for P0 only; 1 for every other P, N, C2, K and U stop; 3 for every E row.
+
+##### 7a. Before delegation, and the no-record outcomes (no facts; nothing counted)
+
+| row | input | action id | the CLI prints | rerun? | what the operator does |
+|---|---|---|---|---|---|
+| P0 | preflight `current` at HEAD (with or without repair) | `done` | the store's version, HEAD | — | nothing; exit 0 |
+| P1 | preflight refusal, outcome `mint-contention` | `rerun-after-contention` | `unknown` | yes | rerun once the race settles |
+| P2 | preflight refusal, outcome `invalid-request` | `fix-invocation` | — | yes, once corrected | correct the command line |
+| P3 | `unexpected-base` (the store changed between rungs) | `rerun-when-quiescent` | "observed v{preflight_base} where v{expected_base} was expected" | yes, once quiescence holds | stop the other writer, rerun |
+| P4 | any other preflight refusal | **the U row its outcome and state select** (U1, U2, U4, U5, U6 or U7), read as an observation made just now | as that row | as that row | as that row. **At preflight the cause is not ambiguous**, because the preflight's report is the observation itself, with no transaction between: `newer` means the store is beyond this build's head (U4's second branch, `no-rerun-this-build`); `migration-source-missing` with state `unaccepted` is an empty `user_version = 0` file at the path (U1, `no-rerun-not-a-source`) |
+| N1 | `migration-audit-unavailable` | `rerun` | `unknown` | yes | rerun: the attempted record is proven not written and nothing was consumed |
+| N2 | **`migration-audit-state-unknown`** | `query-id-first` | `unknown` | **NO** (0018 §4e, verbatim) | query the durable `operation_id` (`read_terminal`) before any rerun |
+| N3 | `migration-quiescence-required` (refused before observation: an invalid, expired, consumed, retargeted or cross-build authority) | `rerun-when-quiescent` | `unknown` | yes, once quiescence holds; the rerun mints a fresh authority | stop the other writer, rerun |
+| N4 | `migration-evidence-missing` (refused before observation: no current path record evidences this rung's migration, an artifact property) | `no-rerun-this-build` | `unknown` | **not with the same build** | repair or upgrade the build, then rerun; or restore the backup |
+
+##### 7b. A delegated report with a record, by fact class
+
+| row | input | action id | the CLI prints | rerun? | what the operator does |
+|---|---|---|---|---|---|
+| C1 | committed, outcome `migrated` or `current`, at `to_version` | `continue` | "rung v{from} -> v{to}: {outcome} (operation {id})" | the walk continues | — (counted) |
+| C2 | committed, **any other outcome** (at the pin: `internal-error`; `package-inconsistent` only through E4) | `stop-inspect-committed` | `v{version}`, labelled "recorded: committed with {outcome}" | **not automatically**: a committed error's facts can describe a store the operation itself created (the pin's M3 shape: a deleted store re-created empty at v16, recorded committed `internal-error`, whose facts read "at `t`" exactly as a real advance would), so a direct rerun could resume from an empty store and lose data silently. The no-create open closes M3 itself (§4e-ii row 11a); this row covers every committed error | counted once; the walk STOPS. Inspect the store; then rerun, which resumes from its actual version, or restore the backup |
+| K | unknown | `stop-inspect-unknown` | `unknown`; **the previous rung's version is never reported as the store's** | not automatically | inspect the store; then rerun, or restore the backup |
+| U0 | unchanged, outcome `current`, state `destination` at `t` (another operation reached the target) | `continue-uncounted` | as C1 | the walk continues | — (not counted) |
+| U1 | unchanged, outcome `stamped-shape-mismatch`, `foreign-shape`, `invalid-version` or `invalid-store` | `no-rerun-not-a-source` | the record's version, or `unknown` | **not as it stands**: a rerun meets the same store and refuses the same way | inspect; restore the backup or repair the store, then rerun |
+| U2 | unchanged, outcome `migration-source-missing`, state `missing` (nothing at the path, by 0013's `lstat` ENOENT) | `fix-path-then-rerun` | `unknown` | yes, once the path holds the store | correct the path or restore the backup, then rerun |
+| U3 | unchanged, outcome `migration-source-missing`, state `unaccepted` | `conditional-other-writer-or-path` | `unknown`, with "the source changed or is empty; this report does not say which" | **not until inspected**: this one input arises from an accepted store at another version (§4e-ii rows 7a, 8a) and from an empty replacement (row 10), and the report carries nothing that tells them apart | stop; inspect the path's version. If it is an accepted store at another version, stop the other writer and rerun; otherwise restore the backup or correct the path |
+| U4 | unchanged, outcome `newer` | `conditional-other-writer-or-newer-build` | `unknown`, with "the store is newer than this rung's target; this report does not say by how much" | **not until inspected**: this one input arises from a store another operation moved above the target but within this build's head (§4e-ii row 7b) and from one beyond the build's head | stop; inspect the store's version. At or below this build's head, stop the other writer and rerun (the preflight resumes it or reports `current`); above it, use a build whose head reaches it |
+| U5 | unchanged, outcome `unsupported-migration` (§4e-ii row 12: a step's postcondition failed), `unsupported-sqlite` (a refused runtime) or `unsupported-base` (a store below this build's lowest migratable base; after this amendment no cell produces it at this head, §4a) | `no-rerun-this-build` | the record's version, or `unknown` | **not with the same build or runtime**: the cause is deterministic, so a rerun fails the same way | repair or upgrade the build or the runtime, then rerun; for `unsupported-base`, first migrate with a release whose floor reaches the store; or restore the backup |
+| U6 | unchanged, outcome `store-unopenable` or `locked` | `fix-access-then-rerun` | `unknown` | yes, once the cause is fixed | fix the permission, the path's type or the lock, then rerun |
+| U7 | unchanged, **any other outcome** (at the pin, among others: `internal-error`, `migration-failed` and `migration-result-mismatch` with state `source` at the base, the reviewer's three; `adoption-refused`; `migration-required`; and any outcome a later head adds) | `inspect-first-fallback` | `v{version}` when the state is `source` or `destination`, else `unknown` | **not until the cause is identified**: the store is unchanged by this rung, but the report does not establish why it refused | inspect the diagnostic and the build; correct the cause, then rerun |
+
+##### 7c. Escapes (exit 3): the escape adds restrictions and disclosure, never removes one
+
+| row | input | action id | the CLI prints | rerun? | what the operator does |
+|---|---|---|---|---|---|
+| E1 | `MigrationAuditWriteError` (the terminal record not published) | **the 7b action of the facts it carries**, classified exactly as if they were the record, except that an escape never continues: C1 and U0 facts give `rerun-resumes-store`; C2, K and U1–U7 give their own 7b ids; **plus** the disclosure `audit-record-not-published` | as that row, plus the operation id and "its terminal record was not published; this tool does not repair it" | as that row: the audit loss never makes it less restrictive | as that row; also record the operation id. Counted once when its carried facts are committed |
+| E2 | `MigrationAuditReadError` | `inspect-audit-trail` | version `unknown`; the error's `derived_resulting_state` printed separately, labelled derived-from-outcome (a state, never a version) | not until the record is inspected | inspect the audit trail for the id. **Not counted** (no validated facts), and the store may nonetheless be at `t`: the last lines say both |
+| E3 | `PackageConsistencyError` before the mint | `repair-build` | `unavailable (pre-mint: no operation minted)`; no earlier id reused | no: the build is inconsistent | repair or reinstall the build |
+| E4 | `PackageConsistencyError` after the mint | `repair-build`; and, when the bound readback's facts are committed, also `stop-inspect-committed` | a readback is used **only** when it is a valid record bound to this escape (0018 §4f(7)): outcome `package-inconsistent` at the minted endpoints, **checked before any counting**. Then its version, labelled recorded; otherwise `unavailable (readback: …)` | no, until the build is repaired | repair or reinstall the build; when the bound record is committed, inspect the store as C2 says. Counted once only for a bound, committed record; a record with another outcome or another rung's endpoints adds no id and no recorded version |
+
+**What a rerun is promised for:** P1, P2 (corrected), P3, N1, N3, U2 and U6 once their condition holds, and E1's
+`rerun-resumes-store` (C1 or U0 facts). Every other row asks for an inspection first (C2, K, U3, U4, U7, E2) or prohibits a rerun until its
+condition is met (N2, N4, U1, U5, E3, E4), whether or not a version is known.
+
+**Reversibility** is 0013's: the one backup the operator took before rung 1 (`--backup REF`) returns the store to its
+pre-walk version, for every row. The amendment adds no reverse step and does not claim that no inspection step is ever
+needed.
+
+### 4j.10 Claims and limits (the amendment's §8)
+
+**Claim (for the CHANGELOG):** *"`veracium migrate` now upgrades a store written by any earlier release, one schema
+version at a time, each step its own audited operation. If a walk stops part-way, its last lines say why and whether
+running `migrate` again is safe; where they say so, running it with this release or a newer one resumes the walk, and
+otherwise they say what to inspect first. A part-walked store is usable only by migrating it with this release or a
+newer one, or by restoring the backup you took before the walk."*
+
+**Limits:**
+- the attestation is the host's assertion, unchanged; a racing writer is detected only where §4e-ii's rows see it, and
+  a same-version, same-shape swap is not seen;
+- a walk does `n` transactions, where the library call does one;
+- each per-rung clock value comes from its own rung's clock read, so values may be equal, increase or move backward
+  across rungs (§5);
+- an audit record missing after a committed rung (§7 E1) is reported, not repaired;
+- no older release is claimed to read an intermediate store;
+- the populated-data guarantee is I33's, at implementation; the design evidence is shape-only plus a model.
+
 ---
 
 ## 5. Regime analysis
@@ -796,9 +1353,9 @@ rows, no readback error); **the loud escapes** (`MigrationAuditWriteError` /
 
 | invariant | executable check | where |
 |---|---|---|
-| **I13** the preflight matrix is TOTAL: bases 1–5 → `unsupported-base` + the ladder; clean-current → `current` (False, False, destination, 7) byte-identical; current-with-repair → `current` (True, True, destination, 7) via the one shared opening path; missing/foreign/malformed/unstamped/newer/locked → the corresponding refusal without minting; every short-circuit zero-authority/zero-audit; resolved base 6 ALONE mints and delegates | `test_preflight_matrix_total` (every cell incl. both current cells and locked) + `test_below_v6_base_refuses_with_the_ladder_message` (all five bases) + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` | CI |
+| **I13** the preflight matrix is TOTAL: bases 1–5 → `unsupported-base` + the ladder; clean-current → `current` (False, False, destination, 7) byte-identical; current-with-repair → `current` (True, True, destination, 7) via the one shared opening path; missing/foreign/malformed/unstamped/newer/locked → the corresponding refusal without minting; every short-circuit zero-authority/zero-audit; resolved base 6 ALONE mints and delegates | `test_preflight_matrix_total` (every cell incl. both current cells and locked) + `test_below_v6_base_refuses_with_the_ladder_message` (all five bases) + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` | CI · **v9:** restated as I13′ (amendment `0018-adjacent-rungs`, §4j.8) |
 | **I14** the mint race closes by the EXACT §4c sequence (pinned by external R3-3 after R2-8's fix missed this carrier) | `test_mint_race_reclassifies` — EXACTLY three resolves and three mint calls, interleaved resolve→mint, with re-resolution after failures one and two ONLY and NO resolve after the third failure; each of the first two `MintError` reasons re-resolves to the now-true outcome; the third → `mint-contention`, facts `(False, False, unknown, None)`, three attempts named in the diagnostic — never proceed-to-mint, never a fourth resolve (call-count asserted, not inferred) | CI |
-| **I15** `MigrationResult` carriers are table-only | `test_migration_result_truth_table` — the LITERAL §4e table: every preflight row (all FIFTEEN, incl. both `migration-source-missing` forms — R2-3), the delegated DEFERENCE law (a record-bearing carrier is valid iff its seven-field `TerminalFacts` passes accepted 0013's `problems()` verbatim, tri-state effects included — R2-2), and the four fixed `(False, False, unknown, None)` no-record rows (R2-9); the validating constructor rejects every out-of-table carrier incl. every non-vocabulary state word. **Gate-extension obligation: the validator joins `tests/test_0013_presend_gates.py`'s independent-oracle pattern — a separately-written oracle enumerates the §4e domain and the exhaustive diff must be empty** | CI |
+| **I15** `MigrationResult` carriers are table-only | `test_migration_result_truth_table` — the LITERAL §4e table: every preflight row (all FIFTEEN, incl. both `migration-source-missing` forms — R2-3), the delegated DEFERENCE law (a record-bearing carrier is valid iff its seven-field `TerminalFacts` passes accepted 0013's `problems()` verbatim, tri-state effects included — R2-2), and the four fixed `(False, False, unknown, None)` no-record rows (R2-9); the validating constructor rejects every out-of-table carrier incl. every non-vocabulary state word. **Gate-extension obligation: the validator joins `tests/test_0013_presend_gates.py`'s independent-oracle pattern — a separately-written oracle enumerates the §4e domain and the exhaustive diff must be empty** | CI · **v9:** restated as I15′ (amendment `0018-adjacent-rungs`, §4j.8) |
 | **I20** the two new outcomes are returnable, never terminal (external R1-5) | `test_new_outcomes_are_excluded_from_terminal_facts` — the reviewer's probe as the regression: constructing `TerminalFacts` (and attempting terminal publication) with `unsupported-base` or `mint-contention` REFUSES; the extended independent oracle enumerates all FOUR exclusion cells (the two new members + the two never-terminal audit outcomes — R2-4's latent-0013-gap closure) AND the `package-inconsistent` inclusion cell; the explicit `TERMINAL_OUTCOMES` definition is asserted | CI |
 | **I22** the fingerprint has an independent oracle (external R3-1) | `test_preflight_fingerprint_oracle` — a separately-written encoder (its own `identity`-equivalent and framing) reproduces the §4b fingerprint byte-for-byte on fixture stores incl. a generated-column store and a quoted-literal DDL store; the raw-`manifest()` serialization failure (tuple keys) is the named negative case | CI |
 | **I23** `ReadbackResult` is a closed constructed carrier (external R3-4) | `test_readback_result_contract` — every cross-field-law violation, a hostile subclass of `ReadbackResult`, a hostile SUBCLASS OF `TerminalFacts` as `facts` (exact-type + the UNBOUND `problems()` call — the reviewer's dynamic-validator probe as the named regression), a list-typed `problems`, a mutable member inside `problems`, and an uncapped problem flood all REFUSE at construction; the malformed row's total construction yields ≥1 capped problem entry; a FORCED read failure (failed SELECT/open) maps to `malformed(read-failed: …)`, never a raise | CI |
@@ -806,9 +1363,9 @@ rows, no readback error); **the loud escapes** (`MigrationAuditWriteError` /
 | **I16** the attestation contract is exact | `test_attestation_contract` — absent, coerced (`quiesced=1`/truthy object), grammar-violating (incl. embedded space), duck-typed, and HOSTILE-SUBCLASS cells (R14-4; `type(x) is` admission, the 0013 authority-regression pattern) | CI |
 | **I17** audit failures are loud end-to-end | `test_audit_read_error_is_loud` — a missing record under a record-guaranteed outcome, and a malformed record under ANY outcome, raise `MigrationAuditReadError` whose validated carrier reaches CLI exit 3 with `derived_resulting_state` labeled derived-from-outcome on stderr; the existing `MigrationAuditWriteError` path and the newly-dispositioned `PackageConsistencyError` share the exit-3 loud-escape class, never exit 0. **Gate-extension obligation: the readback boundary, the no-record routing branch, and the mint-retry loop are NEW failure seams — they join `test_every_fault_seam_preserves_the_invariants`'s injection list** | CI |
 | **I18** the resolution evidence is reason-labeling only (internal F3; test form corrected by external R2-7 — the v3 regression demanded unconditional refusal, which would itself have made the evidence authority-relevant) | `test_resolution_is_reason_labeling_only` — forged vs genuine `resolved` compared under BOTH real-store conditions: with a VALID store + attestation, mint SUCCEEDS identically under forged evidence (an authority IS granted — forgery must not deny either); with a FAILING store, mint fails identically, and at most the `MintError` reason label differs; PLUS the recursive-exactness cells (closure obligation 2): `resolved_base=True` and hostile `str`-subclass scalars REFUSE at the `PreflightResolution` boundary before any comparison runs | CI |
-| **I19** the CLI contract | `tests/test_migrate_cli.py`, amended under this spec's authority (§7a): flags required on the migration path (missing → exit 2), invalid `--backup` → exit 2 with the grammar, exits 0/1/2/3 as §4, reporting from structured fields only — **and the exit-3 package routes enumerated as five named cases (closure obligation 4): pre-mint · bound `package-inconsistent` (recorded facts) · mismatched · missing · malformed, each with its exact stderr form** | CI |
+| **I19** the CLI contract | `tests/test_migrate_cli.py`, amended under this spec's authority (§7a): flags required on the migration path (missing → exit 2), invalid `--backup` → exit 2 with the grammar, exits 0/1/2/3 as §4, reporting from structured fields only — **and the exit-3 package routes enumerated as five named cases (closure obligation 4): pre-mint · bound `package-inconsistent` (recorded facts) · mismatched · missing · malformed, each with its exact stderr form** | CI · **v9:** restated as I19′ (amendment `0018-adjacent-rungs`, §4j.8) |
 
-**v7: I24–I32, the data-migration operation's invariants, are §4i.8**; I13–I23 above are unchanged.
+**v7: I24–I32, the data-migration operation's invariants, are §4i.8**; I13–I23 above are unchanged. **v9: I33–I39, the adjacent rungs' invariants, and the restated I13′, I15′ and I19′ are §4j.8** (amendment `0018-adjacent-rungs`).
 
 ## 7. Failure modes and reversibility
 
@@ -890,3 +1447,6 @@ per-finding verdicts: `specs/reviews.py` + each round's COLLECTED.*
 | ext 2 (v3) | R2-1 fingerprint constructibility · R2-2 the delegated laws vs 0013 (→ DEFERENCE) · R2-3 the empty-replacement cell + read-only mode · R2-4 the terminal-domain algebra · R2-5 `read_terminal` raise capability + mismatch · R2-6 the package escape's facts · R2-7 I18's direction · R2-8 the retry bounds · R2-9 the stale `source`/6 rows · B2-1 the reconciliation arithmetic | `07b5652` (v4); archive `0018-v4-20260813T2140Z` — R3 confirmed R2-2/3/4/9 closed |
 | ext 3 (v4) | R3-1 tuple-key serialization (probe-executed) · R3-2/R3-3 unswept carriers of the R2 fixes · R3-4 `ReadbackResult` construction · R3-5 the pre-mint package route · B3-1 the MCP gate scope | `cf91b77` (v5); archive `0018-v5-20260813T2202Z` — R4 verified the fingerprint against an independent encoder and reconciled the suite delta exactly |
 | ext 4 (v5) | **APPROVED FOR ACCEPTANCE** — four closure obligations: the §2c test clause · recursive exactness (unbound `problems()`, exact-typed scalars) · read-failure totality + the §7a row · the pre-mint message + five enumerated package routes | THIS commit (v6): all four folded, `Spec-Status: accepted`, atomic with 0016 v18 |
+| 0018-adjacent-rungs ext 1 (v0.2.2) | R1-01..R1-07 (round 1 returned the contract for amendment; banked verdict sha16 `65425b2b1eb6b4e5`) | v0.3 (research `91a04864`..`28de0a4f`, v0.3.4); round 2's verdict closed R1-01..R1-04 and R1-07 and partly R1-05, R1-06 (banked verdict sha16 `b5723ec25e5fc57a`) |
+| 0018-adjacent-rungs ext 2 (v0.3.4) | R2-01 committed-error accounting · R2-02 I36's trace units and the direct route · R2-03 three head-bound refusals · E2-01, E2-02 · two text repairs (banked verdict sha16 `b5723ec25e5fc57a`) | v0.4..v0.4.4 (research `b5a78c1b`..`b657699d`); round 3's verdict closed R2-01's counting, R2-02, R2-03, E2-01, E2-02 (banked verdict sha16 `0235b70c17012766`) |
+| 0018-adjacent-rungs ext 3 (v0.4.4) | **ACCEPTED WITH AMENDMENTS** (banked verdict sha16 `0235b70c17012766`), closed internally under PROCESS.md §4a on the owner's ruling: **R3-01** the final recovery split · **R3-02** an audit-write failure weakening recovery · **R3-03** the package-escape control counting an unbound record · the three reconciliations (the census's reach in I33 (iii); I35's resume clearing its fault; admission separate from validity) | v0.5, v0.5.1 (research `ac7f7d3f`, `7a2e150f`): §4j.9's total classifier with action ids, E1, E4, I15′, I33 (iii), I35 (iv). **Executable, run by both seats** from a `git archive` of 67bbba6 with `PYTHONPATH=src`: `python3 specs/evidence/0018-adjacent-rungs/closure/model_v05.py <new dir>` (143 ok, 0 not ok, 3 inexpressible; R3-01: the exhaustive oracle, the reviewer's four carriers, both equal-input pairs; R3-02: four transport pairs; R3-03: the bound positive, two unbound negatives, the zero-count; I35 (iv); twelve mutants killed) and `python3 specs/evidence/0018-adjacent-rungs/closure/check_row_map.py specs/evidence/0018-adjacent-rungs/closure/model-v05-run-67bbba6.jsonl specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json` (57 checks, 0 disagree, 24 of 24 rows; `--control` exits 1), with `specs/evidence/0018-adjacent-rungs/closure/recovery_v05.py` and `specs/evidence/0018-adjacent-rungs/closure/extract_table.py` beside them and `specs/evidence/0018-adjacent-rungs/closure/check-row-map.md` their output; research's runs on its own export (veracium-research commits 617a17a3, 4bfedbdd and 657d4bc4, cited without backticks so that no check reads them as a digest of the paths above), including an independent classifier read from the text (341 inputs, 0 differences); the reconciliations by the text diff v0.4.4 → v0.5.1; and this fold |

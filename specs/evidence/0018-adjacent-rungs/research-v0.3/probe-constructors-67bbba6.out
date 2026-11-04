@@ -1,0 +1,27 @@
+HEAD 16
+table/index constructors over v1..v16: 338
+constructors outside (b1)'s shape: 0 []
+(version, kind, name) whose constructor differs from head: 23
+  (2, 'table', 'confirmations')
+  (3, 'table', 'confirmations')
+  (4, 'table', 'confirmations')
+  (4, 'table', 'supersession_operations')
+  (5, 'table', 'confirmations')
+  (5, 'table', 'supersession_operations')
+  (6, 'table', 'confirmations')
+  (6, 'table', 'contribution_ledger')
+  (6, 'table', 'supersession_operations')
+  (7, 'table', 'confirmations')
+  (7, 'table', 'contribution_ledger')
+  (7, 'table', 'supersession_operations')
+  (8, 'table', 'confirmations')
+  (8, 'table', 'supersession_operations')
+  (9, 'table', 'confirmations')
+  (9, 'table', 'supersession_operations')
+  (10, 'table', 'confirmations')
+  (11, 'table', 'confirmations')
+  (12, 'table', 'confirmations')
+  (13, 'table', 'confirmations')
+  (14, 'table', 'confirmations')
+  (15, 'table', 'confirmations')
+  (15, 'table', 'redactions')

@@ -1445,6 +1445,7 @@ def test_no_plain_json_load_at_evidence_boundaries():
     # scorers' reads use a duplicate-REFUSING hook named `strict` (it raises on a repeated key), a name this gate does
     # not know; each diagnosis (and H5's scorer, for its stratum ids) re-reads a corpus already parsed strictly; H5's
     # extractor reads a subagent's JSONL transcript to copy its final message verbatim, and its merger's reads are strict.
+    ADJ_RUNGS = ("byte-identical copy of the 0018 adjacent-rungs evidence (the round-3 sealed package, or the closure run by both seats); its reads are the evidence's own tables and outputs, and editing one would change what was verified")
     HOLDOUT_0051 = ("research's 0051 holdout instrument, byte-identical to its commit; its reads are strict under a "
                     "hook this gate does not name, re-read a corpus already parsed strictly, or read a subagent's "
                     "transcript to copy its final message verbatim")
@@ -1481,6 +1482,17 @@ def test_no_plain_json_load_at_evidence_boundaries():
         "0007-sqlite-attestation/at-58dd7f6/unmatched.py": (1, SQLITE_R2),
         "0007-sqlite-attestation/r1-repro-at-58dd7f6/classb_freeze.py": (1, SQLITE_R2),
         "0007-sqlite-attestation/r1-repro-at-58dd7f6/runtime_contract_probe.py": (1, SQLITE_R2),
+        # 0018 v9 §4j cites this directory as the adjacent-rungs evidence: research-*/ and dev-model/ are the round-3 sealed
+        # package's evidence/ byte for byte (the bytes the reviewer reproduced), closure/ the bytes both seats ran for the
+        # round-3 closure; their SUMS are pinned in tests/test_spec_gate.py (REVIEWED_EVIDENCE), so hardening a read here
+        # would change what was verified
+        "0018-adjacent-rungs/closure/check_row_map.py": (2, ADJ_RUNGS),
+        "0018-adjacent-rungs/closure/model_v05.py": (1, ADJ_RUNGS),
+        "0018-adjacent-rungs/closure/recovery_v05.py": (1, ADJ_RUNGS),
+        "0018-adjacent-rungs/dev-model/head_bound_census.py": (1, ADJ_RUNGS),
+        "0018-adjacent-rungs/dev-model/model_v04.py": (1, ADJ_RUNGS),
+        "0018-adjacent-rungs/dev-model/probe_m1_m2.py": (1, ADJ_RUNGS),
+        "0018-adjacent-rungs/dev-model/probe_m1_m2.round2-observer.py": (1, ADJ_RUNGS),
         "0051/holdout-h3/score_h3.py": (2, HOLDOUT_0051),
         "0051/holdout-h3/diagnose_h3.py": (1, HOLDOUT_0051),
         "0051/holdout-h4/score_h4.py": (2, HOLDOUT_0051),

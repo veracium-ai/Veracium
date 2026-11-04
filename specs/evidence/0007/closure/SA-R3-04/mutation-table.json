@@ -1,5 +1,5 @@
 {
- "body_sha256": "96954203746a53338fa36c58f9d655d6b6f40228d8d2411ba2baf75d0ff8730b",
+ "body_sha256": "d8a3b45cf8dcef06871bccfa206f2502d10577a9448507ccf313343c0f6c5f72",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
+  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
   "control_definitions": {
    "NOOP-SA-R3-04-attestation_writer": "a74b001695132d815610c332b022781c003d09d0a518b4ef2749e2eb3d59d99b"
   },
@@ -69,8 +69,10 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -79,16 +81,8 @@
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/doctor.py",
-   "src/veracium/store/schema_version.py",
-   "tests/test_0007_doctor_nearest.py",
-   "tests/test_doctor_cli.py"
+   "tests/test_0026_relay_lexicon.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -124,7 +118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: no future or malformed record refuses, and v19's order is never applied"

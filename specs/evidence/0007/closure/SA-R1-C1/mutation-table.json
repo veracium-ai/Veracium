@@ -1,5 +1,5 @@
 {
- "body_sha256": "74d9e900ef0536221d46c383e51420bf0718436328468e4412ea8d20c4f92cbe",
+ "body_sha256": "acc34e51e0774bf42e5a193ba9afc30540229d275073e733e4bcbcfcc9c17c5d",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
+  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -51,7 +51,7 @@
    "c1-the-two-censuses-folded-into-one": "f2b77a27d27e3a35573aa6d5bbad021c896f513bf66e5486343883c33224df4d"
   },
   "digests": {
-   "specs/0013-store-migrations.md": "9145941b721ad1a95b18a07f7e93b6a60742fa001a57daccaac10198bb03670d",
+   "specs/0013-store-migrations.md": "ddd992ad3ef1a942c17136215978fbb636ee21582aa0808b76e7f6ec1e5aebed",
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
@@ -64,21 +64,15 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/doctor.py",
-   "src/veracium/store/schema_version.py",
-   "tests/test_0007_doctor_nearest.py",
-   "tests/test_doctor_cli.py"
+   "tests/test_0026_relay_lexicon.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -110,7 +104,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.08s",
+   "pytest": "1 failed in 0.07s",
    "reason": null,
    "reason_seen": null,
    "what": "the conflation round 1 named: one census carrying the step table's 432/1,685, its scope unstated, and the 48 PA1 fixtures' own scope and figures gone"

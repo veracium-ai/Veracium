@@ -208,7 +208,8 @@ CITATION_DEBT: dict = {
     "0018": {
         "test_base_6_proceeds_through_the_audited_operation": "stale_version: the head moved past v7 after acceptance; the live node is test_base_7_proceeds_through_the_audited_operation",
         "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base over bases 1\u2013HEAD-2 (renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024)",
-        "test_below_v6_open_unchanged": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_open_unchanged"
+        "test_below_v6_open_unchanged": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_open_unchanged",
+        "test_every_rung_from_every_base": "owed_at_implementation: v9 §4j's I33 (populated, release-authored fixtures walked rung by rung); the amendment's design is accepted, its implementation is not yet scheduled (the owner schedules it)"
     },
     "0019": {
         "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: quoted from 0018's final-form amendment; the head moved past v7 after acceptance (live node test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base; renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024)",

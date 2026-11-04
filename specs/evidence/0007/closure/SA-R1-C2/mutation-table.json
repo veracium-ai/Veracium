@@ -1,5 +1,5 @@
 {
- "body_sha256": "c1d960e35bfca164236cd1b762092b7caca1c535c1345db4c54312cb76e7660a",
+ "body_sha256": "cf3dfd907c378cd97d210690857d76d956166e3d6add3081b2de4139e8e66939",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "c3ff286de69c744ce1dce3981222408be47073ba",
+  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -65,7 +65,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "specs/skip_inventory.py": "ac6b10fb83fb9adde631672b633e88020a2a63eadb6a3c6409a1b541c45ec584",
-   "tests/test_spec_gate.py": "5fb8dfd736f3af26dfea7700a2c5d910ec9bc50bb26a66fe7084ee61752e0dfc"
+   "tests/test_spec_gate.py": "d3174c9f54cdcaaabd1b61c440a816cce950aa5a18c4576c689abd8b300522e4"
   },
   "finding": "SA-R1-C2",
   "honest_nodes": [
@@ -76,22 +76,16 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/0007-store-schema-versioning.md",
+   "specs/0013-store-migrations.md",
+   "specs/0018-release-migration-orchestrator.md",
+   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/doctor.py",
-   "src/veracium/store/schema_version.py",
-   "tests/test_0007_doctor_nearest.py",
-   "tests/test_doctor_cli.py"
+   "tests/test_0026_relay_lexicon.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -130,7 +124,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.42s",
+   "pytest": "2 failed in 2.36s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -166,7 +160,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.40s",
+   "pytest": "2 failed in 2.34s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -181,6 +175,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 67
+  "seconds": 65
  }
 }

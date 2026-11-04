@@ -1,0 +1,140 @@
+base  1 rung v 1->v 2: ok 
+base  1 rung v 2->v 3: ok 
+base  1 rung v 3->v 4: ok 
+base  1 rung v 4->v 5: ok 
+base  1 rung v 5->v 6: ok 
+base  1 rung v 6->v 7: ok 
+base  1 rung v 7->v 8: ok 
+base  1 rung v 8->v 9: ok 
+base  1 rung v 9->v10: ok 
+base  1 rung v10->v11: ok 
+base  1 rung v11->v12: ok 
+base  1 rung v12->v13: ok 
+base  1 rung v13->v14: ok 
+base  1 rung v14->v15: ok 
+base  1 rung v15->v16: ok 
+base  1 DIRECT v 1->v16: ok 
+base  2 rung v 2->v 3: ok 
+base  2 rung v 3->v 4: ok 
+base  2 rung v 4->v 5: ok 
+base  2 rung v 5->v 6: ok 
+base  2 rung v 6->v 7: ok 
+base  2 rung v 7->v 8: ok 
+base  2 rung v 8->v 9: ok 
+base  2 rung v 9->v10: ok 
+base  2 rung v10->v11: ok 
+base  2 rung v11->v12: ok 
+base  2 rung v12->v13: ok 
+base  2 rung v13->v14: ok 
+base  2 rung v14->v15: ok 
+base  2 rung v15->v16: ok 
+base  2 DIRECT v 2->v16: ok 
+base  3 rung v 3->v 4: ok 
+base  3 rung v 4->v 5: ok 
+base  3 rung v 5->v 6: ok 
+base  3 rung v 6->v 7: ok 
+base  3 rung v 7->v 8: ok 
+base  3 rung v 8->v 9: ok 
+base  3 rung v 9->v10: ok 
+base  3 rung v10->v11: ok 
+base  3 rung v11->v12: ok 
+base  3 rung v12->v13: ok 
+base  3 rung v13->v14: ok 
+base  3 rung v14->v15: ok 
+base  3 rung v15->v16: ok 
+base  3 DIRECT v 3->v16: ok 
+base  4 rung v 4->v 5: ok 
+base  4 rung v 5->v 6: ok 
+base  4 rung v 6->v 7: ok 
+base  4 rung v 7->v 8: ok 
+base  4 rung v 8->v 9: ok 
+base  4 rung v 9->v10: ok 
+base  4 rung v10->v11: ok 
+base  4 rung v11->v12: ok 
+base  4 rung v12->v13: ok 
+base  4 rung v13->v14: ok 
+base  4 rung v14->v15: ok 
+base  4 rung v15->v16: ok 
+base  4 DIRECT v 4->v16: ok 
+base  5 rung v 5->v 6: ok 
+base  5 rung v 6->v 7: ok 
+base  5 rung v 7->v 8: ok 
+base  5 rung v 8->v 9: ok 
+base  5 rung v 9->v10: ok 
+base  5 rung v10->v11: ok 
+base  5 rung v11->v12: ok 
+base  5 rung v12->v13: ok 
+base  5 rung v13->v14: ok 
+base  5 rung v14->v15: ok 
+base  5 rung v15->v16: ok 
+base  5 DIRECT v 5->v16: ok 
+base  6 rung v 6->v 7: ok 
+base  6 rung v 7->v 8: ok 
+base  6 rung v 8->v 9: ok 
+base  6 rung v 9->v10: ok 
+base  6 rung v10->v11: ok 
+base  6 rung v11->v12: ok 
+base  6 rung v12->v13: ok 
+base  6 rung v13->v14: ok 
+base  6 rung v14->v15: ok 
+base  6 rung v15->v16: ok 
+base  6 DIRECT v 6->v16: ok 
+base  7 rung v 7->v 8: ok 
+base  7 rung v 8->v 9: ok 
+base  7 rung v 9->v10: ok 
+base  7 rung v10->v11: ok 
+base  7 rung v11->v12: ok 
+base  7 rung v12->v13: ok 
+base  7 rung v13->v14: ok 
+base  7 rung v14->v15: ok 
+base  7 rung v15->v16: ok 
+base  7 DIRECT v 7->v16: ok 
+base  8 rung v 8->v 9: ok 
+base  8 rung v 9->v10: ok 
+base  8 rung v10->v11: ok 
+base  8 rung v11->v12: ok 
+base  8 rung v12->v13: ok 
+base  8 rung v13->v14: ok 
+base  8 rung v14->v15: ok 
+base  8 rung v15->v16: ok 
+base  8 DIRECT v 8->v16: ok 
+base  9 rung v 9->v10: ok 
+base  9 rung v10->v11: ok 
+base  9 rung v11->v12: ok 
+base  9 rung v12->v13: ok 
+base  9 rung v13->v14: ok 
+base  9 rung v14->v15: ok 
+base  9 rung v15->v16: ok 
+base  9 DIRECT v 9->v16: ok 
+base 10 rung v10->v11: ok 
+base 10 rung v11->v12: ok 
+base 10 rung v12->v13: ok 
+base 10 rung v13->v14: ok 
+base 10 rung v14->v15: ok 
+base 10 rung v15->v16: ok 
+base 10 DIRECT v10->v16: ok 
+base 11 rung v11->v12: ok 
+base 11 rung v12->v13: ok 
+base 11 rung v13->v14: ok 
+base 11 rung v14->v15: ok 
+base 11 rung v15->v16: ok 
+base 11 DIRECT v11->v16: ok 
+base 12 rung v12->v13: ok 
+base 12 rung v13->v14: ok 
+base 12 rung v14->v15: ok 
+base 12 rung v15->v16: ok 
+base 12 DIRECT v12->v16: ok 
+base 13 rung v13->v14: ok 
+base 13 rung v14->v15: ok 
+base 13 rung v15->v16: ok 
+base 13 DIRECT v13->v16: ok 
+base 14 rung v14->v15: ok 
+base 14 rung v15->v16: ok 
+base 14 DIRECT v14->v16: ok 
+base 15 rung v15->v16: ok 
+base 15 DIRECT v15->v16: ok 
+SUMMARY head v16: 0 base(s) whose rung walk stopped: []
+CONTROL v15 store judged as v16 accepted: False (expect False)
+CONTROL walked v1->v16 store accepted before tampering: True (expect True)
+CONTROL the same store + a foreign table accepted: False (expect False)
+CONTROL the same store with a column added to edges accepted: False (expect False)

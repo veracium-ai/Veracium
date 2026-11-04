@@ -1,0 +1,297 @@
+{
+ "rows": {
+  "C1": {
+   "action_cell": "`continue`",
+   "actions": [
+    "continue"
+   ],
+   "input": "committed, outcome `migrated` or `current`, at `to_version`",
+   "outcomes": [
+    "migrated",
+    "current"
+   ],
+   "row_text": "| C1 | committed, outcome `migrated` or `current`, at `to_version` | `continue` | \"rung v{from} -> v{to}: {outcome} (operation {id})\" | the walk continues | \u2014 (counted) |",
+   "state": null
+  },
+  "C2": {
+   "action_cell": "`stop-inspect-committed`",
+   "actions": [
+    "stop-inspect-committed"
+   ],
+   "input": "committed, **any other outcome** (at the pin: `internal-error`; `package-inconsistent` only through E4)",
+   "outcomes": [
+    "internal-error",
+    "package-inconsistent"
+   ],
+   "row_text": "| C2 | committed, **any other outcome** (at the pin: `internal-error`; `package-inconsistent` only through E4) | `stop-inspect-committed` | `v{version}`, labelled \"recorded: committed with {outcome}\" | **not automatically**: a committed error's facts can describe a store the operation itself created (the pin's M3 shape: a deleted store re-created empty at v16, recorded committed `internal-error`, whose facts read \"at `t`\" exactly as a real advance would), so a direct rerun could resume from an empty store and lose data silently. The no-create open closes M3 itself (\u00a74e-ii row 11a); this row covers every committed error | counted once; the walk STOPS. Inspect the store; then rerun, which resumes from its actual version, or restore the backup |",
+   "state": null
+  },
+  "E1": {
+   "action_cell": "**the 7b action of the facts it carries**, classified exactly as if they were the record, except that an escape never continues: C1 and U0 facts give `rerun-resumes-store`; C2, K and U1\u2013U7 give their own 7b ids; **plus** the disclosure `audit-record-not-published`",
+   "actions": [
+    "rerun-resumes-store",
+    "audit-record-not-published"
+   ],
+   "disclosure": "audit-record-not-published",
+   "input": "`MigrationAuditWriteError` (the terminal record not published)",
+   "outcomes": [],
+   "resume": "rerun-resumes-store",
+   "row_text": "| E1 | `MigrationAuditWriteError` (the terminal record not published) | **the 7b action of the facts it carries**, classified exactly as if they were the record, except that an escape never continues: C1 and U0 facts give `rerun-resumes-store`; C2, K and U1\u2013U7 give their own 7b ids; **plus** the disclosure `audit-record-not-published` | as that row, plus the operation id and \"its terminal record was not published; this tool does not repair it\" | as that row: the audit loss never makes it less restrictive | as that row; also record the operation id. Counted once when its carried facts are committed |",
+   "state": null
+  },
+  "E2": {
+   "action_cell": "`inspect-audit-trail`",
+   "actions": [
+    "inspect-audit-trail"
+   ],
+   "input": "`MigrationAuditReadError`",
+   "outcomes": [],
+   "row_text": "| E2 | `MigrationAuditReadError` | `inspect-audit-trail` | version `unknown`; the error's `derived_resulting_state` printed separately, labelled derived-from-outcome (a state, never a version) | not until the record is inspected | inspect the audit trail for the id. **Not counted** (no validated facts), and the store may nonetheless be at `t`: the last lines say both |",
+   "state": null
+  },
+  "E3": {
+   "action_cell": "`repair-build`",
+   "actions": [
+    "repair-build"
+   ],
+   "input": "`PackageConsistencyError` before the mint",
+   "outcomes": [],
+   "row_text": "| E3 | `PackageConsistencyError` before the mint | `repair-build` | `unavailable (pre-mint: no operation minted)`; no earlier id reused | no: the build is inconsistent | repair or reinstall the build |",
+   "state": null
+  },
+  "E4": {
+   "action_cell": "`repair-build`; and, when the bound readback's facts are committed, also `stop-inspect-committed`",
+   "actions": [
+    "repair-build",
+    "stop-inspect-committed"
+   ],
+   "input": "`PackageConsistencyError` after the mint",
+   "outcomes": [],
+   "row_text": "| E4 | `PackageConsistencyError` after the mint | `repair-build`; and, when the bound readback's facts are committed, also `stop-inspect-committed` | a readback is used **only** when it is a valid record bound to this escape (0018 \u00a74f(7)): outcome `package-inconsistent` at the minted endpoints, **checked before any counting**. Then its version, labelled recorded; otherwise `unavailable (readback: \u2026)` | no, until the build is repaired | repair or reinstall the build; when the bound record is committed, inspect the store as C2 says. Counted once only for a bound, committed record; a record with another outcome or another rung's endpoints adds no id and no recorded version |",
+   "state": null
+  },
+  "K": {
+   "action_cell": "`stop-inspect-unknown`",
+   "actions": [
+    "stop-inspect-unknown"
+   ],
+   "input": "unknown",
+   "outcomes": [],
+   "row_text": "| K | unknown | `stop-inspect-unknown` | `unknown`; **the previous rung's version is never reported as the store's** | not automatically | inspect the store; then rerun, or restore the backup |",
+   "state": null
+  },
+  "N1": {
+   "action_cell": "`rerun`",
+   "actions": [
+    "rerun"
+   ],
+   "input": "`migration-audit-unavailable`",
+   "outcomes": [
+    "migration-audit-unavailable"
+   ],
+   "row_text": "| N1 | `migration-audit-unavailable` | `rerun` | `unknown` | yes | rerun: the attempted record is proven not written and nothing was consumed |",
+   "state": null
+  },
+  "N2": {
+   "action_cell": "`query-id-first`",
+   "actions": [
+    "query-id-first"
+   ],
+   "input": "**`migration-audit-state-unknown`**",
+   "outcomes": [
+    "migration-audit-state-unknown"
+   ],
+   "row_text": "| N2 | **`migration-audit-state-unknown`** | `query-id-first` | `unknown` | **NO** (0018 \u00a74e, verbatim) | query the durable `operation_id` (`read_terminal`) before any rerun |",
+   "state": null
+  },
+  "N3": {
+   "action_cell": "`rerun-when-quiescent`",
+   "actions": [
+    "rerun-when-quiescent"
+   ],
+   "input": "`migration-quiescence-required` (refused before observation: an invalid, expired, consumed, retargeted or cross-build authority)",
+   "outcomes": [
+    "migration-quiescence-required"
+   ],
+   "row_text": "| N3 | `migration-quiescence-required` (refused before observation: an invalid, expired, consumed, retargeted or cross-build authority) | `rerun-when-quiescent` | `unknown` | yes, once quiescence holds; the rerun mints a fresh authority | stop the other writer, rerun |",
+   "state": null
+  },
+  "N4": {
+   "action_cell": "`no-rerun-this-build`",
+   "actions": [
+    "no-rerun-this-build"
+   ],
+   "input": "`migration-evidence-missing` (refused before observation: no current path record evidences this rung's migration, an artifact property)",
+   "outcomes": [
+    "migration-evidence-missing"
+   ],
+   "row_text": "| N4 | `migration-evidence-missing` (refused before observation: no current path record evidences this rung's migration, an artifact property) | `no-rerun-this-build` | `unknown` | **not with the same build** | repair or upgrade the build, then rerun; or restore the backup |",
+   "state": null
+  },
+  "P0": {
+   "action_cell": "`done`",
+   "actions": [
+    "done"
+   ],
+   "input": "preflight `current` at HEAD (with or without repair)",
+   "outcomes": [
+    "current"
+   ],
+   "row_text": "| P0 | preflight `current` at HEAD (with or without repair) | `done` | the store's version, HEAD | \u2014 | nothing; exit 0 |",
+   "state": null
+  },
+  "P1": {
+   "action_cell": "`rerun-after-contention`",
+   "actions": [
+    "rerun-after-contention"
+   ],
+   "input": "preflight refusal, outcome `mint-contention`",
+   "outcomes": [
+    "mint-contention"
+   ],
+   "row_text": "| P1 | preflight refusal, outcome `mint-contention` | `rerun-after-contention` | `unknown` | yes | rerun once the race settles |",
+   "state": null
+  },
+  "P2": {
+   "action_cell": "`fix-invocation`",
+   "actions": [
+    "fix-invocation"
+   ],
+   "input": "preflight refusal, outcome `invalid-request`",
+   "outcomes": [
+    "invalid-request"
+   ],
+   "row_text": "| P2 | preflight refusal, outcome `invalid-request` | `fix-invocation` | \u2014 | yes, once corrected | correct the command line |",
+   "state": null
+  },
+  "P3": {
+   "action_cell": "`rerun-when-quiescent`",
+   "actions": [
+    "rerun-when-quiescent"
+   ],
+   "input": "`unexpected-base` (the store changed between rungs)",
+   "outcomes": [
+    "unexpected-base"
+   ],
+   "row_text": "| P3 | `unexpected-base` (the store changed between rungs) | `rerun-when-quiescent` | \"observed v{preflight_base} where v{expected_base} was expected\" | yes, once quiescence holds | stop the other writer, rerun |",
+   "state": null
+  },
+  "P4": {
+   "action_cell": "**the U row its outcome and state select** (U1, U2, U4, U5, U6 or U7), read as an observation made just now",
+   "actions": [],
+   "input": "any other preflight refusal",
+   "outcomes": [],
+   "row_text": "| P4 | any other preflight refusal | **the U row its outcome and state select** (U1, U2, U4, U5, U6 or U7), read as an observation made just now | as that row | as that row | as that row. **At preflight the cause is not ambiguous**, because the preflight's report is the observation itself, with no transaction between: `newer` means the store is beyond this build's head (U4's second branch, `no-rerun-this-build`); `migration-source-missing` with state `unaccepted` is an empty `user_version = 0` file at the path (U1, `no-rerun-not-a-source`) |",
+   "state": null
+  },
+  "U0": {
+   "action_cell": "`continue-uncounted`",
+   "actions": [
+    "continue-uncounted"
+   ],
+   "input": "unchanged, outcome `current`, state `destination` at `t` (another operation reached the target)",
+   "outcomes": [
+    "current",
+    "t"
+   ],
+   "row_text": "| U0 | unchanged, outcome `current`, state `destination` at `t` (another operation reached the target) | `continue-uncounted` | as C1 | the walk continues | \u2014 (not counted) |",
+   "state": "destination"
+  },
+  "U1": {
+   "action_cell": "`no-rerun-not-a-source`",
+   "actions": [
+    "no-rerun-not-a-source"
+   ],
+   "input": "unchanged, outcome `stamped-shape-mismatch`, `foreign-shape`, `invalid-version` or `invalid-store`",
+   "outcomes": [
+    "stamped-shape-mismatch",
+    "foreign-shape",
+    "invalid-version",
+    "invalid-store"
+   ],
+   "row_text": "| U1 | unchanged, outcome `stamped-shape-mismatch`, `foreign-shape`, `invalid-version` or `invalid-store` | `no-rerun-not-a-source` | the record's version, or `unknown` | **not as it stands**: a rerun meets the same store and refuses the same way | inspect; restore the backup or repair the store, then rerun |",
+   "state": null
+  },
+  "U2": {
+   "action_cell": "`fix-path-then-rerun`",
+   "actions": [
+    "fix-path-then-rerun"
+   ],
+   "input": "unchanged, outcome `migration-source-missing`, state `missing` (nothing at the path, by 0013's `lstat` ENOENT)",
+   "outcomes": [
+    "migration-source-missing",
+    "lstat"
+   ],
+   "row_text": "| U2 | unchanged, outcome `migration-source-missing`, state `missing` (nothing at the path, by 0013's `lstat` ENOENT) | `fix-path-then-rerun` | `unknown` | yes, once the path holds the store | correct the path or restore the backup, then rerun |",
+   "state": "missing"
+  },
+  "U3": {
+   "action_cell": "`conditional-other-writer-or-path`",
+   "actions": [
+    "conditional-other-writer-or-path"
+   ],
+   "input": "unchanged, outcome `migration-source-missing`, state `unaccepted`",
+   "outcomes": [
+    "migration-source-missing"
+   ],
+   "row_text": "| U3 | unchanged, outcome `migration-source-missing`, state `unaccepted` | `conditional-other-writer-or-path` | `unknown`, with \"the source changed or is empty; this report does not say which\" | **not until inspected**: this one input arises from an accepted store at another version (\u00a74e-ii rows 7a, 8a) and from an empty replacement (row 10), and the report carries nothing that tells them apart | stop; inspect the path's version. If it is an accepted store at another version, stop the other writer and rerun; otherwise restore the backup or correct the path |",
+   "state": "unaccepted"
+  },
+  "U4": {
+   "action_cell": "`conditional-other-writer-or-newer-build`",
+   "actions": [
+    "conditional-other-writer-or-newer-build"
+   ],
+   "input": "unchanged, outcome `newer`",
+   "outcomes": [
+    "newer"
+   ],
+   "row_text": "| U4 | unchanged, outcome `newer` | `conditional-other-writer-or-newer-build` | `unknown`, with \"the store is newer than this rung's target; this report does not say by how much\" | **not until inspected**: this one input arises from a store another operation moved above the target but within this build's head (\u00a74e-ii row 7b) and from one beyond the build's head | stop; inspect the store's version. At or below this build's head, stop the other writer and rerun (the preflight resumes it or reports `current`); above it, use a build whose head reaches it |",
+   "state": null
+  },
+  "U5": {
+   "action_cell": "`no-rerun-this-build`",
+   "actions": [
+    "no-rerun-this-build"
+   ],
+   "input": "unchanged, outcome `unsupported-migration` (\u00a74e-ii row 12: a step's postcondition failed), `unsupported-sqlite` (a refused runtime) or `unsupported-base` (a store below this build's lowest migratable base; after this amendment no cell produces it at this head, \u00a74a)",
+   "outcomes": [
+    "unsupported-migration",
+    "unsupported-sqlite",
+    "unsupported-base"
+   ],
+   "row_text": "| U5 | unchanged, outcome `unsupported-migration` (\u00a74e-ii row 12: a step's postcondition failed), `unsupported-sqlite` (a refused runtime) or `unsupported-base` (a store below this build's lowest migratable base; after this amendment no cell produces it at this head, \u00a74a) | `no-rerun-this-build` | the record's version, or `unknown` | **not with the same build or runtime**: the cause is deterministic, so a rerun fails the same way | repair or upgrade the build or the runtime, then rerun; for `unsupported-base`, first migrate with a release whose floor reaches the store; or restore the backup |",
+   "state": null
+  },
+  "U6": {
+   "action_cell": "`fix-access-then-rerun`",
+   "actions": [
+    "fix-access-then-rerun"
+   ],
+   "input": "unchanged, outcome `store-unopenable` or `locked`",
+   "outcomes": [
+    "store-unopenable",
+    "locked"
+   ],
+   "row_text": "| U6 | unchanged, outcome `store-unopenable` or `locked` | `fix-access-then-rerun` | `unknown` | yes, once the cause is fixed | fix the permission, the path's type or the lock, then rerun |",
+   "state": null
+  },
+  "U7": {
+   "action_cell": "`inspect-first-fallback`",
+   "actions": [
+    "inspect-first-fallback"
+   ],
+   "input": "unchanged, **any other outcome** (at the pin, among others: `internal-error`, `migration-failed` and `migration-result-mismatch` with state `source` at the base, the reviewer's three; `adoption-refused`; `migration-required`; and any outcome a later head adds)",
+   "outcomes": [
+    "internal-error",
+    "migration-failed",
+    "migration-result-mismatch",
+    "adoption-refused",
+    "migration-required"
+   ],
+   "row_text": "| U7 | unchanged, **any other outcome** (at the pin, among others: `internal-error`, `migration-failed` and `migration-result-mismatch` with state `source` at the base, the reviewer's three; `adoption-refused`; `migration-required`; and any outcome a later head adds) | `inspect-first-fallback` | `v{version}` when the state is `source` or `destination`, else `unknown` | **not until the cause is identified**: the store is unchanged by this rung, but the report does not establish why it refused | inspect the diagnostic and the build; correct the cause, then rerun |",
+   "state": "source"
+  }
+ },
+ "source": "v0.5.1.md"
+}
