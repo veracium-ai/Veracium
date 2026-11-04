@@ -105,6 +105,10 @@ NON_ROWS = {
         "are rows", ("0008-staleness-clearing", "§6d's SQLite line and two retention rows, C8 and C11, the v6 invariants")),
     ("0041", r"INV-\d+"): ("0041's own INV-1–INV-12 (implementation accepted at round 14); its programme rows are the "
                            "amendment's INV-RR", None),
+    ("0018", r"I(?:1[359]′|3[3-9])"): (
+        "0018 v9's adjacent-rungs rows (§4j, amendment 0018-adjacent-rungs, design accepted at its round 3): not "
+        "programme rows; their implementation acceptance is outstanding and the owner schedules it",
+        ("0018-release-migration-orchestrator", "implementation acceptance outstanding — I33's populated fixtures")),
 }
 _ID = re.compile(r"(?:INV-[A-Z]*|[A-Z])\d+[a-z]?′?")
 # a withdrawn row's withdrawal, quoted from its row
