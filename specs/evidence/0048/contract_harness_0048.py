@@ -85,6 +85,10 @@ with the write method unchanged; two new controls pass (a savepoint pair; a docs
 Harness r6 (2026-11-04, research's read of dev's package-wide fix for S2-01) adds the accessor constructors, whose
 attribute is a string (`attrgetter`, `methodcaller`, `getattr_static`, by name, attribute and import), and five more
 connection forms; `blobopen` and a connection read through a parameter were already refused, and are now mutants.
+Harness r7 (2026-11-04, research's recheck of 8c71f85d, R-01, and dev's class) refuses a route around the store's own
+schema, statically and in the tripwire (`_route`): unqualified names resolve to temp first, so a TEMP table named edges
+takes the store's reads and writes with the file untouched. Seven write-method forms are new. The rule refuses any TEMP
+table in the model, so the harmless control is an ordinary literal instead.
 
 §6 MUTANT ROWS OUTSIDE THIS MODEL (the complement, stated): the two N4c rows,
   "a copy site writing `confidence` removed from the declared table" and
@@ -94,8 +98,8 @@ tests/test_0048_evidence.py) over the tree, not over a model. Every other §6 mu
 several forms once per form: R3-01's three helper bodies (3); "**for each of the declared edge writers:**" once per
 model edge writer, add_edge, confirm, transition and redact (4); "**for each connection form the gate does not
 resolve:**" (18); "a writer calls the helper, or the journal writer, itself" (2); R3-02's reviewer forms (7); the
-(v4.2) write method's own forms (29: the trigger and round 4's six R4-01 forms among them). So the MUTANT lines
-number the rows run plus 2 + 3 + 17 + 1 + 6 + 28 = 57.
+(v4.2) write method's own forms (36: the trigger, round 4's six R4-01 forms and R-01's seven among them). So the MUTANT
+lines number the rows run plus 2 + 3 + 17 + 1 + 6 + 35 = 64.
 
 OUTPUT GRAMMAR (dev's test asserts on it; do not reword without telling dev):
   CONTROL <PASS|FAIL> | `<cell>`[ on a harmless variant: <variant>][ | <failing cases>]
@@ -848,6 +852,8 @@ def _classify(sql, ddl):
         if action in (sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TRIGGER,
                       sqlite3.SQLITE_CREATE_VIEW, sqlite3.SQLITE_CREATE_TEMP_VIEW):
             found.add("trigger")
+        if _route(action, a1, a2, db):
+            found.add("schema-route")
         return sqlite3.SQLITE_OK
     c.set_authorizer(auth)
     for st in _statements(sql):
@@ -863,6 +869,16 @@ def _classify(sql, ddl):
             found.add("unresolved")
     c.close()
     return frozenset(found)
+
+
+def _route(action, a1, a2, db):
+    """A route around the store's own schema, by what SQLite's authorizer reports (research's recheck of 8c71f85d, R-01, and
+    dev's class): any action in a database other than main (`db` is None for most actions, and None is not another
+    database; unqualified names resolve to temp first, so a TEMP table named edges takes the store's reads and writes
+    with the file untouched), ATTACH or DETACH, ALTER on another database (it names the database in its first argument),
+    and any PRAGMA: the model uses none, and `pragma_*` table functions report as PRAGMA too."""
+    return (db is not None and db != "main") or action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH, sqlite3.SQLITE_PRAGMA) \
+        or (action == sqlite3.SQLITE_ALTER_TABLE and a1 != "main")
 
 
 #: the derivation's own control: json moved to the second placeholder must read as position 1 of 3
@@ -1074,6 +1090,9 @@ def _closed_grammar(tree, ddl):
         if "trigger" in kinds:
             bad.append(f"line {node.lineno}: a trigger or view defined in a literal ({norm[:50]!r}): SQLite reports its "
                        f"body's writes only when a statement firing it is prepared")
+        if "schema-route" in kinds:
+            bad.append(f"line {node.lineno}: a route around the store's own schema (another database, ATTACH or a PRAGMA)"
+                       f" ({norm[:50]!r})")
         at_sql = (isinstance(p, ast.Call) and p.args and p.args[0] is node and isinstance(p.func, ast.Attribute)
                   and p.func.attr in ("execute", "executemany", "executescript", WRITE))
         if "unresolved" in kinds and at_sql:            # v4.2 round 5 (R4-01 (c)); a string elsewhere is prose
@@ -1125,6 +1144,8 @@ def _runtime_arm(m, fx):
         if action in (sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TRIGGER,
                       sqlite3.SQLITE_CREATE_VIEW, sqlite3.SQLITE_CREATE_TEMP_VIEW):
             hits.append(f"tripwire: a trigger or view created on the store's connection (`{a1}`)")
+        elif _route(action, a1, a2, db):
+            hits.append(f"tripwire: a route around the store's own schema on its connection ({action}, `{a1}`, `{db}`)")
         elif ((action == sqlite3.SQLITE_INSERT and a1 == "edges") or
                 (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json")) and trig is not None:
             # a trigger's write: the firing statement may be the write method's own journal insert, so its frame
@@ -1811,7 +1832,32 @@ for inst, reps, plan in (
         ("(beyond §6's list; R4-01 (d)) a changed definition a listed site reads (`DDL` gains a table)",
          [("CREATE TABLE redacted (user_id TEXT NOT NULL, target TEXT NOT NULL);\n",
            "CREATE TABLE redacted (user_id TEXT NOT NULL, target TEXT NOT NULL);\nCREATE TABLE extra (x TEXT);\n")],
-         [(G, "a listed non-literal SQL site whose function")])):
+         [(G, "a listed non-literal SQL site whose function")]),
+        # research's recheck of 8c71f85d, R-01: unqualified names resolve to temp first, so a TEMP table named edges takes
+        # the store's reads and writes; the file is untouched, so no teardown over the file sees it
+        ("(beyond §6's list; R-01) `CREATE TEMP TABLE edges`, shadowing the store",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("CREATE TEMP TABLE IF NOT EXISTS edges AS SELECT * FROM main.edges")\n' + CONFIRM_WRITE)],
+         [(G, ("a route around the store's own schema", "tripwire: a route around"))]),
+        ("(beyond §6's list; R-01) `CREATE TEMPORARY TABLE edges`",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("CREATE TEMPORARY TABLE IF NOT EXISTS edges (id TEXT, user_id TEXT, json TEXT)")\n' + CONFIRM_WRITE)],
+         [(G, ("a route around the store's own schema", "tripwire: a route around"))]),
+        ("(beyond §6's list; R-01) `CREATE TABLE temp.edges`",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("CREATE TABLE IF NOT EXISTS temp.edges (id TEXT, user_id TEXT, json TEXT)")\n' + CONFIRM_WRITE)],
+         [(G, ("a route around the store's own schema", "tripwire: a route around"))]),
+        ("(beyond §6's list; R-01's class) a TEMP table shadowing the journal",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("CREATE TEMP TABLE IF NOT EXISTS journal (seq INTEGER PRIMARY KEY, op TEXT NOT NULL, '
+                          f'target TEXT NOT NULL, json TEXT NOT NULL)")\n' + CONFIRM_WRITE)],
+         [(G, ("a route around the store's own schema", "tripwire: a route around"))]),
+        ("(beyond §6's list; R-01's class) ATTACH",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("ATTACH \':memory:\' AS other")\n' + CONFIRM_WRITE)],
+         [(G, ("a route around the store's own schema", "tripwire: a route around"))]),
+        ("(beyond §6's list; R-01's class) PRAGMA writable_schema",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("PRAGMA writable_schema=ON")\n' + CONFIRM_WRITE)],
+         [(G, ("a route around the store's own schema", "tripwire: a route around"))]),
+        # no rule of its own: with writable_schema off, which the PRAGMA rule keeps, SQLite refuses to prepare it
+        ("(beyond §6's list; R-01's class) a schema table written directly",
+         [(CONFIRM_WRITE, f'{_I}self.conn.execute("UPDATE sqlite_master SET sql=sql WHERE 0")\n' + CONFIRM_WRITE)],
+         [(G, "SQLite cannot prepare")])):
     MUTANTS.append((OWN, OWN_KILL, inst, None, reps, plan))
 MUTANTS += [
     ("the transition decides from the listing (read outside the transaction)",
@@ -1879,6 +1925,8 @@ GATE_CONTROLS = [
     ("a savepoint pair (transaction-control literals)",
      [(_READ, '    def _savepoint(self):\n        self.conn.execute("SAVEPOINT s")\n        self.conn.execute("RELEASE s")'
               '\n\n' + _READ)]),
+    ("a schema read through `sqlite_master`, in main (no route: it reads the store's own schema)",
+     [(_READ, '    def _tables(self):\n        return self.conn.execute("SELECT name FROM sqlite_master").fetchall()\n\n' + _READ)]),
     ("a docstring edit in a function no listed site reads (confirm)",
      [('"""The overlapping operation of N4h (B): the 0008 shape, max(c, 0.9), observed now, unflagged."""',
        '"""The overlapping operation of N4h (B): the 0008 shape — max(c, 0.9), observed now, unflagged."""')]),

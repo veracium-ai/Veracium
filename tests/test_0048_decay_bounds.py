@@ -12,6 +12,7 @@ import ast
 import contextlib
 import datetime as dt
 import hashlib
+import importlib.util
 import json
 import math
 import pathlib
@@ -936,6 +937,20 @@ def _binders(tree, name):
 
 _CLASSIFIER = []
 _CLASSIFIED = {}
+# round 5, research's recheck (R-01): routes around the store's own schema. A TEMP table named `edges` shadows main.edges
+# for the connection, so reads and unqualified writes go to a table no journal, trigger rule or teardown invariant
+# sees; ATTACH, ALTER outside main and writable_schema are the class's neighbours. A direct write to a schema table needs
+# no rule: with writable_schema off SQLite refuses to prepare it ("may not be modified"), so it is UNRESOLVED.
+PIN_PRAGMAS = {"quick_check", "user_version", "compile_options"}     # the literal PRAGMAs src/ uses
+
+
+def _schema_route(action, a1, a2, db) -> bool:
+    """One authorizer callback that leaves the store's schema: any database but main, ATTACH or DETACH, ALTER outside
+    main (ALTER reports its database in a1, not db), or writable_schema. Used at prepare by the classifier and at run
+    time by the tripwire."""
+    return (db not in (None, "main") or action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH)
+            or (action == sqlite3.SQLITE_ALTER_TABLE and a1 != "main")
+            or (action == sqlite3.SQLITE_PRAGMA and str(a1).lower() == "writable_schema"))
 # research's stage-1b catch (2026-11-03): a trigger's body writes are reported only when a statement that FIRES it is
 # prepared, never at CREATE TRIGGER, so a trigger or a view is refused as such, wherever it is created
 _TRIGGER_OR_VIEW = {sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TRIGGER, sqlite3.SQLITE_CREATE_VIEW,
@@ -1001,6 +1016,13 @@ def _sqlite_classify(sql: str) -> set:
             tags.add("edges-insert")
         elif action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json":
             tags.add("edges-json-update")
+        if _schema_route(action, a1, a2, db) or (action == sqlite3.SQLITE_PRAGMA and str(a1).lower() not in PIN_PRAGMAS):
+            tags.add("schema-route")
+    # a flag PRAGMA takes effect AT PREPARE (`PRAGMA writable_schema=ON` sets the flag with nothing run), so one outside
+    # the pin's set would change how every later statement reads: the scratch connection is thrown away after it
+    if any(a == sqlite3.SQLITE_PRAGMA and str(x).lower() not in PIN_PRAGMAS for a, x, _y, _d in seen):
+        c.close()
+        _CLASSIFIER.clear()
     _CLASSIFIED[sql] = frozenset(tags)
     return tags
 
@@ -1501,6 +1523,8 @@ def _gate(source: str, others: dict | None = None) -> list:
             tags = _sqlite_classify(a0.value)
             if UNRESOLVED in tags:
                 bad.append(f"{at(n)}: a statement SQLite did not prepare ({where}): {' '.join(a0.value.split())[:70]}")
+            if "schema-route" in tags:
+                bad.append(f"{at(n)}: a route around the store's schema ({where}): {' '.join(a0.value.split())[:70]}")
             if tags & {"edges-insert", "edges-json-update"}:
                 bad.append(f"{at(n)}: an edges json write executed directly, not through `{METHOD}` ({where}): "
                            f"{' '.join(a0.value.split())[:70]}")
@@ -1648,6 +1672,8 @@ def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, s
             tags = _sqlite_classify(arg.value)
             if UNRESOLVED in tags:
                 bad.append(f"{at(call)}: a statement SQLite did not prepare ({where}): {' '.join(arg.value.split())[:70]}")
+            if "schema-route" in tags:
+                bad.append(f"{at(call)}: a route around the store's schema ({where}): {' '.join(arg.value.split())[:70]}")
             if tags & {"edges-insert", "edges-json-update"}:
                 bad.append(f"{at(call)}: an edges json write outside the write method ({where}): "
                            f"{' '.join(arg.value.split())[:70]}")
@@ -1993,6 +2019,22 @@ R5_MUTANTS.update({
     "(S2-02) a class attribute a binding reads, stored at module level": (
         None, '\nSqliteStore._OP_COLS = ("json",)\n', "`_OP_COLS`, a name a listed SQL binding reads"),
 })
+_SHADOW = {
+    "CREATE TEMP TABLE edges": "CREATE TEMP TABLE IF NOT EXISTS edges AS SELECT id, json FROM main.edges",
+    "CREATE TEMPORARY TABLE edges": "CREATE TEMPORARY TABLE edges(id, json)",
+    "CREATE TABLE temp.edges": "CREATE TABLE temp.edges(id, json)",
+    "a TEMP table shadowing the journal": "CREATE TEMP TABLE edge_event(user_id, seq)",
+    "a TEMP virtual table": "CREATE VIRTUAL TABLE temp.edges USING fts5(json)",
+    "ATTACH": "ATTACH DATABASE ':memory:' AS side",
+    "writable_schema": "PRAGMA writable_schema=ON",
+    "a pragma the pin does not use": "PRAGMA trusted_schema=ON",
+}
+for _k, _sql in _SHADOW.items():
+    R5_MUTANTS[f"(R-01) {_k}"] = (_RECOMPUTE, _RECOMPUTE + f'\n        self._conn.execute("{_sql}")',
+                                  "a route around the store's schema")
+R5_MUTANTS["(R-01) a direct write to the schema table"] = (
+    _RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("UPDATE sqlite_schema SET sql=sql WHERE name=\'edges\'")',
+    "a statement SQLite did not prepare")
 # research's stage 2 (S2-01): plants in OTHER src modules, read through the package rule. (module, old, new, reason)
 _NS = ('    serialized (the PK is a backstop only, §4a)."""\n    return 1 + conn.execute(\n'
        '        "SELECT COALESCE(MAX(seq), 0) FROM edge_event WHERE user_id=?",')
@@ -2061,6 +2103,9 @@ R5_SRC_MUTANTS = {
         "veracium/_planted.py", None, 'from veracium.store.sqlite import SqliteStore\nSqliteStore._OP_COLS = ()\n',
         "`_OP_COLS`, a name a listed SQL binding reads"),
 }
+for _k, _sql in _SHADOW.items():
+    R5_SRC_MUTANTS[f"(R-01) {_k} in next_seq"] = (_EE, _NS, _in_next_seq(f'    conn.execute("{_sql}")'),
+                                                  "a route around the store's schema")
 R5_SRC_CONTROLS = {
     "a new literal read in next_txn": (
         _EE, '    transaction (V-TXN-ALLOC) — two connections cannot read the same maximum."""\n',
@@ -2155,6 +2200,62 @@ def test_the_tripwire_holds_a_write_to_the_frame_that_ran_it(tmp_path, monkeypat
         s.add_edge(_edge("f", S.Volatility.SLOW, 0.8))
     assert len(_edges_write_tripwire) == 1 and s.edges(U, active_only=False) == []
     _edges_write_tripwire.clear()
+
+
+def test_the_schema_route_reading_of_honest_and_shadow_statements():
+    """R-01's tag, by SQLite's reading: an honest CREATE (which itself writes sqlite_master), a read of main and a pin
+    PRAGMA are not routes; ALTER outside main reports its database in a1, not db, and is one. Every literal SQL argument
+    in src/ reads clean (the gate's honest pass, above)."""
+    for ok_sql in ("CREATE TABLE side(x)", "SELECT id FROM main.edges", "PRAGMA user_version"):
+        assert "schema-route" not in _sqlite_classify(ok_sql), ok_sql
+    for sql in _SHADOW.values():
+        assert "schema-route" in _sqlite_classify(sql), sql
+    assert _schema_route(sqlite3.SQLITE_ALTER_TABLE, "temp", "x", None)
+    assert not _schema_route(sqlite3.SQLITE_ALTER_TABLE, "main", "x", None)
+
+
+def test_a_pragma_read_at_prepare_does_not_change_the_next_reading():
+    """A flag PRAGMA takes effect at prepare, though nothing runs. Classifying one must not change how a later
+    statement reads, so this holds in either order: unlike the rest of the classifier's inputs, each statement here is
+    read fresh, and a direct schema-table write stays unreadable after writable_schema was classified. The scratch
+    connection keeps no flag."""
+    direct = "UPDATE sqlite_schema SET sql=sql WHERE name='e'"
+    for sql in (direct, "PRAGMA writable_schema=ON", "PRAGMA writable_schema=1"):
+        _CLASSIFIED.pop(sql, None)
+    assert UNRESOLVED in _sqlite_classify(direct)
+    _CLASSIFIED.pop(direct)
+    assert "schema-route" in _sqlite_classify("PRAGMA writable_schema=ON")
+    assert UNRESOLVED in _sqlite_classify(direct)
+    assert _classifier_conn().execute("PRAGMA writable_schema").fetchone() == (0,)
+    assert "schema-route" in _sqlite_classify("PRAGMA WRITABLE_SCHEMA=1") and "schema-route" not in _sqlite_classify("PRAGMA USER_VERSION")
+
+
+def test_the_tripwire_denies_a_table_shadowing_the_store(tmp_path, _edges_write_tripwire):
+    """R-01 at run time: the shadow was invisible to the authorizer and to the teardown invariant, which opens the file
+    while a TEMP table is the connection's own; it read 0.9 over a stored 0.8. Now the CREATE is denied, and the store
+    reads what it holds."""
+    s = SqliteStore(str(tmp_path / "shadow.db"))
+    s.add_edge(_edge("h", S.Volatility.SLOW, 0.8))
+    with pytest.raises(sqlite3.DatabaseError):
+        s._conn.execute("CREATE TEMP TABLE IF NOT EXISTS edges AS SELECT id, user_id, subject, relation, object, active, "
+                        "quarantined, replace(json, '0.8', '0.9') AS json FROM main.edges")
+    assert len(_edges_write_tripwire) >= 1 and _row(s, "h").provenance.confidence == 0.8
+    _edges_write_tripwire.clear()
+
+
+def test_the_census_n4f_depends_on_holds_over_src():
+    """Research's recheck: N4f leaves a NON-literal getattr, vars(), eval, exec and the dunder routes to 0031's
+    connect_census, so that dependence is asserted here too, not only in 0031's own cell: no module of src/ carries a
+    refused form, and a planted one is refused."""
+    spec = importlib.util.spec_from_file_location("connection_census_48", ROOT / "specs/evidence/0031/connection_census.py")
+    census = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(census)
+    refused = [(str(p), k) for p in sorted(SRC.rglob("*.py")) for k in census.connect_census(p.read_text(), str(p.relative_to(SRC)))
+               if "[REFUSED" in k]
+    assert refused == [], refused
+    for plant in ("def f(c, n):\n    return getattr(c, n)\n", "def f(c):\n    return vars(type(c))\n",
+                  "def f(c):\n    return c.__getattribute__('execute')\n", "eval('1')\n"):
+        assert any("[REFUSED" in k for k in census.connect_census(plant, "x.py")), plant
 
 
 def test_the_round_5_mutants_leave_the_write_method_unchanged():
@@ -2652,7 +2753,7 @@ def _edges_write_tripwire(monkeypatch, request):
         def auth(action, a1, a2, db, trigger):
             edges_write = ((action == sqlite3.SQLITE_INSERT and a1 == "edges")
                            or (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json"))
-            if (action in _TRIGGER_OR_VIEW or (trigger is not None and edges_write)
+            if (action in _TRIGGER_OR_VIEW or _schema_route(action, a1, a2, db) or (trigger is not None and edges_write)
                     or (action in (sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_DROP_TABLE) and "edges" in (a1, a2))
                     or (trigger is None and _outside_the_write_method(action, a1, a2))
                     or (trigger is None and _journal_forged(action, a1))):

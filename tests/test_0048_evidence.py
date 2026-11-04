@@ -485,11 +485,11 @@ def test_contract_harness_0048_counts_only_a_refusal_as_a_kill(tmp_path):
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr
     mutants = [ln.split(" | ") for ln in r.stdout.splitlines() if ln.startswith("MUTANT ")]
     assert {(m[1], m[2]) for m in mutants} == want, {(m[1], m[2]) for m in mutants} ^ want
-    n = len(want) + 2 + 3 + 17 + 1 + 6 + 28  # per-row instances beyond one: R3-01's helper bodies x3 (+2); the per-writer
+    n = len(want) + 2 + 3 + 17 + 1 + 6 + 35  # per-row instances beyond one: R3-01's helper bodies x3 (+2); the per-writer
     # bypass row x4 (+3); the unresolved-connection-form row x18 (+17: R2-01's nine, round 5's cursor routes,
     # create_function, set_authorizer, and round 5's five: blobopen, attrgetter, attrgetter under another name,
     # methodcaller, a connection read through a parameter); the helper-or-journal row x2 (+1); R3-02's reviewer forms x7 (+6); the (v4.2)
-    # write method's own forms x29 (+28: round 5's six R4-01 forms among them)
+    # write method's own forms x36 (+35: round 5's six R4-01 forms among them)
     assert len(mutants) == n and all(m[0] == "MUTANT KILLED" for m in mutants), [m[:3] for m in mutants]
     tally = re.findall(r"^TALLY: mutants (\d+)/(\d+) killed; controls (\d+)/(\d+) pass$", r.stdout, re.M)
     assert tally and tally[0][0] == tally[0][1] == str(n) and tally[0][2] == tally[0][3] and int(tally[0][3]) > 0, tally
