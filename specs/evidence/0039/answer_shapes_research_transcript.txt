@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 8c1f177d7920b8ea6666c38674a3f73d28ad48e0
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 0c7ad4aa048ba1afe803efc9dfcc6653610ca0bc
+# RE-PINNED 2026-11-04 0048 round 5 (0c7ad4aa: config.py's bounded `_shown` for R4-02, store/sqlite.py's `_JSON_LAYOUT` and the write method's layout check for R4-01 (a)) landed; 8c71f85d and f955ac04 on top move tests/ and evidence only: bodies byte-identical; the pin moves to 0c7ad4a (from 8c1f177).
 # RE-PINNED 2026-11-03 0048 round 4 (1860fec: config.py R3-03, store/sqlite.py R3-01/R3-02 (a')) landed; the campaign commits 8c1f177 on top: bodies byte-identical; the pin moves to 8c1f177 (from faa35d4).
 # RE-PINNED 2026-11-02 the 0.30.0 batch (19a9558 0048 §4 A–D: config.py, lifecycle.py, store/base.py, store/sqlite.py, combining.py; 9e6c134 0007 v24.1's doctor rows and the interim below-head remedy: doctor.py, store/schema_version.py) is in faa35d4db21eefd8a2e768071824959cb53401b2: bodies byte-identical; the pin moves to it
 # RE-PINNED 2026-11-02 specs/0022 §4g's host API (src/veracium/__init__.py: Memory.revoke_source, unrevoke_source, source_revocations; store/revocation.py: revocation_history) landed in 91219d077490a8285236539c07e24b4c4a9521e5: bodies byte-identical; the pin moves to it
