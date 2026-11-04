@@ -82,6 +82,9 @@ same obligations "where relevant". Research's stage 1 found all four relevant he
       reads, and the parameters its expression reads (each reviewed).
 Four connection forms and six write-method forms are new mutant instances, refused by the static gate's own reason
 with the write method unchanged; two new controls pass (a savepoint pair; a docstring edit outside any listed site).
+Harness r6 (2026-11-04, research's read of dev's package-wide fix for S2-01) adds the accessor constructors, whose
+attribute is a string (`attrgetter`, `methodcaller`, `getattr_static`, by name, attribute and import), and five more
+connection forms; `blobopen` and a connection read through a parameter were already refused, and are now mutants.
 
 §6 MUTANT ROWS OUTSIDE THIS MODEL (the complement, stated): the two N4c rows,
   "a copy site writing `confidence` removed from the declared table" and
@@ -90,9 +93,9 @@ They are held by the census and the tripwire (specs/evidence/0048/census_0048.py
 tests/test_0048_evidence.py) over the tree, not over a model. Every other §6 mutant row is run here, a row that names
 several forms once per form: R3-01's three helper bodies (3); "**for each of the declared edge writers:**" once per
 model edge writer, add_edge, confirm, transition and redact (4); "**for each connection form the gate does not
-resolve:**" (13); "a writer calls the helper, or the journal writer, itself" (2); R3-02's reviewer forms (7); the
+resolve:**" (18); "a writer calls the helper, or the journal writer, itself" (2); R3-02's reviewer forms (7); the
 (v4.2) write method's own forms (29: the trigger and round 4's six R4-01 forms among them). So the MUTANT lines
-number the rows run plus 2 + 3 + 12 + 1 + 6 + 28 = 52.
+number the rows run plus 2 + 3 + 17 + 1 + 6 + 28 = 57.
 
 OUTPUT GRAMMAR (dev's test asserts on it; do not reword without telling dev):
   CONTROL <PASS|FAIL> | `<cell>`[ on a harmless variant: <variant>][ | <failing cases>]
@@ -699,6 +702,9 @@ NONLITERAL = {
 MARK_DOMAIN = ("redacted",)
 CONN_CALLS = ("execute", "executescript")         # the only connection methods the gate resolves
 DYNAMIC = ("getattr", "setattr", "delattr", "vars", "eval", "exec", "compile", "__import__", "globals", "locals")
+#: the accessor constructors: an attribute reached by a STRING, so no attribute node names it (research's read of dev's
+#: package-wide fix for S2-01, 2026-11-04: `operator.attrgetter("conn.execute")(self)` passed every rule of harness r5)
+ACCESSORS = ("attrgetter", "methodcaller", "getattr_static")
 
 
 def _sql(node):
@@ -784,6 +790,10 @@ def _unresolved(tree):
             p = parent.get(node)
             if not (isinstance(p, ast.Call) and p.func is node):
                 bad.append(f"line {line}: `.{node.attr}` held, passed or returned rather than called directly")
+        if (isinstance(node, ast.Name) and node.id in ACCESSORS) or (isinstance(node, ast.Attribute) and node.attr in ACCESSORS) \
+                or (isinstance(node, ast.alias) and node.name.rsplit(".", 1)[-1] in ACCESSORS):
+            bad.append(f"line {line}: an accessor constructor (`{getattr(node, 'id', None) or getattr(node, 'attr', None) or node.name}`), "
+                       f"an attribute reached by a string")
         if cls is not None and cls.name == "ModelConfig":
             continue
         if isinstance(node, ast.Name) and node.id in DYNAMIC:
@@ -1632,7 +1642,19 @@ for inst, need, new in (
         ("create_function on the connection", "does not resolve",
          f"{_I}self.conn.create_function('rj', 1, str)\n" + ADD_WRITE),
         ("set_authorizer on the connection (the tripwire removed)", "does not resolve",
-         f"{_I}self.conn.set_authorizer(None)\n" + ADD_WRITE)):
+         f"{_I}self.conn.set_authorizer(None)\n" + ADD_WRITE),
+        # research's read of dev's package-wide fix for S2-01: routes with no execute attribute node, and a column written
+        # with no SQL statement at all (SQLite's authorizer receives no callback for a blob write)
+        ("operator.attrgetter('conn.execute')(self) (SQL by join)", "an accessor constructor",
+         f"{_I}import operator\n{_I}operator.attrgetter('conn.execute')(self)({_JOIN}, {_P})\n"),
+        ("attrgetter imported under another name (SQL by join)", "an accessor constructor",
+         f"{_I}from operator import attrgetter as ag\n{_I}ag('conn.execute')(self)({_JOIN}, {_P})\n"),
+        ("operator.methodcaller('execute', ...) over an attrgetter of the connection", "an accessor constructor",
+         f"{_I}import operator\n{_I}operator.methodcaller('execute', {_JOIN}, {_P})(operator.attrgetter('conn')(self))\n"),
+        ("blobopen on the connection (a column written with no SQL statement)", "does not resolve",
+         ADD_WRITE + f"{_I}self.conn.blobopen('edges', 'json', 1).close()\n"),
+        ("the store's connection read through a parameter, not `self`", "something other than `self`",
+         ADD_WRITE + f"{_I}(lambda store: store.conn)(self).execute({_JOIN}, {_P})\n")):
     MUTANTS.append((FORMS, GATE, inst, need, [(ADD_WRITE, new)]))
 ITSELF = "a writer calls the helper, or the journal writer, itself"
 MUTANTS += [

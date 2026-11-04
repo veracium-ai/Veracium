@@ -705,6 +705,9 @@ NONLITERAL = {
 }
 # the one dynamic-table INSERT among them reaches only these tables (the domain is frozen with the entry)
 ACT_TABLES = {"confirmations", "replies"}
+# the migration ladder (0013's audited path): the same rules, except that a value fed by a parameter is listed for its
+# reason and not held to the SELECT/PRAGMA head rule — its statements are the ladder's own tables of DDL and steps
+MIGRATION_MODULES = {"veracium/store/migration.py", "veracium/store/schema_version.py"}
 # round 5 (R4-01 (d)): each entry's BINDING — the containing function and the module/class binders of every name its
 # value reads, followed into every function or method it reaches (`_sql_binding`; `_binding_digest`, sha256/16) —
 # regenerated from the tree and re-reviewed when it moves
@@ -751,6 +754,107 @@ NONLITERAL_BINDING = {
     ('SqliteStore.replies_for', '0e50f0c8b250ce20c7dcb393bdcbfc6c910b7099e5eb19b7c5a02ef0c64833d6'): 'c76c555fda255a01',
     ('SqliteStore.transition_consolidation_if_current', '5126e0419cd211f8dc948a7d1276927164e8eab4a076c2c872d1addc70fe9f09'): '1eee398d92ea435c',
 }
+# round 5, research's stage 2 (S2-01): the same rule for every OTHER src module's non-literal SQL argument, keyed
+# ("<module>:<function>", sha256 of the expression) -> (times, its text, its binding). Wherever the connection travels
+# — passed, or read off a passed store — SQL runs at a call, so the check sits at the call, on any receiver.
+SRC_NONLITERAL = {
+    ('veracium/doctor.py:_check_data_migration', '8e17d043b1b6ae8134b00ee61345e868571c8eb8e3d3d66bea3f97d7c92d4541'):
+        (1, "q + (' AND i.user_id=?' if user else '') + ' ORDER BY i.edge_id'", 'dec94e9cf72b4fb8'),
+    ('veracium/doctor.py:_check_data_migration', 'cf6e6f7f0a4468d3d52baba1a1eee4e2633ae33b3d6290b9a728377c0a3a5d34'):
+        (1, "q + (' AND i.user_id=?' if user else '') + ' ORDER BY i.user_id'", 'dec94e9cf72b4fb8'),
+    ('veracium/doctor.py:_check_data_migration', 'f06c89976436a13dfe55e75ea294ce4250614f108663f7864f0d457918086d97'):
+        (1, "q + (' WHERE user_id=?' if user else '')", 'dec94e9cf72b4fb8'),
+    ('veracium/doctor.py:_check_journal', 'bfdca166f562f1f95f4ac1877ac78f637f10b6ec44767e09996ed5fdc24f6df7'):
+        (1, "f'SELECT DISTINCT user_id, edge_id FROM edge_event {where}'", '28b48aa6525f0e22'),
+    ('veracium/doctor.py:_check_refs', '31e30ee2297326561188480017bac2db4a18bd117108e1211bc20d0774312c31'):
+        (1, 'f"SELECT r.id FROM replies r LEFT JOIN replies c ON c.user_id = r.user_id AND c.id = r.tar', '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', '37140b66979feb2e79aac0550b6e37bf99c6f8d62d6fdf5d338016bd4de23b04'):
+        (1, "f'SELECT DISTINCT edge_id, user_id FROM edge_event {where}'", '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', '4257d179728b8b0c3e099820ee15d75cc47e2998a6c7054e90ff6a5a6036f1d5'):
+        (1, "f'SELECT id, user_id, edge_id FROM confirmations {where}'", '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', '79df04d0ef1a255ae68f48ed8b84c2dea0201fac82739ea677fb240a907ded86'):
+        (1, "f'SELECT DISTINCT episode_id, user_id FROM episode_event {where}'", '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', '83b8971e0a2e6b27d567c87e361c6c0562ff426c1adb2710b33333bb907150f2'):
+        (1, "f'SELECT id, user_id, target_kind, target_id, reason, event_ref, source_origin, source_use", '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', '92549afc2b9edb51ecb80fc79841aa6bbb7dacadf65ac9a9652e738c9696cd2e'):
+        (1, "f'SELECT id, user_id, survivor_type, survivor_id, contributor_type, contributor_ref FROM c", '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', 'b7527025020dc60459241af8611d6fb771e2f7c7eaad6ad1106468314fa4085b'):
+        (1, "f'SELECT id, user_id, edge_id FROM replies {where}'", '2c310b21299c1260'),
+    ('veracium/doctor.py:_check_refs', 'ca4b102eebad13600163a82f70f966c3acb11866165e482c93917e3b72f282bd'):
+        (1, "f'SELECT DISTINCT edge_id, user_id FROM edge_embedding {where}'", '2c310b21299c1260'),
+    ('veracium/doctor.py:_live_restoration_origins', '2457f8481d7c284a56809efa46249a5191b2c0859200fc23ae29b609e7f508e5'):
+        (1, '"SELECT user_id, edge_id, origin FROM migration_outcome WHERE outcome=\'restored\' AND undon', '527788fcf853149d'),
+    ('veracium/doctor.py:_load_rows', '7fb37f163f2b7c4e05db81e28c7cebb33226627379e5998dff82000e46827890'):
+        (1, "f'SELECT id, user_id, active, quarantined, json FROM edges {where}'", '9cc67749d8953e08'),
+    ('veracium/doctor.py:_load_rows', 'dce6a89322ea2f08410b10bde9a08c6978544c2e4a5f2fc1dd815c1c25c7f036'):
+        (1, "f'SELECT id, user_id, json FROM episodes {where}'", '9cc67749d8953e08'),
+    ('veracium/store/edge_events.py:append_event', '3e25ffaa62d0012a435668ae6fb4c8bfa6b2122a6b3a1a824e1c1b850d45b70f'):
+        (1, 'EVENT_INSERT_SQL', '00f9eeb97905ba10'),
+    ('veracium/store/migration.py:_apply_forward', '1215f2ca4ee774c18f1c4348eb427fe9dfa2bc707aa6d3eaffb18a992a18fda8'):
+        (1, "f'PRAGMA user_version = {SCHEMA_VERSION}'", 'bdfe325e1e6375ce'),
+    ('veracium/store/migration.py:_apply_forward', '2d110200e5595808793e3b6846c7c617b412b1e9c318c5f07fb3ee78ced6497c'):
+        (1, "f'SELECT {_RED_V15_COLS}, state, pending_reason FROM redactions'", '207b39664c8560e8'),
+    ('veracium/store/migration.py:_apply_forward', '36db0a761d117d0b8642c1deb33a0a415cde37727c9d97d42d35d253cfe5ef0a'):
+        (1, 'o.ddl', 'f6d6a716c772695f'),
+    ('veracium/store/migration.py:_apply_forward', '3f01b166ad2f4380f59e89aecde8502431db2a9604f8b46a5017aad3f9c4b070'):
+        (1, "f'SELECT {_CONF_V15_COLS}, {_CONF_ACT_COLS} FROM confirmations'", '01034d9c7d097119'),
+    ('veracium/store/migration.py:_apply_forward', '4a4fe4cc6f7dc95668bab05b8c6fa993bae999d2b47ab277793e1a320354b5de'):
+        (1, "f'SELECT id, user_id, relation, active, json FROM edges WHERE {named}'", '631938ef27fffab5'),
+    ('veracium/store/migration.py:_apply_forward', '52ae70d7758a2043598287bcf7e3c91641da51f67278f73fa05155c369ddc28c'):
+        (1, "f'SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id'", '631938ef27fffab5'),
+    ('veracium/store/migration.py:_apply_forward', '5fd0dd2e27462e8513c5103e98f8f36c436273f2b6d777d11a31300cbe7911fd'):
+        (1, "f'SELECT {_CONF_V15_COLS} FROM confirmations'", '9dcd9692ed07526d'),
+    ('veracium/store/migration.py:_apply_forward', 'b11a754c51fdd2817d36701eed6469279476290cf9e96146ab5f65acfd782496'):
+        (2, "f'SELECT {_REGISTRY_COLS} FROM request_registry'", 'dd8037958dd6597a'),
+    ('veracium/store/migration.py:_apply_forward', 'c0634dd354e5053a7fcf81a408092222722dba6046af6435842e1a58d3f8dff0'):
+        (1, "f'SELECT {_RED_V15_COLS} FROM redactions'", '207b39664c8560e8'),
+    ('veracium/store/migration.py:_apply_forward', 'e52a5027345445c1885bea37133401cc234649645eef1602c89e064958194204'):
+        (5, 'stmt', '357031eff692cb0b'),
+    ('veracium/store/migration.py:_rows', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
+        (1, 'sql', '15c100bc856f50f2'),
+    ('veracium/store/migration.py:unattested_marker_report', '7bfafeef2fbae7cb3167a698387e39cba03e7e5160aa7ff3b3dccdb94a499062'):
+        (1, "f'SELECT id, json FROM {table}'", '94e6c52ec53fa058'),
+    ('veracium/store/revocation.py:redact_revocation_reasons', '9c8a2192ebccb54f1ae616fa397623c61b6828a14b3266616306f6bc8e09a6f8'):
+        (1, 'f"UPDATE source_revocations SET reason=? WHERE user_id=? AND identity_digest=? AND reason<', 'c56a8f10500707bd'),
+    ('veracium/store/schema_version.py:_feature_probes', '1b129df51e10002df77d69dd7c431df1fbe259667748e32c35d6aa0f65bc604e'):
+        (1, 'marker', '3578532e379f2e4d'),
+    ('veracium/store/schema_version.py:_near_miss_objects', '4b4c725a93da55a020217305a0fa4d593fba67b51151d9a97c3d5b1f4067c9f8'):
+        (1, 'ddl', 'af61a1275a5189db'),
+    ('veracium/store/schema_version.py:_repair_drift', '2118418edeb0136dc156a0bd7e2548e49c513c53059609b5d2cd13de6d1a0cc3'):
+        (1, "f'DROP INDEX IF EXISTS {key[1]}'", '7936da4b7265b0f2'),
+    ('veracium/store/schema_version.py:_repair_drift', '2af12ae0eb2811145ee94aa7ec6ad079f10a5f2d988af2cced31550ce41d1a1b'):
+        (1, 'declared[key].ddl', '7936da4b7265b0f2'),
+    ('veracium/store/schema_version.py:create', '36db0a761d117d0b8642c1deb33a0a415cde37727c9d97d42d35d253cfe5ef0a'):
+        (1, 'o.ddl', '97ef93adf55329e6'),
+    ('veracium/store/schema_version.py:manifest', 'e570e7c925fadb4580eb2e4ebaf2fe8b625768b9db63f9944145c77fef3f90b8'):
+        (1, '_OBJECTS', '605a66d54de65139'),
+    ('veracium/store/schema_version.py:open_versioned', '1215f2ca4ee774c18f1c4348eb427fe9dfa2bc707aa6d3eaffb18a992a18fda8'):
+        (2, "f'PRAGMA user_version = {SCHEMA_VERSION}'", 'e834319b11c214cc'),
+    ('veracium/store/schema_version.py:verify_reproduction', 'f1faaebed47e985137dd526dd1df36ee06707c126d20e91259e9583d40926338'):
+        (1, 'd', '9b13912394de2129'),
+}
+# round 5 (W1): the names of sqlite3.Connection and sqlite3.Cursor, as 3.14 has them; the gate takes this UNION dir() so
+# a name an older runtime lacks (3.10 has no blobopen) still refuses, and a name a newer one adds refuses unreviewed.
+# ADMITTED is what src/ may touch: reads of a result, transaction control, and the exception classes. Everything else —
+# blobopen above all, which writes a column with NO statement, so no authorizer callback sees it — refuses on any
+# receiver in any src module.
+DB_NAMES = {"DataError", "DatabaseError", "Error", "IntegrityError", "InterfaceError", "InternalError",
+            "NotSupportedError", "OperationalError", "ProgrammingError", "Warning", "arraysize", "autocommit", "backup",
+            "blobopen", "close", "commit", "connection", "create_aggregate", "create_collation", "create_function",
+            "create_window_function", "cursor", "description", "deserialize", "enable_load_extension", "execute",
+            "executemany", "executescript", "fetchall", "fetchmany", "fetchone", "getconfig", "getlimit",
+            "in_transaction", "interrupt", "isolation_level", "iterdump", "lastrowid", "load_extension", "rollback",
+            "row_factory", "rowcount", "serialize", "set_authorizer", "set_progress_handler", "set_trace_callback",
+            "setconfig", "setinputsizes", "setlimit", "setoutputsize", "text_factory", "total_changes"}
+DB_ADMITTED = {"DataError", "DatabaseError", "Error", "IntegrityError", "InterfaceError", "InternalError",
+               "NotSupportedError", "OperationalError", "ProgrammingError", "Warning", "close", "commit",
+               "fetchall", "fetchmany", "fetchone", "in_transaction", "isolation_level", "lastrowid", "rollback",
+               "row_factory", "rowcount", "description", "execute", "executemany", "executescript"}
+# the one same-named non-database read in src/, by module and receiver
+DB_NAME_EXCEPTIONS = {("veracium/cli.py", "args", "backup")}
+# round 5 (W2): callable accessors reach an attribute with no attribute node. src/ uses none, so all refuse, by
+# attribute, by name and by import
+ACCESSORS = {"attrgetter", "methodcaller", "getattr_static"}
 # round 5 (R4-01 (a)): the frozen statement binding _JSON_LAYOUT in sqlite.py
 FROZEN_LAYOUT = "1656bcdef030866f5bec4be139413ac460b0b77bcbba747356d3f25ecd1e8472"
 # round 5 (R4-01 (b), research's B2): the connection's closed non-SQL uses — exactly the pin's. `create_function`,
@@ -1029,7 +1133,7 @@ def _sql_binding(tree, parent, fnode, expr, idx=None):
     a name with no module binder is a builtin and records []. RECURSIVE: when a binder is a function or method (the
     value calls it), the module names and self attributes ITS body reads are followed the same way, to closure — a
     changed helper two calls down moves the binding like a changed constant."""
-    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore")
+    cls = next((n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore"), None)
     idx = idx or _Binders(tree)
     params, mod, attrs = set(), {}, {}
 
@@ -1065,6 +1169,8 @@ def _sql_binding(tree, parent, fnode, expr, idx=None):
             continue
         if kind == "mod":
             stmts = [_stmt_of(b, parent, tree) for b in idx.of(tree, name) if _scope_of(b, parent) is None]
+        elif cls is None:
+            stmts = []
         else:
             stmts = [_stmt_of(b, parent, cls) for b in idx.of(cls, name) if _scope_of(b, parent) is cls and b is not cls]
             cls_ids = idx.ids(cls)
@@ -1087,17 +1193,21 @@ def _binding_digest(tree, parent, fnode, expr, binding=None, idx=None) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
-def _leading_constant(expr):
-    """The SQL text an expression begins with, when a constant fixes it (else None)."""
+def _leading_constant(expr, local=None):
+    """The SQL text an expression begins with, when a constant fixes it (else None). `local(name)` gives a local name's
+    assigned values: a name counts when EVERY binder of it opens with the same statement kind."""
+    if isinstance(expr, ast.Name) and local is not None:
+        heads = [_leading_constant(v) for v in local(expr.id)]
+        return heads[0] if heads and all(h and _PARAM_HEAD.match(h) for h in heads) else None
     if isinstance(expr, ast.Constant) and isinstance(expr.value, str):
         return expr.value
     if isinstance(expr, ast.JoinedStr) and expr.values and isinstance(expr.values[0], ast.Constant):
         return expr.values[0].value
     if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
-        return _leading_constant(expr.left)
+        return _leading_constant(expr.left, local)
     if (isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute) and expr.func.attr == "format"
             and not expr.keywords):
-        return _leading_constant(expr.func.value)
+        return _leading_constant(expr.func.value, local)
     return None
 
 
@@ -1423,6 +1533,191 @@ def _gate(source: str, others: dict | None = None) -> list:
     for key, (count, _text) in NONLITERAL.items():
         if seen_nonlit.get(key, 0) != count:
             bad.append(f"non-literal site {key} occurs {seen_nonlit.get(key, 0)} time(s), the reviewed list says {count}")
+    bad += _package_problems(source, tree, parent, idx, others)
+    return bad
+
+
+_PARSED = {}
+
+
+def _parsed(text: str):
+    """(tree, parent map, qualnames, binder index) of one module's text. Read-only by every caller, so cached by text."""
+    got = _PARSED.get(text)
+    if got is None:
+        tree = ast.parse(text)
+        got = _PARSED[text] = (tree, {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}, _qualnames(tree),
+                               _Binders(tree))
+    return got
+
+
+def _exec_callee(call, names):
+    """The derived execute-family name a call reaches, or None. A derived name is a module-level function, so
+    `self.<name>(…)` is some class's own method (scope_read's `_rows`), not it; any other receiver counts."""
+    f = call.func
+    if isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name) and f.value.id == "self":
+        return None
+    name = getattr(f, "id", None) or getattr(f, "attr", None)
+    return name if name in names else None
+
+
+def _sql_argument_of(call, positions):
+    """The SQL-carrying argument of a call of a derived execute-family name, or None (a keyword form reads the same)."""
+    pos, name = positions
+    if len(call.args) > pos:
+        return call.args[pos]
+    return next((k.value for k in call.keywords if k.arg == name), None)
+
+
+def _sites_of(rel, tree, parent, q):
+    """Every direct execute-family call in a module: (call, its SQL argument, "<module>:<function>")."""
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in SQL_CALLS and n.args:
+            yield n, n.args[0], f"{rel}:{q.get(id(n), '<module>')}"
+
+
+def _bare_parameter_sites(mods):
+    """W3: {function name: (position, parameter)} for every function whose SQL argument IS one of its parameters — that
+    function is an execute-family name by another spelling, so every call of it meets the same rules. Derived, to
+    closure: a call passing its own caller's parameter through makes the caller one too."""
+    names = {}
+    changed = True
+    while changed:
+        changed = False
+        for rel, _text, tree, parent, q, _idx in mods:
+            sites = list(_sites_of(rel, tree, parent, q))
+            for n in ast.walk(tree):
+                if isinstance(n, ast.Call):
+                    callee = _exec_callee(n, names)
+                    if callee and _sql_argument_of(n, names[callee]) is not None:
+                        sites.append((n, _sql_argument_of(n, names[callee]), None))
+            for call, arg, _where in sites:
+                f = _scope_of(call, parent)
+                if not (isinstance(arg, ast.Name) and isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))):
+                    continue
+                params = [a.arg for a in f.args.posonlyargs + f.args.args]
+                if arg.id in params and f.name != METHOD and f.name not in names:
+                    names[f.name] = (params.index(arg.id), arg.id)
+                    changed = True
+    return names
+
+
+_MODULE_RESULTS = {}
+
+
+def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, sq):
+    """One module's share of `_package_problems`: (problems, {site key: times seen}). Pure in its arguments, so a matrix
+    of mutants of one module re-reads only that module."""
+    bad, seen = [], {}
+    at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
+    for n in ast.walk(t):
+        if isinstance(n, ast.Attribute):
+            recv = n.value.id if isinstance(n.value, ast.Name) else None
+            if n.attr in denied and (rel, recv, n.attr) not in DB_NAME_EXCEPTIONS:
+                bad.append(f"{at(n)}: `.{n.attr}` of the database API, which src/ does not use")
+            if n.attr in ACCESSORS:
+                bad.append(f"{at(n)}: `.{n.attr}`, an accessor that reaches an attribute with no attribute node")
+            if n.attr in SQL_CALLS and not (isinstance(par.get(n), ast.Call) and par[n].func is n):
+                bad.append(f"{at(n)}: `.{n.attr}` held, passed or returned, not called")
+        if isinstance(n, ast.Name) and n.id in ACCESSORS:
+            bad.append(f"{at(n)}: `{n.id}`, an accessor that reaches an attribute with no attribute node")
+        if isinstance(n, ast.alias) and n.name.split(".")[-1] in ACCESSORS:
+            bad.append(f"{at(n)}: `{n.name}` imported, an accessor that reaches an attribute with no attribute node")
+        # W3: a derived name stays spelled as itself, or a call of it would read as some other function's
+        if isinstance(n, ast.alias) and n.name in exec_names and n.asname not in (None, n.name):
+            bad.append(f"{at(n)}: `{n.name}` runs its SQL argument: imported under another name, `{n.asname}`")
+        if (isinstance(n, ast.Call) and getattr(n.func, "id", None) == "getattr" and len(n.args) >= 2
+                and isinstance(n.args[1], ast.Constant) and n.args[1].value in guarded_literals):
+            bad.append(f"{at(n)}: getattr of `{n.args[1].value}`")
+        # W3: a derived execute-family name is called, never held
+        if (isinstance(n, (ast.Name, ast.Attribute)) and (getattr(n, "id", None) or getattr(n, "attr", None)) in exec_names
+                and isinstance(n.ctx, ast.Load) and not (isinstance(par.get(n), ast.Call) and par[n].func is n)
+                and not (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id == "self")):
+            bad.append(f"{at(n)}: `{getattr(n, 'id', None) or n.attr}` runs its SQL argument: held, not called")
+    sites = [] if rel == sq else list(_sites_of(rel, t, par, q))
+    for n in ast.walk(t):
+        if isinstance(n, ast.Call):
+            callee = _exec_callee(n, exec_names)
+            if callee:
+                arg = _sql_argument_of(n, exec_names[callee])
+                if arg is None:
+                    bad.append(f"{at(n)}: `{callee}` called with no SQL argument the gate can read")
+                else:
+                    sites.append((n, arg, f"{rel}:{q.get(id(n), '<module>')}"))
+    for call, arg, where in sites:
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            tags = _sqlite_classify(arg.value)
+            if UNRESOLVED in tags:
+                bad.append(f"{at(call)}: a statement SQLite did not prepare ({where}): {' '.join(arg.value.split())[:70]}")
+            if tags & {"edges-insert", "edges-json-update"}:
+                bad.append(f"{at(call)}: an edges json write outside the write method ({where}): "
+                           f"{' '.join(arg.value.split())[:70]}")
+            continue
+        key = (where, _digest(arg))
+        seen[key] = seen.get(key, 0) + 1
+        f = _scope_of(call, par)
+        if key not in SRC_NONLITERAL:
+            bad.append(f"{at(call)}: a non-literal SQL site not in the reviewed list ({where}): {ast.unparse(arg)[:80]}")
+            continue
+        binding = _sql_binding(t, par, f, arg, ix)
+        got = _binding_digest(t, par, f, arg, binding, ix)
+        if got != SRC_NONLITERAL[key][2]:
+            bad.append(f"{at(call)}: what determines the non-literal SQL at {where} changed (binding {got}) — "
+                       f"re-review it ({ast.unparse(arg)[:60]})")
+        if binding[0] and rel not in MIGRATION_MODULES and not isinstance(arg, ast.Name):
+            def values(name):
+                out = []
+                for b in ix.of(f, name):
+                    v = _value_of_binder(b, par)
+                    out.append(v if v is not None else ast.Constant(value=""))
+                return out
+            if not _PARAM_HEAD.match(_leading_constant(arg, values) or ""):
+                bad.append(f"{at(call)}: a parameter ({', '.join(binding[0])}) reaches SQL whose leading constant "
+                           f"does not fix a SELECT or a named PRAGMA ({where}): {ast.unparse(arg)[:60]}")
+    return bad, seen
+
+
+def _package_problems(source, tree, parent, idx, others) -> list:
+    """Round 5, research's stage 2 (S2-01, W1–W3, S2-02): N4f's rules over ALL of src/, on any receiver. The connection
+    leaves sqlite.py in more ways than the inventory counts (a passed `self` is read as `store._conn`), so the check
+    sits where SQL runs and where the connection can be used without SQL. A NON-LITERAL `getattr` is 0031's census's to
+    refuse (connect_census); that dependence is stated, not re-implemented here."""
+    bad = []
+    sq = "veracium/store/sqlite.py"
+    mods = [(sq, source, tree, parent, _qualnames(tree), idx)] + [
+        (rel, text, *_parsed(text)) for rel, text in sorted(others.items())]
+    denied = (DB_NAMES | {n for c in (sqlite3.Connection, sqlite3.Cursor) for n in dir(c) if not n.startswith("__")})
+    denied -= DB_ADMITTED
+    exec_names = _bare_parameter_sites(mods)
+    guarded_literals = denied | set(SQL_CALLS) | {"_conn"} | ACCESSORS
+    bound_names, seen = set(), {}
+    for rel, text, tree_m, par_m, q_m, ix_m in mods:
+        key = (rel, text, tuple(sorted(exec_names.items())), tuple(sorted(denied)))
+        if key not in _MODULE_RESULTS:
+            _MODULE_RESULTS[key] = _module_problems(rel, tree_m, par_m, q_m, ix_m, denied, exec_names, guarded_literals, sq)
+        got_bad, got_seen = _MODULE_RESULTS[key]
+        bad += got_bad
+        for k, v in got_seen.items():
+            seen[k] = seen.get(k, 0) + v
+    for key, (count, _text, _b) in SRC_NONLITERAL.items():
+        if seen.get(key, 0) != count:
+            bad.append(f"non-literal site {key} occurs {seen.get(key, 0)} time(s), the reviewed list says {count}")
+    # S2-02: no attribute store reaches a value a listed binding reads, in any module. `self.X` inside the store class
+    # is the binding's own subject and is held by it
+    t0 = mods[0][2]
+    cls = next(n for n in t0.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore")
+    for n in ast.walk(t0):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in SQL_CALLS and n.args:
+            a0 = n.args[0]
+            if not (isinstance(a0, ast.Constant) and isinstance(a0.value, str)):
+                _p, m_names, a_names = _sql_binding(t0, parent, _scope_of(n, parent), a0, idx)
+                bound_names |= {k for k, v in m_names.items() if v} | {k for k, v in a_names.items() if v}
+    cls_ids = idx.ids(cls)
+    for rel, _text, t, par, q, ix in mods:
+        for n in ast.walk(t):
+            if isinstance(n, ast.Attribute) and isinstance(n.ctx, (ast.Store, ast.Del)) and n.attr in bound_names:
+                own = rel == sq and id(n) in cls_ids and isinstance(n.value, ast.Name) and n.value.id == "self"
+                if not own:
+                    bad.append(f"{rel} L{n.lineno}: `{n.attr}`, a name a listed SQL binding reads, stored as an attribute")
     return bad
 
 
@@ -1472,7 +1767,10 @@ def test_the_inventorys_reasons_hold():
     for p in sorted(SRC.rglob("*.py")):
         if p.resolve() == SQLITE.resolve():
             continue
-        assert not re.search(r"(?i)\b(insert(\s+or\s+replace)?\s+into|update)\s+(main\.)?edges\b", p.read_text()), p
+        writes = [n.value for n in ast.walk(ast.parse(p.read_text())) if isinstance(n, ast.Constant)
+                  and isinstance(n.value, str) and "edges" in n.value.lower()
+                  and _sqlite_classify(n.value) & {"edges-insert", "edges-json-update"}]
+        assert writes == [], (p, writes)
 
 
 # The mutants: each an edit of sqlite.py's text (anchors asserted to occur exactly once), refused by the gate. The
@@ -1675,6 +1973,101 @@ R5_MUTANTS = {
         '            args = list(args)\n            rows = self._conn.execute(q, args).fetchall()\n',
         "what determines the non-literal SQL at SqliteStore.edges"),
 }
+R5_MUTANTS.update({
+    # W1, W2 and W3 in sqlite.py itself (research's stage 2)
+    "(W1) blobopen writes the column with no statement": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.blobopen("edges", "json", 1)', "`.blobopen` of the database API"),
+    "(W2) attrgetter reaches execute with no attribute node": (
+        _RECOMPUTE, _RECOMPUTE + '\n        import operator\n        operator.attrgetter("_conn.execute")(self)("UP" + "DATE edges '
+                    'SET json=? WHERE id=?", ' + _LIFT + ')', "`.attrgetter`, an accessor"),
+    "(W2) methodcaller reaches execute with no attribute node": (
+        _RECOMPUTE, _RECOMPUTE + '\n        import operator\n        operator.methodcaller("execute", "SELECT 1")(self._conn)',
+        "`.methodcaller`, an accessor"),
+    "(W2) `from operator import attrgetter`": (
+        _RECOMPUTE, _RECOMPUTE + '\n        from operator import attrgetter as ag\n        ag("_conn")(self)',
+        "`attrgetter` imported"),
+    "(W3) the bare-parameter helper from the store": (
+        _RECOMPUTE, _RECOMPUTE + '\n        from .migration import _rows\n        _rows(self._conn, "UP" + "DATE edges SET json=? '
+                    'WHERE id=?", ' + _LIFT + ')', "a non-literal SQL site not in the reviewed list"),
+    # S2-02: a listed binding's value reached by an attribute store
+    "(S2-02) a class attribute a binding reads, stored at module level": (
+        None, '\nSqliteStore._OP_COLS = ("json",)\n', "`_OP_COLS`, a name a listed SQL binding reads"),
+})
+# research's stage 2 (S2-01): plants in OTHER src modules, read through the package rule. (module, old, new, reason)
+_NS = ('    serialized (the PK is a backstop only, §4a)."""\n    return 1 + conn.execute(\n'
+       '        "SELECT COALESCE(MAX(seq), 0) FROM edge_event WHERE user_id=?",')
+_EE = "veracium/store/edge_events.py"
+_SPLIT = ('"".join(("UP", "DA", "TE ed", "ges SE", "T js", "on=rep", "lace(js", "on, \'0.8\', \'1.8\') WH", "ERE us", "er_id=?"))')
+
+
+def _in_next_seq(lines):
+    return _NS.replace('"""\n    return', '"""\n' + lines + '\n    return')
+
+
+_DR = "veracium/doctor.py"
+_DR_AT = "    conn = store._conn                                 # the package's own convention (revocation.project_store)\n"
+_DM = "veracium/store/data_migration.py"
+_DM_AT = '    converting import\'s (0044 §4l, T11a). Returns (restored ids, withheld ids)."""\n    conn = store._conn\n'
+R5_SRC_MUTANTS = {
+    "a direct split-SQL write in next_seq": (_EE, _NS, _in_next_seq(f'    conn.execute({_SPLIT}, (user_id,))'),
+                                             "a non-literal SQL site not in the reviewed list"),
+    "UPDATE edges in next_seq": (_EE, _NS, _in_next_seq('    conn.execute("UPDATE edges SET json=json WHERE user_id=?", (user_id,))'),
+                                 "an edges json write outside the write method"),
+    "UPDATE OR IGNORE edges in next_seq": (_EE, _NS, _in_next_seq('    conn.execute("UPDATE OR IGNORE edges SET json=json WHERE '
+                                                                  'user_id=?", (user_id,))'),
+                                           "an edges json write outside the write method"),
+    'UPDATE "edges" in next_seq': (_EE, _NS, _in_next_seq("    conn.execute('UPDATE \"edges\" SET json=json WHERE user_id=?', (user_id,))"),
+                                   "an edges json write outside the write method"),
+    "REPLACE INTO edges in next_seq": (_EE, _NS, _in_next_seq('    conn.execute("REPLACE INTO edges(id, user_id, subject, relation, '
+                                                              'object, json) SELECT id, user_id, subject, relation, object, json '
+                                                              'FROM edges WHERE user_id=?", (user_id,))'),
+                                       "an edges json write outside the write method"),
+    "execute held in next_seq, SQL by +": (_EE, _NS, _in_next_seq('    run_sql = conn.execute\n    run_sql("UP" + "DATE edges SET '
+                                                                  'json=json WHERE user_id=?", (user_id,))'),
+                                           "`.execute` held, passed or returned"),
+    "execute held in next_seq, SQL by join (research's full escape)": (
+        _EE, _NS, _in_next_seq(f'    run_sql = conn.execute\n    run_sql({_SPLIT}, (user_id,))'), "`.execute` held, passed or returned"),
+    "blobopen in next_seq": (_EE, _NS, _in_next_seq('    conn.blobopen("edges", "json", 1)'), "`.blobopen` of the database API"),
+    "attrgetter in next_seq": (_EE, _NS, _in_next_seq('    import operator\n    operator.attrgetter("execute")(conn)("SELECT 1")'),
+                               "`.attrgetter`, an accessor"),
+    "methodcaller in next_seq": (_EE, _NS, _in_next_seq('    import operator\n    operator.methodcaller("execute", "SELECT 1")(conn)'),
+                                 "`.methodcaller`, an accessor"),
+    "`from operator import attrgetter` in next_seq": (
+        _EE, _NS, _in_next_seq('    from operator import attrgetter\n    attrgetter("execute")(conn)("SELECT 1")'), "`attrgetter` imported"),
+    "migration._rows from next_seq (W3)": (
+        _EE, _NS, _in_next_seq(f'    from . import migration\n    migration._rows(conn, {_SPLIT}, (user_id,))'),
+        "a non-literal SQL site not in the reviewed list"),
+    "the derived name imported under another name (research's recheck)": (
+        _EE, _NS, _in_next_seq(f'    from .migration import _rows as r\n    r(conn, {_SPLIT}, (user_id,))'),
+        "imported under another name"),
+    "the derived name held in a local (research's recheck)": (
+        _EE, _NS, _in_next_seq(f'    from . import migration\n    run = migration._rows\n    run(conn, {_SPLIT}, (user_id,))'),
+        "runs its SQL argument: held, not called"),
+    "the derived name through functools.partial (research's recheck)": (
+        _EE, _NS, _in_next_seq(f'    import functools\n    from .migration import _rows\n    functools.partial(_rows, conn)({_SPLIT})'),
+        "runs its SQL argument: held, not called"),
+    "a wrapper passing its parameter to the derived name (the closure)": (
+        _EE, _NS, _in_next_seq(f'    from .migration import _rows\n\n    def relay(c, text):\n        return _rows(c, text)\n'
+                               f'    relay(conn, {_SPLIT})'), "a non-literal SQL site not in the reviewed list"),
+    "a literal getattr of execute": (_EE, _NS, _in_next_seq('    getattr(conn, "execute")("SELECT 1")'), "getattr of `execute`"),
+    "a split-SQL write in the doctor": (_DR, _DR_AT, _DR_AT + f'    conn.execute({_SPLIT}, ("u",))\n',
+                                        "a non-literal SQL site not in the reviewed list"),
+    "blobopen in the doctor": (_DR, _DR_AT, _DR_AT + '    conn.blobopen("edges", "json", 1)\n', "`.blobopen` of the database API"),
+    "a passed store read as store._conn in convert_rows": (
+        _DM, _DM_AT, _DM_AT + f'    store._conn.execute({_SPLIT}, (user,))\n', "a non-literal SQL site not in the reviewed list"),
+    "a listed binding's constant stored from another module (S2-02)": (
+        "veracium/_planted.py", None, 'import veracium.store.sqlite as s\ns._APPLIED_SQL = "1"\n', "`_APPLIED_SQL`, a name a listed SQL binding reads"),
+    "a store class attribute stored from another module (S2-02)": (
+        "veracium/_planted.py", None, 'from veracium.store.sqlite import SqliteStore\nSqliteStore._OP_COLS = ()\n',
+        "`_OP_COLS`, a name a listed SQL binding reads"),
+}
+R5_SRC_CONTROLS = {
+    "a new literal read in next_txn": (
+        _EE, '    transaction (V-TXN-ALLOC) — two connections cannot read the same maximum."""\n',
+        '    transaction (V-TXN-ALLOC) — two connections cannot read the same maximum."""\n    conn.execute("SELECT 1")\n'),
+    "an unrelated .backup-named read stays the named exception's": (
+        "veracium/_planted.py", None, "def f(args):\n    return args.description\n"),
+}
 # the harmless controls: each edit is one the gate must PASS
 R5_CONTROLS = {
     "a new literal read": (_RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("SELECT 1 FROM edges WHERE id=?", (edge_id,))'),
@@ -1706,6 +2099,62 @@ def test_the_gate_refuses_each_round_5_form_for_its_reason(name):
     old, new, reason = R5_MUTANTS[name]
     bad = _gate(_r5_planted(old, new))
     assert any(reason in b for b in bad), f"{name}: not refused for its reason {reason!r}: {bad}"
+
+
+def _r5_others(rel, old, new):
+    others = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py")) if p.resolve() != SQLITE.resolve()}
+    if old is None:
+        return {**others, rel: new}
+    assert others[rel].count(old) == 1, f"the anchor occurs {others[rel].count(old)} times — re-anchor it: {old[:60]!r}"
+    return {**others, rel: others[rel].replace(old, new)}
+
+
+@pytest.mark.parametrize("name", list(R5_SRC_MUTANTS))
+def test_the_gate_refuses_each_form_outside_the_store_for_its_reason(name):
+    """Research's stage 2 (S2-01): wherever the connection travels, the rule meets it at the call. Each plant goes into
+    an honest OTHER src module, sqlite.py unchanged, and is refused for its own reason. The escape was the full one:
+    a split-SQL write inside inventoried next_seq passed this gate and the runtime authorizer and stored 1.8."""
+    rel, old, new, reason = R5_SRC_MUTANTS[name]
+    bad = _gate(SQLITE.read_text(), _r5_others(rel, old, new))
+    assert any(reason in b for b in bad), f"{name}: not refused for its reason {reason!r}: {bad}"
+
+
+@pytest.mark.parametrize("name", list(R5_SRC_CONTROLS))
+def test_the_gate_passes_each_harmless_edit_outside_the_store(name):
+    assert _gate(SQLITE.read_text(), _r5_others(*R5_SRC_CONTROLS[name])) == []
+
+
+def test_the_database_names_cover_this_runtime_and_the_named_exception_is_needed():
+    """W1: the frozen names are a superset of this runtime's minus nothing it lacks by age; every refused name is
+    absent from src/ but for the one named exception, which is live; and the bare-parameter derivation finds `_rows`
+    alone (W3)."""
+    here = {n for c in (sqlite3.Connection, sqlite3.Cursor) for n in dir(c) if not n.startswith("__")}
+    assert here <= DB_NAMES | here and "blobopen" in DB_NAMES - DB_ADMITTED and DB_ADMITTED <= DB_NAMES
+    uses = [(str(p.relative_to(SRC)), n.value.id if isinstance(n.value, ast.Name) else None, n.attr)
+            for p in sorted(SRC.rglob("*.py")) for n in ast.walk(ast.parse(p.read_text()))
+            if isinstance(n, ast.Attribute) and n.attr in (DB_NAMES | here) - DB_ADMITTED]
+    assert set(uses) == DB_NAME_EXCEPTIONS, uses
+    src = SQLITE.read_text()
+    others = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py")) if p.resolve() != SQLITE.resolve()}
+    mods = [(r, x, *_parsed(x)) for r, x in [("veracium/store/sqlite.py", src)] + sorted(others.items())]
+    assert _bare_parameter_sites(mods) == {"_rows": (1, "sql")}
+
+
+def test_the_tripwire_holds_a_write_to_the_frame_that_ran_it(tmp_path, monkeypatch, _edges_write_tripwire):
+    """Research's fix 3: a callee the write method reaches runs UNDER it. A write from next_seq, inside the journal
+    writer inside `_write_edge_row`, is denied: the frame that called execute is not the write method. Before, any
+    frame on the stack sufficed, the write passed, and 1.8 persisted."""
+    s = SqliteStore(str(tmp_path / "frame.db"))
+    real = SQ.next_seq
+
+    def planted(conn, user_id):
+        conn.execute("UPDATE edges SET json=json WHERE user_id=?", (user_id,))
+        return real(conn, user_id)
+    monkeypatch.setattr(SQ, "next_seq", planted)
+    with pytest.raises(sqlite3.DatabaseError):
+        s.add_edge(_edge("f", S.Volatility.SLOW, 0.8))
+    assert len(_edges_write_tripwire) == 1 and s.edges(U, active_only=False) == []
+    _edges_write_tripwire.clear()
 
 
 def test_the_round_5_mutants_leave_the_write_method_unchanged():
@@ -2087,6 +2536,16 @@ def _in_frames(codes) -> bool:
     return False
 
 
+def _sql_caller():
+    """The code object of the frame that CALLED execute (research's stage 2, S2-01): the first frame outside this file.
+    The authorizer runs at prepare, inside the C call, so that frame is the statement's author. A write method on the
+    stack proves nothing: a callee it reaches (next_seq, under the journal writer) runs under it."""
+    f = sys._getframe(1)
+    while f is not None and f.f_code.co_filename == __file__:
+        f = f.f_back
+    return f.f_code if f is not None else None
+
+
 _TAKEN = {}                                                 # the guarded code objects, taken ONCE (research's S2-02)
 
 
@@ -2094,14 +2553,14 @@ def _outside_the_write_method(action, a1, a2):
     if not ((action == sqlite3.SQLITE_INSERT and a1 == "edges")
             or (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json")):
         return False
-    return not _in_frames({_TAKEN["write"]})               # BY CODE IDENTITY, taken at setup, never by name
+    return _sql_caller() is not _TAKEN["write"]            # BY CODE IDENTITY, taken at setup, never by name
 
 
 def _journal_forged(action, a1):
     """An edge_event INSERT prepared from neither the journal writer nor the v13 baseline journal (the only two
     callers of append_event in src/): a forged journal would let a write pass the row-equals-journal invariant."""
-    return action == sqlite3.SQLITE_INSERT and a1 == "edge_event" and not _in_frames({_TAKEN["journal"],
-                                                                                      _TAKEN["baselines"]})
+    return action == sqlite3.SQLITE_INSERT and a1 == "edge_event" and not (
+        _sql_caller() is _TAKEN["append"] and _in_frames({_TAKEN["journal"], _TAKEN["baselines"]}))
 
 
 def _guarded_identity_problems():
@@ -2181,6 +2640,7 @@ def _edges_write_tripwire(monkeypatch, request):
     assert _guarded_identity_problems() == [], _guarded_identity_problems()
     from veracium.store import edge_events as _ee
     _TAKEN.update(write=SqliteStore.__dict__[METHOD].__code__, journal=SqliteStore.__dict__[JOURNAL].__code__,
+                  append=SQ.append_event.__code__,
                   baselines=_ee.journal_baselines.__code__)
     hits, paths = [], []
     real_init = SqliteStore.__init__
