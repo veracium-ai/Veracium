@@ -1,0 +1,190 @@
+{
+ "root": "veracium.store.migration:_apply_forward",
+ "definer": "veracium.store.schema_version",
+ "count": 21,
+ "references": [
+  {
+   "module": "veracium.store.migration",
+   "function": "MigrationPostconditionError.__init__",
+   "line": 63,
+   "kind": "error-default",
+   "via": "veracium.store.migration:_apply_forward -> veracium.store.migration:_refuse_unless -> veracium.store.migration:MigrationPostconditionError.__init__"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 321,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 323,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 324,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 331,
+   "kind": "other",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 337,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 348,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 358,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 378,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 387,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 406,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 415,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 429,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 441,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 452,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 487,
+   "kind": "guard",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 497,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 530,
+   "kind": "error-argument",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 587,
+   "kind": "other",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 589,
+   "kind": "other",
+   "via": "veracium.store.migration:_apply_forward"
+  },
+  {
+   "module": "veracium.store.migration",
+   "function": "_apply_forward",
+   "line": 590,
+   "kind": "other",
+   "via": "veracium.store.migration:_apply_forward"
+  }
+ ],
+ "reached": [
+  "veracium.store.edge_events:append_event",
+  "veracium.store.edge_events:journal_baselines",
+  "veracium.store.edge_events:mint_store_epoch",
+  "veracium.store.edge_events:next_seq",
+  "veracium.store.edge_events:next_txn",
+  "veracium.store.lifetime:retirement",
+  "veracium.store.migration:MigrationPostconditionError.__init__",
+  "veracium.store.migration:_act_column_problems",
+  "veracium.store.migration:_act_counter_problems",
+  "veracium.store.migration:_apply_forward",
+  "veracium.store.migration:_arity_era_problems",
+  "veracium.store.migration:_arity_inventory_problems",
+  "veracium.store.migration:_baseline_problems",
+  "veracium.store.migration:_check_outcome_chains",
+  "veracium.store.migration:_clock",
+  "veracium.store.migration:_compare_converted",
+  "veracium.store.migration:_drop_wiki_cache",
+  "veracium.store.migration:_epoch_problems",
+  "veracium.store.migration:_identity_problems",
+  "veracium.store.migration:_migrate_outcome_chains",
+  "veracium.store.migration:_nested_models",
+  "veracium.store.migration:_notice_state_problems",
+  "veracium.store.migration:_raw_object",
+  "veracium.store.migration:_refusal_inventory_problems",
+  "veracium.store.migration:_refuse_unless",
+  "veracium.store.migration:_registry_backfill_problems",
+  "veracium.store.migration:_rows",
+  "veracium.store.migration:_same_instant",
+  "veracium.store.migration:_typed",
+  "veracium.store.migration:_typed_row",
+  "veracium.store.schema_version:StoreVersionError.__init__",
+  "veracium.store.schema_version:_mint_store_identity",
+  "veracium.store.schema_version:mint_act_counter",
+  "veracium.store.schema_version:mint_arity_era"
+ ]
+}

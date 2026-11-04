@@ -39,6 +39,22 @@ def test_head_bound_census_refuses_each_planted_reference(tmp_path):
     assert m.stdout.count("OK  PLANT") == 9 and sum(m.stdout.count(f"OK  {k}") for k in ("honest", "CONTROL")) == 3
 
 
+def test_the_repository_census_sees_a_table_and_refuses_each_plant(tmp_path):
+    """specs/evidence/0018/head_bound_census.py, the repository copy I33 (iii) owes. A census that follows calls by name
+    goes blind on a table (research's stage-1 read: a one-entry table read 21 references as 0, and a blind census and a
+    clean one print the same), so this one also roots at every callable FORWARD_ENTRIES names, directly or by a string,
+    and follows a function merely referenced. Its matrix plants each form and runs its controls."""
+    census = ROOT / "specs/evidence/0018/head_bound_census.py"
+    expected = ROOT / "specs/evidence/0018/head_bound_census.expected.json"
+    r = _run(census, ROOT, "--check", expected)
+    assert r.returncode == 0 and r.stdout.startswith("CENSUS EQUAL: 21 references"), r.stdout + r.stderr[-300:]
+    m = _run(ROOT / "specs/evidence/0018/head_bound_census_matrix.py", ROOT, expected, tmp_path / "matrix")
+    assert m.returncode == 0, m.stdout[-600:] + m.stderr[-300:]
+    assert m.stdout.rstrip().endswith("CENSUS MATRIX: 17 cases, 0 not as expected")
+    assert m.stdout.count("OK  PLANT") == 13 and sum(m.stdout.count(f"OK  {k}") for k in ("honest", "CONTROL")) == 4
+    assert "PLANT a step named only in FORWARD_ENTRIES" in m.stdout
+
+
 def test_check_row_map_refuses_a_stale_row():
     """closure/check_row_map.py (the round-3 closure's check-to-row map): every model check's asserted §7 row and
     ids agree with the table extracted from v0.5.1, every row asserted at least once; with --control (v0.4.1's stale
