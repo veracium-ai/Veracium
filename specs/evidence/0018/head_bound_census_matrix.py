@@ -61,6 +61,20 @@ CASES = [
      {}, {MIG: "def _deep():\n    return SCHEMA_VERSION\n\n\ndef _step_d(conn):\n    return _deep()\n\n\nFORWARD_ENTRIES = (('p', _step_d),)\n"}, "_deep"),
     ("PLANT a function referenced, not called, in _apply_forward", "REFUSE",
      {MIG: [on_line(BASE_KEYS, "_plant = _held")]}, {MIG: "def _held():\n    return SCHEMA_VERSION\n"}, "_held"),
+    ('PLANT (research) keyword field of an entry constructor', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\nclass Entry:\n    def __init__(self, kind, fn=None):\n        self.fn = fn\n\n\nFORWARD_ENTRIES = (Entry('p', fn=_step_x),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) functools.partial in the table', "REFUSE", {}, {'veracium/store/migration.py': "import functools\ndef _step_x(conn):\n    return SCHEMA_VERSION\n\n\nFORWARD_ENTRIES = (('p', functools.partial(_step_x)),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) default argument in a step', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn, head=SCHEMA_VERSION):\n    return head\n\n\nFORWARD_ENTRIES = (('p', _step_x),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) table assembled from a named sub-tuple', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\n_V16_ENTRIES = (('p', _step_x),)\nFORWARD_ENTRIES = _V16_ENTRIES\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) table concatenated from two sub-tuples', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\n_A = ()\n_B = (('p', _step_x),)\nFORWARD_ENTRIES = _A + _B\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) table built by a function', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\ndef _build():\n    return (('p', _step_x),)\n\n\nFORWARD_ENTRIES = _build()\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) table extended with +=', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\nFORWARD_ENTRIES = ()\nFORWARD_ENTRIES += (('p', _step_x),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) the head value in the table itself', "REFUSE", {}, {'veracium/store/migration.py': "FORWARD_ENTRIES = (('stamp', SCHEMA_VERSION),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) a lambda in the table reading the head', "REFUSE", {}, {'veracium/store/migration.py': "FORWARD_ENTRIES = (('p', lambda conn: SCHEMA_VERSION),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) a module-level alias of a step', "REFUSE", {}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\n_alias = _step_x\nFORWARD_ENTRIES = (('p', _alias),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) a staticmethod as a step', "REFUSE", {}, {'veracium/store/migration.py': "class _Steps:\n    @staticmethod\n    def run(conn):\n        return SCHEMA_VERSION\n\n\nFORWARD_ENTRIES = (('p', _Steps.run),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) the table in its own store module', "REFUSE", {}, {'veracium/store/forward_table.py': "from .schema_version import SCHEMA_VERSION\n\n\ndef _step_x(conn):\n    return SCHEMA_VERSION\n\n\nFORWARD_ENTRIES = (('p', _step_x),)\n", 'veracium/store/migration.py': 'from .forward_table import FORWARD_ENTRIES\n'}, "CENSUS DIFFERS"),
+    ('PLANT (research) the table under another name, read in _apply_forward', "REFUSE", {MIG: [on_line(BASE_KEYS, '_plant = _TABLE')]}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\n_TABLE = (('p', _step_x),)\n"}, "CENSUS DIFFERS"),
+    ('PLANT (research) a dict of steps read in _apply_forward', "REFUSE", {MIG: [on_line(BASE_KEYS, '_plant = _STEPS')]}, {'veracium/store/migration.py': "def _step_x(conn):\n    return SCHEMA_VERSION\n\n\n_STEPS = {'x': _step_x}\n"}, "CENSUS DIFFERS"),
     ("CONTROL a reference in a function OUTSIDE the reach (migrate_store)", "PASS",
      {MIG: [on_line(PENDING, "_plant = SCHEMA_VERSION")]}, {}, None),
     ("CONTROL a table naming a function with no reference", "PASS",
@@ -93,7 +107,7 @@ for i, (label, expect, edits, eof, token) in enumerate(CASES):
         assert t != p.read_text(), f"{label}: the edit changed nothing"
         p.write_text(t)
     for f, text in eof.items():
-        p = d / "src" / f; p.write_text(p.read_text() + text)
+        p = d / "src" / f; p.write_text((p.read_text() if p.exists() else "") + text)
     r = subprocess.run([sys.executable, "-I", str(HERE / "head_bound_census.py"), str(d), "--check", str(expected)],
                        capture_output=True, text=True)
     out = r.stdout.strip()

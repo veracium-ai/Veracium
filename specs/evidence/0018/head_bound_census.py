@@ -2,8 +2,10 @@
 """0018 adjacent rungs, the implementation's repository copy (I33 (iii)): the GENERATED census of head-bound references in
 the forward step's reach. Derived from the reviewed specs/evidence/0018-adjacent-rungs/dev-model/head_bound_census.py,
 whose bytes stay as reviewed; the differences are research's stage-1 finding on the plan (a call-following census goes
-blind on a table): the reach is also rooted at every callable FORWARD_ENTRIES names, directly or by a string, and it
-follows a store function or class merely REFERENCED, not only one called.
+blind on a table): the reach follows a store function or class merely REFERENCED, not only one called, and it reads
+MODULE-LEVEL VALUES like function bodies: reaching a module-level name visits every expression bound to it (`=`, `:`,
+`+=`, through imports), so a table split into named sub-tuples, extended, aliased or kept in its own module stays in
+reach, and a class attribute resolves to its member. The table name is a root, so a table nothing yet reads is read.
 
 Usage:
   head_bound_census.py <tree-root> --json             print the set, one JSON object per reference
@@ -12,8 +14,10 @@ Usage:
 THE SET (0018 amendment v0.4.1 §2a): every reference to the store's head version, `SCHEMA_VERSION` as defined in
 `veracium.store.schema_version`, inside the forward step's REACH, by AST:
   - the root `_apply_forward` (src/veracium/store/migration.py), its whole body, nested functions included;
-  - every callable the module-level table `FORWARD_ENTRIES` names, by reference or by a string equal to a module
-    function's name: `--json` prints them as `table_roots`, and tests hold that equal to the runtime table;
+  - the module-level name `FORWARD_ENTRIES`, if bound or imported in that module, and every module-level name reached:
+    each is visited through every expression bound to it, a string equal to a function of its module counting as a
+    reference. `--json` prints the callables so reached from the table as `table_roots`; a cell compares them with the
+    runtime table once a table exists (owed at T1: no table exists at this commit);
   - every module-level function it calls or references, transitively, resolved by name within src/veracium/store/ (a direct name, a
     `from .m import f [as g]` import, or `m.f` where `m` is bound to a store module);
   - for every CLASS it calls (constructs, which includes every `raise X(...)`), that class's `__init__`, and the
@@ -68,6 +72,32 @@ class Module:
         self.tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         self.funcs = {n.name: n for n in self.tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
         self.classes = {n.name: n for n in self.tree.body if isinstance(n, ast.ClassDef)}
+        self.bindings: dict[str, list] = {}              # module-level name -> every expression bound to it
+        self.members: dict[str, dict] = {}               # class -> attribute -> its def, or its value expression
+
+        def module_level(stmts):
+            for s in stmts:
+                targets = s.targets if isinstance(s, ast.Assign) else [s.target] if isinstance(s, (ast.AnnAssign, ast.AugAssign)) else []
+                value = getattr(s, "value", None)
+                for tg in targets:
+                    for x in ast.walk(tg):
+                        if isinstance(x, ast.Name) and isinstance(x.ctx, ast.Store) and value is not None:
+                            self.bindings.setdefault(x.id, []).append(value)
+                if isinstance(s, (ast.If, ast.Try, ast.With)):      # a conditional definition is still module-level
+                    for f in ("body", "orelse", "finalbody"):
+                        module_level(getattr(s, f, []) or [])
+                    for h in getattr(s, "handlers", []) or []:
+                        module_level(h.body)
+        module_level(self.tree.body)
+        for c in self.classes.values():
+            mem = self.members.setdefault(c.name, {})
+            for s in c.body:
+                if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    mem[s.name] = s
+                elif isinstance(s, ast.Assign) and s.value is not None:
+                    for tg in s.targets:
+                        if isinstance(tg, ast.Name):
+                            mem[tg.id] = s.value
         self.imported: dict[str, tuple[str, str]] = {}   # local name -> (module, attr)
         self.modalias: dict[str, str] = {}               # local name -> module
         for n in ast.walk(self.tree):
@@ -142,27 +172,28 @@ def census(tree_root: pathlib.Path) -> list[dict]:
     mods = load(tree_root)
 
     def resolve_call(m: Module, func: ast.AST):
-        """-> ('func', module, name) | ('class', module, name) | None, within the store package."""
+        """-> ('func'|'class'|'bind', module, name) | ('member', module, class, attribute) | None, within the store
+        package. A name is looked up as a function, a class, then a module-level binding."""
+        def in_module(src, name):
+            mm = mods[src]
+            kind = "func" if name in mm.funcs else "class" if name in mm.classes else "bind" if name in mm.bindings else None
+            return (kind, src, name) if kind else None
         if isinstance(func, ast.Name):
-            n = func.id
-            if n in m.funcs:
-                return ("func", m.name, n)
-            if n in m.classes:
-                return ("class", m.name, n)
-            if n in m.imported:
-                src, attr = m.imported[n]
+            r = in_module(m.name, func.id)
+            if r:
+                return r
+            if func.id in m.imported:
+                src, attr = m.imported[func.id]
                 if src in mods:
-                    if attr in mods[src].funcs:
-                        return ("func", src, attr)
-                    if attr in mods[src].classes:
-                        return ("class", src, attr)
-        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name) and func.value.id in m.modalias:
-            src = m.modalias[func.value.id]
-            if src in mods:
-                if func.attr in mods[src].funcs:
-                    return ("func", src, func.attr)
-                if func.attr in mods[src].classes:
-                    return ("class", src, func.attr)
+                    return in_module(src, attr)
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            if func.value.id in m.modalias and m.modalias[func.value.id] in mods:
+                r = in_module(m.modalias[func.value.id], func.attr)
+                if r:
+                    return r
+            owner = resolve_call(m, func.value)
+            if owner and owner[0] == "class" and func.attr in mods[owner[1]].members.get(owner[2], {}):
+                return ("member", owner[1], owner[2], func.attr)
         return None
 
     def class_inits(modn: str, cname: str, seen: set):
@@ -180,39 +211,36 @@ def census(tree_root: pathlib.Path) -> list[dict]:
                 yield from class_inits(r[1], r[2], seen)
 
     out, seen_fn, seen_cls = [], set(), set()
+    census.via_table = []
     work = [(ROOT[0], ROOT[1], mods[ROOT[0]].funcs[ROOT[1]], (f"{ROOT[0]}:{ROOT[1]}",), False)]
 
     def follow(m, node, path):
         r = resolve_call(m, node)
-        if r and r[0] == "func":
+        if not r:
+            return
+        if r[0] == "func":
             fm, fn = r[1], r[2]
             work.append((fm, fn, mods[fm].funcs[fn], path + (f"{fm}:{fn}",), False))
-        elif r and r[0] == "class" and (r[1], r[2]) not in seen_cls:
+        elif r[0] == "class" and (r[1], r[2]) not in seen_cls:
             seen_cls.add((r[1], r[2]))
             for im, iq, inode in class_inits(r[1], r[2], set()):
                 work.append((im, iq, inode, path + (f"{im}:{iq}",), True))
+        elif r[0] == "bind":
+            q = f"<module>.{r[2]}"
+            work.append((r[1], q, ast.Tuple(elts=list(mods[r[1]].bindings[r[2]]), ctx=ast.Load()), path + (f"{r[1]}:{q}",), False))
+        elif r[0] == "member":
+            q = f"{r[2]}.{r[3]}"
+            work.append((r[1], q, mods[r[1]].members[r[2]][r[3]], path + (f"{r[1]}:{q}",), False))
 
-    # the table's roots: everything FORWARD_ENTRIES names, a reference or a string naming a function of its module
-    root_mod, roots = mods[ROOT[0]], []
-    for st in root_mod.tree.body:
-        targets = st.targets if isinstance(st, ast.Assign) else [st.target] if isinstance(st, ast.AnnAssign) else []
-        if st.__class__ in (ast.Assign, ast.AnnAssign) and st.value is not None and any(
-                isinstance(x, ast.Name) and x.id == TABLE for x in targets):
-            for x in ast.walk(st.value):
-                if isinstance(x, (ast.Name, ast.Attribute)) and isinstance(x.ctx, ast.Load):
-                    r = resolve_call(root_mod, x)
-                    if r:
-                        roots.append(f"{r[1]}:{r[2]}")
-                        follow(root_mod, x, (f"{ROOT[0]}:{TABLE}",))
-                elif isinstance(x, ast.Constant) and isinstance(x.value, str) and x.value in root_mod.funcs:
-                    roots.append(f"{ROOT[0]}:{x.value}")
-                    follow(root_mod, ast.Name(id=x.value, ctx=ast.Load()), (f"{ROOT[0]}:{TABLE}",))
-    census.table_roots = sorted(set(roots))
+    follow(mods[ROOT[0]], ast.Name(id=TABLE, ctx=ast.Load()), (f"{ROOT[0]}:{TABLE}",))
+
     while work:
         modn, qual, node, path, is_err_init = work.pop()
         if (modn, qual) in seen_fn:
             continue
         seen_fn.add((modn, qual))
+        if path and path[0].endswith(f":{TABLE}") and not qual.startswith("<module>."):
+            census.via_table.append(f"{modn}:{qual}")
         m = mods[modn]
 
         def visit(n, parents, fqual):
@@ -223,14 +251,20 @@ def census(tree_root: pathlib.Path) -> list[dict]:
                 if is_ref(m, child):
                     out.append({"module": modn, "function": cq, "line": child.lineno,
                                 "kind": kind_of(parents + [n], child, is_err_init), "via": " -> ".join(path)})
-                # a store function or class REFERENCED, called or not: `step = f`, `(f, g)`, a default argument
+                # a store function, class or module-level value REFERENCED, called or not: `step = f`, `(f, g)`, a default
                 if isinstance(child, (ast.Name, ast.Attribute)) and isinstance(child.ctx, ast.Load):
                     follow(m, child, path)
+                # inside a module-level value, a string naming a function of its module is a reference to it
+                if (qual.startswith("<module>.") and isinstance(child, ast.Constant) and isinstance(child.value, str)
+                        and child.value in m.funcs):
+                    follow(m, ast.Name(id=child.value, ctx=ast.Load()), path)
                 visit(child, parents + [n], cq)
 
         visit(node, [], qual)
     out.sort(key=lambda r: (r["module"], r["line"], r["function"]))
     census.reached = sorted(f"{a}:{b}" for a, b in seen_fn)
+    # what the table reaches: the callables whose path to them runs through the table's own name
+    census.table_roots = sorted({r for r in census.via_table})
     return out
 
 
