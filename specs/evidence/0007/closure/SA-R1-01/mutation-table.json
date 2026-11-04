@@ -1,5 +1,5 @@
 {
- "body_sha256": "fa457f7b15e6bd89bee7e32906ad9c4393746ca3418d1de00b1d0f360a39567f",
+ "body_sha256": "1e04cd9b2ee97e065258ddf82fa72dc565dec5674fb23745cafe5b56db536e6f",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
+  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -78,10 +78,7 @@
   "tracked_changes": [
    "specs/0007-store-schema-versioning.md",
    "specs/0013-store-migrations.md",
-   "specs/0018-release-migration-orchestrator.md",
-   "specs/citation_debt.py",
-   "tests/test_0026_relay_lexicon.py",
-   "tests/test_spec_gate.py"
+   "specs/0018-release-migration-orchestrator.md"
   ]
  },
  "rows": [
@@ -116,7 +113,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.13s",
+   "pytest": "2 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -149,7 +146,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -182,7 +179,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -215,7 +212,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -230,6 +227,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 18
+  "seconds": 19
  }
 }

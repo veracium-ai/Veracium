@@ -1,5 +1,5 @@
 {
- "body_sha256": "4835db50a278a914773b0ea024cd0557adc2871a58b045e663d0db63b43d6be4",
+ "body_sha256": "2ad9b2f588467071dce2c397e80aa80d58946be34e6550609eae16b55dd95c03",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 7
    }
   },
-  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
+  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
   "control_definitions": {
    "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
    "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
@@ -108,10 +108,7 @@
    "specs/0007-store-schema-versioning.md",
    "specs/0013-store-migrations.md",
    "specs/0018-release-migration-orchestrator.md",
-   "specs/citation_debt.py",
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "tests/test_0026_relay_lexicon.py",
-   "tests/test_spec_gate.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -143,7 +140,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -176,7 +173,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.12s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -209,7 +206,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.09s",
+   "pytest": "1 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -243,7 +240,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"

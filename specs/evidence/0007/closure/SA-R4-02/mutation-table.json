@@ -1,5 +1,5 @@
 {
- "body_sha256": "fdf93435722c2560d4c25b8341aba59a61752445b9a32545b851b8935f9d43bb",
+ "body_sha256": "745a96cd9198652cd4a7c5e536a9508c1679d94f45897b7c7e5e002921521dfd",
  "controls": [
   {
    "anchor_counts": [
@@ -55,7 +55,7 @@
     "passed": 6
    }
   },
-  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
+  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
   "control_definitions": {
    "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
   },
@@ -82,7 +82,6 @@
    "specs/0007-store-schema-versioning.md",
    "specs/0013-store-migrations.md",
    "specs/0018-release-migration-orchestrator.md",
-   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -93,9 +92,7 @@
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "tests/test_0026_relay_lexicon.py",
-   "tests/test_spec_gate.py"
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -139,7 +136,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.98s",
+   "pytest": "5 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: a same-key current record the production validator rejects is replaced, never refused"
@@ -172,7 +169,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "per-record validation without the artifact-level check: a conflicting duplicate passes"
@@ -187,6 +184,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 9
+  "seconds": 10
  }
 }

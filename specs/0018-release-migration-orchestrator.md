@@ -47,7 +47,7 @@ Folds: 0044/0018-data-migration, 0013/0007-sqlite-attestation, 0018-adjacent-run
 > code and the §4e table are untouched. Tested exhaustively over every base
 > 1..HEAD-2 with the literal text kept as the mutant.
 >
-> **v9 (amendment `0018-adjacent-rungs`, §4j):** no cell produces `unsupported-base` at this head, and the derived diagnostic loses its only caller and is removed (§4j.6, 4a; §4j.3). The outcome and its row stay for a future floor.
+> **v9 (amendment `0018-adjacent-rungs`, §4j):** no cell produces `unsupported-base` at this head, and the derived diagnostic loses its only caller and is removed (§4j.6.4a; §4j.3). The outcome and its row stay for a future floor.
 
 > **Amended by 0019 (same-commit with 0019's acceptance; sign-off granted
 > round 4, 2026-08-14).** (B1) §4a, final: the preflight intercepts
@@ -66,7 +66,7 @@ Folds: 0044/0018-data-migration, 0013/0007-sqlite-attestation, 0018-adjacent-run
 > commit. The body text below is HISTORICAL as-frozen; this rider is the
 > operative numbering.
 >
-> **v9 (amendment `0018-adjacent-rungs`, §4j):** (B1)'s “resolved base **7** ALONE proceeds to minting” (HEAD−1 in the code) is superseded: every resolved base `b`, `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting `b → b+1` (§4j.6, 4a), and no cell produces `unsupported-base` at this head.
+> **v9 (amendment `0018-adjacent-rungs`, §4j):** (B1)'s “resolved base **7** ALONE proceeds to minting” (HEAD−1 in the code) is superseded: every resolved base `b`, `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting `b → b+1` (§4j.6.4a), and no cell produces `unsupported-base` at this head.
 
 ## 1. Problem and motivation
 
@@ -199,7 +199,7 @@ EVERYTHING except resolved base 6**:
 
 **v8 (amendment `0013/0007-sqlite-attestation`; 0007 §4g, 0013 §5f):** `unqualified-runtime` is a build whose `runtime_status()` is `refused`: the preflight's outcome is `unsupported-sqlite` only on `refused`, and an `attested` or `verified` build proceeds as above. The migration audit's sidecar writer copies the `attempted` event's additive key (INV-SA11, 0013 §5e).
 
-**v9 (amendment `0018-adjacent-rungs`; §4j.6, 4a):** the mint cell moves. Every resolved base `b` with `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting `b → b+1`; the CLI walks the rungs (§4j.6, 4g); no cell produces `unsupported-base` at this head. Every other cell above is unchanged.
+**v9 (amendment `0018-adjacent-rungs`; §4j.6.4a):** the mint cell moves. Every resolved base `b` with `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting `b → b+1`; the CLI walks the rungs (§4j.6.4g); no cell produces `unsupported-base` at this head. Every other cell above is unchanged.
 
 Every preflight interception creates ZERO authorities and ZERO 0013 audit
 rows. **Byte-identity holds for every preflight cell EXCEPT
@@ -212,7 +212,7 @@ preflight returns `unsupported-base`.
 
 ### 4b. `PreflightResolution` — the construction (external R1-2)
 
-> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4b):** `resolved_base ∈ {FIRST_MIGRATABLE … HEAD−1}`; its exact-type admission, the fingerprint and I18's reason-labeling-only pin are unchanged.
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6.4b):** `resolved_base ∈ {FIRST_MIGRATABLE … HEAD−1}`; its exact-type admission, the fingerprint and I18's reason-labeling-only pin are unchanged.
 
 The preflight's observation, as an immutable evidence carrier — and it exists
 **only where a store RESOLVED** (external R2-1: missing, unopenable, and
@@ -274,7 +274,7 @@ base 1–5). Every non-resolving cell short-circuits with NO
 
 ### 4c. The mint API and the bounded retry
 
-> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4c):** the mint re-observes the store and mints `b → b+1` for a store stamped `b` and accepted there, or unstamped and resolving to `b` through `legacy_base_versions()`; the retry sequence is unchanged and per rung.
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6.4c):** the mint re-observes the store and mints `b → b+1` for a store stamped `b` and accepted there, or unstamped and resolving to `b` through `legacy_base_versions()`; the retry sequence is unchanged and per rung.
 
 **`mint_release_authority(path, attestation, *, resolved: PreflightResolution)
 -> MigrationAuthority`**, raising **`MintError(reason)`** with the closed
@@ -311,7 +311,7 @@ defaults it.
 
 ### 4e. `MigrationResult` — the carrier and THE LITERAL TABLE (external R1-3)
 
-> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4e):** the result domain is the preflight rows, the no-record rows, and every delegated carrier lawful at SOME rung `(b, b+1)`; the exact binding lives in `RungReport` (§4j.6, 4e-iii). No cell produces the `unsupported-base` row at this head; the row stays for a future floor. A third, glossed `migration-source-missing` row is added (§4j.6, 4e-ii).
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6.4e):** the result domain is the preflight rows, the no-record rows, and every delegated carrier lawful at SOME rung `(b, b+1)`; the exact binding lives in `RungReport` (§4j.6.4e-iii). No cell produces the `unsupported-base` row at this head; the row stays for a future floor. A third, glossed `migration-source-missing` row is added (§4j.6.4e-ii).
 
 Frozen fields: the `Outcome`-string label + `store_changed: Optional[bool]`,
 `transaction_committed: Optional[bool]`, `resulting_state: str` (0013's
@@ -372,7 +372,7 @@ assert the store's present state.
 
 ### 4f. Delegated-outcome routing, the readback, and the loud escapes (external R1-4/R1-6, revised R2-5/R2-6)
 
-> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4e-i and 4f):** the rules are unchanged, applied per rung at the minted endpoints `(b, t)` wherever this section says `(HEAD−1, HEAD)`.
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6.4e-i and §4j.6.4f):** the rules are unchanged, applied per rung at the minted endpoints `(b, t)` wherever this section says `(HEAD−1, HEAD)`.
 
 **`read_terminal(operation_id)`** (defined in the marked 0013 amendment,
 §4h) **RAISES NOTHING (external R2-5 — v3 required it to raise an exception
@@ -463,7 +463,7 @@ message and the CLI's stderr line label it `derived-from-outcome`.
 
 ### 4g. The CLI contract
 
-> **v9 (amendment `0018-adjacent-rungs`; §4j.6, 4g):** `veracium migrate` walks the rungs with a bound that holds by construction, per-rung reporting and one total recovery classifier (§4j.9); the flags, the usage exits and the attestation grammar are unchanged.
+> **v9 (amendment `0018-adjacent-rungs`; §4j.6.4g):** `veracium migrate` walks the rungs with a bound that holds by construction, per-rung reporting and one total recovery classifier (§4j.9); the flags, the usage exits and the attestation grammar are unchanged.
 
 `veracium migrate --db X --i-have-quiesced --backup REF` — flags, never
 prompts; both required for the migration path (missing → exit 2 with usage);
@@ -794,7 +794,7 @@ those values stay hidden and `doctor` warns.”*
 
 ## 4j. Adjacent rungs (v9, amendment `0018-adjacent-rungs`)
 
-> **What this section adds:** the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; design accepted at its external round 3, accepted with amendments, closed internally under PROCESS.md §4a on the owner's ruling, with both seats' closure runs in `## Review closure`): `veracium migrate` walks a released store to head one schema version per audited operation, each rung its own operation id, terminal record and clock read, under one operator attestation; recovery from a stopped walk is one total classifier (§4j.9). The clauses it amends are edited in place and point here: the 0019 rider's (B1), the 2026-09-18 diagnostic amendment, §4a, §4b, §4c, §4e, §4f, §4g, §4h and I13, I15 and I19 in §6. **Within this section, a reference to “§1”–“§8”, “§2a”, “§2c-ii”, “§3b”, “§4a”–“§4h” (and their “-i”, “-ii”, “-iii” parts) or “§7a”–“§7c” means the subsection labelled with that number here** (the amendment's own numbering, kept so its references resolve), **except that “§4d-i” means 0007 §4h and “§4d-ii” and “§4d-iii” mean 0013 §5g**, which carry the amendment's marked 0007 and 0013 amendments. The amendment's §9 (the reviewer's brief), §10 (its open questions, answered) and its reviewer checklist are not folded. A reference to 0018's own sections says “0018”.
+> **What this section adds:** the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; design accepted at its external round 3, accepted with amendments, closed internally under PROCESS.md §4a on the owner's ruling, with both seats' closure runs in `## Review closure`): `veracium migrate` walks a released store to head one schema version per audited operation, each rung its own operation id, terminal record and clock read, under one operator attestation; recovery from a stopped walk is one total classifier (§4j.9). The clauses it amends are edited in place and point here: the 0019 rider's (B1), the 2026-09-18 diagnostic amendment, §4a, §4b, §4c, §4e, §4f, §4g, §4h and I13, I15 and I19 in §6. **Within this section, a reference to “§1”–“§8”, “§2a”, “§2c-ii”, “§3b”, “§4a”–“§4h” (and their “-i”, “-ii”, “-iii” parts) or “§7a”–“§7c” means the subsection here whose label ends in that number** (the amendment's own numbering, kept so its references resolve, behind the prefix of the 4j.N subsection that holds it: “§4a” is §4j.6.4a, “§2c-ii” is §4j.4.2c-ii, “§7b” is §4j.9.7b), **except that “§4d-i” means 0007 §4h and “§4d-ii” and “§4d-iii” mean 0013 §5g**, which carry the amendment's marked 0007 and 0013 amendments. The amendment's §9 (the reviewer's brief), §10 (its open questions, answered) and its reviewer checklist are not folded. A reference to 0018's own sections says “0018”.
 
 ### 4j.1 What it amends (the amendment's header)
 
@@ -887,7 +887,7 @@ they are audit-honesty gaps under a violated precondition, not data defects:
 (dev at implementation). `_ladder_diagnostic` and `_release_heads` lose their only caller and are removed; the release
 record keeps its other consumer, `legacy_base_versions()`.
 
-##### 2a. The accepted rules bound to the values this amendment moves
+##### 4j.3.2a. The accepted rules bound to the values this amendment moves
 
 This amendment turns two constants into per-operation values: the mint's endpoints `(HEAD−1, HEAD)` become `(b, b+1)`,
 and the kernel's destination HEAD becomes the target `t`. Every accepted rule bound to either is listed here, from a
@@ -970,7 +970,7 @@ Every row of 0018 §2c stands. The changed and new rows:
 `expect_base` is supplied only by the package's own CLI, never by a caller of the public API, so it is not an
 untrusted input; `run_release_rung` is package-private.
 
-##### 2c-ii. Assertions about reach — REQUIRED
+##### 4j.4.2c-ii. Assertions about reach — REQUIRED
 
 All at the pin, dev `67bbba69`, on `git archive` exports with CPython 3.14.7. **Rows 6–9 are model results, kept
 apart from product results:** the model runs the pin's real opening path, kernel, audit writers and validator, with a
@@ -1001,14 +1001,14 @@ rung's target set by a process-local patch; it is not the implementation.
 No new trust class: every caller is the operator who owns the file (0018 §3, unchanged). The walk adds no input that
 another principal supplies.
 
-##### 3b. Authorization and scope
+##### 4j.5.3b. Authorization and scope
 
 Unchanged from 0018 §3b, with one carrier fewer: `unsupported-base`'s diagnostic, which cited release tags, is no
 longer produced. Per-rung reporting carries versions, outcomes and operation ids, never store content.
 
 ### 4j.6 Behaviour (the amendment's §4)
 
-##### 4a. The preflight (amends 0018 §4a and the 0019 rider's (B1))
+##### 4j.6.4a. The preflight (amends 0018 §4a and the 0019 rider's (B1))
 
 The preflight's matrix is unchanged except for one cell:
 - **every resolved base `b` with `FIRST_MIGRATABLE ≤ b ≤ HEAD−1`, stamped or unstamped-legacy, proceeds to minting
@@ -1019,12 +1019,12 @@ The preflight's matrix is unchanged except for one cell:
   stamps an unstamped store. It judges the store against the BUILD's head; only a delegated rung is target-relative.
 - The release record is not consulted.
 
-##### 4b. `PreflightResolution` (amends 0018 §4b)
+##### 4j.6.4b. `PreflightResolution` (amends 0018 §4b)
 
 `resolved_base ∈ {FIRST_MIGRATABLE … HEAD−1}`. Its exact-type admission, the fingerprint and I18's reason-labeling-only
 pin are unchanged.
 
-##### 4c. The mint (amends 0018 §4c; R1-01)
+##### 4j.6.4c. The mint (amends 0018 §4c; R1-01)
 
 `mint_release_authority` re-observes the store itself and mints `from_version = b`, `to_version = b+1` when, **by its
 own observation**:
@@ -1043,9 +1043,9 @@ is unchanged and is per rung.
 
 The amendment's §4d (its marked 0007 and 0013 amendments) is 0007 §4h (§4d-i) and 0013 §5g (§4d-ii, §4d-iii).
 
-##### 4e. Results and routing (amends 0018 §4e and §4f)
+##### 4j.6.4e. Results and routing (amends 0018 §4e and §4f)
 
-###### 4e-i. The laws, per rung
+###### 4j.6.4e-i. The laws, per rung
 
 0018 §4e's deference law is unchanged: a delegated carrier carries its terminal record's facts verbatim, and is valid
 iff those facts pass 0013's `problems()` **at the minted endpoints `(b, t)`**. Wherever 0018 §4f and the code use
@@ -1055,7 +1055,7 @@ iff those facts pass 0013's `problems()` **at the minted endpoints `(b, t)`**. W
 **The v0.2.2 sentence "`current` carries HEAD" is withdrawn.** A PREFLIGHT `current` carries HEAD. A DELEGATED `current`
 carries its record's `t`. They are told apart by `RungReport.kind`, never by the label (R1-04).
 
-###### 4e-ii. Inside one rung's transaction (`BEGIN IMMEDIATE`, authority `b → t`, `t = b+1 ≤ HEAD`)
+###### 4j.6.4e-ii. Inside one rung's transaction (`BEGIN IMMEDIATE`, authority `b → t`, `t = b+1 ≤ HEAD`)
 
 Facts are `TerminalFacts(outcome, b, t, changed, committed, state, version)`; every row's facts pass the pin's
 `problems()` at four rungs (§2c-ii row 4). "Existing" means 0013's own cell with endpoints `(b, t)`.
@@ -1099,7 +1099,7 @@ rows) is not visible; `source_digest` digests the shape. That is accepted 0018's
 authority attests; following it needs a different authority, and moving it backward is not a migration. The walk's next
 call re-observes the store, and the base expectation (§4e-iii) decides whether that is progress.
 
-###### 4e-iii. The operation context: `RungReport` and `run_release_rung` (R1-03)
+###### 4j.6.4e-iii. The operation context: `RungReport` and `run_release_rung` (R1-03)
 
 `run_release_rung(path, *, host_attestation, expect_base=None) -> RungReport` is package-private.
 `run_release_migration(path, *, host_attestation)` keeps its signature and public `MigrationResult`, and returns
@@ -1135,9 +1135,9 @@ is the consumption.
 post-mint `PackageConsistencyError`) carries a validated `rung_context = (operation_id, from_version, to_version)`; a
 pre-mint `PackageConsistencyError` carries `rung_context = None`. No id is ever parsed out of a diagnostic.
 
-##### 4f. Routing (0018 §4f): unchanged in its rules, per rung, at the minted endpoints (§4e-i).
+##### 4j.6.4f. Routing (0018 §4f): unchanged in its rules, per rung, at the minted endpoints (§4e-i).
 
-##### 4g. The CLI contract (amends 0018 §4g)
+##### 4j.6.4g. The CLI contract (amends 0018 §4g)
 
 `veracium migrate --db X --i-have-quiesced --backup REF`. The flags, the usage exits and the attestation grammar are
 unchanged. The walk:
@@ -1190,7 +1190,7 @@ The documented exits stay: **0** = the store is `current` at HEAD at the end · 
 verbatim. In the same commit as the CLI change, the refusal names `veracium migrate --db … --i-have-quiesced --backup
 REF` for every base `≥ FIRST_MIGRATABLE`, replacing the 0.30.0 interim text. `doctor` follows through the relay.
 
-##### 4h. Beside the amendment (not normative here)
+##### 4j.6.4h. Beside the amendment (not normative here)
 
 The release record's eight null `store_schema_version`/`digest` entries are filled by re-running the record's generator
 against those tags, never by hand. No mint rule reads the record; completing it is evidence hygiene, dev's to schedule.
@@ -1266,7 +1266,7 @@ action id for each (I35).
 
 **Exits** stay as 0018 §4g: 0 for P0 only; 1 for every other P, N, C2, K and U stop; 3 for every E row.
 
-##### 7a. Before delegation, and the no-record outcomes (no facts; nothing counted)
+##### 4j.9.7a. Before delegation, and the no-record outcomes (no facts; nothing counted)
 
 | row | input | action id | the CLI prints | rerun? | what the operator does |
 |---|---|---|---|---|---|
@@ -1280,7 +1280,7 @@ action id for each (I35).
 | N3 | `migration-quiescence-required` (refused before observation: an invalid, expired, consumed, retargeted or cross-build authority) | `rerun-when-quiescent` | `unknown` | yes, once quiescence holds; the rerun mints a fresh authority | stop the other writer, rerun |
 | N4 | `migration-evidence-missing` (refused before observation: no current path record evidences this rung's migration, an artifact property) | `no-rerun-this-build` | `unknown` | **not with the same build** | repair or upgrade the build, then rerun; or restore the backup |
 
-##### 7b. A delegated report with a record, by fact class
+##### 4j.9.7b. A delegated report with a record, by fact class
 
 | row | input | action id | the CLI prints | rerun? | what the operator does |
 |---|---|---|---|---|---|
@@ -1296,7 +1296,7 @@ action id for each (I35).
 | U6 | unchanged, outcome `store-unopenable` or `locked` | `fix-access-then-rerun` | `unknown` | yes, once the cause is fixed | fix the permission, the path's type or the lock, then rerun |
 | U7 | unchanged, **any other outcome** (at the pin, among others: `internal-error`, `migration-failed` and `migration-result-mismatch` with state `source` at the base, the reviewer's three; `adoption-refused`; `migration-required`; and any outcome a later head adds) | `inspect-first-fallback` | `v{version}` when the state is `source` or `destination`, else `unknown` | **not until the cause is identified**: the store is unchanged by this rung, but the report does not establish why it refused | inspect the diagnostic and the build; correct the cause, then rerun |
 
-##### 7c. Escapes (exit 3): the escape adds restrictions and disclosure, never removes one
+##### 4j.9.7c. Escapes (exit 3): the escape adds restrictions and disclosure, never removes one
 
 | row | input | action id | the CLI prints | rerun? | what the operator does |
 |---|---|---|---|---|---|

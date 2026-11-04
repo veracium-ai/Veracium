@@ -1,5 +1,5 @@
 {
- "body_sha256": "84fd6d501d9a6b2c9338502e4853e2e77b618c852e47f82d423d93ded823f664",
+ "body_sha256": "86bca353781ff3b5c8a6239a718a6b44306e11e9c849e8a3ec3462bcacaa098b",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "a01ef95721ab5b1b4eb05c2d70d7b15f262992ac",
+  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -80,7 +80,6 @@
    "specs/0007-store-schema-versioning.md",
    "specs/0013-store-migrations.md",
    "specs/0018-release-migration-orchestrator.md",
-   "specs/citation_debt.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -90,9 +89,7 @@
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "tests/test_0026_relay_lexicon.py",
-   "tests/test_spec_gate.py"
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json"
   ]
  },
  "rows": [
@@ -127,7 +124,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.67s",
+   "pytest": "2 failed in 8.32s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -160,7 +157,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 7.33s",
+   "pytest": "1 failed in 7.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -193,7 +190,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 7.15s",
+   "pytest": "1 failed in 7.69s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -208,6 +205,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 131
+  "seconds": 145
  }
 }

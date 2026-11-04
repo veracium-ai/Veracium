@@ -1350,7 +1350,7 @@ near-misses.**
 
 ### 4h. The migration target (v25, amendment `0018-adjacent-rungs`)
 
-> **What this section adds:** the marked 0007 amendment of the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; its §4d-i; the amendment itself is 0018 §4j): the package-internal opening path `open_versioned` gains an optional migration target, `migrate_to`, used only by a release rung, with the runtime gate kept at the build. The frozen public contract (§4b) is unchanged and points here. **Within this section, a reference to the amendment's other sections (“§4c”, “§4e-ii row 11a”, …) means the subsection labelled so in 0018 §4j.**
+> **What this section adds:** the marked 0007 amendment of the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; its §4d-i; the amendment itself is 0018 §4j): the package-internal opening path `open_versioned` gains an optional migration target, `migrate_to`, used only by a release rung, with the runtime gate kept at the build. The frozen public contract (§4b) is unchanged and points here. **Within this section, a reference to the amendment's other sections (“§4c”, “§4e-ii row 11a”, …) means the subsection of 0018 §4j whose label ends so (“§4c” is 0018 §4j.6.4c).**
 
 #### 4h.1 `open_versioned` gains a target (the amendment's §4d-i)
 

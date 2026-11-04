@@ -1440,7 +1440,7 @@ The amendment's **Gate** (0007 §4g.8) applies to both: each is a PRODUCT test a
 
 ## 5g. The forward step with a target (v39, amendment `0018-adjacent-rungs`)
 
-> **What this section adds:** the marked 0013 amendments of the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; the amendment itself is 0018 §4j): the forward step takes a target `t`, its steps become one guarded entry table from which `plan(b, t)` is derived for every operation, and §5f.1's (b1), (b2) and stamp rules bind to the operation's established target. The clauses it amends are edited in place and point here: §4f's stamp row and §5f.1. **Within this section, a reference to the amendment's other sections (“§2a”, “§2c-ii”, “§4d-i”, “§4e-ii”, I33–I39, …) means the subsection labelled so in 0018 §4j (“§4d-i” in 0007 §4h).**
+> **What this section adds:** the marked 0013 amendments of the accepted amendment `0018-adjacent-rungs` (v0.5.1, sha256 `bebe330d18206458…`; the amendment itself is 0018 §4j): the forward step takes a target `t`, its steps become one guarded entry table from which `plan(b, t)` is derived for every operation, and §5f.1's (b1), (b2) and stamp rules bind to the operation's established target. The clauses it amends are edited in place and point here: §4f's stamp row and §5f.1. **Within this section, a reference to the amendment's other sections (“§2a”, “§2c-ii”, “§4d-i”, “§4e-ii”, I33–I39, …) means the subsection of 0018 §4j whose label ends so (“§4e-ii” is 0018 §4j.6.4e-ii; I33–I39 are 0018 §4j.8; “§4d-i” is 0007 §4h).**
 
 ### 5g.1 The forward step with a target, and the rung step declaration (the amendment's §4d-ii)
 
