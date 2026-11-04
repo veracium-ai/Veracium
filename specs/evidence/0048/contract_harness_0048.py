@@ -66,6 +66,23 @@ prepared, never when the CREATE TRIGGER literal is, and the firing statement may
 insert, so neither the literal classification nor a frame-based tripwire sees it. The model's gate refuses any
 trigger or view defined in a literal, and its tripwire records any edges write a trigger makes, whatever the frame.
 
+ROUND 4'S VERDICT (2026-11-04, the implementation returned for amendment of R4-01; this file's round-5 update; v4.3's
+text is queued). R4-01 found four forms the closed grammar admitted, and asked that the contract-model gate carry the
+same obligations "where relevant". Research's stage 1 found all four relevant here, statically
+(proposals/evidence-0048-r5-stage1/ in the research tree):
+  (a) the json slot's layout: each write-method call's `before`/`after` are tuple displays whose lengths put the
+      captured bytes at the json position SQLite itself reads (derived by execution against the model's tables, with
+      a moved-json control);
+  (b) every connection route: beyond R2-01's receiver rule, a cursor's `.connection` and its own `.execute` (each the
+      RESULT of an admitted call), and any execute-family attribute not called directly, are refused; `create_function`
+      and `set_authorizer` are connection forms the rule does not resolve;
+  (c) a literal SQLite cannot prepare is UNRESOLVED and refused at every SQL argument position: the classifier
+      compiles each statement as `EXPLAIN <statement>` and never runs it, so honest transaction control prepares;
+  (d) each non-literal allow-list entry binds its function's body, the module and class definitions that function
+      reads, and the parameters its expression reads (each reviewed).
+Four connection forms and six write-method forms are new mutant instances, refused by the static gate's own reason
+with the write method unchanged; two new controls pass (a savepoint pair; a docstring edit outside any listed site).
+
 §6 MUTANT ROWS OUTSIDE THIS MODEL (the complement, stated): the two N4c rows,
   "a copy site writing `confidence` removed from the declared table" and
   "a writer of a form the census does not see, its trigger tokens left unclassified".
@@ -73,9 +90,9 @@ They are held by the census and the tripwire (specs/evidence/0048/census_0048.py
 tests/test_0048_evidence.py) over the tree, not over a model. Every other §6 mutant row is run here, a row that names
 several forms once per form: R3-01's three helper bodies (3); "**for each of the declared edge writers:**" once per
 model edge writer, add_edge, confirm, transition and redact (4); "**for each connection form the gate does not
-resolve:**" (9); "a writer calls the helper, or the journal writer, itself" (2); R3-02's reviewer forms (7); the
-(v4.2) write method's own forms (23, the trigger among them). So the MUTANT lines number the rows run plus
-2 + 3 + 8 + 1 + 6 + 22 = 42.
+resolve:**" (13); "a writer calls the helper, or the journal writer, itself" (2); R3-02's reviewer forms (7); the
+(v4.2) write method's own forms (29: the trigger and round 4's six R4-01 forms among them). So the MUTANT lines
+number the rows run plus 2 + 3 + 12 + 1 + 6 + 28 = 52.
 
 OUTPUT GRAMMAR (dev's test asserts on it; do not reword without telling dev):
   CONTROL <PASS|FAIL> | `<cell>`[ on a harmless variant: <variant>][ | <failing cases>]
@@ -657,11 +674,27 @@ FROZEN = {
     "ModelStore._write_edge_row": "6e4568d12ba7fef2eaea0dcd7dee4085441aab121d310033104978d8e0714c14",
     "_DeferredJournal": "aaf132fd3db92be7669bcbce89c3aa4aeedca6f47ff7195d9c27dee5874d4295",
 }
-#: every NON-literal SQL argument of an execute/executemany/executescript: (qualname, sha256 of its ast.dump)
+#: every NON-literal SQL argument of an execute/executemany/executescript, keyed (qualname, sha256 of its ast.dump) ->
+#: (occurrences, the containing function's digest, the module-level and store-class binders of every name and `self.`
+#: attribute that function reads, by digest, and the parameters the expression reads). v4.2 round 5 (R4-01 (d)): a
+#: changed assignment reaching a listed site, in its function or in a definition the function reads, refuses until
+#: the entry is re-reviewed. The parameters, each reviewed: `__init__` reads none (DDL is a module literal, which step
+#: 5 classifies statement by statement); `_write_edge_row`'s `sql` is the closed write path (every call site's `sql`
+#: is a literal of WRITES, steps 4 and 5, and the method is frozen); `_mark`'s `table` is the frozen domain (every call
+#: site passes a constant of MARK_TABLES, step 4, and MARK_TABLES is frozen, step 3).
 NONLITERAL = {
-    ("ModelStore.__init__", "fc28ecdb9fe43ac94546fd33b959a19c4978ae60199c85a2b29802685d1ed10b"),
-    ("ModelStore._write_edge_row", "33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23"),
-    ("ModelStore._mark", "cade917bcb4632729072d16e0e895f0224ce8bc835d19d10814b273ac8e06854"),
+    ('ModelStore.__init__', 'fc28ecdb9fe43ac94546fd33b959a19c4978ae60199c85a2b29802685d1ed10b'):
+        (1, '1957659e8c4aba526d84676d482c8542af2597d5b2b63384c40aedefd93c399b',
+         (('module DDL', '3c9f387f007ef7999ad5820f7c0e48e2b1318d82f31d05b4a959634e904298da'), ('module sqlite3', '4e97bcd5f1455d88cb504c337bc7b8a2632804c7832b2fe01592f1fc4d604744'), ),
+         ()),
+    ('ModelStore._mark', 'cade917bcb4632729072d16e0e895f0224ce8bc835d19d10814b273ac8e06854'):
+        (1, 'bbd467a181041eeb14917c0f824ceb429d2ae37cea660eab65ebb363cf5ea2ce',
+         (('module MARK_TABLES', '3ed8aba4622a3be7f8eb77664f6dc62e4aeaa0f82e900a2290e6f92668e86d15'), ),
+         ('table',)),
+    ('ModelStore._write_edge_row', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
+        (1, '6e4568d12ba7fef2eaea0dcd7dee4085441aab121d310033104978d8e0714c14',
+         (('class _journal_edge', '9d1ff172ec2668e68751d2e35c0cf29b847939cbf6a453d2aa22815b367df085'), ('module _DeferredJournal', 'e963b0cac49c6a8591d1e05f3b9893cc9b929ecffbc4a1885f713a5d29cd3230'), ('module serialise_edge', '304cb6acea513e462d8911acf4a7b554764aaa2733ebe1e89cf2b1b9dbafbcf9'), ),
+         ('sql',)),
 }
 MARK_DOMAIN = ("redacted",)
 CONN_CALLS = ("execute", "executescript")         # the only connection methods the gate resolves
@@ -741,6 +774,16 @@ def _unresolved(tree):
             elif not (isinstance(p, ast.Attribute) and p.attr in CONN_CALLS and isinstance(parent.get(p), ast.Call)
                       and parent[p].func is p):
                 bad.append(f"line {line}: the connection is reached in a form the gate does not resolve")
+        # v4.2 round 5 (R4-01 (b); research's stage 1, B1): a cursor carries the connection (`.connection`) and its own
+        # `.execute`, so the RESULT of an admitted direct call is a second route to the connection. The model uses
+        # neither attribute, and an execute-family attribute is only ever the callee of a direct call.
+        if isinstance(node, ast.Attribute) and node.attr in ("connection", "cursor"):
+            bad.append(f"line {line}: a cursor or its connection reached (`.{node.attr}`), a route the gate does not "
+                       f"resolve")
+        if isinstance(node, ast.Attribute) and node.attr in ("execute", "executemany", "executescript"):
+            p = parent.get(node)
+            if not (isinstance(p, ast.Call) and p.func is node):
+                bad.append(f"line {line}: `.{node.attr}` held, passed or returned rather than called directly")
         if cls is not None and cls.name == "ModelConfig":
             continue
         if isinstance(node, ast.Name) and node.id in DYNAMIC:
@@ -763,35 +806,136 @@ def _statements(sql):
     return out
 
 
-@functools.lru_cache(maxsize=None)
-def _classify(sql, ddl):
-    """SQLite's own reading of a literal, prepared statement by statement under an authorizer against a scratch copy of
-    the model's tables: ("edges", ...) for an INSERT on edges or an UPDATE of edges.json in any database, ("trigger",
-    ...) for a trigger or view defined (its body is reported only when a statement that fires it is prepared)."""
-    c = sqlite3.connect(":memory:")
+#: CPython's sqlite3 text for the one expected error, a statement's parameters left unbound (pinned; N is a number)
+_BINDINGS = re.compile(r"Incorrect number of bindings supplied\. The current statement uses (\d+), and there are 0 "
+                       r"supplied\.")
+
+
+def _scratch(ddl):
+    c = sqlite3.connect(":memory:", isolation_level=None)
     for st in _statements(ddl):
         if st.strip().upper().startswith("CREATE TABLE"):
             c.execute(st)
+    return c
+
+
+@functools.lru_cache(maxsize=None)
+def _classify(sql, ddl):
+    """SQLite's own reading of a literal, statement by statement, against a scratch copy of the model's tables:
+    ("edges", ...) for an INSERT on edges or an UPDATE of edges.json in any database, ("trigger", ...) for a trigger or
+    view defined (its body is reported only when a statement that fires it is prepared), ("unresolved", ...) when
+    SQLite cannot prepare a statement. v4.2 round 5 (R4-01 (c)): each statement is COMPILED as `EXPLAIN <statement>`
+    under the authorizer and never executed, so every error is a failure to prepare (a missing function, table or
+    collation; a syntax error), and a failure to prepare is UNRESOLVED, never an empty classification. The one
+    expected error, unbound parameters, is answered by compiling again with that many NULLs."""
+    c = _scratch(ddl)
     found = set()
 
     def auth(action, a1, a2, db, trig):
         if (action == sqlite3.SQLITE_INSERT and a1 == "edges") or \
                 (action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json"):
             found.add("edges")
-            return sqlite3.SQLITE_DENY
         if action in (sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TRIGGER,
                       sqlite3.SQLITE_CREATE_VIEW, sqlite3.SQLITE_CREATE_TEMP_VIEW):
             found.add("trigger")
-            return sqlite3.SQLITE_DENY
         return sqlite3.SQLITE_OK
     c.set_authorizer(auth)
     for st in _statements(sql):
         try:
-            c.execute(st)
-        except Exception:                               # a non-SQL string, a binding count, a denial: classified above
-            pass
+            try:
+                c.execute("EXPLAIN " + st)
+            except sqlite3.ProgrammingError as ex:
+                m = _BINDINGS.fullmatch(str(ex))
+                if m is None:
+                    raise
+                c.execute("EXPLAIN " + st, (None,) * int(m.group(1)))
+        except sqlite3.DatabaseError:                    # ProgrammingError included: it subclasses DatabaseError
+            found.add("unresolved")
     c.close()
     return frozenset(found)
+
+
+#: the derivation's own control: json moved to the second placeholder must read as position 1 of 3
+LAYOUT_CONTROL = ("UPDATE edges SET user_id=?, json=? WHERE id=?", (3, 1))
+
+
+@functools.lru_cache(maxsize=None)
+def _json_layout(sql, ddl):
+    """(n, json_index) of a json-writing literal, by SQLite's own reading (v4.2 round 5, R4-01 (a); research's stage
+    1, B4): in a scratch store of the model's tables holding one seeded row, bind valid JSON at position k and the
+    seed's id everywhere else, and read whether it landed in edges.json; over every k. None unless exactly one does."""
+    c = _scratch(ddl)
+    c.execute("INSERT INTO edges (id, user_id, json) VALUES ('S0', 'S0', '{}')")
+    try:
+        c.execute("EXPLAIN " + sql)
+        n = 0
+    except sqlite3.ProgrammingError as ex:
+        m = _BINDINGS.fullmatch(str(ex))
+        n = int(m.group(1)) if m else 0
+    except sqlite3.DatabaseError:
+        n = 0
+    hits = []
+    for k in range(n):
+        vals = ["S0"] * n
+        vals[k] = '{"probe": %d}' % k
+        c.execute("SAVEPOINT p")
+        try:
+            c.execute(sql, vals)
+            if c.execute("SELECT count(*) FROM edges WHERE json=?", (vals[k],)).fetchone()[0]:
+                hits.append(k)
+        except sqlite3.DatabaseError:
+            pass
+        c.execute("ROLLBACK TO p")
+        c.execute("RELEASE p")
+    c.close()
+    return (n, hits[0]) if n and len(hits) == 1 else None
+
+
+def _defs(body):
+    """name -> sha256 over the ast.dump of every top-level statement in `body` that binds it"""
+    out = {}
+    for st in body:
+        names = []
+        if isinstance(st, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names = [st.name]
+        elif isinstance(st, ast.Assign):
+            names = [x.id for tg in st.targets for x in ast.walk(tg) if isinstance(x, ast.Name)]
+        elif isinstance(st, (ast.AnnAssign, ast.AugAssign)) and isinstance(st.target, ast.Name):
+            names = [st.target.id]
+        elif isinstance(st, (ast.Import, ast.ImportFrom)):
+            names = [a.asname or a.name.split(".")[0] for a in st.names]
+        for x in names:
+            out.setdefault(x, []).append(_digest(st))
+    return {k: hashlib.sha256("".join(v).encode()).hexdigest() for k, v in out.items()}
+
+
+def _binding(fn, expr, mdefs, cdefs):
+    """What a listed non-literal SQL site's value depends on (v4.2 round 5, R4-01 (d); research's stage 1, B3): its
+    containing function's body (every local assignment); the module-level and store-class binders of every name and
+    `self.` attribute the function reads; and the function's parameters the expression reads, directly or through the
+    function's own assignments. -> (function digest, ((dependency, digest), ...), (parameter, ...))"""
+    a = fn.args
+    params = {x.arg for x in a.posonlyargs + a.args + a.kwonlyargs} | {x.arg for x in (a.vararg, a.kwarg) if x}
+    local = {x.id for x in ast.walk(fn) if isinstance(x, ast.Name) and isinstance(x.ctx, (ast.Store, ast.Del))}
+    deps = {}
+    for x in ast.walk(fn):
+        if isinstance(x, ast.Name) and isinstance(x.ctx, ast.Load) and x.id not in local | params and x.id in mdefs:
+            deps[f"module {x.id}"] = mdefs[x.id]
+        elif (isinstance(x, ast.Attribute) and isinstance(x.value, ast.Name) and x.value.id == "self"
+              and x.attr in cdefs):
+            deps[f"class {x.attr}"] = cdefs[x.attr]
+    reach = {x.id for x in ast.walk(expr) if isinstance(x, ast.Name)}
+    while True:                                          # the function's own assignments feeding the expression
+        more = set()
+        for st in ast.walk(fn):
+            if isinstance(st, (ast.Assign, ast.AnnAssign, ast.AugAssign)) and st.value is not None:
+                tgs = st.targets if isinstance(st, ast.Assign) else [st.target]
+                if any(isinstance(y, ast.Name) and y.id in reach for tg in tgs for y in ast.walk(tg)):
+                    more |= {y.id for y in ast.walk(st.value) if isinstance(y, ast.Name)}
+        if more <= reach:
+            break
+        reach |= more
+    return _digest(fn), tuple(sorted(deps.items())), tuple(sorted(reach & params - {"self"}))
 
 
 def _closed_grammar(tree, ddl):
@@ -800,6 +944,9 @@ def _closed_grammar(tree, ddl):
     bad = []
     mod_defs = {n.name: n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
     store = mod_defs.get("ModelStore")
+    if _json_layout(LAYOUT_CONTROL[0], ddl) != LAYOUT_CONTROL[1]:
+        bad.append(f"the json-layout derivation failed its control ({LAYOUT_CONTROL[0]!r} did not read as "
+                   f"{LAYOUT_CONTROL[1]})")
     # 1. the two frozen bodies
     bodies = {"_DeferredJournal": mod_defs.get(DEFERRED),
               "ModelStore._write_edge_row": next((n for n in (store.body if store else ()) if
@@ -884,6 +1031,19 @@ def _closed_grammar(tree, ddl):
             bad.append(f"line {line}: a `*` or `**` argument reaching the write method")
         if len(call.args) != 4 or _sql(call.args[0]) is None:
             bad.append(f"line {line}: the write method's SQL is not its first of four positional arguments, a literal")
+        else:
+            # v4.2 round 5 (R4-01 (a)): the captured bytes go to `(*before, captured, *after)`[len(before)], so the
+            # json slot is the captured one only when `before` is exactly as long as SQLite's json index
+            lay, b, a = _json_layout(_sql(call.args[0]), ddl), call.args[1], call.args[3]
+            if lay is None:
+                bad.append(f"line {line}: the write method's SQL has no single json position by SQLite's reading")
+            elif not (isinstance(b, ast.Tuple) and isinstance(a, ast.Tuple)) or any(
+                    isinstance(x, ast.Starred) for x in b.elts + a.elts):
+                bad.append(f"line {line}: the write method's `before` and `after` are not tuple displays without `*`, "
+                           f"so the json slot's layout cannot be read")
+            elif len(b.elts) != lay[1] or len(b.elts) + 1 + len(a.elts) != lay[0]:
+                bad.append(f"line {line}: the json slot's layout: `before` has {len(b.elts)} and `after` "
+                           f"{len(a.elts)} element(s), where SQLite reads {lay[0]} parameters with json at {lay[1]}")
         for k in call.keywords:
             if k.arg == "defer":
                 defer_sites.append(call)
@@ -904,6 +1064,11 @@ def _closed_grammar(tree, ddl):
         if "trigger" in kinds:
             bad.append(f"line {node.lineno}: a trigger or view defined in a literal ({norm[:50]!r}): SQLite reports its "
                        f"body's writes only when a statement firing it is prepared")
+        at_sql = (isinstance(p, ast.Call) and p.args and p.args[0] is node and isinstance(p.func, ast.Attribute)
+                  and p.func.attr in ("execute", "executemany", "executescript", WRITE))
+        if "unresolved" in kinds and at_sql:            # v4.2 round 5 (R4-01 (c)); a string elsewhere is prose
+            bad.append(f"line {node.lineno}: an SQL literal SQLite cannot prepare, at an SQL argument position: "
+                       f"unresolved, not classified ({norm[:60]!r})")
         if "edges" in kinds:
             at_write = (isinstance(p, ast.Call) and p.args and p.args[0] is node and isinstance(p.func, ast.Attribute)
                         and p.func.attr == WRITE)
@@ -911,16 +1076,31 @@ def _closed_grammar(tree, ddl):
                 bad.append(f"line {node.lineno}: an edges-writing SQL literal outside the write method ({norm[:60]!r})")
             elif norm not in WRITES:
                 bad.append(f"line {node.lineno}: an edges-writing SQL literal not in the closed set ({norm[:60]!r})")
-    # 6. every non-literal SQL site is on the closed allow-list (by its function and its expression)
+    # 6. every non-literal SQL site is on the closed allow-list, by its function and its expression, counted, and bound
+    # (v4.2 round 5, R4-01 (d)) to what determines its value: a changed assignment reaching it refuses until re-review
+    mdefs, cdefs = _defs(tree.body), _defs(store.body if store else [])
+    seen = {}
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and \
                 node.func.attr in ("execute", "executemany", "executescript"):
             arg = node.args[0] if node.args else None
             if arg is None or _sql(arg) is None:
                 key = (_qualname(node, parent), _digest(arg) if arg is not None else "none")
+                seen[key] = seen.get(key, 0) + 1
                 if key not in NONLITERAL:
                     bad.append(f"line {node.lineno}: an execute whose SQL is not a literal and not on the non-literal "
                                f"allow-list ({key[0]})")
+                    continue
+                fn = node
+                while fn in parent and not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    fn = parent[fn]
+                got = _binding(fn, arg, mdefs, cdefs) if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) else None
+                if got != NONLITERAL[key][1:]:
+                    bad.append(f"line {node.lineno}: a listed non-literal SQL site whose function, a definition it "
+                               f"reads or a parameter it reads changed ({key[0]}): re-review it")
+    for key, want in NONLITERAL.items():
+        if seen.get(key, 0) != want[0]:
+            bad.append(f"the non-literal site {key[0]} occurs {seen.get(key, 0)} time(s); the reviewed list says {want[0]}")
     return bad
 
 
@@ -1418,6 +1598,8 @@ REDACT_WRITE = (f'{_I}with self._write_edge_row("UPDATE edges SET json=? WHERE i
                 '                pending.emit("redacted")\n')
 _SQL = '"INSERT INTO edges (id, user_id, json) VALUES (?, ?, ?) ON CONFLICT(id, user_id) DO UPDATE SET json = excluded.json"'
 _P = "(e.id, e.user_id, e.model_dump_json())"
+_JOIN = ('"".join(["INSERT INTO ed", "ges (id, user_id, json) VALUES (?, ?, ?) ON CONFLICT(id, user_id) DO UPDATE SET '
+         'json = excluded.json"])')
 BYPASS = "**for each of the declared edge writers:** that writer bypasses the write method"
 for inst, old, new in (
         ("add_edge", ADD_WRITE, f"{_I}self.conn.execute({_SQL}, {_P})\n"),
@@ -1439,7 +1621,18 @@ for inst, need, new in (
         ("the unbound sqlite3.Connection.execute", "sqlite3 used",
          f"{_I}sqlite3.Connection.execute(self.conn, {_SQL}, {_P})\n"),
         ("a second connection", "sqlite3 used", f"{_I}sqlite3.connect(':memory:').execute({_SQL}, {_P})\n"),
-        ("the instance __dict__", "dynamic access", f"{_I}self.__dict__['conn'].execute({_SQL}, {_P})\n")):
+        ("the instance __dict__", "dynamic access", f"{_I}self.__dict__['conn'].execute({_SQL}, {_P})\n"),
+        # v4.2 round 5 (R4-01 (b); research's stage 1, B1, B2): a cursor's connection, a cursor's own execute, each
+        # called with SQL the literal rule cannot fold; and the two connection methods that change what SQL means or
+        # who sees it
+        ("a cursor's `.connection`, its execute held in a name (SQL by join)", "a cursor or its connection reached",
+         f"{_I}_x = self.conn.execute('SELECT 1').connection.execute\n{_I}_x({_JOIN}, {_P})\n"),
+        ("a cursor's own execute held in a name (SQL by join)", "held, passed or returned",
+         f"{_I}_x = self.conn.execute('SELECT 1').execute\n{_I}_x({_JOIN}, {_P})\n"),
+        ("create_function on the connection", "does not resolve",
+         f"{_I}self.conn.create_function('rj', 1, str)\n" + ADD_WRITE),
+        ("set_authorizer on the connection (the tripwire removed)", "does not resolve",
+         f"{_I}self.conn.set_authorizer(None)\n" + ADD_WRITE)):
     MUTANTS.append((FORMS, GATE, inst, need, [(ADD_WRITE, new)]))
 ITSELF = "a writer calls the helper, or the journal writer, itself"
 MUTANTS += [
@@ -1563,7 +1756,40 @@ for inst, reps, plan in (
            "CREATE TABLE redacted (user_id TEXT NOT NULL, target TEXT NOT NULL);\n"
            "CREATE TRIGGER lift AFTER INSERT ON journal BEGIN UPDATE edges SET json = json_set(json, "
            "'$.provenance.confidence', 1.8) WHERE id = NEW.target; END;\n")],
-         [(G, ("a trigger or view defined in a literal", "an edges write made by trigger"))])):
+         [(G, ("a trigger or view defined in a literal", "an edges write made by trigger"))]),
+        # v4.2 round 5: round 4's R4-01, beyond v4.2's list (v4.3's row text is queued); each is refused by the static
+        # gate's own reason, the write method unchanged
+        ("(beyond §6's list; R4-01 (a)) the json slot re-laid: `before` one short, the unchecked dump in `after`",
+         [(ADD_WRITE, f'{_I}self._write_edge_row("INSERT INTO edges (id, user_id, json) VALUES (?, ?, ?) "\n'
+                      '                                 "ON CONFLICT(id, user_id) DO UPDATE SET json = excluded.json",\n'
+                      '                                 (e.id,), e, (e.model_dump_json().replace("0.8", "1.8"),), '
+                      'target=e.id, op="add")\n')],
+         [(G, "the json slot's layout")]),
+        ("(beyond §6's list; R4-01 (a)) `before` held in a name",
+         [(ADD_WRITE, f'{_I}_b = (e.id, e.user_id)\n'
+                      f'{_I}self._write_edge_row("INSERT INTO edges (id, user_id, json) VALUES (?, ?, ?) "\n'
+                      '                                 "ON CONFLICT(id, user_id) DO UPDATE SET json = excluded.json",\n'
+                      '                                 _b, e, (), target=e.id, op="add")\n')],
+         [(G, "not tuple displays")]),
+        ("(beyond §6's list; R4-01 (c)) an edges write SQLite cannot prepare in the classifier (a table made at run time)",
+         [(CONFIRM_WRITE, CONFIRM_WRITE + f'{_I}self.conn.execute("CREATE TEMP TABLE IF NOT EXISTS scratch (j)")\n'
+                          f'{_I}self.conn.execute("INSERT INTO scratch VALUES (?)", (e.model_dump_json(),))\n'
+                          f'{_I}self.conn.execute("UPDATE edges SET json=(SELECT j FROM scratch) WHERE id=? AND '
+                          f'user_id=?", (eid, user_id))\n')],
+         [(G, "SQLite cannot prepare")]),
+        ("(beyond §6's list; R4-01 (c)) an edges write through a function the classifier lacks",
+         [(CONFIRM_WRITE, CONFIRM_WRITE + f'{_I}self.conn.execute("UPDATE edges SET json=rj(json) WHERE id=? AND '
+                          f'user_id=?", (eid, user_id))\n')],
+         [(G, "SQLite cannot prepare")]),
+        ("(beyond §6's list; R4-01 (d)) a changed assignment reaching a listed site (`_mark`'s table)",
+         [('        self.conn.execute(f"INSERT INTO {table} (user_id, target) VALUES (?, ?)", (user_id, target))\n',
+           '        table = "edges (id, json) VALUES (?, ?) --"\n'
+           '        self.conn.execute(f"INSERT INTO {table} (user_id, target) VALUES (?, ?)", (user_id, target))\n')],
+         [(G, "a listed non-literal SQL site whose function")]),
+        ("(beyond §6's list; R4-01 (d)) a changed definition a listed site reads (`DDL` gains a table)",
+         [("CREATE TABLE redacted (user_id TEXT NOT NULL, target TEXT NOT NULL);\n",
+           "CREATE TABLE redacted (user_id TEXT NOT NULL, target TEXT NOT NULL);\nCREATE TABLE extra (x TEXT);\n")],
+         [(G, "a listed non-literal SQL site whose function")])):
     MUTANTS.append((OWN, OWN_KILL, inst, None, reps, plan))
 MUTANTS += [
     ("the transition decides from the listing (read outside the transaction)",
@@ -1626,6 +1852,14 @@ GATE_CONTROLS = [
     ("a WITH-led read of edges",
      [(_READ, '    def count(self, user_id):\n        return self.conn.execute("WITH x AS (SELECT json FROM edges WHERE '
               'user_id=?) SELECT count(*) FROM x", (user_id,)).fetchone()[0]\n\n' + _READ)]),
+    # v4.2 round 5: transaction control, which a classifier that RAN statements would read as an error (COMMIT with
+    # none open), and an edit in a function no listed non-literal site reads
+    ("a savepoint pair (transaction-control literals)",
+     [(_READ, '    def _savepoint(self):\n        self.conn.execute("SAVEPOINT s")\n        self.conn.execute("RELEASE s")'
+              '\n\n' + _READ)]),
+    ("a docstring edit in a function no listed site reads (confirm)",
+     [('"""The overlapping operation of N4h (B): the 0008 shape, max(c, 0.9), observed now, unflagged."""',
+       '"""The overlapping operation of N4h (B): the 0008 shape — max(c, 0.9), observed now, unflagged."""')]),
 ]
 
 

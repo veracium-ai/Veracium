@@ -20,18 +20,38 @@ def _default_lifetimes() -> dict[Volatility, Optional[int]]:
 DECAY_BOUNDS = ("decay_factor", "confidence_floor")
 
 
+_SHOWN_MAX = 200
+
+
+def _shown(value) -> str:
+    """A bounded rendering of a refused setting that cannot itself raise (0048 round 4, R4-02): `repr(value)` when it
+    renders, cut to _SHOWN_MAX characters; an int whose decimal form the interpreter refuses to build is named by sign
+    and bit length; anything else whose repr fails is named by its type."""
+    try:
+        text = repr(value)
+    except Exception:
+        if isinstance(value, int):
+            return f"an integer of {'-' if value < 0 else '+'}{value.bit_length()} bits (too long to print)"
+        return f"a value of type {type(value).__name__} (its repr failed)"
+    return text if len(text) <= _SHOWN_MAX else f"{text[:_SHOWN_MAX]}… ({len(text)} characters)"
+
+
 def validate_decay_bound(name: str, value) -> float:
     """specs/0048 §4A: `value` must be a real number (`int` or `float`; a `bool` is refused explicitly), finite, with
     0.0 <= value <= 1.0 — integers and both inclusive endpoints accepted. Refuses with ValueError naming the field and
     the value; returns the value unchanged. Per field: there is no cross-field rule (a decayed fact below the floor is
-    invalidated, at any pair), so construction can validate each field as the dataclass sets it."""
+    invalidated, at any pair), so construction can validate each field as the dataclass sets it.
+
+    The value is named through `_shown`, which cannot fail (0048 round 4, R4-02): an integer beyond the interpreter's
+    decimal-rendering limit is named by its sign and bit length, so the refusal is always this ValueError, naming the
+    field; the process-wide limit is never read or changed."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{name} must be a real number in [0, 1] (int or float, not bool), got {value!r} "
+        raise ValueError(f"{name} must be a real number in [0, 1] (int or float, not bool), got {_shown(value)} "
                          f"(specs/0048 §4A)")
     # 0048 round 3, R3-03: an int is compared EXACTLY, before anything converts it to float — `math.isfinite(10**400)`
     # raises OverflowError, which is not the refusal this function names
     if (isinstance(value, int) and not 0 <= value <= 1) or not math.isfinite(value) or not 0.0 <= value <= 1.0:
-        raise ValueError(f"{name} must be in [0, 1] and finite, got {value!r} (specs/0048 §4A: maintenance may "
+        raise ValueError(f"{name} must be in [0, 1] and finite, got {_shown(value)} (specs/0048 §4A: maintenance may "
                          f"lower a fact's confidence, never raise it)")
     return value
 

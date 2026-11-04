@@ -267,6 +267,27 @@ def _validated_edge_json(edge: Edge) -> str:
     return captured
 
 
+# specs/0048 §4C, round 5 (R4-01 (a)): THE binding layout of each statement `_write_edge_row` may run, as
+# (sha256 of the statement's text, number of parameters, index of the json parameter). The write method refuses any
+# call whose `before`/`after` lengths do not put the captured bytes at that index, so the validated serialisation
+# cannot be bound into another column and an unvalidated one into `json`. A tuple of str/int triples: immutable all
+# the way down. Keyed by digest so the statements' text stays where the census counts it, at the seven call sites:
+#   INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,…  8 parameters, json at 7
+#   UPDATE edges SET json=? WHERE id=?  2 parameters, json at 0
+#   UPDATE edges SET active=0, json=? WHERE id=?  2 parameters, json at 0
+#   UPDATE edges SET active=1, json=? WHERE id=?  2 parameters, json at 0
+#   UPDATE edges SET json=?, subject=?, relation=?, object=?, quaran…  6 parameters, json at 0
+# `tests/test_0048_decay_bounds.py` derives every triple by EXECUTING the statement (a sentinel at each position, read
+# back from edges.json) and freezes this binding.
+_JSON_LAYOUT = (
+    ("11a4cf8c9f53928ae3a9731f937337f426501f49ee763347fb8dbb9cba63f94d", 8, 7),
+    ("26f37e1c4ff86d41120fc0319eb542a7bfa282b476d31a2cb3caeeec8ca84220", 2, 0),
+    ("3978f9b4539099829f4b4c9cfe61c7be3cf82b223eedbb6c807f6be0b12924e5", 2, 0),
+    ("9ca8a2ac0dafec03ceedf3067558b606949092b63aa8346b0773f743b246ebd0", 2, 0),
+    ("f057c868430e5df6882cd7e202fc65c3bcbf7f6721bab93b72e9a524d9a74ef9", 6, 0),
+)
+
+
 class _DeferredJournal:
     """specs/0048 §4C, round 4 (R3-02, (a′)): the ONE edge journal a writer emits LATER than its row write — the
     redaction's, which must tombstone every prior event before journaling its own. Built only by
@@ -463,10 +484,16 @@ class SqliteStore(Store):
         """specs/0048 §4C, round 4 (R3-02, (a′)): THE write of the edges table's `json` column. It captures the edge's
         serialisation ONCE through `_validated_edge_json`, binds those bytes at the json position
         (`(*before, captured, *after)`), and journals THE SAME bytes, so no writer ever holds the string a later line
-        could rebind. `defer=True` (the redaction alone) returns a `_DeferredJournal` over those bytes instead of
+        could rebind. Round 5 (R4-01 (a)): before it captures or runs anything, it refuses a call whose `before`/`after` lengths do not
+        place those bytes at the statement's json parameter, by `_JSON_LAYOUT`. `defer=True` (the redaction alone) returns a `_DeferredJournal` over those bytes instead of
         journaling now. `tests/test_0048_decay_bounds.py` freezes this body and holds every writer to it."""
         if defer and (kind is not None or reason is not None):
             raise TypeError("a deferred edge journal takes its kind and reason at emit(), not at the write")
+        layout = (hashlib.sha256(sql.encode()).hexdigest(), len(before) + 1 + len(after), len(before))
+        if layout not in _JSON_LAYOUT:
+            raise ValueError(f"edge {edge_id!r}: {len(before)} parameter(s) before the json and {len(after)} after it "
+                             f"do not match the binding layout of {sql!r} (specs/0048 §4C, _JSON_LAYOUT); nothing "
+                             f"written")
         captured = _validated_edge_json(edge)
         self._conn.execute(sql, (*before, captured, *after))
         if defer:

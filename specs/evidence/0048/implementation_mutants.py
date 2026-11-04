@@ -52,6 +52,9 @@ FACTOR = lambda fa, c: C(f"test_factor_is_validated_whatever_the_confidence[{fa}
 N4I = lambda case: C(f"test_decay_keeps_the_shipped_result[{case}]")                 # noqa: E731
 N4H = lambda case: C(f"test_expiry_is_decided_from_the_current_row[{case}]")         # noqa: E731
 OTHER = C("test_other_fields_still_assign")
+RENDER = lambda v, f: C(f"test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[{v}-{f}]")  # noqa: E731
+LAYOUT_RUNTIME = C("test_the_write_method_refuses_a_wrong_layout_before_any_sql")
+LAYOUT_DERIVED = C("test_the_layout_is_derived_by_execution_and_frozen_in_the_store")
 SHIPPED = C("test_lapse_and_confirm_keep_their_shipped_counts")
 OUT_OF_BOUND = C("test_the_store_refuses_an_out_of_bound_edge")
 GATE = C("test_every_edge_write_goes_through_the_validating_serialiser")
@@ -138,6 +141,12 @@ MUTANTS = [
      [VALIDATED("+10**400", "decay_factor"), VALIDATED("-10**400", "confidence_floor"),
       ASSIGN("+10**400", "confidence_floor"), REFUSAL("+10**400", "0.3")], [VALIDATED("1.5", "decay_factor")], None,
      "the float conversion first again: 10**400 raises OverflowError, not the ValueError naming the field (R3-03)"),
+    ("R4-02-the-value-rendered-unbounded", "product", CFG,
+     [("got {_shown(value)} (specs/0048 §4A: maintenance may", "got {value!r} (specs/0048 §4A: maintenance may")],
+     [VALIDATED("+10**5000", "decay_factor"), RENDER("-10**5000", "confidence_floor"),
+      ASSIGN("+10**5000", "confidence_floor")], [VALIDATED("1.5", "decay_factor")], None,
+     "the refused value rendered by repr again: beyond the 4,300-digit limit the rendering's own ValueError replaces "
+     "the refusal naming the field (R4-02)"),
     ("N4b-bool-accepted", "product", CFG,
      [("if isinstance(value, bool) or not isinstance(value, (int, float)):", "if not isinstance(value, (int, float)):")],
      [VALIDATED("True", "decay_factor"), VALIDATED("False", "confidence_floor")], [VALIDATED("1.5", "decay_factor")],
@@ -208,6 +217,16 @@ MUTANTS = [
     ("N4f-the-helpers-return-ignored", "product", SQ,
      [(_INV_WRITER, "        _validated_edge_json(edge)\n" + _INV_DIRECT.format(dump="edge.model_dump_json()"))],
      [GATE], [OUT_OF_BOUND], None, "a writer calls the helper and ignores its return value"),
+    ("R4-01-the-runtime-layout-check-removed", "product", SQ,
+     [("        if layout not in _JSON_LAYOUT:\n", "        if False:\n")],
+     [LAYOUT_RUNTIME, GATE], [OUT_OF_BOUND], None,
+     "the write method no longer refuses a call whose before/after lengths misplace the captured json (R4-01 (a)'s "
+     "second layer; the static gate also refuses the changed body)"),
+    ("R4-01-a-layout-entry-moved", "product", SQ,
+     [(", 8, 7),\n", ", 8, 6),\n")],
+     [LAYOUT_DERIVED, GATE], [OTHER], None,
+     "the frozen layout names the wrong json position for the INSERT: it no longer equals the layout SQLite gives by "
+     "execution (R4-01 (a))"),
     ("R3-01-two-observations", "product", SQ,
      [(_HELPER, "    Edge.model_validate(edge.model_dump())\n    return edge.model_dump_json()\n")],
      [C("test_the_store_binds_the_bytes_it_validated")], [OUT_OF_BOUND], None,

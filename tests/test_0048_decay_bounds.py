@@ -37,13 +37,15 @@ OLD = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 NOW = dt.datetime(2026, 11, 2, tzinfo=dt.timezone.utc)
 FIELDS = ("decay_factor", "confidence_floor")
 HUGE = 10 ** 400                       # 0048 round 3, R3-03: beyond float — `math.isfinite` raised OverflowError on it
+VAST = 10 ** 5000                      # round 4, R4-02: beyond the 4,300-digit rendering limit — `{value!r}` raised
 REJECTED = [1.5, -0.1, float("nan"), float("inf"), float("-inf"), True, False, "0.5", None,
-            math.nextafter(1.0, 2.0), math.nextafter(0.0, -1.0), HUGE, -HUGE]
+            math.nextafter(1.0, 2.0), math.nextafter(0.0, -1.0), HUGE, -HUGE, VAST, -VAST]
 
 
 def _vid(v):
-    """A cell id: `repr(v)` — every existing id unchanged — except the two integers too long to print."""
-    return "+10**400" if v == HUGE else "-10**400" if v == -HUGE else repr(v)
+    """A cell id: `repr(v)` — every existing id unchanged — except the integers too long to print."""
+    big = {HUGE: "+10**400", -HUGE: "-10**400", VAST: "+10**5000", -VAST: "-10**5000"}
+    return big[v] if isinstance(v, int) and not isinstance(v, bool) and v in big else repr(v)
 BOUNDARY = [0.0, 1.0, 0, 1]
 
 
@@ -128,6 +130,19 @@ def test_config_bounds_are_validated(field, value):
 
 
 @pytest.mark.parametrize("field", FIELDS)
+@pytest.mark.parametrize("value", [VAST, -VAST], ids=_vid)
+def test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value(field, value):
+    """R4-02: beyond the interpreter's decimal-rendering limit the refusal is still §4A's ValueError, its message
+    LEADING with the field and naming the value boundedly (sign and bit length); the process-wide limit is untouched."""
+    limit = sys.get_int_max_str_digits()
+    with pytest.raises(ValueError) as ex:
+        MemoryConfig(**{field: value})
+    msg = str(ex.value)
+    assert msg.startswith(f"{field} must be") and f"an integer of {'+' if value > 0 else '-'}{value.bit_length()} bits" in msg
+    assert len(msg) < 400 and sys.get_int_max_str_digits() == limit
+
+
+@pytest.mark.parametrize("field", FIELDS)
 @pytest.mark.parametrize("value", BOUNDARY, ids=repr)
 def test_boundary_configs_are_still_valid(field, value):
     """N4b′: 0.0, 1.0, 0 and 1 stay accepted on both fields, at construction and on assignment (the cheapest wrong fix
@@ -173,7 +188,8 @@ def _mixed(tmp_path):
 
 @pytest.mark.parametrize("factor,floor", [(2.0, 0.3), (-1.0, 0.3), (float("nan"), 0.3), (True, 0.3), ("0.5", 0.3),
                                           (0.5, 2.0), (0.5, -0.5), (0.5, float("nan")),
-                                          (HUGE, 0.3), (-HUGE, 0.3), (0.5, HUGE), (0.5, -HUGE)], ids=_vid)
+                                          (HUGE, 0.3), (-HUGE, 0.3), (0.5, HUGE), (0.5, -HUGE),
+                                          (VAST, 0.3), (-VAST, 0.3), (0.5, VAST), (0.5, -VAST)], ids=_vid)
 def test_decay_config_refusal_writes_nothing(tmp_path, decay_mapped, factor, floor):
     """N4d: a malformed duck-typed policy refuses at entry with ValueError, and the complete store snapshot is
     byte-identical (every table; the counters and 0029's journal included). Then the same on an EMPTY store."""
@@ -574,6 +590,9 @@ METHOD = "_write_edge_row"
 DEFERRED = "_DeferredJournal"
 JOURNAL = "_journal_edge_write"
 GUARDED = (HELPER, METHOD, DEFERRED, JOURNAL)
+# round 5 (R4-01 (a)): the write method's binding layout, frozen like the bodies and never rebound from anywhere
+LAYOUT = "_JSON_LAYOUT"
+PROTECTED = GUARDED + (LAYOUT,)
 # 0048 round 4 (R3-02, (a′)): THE edges-json writers — exactly these seven call the write method, and an eighth is a
 # reviewed addition (research's stage-1 read, item 5)
 WRITERS = {"SqliteStore._upsert_edge_row", "SqliteStore.confirm_edge", "SqliteStore._invalidate_edge_row",
@@ -590,7 +609,7 @@ CLOSED_SQL = {
     "UPDATE edges SET json=?, subject=?, relation=?, object=?, quarantined=? WHERE id=?",
 }
 # the frozen bodies (ast.dump without positions, sha256). An edit of either refuses until the digest is re-reviewed.
-FROZEN = {METHOD: "a188aa4c5166525dd305b32f88182168968e05ee76276927642cd3bf20482db0", DEFERRED: "f34451a125834bb07a97daad6febc2b328674410162d77f18867ad95c1b7f2d8",
+FROZEN = {METHOD: "b593ddefa27983b2b441be8cd9b98282ef4904a6fe7184d222c979c0ac7ae67a", DEFERRED: "f34451a125834bb07a97daad6febc2b328674410162d77f18867ad95c1b7f2d8",
           HELPER: "135b1ee93136505fff98d067a0513316f795866f5d8c6353caade25cb7e2e86a"}   # research's stage 2 (S2-03): the helper's single capture is frozen with the rest
 # the dynamic-rebinding routes refused anywhere in sqlite.py (the existing receiver rule's list, plus the module routes)
 DYNAMIC_NAMES = {"getattr", "setattr", "delattr", "vars", "eval", "exec", "globals", "locals", "compile", "__import__",
@@ -686,6 +705,82 @@ NONLITERAL = {
 }
 # the one dynamic-table INSERT among them reaches only these tables (the domain is frozen with the entry)
 ACT_TABLES = {"confirmations", "replies"}
+# round 5 (R4-01 (d)): each entry's BINDING — the containing function and the module/class binders of every name its
+# value reads, followed into every function or method it reaches (`_sql_binding`; `_binding_digest`, sha256/16) —
+# regenerated from the tree and re-reviewed when it moves
+NONLITERAL_BINDING = {
+    ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): 'a007dac83ad5a192',
+    ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'): 'db9f67ef1d767cb0',
+    ('SqliteStore._attested_by_another_owner', 'eb2ba4c3290426945f64f55e532238461d5d9d44a5ee085a4f52645c927eeb3a'): 'd4fc7f5ee142b3a5',
+    ('SqliteStore._attested_fields', 'b4446c6ae88d8497d190f8f13a92911f81cf0e25a5c0df840c605cad4633adbf'): '471eb25f14d333e4',
+    ('SqliteStore._completed_attestation', 'ac4cc2426e52d922b8ed28e84effe37c30011850f64dd4452e744ad48eb150ab'): '4d491a150e8caa2a',
+    ('SqliteStore._confirm_replay', '0fbc4fa0d37e8071b0b5d73055918b6efd7b50a9f1fe40d6c3d3b079ac40816c'): '45981a477261c709',
+    ('SqliteStore._id_reserved', '39865061523d15e9bada3bba4afb270b89f19e430857060a14b8a6ae6efac59d'): 'd44dc55816e85de6',
+    ('SqliteStore._load_op', '27d008897c48b8c107eb9520ec542b393921f9e25847f9c51fedc2edfb07af6d'): 'e8a2b28487621067',
+    ('SqliteStore._ops_for_user', '2f505a5bb0ddb655bf46fa2ba3b0e786f2db13e1241afb349d9eb3adba2c4902'): '5201b8a46b469ae7',
+    ('SqliteStore._redact_in_txn', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'): 'c092f64467014f77',
+    ('SqliteStore._redaction_record', 'c2aa0c6f503ee77f2f03c4cd951b3745a4d865b0e283306c915c53d5fbb16e05'): 'cd48256676379af6',
+    ('SqliteStore._reply_replay', 'ebab35174f4bd03a186cdddb45260a877bf8623edb94965487f0a205325d2eac'): 'da23ba8b0553970b',
+    ('SqliteStore._source_redacted', '29a9ff461c9d9dce95085ee23caaf9cf3005b1caa65b04eaaa213d5db57baa50'): '2799124cf5fa5c48',
+    ('SqliteStore._surviving_derived', '3d9f2c553d81b34f9e0c3dae13bdce09ed08cd1a45de42c73e1c810fdaef9421'): '00fc3fe13f6cd5b6',
+    ('SqliteStore._write_edge_row', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'): '837cbf13ae6f3251',
+    ('SqliteStore._write_op', 'b0447a31f610348c07a0930af4ffe437a4178a7e2f7cdc52d11e2e5d8753060b'): 'f33708a9b03795b5',
+    ('SqliteStore.acted_edge_ids', 'b4820e17f1261cb74f4605d69f700b538e78998cf1b5c347ff27fcff8c8b43e3'): 'c6a8d350c8576df4',
+    ('SqliteStore.active_challenges', '7aae11eef304bd121d26fa2bfe8557573f7bad633b1f0ac29ea9852f41560577'): '51ab4f0c4419ffc6',
+    ('SqliteStore.add_reply', 'a2022f06b808b3a462a935471067cafc7535c753122add6c146aa954827fa400'): '16ce222052f71771',
+    ('SqliteStore.commit_outcome_import_plan', '03827958ec7b7072aefe89448678674c9fc02886e4c4edb1311a054d9d8f4a2d'): '9c2d3144a3f87cbb',
+    ('SqliteStore.commit_outcome_import_plan', '25a68e8dfc53a69efba960f40b99fc74fd55430b7a5d678e75be6ac3347e56eb'): '8b9ba230c6669e58',
+    ('SqliteStore.commit_outcome_import_plan', '70905b22342c93513fc74ea1d16e4f11233b00789a3dd9f73bc874dac57eebc9'): '6d5a5fff8f0d0aec',
+    ('SqliteStore.commit_outcome_import_plan', 'add6a203baf74ebdf25588d537da098d28d3d62b1dd80390be8daa6599b1fb04'): '6f9398b295171a36',
+    ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'): '6d5a5fff8f0d0aec',
+    ('SqliteStore.commit_outcome_import_plan', 'e09d8261753337dde680071ab5bdc7e6175a5754f49b43053debc68f25e57da4'): '58ce5c12abef5978',
+    ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'): 'ed117a2c64ccf155',
+    ('SqliteStore.confirm_notice', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'): '9f164edab461b1c5',
+    ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): '05623ef1b5666877',
+    ('SqliteStore.confirmations_for', '6de03e078785d11fe4b34b9c39000a308103c9a26815b350347938403fc4eea6'): '17ed76defda31afb',
+    ('SqliteStore.contributions', 'c1a33b453a06fc1a588f12603f9d30098c211b2f378a5aa76edf0dfc0c49e6ef'): 'f98d99163f1cec8b',
+    ('SqliteStore.contributors_of_source', 'ff79d44b37b3604e5d6ef605c9bec3381dec33cb8f91d45a207c030863ae2a27'): '4c3df298fc8b4db1',
+    ('SqliteStore.edge_events', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'): 'f952d758c62e895e',
+    ('SqliteStore.edges', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'): '0c543259081195a0',
+    ('SqliteStore.forget_user', '99b754925b96f9575742044fee438d82476f53a86a23cd0dd138a323fc044add'): 'a3396a908001aa71',
+    ('SqliteStore.migration_outcomes', 'e8e50718b302ae192e9d7ec4f38f340869dceab25ea51999b09d66a1041cf291'): 'f759f8fe493a46ea',
+    ('SqliteStore.migration_outcomes_by_uid', '0af9489795fdbff7246fc9b15f70bf20e45f07abc5cdb64638b5a4e429a4e3a4'): '72f22f204b4df4af',
+    ('SqliteStore.policy_receipts', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'): '93162dbd3567d5ad',
+    ('SqliteStore.redact', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): '0fa9218fe3cded6b',
+    ('SqliteStore.redacted_targets', '6f6166079c03b2f9ad0b61e4d8ba0e1882ed1b32d1d221f124d45d4b67c39af6'): '3308dde1ffb62e56',
+    ('SqliteStore.replies_for', '0e50f0c8b250ce20c7dcb393bdcbfc6c910b7099e5eb19b7c5a02ef0c64833d6'): 'c76c555fda255a01',
+    ('SqliteStore.transition_consolidation_if_current', '5126e0419cd211f8dc948a7d1276927164e8eab4a076c2c872d1addc70fe9f09'): '1eee398d92ea435c',
+}
+# round 5 (R4-01 (a)): the frozen statement binding _JSON_LAYOUT in sqlite.py
+FROZEN_LAYOUT = "1656bcdef030866f5bec4be139413ac460b0b77bcbba747356d3f25ecd1e8472"
+# round 5 (R4-01 (b), research's B2): the connection's closed non-SQL uses — exactly the pin's. `create_function`,
+# `set_authorizer`, `total_changes`, `cursor`, `backup`, `iterdump` and the rest are absent, so they refuse: a user
+# function is how an unread statement can write ((c)'s witness), and `set_authorizer(None)` would remove the test
+# fixture's runtime authorizer
+CONN_CALLS = {"commit", "rollback", "close"}
+CONN_READS = {"in_transaction"}
+# THE BINDING INVENTORY (round 3's, restored and counted): every pass of the connection to a function, keyed
+# (calling function, "arg:<callee name>") -> (times, the import the name must be bound by, the reason). Whether each
+# callee can write edges.json: `test_the_connection_inventorys_callees_hold` reads each one's body.
+INVENTORY = {
+    ("SqliteStore.__init__", "arg:open_versioned"): (1, ".schema_version:open_versioned",
+        "the 0007/0013 versioned open (DDL, the stamp, the migration ladder): MIGRATION SCOPE — an edges rewrite there "
+        "is 0013's audited migration, outside 0048's maintenance writers; N4c's tripwire covers the package"),
+    ("SqliteStore._journal_edge_write", "arg:next_txn"): (1, ".edge_events:next_txn",
+        "store.edge_events: the 0029 journal's allocation read; no edges write"),
+    ("SqliteStore._journal_edge_write", "arg:mint_recorded_at"): (1, ".edge_events:mint_recorded_at",
+        "store.edge_events: the journal's clock mint; no edges write"),
+    ("SqliteStore._journal_edge_write", "arg:next_seq"): (1, ".edge_events:next_seq",
+        "store.edge_events: the journal's sequence read; no edges write"),
+    ("SqliteStore._journal_edge_write", "arg:append_event"): (1, ".edge_events:append_event",
+        "store.edge_events: appends to edge_event, never to edges"),
+    ("SqliteStore.standing_revocations", "arg:_standing"): (1, ".revocation:standing_revocations",
+        "store.revocation: a SELECT on source_revocations; no edges write"),
+    ("SqliteStore._redact_in_txn", "arg:_redact_revocation_reasons"): (1, ".revocation:redact_revocation_reasons",
+        "store.revocation: UPDATE of source_revocations' reason column; no edges write"),
+    ("SqliteStore._redact_in_txn", "arg:_revocation_reason_marked"): (1, ".revocation:revocation_reason_marked",
+        "store.revocation: a SELECT on source_revocations; no edges write"),
+}
 
 
 def _qualnames(tree):
@@ -708,29 +803,31 @@ def _digest(node) -> str:
     return hashlib.sha256(ast.dump(node, include_attributes=False).encode()).hexdigest()
 
 
+def _bound_names(n):
+    """The names node `n` BINDS, in every statement form Python has (the one rule `_binders` and `_Binders` share)."""
+    if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        yield n.name
+    elif isinstance(n, ast.Name) and isinstance(n.ctx, (ast.Store, ast.Del)):
+        yield n.id                     # Assign/AnnAssign/AugAssign/For/With/NamedExpr/comprehension/Delete targets
+    elif isinstance(n, ast.alias):
+        yield n.asname or n.name.split(".")[0]
+    elif isinstance(n, ast.arg):
+        yield n.arg
+    elif isinstance(n, ast.ExceptHandler) and n.name:
+        yield n.name
+    elif isinstance(n, (ast.Global, ast.Nonlocal)):
+        yield from n.names
+    elif isinstance(n, (ast.MatchAs, ast.MatchStar)) and n.name:
+        yield n.name
+    elif isinstance(n, ast.MatchMapping) and n.rest:
+        yield n.rest
+    elif hasattr(ast, "TypeVar") and isinstance(n, (ast.TypeVar, ast.ParamSpec, ast.TypeVarTuple)):
+        yield n.name
+
+
 def _binders(tree, name):
     """Every node that BINDS `name` anywhere in the tree, in every statement form Python has."""
-    out = []
-    for n in ast.walk(tree):
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and n.name == name:
-            out.append(n)
-        elif isinstance(n, ast.Name) and n.id == name and isinstance(n.ctx, (ast.Store, ast.Del)):
-            out.append(n)                  # Assign/AnnAssign/AugAssign/For/With/NamedExpr/comprehension/Delete targets
-        elif isinstance(n, ast.alias) and (n.asname or n.name.split(".")[0]) == name:
-            out.append(n)
-        elif isinstance(n, ast.arg) and n.arg == name:
-            out.append(n)
-        elif isinstance(n, ast.ExceptHandler) and n.name == name:
-            out.append(n)
-        elif isinstance(n, (ast.Global, ast.Nonlocal)) and name in n.names:
-            out.append(n)
-        elif isinstance(n, (ast.MatchAs, ast.MatchStar)) and n.name == name:
-            out.append(n)
-        elif isinstance(n, ast.MatchMapping) and n.rest == name:
-            out.append(n)
-        elif hasattr(ast, "TypeVar") and isinstance(n, (ast.TypeVar, ast.ParamSpec, ast.TypeVarTuple)) and n.name == name:
-            out.append(n)
-    return out
+    return [n for n in ast.walk(tree) if name in _bound_names(n)]
 
 
 _CLASSIFIER = []
@@ -741,13 +838,19 @@ _TRIGGER_OR_VIEW = {sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TR
                     sqlite3.SQLITE_CREATE_TEMP_VIEW}
 
 
-def _sqlite_classify(sql: str) -> set:
-    """SQLite's own reading of a statement, not a keyword: prepare it under an authorizer against an in-memory store at
-    the head schema and record each (action, table, column) — the prepare asks once per updated column, so every
-    callback is allowed and the statement runs inside a savepoint that is always rolled back. Returns the subset of
-    {"edges-insert", "edges-json-update"} the statement performs."""
-    if sql in _CLASSIFIED:
-        return set(_CLASSIFIED[sql])
+# 0048 round 5 (R4-01 (c)): the statement is PREPARED and never run. CPython prepares it (the authorizer sees every
+# action), then checks the binding count BEFORE the first step; supplying more parameters than SQLite allows any
+# statement (32766) makes that check refuse every statement that prepared — 0-parameter ones included — with exactly
+# this message. Any other outcome (a missing function, table or collation, a syntax error, two statements) is a
+# statement SQLite did not read: UNRESOLVED, never "no write".
+_OVERBIND = 32767
+_BIND_COUNT = re.compile(r"Incorrect number of bindings supplied\. The current statement uses (\d+), and there are "
+                         + str(_OVERBIND) + r" supplied\.")
+UNRESOLVED = "unresolved"
+_PARAMS = {}
+
+
+def _classifier_conn():
     if not _CLASSIFIER:
         from veracium.store import schema_version as _sv
         # NO statement cache: a cached statement is not re-prepared, so the authorizer would not be asked again
@@ -756,35 +859,287 @@ def _sqlite_classify(sql: str) -> set:
         _sv.create(c0, _sv.SCHEMA_VERSION)
         c0.execute("COMMIT")
         _CLASSIFIER.append(c0)
-    c = _CLASSIFIER[0]
-    if True:
-        seen = []
+    return _CLASSIFIER[0]
 
-        def auth(action, a1, a2, db, trigger):
-            seen.append((action, a1, a2, db))     # SQLite asks once per updated COLUMN: every one must be seen
-            return sqlite3.SQLITE_OK
-        c.set_authorizer(auth)
-        c.execute("BEGIN")                       # an in-memory scratch store, and whatever ran is rolled back
+
+def _sqlite_classify(sql: str) -> set:
+    """SQLite's own reading of a statement, not a keyword: PREPARE it under an authorizer against an in-memory store at
+    the head schema and record each (action, table, column) — the prepare asks once per updated column. Returns the
+    subset of {"edges-insert", "edges-json-update", "trigger-or-view", UNRESOLVED} the reading gives; UNRESOLVED when
+    the statement did not prepare (round 5, R4-01 (c): an unknown function is not an empty write set)."""
+    if sql in _CLASSIFIED:
+        return set(_CLASSIFIED[sql])
+    c = _classifier_conn()
+    seen = []
+
+    def auth(action, a1, a2, db, trigger):
+        seen.append((action, a1, a2, db))     # SQLite asks once per updated COLUMN: every one must be seen
+        return sqlite3.SQLITE_OK
+    c.set_authorizer(auth)
+    prepared = False
+    try:
+        c.execute(sql, (None,) * _OVERBIND)
+    except Exception as ex:                  # 3.10 raises sqlite3.Warning for two statements: every outcome is read
+        m = _BIND_COUNT.fullmatch(str(ex)) if type(ex) is sqlite3.ProgrammingError else None
+        if m:
+            prepared, _PARAMS[sql] = True, int(m.group(1))
+    finally:
+        c.set_authorizer(None)
+        if c.in_transaction:                 # never reached by a statement that only prepared: kept as a backstop
+            c.execute("ROLLBACK")
+    tags = set() if prepared else {UNRESOLVED}
+    for action, a1, a2, db in seen:
+        if action in _TRIGGER_OR_VIEW:
+            tags.add("trigger-or-view")
+        if action in (sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_DROP_TABLE) and "edges" in (a1, a2):
+            tags.add("trigger-or-view")      # research's stage 2, S2-01: renaming edges routes a write around it
+        if action == sqlite3.SQLITE_INSERT and a1 == "edges":
+            tags.add("edges-insert")
+        elif action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json":
+            tags.add("edges-json-update")
+    _CLASSIFIED[sql] = frozenset(tags)
+    return tags
+
+
+def _param_count(sql: str) -> int:
+    """The statement's parameter count, as SQLite reports it after the prepare (the binding-count refusal)."""
+    assert UNRESOLVED not in _sqlite_classify(sql), sql
+    return _PARAMS[sql]
+
+
+_LAYOUT_DERIVED = []
+
+
+def _derive_one(sql: str) -> tuple:
+    """(parameters, json index) of ONE statement, by execution (research's B4 recipe; see `_derived_layout`)."""
+    from veracium.store import schema_version as _sv
+    n = _param_count(sql)
+    c = sqlite3.connect(":memory:", isolation_level=None)
+    c.execute("BEGIN")
+    _sv.create(c, _sv.SCHEMA_VERSION)
+    c.execute("COMMIT")
+    c.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
+              "VALUES('S0','u','s','r','o',1,0,'{}')")
+    hits = []
+    for k in range(n):
+        vals = ["S0"] * n
+        vals[k] = '{"probe": %d}' % k
+        c.execute("SAVEPOINT p")
         try:
-            c.execute(sql)
-        except (sqlite3.DatabaseError, sqlite3.ProgrammingError):
-            pass                                  # unbound parameters stop it after the prepare the authorizer saw
-        finally:
-            c.set_authorizer(None)
-            if c.in_transaction:
-                c.execute("ROLLBACK")
-        tags = set()
-        for action, a1, a2, db in seen:
-            if action in _TRIGGER_OR_VIEW:
-                tags.add("trigger-or-view")
-            if action in (sqlite3.SQLITE_ALTER_TABLE, sqlite3.SQLITE_DROP_TABLE) and "edges" in (a1, a2):
-                tags.add("trigger-or-view")      # research's stage 2, S2-01: renaming edges routes a write around it
-            if action == sqlite3.SQLITE_INSERT and a1 == "edges":
-                tags.add("edges-insert")
-            elif action == sqlite3.SQLITE_UPDATE and a1 == "edges" and a2 == "json":
-                tags.add("edges-json-update")
-        _CLASSIFIED[sql] = frozenset(tags)
-        return tags
+            c.execute(sql, vals)
+            if vals[k] in {r[0] for r in c.execute("SELECT json FROM edges")}:
+                hits.append(k)
+        except sqlite3.DatabaseError:
+            pass
+        c.execute("ROLLBACK TO p")
+        c.execute("RELEASE p")
+    c.close()
+    assert len(hits) == 1, (sql, hits)
+    return n, hits[0]
+
+
+def _derived_layout() -> frozenset:
+    """R4-01 (a), research's B4 recipe: each closed statement's json position BY EXECUTION — a scratch store at the head
+    schema, one seeded row; for each position k, a distinct JSON sentinel at k and the seed id everywhere else; the k
+    whose sentinel lands in edges.json is the json position. Exactly one k per statement, or this refuses."""
+    if _LAYOUT_DERIVED:
+        return _LAYOUT_DERIVED[0]
+    out = set()
+    for sql in sorted(CLOSED_SQL):
+        n, k = _derive_one(sql)
+        out.add((sql, n, k))
+    _LAYOUT_DERIVED.append(frozenset(out))
+    return _LAYOUT_DERIVED[0]
+
+
+_SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+
+
+class _Binders:
+    """`_binders(sub, name)` for many names over one tree, from ONE walk with the same rule (`_bound_names`), restricted
+    to the subtree `sub` by node identity."""
+
+    def __init__(self, tree):
+        self.by_name, self._ids, self._digests, self.self_stores = {}, {}, {}, {}
+        for n in ast.walk(tree):
+            for name in _bound_names(n):
+                self.by_name.setdefault(name, []).append(n)
+            if (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id == "self"
+                    and isinstance(n.ctx, (ast.Store, ast.Del))):
+                self.self_stores.setdefault(n.attr, []).append(n)    # `self.X = …` / `del self.X`
+
+    def digest(self, node):
+        d = self._digests.get(id(node))
+        if d is None:
+            d = self._digests[id(node)] = _digest(node)
+        return d
+
+    def ids(self, sub):
+        ids = self._ids.get(id(sub))
+        if ids is None:
+            ids = self._ids[id(sub)] = {id(x) for x in ast.walk(sub)}
+        return ids
+
+    def of(self, sub, name):
+        ids = self.ids(sub)
+        return [b for b in self.by_name.get(name, []) if id(b) in ids]
+
+
+def _scope_of(node, parent):
+    """The innermost def, class or lambda enclosing `node` (None: the module)."""
+    while node in parent:
+        node = parent[node]
+        if isinstance(node, _SCOPES):
+            return node
+    return None
+
+
+def _stmt_of(node, parent, holder):
+    """The statement directly in `holder`'s body that contains `node`."""
+    while parent.get(node) is not holder:
+        node = parent[node]
+    return node
+
+
+def _value_of_binder(b, parent):
+    """The expression a local binder takes its value from; None for a parameter (round 5, R4-01 (d))."""
+    if isinstance(b, ast.arg):
+        return None
+    x = b
+    while x in parent:
+        pnode = parent[x]
+        if isinstance(pnode, (ast.Assign, ast.AnnAssign, ast.NamedExpr)) and x is not pnode.value:
+            return pnode.value
+        if isinstance(pnode, ast.AugAssign):
+            return pnode
+        if isinstance(pnode, (ast.For, ast.AsyncFor, ast.comprehension)) and x is pnode.target:
+            return pnode.iter
+        if isinstance(pnode, ast.withitem) and x is pnode.optional_vars:
+            return pnode.context_expr
+        if isinstance(pnode, ast.stmt):
+            return pnode
+        x = pnode
+    return b
+
+
+def _sql_binding(tree, parent, fnode, expr, idx=None):
+    """R4-01 (d), research's B3: what determines a non-literal SQL value — the names it reads, followed through their
+    local definitions in the containing function: (parameters reached, {module name: binder digests},
+    {self attribute: binder digests}). Module and class binders are the statements that bind the name at that scope;
+    a name with no module binder is a builtin and records []. RECURSIVE: when a binder is a function or method (the
+    value calls it), the module names and self attributes ITS body reads are followed the same way, to closure — a
+    changed helper two calls down moves the binding like a changed constant."""
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore")
+    idx = idx or _Binders(tree)
+    params, mod, attrs = set(), {}, {}
+
+    def local_reads(func, start):
+        """(module names, self attributes, parameters) `start` reads, through `func`'s local definitions."""
+        g, a, ps, todo, seen, done = set(), set(), set(), [start], set(), set()
+        while todo:
+            node = todo.pop()
+            for x in ast.walk(node):
+                if (isinstance(x, ast.Attribute) and isinstance(x.value, ast.Name) and x.value.id == "self"
+                        and isinstance(x.ctx, ast.Load)):
+                    a.add(x.attr)
+                if not (isinstance(x, ast.Name) and isinstance(x.ctx, ast.Load)) or x.id == "self" or x.id in done:
+                    continue
+                done.add(x.id)
+                local = [b for b in idx.of(func, x.id) if b is not func] if func is not None else []
+                if not local:
+                    g.add(x.id)
+                for b in local:
+                    v = _value_of_binder(b, parent)
+                    if v is None:
+                        ps.add(x.id)
+                    elif id(v) not in seen:
+                        seen.add(id(v))
+                        todo.append(v)
+        return g, a, ps
+
+    g, a, params = local_reads(fnode, expr)
+    work = [("mod", n) for n in g] + [("self", n) for n in a]
+    while work:
+        kind, name = work.pop()
+        if (mod if kind == "mod" else attrs).get(name) is not None:
+            continue
+        if kind == "mod":
+            stmts = [_stmt_of(b, parent, tree) for b in idx.of(tree, name) if _scope_of(b, parent) is None]
+        else:
+            stmts = [_stmt_of(b, parent, cls) for b in idx.of(cls, name) if _scope_of(b, parent) is cls and b is not cls]
+            cls_ids = idx.ids(cls)
+            for x in idx.self_stores.get(name, []):     # `self.X = …` in a method: the statement that stores it
+                if id(x) in cls_ids:
+                    while not isinstance(x, ast.stmt):
+                        x = parent[x]
+                    stmts.append(x)
+        (mod if kind == "mod" else attrs)[name] = sorted(idx.digest(s) for s in stmts)
+        for s in stmts:                                 # a function the value reaches: follow what IT reads
+            if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                g2, a2, _p = local_reads(s, s)
+                work += [("mod", n) for n in g2 if n not in mod] + [("self", n) for n in a2 if n not in attrs]
+    return sorted(params), mod, attrs
+
+
+def _binding_digest(tree, parent, fnode, expr, binding=None, idx=None) -> str:
+    params, mod, attrs = binding or _sql_binding(tree, parent, fnode, expr, idx)
+    blob = json.dumps([(idx.digest if idx else _digest)(fnode), params, mod, attrs], sort_keys=True)
+    return hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+def _leading_constant(expr):
+    """The SQL text an expression begins with, when a constant fixes it (else None)."""
+    if isinstance(expr, ast.Constant) and isinstance(expr.value, str):
+        return expr.value
+    if isinstance(expr, ast.JoinedStr) and expr.values and isinstance(expr.values[0], ast.Constant):
+        return expr.values[0].value
+    if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
+        return _leading_constant(expr.left)
+    if (isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute) and expr.func.attr == "format"
+            and not expr.keywords):
+        return _leading_constant(expr.func.value)
+    return None
+
+
+# R4-01 (d), the head rule for a non-literal whose value a PARAMETER reaches (research's B3): its leading constant fixes
+# the statement as a SELECT, or as a PRAGMA whose name is fixed — neither writes a table (one statement per execute;
+# no user function can be registered, (b))
+_PARAM_HEAD = re.compile(r"\s*(SELECT\s|PRAGMA\s+\w+\s*=)", re.I)
+
+
+def _act_table_insert(fnode, expr) -> bool:
+    """The one other form a parameter may reach: `INSERT INTO {T}(…)` whose table T is, in the same function, preceded by
+    a `self._ACT_COLUMNS[T]` lookup — which raises unless T is one of the frozen ACT_TABLES (5c), none of them
+    edges. Matched by the expression's own shape, not by the function's name. "Preceded" is by line, in the same
+    function: the gate does not prove the lookup dominates the execute (the frozen function digest binds the order)."""
+    if not (isinstance(expr, ast.JoinedStr) and len(expr.values) >= 2 and isinstance(expr.values[0], ast.Constant)
+            and re.fullmatch(r"\s*INSERT\s+INTO\s*", expr.values[0].value, re.I)
+            and isinstance(expr.values[1], ast.FormattedValue)):
+        return False
+    want = ast.dump(expr.values[1].value)
+    return any(isinstance(x, ast.Subscript) and isinstance(x.value, ast.Attribute) and x.value.attr == "_ACT_COLUMNS"
+               and isinstance(x.value.value, ast.Name) and x.value.value.id == "self" and ast.dump(x.slice) == want
+               and x.lineno <= expr.lineno for x in ast.walk(fnode))
+
+
+def _import_target(tree, parent, fnode, name, idx=None):
+    """The `module:attr` a callee name is bound to by an import, in the calling function or at module level; None
+    when any binder of the name is not such an import."""
+    idx = idx or _Binders(tree)
+    bs = [b for b in idx.of(fnode, name) if b is not fnode] or [
+        b for b in idx.of(tree, name) if _scope_of(b, parent) is None]
+    out = set()
+    for b in bs:
+        imp = parent.get(b)
+        if not (isinstance(b, ast.alias) and isinstance(imp, ast.ImportFrom)):
+            return None
+        out.add(f"{'.' * imp.level}{imp.module}:{b.name}")
+    return out.pop() if len(out) == 1 else None
+
+
+def _derived_layout_by_digest() -> frozenset:
+    """The derived layout as sqlite.py keys it: (sha256 of the statement, parameters, json index)."""
+    return frozenset((hashlib.sha256(s.encode()).hexdigest(), n, j) for s, n, j in _derived_layout())
 
 
 def _gate(source: str, others: dict | None = None) -> list:
@@ -793,6 +1148,7 @@ def _gate(source: str, others: dict | None = None) -> list:
     tree = ast.parse(source)
     q = _qualnames(tree)
     parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+    idx = _Binders(tree)
     bad = []
     at = lambda n: f"L{getattr(n, 'lineno', '?')}"
     cls = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore"]
@@ -807,12 +1163,12 @@ def _gate(source: str, others: dict | None = None) -> list:
             bad.append(f"{name}: its body is not the frozen one (digest {_digest(node)[:16]}…) — re-review it")
     # 2. the names: one binder each, never shadowed, never reached dynamically
     for name in (HELPER, DEFERRED):
-        b = _binders(tree, name)
+        b = idx.of(tree, name)
         if len(b) != 1 or not isinstance(b[0], (ast.FunctionDef, ast.ClassDef)) or b[0] not in tree.body:
             bad.append(f"{name}: bound {len(b)} time(s) in sqlite.py ({[at(x) for x in b]}) — exactly its one "
                        f"module-level definition may bind it")
     for name in (METHOD, JOURNAL):
-        b = _binders(tree, name)
+        b = idx.of(tree, name)
         if len(b) != 1 or b[0] is not defs.get(name):
             bad.append(f"{name}: bound {len(b)} time(s) in sqlite.py ({[at(x) for x in b]}) — exactly its one def "
                        f"in SqliteStore's class body may bind it")
@@ -825,7 +1181,7 @@ def _gate(source: str, others: dict | None = None) -> list:
     for t in scopes(table):
         if t.get_type() == "module":
             continue
-        for name in (HELPER, DEFERRED):
+        for name in (HELPER, DEFERRED, LAYOUT):
             try:
                 s = t.lookup(name)
             except KeyError:
@@ -839,6 +1195,25 @@ def _gate(source: str, others: dict | None = None) -> list:
             bad.append(f"{at(n)}: dynamic access `.{n.attr}` in the store module")
         if isinstance(n, ast.Attribute) and n.attr in DYNAMIC_ATTRS:
             bad.append(f"{at(n)}: dynamic access `{n.attr}` in the store module")
+    # 2b. the binding layout (round 5, R4-01 (a)): ONE module-level binder, its statement frozen, its value the layout
+    # SQLite gives BY EXECUTION, and read only by the write method
+    lb = idx.of(tree, LAYOUT)
+    asg = parent.get(lb[0]) if len(lb) == 1 else None
+    if not (isinstance(asg, ast.Assign) and asg in tree.body and len(asg.targets) == 1 and asg.targets[0] is lb[0]):
+        bad.append(f"{LAYOUT}: bound {len(lb)} time(s) ({[at(x) for x in lb]}) — exactly one module-level assignment "
+                   f"may bind it")
+    else:
+        if _digest(asg) != FROZEN_LAYOUT:
+            bad.append(f"{LAYOUT}: its statement is not the frozen one (digest {_digest(asg)[:16]}…) — re-review it")
+        try:
+            val = ast.literal_eval(asg.value)
+        except (ValueError, SyntaxError, TypeError):
+            val = None
+        if not (isinstance(val, tuple) and len(set(val)) == len(val) and set(val) == _derived_layout_by_digest()):
+            bad.append(f"{LAYOUT}: its value is not the layout SQLite gives by execution")
+    refs = [n for n in ast.walk(tree) if isinstance(n, ast.Name) and n.id == LAYOUT and isinstance(n.ctx, ast.Load)]
+    if [q.get(id(r)) for r in refs] != [f"SqliteStore.{METHOD}"]:
+        bad.append(f"{LAYOUT}: read at {[at(r) for r in refs]} — exactly once, by the write method")
     # 3. method names are what they say, across src/ (research's read, item 1): no attribute assignment or deletion of
     # a guarded name on any receiver, and no class but SqliteStore defines the two methods
     if others is None:
@@ -851,12 +1226,12 @@ def _gate(source: str, others: dict | None = None) -> list:
                        [n.target] if isinstance(n, (ast.AnnAssign, ast.AugAssign)) else [])
             for tg in targets:
                 for x in ast.walk(tg):
-                    if isinstance(x, ast.Attribute) and x.attr in GUARDED:
+                    if isinstance(x, ast.Attribute) and x.attr in PROTECTED:
                         bad.append(f"{rel} {at(n)}: `{x.attr}` assigned or deleted as an attribute")
             # research's stage 2, S2-02: `setattr(SqliteStore, "_write_edge_row", …)` from another module
             if (isinstance(n, ast.Call) and (getattr(n.func, "id", None) in ("setattr", "delattr")
                                              or getattr(n.func, "attr", None) in ("setattr", "delattr"))
-                    and len(n.args) >= 2 and isinstance(n.args[1], ast.Constant) and n.args[1].value in GUARDED):
+                    and len(n.args) >= 2 and isinstance(n.args[1], ast.Constant) and n.args[1].value in PROTECTED):
                 bad.append(f"{rel} {at(n)}: `{n.args[1].value}` rebound by setattr/delattr")
             if isinstance(n, ast.ClassDef) and not (rel.endswith("store/sqlite.py") and n.name == "SqliteStore"):
                 for m in n.body:
@@ -890,8 +1265,22 @@ def _gate(source: str, others: dict | None = None) -> list:
             sql = call.args[0] if call.args else None
             if not (isinstance(sql, ast.Constant) and isinstance(sql.value, str) and sql.value in CLOSED_SQL):
                 bad.append(f"{at(n)}: `{METHOD}`'s sql is not a literal of the closed set ({where})")
+            elif UNRESOLVED in _sqlite_classify(sql.value):
+                bad.append(f"{at(n)}: `{METHOD}`'s sql did not prepare: SQLite has not read it ({where})")
             elif not (_sqlite_classify(sql.value) & {"edges-insert", "edges-json-update"}):
                 bad.append(f"{at(n)}: `{METHOD}`'s sql is not, by SQLite's reading, an edges json write ({where})")
+            # round 5 (R4-01 (a)): the captured bytes reach the statement's json parameter and no other — before and
+            # after are tuple displays whose lengths are the layout SQLite gives by execution
+            if len(call.args) == 4:
+                b4, af = call.args[1], call.args[3]
+                if not all(isinstance(x, ast.Tuple) and not any(isinstance(e, ast.Starred) for e in x.elts)
+                           for x in (b4, af)):
+                    bad.append(f"{at(n)}: `{METHOD}`'s before/after are not tuple displays of fixed length ({where})")
+                elif (isinstance(sql, ast.Constant) and (sql.value, len(b4.elts) + 1 + len(af.elts), len(b4.elts))
+                      not in _derived_layout()):
+                    bad.append(f"{at(n)}: `{METHOD}`'s binding layout puts the captured json at parameter "
+                               f"{len(b4.elts)} of {len(b4.elts) + 1 + len(af.elts)}, not at the statement's json "
+                               f"position ({where})")
             kws = {k.arg: k.value for k in call.keywords}
             if None in kws:
                 bad.append(f"{at(n)}: `{METHOD}` called with **kwargs ({where})")
@@ -917,6 +1306,54 @@ def _gate(source: str, others: dict | None = None) -> list:
         if (isinstance(n, ast.Attribute) and n.attr == "_conn"
                 and not (isinstance(n.value, ast.Name) and n.value.id == "self")):
             bad.append(f"{at(n)}: the connection reached through something other than `self`")
+    # 5a'. every connection reference resolves (round 5, R4-01 (b); research's B1/B2): no cursor and no `.connection`
+    # anywhere in the module; an execute-family attribute on ANY receiver is the function of a direct call — never
+    # held, passed or returned; and every `self._conn` is a direct execute-family call (its SQL read below), one of the
+    # closed non-SQL uses, the one binder in __init__, or a counted, reasoned pass in the inventory
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Attribute) and n.attr in ("connection", "cursor"):
+            bad.append(f"{at(n)}: `.{n.attr}` in the store module — a cursor or its connection is not resolved "
+                       f"({q.get(id(n), '<module>')})")
+        if (isinstance(n, ast.Attribute) and n.attr in SQL_CALLS
+                and not (isinstance(parent.get(n), ast.Call) and parent[n].func is n)):
+            bad.append(f"{at(n)}: `.{n.attr}` held, passed or returned, not called ({q.get(id(n), '<module>')})")
+    passes = {}
+    for n in ast.walk(tree):
+        if not (isinstance(n, ast.Attribute) and n.attr == "_conn" and isinstance(n.value, ast.Name)
+                and n.value.id == "self"):
+            continue
+        where, pn = q.get(id(n), "<module>"), parent.get(n)
+        if isinstance(n.ctx, (ast.Store, ast.Del)):
+            if not (where == "SqliteStore.__init__" and isinstance(pn, ast.Assign) and pn.targets == [n]):
+                bad.append(f"{at(n)}: the connection bound outside its one assignment in __init__ ({where})")
+            passes["<binder>"] = passes.get("<binder>", 0) + 1
+            continue
+        if isinstance(pn, ast.Attribute) and pn.value is n:
+            called = isinstance(parent.get(pn), ast.Call) and parent[pn].func is pn
+            if called and pn.attr in SQL_CALLS:
+                continue
+            if called and pn.attr in CONN_CALLS and not parent[pn].args and not parent[pn].keywords:
+                continue
+            if not called and pn.attr in CONN_READS and isinstance(pn.ctx, ast.Load):
+                continue
+            bad.append(f"{at(n)}: `self._conn.{pn.attr}` in a form the gate does not resolve ({where})")
+            continue
+        if isinstance(pn, ast.Call) and n in pn.args and isinstance(pn.func, ast.Name):
+            key = (where, f"arg:{pn.func.id}")
+            fnode = _scope_of(n, parent)
+            if key not in INVENTORY:
+                bad.append(f"{at(n)}: the connection passed to `{pn.func.id}`, not in the inventory ({where})")
+            elif _import_target(tree, parent, fnode, pn.func.id, idx) != INVENTORY[key][1]:
+                bad.append(f"{at(n)}: `{pn.func.id}` is not bound to the inventory's "
+                           f"{INVENTORY[key][1]} ({where})")
+            passes[key] = passes.get(key, 0) + 1
+            continue
+        bad.append(f"{at(n)}: the connection reached in a form the gate does not resolve ({where})")
+    if passes.get("<binder>") != 1:
+        bad.append(f"the connection is bound {passes.get('<binder>', 0)} time(s), not once")
+    for key, (count, _target, _reason) in INVENTORY.items():
+        if passes.get(key, 0) != count:
+            bad.append(f"inventory entry {key} is reached {passes.get(key, 0)} time(s), the inventory says {count}")
     # 5b. every string constant that SQLite reads as an edges json write is the `sql` of a write-method call — so an
     # alias of execute, the unbound Connection.execute, a cursor, a second connection or SQL held in a name cannot
     # carry one (the R2-01 forms)
@@ -952,6 +1389,8 @@ def _gate(source: str, others: dict | None = None) -> list:
         a0 = n.args[0]
         if isinstance(a0, ast.Constant) and isinstance(a0.value, str):
             tags = _sqlite_classify(a0.value)
+            if UNRESOLVED in tags:
+                bad.append(f"{at(n)}: a statement SQLite did not prepare ({where}): {' '.join(a0.value.split())[:70]}")
             if tags & {"edges-insert", "edges-json-update"}:
                 bad.append(f"{at(n)}: an edges json write executed directly, not through `{METHOD}` ({where}): "
                            f"{' '.join(a0.value.split())[:70]}")
@@ -961,9 +1400,26 @@ def _gate(source: str, others: dict | None = None) -> list:
         key = (where, _digest(a0))
         if key not in NONLITERAL:
             bad.append(f"{at(n)}: a non-literal SQL site not in the reviewed list ({where}): {ast.unparse(a0)[:80]}")
+        else:
+            # round 5 (R4-01 (d)): the entry binds what determines the value — the containing function and the module
+            # and class binders of every name the value reads — and a value a parameter reaches is a SELECT or a
+            # fixed PRAGMA by its leading constant (the write method's own `sql`: its callers' literals, above)
+            fnode = _scope_of(n, parent)
+            binding = _sql_binding(tree, parent, fnode, a0, idx)
+            got = _binding_digest(tree, parent, fnode, a0, binding, idx)
+            if got != NONLITERAL_BINDING.get(key):
+                bad.append(f"{at(n)}: what determines the non-literal SQL at {key[0]} changed (binding {got}) — "
+                           f"re-review it ({ast.unparse(a0)[:60]})")
+            params = binding[0]
+            if (params and where != f"SqliteStore.{METHOD}" and not _PARAM_HEAD.match(_leading_constant(a0) or "")
+                    and not _act_table_insert(fnode, a0)):
+                bad.append(f"{at(n)}: a parameter ({', '.join(params)}) reaches SQL whose leading constant does not "
+                           f"fix a SELECT or a named PRAGMA ({where}): {ast.unparse(a0)[:60]}")
         seen_nonlit[key] = seen_nonlit.get(key, 0) + 1
     # COUNTED (research's stage 2): a second site with an identical expression in the same function is not admitted
     # by the first one's entry
+    if set(NONLITERAL_BINDING) != set(NONLITERAL):
+        bad.append(f"the non-literal list and its bindings disagree: {sorted(set(NONLITERAL) ^ set(NONLITERAL_BINDING))}")
     for key, (count, _text) in NONLITERAL.items():
         if seen_nonlit.get(key, 0) != count:
             bad.append(f"non-literal site {key} occurs {seen_nonlit.get(key, 0)} time(s), the reviewed list says {count}")
@@ -1138,6 +1594,231 @@ def test_the_gate_reads_the_rest_of_src(name):
     others = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py")) if p.resolve() != SQLITE.resolve()}
     assert _gate(SQLITE.read_text(), others) == []
     assert _gate(SQLITE.read_text(), {**others, **OTHER_MUTANTS[name]}), f"{name}: the gate passed it"
+
+
+# ---- round 5 (R4-01): the four unresolved forms, their siblings and the harmless controls -----------------------------
+# Each mutant edits ONLY a call site or a definition the gate reads — the write method is never changed (the reviewer:
+# "the positional witness must use the unchanged frozen method") — and each is refused by the STATIC gate for its own
+# named reason (research's N3), asserted below. (old, new, the reason's text); old None appends to the end.
+_UPSERT = ("                (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,\n"
+           "                 int(edge.active), int(edge.quarantined)), edge, (),\n"
+           "                user_id=edge.user_id, edge_id=edge.id,")
+_RECOMPUTE = ('        self._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), edge, (edge_id,),\n'
+              '                             user_id=row[1], edge_id=edge_id, prior=row[0])\n'
+              '        self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))')
+_LIFT = '(edge.model_dump_json().replace("0.8", "1.8"), edge_id)'
+R5_MUTANTS = {
+    # (a) the binding layout
+    "(a) the reviewer's re-layout: the captured json in `quarantined`, an unchecked dump in `json`": (
+        _UPSERT, "                (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,\n"
+                 "                 int(edge.active)), edge, (edge.model_dump_json().replace(\"0.8\", \"1.8\"),),\n"
+                 "                user_id=edge.user_id, edge_id=edge.id,", "binding layout puts the captured json at parameter 6 of 8"),
+    "(a) a starred `before`": (
+        _UPSERT, _UPSERT.replace("(edge.id, edge.user_id,", "(*(edge.id,), edge.user_id,"), "not tuple displays"),
+    "(a) a `before` held in a name": (
+        _INV, "        before = ()\n" + _INV.replace('WHERE id=?", (), edge,', 'WHERE id=?", before, edge,'),
+        "not tuple displays"),
+    # (b) every connection reference
+    "(b) the reviewer's alias of execute, with constructed SQL": (
+        _RECOMPUTE, _RECOMPUTE + '\n        run_sql = self._conn.execute\n        run_sql("UP" + "DATE ed" + "ges SET js"'
+                    ' + "on=? WHERE id=?", ' + _LIFT + ')', "held, passed or returned, not called"),
+    "(b) a cursor's `.connection` held in a name (research's B1)": (
+        _RECOMPUTE, _RECOMPUTE + '\n        run_sql = self._conn.execute("SELECT 1").connection.execute\n'
+                    '        run_sql("UP" + "DATE edges SET json=? WHERE id=?", ' + _LIFT + ')', "`.connection` in the store module"),
+    "(b) a cursor's own execute held in a name (research's B1)": (
+        _RECOMPUTE, _RECOMPUTE + '\n        run_sql = self._conn.execute("SELECT 1").execute\n'
+                    '        run_sql("UP" + "DATE edges SET json=? WHERE id=?", ' + _LIFT + ')', "held, passed or returned, not called"),
+    "(b) create_function on the store's connection": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.create_function("lift", 1, lambda j: j)', "`self._conn.create_function`"),
+    "(b) set_authorizer(None) on the store's connection": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.set_authorizer(None)', "`self._conn.set_authorizer`"),
+    "(b) total_changes read": (
+        _RECOMPUTE, _RECOMPUTE + '\n        assert self._conn.total_changes >= 0', "`self._conn.total_changes`"),
+    "(b) `with self._conn:`": (
+        _RECOMPUTE, _RECOMPUTE + '\n        with self._conn:\n            pass', "the connection reached in a form"),
+    "(b) the connection passed to a function the inventory lacks": (
+        _RECOMPUTE, _RECOMPUTE + '\n        _lift(self._conn)', "not in the inventory"),
+    "(b) an inventory callee rebound at module scope": (None, "\nappend_event = print\n", "is not bound to the inventory's"),
+    "(b) the connection held in a name": (
+        _RECOMPUTE, _RECOMPUTE + '\n        c = self._conn\n        c.execute("SELECT 1")', "the connection reached in a form"),
+    # (c) a statement SQLite did not prepare
+    "(c) the reviewer's unregistered function": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("UPDATE edges SET json=reviewer_json(json) WHERE id=?", (edge_id,))',
+        "a statement SQLite did not prepare"),
+    "(c) a missing collation": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("UPDATE edges SET json=? WHERE id=? AND json < \'x\' COLLATE lift", '
+                    + _LIFT + ')', "a statement SQLite did not prepare"),
+    "(c) a missing table": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("UPDATE edges SET json=(SELECT j FROM scratch) WHERE id=?", (edge_id,))',
+        "a statement SQLite did not prepare"),
+    "(c) a syntax error": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("UPDATE edges SET json=? WHERE", (edge_id,))',
+        "a statement SQLite did not prepare"),
+    # (d) what determines a listed non-literal
+    "(d) the reviewer's changed assignment reaching `q` in edges": (
+        '            q = "SELECT json FROM edges WHERE user_id=?"\n',
+        '            q = ("UP" + "DATE ed" + "ges SET js" + "on=re" + "place(js"\n'
+        '                 + "on, \'0.8\', \'1.8\') WHERE user_id=?")\n', "what determines the non-literal SQL at SqliteStore.edges"),
+    "(d) a changed _APPLIED_SQL (research's B3)": (
+        '_APPLIED_SQL = "(state = \'applied\')"', '_APPLIED_SQL = "(state = \'applied\' OR 1)"',
+        "what determines the non-literal SQL at SqliteStore._attested_by_another_owner"),
+    "(d) a changed _OP_COLS (research's B3)": (
+        '    _OP_COLS = ("operation_id", "user_id", "fence", "state", "owner",',
+        '    _OP_COLS = ("operation_id", "user_id", "fence", "state", "owner", "json",',
+        "what determines the non-literal SQL at SqliteStore._load_op"),
+    "(d) a method two calls down changed (the binding is followed to closure)": (
+        "            lease_expires_at=row[6], claimed_ids=json.loads(row[7]))\n",
+        "            lease_expires_at=row[6], claimed_ids=json.loads(row[7]) or [])\n",
+        "what determines the non-literal SQL at SqliteStore.transition_consolidation_if_current"),
+    "(d) an edit elsewhere in a listed function": (
+        '            rows = self._conn.execute(q, args).fetchall()\n',
+        '            args = list(args)\n            rows = self._conn.execute(q, args).fetchall()\n',
+        "what determines the non-literal SQL at SqliteStore.edges"),
+}
+# the harmless controls: each edit is one the gate must PASS
+R5_CONTROLS = {
+    "a new literal read": (_RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("SELECT 1 FROM edges WHERE id=?", (edge_id,))'),
+    "a new literal write to another table": (
+        _RECOMPUTE, _RECOMPUTE + '\n        self._conn.execute("UPDATE confirmations SET request_digest=? WHERE edge_id=?", '
+                    '("x", edge_id))'),
+    "an edit in a function no listed site reads": (
+        "    def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:\n",
+        "    def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:\n        pass\n"),
+    "a commit and a rollback": (_RECOMPUTE, _RECOMPUTE + '\n        if not self._conn.in_transaction:\n'
+                                '            self._conn.commit()\n            self._conn.rollback()'),
+}
+
+
+def _r5_planted(old, new):
+    src = SQLITE.read_text()
+    if old is None:
+        return src + new
+    assert src.count(old) == 1, f"the anchor occurs {src.count(old)} times — re-anchor it: {old[:60]!r}"
+    out = src.replace(old, new)
+    assert out != src
+    return out
+
+
+@pytest.mark.parametrize("name", list(R5_MUTANTS))
+def test_the_gate_refuses_each_round_5_form_for_its_reason(name):
+    """R4-01 (a)–(d): each form planted on a copy of sqlite.py — the write method unchanged — is refused by the static
+    gate, and one of the problems is the form's own named reason (not a neighbour rule catching it by accident)."""
+    old, new, reason = R5_MUTANTS[name]
+    bad = _gate(_r5_planted(old, new))
+    assert any(reason in b for b in bad), f"{name}: not refused for its reason {reason!r}: {bad}"
+
+
+def test_the_round_5_mutants_leave_the_write_method_unchanged():
+    """The reviewer's condition on the witnesses: every R5 mutant leaves the write method's frozen body as it is."""
+    for name, (old, new, _r) in R5_MUTANTS.items():
+        tree = ast.parse(_r5_planted(old, new))
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SqliteStore")
+        m = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == METHOD)
+        assert _digest(m) == FROZEN[METHOD], name
+
+
+@pytest.mark.parametrize("name", list(R5_CONTROLS))
+def test_the_gate_passes_each_harmless_round_5_control(name):
+    """The other half of each rule: a harmless edit of the same kinds passes (a gate refusing everything is no gate)."""
+    old, new = R5_CONTROLS[name]
+    assert _gate(_r5_planted(old, new)) == []
+
+
+def test_a_parameter_reaching_a_write_refuses_by_the_head_rule(monkeypatch):
+    """R4-01 (d)'s head rule ALONE: a listed site whose value a parameter reaches becomes a DELETE; its new entry and
+    binding are admitted (as a re-review would), so the only remaining problem is the head rule's."""
+    old = 'f"SELECT json FROM {table} WHERE id=? AND user_id=?"'
+    new = 'f"DELETE FROM {table} WHERE id=? AND user_id=?"'
+    planted = _r5_planted(old, new)
+    tree = ast.parse(planted)
+    parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+    expr = next(n for n in ast.walk(tree) if isinstance(n, ast.JoinedStr) and ast.unparse(n).startswith("f'DELETE FROM {table}"))
+    call = parent[expr]
+    fnode = _scope_of(call, parent)
+    key = (f"SqliteStore.{fnode.name}", _digest(expr))
+    oldkey = next(k for k, v in NONLITERAL.items() if k[0] == key[0] and "SELECT json FROM {table}" in v[1])
+    monkeypatch.delitem(NONLITERAL, oldkey)
+    monkeypatch.delitem(NONLITERAL_BINDING, oldkey)
+    monkeypatch.setitem(NONLITERAL, key, (1, new))
+    monkeypatch.setitem(NONLITERAL_BINDING, key, _binding_digest(tree, parent, fnode, expr))
+    bad = _gate(planted)
+    assert len(bad) == 1 and "reaches SQL whose leading constant does not fix a SELECT" in bad[0], bad
+    assert _sql_binding(tree, parent, fnode, expr)[0] == ["kind"]
+
+
+def test_the_classifier_prepares_and_never_runs():
+    """R4-01 (c): the classifier's one expected outcome is CPython's binding-count refusal, raised after the prepare and
+    before any step; its text is pinned here, with N a number. A missing function, collation or table, a syntax error
+    and two statements are UNRESOLVED; a 0-parameter COMMIT or BEGIN prepares and does nothing; and every literal SQL
+    argument in the pin's sqlite.py prepares (0 UNRESOLVED)."""
+    c = sqlite3.connect(":memory:", isolation_level=None)
+    with pytest.raises(sqlite3.ProgrammingError) as ex:
+        c.execute("SELECT ?, ?", (None,) * _OVERBIND)
+    assert str(ex.value) == ("Incorrect number of bindings supplied. The current statement uses 2, and there are "
+                             "32767 supplied.")
+    for bad_sql in ("UPDATE edges SET json=reviewer_json(json) WHERE id=?", "SELECT json FROM edges ORDER BY json "
+                    "COLLATE nope", "SELECT j FROM scratch", "UPDATE edges SET json=? WHERE", "SELECT 1; SELECT 2"):
+        assert UNRESOLVED in _sqlite_classify(bad_sql), bad_sql
+    conn = _classifier_conn()
+    for ok_sql in ("COMMIT", "BEGIN IMMEDIATE", "ROLLBACK", "SELECT 1"):
+        assert _sqlite_classify(ok_sql) == set() and _param_count(ok_sql) == 0, ok_sql
+    assert not conn.in_transaction and conn.execute("SELECT COUNT(*) FROM edges").fetchone() == (0,)
+    tree = ast.parse(SQLITE.read_text())
+    lits = [n.args[0].value for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+            and n.func.attr in SQL_CALLS and n.args and isinstance(n.args[0], ast.Constant)
+            and isinstance(n.args[0].value, str)]
+    assert len(lits) > 100 and [s for s in lits if UNRESOLVED in _sqlite_classify(s)] == [], len(lits)
+
+
+def test_the_layout_is_derived_by_execution_and_frozen_in_the_store():
+    """R4-01 (a), research's B4: each closed statement's json position comes from EXECUTING it (INSERT 8/7, each UPDATE
+    at 0 — the call sites' before-lengths), the moved-json control derives 1, and sqlite.py's _JSON_LAYOUT is exactly
+    that, by digest, as an immutable tuple."""
+    got = {(s, n, j) for s, n, j in _derived_layout()}
+    assert {(n, j) for _s, n, j in got} == {(8, 7), (2, 0), (6, 0)} and len(got) == len(CLOSED_SQL) == 5
+    assert _derive_one("UPDATE edges SET subject=?, json=? WHERE id=?") == (3, 1)
+    assert isinstance(SQ._JSON_LAYOUT, tuple) and all(isinstance(r, tuple) for r in SQ._JSON_LAYOUT)
+    assert set(SQ._JSON_LAYOUT) == _derived_layout_by_digest() and len(SQ._JSON_LAYOUT) == 5
+
+
+def test_the_write_method_refuses_a_wrong_layout_before_any_sql(tmp_path):
+    """R4-01 (a)'s second layer, at run time: the reviewer's re-layout reaching the UNCHANGED method's caller shape —
+    the captured json bound one slot early — refuses with ValueError before any statement runs; the store is
+    byte-identical. The honest layout writes."""
+    db = tmp_path / "layout.db"
+    s = SqliteStore(str(db))
+    e = _edge("e", S.Volatility.SLOW, 0.8)
+    s.add_edge(e)
+    before = _snapshot(db)
+    ins = next(x for x in CLOSED_SQL if x.startswith("INSERT"))
+    with pytest.raises(ValueError, match="binding layout"):
+        with s._write_txn():
+            s._write_edge_row(ins, (e.id, e.user_id, e.subject, e.relation, e.object, int(e.active)), e,
+                              (e.model_dump_json().replace("0.8", "1.8"),), user_id=e.user_id, edge_id=e.id, prior=None)
+    assert _snapshot(db) == before
+    with pytest.raises(ValueError, match="binding layout"):
+        with s._write_txn():
+            s._write_edge_row("UPDATE edges SET json=? WHERE id=?", (), e, (), user_id=e.user_id, edge_id=e.id, prior=None)
+    assert _snapshot(db) == before and _row(s, "e").provenance.confidence == 0.8
+
+
+def test_the_connection_inventorys_callees_hold():
+    """R4-01 (b), research's B2: the inventory's reasons are claims about other code, checked — each callee resolves to
+    the function its entry names, and that function's body holds no statement SQLite reads as an edges json write;
+    open_versioned is the one stated MIGRATION SCOPE entry (its ladder is 0013's audited path). The pin passes the
+    connection eight times."""
+    assert sum(c for c, _t, _r in INVENTORY.values()) == 8
+    for (where, form), (_count, target, reason) in INVENTORY.items():
+        mod, fname = target.split(":")
+        path = SRC / "veracium" / "store" / (mod.lstrip(".") + ".py")
+        fn = next(n for n in ast.walk(ast.parse(path.read_text()))
+                  if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == fname)
+        writes = [n.value for n in ast.walk(fn) if isinstance(n, ast.Constant) and isinstance(n.value, str)
+                  and _sqlite_classify(n.value) & {"edges-insert", "edges-json-update"}]
+        if fname == "open_versioned":
+            assert "MIGRATION SCOPE" in reason and writes == [], (target, writes)
+        else:
+            assert writes == [] and ("no edges write" in reason or "never to edges" in reason), (target, writes, reason)
 
 
 def test_each_writer_bypassing_the_write_method_is_refused():
