@@ -271,12 +271,12 @@ def _validated_edge_json(edge: Edge) -> str:
 # (sha256 of the statement's text, number of parameters, index of the json parameter). The write method refuses any
 # call whose `before`/`after` lengths do not put the captured bytes at that index, so the validated serialisation
 # cannot be bound into another column and an unvalidated one into `json`. A tuple of str/int triples: immutable all
-# the way down. Keyed by digest so the statements' text stays where the census counts it, at the seven call sites:
-#   INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,…  8 parameters, json at 7
-#   UPDATE edges SET json=? WHERE id=?  2 parameters, json at 0
-#   UPDATE edges SET active=0, json=? WHERE id=?  2 parameters, json at 0
-#   UPDATE edges SET active=1, json=? WHERE id=?  2 parameters, json at 0
-#   UPDATE edges SET json=?, subject=?, relation=?, object=?, quaran…  6 parameters, json at 0
+# the way down. Keyed by digest, so the statements' text stays at the seven call sites, where the scans read it:
+#   the row insert: 8 parameters, json at 7 (the last column)
+#   the json-only update: 2 parameters, json at 0
+#   the retire update: 2 parameters, json at 0
+#   the reinstate update: 2 parameters, json at 0
+#   the redaction update: 6 parameters, json at 0
 # `tests/test_0048_decay_bounds.py` derives every triple by EXECUTING the statement (a sentinel at each position, read
 # back from edges.json) and freezes this binding.
 _JSON_LAYOUT = (
