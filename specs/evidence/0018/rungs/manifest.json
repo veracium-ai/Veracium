@@ -1,0 +1,1161 @@
+{
+ "generator": {
+  "python": "3.14.7",
+  "sqlite": "3.45.1"
+ },
+ "fixtures": [
+  {
+   "fixture": "v01-910e49325716.db",
+   "base": 1,
+   "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+   "accepted": true,
+   "origin": "v0.4.8",
+   "route": "v0.4.8",
+   "rows": {
+    "edges": 3,
+    "episodes": 2,
+    "wiki": 1,
+    "write_counter": 1
+   },
+   "sha256": "05d17d41296fbddfb5d6763bef34dbef98eb73f2a85fd6a6c0606024f76081f8",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 3,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v03-ed6ae6221423.db",
+   "base": 3,
+   "digest": "ed6ae62214236e484b9fe2b67b529c0833b2ac2ecd513d2569ab4b333e179bbb",
+   "accepted": true,
+   "origin": "v0.5.0",
+   "route": "v0.5.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 3,
+    "episodes": 2,
+    "wiki": 1,
+    "write_counter": 1
+   },
+   "sha256": "a05a966c0a57b7651429bbc074d5e5aa53f609436b5ba781c710a5216615acf9",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 3,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v04-088bc124ace2.db",
+   "base": 4,
+   "digest": "088bc124ace2680742e48958658b91e4ad4f7fb09be97ae317170b8a5daaf913",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "797dc1f659c5cd79ec7f10b9e5b0844bb7396c5929ab68b8b6f1a933eb57e1fd",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v06-34708aa71998.db",
+   "base": 6,
+   "digest": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
+   "accepted": true,
+   "origin": "v0.9.0",
+   "route": "v0.9.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "5b757f76feefac83d8114ae775a8cbfbab86e06ed0bb5dff10c71131d8a9034d",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v06-9235be563941.db",
+   "base": 6,
+   "digest": "9235be5639416842beeebfc09501a0fa3b4bdec6ec5d6e49680221eb2888763d",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.9.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "ce70e901b26a3f2d5b44621d37a14b9ebedda432fb7081461868afa3657b6ce5",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v07-34708aa71998.db",
+   "base": 7,
+   "digest": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "ed5343dfaad3add6fbe769ab58a80414122f4575cea332d2c93b6c18dbed77b7",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v07-9235be563941.db",
+   "base": 7,
+   "digest": "9235be5639416842beeebfc09501a0fa3b4bdec6ec5d6e49680221eb2888763d",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "dbd5d3b037dd82a843326533b73e6946a146d393322fd3eab181474fa2eadbf1",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v08-22aac52fe13e.db",
+   "base": 8,
+   "digest": "22aac52fe13ec58d8d6f4959c919fafb1482b9fae38b84d431c96089ca235766",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.12.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "d7adc5ce0521bc8ba1e00d8a451221e723a753135ca4a6b47298bb5fdb2992d1",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v08-382758f75c3c.db",
+   "base": 8,
+   "digest": "382758f75c3c7455901192efd4c2cb8270dcef98cc240d370e5ba44608564a33",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.12.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "88ad99e4f2c446838fbce30b5ca05f2a384ae58729e6b70a799284391bd46d73",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v08-aa760c39300f.db",
+   "base": 8,
+   "digest": "aa760c39300f64cb64a76440ea9e9676bbec9814eeaf3d8aa2062da9f74a40c2",
+   "accepted": true,
+   "origin": "v0.12.0",
+   "route": "v0.12.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "b4bd4d8510cac3d09b376fbea61907624c976797a8e05928494444afbc0e846c",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v08-ce8d7124a758.db",
+   "base": 8,
+   "digest": "ce8d7124a758a9be60ad4cf2596d1c1a98594f0b0ca5a89f9faf2665ea93d941",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.12.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "6d6795547a01f864e6bd3d7fb2204ae1bfd7276c46a6eef1328788ba74a4f734",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v09-234a90dce4b8.db",
+   "base": 9,
+   "digest": "234a90dce4b811fa758c25d3f57ef294ccd48af42d6d6722d8ed1329602cc617",
+   "accepted": true,
+   "origin": "v0.13.0",
+   "route": "v0.13.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "646c2fe9c63c3121365e8cb5ba6d72a2aea4766cd9d47fe9552af4e82640e810",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v09-9028136eae70.db",
+   "base": 9,
+   "digest": "9028136eae7055ab3040d9b7db55ef89484c86c654fa0ce9aebe75a761ee650f",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.13.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "c6eb760326efbbaed7a0002ef232d18d6e0db5e5e3d0b0de58fa4cd1027ca8e4",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v09-af3d03d62457.db",
+   "base": 9,
+   "digest": "af3d03d62457462a8b84a258efe6f28eac8c85f73d6b4b7d31b546f4b9f83de2",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.13.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "86a6bd551828421ba6723dbe3c95eca8b23822c0d3d6c95a6de842a026370995",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v09-f69b19b99b21.db",
+   "base": 9,
+   "digest": "f69b19b99b21dffe0eec21e6763bc2a06472675d32dcf371d3b699d55eb275ef",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.13.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "d097c974fd31fc2c7b3b5627527b02d2b3bae921c7d6dfaf06230610557fd1df",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v10-386216c67768.db",
+   "base": 10,
+   "digest": "386216c67768d2d5ed1404994f363f04f5922089a632a25a6121defce31958ae",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.15.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "916a6949d05655b26f085c21e5e6c799a8941e475e178fad856553f70b31f8cf",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v10-5cc96a20ec86.db",
+   "base": 10,
+   "digest": "5cc96a20ec86da4894f5cca4abbc136238d4d16342118ee0cc1f3f1220ab1741",
+   "accepted": true,
+   "origin": "v0.13.0",
+   "route": "v0.13.0>v0.15.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "da36ca2af8384c9e667526a7460b1a2026812b0f7a0cbc67bd7f2adb554280e1",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v10-9f4401b7e68b.db",
+   "base": 10,
+   "digest": "9f4401b7e68b4df2315e6885790aa8add10768d026c9d8d6b87054eabc0e2dff",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.15.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "d528bcf8ac4697601195cf8f5fa4601ebe93ff3b4b6d221b3ca6d8539c86e130",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v10-c5b71f6c1aed.db",
+   "base": 10,
+   "digest": "c5b71f6c1aed87a7b5b4c3ba8a50b7dcd6c2888376dd680fcbff2b1a08ac8b07",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.15.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "60e2af17625b0ada732500da19ab9b145f9c29f9de568f39f0822ce7a90242fb",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v10-d175d3614a59.db",
+   "base": 10,
+   "digest": "d175d3614a5925741e1f2af86c18cd927c8ad05aadc90c499095f1517e997295",
+   "accepted": true,
+   "origin": "v0.15.0",
+   "route": "v0.15.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "ec105c4a00d5d8a39c292cd75bdd2f4b3eec8e7fc7dc76c31cb9ea719087aece",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v11-386216c67768.db",
+   "base": 11,
+   "digest": "386216c67768d2d5ed1404994f363f04f5922089a632a25a6121defce31958ae",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.17.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "5335535a9875d00b7968a1316c50dd7a460e7054442566cd7c941630560544c5",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v11-5cc96a20ec86.db",
+   "base": 11,
+   "digest": "5cc96a20ec86da4894f5cca4abbc136238d4d16342118ee0cc1f3f1220ab1741",
+   "accepted": true,
+   "origin": "v0.13.0",
+   "route": "v0.13.0>v0.17.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "44e5cc3f156f26f1cf06d3df3e1371f98eaec80147ec6037f8c0e6c3d73aeb1c",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v11-9f4401b7e68b.db",
+   "base": 11,
+   "digest": "9f4401b7e68b4df2315e6885790aa8add10768d026c9d8d6b87054eabc0e2dff",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.17.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "a197ded688b16e1c7cad8abd48ec8728bcb299e7dd22b29139637d2a81b2dbfd",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v11-c5b71f6c1aed.db",
+   "base": 11,
+   "digest": "c5b71f6c1aed87a7b5b4c3ba8a50b7dcd6c2888376dd680fcbff2b1a08ac8b07",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.17.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "bfd364bfecd5a772fffa4015708b48a930da6b1984576e6c4a9a1cedbafb2388",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v11-d175d3614a59.db",
+   "base": 11,
+   "digest": "d175d3614a5925741e1f2af86c18cd927c8ad05aadc90c499095f1517e997295",
+   "accepted": true,
+   "origin": "v0.17.0",
+   "route": "v0.17.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "d27202e2560becccae3759838d403a6698a39968ae15c27b99e5ed67dd99f643",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v12-83544c4f0819.db",
+   "base": 12,
+   "digest": "83544c4f081921a5ab19c884ec79bd17014d5ffb6b7664e5fe3145b74c2ce6a9",
+   "accepted": true,
+   "origin": "v0.13.0",
+   "route": "v0.13.0>v0.19.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "ccdc9a34e92bf51f75d501a2a9fe3a7ce74fdc9e0f8b98820d1a2acd51efead6",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v12-bccfda59a71b.db",
+   "base": 12,
+   "digest": "bccfda59a71be98201054cee17dc3cb4944836beacc11f492394a8a3bb70f904",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.19.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "4f97cbd0de6f8907ba9f9ba2fb28bcead0b845a8d520cb297817e79f97c03940",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v12-cfec8dd3bad8.db",
+   "base": 12,
+   "digest": "cfec8dd3bad8aa4781f952853950ce4d3ad374f2780141d5d18d740dca5b7618",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.19.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "9dea1d4dccbd4642f754e77ad6fe056b731ea1dec3ddfc4933f692e36aa0be04",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v12-ee2e1e869ddc.db",
+   "base": 12,
+   "digest": "ee2e1e869ddc320d0e53315de751cc7126dd6bdf3746ec0419638c0b4fd39dfa",
+   "accepted": true,
+   "origin": "v0.19.0",
+   "route": "v0.19.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "2b8395473e5e8a46ff8c2f1d990a5f3c480bb8207fdd2822769d2ef703e5b955",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v12-f24ed94ce439.db",
+   "base": 12,
+   "digest": "f24ed94ce439e8f2a0520723d37548dba79bba1dbeb07b639499621e96bc08a7",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.19.0",
+   "rows": {
+    "confirmations": 1,
+    "edges": 4,
+    "episodes": 2,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "ff21ebbfe7500c1dc2d883f8d8af4338b3c656075d56bf59b1c1be48989b7c0e",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v13-0caab66122ed.db",
+   "base": 13,
+   "digest": "0caab66122ede6ca6d60838071d1a78c29d46f55bdbcdca34c8161125ae5f012",
+   "accepted": true,
+   "origin": "v0.13.0",
+   "route": "v0.13.0>v0.25.0",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "dacc541f925d19bdb6243e977162a0f9370b659dd03b416cb639728678a20886",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v13-5c73709bb048.db",
+   "base": 13,
+   "digest": "5c73709bb048c9e0989b7407d73a5694b3dfd85bec01530fae83410d8ced0a8c",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.25.0",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "e73519ee540b3185c2d9ea4227db6999d21d2898a3f0ef7531214fe9631c455a",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v13-73950715229c.db",
+   "base": 13,
+   "digest": "73950715229cc2cac12e91898627a5c9a823ad8fceab2d7dba8e4c94e6920caa",
+   "accepted": true,
+   "origin": "v0.25.0",
+   "route": "v0.25.0",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 6,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "fd9af2c377e91400557866597d75e77c8542d60c90bf7840f4ab8c5350ac5d0b",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v13-9b87d1c93faa.db",
+   "base": 13,
+   "digest": "9b87d1c93faa50ef0326861f679cc869984e942c1efc3a237d0048ac3fa81f19",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.25.0",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "73c487396b99245f24ceff40c76c0af4150278714d17f739f21fe59f5c42462b",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v13-d1fc72794b80.db",
+   "base": 13,
+   "digest": "d1fc72794b802f4b32d6765c710d24ea7955617bcf9b7b5d196524534100097a",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.25.0",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "1d7d49eeeb994b665ec432397fe71a53b1784d067be3f95550d09a632fc912bc",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v14-51f71b8355a9.db",
+   "base": 14,
+   "digest": "51f71b8355a996dcc578df3253e7fd653b34ed03420c9f284575c65660411d4e",
+   "accepted": true,
+   "origin": "v0.26.1",
+   "route": "v0.26.1",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 6,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "22f719b660eac3ba97fb1582257f527f486ea8818b57c11557a446de48bd1a41",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v14-91107f7b93ce.db",
+   "base": 14,
+   "digest": "91107f7b93cee76963211aa604868f390caa931fca02b21d40d1a39526afbc29",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.26.1",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "8e487fc449dff1e741106855dd5c495e56a7ac9e31630d468f36b2c61fe87030",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v14-b6d7bfae66ad.db",
+   "base": 14,
+   "digest": "b6d7bfae66ad4128099e9baf5bc6ee2d401cb4dd77a766da45596e6947550140",
+   "accepted": true,
+   "origin": "v0.6.0",
+   "route": "v0.6.0>v0.10.0>v0.26.1",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "680d2fd5fd8b9279d717ccdbe3862866c6b2f7a513fa44bf8e6c85646b9cd3e7",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v14-c12b4015c90e.db",
+   "base": 14,
+   "digest": "c12b4015c90efef6bc0dec815be547507576c7a796893479aa48ff43d48a6c9d",
+   "accepted": true,
+   "origin": "v0.13.0",
+   "route": "v0.13.0>v0.26.1",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "b4a77be902023f8b4920fdc7dc227b053d0c6551370232192926fb80164166ce",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  },
+  {
+   "fixture": "v14-f726083ec966.db",
+   "base": 14,
+   "digest": "f726083ec966697794bd1dae26193b047f8d990027c6db5af58c249e5dd65c01",
+   "accepted": true,
+   "origin": "v0.10.0",
+   "route": "v0.10.0>v0.26.1",
+   "rows": {
+    "confirmations": 1,
+    "edge_event": 4,
+    "edges": 4,
+    "episodes": 2,
+    "store_epoch": 1,
+    "store_identity": 1,
+    "supersession_operations": 1,
+    "supersession_refusals": 1,
+    "write_counter": 1
+   },
+   "sha256": "23290a7dc5d68b2bdd44f7420e875dc18d71a2239893f0dfe9d3fb2f56e2817b",
+   "head": {
+    "outcome": "migrated",
+    "to": 16,
+    "accepted": true,
+    "rows": {
+     "edges": 4,
+     "episodes": 2
+    }
+   }
+  }
+ ],
+ "coverage": [
+  {
+   "seen": true,
+   "runs": "runs=1",
+   "rows": "rows=1",
+   "statement": "UPDATE episodes SET json=? WHERE id=?"
+  },
+  {
+   "seen": true,
+   "runs": "runs=2",
+   "rows": "rows=2",
+   "statement": "DELETE FROM wiki"
+  },
+  {
+   "seen": true,
+   "runs": "runs=40",
+   "rows": "rows=39",
+   "statement": "INSERT INTO request_registry(user_id, correlation_id, verb, target_edg"
+  },
+  {
+   "seen": false,
+   "runs": "runs=40",
+   "rows": "rows=0",
+   "statement": "UPDATE redactions SET state='standing' WHERE event_ref IS NULL AND sou"
+  },
+  {
+   "seen": true,
+   "runs": "runs=40",
+   "rows": "rows=40",
+   "statement": "INSERT INTO arity_inventory(edge_id, user_id, pre_invalidated_at, pre_"
+  },
+  {
+   "seen": true,
+   "runs": "runs=40",
+   "rows": "rows=38",
+   "statement": "INSERT INTO refusal_inventory(refusal_id, user_id) SELECT refusal_id, "
+  },
+  {
+   "seen": true,
+   "runs": "runs=80",
+   "rows": "rows=80",
+   "statement": "INSERT OR IGNORE INTO act_counter(id, next_seq) VALUES(1, 1)"
+  },
+  {
+   "seen": true,
+   "runs": "runs=80",
+   "rows": "rows=80",
+   "statement": "INSERT OR IGNORE INTO arity_era(id, effective_at) VALUES(1, ?)"
+  },
+  {
+   "seen": true,
+   "runs": "runs=483",
+   "rows": "rows=483",
+   "statement": "INSERT OR IGNORE INTO store_identity(id, origin) VALUES(1, ?)"
+  }
+ ],
+ "not_seen": {
+  "UPDATE redactions": "no released base holds `redactions`, so no release-authored fixture can carry a row: v16-notice-state and the redactions ALTERs stay on PA1's synthetic row, a limit of release-authored"
+ }
+}
