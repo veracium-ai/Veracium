@@ -116,7 +116,7 @@ class MembershipResolver:
         self._legacy_cache = None
 
     # -- the ledger projection (§4a-iii) -----------------------------------
-    def _rows(self, kind: str, rid: str) -> list:
+    def _membership_rows(self, kind: str, rid: str) -> list:
         key = (kind, rid)
         if key not in self._rows_cache:
             try:
@@ -142,7 +142,7 @@ class MembershipResolver:
             if (k, i) in seen:
                 continue
             seen.add((k, i))
-            rows = self._rows(k, i)
+            rows = self._membership_rows(k, i)
             proj[i] = rows
             for r in rows:
                 ref = r.get("contributor_ref")
@@ -199,7 +199,7 @@ class MembershipResolver:
     def _evidence_of(self, record):
         kind = self._kind(record)
         shape = self._record_shape(record)
-        rows = self._rows(kind, record.id)
+        rows = self._membership_rows(kind, record.id)
         lineage = getattr(record, "lineage", None)
         expected = len(lineage) if shape["lineage"] else None
         if not shape["lineage"] and any(r["site"] in MEMBERSHIP_SITES

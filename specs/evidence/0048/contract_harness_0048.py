@@ -77,7 +77,7 @@ same obligations "where relevant". Research's stage 1 found all four relevant he
       RESULT of an admitted call), and any execute-family attribute not called directly, are refused; `create_function`
       and `set_authorizer` are connection forms the rule does not resolve;
   (c) a literal SQLite cannot prepare is UNRESOLVED and refused at every SQL argument position: the classifier
-      compiles each statement as `EXPLAIN <statement>` and never runs it, so honest transaction control prepares;
+      compiles each statement as `EXPLAIN QUERY PLAN <statement>` and never runs it, so honest transaction control prepares;
   (d) each non-literal allow-list entry binds its function's body, the module and class definitions that function
       reads, and the parameters its expression reads (each reviewed).
 Four connection forms and six write-method forms are new mutant instances, refused by the static gate's own reason
@@ -838,7 +838,7 @@ def _classify(sql, ddl):
     """SQLite's own reading of a literal, statement by statement, against a scratch copy of the model's tables:
     ("edges", ...) for an INSERT on edges or an UPDATE of edges.json in any database, ("trigger", ...) for a trigger or
     view defined (its body is reported only when a statement that fires it is prepared), ("unresolved", ...) when
-    SQLite cannot prepare a statement. v4.2 round 5 (R4-01 (c)): each statement is COMPILED as `EXPLAIN <statement>`
+    SQLite cannot prepare a statement. v4.2 round 5 (R4-01 (c)): each statement is COMPILED as `EXPLAIN QUERY PLAN <statement>`
     under the authorizer and never executed, so every error is a failure to prepare (a missing function, table or
     collation; a syntax error), and a failure to prepare is UNRESOLVED, never an empty classification. The one
     expected error, unbound parameters, is answered by compiling again with that many NULLs."""
@@ -859,12 +859,12 @@ def _classify(sql, ddl):
     for st in _statements(sql):
         try:
             try:
-                c.execute("EXPLAIN " + st)
+                c.execute("EXPLAIN QUERY PLAN " + st)
             except sqlite3.ProgrammingError as ex:
                 m = _BINDINGS.fullmatch(str(ex))
                 if m is None:
                     raise
-                c.execute("EXPLAIN " + st, (None,) * int(m.group(1)))
+                c.execute("EXPLAIN QUERY PLAN " + st, (None,) * int(m.group(1)))
         except sqlite3.DatabaseError:                    # ProgrammingError included: it subclasses DatabaseError
             found.add("unresolved")
     c.close()
@@ -893,7 +893,7 @@ def _json_layout(sql, ddl):
     c = _scratch(ddl)
     c.execute("INSERT INTO edges (id, user_id, json) VALUES ('S0', 'S0', '{}')")
     try:
-        c.execute("EXPLAIN " + sql)
+        c.execute("EXPLAIN QUERY PLAN " + sql)
         n = 0
     except sqlite3.ProgrammingError as ex:
         m = _BINDINGS.fullmatch(str(ex))

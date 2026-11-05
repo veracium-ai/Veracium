@@ -851,8 +851,10 @@ DB_ADMITTED = {"DataError", "DatabaseError", "Error", "IntegrityError", "Interfa
                "NotSupportedError", "OperationalError", "ProgrammingError", "Warning", "close", "commit",
                "fetchall", "fetchmany", "fetchone", "in_transaction", "isolation_level", "lastrowid", "rollback",
                "row_factory", "rowcount", "description", "execute", "executemany", "executescript"}
-# the one same-named non-database read in src/, by module and receiver
-DB_NAME_EXCEPTIONS = {("veracium/cli.py", "args", "backup")}
+# the one same-named non-database read in src/: (module, containing function, receiver, attribute) -> that function's
+# whole digest. Round 6: a receiver's spelling proves nothing (`import shutil as args`), so the function is reviewed
+# and frozen, and the attribute may be read or passed but is never the function of a call
+DB_NAME_EXCEPTIONS = {("veracium/cli.py", "_migrate", "args", "backup"): "8b3470b8875f2ab808c23b3ac96052a49fd666276272cd6d0e1fc8ef15fe395a"}
 # round 5 (W2): callable accessors reach an attribute with no attribute node. src/ uses none, so all refuse, by
 # attribute, by name and by import
 ACCESSORS = {"attrgetter", "methodcaller", "getattr_static"}
@@ -957,11 +959,14 @@ _TRIGGER_OR_VIEW = {sqlite3.SQLITE_CREATE_TRIGGER, sqlite3.SQLITE_CREATE_TEMP_TR
                     sqlite3.SQLITE_CREATE_TEMP_VIEW}
 
 
-# 0048 round 5 (R4-01 (c)): the statement is PREPARED and never run. CPython prepares it (the authorizer sees every
-# action), then checks the binding count BEFORE the first step; supplying more parameters than SQLite allows any
-# statement (32766) makes that check refuse every statement that prepared — 0-parameter ones included — with exactly
-# this message. Any other outcome (a missing function, table or collation, a syntax error, two statements) is a
-# statement SQLite did not read: UNRESOLVED, never "no write".
+# 0048 round 5 (R4-01 (c)), round 6 (R5-02): the statement is COMPILED under `EXPLAIN QUERY PLAN` and never run, so the
+# authorizer sees every action and nothing steps, whatever the runtime's variable limit is (the qualified runtime
+# allows 250000, so a count alone could not promise a refusal, and a statement with exactly that many parameters ran).
+# Not plain `EXPLAIN`: `EXPLAIN QUERY PLAN` is a production of its own, so `QUERY PLAN x` would prepare under it, where
+# SQLite refuses it bare. This production cannot repeat. Over-binding remains how the parameter count is read: CPython
+# checks it before the first step, with exactly this message. Any other failure (a missing function, table or
+# collation, a syntax error, two statements) is a statement SQLite did not read: UNRESOLVED, never "no write".
+_PREPARE = "EXPLAIN QUERY PLAN "
 _OVERBIND = 32767
 _BIND_COUNT = re.compile(r"Incorrect number of bindings supplied\. The current statement uses (\d+), and there are "
                          + str(_OVERBIND) + r" supplied\.")
@@ -982,7 +987,7 @@ def _classifier_conn():
 
 
 def _sqlite_classify(sql: str) -> set:
-    """SQLite's own reading of a statement, not a keyword: PREPARE it under an authorizer against an in-memory store at
+    """SQLite's own reading of a statement, not a keyword: COMPILE it under an authorizer against an in-memory store at
     the head schema and record each (action, table, column) — the prepare asks once per updated column. Returns the
     subset of {"edges-insert", "edges-json-update", "trigger-or-view", UNRESOLVED} the reading gives; UNRESOLVED when
     the statement did not prepare (round 5, R4-01 (c): an unknown function is not an empty write set)."""
@@ -997,8 +1002,9 @@ def _sqlite_classify(sql: str) -> set:
     c.set_authorizer(auth)
     prepared = False
     try:
-        c.execute(sql, (None,) * _OVERBIND)
-    except Exception as ex:                  # 3.10 raises sqlite3.Warning for two statements: every outcome is read
+        c.execute(_PREPARE + sql, (None,) * _OVERBIND).close()
+        prepared, _PARAMS[sql] = True, _OVERBIND      # it binds exactly that many: only the plan listing ran
+    except Exception as ex:                  # every outcome is read, not only the database's own errors
         m = _BIND_COUNT.fullmatch(str(ex)) if type(ex) is sqlite3.ProgrammingError else None
         if m:
             prepared, _PARAMS[sql] = True, int(m.group(1))
@@ -1575,11 +1581,9 @@ def _parsed(text: str):
 
 
 def _exec_callee(call, names):
-    """The derived execute-family name a call reaches, or None. A derived name is a module-level function, so
-    `self.<name>(…)` is some class's own method (scope_read's `_rows`), not it; any other receiver counts."""
+    """The derived execute-family name a call reaches, on ANY receiver, or None. Round 6 (R5-01): no receiver is exempt
+    by its spelling. The one method that shared the name was renamed, so no resolving or reviewing is left to do."""
     f = call.func
-    if isinstance(f, ast.Attribute) and isinstance(f.value, ast.Name) and f.value.id == "self":
-        return None
     name = getattr(f, "id", None) or getattr(f, "attr", None)
     return name if name in names else None
 
@@ -1626,17 +1630,57 @@ def _bare_parameter_sites(mods):
 
 
 _MODULE_RESULTS = {}
+# the decorators src/'s methods carry today: anything else, staticmethod and classmethod first, is not a plain method
+SELF_DECORATORS = {"abstractmethod", "contextlib.contextmanager", "contextmanager", "model_serializer", "model_validator",
+                   "property", "store_mutator"}
+
+
+def _plain_method(f, par):
+    """`f` is a def directly in a class, its first parameter `self`, carrying only decorators known to leave it one."""
+    if not (isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef)) and isinstance(par.get(f), ast.ClassDef)):
+        return False
+    first = (f.args.posonlyargs + f.args.args)[:1]
+    deco = {ast.unparse(d.func if isinstance(d, ast.Call) else d) for d in f.decorator_list}
+    return bool(first) and first[0].arg == "self" and deco <= SELF_DECORATORS
+
+
+def _self_problems(rel, t, par, ix):
+    """Round 6 (R5-01): the gate reads `self.X` as an instance's X in many places, so the name's meaning is established
+    once, for all of src/: its only binder is a plain method's first parameter, and every read reaches one through the
+    enclosing scopes (a closure counts; a default or a decorator is evaluated outside the method, so it does not). The
+    read half catches what binds nothing the binder walk sees, such as `globals()["self"] = …`."""
+    bad = []
+    for b in ix.by_name.get("self", ()):
+        owner = par.get(par.get(b)) if isinstance(b, ast.arg) else None
+        if not (owner is not None and _plain_method(owner, par)):      # a parameter name cannot repeat: this is the first
+            bad.append(f"{rel} L{getattr(b, 'lineno', '?')}: `self` bound other than as a plain method's first parameter")
+    for n in ast.walk(t):
+        if isinstance(n, ast.Name) and n.id == "self" and isinstance(n.ctx, ast.Load):
+            child, node = n, par.get(n)
+            while node is not None and not (_plain_method(node, par) and any(child is x for x in node.body)):
+                child, node = node, par.get(node)
+            if node is None:
+                bad.append(f"{rel} L{n.lineno}: `self` read where no plain method's first parameter reaches it")
+    return bad
+
+
+def _db_name_exception(rel, n, par, q):
+    """`n`, a denied name's attribute node, is the reviewed exception: its function and receiver are listed, the whole
+    function is the reviewed one, and the attribute is not the function of a call."""
+    recv = n.value.id if isinstance(n.value, ast.Name) else None
+    want = DB_NAME_EXCEPTIONS.get((rel, q.get(id(n)), recv, n.attr))
+    called = isinstance(par.get(n), ast.Call) and par[n].func is n
+    return want is not None and not called and _digest(_scope_of(n, par)) == want
 
 
 def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, sq):
     """One module's share of `_package_problems`: (problems, {site key: times seen}). Pure in its arguments, so a matrix
     of mutants of one module re-reads only that module."""
-    bad, seen = [], {}
+    bad, seen = _self_problems(rel, t, par, ix), {}
     at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
     for n in ast.walk(t):
         if isinstance(n, ast.Attribute):
-            recv = n.value.id if isinstance(n.value, ast.Name) else None
-            if n.attr in denied and (rel, recv, n.attr) not in DB_NAME_EXCEPTIONS:
+            if n.attr in denied and not _db_name_exception(rel, n, par, q):
                 bad.append(f"{at(n)}: `.{n.attr}` of the database API, which src/ does not use")
             if n.attr in ACCESSORS:
                 bad.append(f"{at(n)}: `.{n.attr}`, an accessor that reaches an attribute with no attribute node")
@@ -1654,8 +1698,7 @@ def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, s
             bad.append(f"{at(n)}: getattr of `{n.args[1].value}`")
         # W3: a derived execute-family name is called, never held
         if (isinstance(n, (ast.Name, ast.Attribute)) and (getattr(n, "id", None) or getattr(n, "attr", None)) in exec_names
-                and isinstance(n.ctx, ast.Load) and not (isinstance(par.get(n), ast.Call) and par[n].func is n)
-                and not (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) and n.value.id == "self")):
+                and isinstance(n.ctx, ast.Load) and not (isinstance(par.get(n), ast.Call) and par[n].func is n)):
             bad.append(f"{at(n)}: `{getattr(n, 'id', None) or n.attr}` runs its SQL argument: held, not called")
     sites = [] if rel == sq else list(_sites_of(rel, t, par, q))
     for n in ast.walk(t):
@@ -1689,7 +1732,7 @@ def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, s
         if got != SRC_NONLITERAL[key][2]:
             bad.append(f"{at(call)}: what determines the non-literal SQL at {where} changed (binding {got}) — "
                        f"re-review it ({ast.unparse(arg)[:60]})")
-        if binding[0] and rel not in MIGRATION_MODULES and not isinstance(arg, ast.Name):
+        if binding[0] and rel not in MIGRATION_MODULES:
             def values(name):
                 out = []
                 for b in ix.of(f, name):
@@ -1714,7 +1757,7 @@ def _package_problems(source, tree, parent, idx, others) -> list:
     denied = (DB_NAMES | {n for c in (sqlite3.Connection, sqlite3.Cursor) for n in dir(c) if not n.startswith("__")})
     denied -= DB_ADMITTED
     exec_names = _bare_parameter_sites(mods)
-    guarded_literals = denied | set(SQL_CALLS) | {"_conn"} | ACCESSORS
+    guarded_literals = denied | set(SQL_CALLS) | {"_conn"} | ACCESSORS | set(exec_names)
     bound_names, seen = set(), {}
     for rel, text, tree_m, par_m, q_m, ix_m in mods:
         key = (rel, text, tuple(sorted(exec_names.items())), tuple(sorted(denied)))
@@ -2106,6 +2149,118 @@ R5_SRC_MUTANTS = {
 for _k, _sql in _SHADOW.items():
     R5_SRC_MUTANTS[f"(R-01) {_k} in next_seq"] = (_EE, _NS, _in_next_seq(f'    conn.execute("{_sql}")'),
                                                   "a route around the store's schema")
+# Round 6 (R5-01, research's stage-1 B1-B3): the receiver matrix. Each form names its STATIC outcome (the gate's reason, or
+# None where the gate has nothing to say) and its RUNTIME one, recorded apart, because a runtime refusal does not establish
+# the static claim: "denied" is the authorizer refusing the write; an exception class is a route that dies before any
+# SQL now that `MembershipResolver._rows` is `_membership_rows` (the cell asserts that class AND that nothing reached the
+# store, since "it raised" would pass a plant that raised for another reason); "ran" is a read that completes.
+_NOWHERE = '"".join(("UP", "DA", "TE ed", "ges SE", "T js", "on=rep", "lace(js", "on, \'0.8\', \'1.8\')"))'
+_CALL = f"self._rows(conn, {_SPLIT}, (user_id,))"
+_MOD = "    from . import migration as m_\n"
+_RES = "    from ..scope_read import MembershipResolver as R_\n"
+_SELF_BOUND = "`self` bound other than as a plain method's first parameter"
+_SELF_READ = "`self` read where no plain method's first parameter reaches it"
+_UNLISTED = "a non-literal SQL site not in the reviewed list"
+_HELD = "runs its SQL argument: held, not called"
+_SUBCLASS = "        from .migration import _rows\n        def g(self, conn, s):\n            return self._projection(self, conn, s)\n"
+R6_RECEIVER = {
+    # the reviewer's plant, and the binders of the name
+    "P0 a module imported as self (the reviewer's)": ("    from . import migration as self\n    " + _CALL, _SELF_BOUND, "denied"),
+    "P2 assignment": (_MOD + "    self = m_\n    " + _CALL, _SELF_BOUND, "denied"),
+    "P3 a for target": (_MOD + "    for self in (m_,):\n        " + _CALL, _SELF_BOUND, "denied"),
+    "P4 a walrus in a condition": (_MOD + "    if (self := m_):\n        " + _CALL, _SELF_BOUND, "denied"),
+    "P5 a nested def's parameter": (_MOD + f"    def g(self):\n        return {_CALL}\n    g(m_)", _SELF_BOUND, "denied"),
+    "P6 a lambda's parameter": (_MOD + f"    (lambda self: {_CALL})(m_)", _SELF_BOUND, "denied"),
+    "P7 import … as self": ("    import veracium.store.migration as self\n    " + _CALL, _SELF_BOUND, "denied"),
+    "P8 a match capture": (_MOD + "    match m_:\n        case self:\n            " + _CALL, _SELF_BOUND, "denied"),
+    "P9 a class named self": ("    class self:\n        from .migration import _rows\n    " + _CALL, _SELF_BOUND, "denied"),
+    "P10 global self": ("    global self\n    from . import migration as self\n    " + _CALL, _SELF_BOUND, "denied"),
+    "P11 with … as self": (_MOD + "    import contextlib\n    with contextlib.nullcontext(m_) as self:\n        " + _CALL,
+                           _SELF_BOUND, "denied"),
+    "G1 globals()['self'] binds nothing the walk sees": (_MOD + '    globals()["self"] = m_\n    ' + _CALL, _SELF_READ, "denied"),
+    # the name is a real method's first parameter: the rule that refuses is the call's
+    "P12 method-shaped, no such member": (
+        _MOD + f"    class K:\n        def f(self, conn, user_id):\n            {_CALL}\n    K.f(m_, conn, user_id)", _UNLISTED, "denied"),
+    "P13 method-shaped, its own _rows member": (
+        _MOD + f"    class K:\n        def _rows(self, *a):\n            return []\n        def f(self, conn, user_id):\n"
+        f"            {_CALL}\n    K.f(m_, conn, user_id)", _UNLISTED, "denied"),
+    # held references (the verdict's sibling)
+    "P1 held: run = self._rows": (f"    from . import migration as self\n    run = self._rows\n    run(conn, {_SPLIT}, (user_id,))",
+                                  _HELD, "denied"),
+    "P14 held, passed as an argument": (
+        f"    from . import migration as self\n    (lambda f: f(conn, {_SPLIT}, (user_id,)))(self._rows)", _HELD, "denied"),
+    "X1 a literal getattr of the derived name (B3)": (_MOD + f'    getattr(m_, "_rows")(conn, {_SPLIT}, (user_id,))',
+                                                      "getattr of `_rows`", "denied"),
+    # B1: a method reached unbound. The rename leaves it nothing to reach: no static rule, a raise before any SQL
+    "U1 R_._projection(module, conn, sql)": (_MOD + _RES + f"    R_._projection(m_, conn, {_NOWHERE})", None, AttributeError),
+    "U2 held f = R_._projection": (_MOD + _RES + f"    f_ = R_._projection\n    f_(m_, conn, {_NOWHERE})", None, AttributeError),
+    "U3 a subclass importing _rows": (_RES + "    class K_(R_):\n" + _SUBCLASS + f"    K_.g(K_, conn, {_NOWHERE})", None, TypeError),
+    "U4 types.MethodType": (_MOD + _RES + f"    import types\n    types.MethodType(R_._projection, m_)(conn, {_NOWHERE})",
+                            None, AttributeError),
+    "U5 a subclass through an alias base": (_RES + "    B_ = R_\n    class K_(B_):\n" + _SUBCLASS + f"    K_.g(K_, conn, {_NOWHERE})",
+                                            None, TypeError),
+    "U6 a super() route": (_RES + "    class K_(R_):\n        from .migration import _rows\n        @classmethod\n"
+                           f"        def g(cls, conn, s):\n            return super()._projection(cls, conn, s)\n    K_.g(conn, {_NOWHERE})",
+                           None, TypeError),
+    "X5 a literal getattr of the method": (_MOD + _RES + f'    getattr(R_, "_projection")(m_, conn, {_NOWHERE})', None, AttributeError),
+    # the three ways round the rename research tried, with the new name
+    "U7 _rows imported under the method's name": (
+        _RES + f"    class K_(R_):\n        from .migration import _rows as _membership_rows\n    K_._projection(K_, conn, {_NOWHERE})",
+        "imported under another name", "denied"),
+    "U8 a class attribute from the imported _rows": (
+        _RES + "    class K_(R_):\n        from .migration import _rows\n        _membership_rows = _rows\n"
+        f"    K_._projection(K_, conn, {_NOWHERE})", _HELD, "denied"),
+    "U9 a subclass method calling _rows": (
+        _MOD + _RES + "    class K_(R_):\n        def _membership_rows(self, k, i):\n            return m_._rows(k, i)\n"
+        f"    K_._projection(object.__new__(K_), conn, {_NOWHERE})", "called with no SQL argument the gate can read", "denied"),
+    # controls. C3 is the reviewer's own read control, and its static outcome CHANGED this round (the verdict allows
+    # refusing an unresolved receiver); its runtime did not. The "legitimate method" control has no subject after the
+    # rename: `self._membership_rows` is no derived name, and the honest tree is what covers its two calls
+    "C1 control: the same write through a named module": (
+        f"    from . import migration as reader\n    reader._rows(conn, {_SPLIT}, (user_id,))", _UNLISTED, "denied"),
+    "C2 control: a literal read through a named module": (
+        '    from . import migration as reader\n    reader._rows(conn, "SELECT json FROM edges WHERE user_id=?", (user_id,))', None, "ran"),
+    "C3 control: the read through a module spelled self": (
+        '    from . import migration as self\n    self._rows(conn, "SELECT json FROM edges WHERE user_id=?", (user_id,))', _SELF_BOUND, "ran"),
+}
+_CLI = "veracium/cli.py"
+_CLI_AT = "    if not args.i_have_quiesced or args.backup is None:\n"
+_MG = "veracium/store/migration.py"
+R5_SRC_MUTANTS.update({
+    "(Q1) cli: args rebound and .backup called": (_CLI, _CLI_AT, '    import shutil as args\n    args.backup("x")\n' + _CLI_AT,
+                                                  "`.backup` of the database API"),
+    "(Q2) cli: args.backup called, unrebound": (_CLI, _CLI_AT, '    args.backup("x")\n' + _CLI_AT, "`.backup` of the database API"),
+    "(Q4) cli: args rebound, the reads unchanged": (_CLI, _CLI_AT, "    import shutil as args\n" + _CLI_AT,
+                                                    "`.backup` of the database API"),
+    "(Q3) the named attribute read in another function": ("veracium/_planted.py", None, "def f(args):\n    return args.backup\n",
+                                                          "`.backup` of the database API"),
+    "(R1) a function spelled _write_edge_row": (
+        _EE, _NS, _in_next_seq(f"    def _write_edge_row(conn, sql, p):\n        return conn.execute(sql, p)\n"
+                               f"    _write_edge_row(conn, {_SPLIT}, (user_id,))"), _UNLISTED),
+    "(R3) migration.py: a literal json write": (
+        _MG, "def _rows(", "def _plant(conn, user_id):\n    conn.execute(\"UPDATE edges SET json=json WHERE user_id=?\", (user_id,))\n\n\n"
+        "def _rows(", "an edges json write outside the write method"),
+    "(R3b) migration.py: assembled SQL through _rows": (
+        _MG, "def _rows(", f"def _plant(conn, user_id):\n    _rows(conn, {_SPLIT}, (user_id,))\n\n\ndef _rows(", _UNLISTED),
+    "(S1) a static method's self": ("veracium/_planted.py", None, "class K:\n    @staticmethod\n    def f(self):\n        return self\n",
+                                    _SELF_BOUND),
+    "(S2) a class method's self": ("veracium/_planted.py", None, "class K:\n    @classmethod\n    def f(self):\n        return self\n",
+                                   _SELF_BOUND),
+    "(S3) a decorator the rule does not know": ("veracium/_planted.py", None, "class K:\n    @wrap\n    def f(self):\n        return self\n",
+                                                _SELF_BOUND),
+    "(S4) a default is evaluated outside the method": ("veracium/_planted.py", None, "class K:\n    def f(self, x=self):\n        return x\n",
+                                                       _SELF_READ),
+    "(S5) self as a later parameter": ("veracium/_planted.py", None, "class K:\n    def f(this, self):\n        return self\n", _SELF_BOUND),
+    "(S6) a module-level def's self": ("veracium/_planted.py", None, "def f(self):\n    return self\n", _SELF_BOUND),
+})
+R5_MUTANTS.update({
+    "(R2) sqlite.py: a named module, the store's connection": (
+        _RECOMPUTE, _RECOMPUTE + f'\n        from . import migration\n        migration._rows(self._conn, {_SPLIT}, ("u",))',
+        "the connection reached in a form the gate does not resolve"),
+    "(R2b) sqlite.py: self rebound inside a store method": (
+        _RECOMPUTE, _RECOMPUTE + f'\n        store = self\n        from . import migration as self\n        self._rows(store._conn, {_SPLIT}, ("u",))',
+        _SELF_BOUND),
+})
 R5_SRC_CONTROLS = {
     "a new literal read in next_txn": (
         _EE, '    transaction (V-TXN-ALLOC) — two connections cannot read the same maximum."""\n',
@@ -2169,6 +2324,171 @@ def test_the_gate_passes_each_harmless_edit_outside_the_store(name):
     assert _gate(SQLITE.read_text(), _r5_others(*R5_SRC_CONTROLS[name])) == []
 
 
+@pytest.mark.parametrize("name", list(R6_RECEIVER))
+def test_each_receiver_form_has_its_stated_static_and_runtime_outcome(name, tmp_path, monkeypatch, _edges_write_tripwire):
+    """R5-01's matrix, static and runtime apart. Static: the plant in next_seq, the gate's own reason or, where the
+    rename leaves nothing to refuse, no problem. Runtime: the same lines run inside the journal's next_seq on a real store
+    under the authorizer, with the exact outcome the table states and, for every route, the store unchanged."""
+    lines, reason, runtime = R6_RECEIVER[name]
+    bad = _gate(SQLITE.read_text(), _r5_others(_EE, _NS, _in_next_seq(lines)))
+    if reason is None:
+        assert bad == [], bad
+    else:
+        assert any(reason in b for b in bad), f"{name}: not refused for its reason {reason!r}: {bad}"
+    path = tmp_path / "plant.db"
+    s = SqliteStore(str(path))
+    s.add_edge(_edge("e", S.Volatility.SLOW, 0.9))
+    before = _snapshot(path)
+    scope = {"__name__": "veracium.store.edge_events", "__package__": "veracium.store"}
+    exec(compile("def planted(conn, user_id):\n" + lines + "\n", "<plant>", "exec"), scope)
+    real = SQ.next_seq
+
+    def next_seq(conn, user_id):
+        scope["planted"](conn, user_id)
+        return real(conn, user_id)
+    monkeypatch.setattr(SQ, "next_seq", next_seq)
+
+    def drive():
+        with s._lock, s._write_txn():
+            s._recompute_edge_row("e", {"valid_from": OLD, "observed_at": OLD, "confidence": 0.8})
+    if runtime == "ran":
+        drive()
+        assert _edges_write_tripwire == [] and _row(s, "e").provenance.confidence == 0.8
+        return
+    with pytest.raises(sqlite3.DatabaseError if runtime == "denied" else runtime) as ex:
+        drive()
+    if runtime == "denied":
+        assert "not authorized" in str(ex.value) and len(_edges_write_tripwire) == 1, (ex.value, _edges_write_tripwire)
+    else:
+        assert type(ex.value) is runtime and _edges_write_tripwire == [], (ex.value, _edges_write_tripwire)
+    assert _snapshot(path) == before, "something reached the store"
+    _edges_write_tripwire.clear()
+
+
+def test_a_closure_over_a_methods_self_is_the_method_s():
+    """Rule 4's other half: a nested def or lambda inside a plain method, and a comment edit inside the reviewed
+    `_migrate`, change nothing. (Four closures in src/ read `self`; the honest pass holds them, this states the shape.)"""
+    plant = "class K:\n    def f(self):\n        def g():\n            return self\n        return (g, lambda: self)\n"
+    assert _gate(SQLITE.read_text(), _r5_others("veracium/_planted.py", None, plant)) == []
+    assert _gate(SQLITE.read_text(), _r5_others(_CLI, _CLI_AT, "    # a comment edit\n" + _CLI_AT)) == []
+
+
+def test_a_reviewed_function_may_still_not_call_the_named_attribute(monkeypatch):
+    """The exception's two conditions are separate: the digest alone would let a re-review admit a call. With the planted
+    `_migrate`'s own digest admitted, its four reads pass and the call alone is refused."""
+    rel, key = _CLI, next(iter(DB_NAME_EXCEPTIONS))
+    others = _r5_others(_CLI, _CLI_AT, '    args.backup("x")\n' + _CLI_AT)
+    fn = next(n for n in ast.parse(others[rel]).body if isinstance(n, ast.FunctionDef) and n.name == "_migrate")
+    monkeypatch.setitem(DB_NAME_EXCEPTIONS, key, _digest(fn))
+    bad = _gate(SQLITE.read_text(), others)
+    assert len(bad) == 1 and "`.backup` of the database API" in bad[0], bad
+
+
+def test_a_name_parameter_reaching_sql_meets_the_head_rule(monkeypatch):
+    """The head rule no longer exempts a bare name: a reviewed, listed site whose SQL is a NAME a parameter reaches is
+    refused like any other expression. The entry and binding are admitted, as a re-review would, so the head rule is the
+    only problem left."""
+    rel, text = "veracium/_planted.py", "def f(conn, stmt):\n    q = stmt\n    return conn.execute(q)\n"
+    tree, par, _q, ix = _parsed(text)
+    call = next(n for n in ast.walk(tree) if isinstance(n, ast.Call))
+    arg, fn = call.args[0], _scope_of(call, par)
+    binding = _sql_binding(tree, par, fn, arg, ix)
+    assert binding[0] == ["stmt"], binding
+    key = (f"{rel}:f", _digest(arg))
+    monkeypatch.setitem(SRC_NONLITERAL, key, (1, "q", _binding_digest(tree, par, fn, arg, binding, ix)))
+    bad = _gate(SQLITE.read_text(), _r5_others(rel, None, text))
+    assert len(bad) == 1 and "reaches SQL whose leading constant does not fix a SELECT" in bad[0], bad
+
+
+def test_a_ladder_table_statement_is_not_n4fs_and_sa10_refuses_it(tmp_path, monkeypatch):
+    """Research's B4, DECLARED: the five `conn.execute(stmt)` sites in `_apply_forward` read a for-target, so a statement
+    added to a ladder table moves no digest and N4f accepts it. Its governing check is SA10, by execution, and this cell
+    runs it, so the manifest's row rests on a run. A static head check over the tables is next round's, written once with
+    0018's table; when it lands, the first assertion here turns over, which is the point of stating it."""
+    anchor = "ALTERS_V15_TO_V16 = (\n"
+    split = '"UP" + "DATE ed" + "ges SET js" + "on=re" + "place(js" + "on, \'0.8\', \'1.8\')"'
+    assert _gate(SQLITE.read_text(), _r5_others("veracium/store/schema_version.py", anchor, anchor + f"    {split},\n")) == []
+    name = "veracium_sa10_gate"
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, ROOT / "specs/evidence/0013/sa10_gate.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+    g = sys.modules[name]
+    from veracium.store import schema_version as sv
+    statement = "UPDATE edges SET json=replace(json, '0.8', '1.8')"
+    monkeypatch.setattr(sv, "ALTERS_V15_TO_V16", (statement,) + tuple(sv.ALTERS_V15_TO_V16))
+    builders = {lab: b for lab, e, b in g.gate_paths() if e == "migrate_store"}
+    for label in ("v2#0", "v15#0"):        # the table's two ends: the ladder runs it from every base from v2
+        r = g.run_path(label, "migrate_store", builders[label], str(tmp_path / label))
+        assert any("a row write on ['edges'] maps to 0 steps" in p for p in r["problems"]), (label, r["problems"])
+    assert g.run_path("v1#0", "migrate_store", builders["v1#0"], str(tmp_path / "v1"))["problems"] == []   # never runs it
+
+
+def _scratch_state():
+    """The classifier's whole scratch database: its schema, every table's rows, and SQLite's change counter."""
+    c = _classifier_conn()
+    schema = c.execute("SELECT type, name, tbl_name, sql FROM sqlite_master ORDER BY type, name").fetchall()
+    rows = {t: c.execute(f'SELECT * FROM "{t}"').fetchall() for k, t, _n, _s in schema if k == "table"}
+    return schema, rows, c.total_changes
+
+
+def test_a_statement_that_binds_exactly_is_compiled_and_not_run():
+    """R5-02's case: exactly `_OVERBIND` numbered parameters, which bind on any runtime whose limit allows them (the
+    qualified one's is 250000). Where they bind the statement counts as prepared, with that count; where they cannot it is
+    UNRESOLVED. Either way nothing ran: no table, no row, no change."""
+    limit = _classifier_conn().getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER)
+    sql = f"CREATE TABLE reviewer_classifier_probe AS SELECT ?{_OVERBIND} AS value"
+    _CLASSIFIED.pop(sql, None)
+    before = _scratch_state()
+    tags = _sqlite_classify(sql)
+    assert _scratch_state() == before
+    if limit >= _OVERBIND:
+        assert tags == set() and _param_count(sql) == _OVERBIND, tags
+    else:
+        assert tags == {UNRESOLVED}, tags
+    assert UNRESOLVED in _sqlite_classify("SELECT value FROM reviewer_classifier_probe")
+
+
+def test_classifying_every_sql_literal_in_src_leaves_the_scratch_unchanged():
+    """The same invariance over the pin: every literal at an execute-family call in src/, read fresh."""
+    lits = {n.args[0].value for p in sorted(SRC.rglob("*.py")) for n in ast.walk(ast.parse(p.read_text()))
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in SQL_CALLS and n.args
+            and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str)} | set(CLOSED_SQL)
+    assert len(lits) > 100, len(lits)
+    before = _scratch_state()
+    for sql in sorted(lits):
+        _CLASSIFIED.pop(sql, None)
+        _sqlite_classify(sql)
+        assert _scratch_state() == before, sql
+
+
+@pytest.mark.parametrize("sql", ["QUERY PLAN SELECT 1", "QUERY PLAN DELETE FROM edges", "-- c\nQUERY PLAN DELETE FROM edges"])
+def test_a_string_sqlite_refuses_bare_stays_unresolved(sql):
+    """Research's B2: the prefix must not make a new statement grammatical (R4-01 (c))."""
+    _CLASSIFIED.pop(sql, None)
+    assert _sqlite_classify(sql) == {UNRESOLVED}
+
+
+def test_the_superseded_preparations_are_what_these_cells_catch(monkeypatch):
+    """The two superseded forms, run: with no prefix the exact-count statement EXECUTES in the scratch (R5-02), and with
+    plain `EXPLAIN ` a `QUERY PLAN` string prepares (B2). So the cells above can fail, and the prefix is what passes them."""
+    env = _sqlite_classify.__globals__
+    limit = sqlite3.connect(":memory:").getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER)
+    assert limit >= _OVERBIND, limit       # the demonstration needs a runtime that binds them; the qualified one does
+    for prefix, sql, check in (
+            ("", f"CREATE TABLE reviewer_classifier_probe AS SELECT ?{_OVERBIND} AS value",
+             lambda: _classifier_conn().execute("SELECT count(*) FROM reviewer_classifier_probe").fetchone() == (1,)),
+            ("EXPLAIN ", "QUERY PLAN SELECT 1", lambda: _sqlite_classify("QUERY PLAN SELECT 1") == set())):
+        with monkeypatch.context() as m:
+            m.setitem(env, "_PREPARE", prefix)
+            m.setitem(env, "_CLASSIFIER", [])
+            m.setitem(env, "_CLASSIFIED", {})
+            _sqlite_classify(sql)
+            assert check(), prefix
+            _classifier_conn().close()
+
+
 def test_the_database_names_cover_this_runtime_and_the_named_exception_is_needed():
     """W1: the frozen names are a superset of this runtime's minus nothing it lacks by age; every refused name is
     absent from src/ but for the one named exception, which is live; and the bare-parameter derivation finds `_rows`
@@ -2178,7 +2498,7 @@ def test_the_database_names_cover_this_runtime_and_the_named_exception_is_needed
     uses = [(str(p.relative_to(SRC)), n.value.id if isinstance(n.value, ast.Name) else None, n.attr)
             for p in sorted(SRC.rglob("*.py")) for n in ast.walk(ast.parse(p.read_text()))
             if isinstance(n, ast.Attribute) and n.attr in (DB_NAMES | here) - DB_ADMITTED]
-    assert set(uses) == DB_NAME_EXCEPTIONS, uses
+    assert set(uses) == {(rel, recv, attr) for rel, _f, recv, attr in DB_NAME_EXCEPTIONS}, uses
     src = SQLITE.read_text()
     others = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py")) if p.resolve() != SQLITE.resolve()}
     mods = [(r, x, *_parsed(x)) for r, x in [("veracium/store/sqlite.py", src)] + sorted(others.items())]
