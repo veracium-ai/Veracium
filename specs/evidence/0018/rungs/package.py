@@ -6,7 +6,7 @@ W, COV, OUT = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 r = json.loads((W / "result.json").read_text())
 entries, blobs = [], {}
 for s in r["states"]:
-    name = f"v{s['v']:02d}-{s['digest'][:12]}.db"
+    name = f"v{s['v']:02d}-{s['digest'][:12]}-from-{s['origin']}.db"
     b = Path(s["db"]).read_bytes(); blobs[name] = b
     entries.append({"fixture": name, "base": s["v"], "digest": s["digest"], "accepted": s["accepted"], "origin": s["origin"], "route": s["route"],
                     "rows": s["rows"], "sha256": hashlib.sha256(b).hexdigest(), "head": json.loads(s["head"])})

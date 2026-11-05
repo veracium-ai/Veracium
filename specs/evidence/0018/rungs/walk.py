@@ -18,7 +18,7 @@ for i, (t, v) in enumerate(rows):
     if os.path.exists(db): os.remove(db)
     r = run("populate_release.py", [db], tree)
     pop[t] = last(r.stdout)[:400] if r.returncode == 0 else "POPULATE FAILED " + last(r.stderr)[:160]
-    d = digest(db, v); key = (v, d.get("digest"))
+    d = digest(db, v); key = (t, v, d.get("digest"))      # the origin is in the key: a shape another origin reached still walks
     if key not in seen:
         q = f"{W}/st/{next(n)}.db"; shutil.copyfile(db, q); seen[key] = {"route": t, "origin": t, "db": q}; work.append((i, q, d.get("digest"), t, t))
 while work:
@@ -30,11 +30,11 @@ while work:
             fails.setdefault((rows[i][0], t), last(r.stderr)[:140]); os.remove(q); continue
         d = digest(q, v)
         if d.get("uv") != v: fails.setdefault((rows[i][0], t), f"uv {d}"); os.remove(q); continue
-        key = (v, d["digest"])
+        key = (origin, v, d["digest"])
         if key in seen: os.remove(q); continue
         seen[key] = {"route": route + ">" + t, "origin": origin, "db": q}; work.append((j, q, d["digest"], route + ">" + t, origin))
 res = {"populate": pop, "states": [], "fails": {f"{a}>{b}": e for (a, b), e in fails.items()}}
-for (v, dg), s in sorted(seen.items(), key=lambda kv: (kv[0][0], str(kv[0][1]))):
+for (_o, v, dg), s in sorted(seen.items(), key=lambda kv: (kv[0][1], kv[0][0], str(kv[0][2]))):
     base = json.loads(last(run("content.py", [s["db"]], HEAD).stdout))
     h = s["db"] + ".head"; shutil.copyfile(s["db"], h)
     r = run("head.py", [h], HEAD); hd = last(r.stdout)
@@ -44,4 +44,4 @@ for (v, dg), s in sorted(seen.items(), key=lambda kv: (kv[0][0], str(kv[0][1])))
                           "headcontent": {k: x["d"] for k, x in json.loads(last(run("content.py", [h], HEAD).stdout)).items()} if r.returncode == 0 else None})
 res["accepted_at_bases"] = {str(v): len(acc[str(v)]) for _, v in rows}
 json.dump(res, open(f"{W}/result.json", "w"), indent=1, default=str)
-tot = sum(1 for s in res["states"] if s["accepted"]); print("reached accepted", tot, "of", sum(res["accepted_at_bases"].values()), "states", len(res["states"]), "route failures", len(fails))
+shapes = {(s["v"], s["digest"]) for s in res["states"] if s["accepted"]}; print("reached accepted", len(shapes), "of", sum(res["accepted_at_bases"].values()), "states", len(res["states"]), "all accepted", all(s["accepted"] for s in res["states"]), "route failures", len(fails))
