@@ -12,7 +12,9 @@ import ast
 import contextlib
 import datetime as dt
 import hashlib
+import importlib
 import importlib.util
+import inspect
 import json
 import math
 import pathlib
@@ -22,6 +24,7 @@ import sqlite3
 import symtable
 import sys
 import threading
+import types
 
 import pytest
 
@@ -858,6 +861,82 @@ DB_NAME_EXCEPTIONS = {("veracium/cli.py", "_migrate", "args", "backup"): "8b3470
 # round 5 (W2): callable accessors reach an attribute with no attribute node. src/ uses none, so all refuse, by
 # attribute, by name and by import
 ACCESSORS = {"attrgetter", "methodcaller", "getattr_static"}
+# round 6, research's stage 2 (1a493ea3; the owner: "Close members too (Recommended)"). Every module src/ names and every
+# member it reads of each, frozen: a list of import statements alone leaves an unlisted module one attribute away, since a
+# listed module holds others (`urllib.request.string`, `enum.bltns`, `dataclasses.inspect`). A new use adds a row here.
+SRC_IMPORTS = {
+    "__future__": {"annotations"},
+    "abc": {"ABC", "abstractmethod"},
+    "anthropic": {"Anthropic"},
+    "argparse": {"ArgumentParser"},
+    "calendar": {"monthrange"},
+    "collections": {"defaultdict"},
+    "collections.abc": {"Mapping"},
+    "contextlib": {"closing", "contextmanager", "nullcontext"},
+    "contextvars": {"ContextVar"},
+    "dataclasses": {"asdict", "dataclass", "field", "fields"},
+    "datetime": {"date", "datetime", "timedelta", "timezone"},
+    "enum": {"Enum"},
+    "fcntl": {"LOCK_EX", "LOCK_NB", "LOCK_UN", "flock"},
+    "hashlib": {"sha256"},
+    "importlib.metadata": {"PackageNotFoundError", "version"},
+    "json": {"JSONDecodeError", "JSONDecoder", "dump", "dumps", "load", "loads"},
+    "logging": {"Formatter", "INFO", "Logger", "getLogger"},
+    "logging.handlers": {"RotatingFileHandler"},
+    "math": {"inf", "isfinite", "sqrt"},
+    "mcp.server.fastmcp": {"FastMCP"},
+    "mcp.server.mcpserver": {"MCPServer"},
+    "msvcrt": {"LK_NBLCK", "LK_UNLCK", "locking"},
+    "os": {"O_CREAT", "O_RDWR", "close", "environ", "fsencode", "fstat", "fsync", "getpid", "lseek", "name", "open",
+        "path", "replace", "write"},
+    "os.path": {"basename", "exists", "isabs", "join", "realpath"},
+    "pathlib": {"Path"},
+    "platform": {"machine", "python_version", "system"},
+    "pydantic": {"BaseModel", "Field", "StrictBool", "TypeAdapter", "ValidationError", "field_validator",
+        "model_serializer", "model_validator"},
+    "re": {"I", "compile", "escape", "findall", "finditer", "fullmatch", "match", "search", "split", "sub"},
+    "secrets": {"token_bytes"},
+    "shutil": {"copy2", "rmtree"},
+    "sqlite3": {"Connection", "DatabaseError", "Error", "IntegrityError", "OperationalError", "Row", "connect",
+        "sqlite_version"},
+    "struct": {"error", "pack", "unpack", "unpack_from"},
+    "sys": {"argv", "stderr", "stdin"},
+    "tempfile": {"TemporaryDirectory", "mkdtemp"},
+    "threading": {"Lock", "RLock", "Thread", "get_ident"},
+    "time": {"monotonic", "perf_counter", "sleep", "time"},
+    "traceback": {"format_exception"},
+    "types": {"MappingProxyType"},
+    "typing": {"Any", "Callable", "Literal", "Mapping", "NamedTuple", "Optional", "Protocol", "TYPE_CHECKING",
+        "get_args", "runtime_checkable"},
+    "urllib": {"request"},
+    "urllib.request": {"Request", "urlopen"},
+    "uuid": {"UUID", "uuid4"},
+    "warnings": {"warn"},
+    "weakref": {"WeakKeyDictionary"},
+}
+# every dunder src/ reads: `__globals__`, `__builtins__`, `__match_args__`, `__annotations__` and the rest fall outside it
+SRC_DUNDERS = {"__all__", "__cause__", "__file__", "__func__", "__getitem__", "__init__", "__name__",
+               "__new__", "__setattr__", "__slots__", "__store_mutator__", "__str__", "__traceback__"}
+# names src/ does not use, each reaching a namespace, a module or an evaluator whatever holds it
+REACH_NAMES = {"globals", "import_module", "locals", "model_rebuild"}
+# an attribute name src/ does not read: `pathlib.Path.parser` is `posixpath`, a module the member walk cannot see through a
+# class (research, 9e5daf2f). A plain name is not refused: src/'s `parser` variables are argparse's
+REACH_ATTRIBUTES = {"parser"}
+# round 6 (research's read): the two `__import__` calls, each frozen with the attribute read on it. (module, function) -> digest
+IMPORT_SITES = {("veracium/portability.py", "import_memory"):
+                    "bc26b86e08e26b357106adbe7551a63ea74a1c4f035a83779a68c3ae05b15ce4",
+                ("veracium/schema.py", None):
+                    "d5956fdb940525256bc1066ba504b6dcd866ccf1159e70741dba3017f501e027"}
+# a class's attribute that holds a module: the walk stops at a class, so each is named here and refused by name above
+CLASS_HELD_MODULES = {("pathlib", "Path", "parser")}
+# rows the runtime audit cannot import on every lane: a platform's module or an optional extra. The tables stay AST-only
+UNAUDITED_MODULES = {"anthropic", "fcntl", "mcp.server.fastmcp", "mcp.server.mcpserver", "msvcrt"}
+# the one own module src/ passes as a value: (module, function, name) -> that function's whole digest
+OWN_MODULE_VALUES = {("veracium/store/sqlite.py", "SqliteStore.upsert_embedding", "_semantic"):
+                     "d0b51a22f785ffdcd824b47053465f2c18ba99850f7ec8eee235ea605a50ebe1"}
+# pydantic evaluates a string it is handed as a type, so its one call here is frozen: (module, function) -> the call's digest
+TYPE_ADAPTER_SITE = {("veracium/store/migration.py", "_typed"):
+                     "85b8cdbe11b38e63e227521d86d087a4432bb0075ae20d6f9d9ee19b350581fe"}
 # round 5 (R4-01 (a)): the frozen statement binding _JSON_LAYOUT in sqlite.py
 FROZEN_LAYOUT = "1656bcdef030866f5bec4be139413ac460b0b77bcbba747356d3f25ecd1e8472"
 # round 5 (R4-01 (b), research's B2): the connection's closed non-SQL uses — exactly the pin's. `create_function`,
@@ -1673,10 +1752,233 @@ def _db_name_exception(rel, n, par, q):
     return want is not None and not called and _digest(_scope_of(n, par)) == want
 
 
-def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, sq):
+def _module_bindings(t):
+    """{name: dotted module} for every name an absolute import binds to a module."""
+    out = {}
+    for n in ast.walk(t):
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                out[a.asname or a.name.split(".")[0]] = a.name if a.asname else a.name.split(".")[0]
+        elif isinstance(n, ast.ImportFrom) and n.level == 0:
+            for a in n.names:
+                if f"{n.module}.{a.name}" in SRC_IMPORTS:      # `from os import path as p`: the name holds a module
+                    out[a.asname or a.name] = f"{n.module}.{a.name}"
+    return out
+
+
+def _is_base(n, par):
+    """`n` is read only as the base of an attribute."""
+    q = par.get(n)
+    return isinstance(q, ast.Attribute) and q.value is n
+
+
+def _is_dunder(name):
+    return isinstance(name, str) and len(name) > 4 and name.startswith("__") and name.endswith("__")
+
+
+def _import_uses(t, par):
+    """Everything in one module the closed tables judge: (kind, name, member, node), kind one of module, member, held,
+    dunder, dynamic (a name read for its site). The gate and the table's currency cell both read this, so they cannot drift."""
+    bound = _module_bindings(t)
+    for n in ast.walk(t):
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                yield "module", a.name, None, n
+        elif isinstance(n, ast.ImportFrom) and n.level == 0:
+            yield "module", n.module, None, n
+            for a in n.names:
+                yield "member", n.module, a.name, n
+        if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load) and n.id in bound:
+            if not _is_base(n, par):
+                yield "held", n.id, None, n
+                continue
+            mod, q = bound[n.id], par[n]
+            while True:
+                yield "member", mod, q.attr, q
+                full = f"{mod}.{q.attr}"
+                if full not in SRC_IMPORTS:
+                    break
+                if not _is_base(q, par):
+                    yield "held", full, None, q
+                    break
+                mod, q = full, par[q]
+        name = n.attr if isinstance(n, ast.Attribute) else n.id if isinstance(n, ast.Name) else None
+        if _is_dunder(name) and not (isinstance(n, ast.Name) and name == "__import__"):
+            yield "dunder", name, None, n
+        if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "getattr" and len(n.args) >= 2:
+            if isinstance(n.args[1], ast.Constant) and _is_dunder(n.args[1].value):
+                yield "dunder", n.args[1].value, None, n
+        if isinstance(n, ast.Name) and n.id == "__import__":
+            yield "dynamic", "__import__", None, n
+
+
+def _absolute_names(t):
+    """Every name an absolute import binds in this module, module or member."""
+    out = set()
+    for n in ast.walk(t):
+        if isinstance(n, ast.Import):
+            out |= {a.asname or a.name.split(".")[0] for a in n.names}
+        elif isinstance(n, ast.ImportFrom) and n.level == 0:
+            out |= {a.asname or a.name for a in n.names}
+    return out
+
+
+def _own_module_at(path, modules):
+    """The own module at dotted-path `path`: its file, its `__init__.py`, or `path/` for a directory of modules with no
+    `__init__.py`. `veracium/store` is one, and `from .. import store` binds it all the same."""
+    for m in (f"{path}.py", f"{path}/__init__.py"):
+        if m in modules:
+            return m
+    return f"{path}/" if any(m.startswith(f"{path}/") for m in modules) else None
+
+
+def _own_targets(rel, t, modules):
+    """{name: module of src/} for every relative import of a module, and [(node, target, name, bound as)] for every
+    relative import of a name out of a module. `modules` is the set of src/'s module paths."""
+    bound, names = {}, []
+    pkg = rel.split("/")[:-1]
+    for n in ast.walk(t):
+        if isinstance(n, ast.ImportFrom) and n.level:
+            base = "/".join(pkg[:len(pkg) - n.level + 1] + (n.module.split(".") if n.module else []))
+            for a in n.names:
+                sub = _own_module_at(f"{base}/{a.name}", modules)
+                if sub:
+                    bound[a.asname or a.name] = sub
+                else:
+                    tgt = _own_module_at(base, modules)
+                    if tgt and not tgt.endswith("/"):
+                        names.append((n, tgt, a.name, a.asname or a.name))
+    return bound, names
+
+
+def _own_index(mods):
+    """{module: (its absolute names, ((name, own module it holds), ...))}, every input `_own_problems` reads of OTHER
+    modules, so the memo's key can carry it whole."""
+    modules = {m[0] for m in mods}
+    return {rel: (tuple(sorted(_absolute_names(tree))), tuple(sorted(_own_targets(rel, tree, modules)[0].items())))
+            for rel, _text, tree, _p, _q, _i in mods}
+
+
+def _own_problems(rel, t, par, q, own_index):
+    """A name reached through another module of src/ (N6): `d.X` or `from .m import X`, X anything `d` took by an absolute
+    import, through own modules to any depth."""
+    bad = []
+    bound, names = _own_targets(rel, t, set(own_index))
+    at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
+    why = "a name another module of src/ imported, reached through it"
+    for n, tgt, name, as_name in names:
+        if name in own_index[tgt][0]:
+            bad.append(f"{at(n)}: `{name}`, {why}")
+        held = dict(own_index[tgt][1]).get(name)
+        if held:
+            bound[as_name] = held
+    for n in ast.walk(t):
+        if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load) and n.id in bound:
+            if not _is_base(n, par):
+                want = OWN_MODULE_VALUES.get((rel, q.get(id(n)), n.id))
+                if want is None or _digest(_scope_of(n, par)) != want:
+                    bad.append(f"{at(n)}: `{n.id}`, a module of src/ held as a value")
+                continue
+            tgt, a = bound[n.id], par[n]
+            while True:
+                names_of, held_of = own_index.get(tgt, ((), ()))       # a directory has no text, so it holds nothing itself
+                if a.attr in names_of:
+                    bad.append(f"{at(a)}: `{a.attr}`, {why}")
+                    break
+                sub = dict(held_of).get(a.attr)
+                if sub is None and tgt.endswith(("/", "/__init__.py")):
+                    sub = _own_module_at(f"{tgt.rsplit('/', 1)[0]}/{a.attr}", own_index)
+                if sub is None:
+                    break
+                if not _is_base(a, par):
+                    bad.append(f"{at(a)}: `{a.attr}`, a module of src/ held as a value")
+                    break
+                tgt, a = sub, par[a]
+    return bad
+
+
+def _annotation_slots(n):
+    """The annotation expressions node `n` carries."""
+    if isinstance(n, ast.AnnAssign):
+        yield n.annotation
+    elif isinstance(n, ast.arg) and n.annotation is not None:
+        yield n.annotation
+    elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.returns is not None:
+        yield n.returns
+
+
+def _annotation_problem(slot):
+    """Why a library evaluating this annotation would run code, or None. A string is parsed and read as an expression;
+    a computed string has no text to read, so a computed form refuses. `-` stays: it cannot build a string, and a Literal's
+    honest value (`"within-episode-v1"`) parses as subtraction."""
+    for c in ast.walk(slot):
+        if isinstance(c, (ast.Call, ast.JoinedStr)) or (isinstance(c, ast.BinOp) and not isinstance(c.op, (ast.BitOr, ast.Sub))):
+            return ast.unparse(c)[:50]
+        if isinstance(c, ast.Constant) and isinstance(c.value, str):
+            try:
+                inner = ast.parse(c.value, mode="eval")
+            except SyntaxError:
+                return c.value[:50]
+            found = _annotation_problem(inner.body)       # a string inside the string is read the same way
+            if found is not None:
+                return found
+    return None
+
+
+def _import_problems(rel, t, par, q):
+    """N1-N5, N7, N8: what src/ may reach by name, over one module. Pure in its arguments and the tables."""
+    bad = []
+    at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
+    for kind, name, member, n in _import_uses(t, par):
+        if kind == "module" and name not in SRC_IMPORTS:
+            bad.append(f"{at(n)}: `{name}`, a module src/ does not import")
+        elif kind == "member" and member not in SRC_IMPORTS.get(name, ()):
+            bad.append(f"{at(n)}: `{name}.{member}`, a member src/ does not use")
+        elif kind == "held":
+            bad.append(f"{at(n)}: `{name}`, a module held as a value")
+        elif kind == "dunder" and name not in SRC_DUNDERS:
+            bad.append(f"{at(n)}: `{name}`, a dunder src/ does not read")
+        elif kind == "dynamic":
+            call = par.get(n)
+            read = par.get(call)
+            if not (isinstance(call, ast.Call) and call.func is n and isinstance(read, ast.Attribute)
+                    and IMPORT_SITES.get((rel, q.get(id(n)))) == _digest(read)):
+                bad.append(f"{at(n)}: `__import__` outside its two reviewed calls")
+    for n in ast.walk(t):
+        if isinstance(n, ast.Match):
+            bad.append(f"{at(n)}: `match`, whose patterns read an attribute with no attribute node")
+        if isinstance(n, ast.alias) and n.name == "*":
+            bad.append(f"{at(n)}: a star import, whose names no rule here can see")
+        word = n.attr if isinstance(n, ast.Attribute) else n.id if isinstance(n, ast.Name) else None
+        if isinstance(n, ast.alias):
+            word = n.name.split(".")[-1]
+        if word in REACH_NAMES:
+            bad.append(f"{at(n)}: `{word}`, which reaches a namespace, a module or an evaluator")
+        if isinstance(n, ast.Attribute) and n.attr in REACH_ATTRIBUTES:
+            bad.append(f"{at(n)}: `.{n.attr}`, an attribute of a class that holds a module")
+        if isinstance(n, ast.ClassDef) and _scope_of(n, par) is not None and not isinstance(_scope_of(n, par), ast.ClassDef):
+            bad.append(f"{at(n)}: a class inside a function, where a library can evaluate its annotations against locals")
+        if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "type" and len(n.args) + len(n.keywords) > 1:
+            bad.append(f"{at(n)}: `type` building a class, whose annotations a library can evaluate")
+        for slot in _annotation_slots(n):
+            why = _annotation_problem(slot)
+            if why is not None:
+                bad.append(f"{at(n)}: an annotation a library would evaluate as code: {why}")
+        spelled = n.attr if isinstance(n, ast.Attribute) else n.id if isinstance(n, ast.Name) else None
+        if spelled == "TypeAdapter":
+            call = par.get(n)
+            site = (rel, q.get(id(n)))
+            if not (isinstance(call, ast.Call) and call.func is n and TYPE_ADAPTER_SITE.get(site) == _digest(call)):
+                bad.append(f"{at(n)}: `TypeAdapter` outside its one reviewed call")
+        if isinstance(n, ast.alias) and n.name == "TypeAdapter" and n.asname:
+            bad.append(f"{at(n)}: `TypeAdapter` imported under another name, `{n.asname}`")
+    return bad
+
+
+def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, sq, own_index):
     """One module's share of `_package_problems`: (problems, {site key: times seen}). Pure in its arguments, so a matrix
     of mutants of one module re-reads only that module."""
-    bad, seen = _self_problems(rel, t, par, ix), {}
+    bad, seen = _self_problems(rel, t, par, ix) + _import_problems(rel, t, par, q) + _own_problems(rel, t, par, q, own_index), {}
     at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
     for n in ast.walk(t):
         if isinstance(n, ast.Attribute):
@@ -1759,10 +2061,19 @@ def _package_problems(source, tree, parent, idx, others) -> list:
     exec_names = _bare_parameter_sites(mods)
     guarded_literals = denied | set(SQL_CALLS) | {"_conn"} | ACCESSORS | set(exec_names)
     bound_names, seen = set(), {}
+    own_index = _own_index(mods)
+    # every input `_module_problems` reads, every table a cell may patch included: a key that omits one serves a stale
+    # result, which only a fixed test order shows (round 6: offline red, the suite and CI green)
+    shared = (tuple(sorted(exec_names.items())), tuple(sorted(denied)), tuple(sorted(DB_NAME_EXCEPTIONS.items())),
+              tuple(sorted(SRC_NONLITERAL.items())), tuple(sorted((k, tuple(sorted(v))) for k, v in SRC_IMPORTS.items())),
+              tuple(sorted(SRC_DUNDERS)), tuple(sorted(REACH_NAMES)), tuple(sorted(OWN_MODULE_VALUES.items())),
+              tuple(sorted(TYPE_ADAPTER_SITE.items())), tuple(sorted(IMPORT_SITES.items())), tuple(sorted(REACH_ATTRIBUTES)),
+              tuple(sorted(own_index.items())))
     for rel, text, tree_m, par_m, q_m, ix_m in mods:
-        key = (rel, text, tuple(sorted(exec_names.items())), tuple(sorted(denied)))
+        key = (rel, text, shared)
         if key not in _MODULE_RESULTS:
-            _MODULE_RESULTS[key] = _module_problems(rel, tree_m, par_m, q_m, ix_m, denied, exec_names, guarded_literals, sq)
+            _MODULE_RESULTS[key] = _module_problems(rel, tree_m, par_m, q_m, ix_m, denied, exec_names, guarded_literals, sq,
+                                                    own_index)
         got_bad, got_seen = _MODULE_RESULTS[key]
         bad += got_bad
         for k, v in got_seen.items():
@@ -2159,6 +2470,8 @@ _CALL = f"self._rows(conn, {_SPLIT}, (user_id,))"
 _MOD = "    from . import migration as m_\n"
 _RES = "    from ..scope_read import MembershipResolver as R_\n"
 _SELF_BOUND = "`self` bound other than as a plain method's first parameter"
+_OWN_HELD = "a module of src/ held as a value"
+_LOCAL_CLASS = "a class inside a function"
 _SELF_READ = "`self` read where no plain method's first parameter reaches it"
 _UNLISTED = "a non-literal SQL site not in the reviewed list"
 _HELD = "runs its SQL argument: held, not called"
@@ -2191,18 +2504,19 @@ R6_RECEIVER = {
         f"    from . import migration as self\n    (lambda f: f(conn, {_SPLIT}, (user_id,)))(self._rows)", _HELD, "denied"),
     "X1 a literal getattr of the derived name (B3)": (_MOD + f'    getattr(m_, "_rows")(conn, {_SPLIT}, (user_id,))',
                                                       "getattr of `_rows`", "denied"),
-    # B1: a method reached unbound. The rename leaves it nothing to reach: no static rule, a raise before any SQL
-    "U1 R_._projection(module, conn, sql)": (_MOD + _RES + f"    R_._projection(m_, conn, {_NOWHERE})", None, AttributeError),
-    "U2 held f = R_._projection": (_MOD + _RES + f"    f_ = R_._projection\n    f_(m_, conn, {_NOWHERE})", None, AttributeError),
-    "U3 a subclass importing _rows": (_RES + "    class K_(R_):\n" + _SUBCLASS + f"    K_.g(K_, conn, {_NOWHERE})", None, TypeError),
+    # B1: a method reached unbound. The rename leaves it nothing to reach, so each raises before any SQL; stage 2's
+    # closures refuse the forms statically too, for the module held as a value or the class inside a function
+    "U1 R_._projection(module, conn, sql)": (_MOD + _RES + f"    R_._projection(m_, conn, {_NOWHERE})", _OWN_HELD, AttributeError),
+    "U2 held f = R_._projection": (_MOD + _RES + f"    f_ = R_._projection\n    f_(m_, conn, {_NOWHERE})", _OWN_HELD, AttributeError),
+    "U3 a subclass importing _rows": (_RES + "    class K_(R_):\n" + _SUBCLASS + f"    K_.g(K_, conn, {_NOWHERE})", _LOCAL_CLASS, TypeError),
     "U4 types.MethodType": (_MOD + _RES + f"    import types\n    types.MethodType(R_._projection, m_)(conn, {_NOWHERE})",
-                            None, AttributeError),
+                            _OWN_HELD, AttributeError),
     "U5 a subclass through an alias base": (_RES + "    B_ = R_\n    class K_(B_):\n" + _SUBCLASS + f"    K_.g(K_, conn, {_NOWHERE})",
-                                            None, TypeError),
+                                            _LOCAL_CLASS, TypeError),
     "U6 a super() route": (_RES + "    class K_(R_):\n        from .migration import _rows\n        @classmethod\n"
                            f"        def g(cls, conn, s):\n            return super()._projection(cls, conn, s)\n    K_.g(conn, {_NOWHERE})",
-                           None, TypeError),
-    "X5 a literal getattr of the method": (_MOD + _RES + f'    getattr(R_, "_projection")(m_, conn, {_NOWHERE})', None, AttributeError),
+                           _LOCAL_CLASS, TypeError),
+    "X5 a literal getattr of the method": (_MOD + _RES + f'    getattr(R_, "_projection")(m_, conn, {_NOWHERE})', _OWN_HELD, AttributeError),
     # the three ways round the rename research tried, with the new name
     "U7 _rows imported under the method's name": (
         _RES + f"    class K_(R_):\n        from .migration import _rows as _membership_rows\n    K_._projection(K_, conn, {_NOWHERE})",
@@ -2222,6 +2536,109 @@ R6_RECEIVER = {
         '    from . import migration as reader\n    reader._rows(conn, "SELECT json FROM edges WHERE user_id=?", (user_id,))', None, "ran"),
     "C3 control: the read through a module spelled self": (
         '    from . import migration as self\n    self._rows(conn, "SELECT json FROM edges WHERE user_id=?", (user_id,))', _SELF_BOUND, "ran"),
+}
+_Q = f"({_SPLIT}, (user_id,))"
+_P = f"(conn, {_SPLIT}, (user_id,))"
+_GF = 'Formatter().get_field("0.execute", (conn,), {})[0]'
+_FAKE = ("    class Mt_(type):\n        def __instancecheck__(c, o):\n            return True\n"
+         "    class P_(metaclass=Mt_):\n        __match_args__ = (%r,)\n")
+_TEXT = f'"c.exe" + "cute(s, p)", globals={{"c": conn, "s": {_SPLIT}, "p": (user_id,)}}'
+_EVAL = '"conn.exe" "cute(\'UP\' \'DATE edges SET json=json\')"'
+_MEMBER = "a member src/ does not use"
+_MODULE = "a module src/ does not import"
+_HELD_MOD = "a module held as a value"
+_DUNDER = "a dunder src/ does not read"
+_REACH = "which reaches a namespace, a module or an evaluator"
+_OWN = "a name another module of src/ imported, reached through it"
+_SITE = "`__import__` outside its two reviewed calls"
+_MATCH = "`match`, whose patterns read an attribute with no attribute node"
+_ANN = "an annotation a library would evaluate as code"
+_BMOD = "    from pydantic import BaseModel\n"
+_BRACKETS = '    o_, c_, s_ = "(", ")", "UP" + "DATE edges SET json=json"\n'
+# stage 2 (research 1a493ea3; the owner: "Close members too (Recommended)"). Each form wrote, or was accepted by gate and
+# census, at e25eb0a7. A form's name says which rule it answers; the line each rule stops short of is the README's
+R6_IMPORT = {
+    # N1: a pattern reads an attribute with no attribute node, and positionally with no keyword either
+    "M1 a class pattern on a module": (_MOD + f"    match m_:\n        case object(_rows=run):\n            run{_P}", _MATCH, "denied"),
+    "M2 a class pattern on the connection": (f"    match conn:\n        case object(execute=run):\n            run{_Q}", _MATCH, "denied"),
+    "M3 positional, __match_args__, the connection": (_FAKE % "execute" + f"    match conn:\n        case P_(run):\n            run{_Q}", _MATCH, "denied"),
+    "M4 positional, __match_args__, a module": (_MOD + _FAKE % "_rows" + f"    match m_:\n        case P_(run):\n            run{_P}", _MATCH, "denied"),
+    # N2: a module src/ does not name
+    "L1 import string": (f"    import string as g_\n    run = g_.{_GF}\n    run{_Q}", _MODULE, "denied"),
+    "L2 from string import": (f"    from string import Formatter\n    run = {_GF}\n    run{_Q}", _MODULE, "denied"),
+    "L6 logging.config": (f'    import logging.config\n    run = logging.config.BaseConfigurator({{}}).resolve("veracium.store.migration._rows")\n    run{_P}',
+                          _MODULE, "denied"),
+    "T1 timeit": (f"    import timeit\n    timeit.timeit({_TEXT}, number=1)", _MODULE, "denied"),
+    "T2 cProfile": (f'    import cProfile\n    cProfile.runctx("c.exe" + "cute(s, p)", {{"c": conn, "s": {_SPLIT}, "p": (user_id,)}}, {{}})', _MODULE, "denied"),
+    "T3 xmlrpc": (f'    from xmlrpc.server import resolve_dotted_attribute as r_\n    r_(conn, "execute"){_Q}', _MODULE, "denied"),
+    "S1 subprocess": ('    import subprocess\n    subprocess.run(["true"])', _MODULE, None),
+    "H5 __import__ of an unlisted module": (f'    run = __import__("string").{_GF}\n    run{_Q}', _SITE, "denied"),
+    # N3: a member src/ does not use, one attribute past a listed module
+    "L6b from logging import config": ('    from logging import config as c_\n    c_.BaseConfigurator({})', _MEMBER, "ran"),
+    "R1 urllib.request.string": (f"    import urllib.request as u_\n    run = u_.string.{_GF}\n    run{_Q}", _MEMBER, "denied"),
+    "R3 enum.bltns": (f'    import enum as e_\n    run = e_.bltns.getattr(conn, "exe" + "cute")\n    run{_Q}', _MEMBER, "denied"),
+    "R4 dataclasses.inspect": (f'    import dataclasses as d_\n    run = dict(d_.inspect.getmembers(conn))["exe" + "cute"]\n    run{_Q}', _MEMBER, "denied"),
+    "R5 logging.handlers.pickle": ("    import logging.handlers as h_\n    h_.pickle", _MEMBER, "ran"),
+    "R9 os.path.sys": ("    import os as o_\n    o_.path.sys", _MEMBER, "ran"),
+    "H4 from urllib.request import string": (f"    from urllib.request import string as g_\n    run = g_.{_GF}\n    run{_Q}", _MEMBER, "denied"),
+    "H6 __import__ of a listed dotted name": (f'    run = __import__("urllib.request").request.string.{_GF}\n    run{_Q}', _SITE, "denied"),
+    "H10 a listed submodule by from-import": ("    from os import path as p_\n    p_.sys", _MEMBER, "ran"),
+    "H11 from logging import handlers": ("    from logging import handlers as h_\n    h_.pickle", _MEMBER, "ran"),
+    "H17 from urllib import request": (f"    from urllib import request as r_\n    run = r_.string.{_GF}\n    run{_Q}", _MEMBER, "denied"),
+    "H18 a from-imported submodule held": (f"    from urllib import request as r_\n    x_ = r_\n    run = x_.string.{_GF}\n    run{_Q}", _HELD_MOD, "denied"),
+    "R10 pathlib.Path.parser": ("    from pathlib import Path\n    Path.parser.sys", "an attribute of a class that holds a module", "ran"),
+    "G1 typing.get_type_hints": (f'    import typing as y_\n    def g_(): pass\n    g_.__annotations__ = {{"x": "c.exe" + "cute(s, p)"}}\n'
+                                 f'    y_.get_type_hints(g_, {{"c": conn, "s": {_SPLIT}, "p": (user_id,)}})', _MEMBER, "denied"),
+    "E1 EntryPoint.load": (f'    from importlib.metadata import EntryPoint\n    EntryPoint("x", "veracium.store.migration:_rows", "g").load(){_P}', _MEMBER, "denied"),
+    "S2 os.system": ('    import os as o_\n    o_.system("true")', _MEMBER, None),
+    "S3 os.popen": ('    import os as o_\n    o_.popen("true").close()', _MEMBER, None),
+    # N4: a module read as a value, which no member rule then sees
+    "H1 a module held": (f"    import urllib.request as u_\n    x_ = u_\n    run = x_.string.{_GF}\n    run{_Q}", _HELD_MOD, "denied"),
+    "H2 a dotted module held": (f"    import urllib.request\n    x_ = urllib.request\n    run = x_.string.{_GF}\n    run{_Q}", _HELD_MOD, "denied"),
+    "H3 a module passed": (f"    import urllib.request as u_\n    run = (lambda m: m.string.{_GF})(u_)\n    run{_Q}", _HELD_MOD, "denied"),
+    # N5: the named import route, and `__import__` the gate cannot read
+    "I1 import_module through importlib.metadata": (f'    import importlib.metadata as m_\n    run = m_.import_module("string").{_GF}\n    run{_Q}', _REACH, "denied"),
+    "I2 from importlib import import_module": (f'    from importlib import import_module\n    run = import_module("string").{_GF}\n    run{_Q}', _REACH, "denied"),
+    "H7 __import__ of a computed name": (f'    run = __import__("str" + "ing").{_GF}\n    run{_Q}', _SITE, "denied"),
+    "H15 __import__ held": (f'    i_ = __import__\n    run = i_("string").{_GF}\n    run{_Q}', _SITE, "denied"),
+    "H16 __import__ of a listed module, a listed member": ('    __import__("json").dumps({})', _SITE, "ran"),
+    "H12 globals()": ('    b_ = globals()["__buil" + "tins__"]\n    run = b_["getattr"](conn, "exe" + "cute")\n' + f"    run{_Q}", _REACH, "denied"),
+    "H13 locals()": (f'    import urllib.request as u_\n    run = locals()["u_"].string.{_GF}\n    run{_Q}', _REACH, "denied"),
+    # N6: a module reached through another module of src/
+    "H8 an own module's import": ("    from . import migration as m_\n    m_.sqlite3", _OWN, "ran"),
+    "H9 from an own module, its import": ("    from .migration import sqlite3 as q_\n    q_.connect", _OWN, "ran"),
+    "H14 an own module held": ("    from . import migration as m_\n    x_ = m_\n    x_.sqlite3", _OWN_HELD, "ran"),
+    "H19 an own module's from-import": ("    from . import migration as m_\n    m_.BaseModel", _OWN, "ran"),
+    "H20 from an own module, its from-import": ("    from .migration import BaseModel as B_\n    B_", _OWN, "ran"),
+    "H21 a second own module deep": ("    from .. import store as s_\n    s_.migration.sqlite3", _OWN, "ran"),
+    "H22 an own module held by another, from-imported": ("    from .sqlite import _semantic as z_\n    z_.hashlib", _OWN, None),
+    # not a route: the gate has always refused this, and the record says so
+    "T4 a held execute as a Thread target": (f'    import threading as h_\n    h_.Thread(target=conn.execute, args=({_SPLIT}, (user_id,))).run()',
+                                             "held, passed or returned, not called", "denied"),
+    # N7: a dunder src/ does not read
+    "D1 a function's __globals__": ('    import json as j_\n    b_ = j_.dumps.__globals__["__builtins__"]\n    run = b_["getattr"](conn, "exe" + "cute")\n' + f"    run{_Q}", _DUNDER, "denied"),
+    "D2 a lambda's __globals__": ('    b_ = (lambda: 0).__globals__["__builtins__"]\n    run = b_["getattr"](conn, "exe" + "cute")\n' + f"    run{_Q}", _DUNDER, "denied"),
+    "D3 __builtins__": ('    run = __builtins__["getattr"](conn, "exe" + "cute")\n' + f"    run{_Q}", _DUNDER, "denied"),
+    "D4 __loader__": ("    __loader__", _DUNDER, None),
+    "D5 a subclass walk": ("    ().__class__.__base__.__subclasses__()", _DUNDER, "ran"),
+    "D6 a literal getattr of a dunder": ('    import json as j_\n    b_ = getattr(j_.dumps, "__globals__")["__builtins__"]\n    run = b_["getattr"](conn, "exe" + "cute")\n' + f"    run{_Q}", _DUNDER, "denied"),
+    # N8: text a library evaluates. A class inside a function is how an annotation sees a local
+    "P1 a quoted annotation": (_BMOD + f"    class K_(BaseModel):\n        a: {_EVAL}", _ANN, "denied"),
+    "P2 TypeAdapter on a string": (f"    from pydantic import TypeAdapter\n    TypeAdapter({_EVAL})", "`TypeAdapter` outside its one reviewed call", "denied"),
+    "P3 an annotation held in a name": (_BMOD + '    s_ = "conn.exe" + "cute(\'UP\' \'DATE edges SET json=json\')"\n    class K_(BaseModel):\n        a: s_', _LOCAL_CLASS, "denied"),
+    # every constant of P4 and P5 parses, to a name: the string rule alone would pass both, at any depth
+    "P4 an annotation of joined strings": (_BMOD + _BRACKETS + "    class K_(BaseModel):\n        a: \"conn.execute\" + o_ + \"s_\" + c_", _ANN, "denied"),
+    "P5 an f-string annotation": (_BMOD + _BRACKETS + "    class K_(BaseModel):\n        a: f\"conn.execute{o_}s_{c_}\"", _ANN, "denied"),
+    "P6 a quoted annotation inside Optional": (_BMOD + f"    from typing import Optional\n    class K_(BaseModel):\n        a: Optional[{_EVAL}]", _ANN, "denied"),
+    "P10 a string inside a quoted annotation": (_BMOD + "    class K_(BaseModel):\n        a: \"\\\"conn.exe\\\" \\\"cute('UP' 'DATE edges SET json=json')\\\"\"", _ANN, "denied"),
+    "P7 type() building a model": (_BMOD + f'    type("K_", (BaseModel,), {{"__annot" + "ations__": {{"a": {_EVAL}}}}})', "`type` building a class", "denied"),
+    "P8 TypeAdapter under another name": (f"    from pydantic import TypeAdapter as T_\n    T_({_EVAL})", "imported under another name", "denied"),
+    "P9 model_rebuild": (_BMOD + "    BaseModel.model_rebuild", _REACH, "ran"),
+    # controls: what a listed member, a read and a type annotation still may do
+    "C1 control: a literal read on the connection": ('    conn.execute("SELECT 1")', None, "ran"),
+    "C2 control: a listed member": ("    import json as j_\n    j_.dumps({})", None, "ran"),
+    "C3 control: a listed from-import": ("    from typing import Any\n    x_: Any = 1", None, "ran"),
+    "C4 control: a quoted type": ('    x_: "dict | None" = None', None, "ran"),
 }
 _CLI = "veracium/cli.py"
 _CLI_AT = "    if not args.i_have_quiesced or args.backup is None:\n"
@@ -2329,12 +2746,24 @@ def test_each_receiver_form_has_its_stated_static_and_runtime_outcome(name, tmp_
     """R5-01's matrix, static and runtime apart. Static: the plant in next_seq, the gate's own reason or, where the
     rename leaves nothing to refuse, no problem. Runtime: the same lines run inside the journal's next_seq on a real store
     under the authorizer, with the exact outcome the table states and, for every route, the store unchanged."""
-    lines, reason, runtime = R6_RECEIVER[name]
+    _plant_outcome(name, *R6_RECEIVER[name], tmp_path, monkeypatch, _edges_write_tripwire)
+
+
+@pytest.mark.parametrize("name", list(R6_IMPORT))
+def test_each_import_form_has_its_stated_static_and_runtime_outcome(name, tmp_path, monkeypatch, _edges_write_tripwire):
+    """Stage 2's matrix (1a493ea3), read the same way. A runtime of None is static only: those forms start a second
+    process or read a name and do nothing, and none was run."""
+    _plant_outcome(name, *R6_IMPORT[name], tmp_path, monkeypatch, _edges_write_tripwire)
+
+
+def _plant_outcome(name, lines, reason, runtime, tmp_path, monkeypatch, _edges_write_tripwire):
     bad = _gate(SQLITE.read_text(), _r5_others(_EE, _NS, _in_next_seq(lines)))
     if reason is None:
         assert bad == [], bad
     else:
         assert any(reason in b for b in bad), f"{name}: not refused for its reason {reason!r}: {bad}"
+    if runtime is None:
+        return
     path = tmp_path / "plant.db"
     s = SqliteStore(str(path))
     s.add_edge(_edge("e", S.Volatility.SLOW, 0.9))
@@ -2365,6 +2794,174 @@ def test_each_receiver_form_has_its_stated_static_and_runtime_outcome(name, tmp_
     _edges_write_tripwire.clear()
 
 
+_SQ_AT = "    def upsert_embedding(self"
+
+
+def _in_sqlite(body):
+    text = SQLITE.read_text()
+    assert text.count(_SQ_AT) == 1, f"the anchor occurs {text.count(_SQ_AT)} times — re-anchor it"
+    return text.replace(_SQ_AT, "    def planted(self):\n" + body + "\n\n" + _SQ_AT)
+
+
+@pytest.mark.parametrize("body", [
+    "        match self:\n            case object(_conn=object(execute=run)):\n                run('SELECT 1')",
+    "        match self._conn:\n            case object(execute=run):\n                run('SELECT 1')"], ids=["Q2 nested, _conn unspelled", "Q1 the subject spelled"])
+def test_a_class_pattern_inside_the_store_is_refused(body):
+    others = _r5_others(_EE, _NS, _NS)
+    assert not any(_MATCH in b for b in _gate(SQLITE.read_text(), others))
+    assert any(_MATCH in b for b in _gate(_in_sqlite(body), others))
+
+
+def test_a_class_pattern_from_a_new_module_is_refused():
+    """O1: the same reach from a module the inventory has not met, holding a store."""
+    plant = "def f(store):\n    match store:\n        case object(_conn=object(execute=run)):\n            run('SELECT 1')\n"
+    bad = _gate(SQLITE.read_text(), _r5_others("veracium/_planted.py", None, plant))
+    assert any(_MATCH in b for b in bad), bad
+
+
+@pytest.mark.parametrize("plant", ["from .store.migration import *\n", "from os import *\n"], ids=["relative", "absolute"])
+def test_a_star_import_is_refused(plant):
+    """S1 (research 4e8529bd). It binds names no binder walk sees, so the relative form reached neither N3, N4 nor N6. A
+    star is legal only at module level, so this plant is a new module's and not a row of next_seq."""
+    bad = _gate(SQLITE.read_text(), _r5_others("veracium/_planted.py", None, plant))
+    assert any("a star import, whose names no rule here can see" in b for b in bad), bad
+
+
+@pytest.mark.parametrize("slot, refused", [
+    ('Literal["within-episode-v1"]', False), ("int | None", False), ('"dict | None"', False),
+    ('"\'a\' + \'b\'"', True), ('"\'\\\'a\\\' + \\\'b\\\'\'"', True), ('"\'a\' % \'b\'"', True), ('"\'a\' * 2"', True), ('"f()"', True)],
+    ids=["a Literal's value", "a union", "a quoted union", "joined in a string", "joined two strings deep", "formatted", "repeated", "a call"])
+def test_an_annotation_slot_reads_as_its_rule_says(slot, refused):
+    """The rule alone, on the shapes the honest tree holds and the shapes that build text."""
+    assert (_annotation_problem(ast.parse(slot, mode="eval").body) is not None) is refused
+
+
+def _src_uses():
+    modules, members, dunders, other = set(), {}, set(), []      # `other`: only `__import__`, which is judged by site
+    for p in sorted(SRC.rglob("*.py")):
+        tree = ast.parse(p.read_text())
+        par = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+        for kind, name, member, n in _import_uses(tree, par):
+            if kind == "module":
+                modules.add(name)
+            elif kind == "member":
+                members.setdefault(name, set()).add(member)
+            elif kind == "dunder":
+                dunders.add(name)
+            else:
+                other.append((str(p), kind, name))
+    return modules, members, dunders, other
+
+
+def test_the_closed_tables_are_exactly_what_src_uses():
+    """Both ways: a use the tables lack is the gate's to refuse, and a row nothing uses is a route left open for nothing.
+    The tables are frozen data; this compares them with a fresh read of src/, and never derives them."""
+    modules, members, dunders, other = _src_uses()
+    assert [k for _p, k, _n in other] == ["dynamic"] * len(IMPORT_SITES) == ["dynamic"] * 2, other
+    assert {m: set(v) for m, v in SRC_IMPORTS.items() if v} == members
+    assert modules <= set(SRC_IMPORTS) and set(SRC_IMPORTS) - modules <= set(members)
+    assert SRC_DUNDERS == dunders
+
+
+def _gate_r1():
+    return _gate(SQLITE.read_text(), _r5_others(_EE, _NS, _in_next_seq(R6_IMPORT["R1 urllib.request.string"][0])))
+
+
+def _audited_rows():
+    """Each table row whose module imports here, with what it holds. The tables stay AST-only: this reads the interpreter
+    the suite runs on, so a new Python's route is caught by this cell and not by a reviewer."""
+    for module, members in sorted(SRC_IMPORTS.items()):
+        try:
+            mod = importlib.import_module(module)
+        except ImportError:
+            assert module.split(".")[0] in {m.split(".")[0] for m in UNAUDITED_MODULES}, module
+            continue
+        for member in sorted(members):
+            yield module, member, getattr(mod, member, None)
+
+
+def test_no_listed_member_holds_a_route_to_an_unlisted_module():
+    """Research's read (9e5daf2f, B2), one attribute level, classes and modules: the walk reads through a listed module
+    and stops at anything else, so a class holding a module is a route it cannot see. Each is named, and refused by name."""
+    seen = set()
+    for module, member, value in _audited_rows():
+        if isinstance(value, types.ModuleType):
+            assert f"{module}.{member}" in SRC_IMPORTS, (module, member, value)
+        elif isinstance(value, type):
+            for k in dir(value):
+                try:
+                    held = inspect.getattr_static(value, k)
+                except AttributeError:
+                    continue
+                if isinstance(held, types.ModuleType):
+                    seen.add((module, member, k))
+    assert seen <= CLASS_HELD_MODULES, seen - CLASS_HELD_MODULES      # by the interpreter: `Path.parser` is 3.13's
+    assert {k for _m, _c, k in CLASS_HELD_MODULES} <= REACH_ATTRIBUTES
+
+
+def test_a_reach_attribute_moves_the_gate_when_it_moves(monkeypatch):
+    others = _r5_others(_EE, _NS, _in_next_seq(R6_IMPORT["R10 pathlib.Path.parser"][0]))
+    why = R6_IMPORT["R10 pathlib.Path.parser"][1]
+    assert any(why in b for b in _gate(SQLITE.read_text(), others))
+    monkeypatch.setattr(sys.modules[__name__], "REACH_ATTRIBUTES", set())
+    assert not any(why in b for b in _gate(SQLITE.read_text(), others))
+
+
+def test_the_two_import_calls_are_frozen(monkeypatch):
+    others = _r5_others(_EE, _NS, _NS)
+    assert not any(_SITE in b for b in _gate(SQLITE.read_text(), others))
+    monkeypatch.setattr(sys.modules[__name__], "IMPORT_SITES", {k: "0" * 64 for k in IMPORT_SITES})
+    assert sum(_SITE in b for b in _gate(SQLITE.read_text(), others)) == 2
+
+
+def test_a_closed_table_moves_the_gate_when_it_moves(monkeypatch):
+    """The unpatched call runs first, in the same test: a memo that omits a table then fails here and not by order."""
+    assert any(_MEMBER in b for b in _gate_r1())
+    monkeypatch.setitem(SRC_IMPORTS, "urllib.request", SRC_IMPORTS["urllib.request"] | {"string"})
+    assert not any(_MEMBER in b for b in _gate_r1())
+
+
+def test_a_dunder_row_moves_the_gate_when_it_moves(monkeypatch):
+    plant = _in_next_seq(R6_IMPORT["D4 __loader__"][0])
+    others = _r5_others(_EE, _NS, plant)
+    assert any(_DUNDER in b for b in _gate(SQLITE.read_text(), others))
+    monkeypatch.setattr(sys.modules[__name__], "SRC_DUNDERS", SRC_DUNDERS | {"__loader__"})
+    assert not any(_DUNDER in b for b in _gate(SQLITE.read_text(), others))
+
+
+def test_a_reach_name_moves_the_gate_when_it_moves(monkeypatch):
+    others = _r5_others(_EE, _NS, _in_next_seq(R6_IMPORT["H13 locals()"][0]))
+    assert any(_REACH in b for b in _gate(SQLITE.read_text(), others))
+    monkeypatch.setattr(sys.modules[__name__], "REACH_NAMES", REACH_NAMES - {"locals"})
+    assert not any(_REACH in b for b in _gate(SQLITE.read_text(), others))
+
+
+def test_the_reviewed_own_module_value_is_frozen_with_its_function(monkeypatch):
+    """`upsert_embedding` passes `_semantic` on as a value: the one entry. Any edit of the function refuses until it is
+    re-reviewed, and the table is read, not the spelling."""
+    others = _r5_others(_EE, _NS, _NS)
+    assert not any(_OWN_HELD in b for b in _gate(SQLITE.read_text(), others))
+    monkeypatch.setattr(sys.modules[__name__], "OWN_MODULE_VALUES", {k: "0" * 64 for k in OWN_MODULE_VALUES})
+    assert any(_OWN_HELD in b for b in _gate(SQLITE.read_text(), others))
+
+
+def test_an_own_module_read_follows_what_that_module_imports():
+    """N6 reads another module's text. The plant's own module does not change between the two calls, so a memo that omits
+    the bindings serves the first answer to the second."""
+    plant = "    from . import migration as m_\n    m_.zz_"
+    others = _r5_others(_EE, _NS, _in_next_seq(plant))
+    assert not any(_OWN in b for b in _gate(SQLITE.read_text(), others))
+    moved = {**others, _MG: "import json as zz_\n" + others[_MG]}
+    assert any(_OWN in b for b in _gate(SQLITE.read_text(), moved))
+
+
+def test_the_one_type_adapter_call_is_frozen(monkeypatch):
+    others = _r5_others(_EE, _NS, _NS)
+    assert not any("`TypeAdapter` outside" in b for b in _gate(SQLITE.read_text(), others))
+    monkeypatch.setattr(sys.modules[__name__], "TYPE_ADAPTER_SITE", {k: "0" * 64 for k in TYPE_ADAPTER_SITE})
+    assert any("`TypeAdapter` outside" in b for b in _gate(SQLITE.read_text(), others))
+
+
 def test_a_closure_over_a_methods_self_is_the_method_s():
     """Rule 4's other half: a nested def or lambda inside a plain method, and a comment edit inside the reviewed
     `_migrate`, change nothing. (Four closures in src/ read `self`; the honest pass holds them, this states the shape.)"""
@@ -2379,8 +2976,9 @@ def test_a_reviewed_function_may_still_not_call_the_named_attribute(monkeypatch)
     rel, key = _CLI, next(iter(DB_NAME_EXCEPTIONS))
     others = _r5_others(_CLI, _CLI_AT, '    args.backup("x")\n' + _CLI_AT)
     fn = next(n for n in ast.parse(others[rel]).body if isinstance(n, ast.FunctionDef) and n.name == "_migrate")
+    assert len(_gate(SQLITE.read_text(), others)) == 5, "the four reads and the call, before the digest is admitted"
     monkeypatch.setitem(DB_NAME_EXCEPTIONS, key, _digest(fn))
-    bad = _gate(SQLITE.read_text(), others)
+    bad = _gate(SQLITE.read_text(), others)       # the same text again: the patched table must reach the memo
     assert len(bad) == 1 and "`.backup` of the database API" in bad[0], bad
 
 
@@ -2395,8 +2993,9 @@ def test_a_name_parameter_reaching_sql_meets_the_head_rule(monkeypatch):
     binding = _sql_binding(tree, par, fn, arg, ix)
     assert binding[0] == ["stmt"], binding
     key = (f"{rel}:f", _digest(arg))
+    assert any("not in the reviewed list" in b for b in _gate(SQLITE.read_text(), _r5_others(rel, None, text)))
     monkeypatch.setitem(SRC_NONLITERAL, key, (1, "q", _binding_digest(tree, par, fn, arg, binding, ix)))
-    bad = _gate(SQLITE.read_text(), _r5_others(rel, None, text))
+    bad = _gate(SQLITE.read_text(), _r5_others(rel, None, text))     # the same text again, the entry admitted
     assert len(bad) == 1 and "reaches SQL whose leading constant does not fix a SELECT" in bad[0], bad
 
 
@@ -2574,7 +3173,12 @@ def test_the_census_n4f_depends_on_holds_over_src():
                if "[REFUSED" in k]
     assert refused == [], refused
     for plant in ("def f(c, n):\n    return getattr(c, n)\n", "def f(c):\n    return vars(type(c))\n",
-                  "def f(c):\n    return c.__getattribute__('execute')\n", "eval('1')\n"):
+                  "def f(c):\n    return c.__getattribute__('execute')\n", "eval('1')\n",
+                  # stage 2: the frames need no rule of N4f's, because this holds them
+                  "def f():\n    return (x for x in ()).gi_frame.f_builtins\n",
+                  "def f(e):\n    return e.__traceback__.tb_frame.f_builtins\n",
+                  "import sys\ndef f():\n    return sys.exc_info()[2].tb_frame.f_builtins\n",
+                  "import sys\ndef f():\n    return sys._getframe().f_builtins\n"):
         assert any("[REFUSED" in k for k in census.connect_census(plant, "x.py")), plant
 
 
