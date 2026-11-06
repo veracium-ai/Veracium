@@ -390,12 +390,22 @@ def _function(rel, name):
     return hits[0]
 
 
+def test_a_status_read_inside_a_step_of_the_table_is_seen():
+    """The plant the narrow form missed: a read in a step, far from the dispatcher."""
+    text = (SRC / "store/migration.py").read_text(encoding="utf-8")
+    anchor = "    _drop_wiki_cache(conn)\n"
+    assert text.count(anchor) == 1
+    planted = ast.parse(text.replace(anchor, "    runtime_status()\n" + anchor))
+    assert len(_calls_in(planted, "runtime_status")) == 1
+
+
 def test_the_status_is_read_once_at_each_gate_and_nothing_after_branches_on_it():
-    """`runtime_status()` is called exactly once in each gate function and never in `_apply_forward`; no
-    production module calls the withdrawn `runtime_supported()`."""
+    """`runtime_status()` is called exactly once in each gate function and never in the migration module: `_apply_forward`
+    was the whole kernel when this was written, and its steps are functions of the table now, so the whole module is what
+    is read (research, 11f9329c). No production module calls the withdrawn `runtime_supported()`."""
     assert len(_calls_in(_function("store/schema_version.py", "open_versioned"), "runtime_status")) == 1
     assert len(_calls_in(_function("store/release_migration.py", "_preflight_classify"), "runtime_status")) == 1
-    assert _calls_in(_function("store/migration.py", "_apply_forward"), "runtime_status") == []
+    assert _calls_in(ast.parse((SRC / "store/migration.py").read_text(encoding="utf-8")), "runtime_status") == []
     for f in sorted(SRC.rglob("*.py")):
         tree = ast.parse(f.read_text(encoding="utf-8"))
         own = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
