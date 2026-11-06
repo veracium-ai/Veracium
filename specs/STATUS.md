@@ -4,7 +4,7 @@
 
 # Spec status
 
-**44 specs · 42 accepted · 457 external review
+**44 specs · 42 accepted · 461 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -55,14 +55,14 @@ is the number that decides what can be built.
 | **0045** | the declarative grounding axis — was a fact STATED, or not shown to be? | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
 | **0046** | the correction receipt — a corrected fact names what still rests on it | `draft` | 2026-09-20 | 0 | 0 | 0 | 0 | 0 | — |
 | **0047** | the subject's right of reply — the record stands, and the reply travels with it | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
-| **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-03 | 0 | 2 | 2 | 0 | 0 | — |
+| **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-06 | 0 | 6 | 2 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
-**Per-finding closure ledger — 615 findings across the
-15 tracked specs** (0001, 0007, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038, 0039, 0041, 0042, 0043), derived from
+**Per-finding closure ledger — 629 findings across the
+16 tracked specs** (0001, 0007, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038, 0039, 0041, 0048, 0042, 0043), derived from
 `specs/closure_findings.py` and validated against `specs/reviews.py` by
 `specs/render_closure.py --check`. This total is rendered HERE ONLY (owner's
 ruling, 2026-09-08): each tracked spec's `## Review closure` block carries its
