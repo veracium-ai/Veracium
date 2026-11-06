@@ -1,5 +1,5 @@
 {
- "body_sha256": "5574eca173a56004389b3b07f707b65181a5572aedabb8309daa730c739602b1",
+ "body_sha256": "4aef1a5da33818c5acd3a94172469d2de59bc93afe580dd3597e4c63513ef1a6",
  "controls": [
   {
    "anchor_counts": [
@@ -10,6 +10,7 @@
    "cells_failed": [],
    "cells_passed": [
     "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
+    "tests/test_0018_rungs_t3.py::test_a_first_rung_that_fails_restores_the_original_stamp_and_data",
     "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp",
     "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]",
     "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]",
@@ -22,7 +23,7 @@
     "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]",
     "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes"
    ],
-   "definition_sha256": "800f5ae2358d81e11477a99cbe5c92d9aed64ec4558ffdf538fc785ce59b53e9",
+   "definition_sha256": "a57b04e4a9a8c4f035d7727643ecd782a3fc040d7b16ecaa65fc4466102e65c7",
    "expected": "SURVIVED",
    "file": "src/veracium/store/migration.py",
    "good": true,
@@ -31,6 +32,7 @@
    "kill_kind": null,
    "named_cells": [
     "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
+    "tests/test_0018_rungs_t3.py::test_a_first_rung_that_fails_restores_the_original_stamp_and_data",
     "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp",
     "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]",
     "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]",
@@ -55,6 +57,9 @@
    "cells_failed": [],
    "cells_passed": [
     "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used",
+    "tests/test_0018_rungs_t3.py::test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[stamped middle rung]",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[unstamped first rung]",
     "tests/test_0018_rungs_t3.py::test_row_10_an_empty_replacement_is_never_created_into[1]",
     "tests/test_0018_rungs_t3.py::test_row_11a_nothing_at_the_path_is_refused_and_nothing_appears[13]",
     "tests/test_0018_rungs_t3.py::test_row_11b_an_existing_path_that_will_not_open_is_unopenable",
@@ -70,7 +75,7 @@
     "tests/test_0018_rungs_t4.py::test_the_classifier_equals_the_extracted_table_input_by_input[13-14]",
     "tests/test_0018_rungs_t4.py::test_the_classifier_equals_the_extracted_table_input_by_input[15-16]"
    ],
-   "definition_sha256": "85bf9cdcde265b128f2004fe07f6c3ae730ffedd699ce17bf674346e2bc9dba9",
+   "definition_sha256": "ed66fad8177931857fdf28816a3dca9ad7c31ba213cc5fd6962ccfd966f9352d",
    "expected": "SURVIVED",
    "file": "src/veracium/store/release_migration.py",
    "good": true,
@@ -79,6 +84,9 @@
    "kill_kind": null,
    "named_cells": [
     "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used",
+    "tests/test_0018_rungs_t3.py::test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[stamped middle rung]",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[unstamped first rung]",
     "tests/test_0018_rungs_t3.py::test_row_10_an_empty_replacement_is_never_created_into[1]",
     "tests/test_0018_rungs_t3.py::test_row_11a_nothing_at_the_path_is_refused_and_nothing_appears[13]",
     "tests/test_0018_rungs_t3.py::test_row_11b_an_existing_path_that_will_not_open_is_unopenable",
@@ -194,7 +202,11 @@
     "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
     "tests/test_0018_rungs_t2.py::test_a_target_below_head_needs_the_hook",
     "tests/test_0018_rungs_t2.py::test_the_runtime_gate_never_sees_the_target",
+    "tests/test_0018_rungs_t3.py::test_a_first_rung_that_fails_restores_the_original_stamp_and_data",
     "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used",
+    "tests/test_0018_rungs_t3.py::test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[stamped middle rung]",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[unstamped first rung]",
     "tests/test_0018_rungs_t3.py::test_row_10_an_empty_replacement_is_never_created_into[1]",
     "tests/test_0018_rungs_t3.py::test_row_11a_nothing_at_the_path_is_refused_and_nothing_appears[13]",
     "tests/test_0018_rungs_t3.py::test_row_11b_an_existing_path_that_will_not_open_is_unopenable",
@@ -233,25 +245,27 @@
   },
   "clean": {
    "first": {
-    "of": 39,
+    "of": 43,
     "ok": true,
-    "passed": 39
+    "passed": 43
    },
    "last": {
-    "of": 39,
+    "of": 43,
     "ok": true,
-    "passed": 39
+    "passed": 43
    }
   },
-  "commit": "8d16497f40a3c39f1ea5e08ad201de4a2ccd1edd",
+  "commit": "73dd2b79bc01dbbb86c4e3780fa09a10571cbcf2",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "6d0369e0b2d072d9918138bb86bfdfbd6c8606414372f4564f8f6f55789320cb",
    "NOOP-cli": "8083330861a77e8247dd751832d127a9cc110fd6c7a46e2888fa2df712636b93",
-   "NOOP-migration": "800f5ae2358d81e11477a99cbe5c92d9aed64ec4558ffdf538fc785ce59b53e9",
-   "NOOP-release_migration": "85bf9cdcde265b128f2004fe07f6c3ae730ffedd699ce17bf674346e2bc9dba9",
+   "NOOP-migration": "a57b04e4a9a8c4f035d7727643ecd782a3fc040d7b16ecaa65fc4466102e65c7",
+   "NOOP-release_migration": "ed66fad8177931857fdf28816a3dca9ad7c31ba213cc5fd6962ccfd966f9352d",
    "NOOP-schema_version": "a32c2c419c41d2f8b46bce777920cd6a437a1141cbbdb713f766a1e746e13069"
   },
   "definitions": {
+   "I13-forged-evidence-carried-into-the-authority": "30f57ff14d68309ede5f13b48d0f7dd378f55700a0257154af25967d2b9ca604",
+   "I13-the-preflight-writes-the-store": "6d6063bf8e550cb4d3c61f5a65f6d102c500e497a787f7a56736d2bcbccadd7c",
    "I33-a-guard-bound-to-head": "1bd22e8cd8c1a1d150cec9f44c9d00cadae7169caa480c2c762ab38b2e95145d",
    "I33-one-clock-for-every-rung": "9b898e12cd6fe24af2c1ce1baa3c1cd1dccb17d96ecf32c3796102d907d2cab6",
    "I33-the-additive-diff-ignores-the-target": "b530e0fc27225339fdfa8dc281b747c80886035523acdb6958e41af36bf1358f",
@@ -268,7 +282,7 @@
    "I34-count-printed-rungs": "f5f7a73972b008e2e09fea69651c69425e0a8ecee253e945a2e472b57f96cb4f",
    "I34-re-create-the-attestation": "b282e26cb5297a391ed6a9bbcb1c844b36c38e3f06dab79e56511af0928982bf",
    "I35-a-conditional-claims-a-cause": "8ffc057c75a101c498419899b5de8e899582b55e547305b2e3f636595aaccca3",
-   "I35-a-partial-rung": "e3a43c6e7ffabb7020c2a5f9ccf7df23e1fd62f1ed2075d57779f8f05879872f",
+   "I35-a-partial-rung": "4fb09fa386ff1de30af822034f957105532cdcffa4b6a71dddbf9cab39bb965d",
    "I35-audit-write-weaker": "e9bd44c1000e9647de4bb31928b876589e639c8b289c4564056373d41a5b0c2d",
    "I35-rerun-because-a-version-is-known": "13fac5a5b828f7edb11c40349e3f6f792b7807c60e1037a5e153b18dd6c03222",
    "I35-rerun-repairs-a-missing-record": "6227cc0883207b0cfe698bf70904bb8b2684f0316066cf41646c8173d61dc7cb",
@@ -309,7 +323,7 @@
    "specs/evidence/0018-adjacent-rungs/closure/recovery_v05.py": "4e5d1297485d5606f91c5fe1b659fb3ce369a1e7aee8d850cf0bb3ecf7a16aa7",
    "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
    "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
-   "specs/evidence/0018/rungs/implementation_mutants.py": "9339ede8ab10e72086ac9cbae3030198f3af3f4abb14f861a69dc8a4efa8cb29",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "d780c48189de99ba1dbb6406db6f03937a847cb1a0a2f257ef9592c8556217da",
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
@@ -319,7 +333,7 @@
    "src/veracium/store/schema_version.py": "600a4e42a15990a91cff036c10587c076daf4bb4d60960bd8bd29ba55bf62e79",
    "tests/test_0013_pa1_campaign_cells.py": "0df0af6e7812e379fab5c64f8c72528f015a114baeee652bd83350f25ec961b5",
    "tests/test_0018_rungs_t2.py": "950724e6caabde4cb23814f0ff18831e7dc0c945e047dd755e8be53acf4b0c8b",
-   "tests/test_0018_rungs_t3.py": "2f854aa06e1682539fe925c1b9f0b298b63008319c2c47388ce189a5eb93267e",
+   "tests/test_0018_rungs_t3.py": "c509c85c8bf3ead818b2aa65a0f3d5c0c9cb96870681605e62c190eb8661fc2f",
    "tests/test_0018_rungs_t4.py": "540bf298b098183fd6484c7c819988fec246e6b3da894c655fb10b581b58b2a3",
    "tests/test_0018_rungs_t5.py": "f60dd0806f07c964f0395a3a2f4943170c4da26413d1430a7558b4fb7b4ca8a7",
    "tests/test_migrate_cli.py": "555a9338beb0389994aceec7a3065f445f81fb2cba73aa773482c02635680aae"
@@ -333,23 +347,7 @@
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
-  "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json"
-  ]
+  "tracked_changes": []
  },
  "rows": [
   {
@@ -380,7 +378,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung adds head's objects, not its target's"
@@ -413,7 +411,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung runs every later step, because the guard forgot the target"
@@ -446,7 +444,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung stamps head"
@@ -479,7 +477,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the v6 refusal reports head"
@@ -512,7 +510,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.49s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the v8 refusal reports head"
@@ -545,7 +543,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the v10 refusal reports head"
@@ -578,7 +576,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the stamp is written and never read back"
@@ -611,7 +609,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "a check the v16 block repeats runs once fewer"
@@ -644,7 +642,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "two data steps of one rung run in the other order"
@@ -677,7 +675,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "two data steps of different rungs swap: the same direct route, a different order, and no rung's digest moves"
@@ -710,7 +708,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "a field is encoded with a separator, not as its own segment"
@@ -743,7 +741,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the one clock read moves after the additive diff"
@@ -776,7 +774,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "a write with no active entry"
@@ -809,7 +807,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "an entry the plan does not hold is dispatched"
@@ -842,7 +840,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "a `data` entry issues DDL: what the kind rule stops and SA10 alone would admit elsewhere"
@@ -875,7 +873,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the v6 byte check never fires"
@@ -908,7 +906,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "one statement of a frozen ALTERS tuple is dropped"
@@ -942,7 +940,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the expectation is checked after the mint is delegated"
@@ -975,7 +973,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "U5 offers a retry with the same build"
@@ -1008,7 +1006,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.42s",
+   "pytest": "1 failed in 0.46s",
    "reason": null,
    "reason_seen": null,
    "what": "unknown facts with a version offer a rerun"
@@ -1041,7 +1039,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.42s",
+   "pytest": "1 failed in 0.46s",
    "reason": null,
    "reason_seen": null,
    "what": "every write-error resumes, its facts unread"
@@ -1074,7 +1072,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.47s",
    "reason": null,
    "reason_seen": null,
    "what": "the prose promises that a rerun repairs a missing record"
@@ -1107,7 +1105,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "a check that lives in a helper never runs"
@@ -1140,7 +1138,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a check's body is emptied"
@@ -1173,7 +1171,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.65s",
+   "pytest": "1 failed in 3.03s",
    "reason": null,
    "reason_seen": null,
    "what": "the direct route is rebuilt as the concatenation of adjacent plans"
@@ -1206,7 +1204,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.37s",
+   "pytest": "1 failed in 2.58s",
    "reason": null,
    "reason_seen": null,
    "what": "`migrate_to` defaults to found+1"
@@ -1239,7 +1237,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the binding is put on `migrate_to`, so the last rung is unbound"
@@ -1272,7 +1270,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "no `new=` hook"
@@ -1305,7 +1303,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the path interpolated into the URI unencoded"
@@ -1338,7 +1336,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "an OperationalError mapped to `missing`"
@@ -1371,7 +1369,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.47s",
    "reason": null,
    "reason_seen": null,
    "what": "an ordinary open, with no migration hook, reaches a below-head target"
@@ -1404,7 +1402,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the target reaches the runtime gate"
@@ -1437,7 +1435,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.44s",
    "reason": null,
    "reason_seen": null,
    "what": "an admitted input gets no action id"
@@ -1470,7 +1468,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.42s",
+   "pytest": "1 failed in 0.44s",
    "reason": null,
    "reason_seen": null,
    "what": "an admitted input gets two action ids"
@@ -1480,13 +1478,15 @@
     1
    ],
    "cell_kinds": {
+    "tests/test_0018_rungs_t3.py::test_a_first_rung_that_fails_restores_the_original_stamp_and_data": "assertion",
     "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes": "assertion"
    },
    "cells_errored": [],
    "cells_failed": [
+    "tests/test_0018_rungs_t3.py::test_a_first_rung_that_fails_restores_the_original_stamp_and_data",
     "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes"
    ],
-   "definition_sha256": "e3a43c6e7ffabb7020c2a5f9ccf7df23e1fd62f1ed2075d57779f8f05879872f",
+   "definition_sha256": "4fb09fa386ff1de30af822034f957105532cdcffa4b6a71dddbf9cab39bb965d",
    "file": "src/veracium/store/migration.py",
    "finding": "adjacent-rungs-implementation",
    "good": true,
@@ -1499,14 +1499,84 @@
    "kill_kind": "assertion",
    "kind": "product",
    "named_cells": [
-    "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes"
+    "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes",
+    "tests/test_0018_rungs_t3.py::test_a_first_rung_that_fails_restores_the_original_stamp_and_data"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.79s",
+   "pytest": "2 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung commits before its last check, so a failure leaves it partial"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t3.py::test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t3.py::test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp"
+   ],
+   "definition_sha256": "6d6063bf8e550cb4d3c61f5a65f6d102c500e497a787f7a56736d2bcbccadd7c",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "adjacent-rungs-implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I13-the-preflight-writes-the-store",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t3.py::test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.57s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "resolving a legacy store stamps it, so a stopped rung has changed it"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[stamped middle rung]": "assertion",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[unstamped first rung]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[stamped middle rung]",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[unstamped first rung]"
+   ],
+   "definition_sha256": "30f57ff14d68309ede5f13b48d0f7dd378f55700a0257154af25967d2b9ca604",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "adjacent-rungs-implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I13-forged-evidence-carried-into-the-authority",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[unstamped first rung]",
+    "tests/test_0018_rungs_t3.py::test_forged_resolution_evidence_cannot_alter_a_rung[stamped middle rung]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.59s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the authority carries the resolution's digest, not the store's own observation"
   },
   {
    "anchor_counts": [
@@ -1537,7 +1607,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.50s",
+   "pytest": "1 failed in 2.66s",
    "reason": null,
    "reason_seen": null,
    "what": "an ALTER moved under a neighbouring entry: a write lands where its kind does not admit it"
@@ -1570,7 +1640,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.35s",
+   "pytest": "1 failed in 2.41s",
    "reason": null,
    "reason_seen": null,
    "what": "every rung reuses the first clock read"
@@ -1603,7 +1673,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "M1: the transaction walks from a base the authority did not attest"
@@ -1636,7 +1706,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "M3: a store deleted in the window is re-created"
@@ -1669,7 +1739,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "M2 reported as a store that is not there. Building into the empty store is refused twice: a mutant that builds meets a second, loud refusal in `open_versioned`, a crash and no assertion, so this row kills what the refusal SAYS"
@@ -1702,7 +1772,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.14s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "the walk does not bind each rung to the last"
@@ -1735,7 +1805,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a printed rung is counted, so an unchanged current is"
@@ -1768,7 +1838,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "a committed error drops out of the count"
@@ -1801,7 +1871,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "an id enters the count twice"
@@ -1834,7 +1904,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "a committed error is treated as a success"
@@ -1867,7 +1937,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.98s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "each rung gets a fresh attestation"
@@ -1903,7 +1973,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.47s",
+   "pytest": "2 failed in 0.45s",
    "reason": null,
    "reason_seen": null,
    "what": "any record counts, as round 2's model accepted any readback of kind `record`"
@@ -1936,7 +2006,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "unknown facts print the last known version"
@@ -1969,7 +2039,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "`derived_resulting_state` lands in the version column"
@@ -2008,7 +2078,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.46s",
+   "pytest": "3 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "every unchanged carrier the rows do not name retries blindly"
@@ -2049,13 +2119,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 51
+   "product": 53
   },
   "controls": 5,
   "controls_good": 5,
-  "good": 51,
-  "killed": 51,
-  "rows": 51,
-  "seconds": 168
+  "good": 53,
+  "killed": 53,
+  "rows": 53,
+  "seconds": 189
  }
 }
