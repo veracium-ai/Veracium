@@ -348,3 +348,56 @@ def test_forged_resolution_evidence_cannot_alter_a_rung(tmp_path, b, stamp):
             rm.mint_release_authority(p, ATT, resolved=x)
         reasons.append(e.value.reason)
     assert reasons[0] == reasons[1], reasons
+
+
+# ---- §4e-ii's rows 3, 5, 6 and 8b: the truth table's remaining cells, at I38's rungs -------------------------------------------
+def _intruder(path):
+    c = sqlite3.connect(path)
+    c.execute("CREATE TABLE intruder (x)")
+    c.commit()
+    c.close()
+
+
+@pytest.mark.parametrize("b", RUNGS)
+def test_row_3_a_source_of_another_shape_refuses_as_stamped_shape_mismatch(tmp_path, b):
+    p = _store(tmp_path / "s.db", b)
+    a = _authority(p, b)
+    _intruder(p)
+    r = _run_authority(p, a)
+    assert r.outcome == "stamped-shape-mismatch" and _facts(r) == (False, False, "unaccepted", None)
+    assert _stamp(p) == b
+
+
+@pytest.mark.parametrize("b", [b for b in BASES if any(o.key[0] == "index" and o.policy == sv.REBUILDABLE for o in sv.SCHEMAS[b + 1])][:1] + [13, 15])
+def test_row_5_a_target_store_with_drift_is_repaired_against_the_target(tmp_path, b):
+    """Target-current WITH repair: the index dropped is `SCHEMAS[t]`'s, and the repair puts it back at `t`, committed, the stamp unmoved."""
+    p = _store(tmp_path / "s.db", b)
+    a = _authority(p, b)
+    os.remove(p)
+    _store(p, b + 1)
+    name = next(o.key[1] for o in sv.SCHEMAS[b + 1] if o.key[0] == "index" and o.policy == sv.REBUILDABLE)
+    c = sqlite3.connect(p)
+    c.execute(f"DROP INDEX {name}")
+    c.commit()
+    c.close()
+    r = _run_authority(p, a)
+    assert r.outcome == "current" and _facts(r) == (True, True, "destination", b + 1) and _stamp(p) == b + 1
+    c = sqlite3.connect(p)
+    assert c.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?", (name,)).fetchone()[0] == 1
+    c.close()
+
+
+@pytest.mark.parametrize("b", RUNGS)
+def test_row_6_a_target_store_of_another_shape_refuses_as_stamped_shape_mismatch(tmp_path, b):
+    p = _store(tmp_path / "s.db", b)
+    a = _authority(p, b)
+    os.remove(p)
+    _store(p, b + 1)
+    _intruder(p)
+    r = _run_authority(p, a)
+    assert r.outcome == "stamped-shape-mismatch" and _facts(r) == (False, False, "unaccepted", None) and _stamp(p) == b + 1
+
+
+def test_row_8b_is_unreachable_at_this_head():
+    """An unstamped store resolving to exactly `t` needs a legacy base of at least 2, and the only legacy base is 1."""
+    assert set(sv.legacy_base_versions()) == {1}

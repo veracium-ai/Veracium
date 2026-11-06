@@ -60,7 +60,7 @@ RELEASE = "src/veracium/store/release_migration.py"
 CELLS_FILE = "tests/test_0013_sa10_gate.py"
 KINDS = "specs/evidence/mutation_kinds.py"
 DIGESTED = (GATE, DIGEST, MIGRATION, RELEASE, "src/veracium/store/schema_version.py", "specs/evidence/mutation_protocol.py",
-            "specs/evidence/0013/pa1_campaign.py", "specs/evidence/0013/steptable.py", CELLS_FILE, KINDS, SELF)
+            "specs/evidence/0013/pa1_campaign.py", "specs/evidence/0013/steptable.py", CELLS_FILE, "tests/test_0018_rungs_t2.py", KINDS, SELF)
 SUBJECT = "INV-SA10"
 
 
@@ -262,6 +262,9 @@ MUTANTS = [
      [C("test_the_clean_control_admits_a_call_whose_nested_pragma_traces_twice")], [ROUTE("connection.blobopen")],
      "the call traced more than once", "§5f.1 rule 3: a per-call trace count refuses the nested table-valued pragma"),
     # ---- tree mutants: the ladder (INV-SA10's mutation row; stage-1 decision 5) ----------------------------------
+    ("tree-a-rung-writes-heads-objects", "tree", MIGRATION,
+     [('[ForwardEntry(0, target, "add", o) for o in SCHEMAS[target] if o.key not in have]', '[ForwardEntry(0, target, "add", o) for o in SCHEMAS[SCHEMA_VERSION] if o.key not in have]')],
+     [CLEAN_GATE], [PARAMS], None, "I39: a rung writes head's constructors instead of its target's"),
     ("tree-a-rung-stamps-another-version", "tree", MIGRATION,
      [('ForwardEntry(0, target, "stamp", target)', 'ForwardEntry(0, target, "stamp", target if target == SCHEMA_VERSION else target + 1)')],
      [CLEAN_GATE], [PARAMS], None, "I39: a rung stamps a valid version that is not its target"),
@@ -349,6 +352,13 @@ MUTANTS += [
        '    for lab, b, _a, stamped in pa1.lib()["paths"]():      # 0018 §4j, I39: every release base, one rung each, at its own target\n'
        '        if b == 7:\n            continue\n        out.append(')],
      [CLEAN_GATE], [_CF("factory-keyword")], None, "I39: a release base is dropped from the inventory, so its rung runs under no census"),
+    ("every-historical-constructor-admitted", "gate", GATE,
+     [('    b1 = {o.ddl for o in head if o.key[0] in ("table", "index")}\n', '    b1 = {o.ddl for v in sv.SCHEMAS.values() for o in v if o.key[0] in ("table", "index")}\n')],
+     ["tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head"], [_CF("factory-keyword")], None,
+     "I39: head equality is widened to every historical constructor, which round 1 ruled out"),
+    ("the-direct-route-loses-its-head-bound", "gate", GATE,
+     [('    bound = sv.SCHEMA_VERSION if target is None else target\n', '    bound = sv.SCHEMA_VERSION - 1 if target is None else target\n')],
+     [CLEAN_GATE], [_CF("factory-keyword")], None, "I39: the direct route is no longer held to head"),
     ("rung-uri-any-form-admitted", "gate", GATE,
      [('            if names is None:\n                raise self.refuse(f"connect with the URI {database!r}", site)\n', "")],
      [_UF("creates"), _UF("a-vfs"), _UF("a-second-parameter")], [_CF("factory-keyword")], None,
@@ -511,7 +521,7 @@ CONTROLS = [
 SUBJECT_P = _protocol.Subject(
     spec="0013", finding=SUBJECT, table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium.store.migration", "veracium.store.release_migration"),
-    import_specs=("specs/evidence/0013/sa10_gate.py",), cells_files=(CELLS_FILE,), kinds=("gate", "tree"))
+    import_specs=("specs/evidence/0013/sa10_gate.py",), cells_files=(CELLS_FILE, "tests/test_0018_rungs_t2.py"), kinds=("gate", "tree"))
 """INV-SA10's subject: its data, run by the shared protocol (specs/evidence/mutation_protocol.py)."""
 
 definition_sha = _protocol.definition_sha
