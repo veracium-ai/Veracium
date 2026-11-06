@@ -3,6 +3,7 @@ base, and the rung's open, which never creates and addresses exactly the file th
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import sqlite3
 
@@ -96,6 +97,7 @@ def test_row_4_another_operation_reached_the_target_first(tmp_path, b):
     assert rm.run_release_migration(p, host_attestation=ATT).outcome == "migrated"
     r = _run_authority(p, a)
     assert r.outcome == "current" and _facts(r) == (False, False, "destination", b + 1) and _stamp(p) == b + 1
+    assert _sidecar(p, a) == ["terminal"]
 
 
 @pytest.mark.parametrize("b, found", [(13, 11), (13, 12), (15, 13), (15, 14)],
@@ -338,9 +340,12 @@ def test_forged_resolution_evidence_cannot_alter_a_rung(tmp_path, b, stamp):
     and on a failing one it refuses for the same reason as the genuine evidence."""
     p = _store(tmp_path / "s.db", b, stamp=stamp)
     canonical = os.path.realpath(p)
-    genuine, forged = rm.PreflightResolution(canonical, b, "0" * 64), rm.PreflightResolution(canonical, b, "ab" * 32)
+    c = sqlite3.connect(p)
+    real = sv.digest(sv.manifest(c), b)
+    c.close()
+    genuine, forged = rm.PreflightResolution(canonical, b, real), rm.PreflightResolution(canonical, b, "ab" * 32)
     a, f = (rm.mint_release_authority(p, ATT, resolved=x) for x in (genuine, forged))
-    assert (a.from_version, a.to_version, a.source_digest) == (f.from_version, f.to_version, f.source_digest) == (b, b + 1, a.source_digest)
+    assert (a.from_version, a.to_version, a.source_digest) == (f.from_version, f.to_version, f.source_digest) == (b, b + 1, real)
     os.remove(p)
     reasons = []
     for x in (genuine, forged):
@@ -351,6 +356,12 @@ def test_forged_resolution_evidence_cannot_alter_a_rung(tmp_path, b, stamp):
 
 
 # ---- §4e-ii's rows 3, 5, 6 and 8b: the truth table's remaining cells, at I38's rungs -------------------------------------------
+def _sidecar(path, authority):
+    """What the audit sidecar holds for this operation: no rollback reaches it, so it says what actually ran."""
+    with open(rm.audit_trail_path(os.path.realpath(path))) as f:
+        return sorted(json.load(f).get(authority.operation_id, {}))
+
+
 def _intruder(path):
     c = sqlite3.connect(path)
     c.execute("CREATE TABLE intruder (x)")
@@ -365,7 +376,7 @@ def test_row_3_a_source_of_another_shape_refuses_as_stamped_shape_mismatch(tmp_p
     _intruder(p)
     r = _run_authority(p, a)
     assert r.outcome == "stamped-shape-mismatch" and _facts(r) == (False, False, "unaccepted", None)
-    assert _stamp(p) == b
+    assert _stamp(p) == b and _sidecar(p, a) == ["attempted", "terminal"]          # no check precedes the step, so it ran
 
 
 @pytest.mark.parametrize("b", [b for b in BASES if any(o.key[0] == "index" and o.policy == sv.REBUILDABLE for o in sv.SCHEMAS[b + 1])][:1] + [13, 15])
@@ -382,6 +393,7 @@ def test_row_5_a_target_store_with_drift_is_repaired_against_the_target(tmp_path
     c.close()
     r = _run_authority(p, a)
     assert r.outcome == "current" and _facts(r) == (True, True, "destination", b + 1) and _stamp(p) == b + 1
+    assert _sidecar(p, a) == ["terminal"]
     c = sqlite3.connect(p)
     assert c.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?", (name,)).fetchone()[0] == 1
     c.close()
@@ -396,6 +408,49 @@ def test_row_6_a_target_store_of_another_shape_refuses_as_stamped_shape_mismatch
     _intruder(p)
     r = _run_authority(p, a)
     assert r.outcome == "stamped-shape-mismatch" and _facts(r) == (False, False, "unaccepted", None) and _stamp(p) == b + 1
+    assert _sidecar(p, a) == ["terminal"]
+
+
+def test_row_6_a_neighbour_s_whole_shape_under_the_target_s_stamp_refuses(tmp_path):
+    """The form an intruder cannot be: a shape accepted at ANOTHER version. At every rung, each neighbouring version's shape stamped `t` that
+    is not accepted at `t` refuses, so acceptance is judged at `t` and not at any version."""
+    refused = 0
+    for b in BASES:
+        for shape in (b, b + 2):
+            if not 1 <= shape <= HEAD:
+                continue
+            p = _store(tmp_path / f"s{b}-{shape}.db", b)
+            a = _authority(p, b)
+            os.remove(p)
+            _store(p, shape, stamp=b + 1)
+            c = sqlite3.connect(p)
+            accepted = sv.digest(sv.manifest(c), b + 1) in sv.accepted_digests(b + 1)
+            c.close()
+            if accepted:
+                continue
+            r = _run_authority(p, a)
+            assert r.outcome == "stamped-shape-mismatch", (b, shape, r)
+            assert _facts(r) == (False, False, "unaccepted", None) and _stamp(p) == b + 1, (b, shape, r)
+            refused += 1
+    assert refused >= 20, refused
+
+
+@pytest.mark.parametrize("b", RUNGS)
+def test_a_committed_marker_that_fails_still_reports_the_rung_migrated(tmp_path, monkeypatch, b):
+    """R1-03's post-commit facts at a lower rung: the marker is best-effort, so the rung stands and the terminal record is the trail."""
+    p = _store(tmp_path / "s.db", b)
+    monkeypatch.setattr(rm, "_write_committed_marker", lambda *x, **k: (_ for _ in ()).throw(OSError("disk")))
+    r = rm.run_release_rung(p, host_attestation=ATT)
+    assert r.result.outcome == "migrated" and _facts(r.result) == (True, True, "destination", b + 1) and _stamp(p) == b + 1
+
+
+@pytest.mark.parametrize("b", RUNGS)
+def test_an_attempted_record_that_cannot_be_written_aborts_the_rung(tmp_path, monkeypatch, b):
+    """R1-05's failure before commit, at each rung: the store keeps its base, and the outcome is the no-record row."""
+    p = _store(tmp_path / "s.db", b)
+    monkeypatch.setattr(rm, "_write_attempted", lambda *x, **k: (_ for _ in ()).throw(OSError("disk")))
+    r = rm.run_release_rung(p, host_attestation=ATT)
+    assert r.result.outcome == "migration-audit-unavailable" and _facts(r.result)[:2] == (False, False) and _stamp(p) == b
 
 
 def test_row_8b_is_unreachable_at_this_head():

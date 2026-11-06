@@ -462,3 +462,52 @@ def test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaire
     assert main(["migrate", "--db", p] + FLAGS) == 0
     out = capsys.readouterr().out
     assert "rung v14 -> v15: migrated" in out and "rung v15 -> v16: migrated" in out and _user_version(p) == HEAD
+
+
+def _replace_with(p, version):
+    q = _store_at(version)
+    with open(q, "rb") as src, open(p, "wb") as dst:
+        dst.write(src.read())
+
+
+def _plant_intruder(p):
+    c = sqlite3.connect(p)
+    c.execute("CREATE TABLE intruder (x)")
+    c.commit()
+    c.close()
+
+
+def _plant_drift(p, version):
+    name = next(o.key[1] for o in sv.SCHEMAS[version] if o.key[0] == "index" and o.policy == sv.REBUILDABLE)
+    c = sqlite3.connect(p)
+    c.execute(f"DROP INDEX {name}")
+    c.commit()
+    c.close()
+
+
+@pytest.mark.parametrize("b", [13, 15])
+@pytest.mark.parametrize("row, plant, rc, counted", [
+    ("3", lambda p, b: _plant_intruder(p), 1, 0),
+    ("4", lambda p, b: _replace_with(p, b + 1), 0, 0),
+    ("5", lambda p, b: (_replace_with(p, b + 1), _plant_drift(p, b + 1)), 0, 1),
+    ("6", lambda p, b: (_replace_with(p, b + 1), _plant_intruder(p)), 1, 0),
+], ids=["row 3", "row 4", "row 5", "row 6"])
+def test_rows_3_to_6_through_the_real_walk(capsys, monkeypatch, row, plant, rc, counted, b):
+    """R1-04: "Verify both stored state and CLI exit/facts". The store really changes between the mint and the rung's transaction, and the
+    real walk reports it: a repair that committed is counted, an unchanged current is not, and a shape refusal stops the walk."""
+    p = _store_at(b)
+    real, done = rm._delegate, []
+
+    def delegate(canonical, authority):
+        if not done:
+            done.append(1)
+            plant(p, b)
+        return real(canonical, authority)
+    monkeypatch.setattr(rm, "_delegate", delegate)
+    assert main(["migrate", "--db", p] + FLAGS) == rc
+    out = capsys.readouterr().out
+    if rc == 1:
+        assert "outcome: stamped-shape-mismatch" in out and "rungs committed by this walk: 0 (none)" in out
+        assert _user_version(p) == (b if row == "3" else b + 1)
+    else:
+        assert f"rungs committed by this walk: {counted + HEAD - b - 1} " in out and _user_version(p) == HEAD

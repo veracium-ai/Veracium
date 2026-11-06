@@ -1080,6 +1080,8 @@ Facts are `TerminalFacts(outcome, b, t, changed, committed, state, version)`; ev
 | 11b | `found > HEAD`, `found < 0`, unopenable, locked, a refused runtime | existing | existing |
 | 12 | a step's postcondition fails inside the hook | `unsupported-migration` (0013 §4f, M123); rollback; the store keeps its original raw stamp (`t−1`, or 0 for an unstamped first rung) | `(False, False, unknown, None)` |
 
+*Annotation (research, 2026-11-06; the table above is kept as written): Row 3 is decided by the check after the hook: no check of the source's shape precedes the step. So the step has run and its attempted event stands in the sidecar beside the terminal record, though the transaction rolled back, and I38's "no attempted event" does not reach this row. A difference the step itself meets ends before that check, with no attempted event: row 12 when a postcondition fails, `migration-failed` with `(None, None, unknown, None)` when its SQL fails. Measured over 958 forms at every rung, the store is left as it was in each, and no source unaccepted at `b` is migrated.*
+
 **A third, glossed `migration-source-missing` row (marked amendment to 0018 §4e).** Accepted §4e has two rows under
 that label: nothing at the path (`missing`), and an existing, valid, empty `user_version=0` database (`unaccepted`,
 R2-3). Rows 11a and 10 are those two, verbatim. Rows 7a and 8a add a third:
