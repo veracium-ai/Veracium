@@ -1,5 +1,5 @@
 {
- "body_sha256": "be34e94f22913b82807beb4a307c364b126f2e330b78b673752d3f04bad93bcf",
+ "body_sha256": "faee0e67b1d1b3bad48e2c3731f881a41cd1a02373adee4531f711d1ae9923db",
  "controls": [
   {
    "anchor_counts": [
@@ -55,7 +55,7 @@
     "passed": 6
    }
   },
-  "commit": "8d16497f40a3c39f1ea5e08ad201de4a2ccd1edd",
+  "commit": "df418c142691c3f101073ae4b0c5da7f0d4409d0",
   "control_definitions": {
    "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
   },
@@ -89,9 +89,7 @@
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -135,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.97s",
+   "pytest": "5 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: a same-key current record the production validator rejects is replaced, never refused"
@@ -168,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "per-record validation without the artifact-level check: a conflicting duplicate passes"
@@ -183,6 +181,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 9
+  "seconds": 10
  }
 }

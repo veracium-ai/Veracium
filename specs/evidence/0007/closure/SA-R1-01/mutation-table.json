@@ -1,5 +1,5 @@
 {
- "body_sha256": "e119f38344114ffbf2a624ae119f5b6adf10602218fb769d8c31de27060c0e29",
+ "body_sha256": "8b45ebc2824b0ecb862dccc5ace2a8bdc56b8904039823ebc1e0de45d320bb4c",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "8d16497f40a3c39f1ea5e08ad201de4a2ccd1edd",
+  "commit": "df418c142691c3f101073ae4b0c5da7f0d4409d0",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -62,7 +62,7 @@
   "digests": {
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/0013/sa10_gate.py": "8a03d9f2f6f3a705bf6bcfa6e247141c6bb75dbe08de4b9d8edd2baf38ca746d",
-   "specs/evidence/0013/sa10_mutants.py": "019e0a281a850c11d9886263fbe7fbb535c9dd5219cd2dcac6c9379075e2ab1c",
+   "specs/evidence/0013/sa10_mutants.py": "9412b0e3effa7899172a1ba66f0582c7a5c5ecbf41dd1cb6b2c2b19ccad9ee4a",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "tests/test_0013_sa10_gate.py": "d53162cb366fc98da7dd555e7e3f8fb45372e867afe3e244a0778417493834d9"
@@ -75,10 +75,7 @@
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
-  "tracked_changes": [
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json"
-  ]
+  "tracked_changes": []
  },
  "rows": [
   {
@@ -112,7 +109,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.14s",
+   "pytest": "2 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -145,7 +142,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -211,7 +208,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.93s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -226,6 +223,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 19
+  "seconds": 18
  }
 }
