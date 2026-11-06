@@ -1,5 +1,5 @@
 {
- "body_sha256": "5880d1157a88283b86c05f85edff9abd7b768224537ae6e55c421b47e4b150fc",
+ "body_sha256": "3fbd77d5272823d1edc79aae962cdc94a2bdd50046a28b32e9f27b35069d56e0",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
   "control_definitions": {
    "NOOP-0048-R5-02-test_0048_decay_bounds": "37dc4c8c374d6dc5e5faf76932ee7b7b58336f9206df55afeefca0b999519346"
   },
@@ -58,7 +58,7 @@
    "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
   },
   "finding": "0048-R5-02",
   "honest_nodes": [
@@ -69,10 +69,36 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0048-decay-never-raises-confidence.md",
-   "specs/closure_findings.py",
-   "specs/render_closure.py",
-   "specs/reviews.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -104,7 +130,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the statement prepared bare, so one that binds exactly runs"
@@ -137,7 +163,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "plain EXPLAIN: a string SQLite refuses bare becomes grammatical"
@@ -152,6 +178,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 49
+  "seconds": 76
  }
 }

@@ -58,6 +58,7 @@ import logging
 import os
 import re
 import sqlite3
+import urllib.parse
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import NamedTuple, Optional
@@ -67,9 +68,7 @@ from . import schema_version as sv
 log = logging.getLogger(__name__)
 
 _HEAD = sv.SCHEMA_VERSION            # 8 — the destination this release migrates to
-_MINT_BASE = _HEAD - 1               # 7 — the ONLY base the preflight passes to mint
-_MAX_UNSUPPORTED = _HEAD - 2         # 6 — unsupported-base carries 1.._MAX_UNSUPPORTED
-
+_FIRST = sv.FIRST_MIGRATABLE         # the oldest base a rung starts from: `unsupported-base` is the bases below it, none at this head
 _BUSY_TIMEOUT_S = 5.0                # preflight/mint connect timeout (tests shrink it)
 
 # --------------------------------------------------------------------------
@@ -681,9 +680,9 @@ def _resolution_scalar_problems(canonical_path, resolved_base,
     if type(resolved_base) is not int:
         p.append(f"resolved_base must be an exact int, is "
                  f"{type(resolved_base).__name__}")
-    elif not 1 <= resolved_base <= _MINT_BASE:
+    elif not _FIRST <= resolved_base <= _HEAD - 1:
         p.append(f"resolved_base {resolved_base} is outside the accepted-base "
-                 f"set 1..{_MINT_BASE}")
+                 f"set {_FIRST}..{_HEAD - 1}")
     if type(source_fingerprint) is not str:
         p.append(f"source_fingerprint must be an exact str, is "
                  f"{type(source_fingerprint).__name__}")
@@ -741,9 +740,9 @@ def _migration_result_problems(outcome, ch, co, state, ver,
         return p
     if outcome == "unsupported-base":
         if not (ch is False and co is False and state == "source"
-                and type(ver) is int and 1 <= ver <= _MAX_UNSUPPORTED):
+                and type(ver) is int and 1 <= ver < _FIRST):
             p.append(f"unsupported-base carries exactly (False, False, "
-                     f"'source', 1..{_MAX_UNSUPPORTED})")
+                     f"'source', a base below {_FIRST})")
         return p
     if outcome == "mint-contention" or outcome in ("migration-audit-unavailable",
                                                    "migration-audit-state-unknown"):
@@ -755,11 +754,12 @@ def _migration_result_problems(outcome, ch, co, state, ver,
     if outcome not in OUTCOMES:
         p.append(f"outcome {outcome!r} is not in the returnable vocabulary")
         return p
-    # The delegated DEFERENCE law (external R2-2): a carrier is valid iff its
-    # seven-field TerminalFacts passes accepted 0013's problems() VERBATIM at
-    # this release's endpoints — no 0018-added effect/state/version law.
-    p += TerminalFacts.problems(TerminalFacts(outcome, _MINT_BASE, _HEAD, ch,
-                                              co, state, ver))
+    # The delegated DEFERENCE law (external R2-2), per rung (0018 §4j.6.4e-iii): a carrier is valid iff its seven-field
+    # TerminalFacts passes accepted 0013's problems() VERBATIM at SOME rung `(b, b+1)`. The exact binding to the rung that
+    # ran is `RungReport`'s, which knows the minted endpoints; no 0018-added effect, state or version law here.
+    verdicts = [TerminalFacts.problems(TerminalFacts(outcome, b, b + 1, ch, co, state, ver)) for b in range(_FIRST, _HEAD)]
+    if all(verdicts):
+        p += verdicts[-1]
     return p
 
 
@@ -871,13 +871,21 @@ def _release_ref() -> str:
         return "veracium-unreleased"
 
 
-def _declared_migration_digest() -> str:
-    """The digest of this release's declared v7→v8 steps, over the
-    instrument's canonical migration encoding (`canonical_migration_bytes`)."""
-    payload = (b"veracium-migration-v1:"
-               + json.dumps([_MINT_BASE, _HEAD, list(sv.ALTERS_V7_TO_V8)],
-                            separators=(",", ":")).encode())
-    return hashlib.sha256(payload).hexdigest()
+def _declared_migration_digest(base: int, target: int) -> str:
+    """SHA-256 over the frozen preimage of `plan(base, target)`, the plan of exactly this rung (0013 §5g.1)."""
+    from .migration import plan_preimage
+    return hashlib.sha256(plan_preimage(base, target)).hexdigest()
+
+
+def _mintable_base(found: int, objs):
+    """The base a mint attests, by its OWN observation (0018 §4j.6.4c): stamped and accepted at the stamp, or unstamped with
+    objects and resolving through the legacy bases. None for anything else."""
+    if _FIRST <= found <= _HEAD - 1:
+        return found if sv.digest(objs, found) in sv.accepted_digests(found) else None
+    if found == 0 and objs:
+        base = sv.resolve(objs, sv.version_records(), candidates=sv.legacy_base_versions())
+        return base if base is not None and _FIRST <= base <= _HEAD - 1 else None
+    return None
 
 
 def mint_release_authority(path, attestation, *,
@@ -912,17 +920,16 @@ def mint_release_authority(path, attestation, *,
         raise MintError("source-changed",
                         f"the store could not be re-observed ({exc.kind}): "
                         f"{exc.diagnostic}") from exc
-    mintable = (found == _MINT_BASE
-                and sv.digest(objs, _MINT_BASE) in sv.accepted_digests(_MINT_BASE))
-    if mintable:
+    base = _mintable_base(found, objs)
+    if base is not None:
         now = datetime.now(timezone.utc)
         return MigrationAuthority(
             quiesced=True,
             backup_ref=tuple.__getitem__(attestation, 1),
             store_path=canonical,
-            from_version=_MINT_BASE, to_version=_HEAD,
-            source_digest=sv.digest(objs, _MINT_BASE),
-            migration_digest=_declared_migration_digest(),
+            from_version=base, to_version=base + 1,
+            source_digest=sv.digest(objs, base),
+            migration_digest=_declared_migration_digest(base, base + 1),
             release_ref=_release_ref(),
             operation_id="op-" + str(uuid.uuid4()),
             issued_at=canonical_timestamp(now),
@@ -935,7 +942,7 @@ def mint_release_authority(path, attestation, *,
         raise MintError(
             "source-unaccepted",
             f"the store at {canonical!r} matches the preflight observation "
-            f"but is not an accepted v{_MINT_BASE} migration source "
+            f"but is not an accepted v{found} migration source "
             f"(user_version={found})")
     raise MintError(
         "source-changed",
@@ -951,54 +958,14 @@ def _intercept(outcome, ch, co, state, ver, diagnostic):
             MigrationResult(outcome, ch, co, state, ver, diagnostic))
 
 
-def _release_heads() -> dict:
-    """{schema version: [release tags whose store schema head is that version]} from the
-    shipped release record; {} (fail closed to "unknown") if the record is unreadable."""
-    try:
-        data = json.loads(sv.RELEASES.read_text())
-        out: dict = {}
-        for r in data.get("releases", []):
-            v = r.get("store_schema_version")
-            if isinstance(v, int) and v > 0 and isinstance(r.get("tag"), str):
-                out.setdefault(v, []).append(r["tag"])
-        return out
-    except (OSError, ValueError, AttributeError):
-        return {}
-
-
-def _ladder_diagnostic(base: int) -> str:
-    """DERIVED from the resolved base, the mint base and the shipped release record (amended
-    2026-09-18; the 0019 rider's literal head-8 sentences named "v6"/"v7" for every base and,
-    once the head moved past 8, misreported bases 7.. as v6). States: the actual base; that
-    this orchestrator migrates one schema version per release; how many rungs the CLI ladder
-    has and which rungs the shipped record names no release for (so an operator is never sent
-    to a release the record cannot vouch for); and the library route that walks every step."""
-    rungs = list(range(base + 1, _MINT_BASE + 1))       # the intermediate heads a CLI ladder needs
-    heads = _release_heads()
-    unwalkable = [v for v in rungs if v not in heads]
-    walk = (f"{len(rungs)} intermediate migration(s) on earlier releases (one schema version "
-            f"per release: " + ", ".join(
-                f"v{v} on {heads[v][0]}" + (f"..{heads[v][-1]}" if len(heads[v]) > 1 else "")
-                if v in heads else f"v{v} on a release the shipped record does not name"
-                for v in rungs) + ")")
-    if unwalkable:
-        walk += (f"; the shipped record names no release whose schema head is "
-                 + ", ".join(f"v{v}" for v in unwalkable)
-                 + " (some releases were recorded without one), so that ladder cannot be "
-                 f"planned from the record alone")
-    return (f"store resolves to base v{base}, below this release's supported migration "
-            f"source (v{_MINT_BASE}): this release's orchestrator migrates v{_MINT_BASE} -> "
-            f"v{_HEAD} only, so from v{base} the CLI path needs {walk}. The offline library "
-            f"path applies every step in one call: quiesce, back up, then "
-            f"veracium.store.migration.migrate_store(path) (docs/api.md, 'Migrating a store')")
-
-
-def _preflight_classify(path: str):
+def _preflight_classify(path: str, seen: Optional[dict] = None):
     """The READ-ONLY resolution pass (0018 §4h): never creates, never adopts,
     never stamps. Returns ("intercept", MigrationResult) for every cell except
-    resolved base 7 → ("mint", PreflightResolution) and current-with-drift →
+    every migratable resolved base → ("mint", PreflightResolution) and current-with-drift →
     ("repair", canonical_path). Reuses 0007's own classification machinery
-    (accepted digests, legacy-base resolution, the runtime gate)."""
+    (accepted digests, legacy-base resolution, the runtime gate). `seen`, if given, receives the raw `user_version` read and
+    the base resolved, for `RungReport`: what a refusal leaves unresolved stays absent."""
+    seen = {} if seen is None else seen
     canonical = os.path.realpath(path)
     if not os.path.exists(canonical):
         return _intercept("migration-source-missing", False, False, "missing",
@@ -1013,6 +980,7 @@ def _preflight_classify(path: str):
     except _Unobservable as exc:
         return _intercept(exc.kind, False, False, "unknown", None,
                           exc.diagnostic)
+    seen["stamp"] = found
     fingerprint = _fingerprint_of(found, objs)
     if found < 0:
         return _intercept("invalid-version", False, False, "unaccepted", None,
@@ -1053,11 +1021,11 @@ def _preflight_classify(path: str):
                               f"stamped v{found} but the shape is not in "
                               f"v{found}'s accepted manifest set")
         base = found
-    if base == _MINT_BASE:
-        return ("mint", PreflightResolution(canonical, _MINT_BASE,
-                                            fingerprint))
+    seen["base"] = base
+    if _FIRST <= base <= _HEAD - 1:
+        return ("mint", PreflightResolution(canonical, base, fingerprint))
     return _intercept("unsupported-base", False, False, "source", base,
-                      _ladder_diagnostic(base))
+                      f"store resolves to base v{base}, below the first base this release migrates, v{_FIRST}")
 
 
 def _repair_current(canonical: str) -> MigrationResult:
@@ -1116,6 +1084,72 @@ def _make_sink(apath: str, operation_id: str):
     return sink
 
 
+class _RungRefused(Exception):
+    """The rung's hook, or its open, found no source this authority attests (0018 §4j.6.4e-ii rows 7a, 8a, 10 and 11a). Raised
+    inside the transaction where there is one, so nothing is written. Maps to `migration-source-missing`."""
+
+    def __init__(self, state: str, diagnostic: str):
+        super().__init__(diagnostic)
+        self.state, self.diagnostic = state, diagnostic
+
+
+class _RungUnopenable(Exception):
+    """An existing path the rung could not open (a directory, a permission refusal, a dangling symlink): row 11b."""
+
+
+def _open_rung(canonical: str) -> sqlite3.Connection:
+    """Open the store WITHOUT creating it (0007 §4h.1), the path's bytes percent-encoded so `?`, `#`, `%`, spaces and a non-UTF-8
+    name address exactly the file the mint observed. A failed open is not absence: absence is an `lstat` ENOENT (0013 §4f),
+    re-checked here, and anything else that exists and will not open is `store-unopenable`."""
+    uri = "file:" + urllib.parse.quote_from_bytes(os.fsencode(canonical)) + "?mode=rw"
+    try:
+        return sqlite3.connect(uri, uri=True)
+    except sqlite3.OperationalError as exc:
+        try:
+            os.lstat(canonical)
+        except FileNotFoundError:
+            raise _RungRefused("missing", f"nothing at {canonical!r}") from exc
+        except OSError:
+            pass
+        raise _RungUnopenable(f"cannot open: {_safe_repr(exc)}") from exc
+
+
+def _run_rung(canonical: str, audit_sink, b: int, t: int):
+    """One rung: `b → t`, `t = b+1`, in one transaction. The source binding lives in the hook and not in the target, so it holds
+    on the LAST rung too, where `t` is head and `migrate_to` is `None`'s equal. Events are this rung's, built with `(b, t)`."""
+    from .migration import _apply_forward, _mig_event, migration_runtime
+    conn = _open_rung(canonical)
+    closed = False
+    try:
+        mid = str(uuid.uuid4())
+        pending: dict = {}
+
+        def older(c, spath, found, objs, base, *, runtime):
+            if base != t - 1:
+                raise _RungRefused("unaccepted", f"no accepted v{t - 1} source where the authority attests one; "
+                                                 f"observed v{base}")
+            _apply_forward(c, base, t)
+            pending["runtime"] = migration_runtime(runtime)
+            audit_sink(_mig_event("migration_attempted", mid, spath, base, t, pending["runtime"]))
+
+        def new(c, spath, found, objs):
+            raise _RungRefused("unaccepted", "an empty database where the authority attests a source: never created-into")
+
+        result = sv.open_versioned(conn, canonical, older=older, new=new, migrate_to=t, allow_adopt=False)
+        if str(result) == "migrated":
+            committed = _mig_event("migration_committed", mid, canonical, b, t, pending["runtime"])
+            try:
+                audit_sink(committed)
+            except BaseException as exc:
+                conn.close()
+                closed = True
+                raise sv.PostCommitAuditError(canonical, mid, exc) from exc
+        return result
+    finally:
+        if not closed:
+            conn.close()
+
+
 _NO_RECORD_DIAGNOSTICS = {
     "migration-audit-unavailable":
         "the attempted audit record is proven not written; the kernel "
@@ -1131,14 +1165,21 @@ _NO_RECORD_DIAGNOSTICS = {
 }
 
 
-def _kernel_call(canonical: str, apath: str, operation_id: str):
+def _kernel_call(canonical: str, apath: str, operation_id: str, b: int, t: int):
     """Run the delegated kernel operation and derive (outcome, facts,
     diagnostic) from what ACTUALLY happened — never from a label alone.
     Returns facts=None only for the no-record outcomes."""
-    from .migration import DuplicateOutcomeChainError, migrate_store
+    from .migration import DuplicateOutcomeChainError
     try:
-        r = migrate_store(canonical, audit_sink=_make_sink(apath,
-                                                           operation_id))
+        r = _run_rung(canonical, _make_sink(apath, operation_id), b, t)
+    except _RungRefused as exc:
+        return ("migration-source-missing",
+                TerminalFacts("migration-source-missing", b, t, False, False, exc.state, None),
+                exc.diagnostic)
+    except _RungUnopenable as exc:
+        return ("store-unopenable",
+                TerminalFacts("store-unopenable", b, t, False, False, "unknown", None),
+                str(exc))
     except _AuditSinkWriteFailed as exc:
         return ("migration-audit-unavailable", None,
                 f"attempted-record write failed: {exc}")
@@ -1148,33 +1189,33 @@ def _kernel_call(canonical: str, apath: str, operation_id: str):
                                                 "stamped-shape-mismatch")
                  else "unknown")
         return (exc.reason,
-                TerminalFacts(exc.reason, _MINT_BASE, _HEAD, False, False,
+                TerminalFacts(exc.reason, b, t, False, False,
                               state, None),
                 str(exc))
     except sv.PostCommitAuditError as exc:
         # the store IS migrated (committed=True by contract); the terminal
         # record below is the authoritative trail.
         return ("migrated",
-                TerminalFacts("migrated", _MINT_BASE, _HEAD, True, True,
-                              "destination", _HEAD),
+                TerminalFacts("migrated", b, t, True, True,
+                              "destination", t),
                 f"migrated; the committed-event marker failed afterwards "
                 f"({_safe_repr(exc)})")
     except sv.PackageConsistencyError:
         raise                                     # §4f: the named escape
     except DuplicateOutcomeChainError as exc:
         return ("migration-failed",
-                TerminalFacts("migration-failed", _MINT_BASE, _HEAD, None,
+                TerminalFacts("migration-failed", b, t, None,
                               None, "unknown", None),
                 _safe_repr(exc))
     except sqlite3.DatabaseError as exc:
         return ("migration-failed",
-                TerminalFacts("migration-failed", _MINT_BASE, _HEAD, None,
+                TerminalFacts("migration-failed", b, t, None,
                               None, "unknown", None),
                 f"the kernel operation failed ({_safe_repr(exc)}); the "
                 f"post-failure store state is unknown (rollback unconfirmed)")
     except Exception as exc:                      # noqa: BLE001 — total boundary
         return ("internal-error",
-                TerminalFacts("internal-error", _MINT_BASE, _HEAD, None, None,
+                TerminalFacts("internal-error", b, t, None, None,
                               "unknown", None),
                 f"library defect in the delegated operation: "
                 f"{type(exc).__name__}: {_safe_repr(exc)}")
@@ -1184,38 +1225,38 @@ def _kernel_call(canonical: str, apath: str, operation_id: str):
             or type(r.transaction_committed) is not bool \
             or type(r.resulting_version) is not int:
         return ("internal-error",
-                TerminalFacts("internal-error", _MINT_BASE, _HEAD, None, None,
+                TerminalFacts("internal-error", b, t, None, None,
                               "unknown", None),
                 f"the kernel returned a malformed result: {_safe_repr(r)}")
     label = str.__str__(r)
     if label == "migrated" and r.store_changed is True \
             and r.transaction_committed is True \
-            and r.resulting_version == _HEAD:
+            and r.resulting_version == t:
         return ("migrated",
-                TerminalFacts("migrated", _MINT_BASE, _HEAD, True, True,
-                              "destination", _HEAD),
-                f"migrated v{_MINT_BASE} -> v{_HEAD}")
+                TerminalFacts("migrated", b, t, True, True,
+                              "destination", t),
+                f"migrated v{b} -> v{t}")
     if label == "current" and r.store_changed == r.transaction_committed \
-            and r.resulting_version == _HEAD:
+            and r.resulting_version == t:
         return ("current",
-                TerminalFacts("current", _MINT_BASE, _HEAD, r.store_changed,
-                              r.transaction_committed, "destination", _HEAD),
+                TerminalFacts("current", b, t, r.store_changed,
+                              r.transaction_committed, "destination", t),
                 "the store was already at the destination when the delegated "
                 "operation ran (a concurrent operation migrated it)")
     if label in ("created", "adopted") and r.store_changed is True \
             and r.transaction_committed is True \
-            and r.resulting_version == _HEAD:
+            and r.resulting_version == t:
         # the kernel lacks 0013's new= seam (documented narrowing): a dedicated
         # migration must never create/adopt — recorded honestly as a defect
         # WITH the committed facts, never hidden.
         return ("internal-error",
-                TerminalFacts("internal-error", _MINT_BASE, _HEAD, True, True,
-                              "destination", _HEAD),
+                TerminalFacts("internal-error", b, t, True, True,
+                              "destination", t),
                 f"the delegated operation returned {label!r} — a dedicated "
                 f"migration must never {label} a store (0013 §5b); the "
                 f"committed facts are recorded")
     return ("internal-error",
-            TerminalFacts("internal-error", _MINT_BASE, _HEAD, None, None,
+            TerminalFacts("internal-error", b, t, None, None,
                           "unknown", None),
             f"the kernel returned an impossible cell: {label!r}/"
             f"{r.store_changed}/{r.transaction_committed}/"
@@ -1256,31 +1297,37 @@ def _route_delegated(operation_id: str, kernel_outcome: str, apath: str,
 
 def _delegate(canonical: str, authority: MigrationAuthority) -> MigrationResult:
     operation_id = authority.operation_id
+    b, t = authority.from_version, authority.to_version
+    context = (operation_id, b, t)
     apath = audit_trail_path(canonical)
     try:
-        kernel_outcome, facts, diagnostic = _kernel_call(canonical, apath,
-                                                         operation_id)
+        kernel_outcome, facts, diagnostic = _kernel_call(canonical, apath, operation_id, b, t)
     except sv.PackageConsistencyError as exc:
-        _package_escape_post_mint(exc, operation_id, apath)
+        _package_escape_post_mint(exc, operation_id, apath, b, t)
+        exc.rung_context = context
         raise
     if facts is not None:
         try:
             _write_terminal(apath, operation_id, facts)
         except Exception as exc:
-            raise MigrationAuditWriteError(operation_id, canonical, facts,
-                                           audit_committed=False,
-                                           cause=exc) from exc
-    return _route_delegated(operation_id, kernel_outcome, apath, diagnostic)
+            err = MigrationAuditWriteError(operation_id, canonical, facts, audit_committed=False, cause=exc)
+            err.rung_context = context
+            raise err from exc
+    try:
+        return _route_delegated(operation_id, kernel_outcome, apath, diagnostic)
+    except MigrationAuditReadError as exc:
+        exc.rung_context = context
+        raise
 
 
-def _package_escape_post_mint(exc, operation_id: str, apath: str) -> None:
+def _package_escape_post_mint(exc, operation_id: str, apath: str, b: int, t: int) -> None:
     """The POST-MINT package route (external R3-5): terminal-record the
     consumed operation as `package-inconsistent` (best-effort — the escape
     must propagate regardless), run the escape-path readback, and attach the
     routing evidence to the exception (`readback_route`, `recorded_facts`).
     The record is accepted as a fact source ONLY when valid AND bound to
     `package-inconsistent`."""
-    facts = TerminalFacts("package-inconsistent", _MINT_BASE, _HEAD, None,
+    facts = TerminalFacts("package-inconsistent", b, t, None,
                           None, "unknown", None)
     try:
         _write_terminal(apath, operation_id, facts)
@@ -1310,41 +1357,223 @@ def _invalid_request(diagnostic: str) -> MigrationResult:
                            diagnostic)
 
 
-def _classify_or_intercept(path: str):
+def _classify_or_intercept(path: str, seen: Optional[dict] = None):
     """One preflight classification, with the repair cell executed. Returns
     ("intercept", MigrationResult) or ("mint", PreflightResolution).
     PackageConsistencyError propagates (the PRE-MINT route: no operation
     minted, no readback attempted)."""
-    kind, payload = _preflight_classify(path)
+    kind, payload = _preflight_classify(path, seen)
     if kind == "repair":
         return "intercept", _repair_current(payload)
     return kind, payload
 
 
-def run_release_migration(path, *, host_attestation) -> MigrationResult:
-    """The release-migration orchestrator (0018 §4): total over every input
-    per the §4e matrix; every preflight interception zero-authority and
-    zero-audit; resolved base 7 ALONE mints and delegates to the audited
-    kernel operation."""
+class _RungReportBase(NamedTuple):
+    kind: str
+    result: object                  # exactly a MigrationResult, or None
+    preflight_base: object          # Optional[int]
+    source_stamp: object            # Optional[int]
+    operation_id: object            # Optional[str]
+    from_version: object            # Optional[int]
+    to_version: object              # Optional[int]
+    expected_base: object           # Optional[int]
+
+
+def _rung_report_problems(r) -> list:
+    p = []
+    if type(r.kind) is not str or r.kind not in ("preflight", "delegated", "unexpected-base"):
+        return [f"kind {_safe_repr(r.kind)} is not preflight, delegated or unexpected-base"]
+    for name, value in (("preflight_base", r.preflight_base), ("source_stamp", r.source_stamp), ("from_version", r.from_version),
+                        ("to_version", r.to_version), ("expected_base", r.expected_base)):
+        if not (value is None or type(value) is int):
+            p.append(f"{name} must be an exact int or None")
+    if r.kind == "unexpected-base":
+        if r.result is not None:
+            p.append("unexpected-base carries no result")
+        if r.expected_base == r.preflight_base:
+            p.append("unexpected-base where the bases agree")
+    elif type(r.result) is not MigrationResult:
+        p.append("result must be exactly a MigrationResult")
+    if r.kind == "delegated":
+        if not (type(r.from_version) is int and type(r.to_version) is int and r.to_version == r.from_version + 1
+                and _FIRST <= r.from_version < _HEAD):
+            p.append(f"endpoints {r.from_version}->{r.to_version} are not an adjacent rung")
+        elif type(r.result) is MigrationResult and r.result.outcome not in _NO_RECORD_OUTCOMES:
+            p += TerminalFacts.problems(TerminalFacts(
+                r.result.outcome, r.from_version, r.to_version, r.result.store_changed, r.result.transaction_committed,
+                r.result.resulting_state, r.result.resulting_version))
+        if not (type(r.operation_id) is str and _OPERATION_RE.fullmatch(r.operation_id)):
+            p.append("operation_id must be op-<uuid4>")
+    elif r.operation_id is not None or r.from_version is not None or r.to_version is not None:
+        p.append("only a delegated report carries operation context")
+    return p
+
+
+class RungReport(_RungReportBase):
+    """What one rung did, in the operation's own terms (0018 §4j.6.4e-iii). The record binds to the MINTED endpoints, never to
+    endpoints rebuilt from `resulting_version`: a lawful `(13, 14, migrated)` validates under `13 → 14` and fails under `14 → 15`."""
+    __slots__ = ()
+
+    def __new__(cls, kind, result, preflight_base, source_stamp, operation_id, from_version, to_version, expected_base):
+        report = super().__new__(cls, kind, result, preflight_base, source_stamp, operation_id, from_version, to_version,
+                                 expected_base)
+        problems = _rung_report_problems(report)
+        if problems:
+            raise ValueError("invalid RungReport: " + "; ".join(problems))
+        return report
+
+
+class RecoveryDecision(NamedTuple):
+    row: str
+    actions: tuple
+    counted: bool
+
+
+# 0018 §4j.9: the rows, each with its stable action id. The ids are what `tests/test_0018_rungs_t4.py` compares with the table extracted
+# from the spec; the prose beside them is in `RECOVERY_PROSE`.
+_NO_RECORD_ROWS = {"migration-audit-unavailable": ("N1", "rerun"), "migration-audit-state-unknown": ("N2", "query-id-first"),
+                   "migration-quiescence-required": ("N3", "rerun-when-quiescent"),
+                   "migration-evidence-missing": ("N4", "no-rerun-this-build")}
+_UNCHANGED_ROWS = (
+    ("U1", ("stamped-shape-mismatch", "foreign-shape", "invalid-version", "invalid-store"), None, "no-rerun-not-a-source"),
+    ("U2", ("migration-source-missing",), "missing", "fix-path-then-rerun"),
+    ("U3", ("migration-source-missing",), "unaccepted", "conditional-other-writer-or-path"),
+    ("U4", ("newer",), None, "conditional-other-writer-or-newer-build"),
+    ("U5", ("unsupported-migration", "unsupported-sqlite", "unsupported-base"), None, "no-rerun-this-build"),
+    ("U6", ("store-unopenable", "locked"), None, "fix-access-then-rerun"),
+)
+
+
+def _unchanged_row(outcome, state, version, t):
+    """§4j.9.7b's unchanged rows: U0, then the first of U1 to U6 whose input names the outcome (and its state, where the row names
+    one); every other outcome is U7, including any a later head adds."""
+    if outcome == "current" and state == "destination" and version == t:
+        return "U0", "continue-uncounted"
+    for row, outcomes, wanted, action in _UNCHANGED_ROWS:
+        if outcome in outcomes and (wanted is None or wanted == state):
+            return row, action
+    return "U7", "inspect-first-fallback"
+
+
+def _record_row(outcome, facts, t):
+    """§4j.9.7b, by the facts' class alone: `(True, True)` committed, `(None, None)` unknown, `(False, False)` unchanged."""
+    changed, committed, state, version = facts
+    if (changed, committed) == (True, True):
+        return ("C1", "continue") if outcome in ("migrated", "current") and version == t else ("C2", "stop-inspect-committed")
+    if (changed, committed) == (None, None):
+        return "K", "stop-inspect-unknown"
+    if (changed, committed) == (False, False):
+        return _unchanged_row(outcome, state, version, t)
+    raise ValueError(f"facts of no class: {changed!r}, {committed!r}")
+
+
+def _readback_is_bound(readback_facts, minted) -> bool:
+    """0018 §4f(7) at a rung: a record of `package-inconsistent` at the minted endpoints, checked before any counting."""
+    return (readback_facts is not None and readback_facts.outcome == "package-inconsistent"
+            and (readback_facts.from_version, readback_facts.to_version) == tuple(minted))
+
+
+def classify_recovery(route, outcome=None, facts=None, t=None, minted=None, readback_facts=None) -> RecoveryDecision:
+    """0018 §4j.9's ONE total classifier: exactly one row and its action ids, from structured inputs alone, and never from a
+    diagnostic. `route`: preflight, unexpected-base, delegated, write-error, read-error, package-pre-mint or package-post-mint.
+    `facts`: (store_changed, transaction_committed, resulting_state, resulting_version), or None for a route that has none."""
+    if route == "preflight":
+        if outcome == "current":
+            return RecoveryDecision("P0", ("done",), False)
+        if outcome == "mint-contention":
+            return RecoveryDecision("P1", ("rerun-after-contention",), False)
+        if outcome == "invalid-request":
+            return RecoveryDecision("P2", ("fix-invocation",), False)
+        state = facts[2] if facts else None
+        if outcome == "newer":                    # P4: the report IS the observation, so neither conditional applies
+            return RecoveryDecision("P4>U4", ("no-rerun-this-build",), False)
+        if outcome == "migration-source-missing" and state == "unaccepted":
+            return RecoveryDecision("P4>U1", ("no-rerun-not-a-source",), False)
+        row, action = _unchanged_row(outcome, state, None, None)
+        return RecoveryDecision(f"P4>{row}", (action,), False)
+    if route == "unexpected-base":
+        return RecoveryDecision("P3", ("rerun-when-quiescent",), False)
+    if route == "delegated":
+        if outcome in _NO_RECORD_ROWS:
+            row, action = _NO_RECORD_ROWS[outcome]
+            return RecoveryDecision(row, (action,), False)
+        row, action = _record_row(outcome, facts, t)
+        return RecoveryDecision(row, (action,), row in ("C1", "C2"))
+    if route == "write-error":                    # E1: the carried facts, exactly as a record, but an escape never continues
+        row, action = _record_row(outcome, facts, t)
+        store = "rerun-resumes-store" if row in ("C1", "U0") else action
+        return RecoveryDecision(f"E1>{row}", (store, "audit-record-not-published"), row in ("C1", "C2"))
+    if route == "read-error":
+        return RecoveryDecision("E2", ("inspect-audit-trail",), False)
+    if route == "package-pre-mint":
+        return RecoveryDecision("E3", ("repair-build",), False)
+    if route == "package-post-mint":
+        if _readback_is_bound(readback_facts, minted):
+            committed = (readback_facts.store_changed, readback_facts.transaction_committed) == (True, True)
+            return RecoveryDecision("E4", ("repair-build",) + (("stop-inspect-committed",) if committed else ()), committed)
+        return RecoveryDecision("E4", ("repair-build",), False)
+    raise ValueError(f"route {route!r}")
+
+
+# what each action asks of the operator, and whether a rerun is safe (§4j.9's "rerun?" and "what the operator does" columns)
+RECOVERY_PROSE = {
+    "done": ("nothing to do", "the store is at this build's head"),
+    "rerun-after-contention": ("yes", "rerun once the race settles"),
+    "fix-invocation": ("yes, once corrected", "correct the command line"),
+    "rerun-when-quiescent": ("yes, once quiescence holds", "stop the other writer, then rerun"),
+    "rerun": ("yes", "rerun: the attempted record is proven not written and nothing was consumed"),
+    "query-id-first": ("NO", "query the durable operation id (read_terminal) before any rerun"),
+    "no-rerun-this-build": ("not with the same build or runtime", "repair or upgrade the build or runtime, then rerun; or restore the backup"),
+    "stop-inspect-committed": ("not automatically", "inspect the store: a committed error can describe a store the operation itself "
+                                                    "created; then rerun or restore the backup"),
+    "stop-inspect-unknown": ("not automatically", "inspect the store; then rerun, or restore the backup"),
+    "no-rerun-not-a-source": ("not as it stands", "inspect; restore the backup or repair the store, then rerun"),
+    "fix-path-then-rerun": ("yes, once the path holds the store", "correct the path or restore the backup, then rerun"),
+    "conditional-other-writer-or-path": ("not until inspected", "stop; inspect the path; this report does not say whether the source "
+                                                                "changed or is empty"),
+    "conditional-other-writer-or-newer-build": ("not until inspected", "stop; inspect the store's version; this report does not say how "
+                                                                       "far it is above this rung's target"),
+    "fix-access-then-rerun": ("yes, once the cause is fixed", "fix the permission, the path's type or the lock, then rerun"),
+    "inspect-first-fallback": ("not until the cause is identified", "inspect the store and the diagnostic before any rerun"),
+    "rerun-resumes-store": ("yes", "rerun resumes from the store as it stands"),
+    "inspect-audit-trail": ("not until the record is inspected", "inspect the audit trail for the operation id; the store may be at the "
+                                                                 "rung's target regardless"),
+    "repair-build": ("no", "repair or reinstall the build"),
+}
+
+
+def run_release_rung(path, *, host_attestation, expect_base=None) -> RungReport:
+    """One rung, `b → b+1`, of a resolved store (0018 §4j.6.4e-iii): total over every input per the §4e matrix, every preflight
+    interception zero-authority and zero-audit. `expect_base` is checked after the first resolution, after each retry's
+    re-resolution, and against the minted authority before delegation; an authority minted and not delegated is discarded,
+    since minting writes nothing and the attempted insert is the consumption."""
+    def preflight(result, seen):
+        return RungReport("preflight", result, seen.get("base"), seen.get("stamp"), None, None, None, expect_base)
+
+    def unexpected(seen, base):
+        return RungReport("unexpected-base", None, base, seen.get("stamp"), None, None, None, expect_base)
+
+    seen: dict = {}
     ap = _attestation_problems(host_attestation)
     if ap:
-        return _invalid_request("host_attestation refused: " + "; ".join(ap))
+        return preflight(_invalid_request("host_attestation refused: " + "; ".join(ap)), seen)
     if not _usable_store_path(path):
-        return _invalid_request(f"path {_safe_repr(path)} is not a usable "
-                                f"store path")
+        return preflight(_invalid_request(f"path {_safe_repr(path)} is not a usable store path"), seen)
     try:
-        kind, payload = _classify_or_intercept(path)
-    except sv.PackageConsistencyError:
+        kind, payload = _classify_or_intercept(path, seen)
+    except sv.PackageConsistencyError as exc:
+        exc.rung_context = None
         raise                                     # pre-mint: propagates bare
     except (MigrationAuditWriteError, MigrationAuditReadError):
         raise
     except Exception as exc:                      # noqa: BLE001 — total boundary
-        return MigrationResult("internal-error", None, None, "unknown", None,
-                               f"preflight defect: {type(exc).__name__}: "
-                               f"{_safe_repr(exc)}")
+        return preflight(MigrationResult("internal-error", None, None, "unknown", None,
+                                         f"preflight defect: {type(exc).__name__}: {_safe_repr(exc)}"), seen)
     if kind == "intercept":
-        return payload
+        return preflight(payload, seen)
     resolved = payload
+    if expect_base is not None and resolved.resolved_base != expect_base:
+        return unexpected(seen, resolved.resolved_base)
     canonical = resolved.canonical_path
     # -- the EXACT §4c retry: at most THREE mint calls, re-resolution after
     # -- failures one and two ONLY, the third error → mint-contention.
@@ -1357,26 +1586,36 @@ def run_release_migration(path, *, host_attestation) -> MigrationResult:
         except MintError as exc:
             reasons.append(exc.reason)
             if len(reasons) == 3:
-                return MigrationResult(
+                return preflight(MigrationResult(
                     "mint-contention", False, False, "unknown", None,
                     f"three mint attempts failed ({', '.join(reasons)}); a "
                     f"concurrent operation is racing this one and contention "
                     f"persisted three rounds — nothing was minted, nothing "
-                    f"written; retry after the race settles")
+                    f"written; retry after the race settles"), seen)
         except Exception as exc:                  # noqa: BLE001
-            return MigrationResult("internal-error", None, None, "unknown",
-                                   None, f"mint defect: {type(exc).__name__}: "
-                                         f"{_safe_repr(exc)}")
+            return preflight(MigrationResult("internal-error", None, None, "unknown", None,
+                                             f"mint defect: {type(exc).__name__}: {_safe_repr(exc)}"), seen)
         try:
-            kind, payload = _classify_or_intercept(canonical)
-        except sv.PackageConsistencyError:
+            kind, payload = _classify_or_intercept(canonical, seen)
+        except sv.PackageConsistencyError as exc:
+            exc.rung_context = None
             raise
         except Exception as exc:                  # noqa: BLE001
-            return MigrationResult("internal-error", None, None, "unknown",
-                                   None, f"re-resolution defect: "
-                                         f"{type(exc).__name__}: "
-                                         f"{_safe_repr(exc)}")
+            return preflight(MigrationResult("internal-error", None, None, "unknown", None,
+                                             f"re-resolution defect: {type(exc).__name__}: {_safe_repr(exc)}"), seen)
         if kind == "intercept":
-            return payload                        # the now-true outcome
+            return preflight(payload, seen)       # the now-true outcome
         resolved = payload
-    return _delegate(canonical, authority)
+        if expect_base is not None and resolved.resolved_base != expect_base:
+            return unexpected(seen, resolved.resolved_base)
+    if expect_base is not None and authority.from_version != expect_base:
+        return unexpected(seen, authority.from_version)
+    result = _delegate(canonical, authority)
+    return RungReport("delegated", result, seen.get("base"), seen.get("stamp"), authority.operation_id,
+                      authority.from_version, authority.to_version, expect_base)
+
+
+def run_release_migration(path, *, host_attestation) -> MigrationResult:
+    """The release-migration orchestrator (0018 §4): one rung of the store as found. Its signature and public result are
+    unchanged; the operation's own terms are `run_release_rung`'s."""
+    return run_release_rung(path, host_attestation=host_attestation).result

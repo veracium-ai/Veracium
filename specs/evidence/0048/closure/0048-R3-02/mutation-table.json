@@ -1,5 +1,5 @@
 {
- "body_sha256": "c5b21fc55c8b61f48aa3f2593237d2456c00c38f9f0fcb22fc84396ec3ab1d35",
+ "body_sha256": "3ed5e4ace89b7a3e0e4a4e3d3c375b02e5a6d957460a6df51d7808d727c4bb3b",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
   "control_definitions": {
    "NOOP-0048-R3-02-sqlite": "c9fca0bec6664fcb55be06928fc0602197100806acabba61bf6b8d8f48a929a4"
   },
@@ -57,7 +57,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
   },
   "finding": "0048-R3-02",
   "honest_nodes": [
@@ -68,10 +68,31 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0048-decay-never-raises-confidence.md",
-   "specs/closure_findings.py",
-   "specs/render_closure.py",
-   "specs/reviews.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -103,7 +124,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.29s",
+   "pytest": "1 failed in 9.22s",
    "reason": null,
    "reason_seen": null,
    "what": "the sole active=0 writer binds its own dump, not the helper's"
@@ -136,7 +157,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.38s",
+   "pytest": "1 failed in 9.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer calls the helper and ignores its return value"
@@ -151,6 +172,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 41
+  "seconds": 62
  }
 }

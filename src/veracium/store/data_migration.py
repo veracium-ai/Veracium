@@ -256,7 +256,7 @@ def _preflight(path, op_id):
     if kind == "mint":
         return None, _result("requires-schema-step", op_id=op_id,
                              diagnostic=f"the store is at v{payload.resolved_base}, below v{sv.SCHEMA_VERSION}: run "
-                                        f"the schema step first (run_release_migration, or migrate_store)")
+                                        f"the schema walk first (`veracium migrate`, or migrate_store)")
     # kind == "repair": research's T6 read, Q1 — the repair would be a durable change §4c's store_changed does not
     # define, so this operation refuses rather than repairing silently
     return None, _result("preflight-refused", op_id=op_id,

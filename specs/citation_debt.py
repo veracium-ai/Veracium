@@ -184,7 +184,7 @@ CITATION_DEBT: dict = {
         "test_windows_live_holder_exclusion_across_processes": "never_written: the spec marks it '(platform-gated, future)'; only the POSIX twin exists"
     },
     "0016": {
-        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base over bases 1\u2013HEAD-2 (renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024), and the row's 'below-v6 (bases 1\u20135)' is the number at acceptance",
+        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_every_base_mints_its_own_rung_and_only_that_rung over bases 1\u2013HEAD-2 (renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024), and the row's 'below-v6 (bases 1\u20135)' is the number at acceptance",
         "test_below_v6_open_unchanged": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_open_unchanged",
         "test_deletion_is_decision_invisible": "never_written: the I1 projection-compare test was never written under any name (the near match test_metering_is_decision_invisible is 0017's, a different subject)",
         "test_dir_surfaces_include_sourcetype": "stale_version: the I2 row is the D1 deprecation surface (dir INCLUDES SourceType); the same spec's D2 deleted the class and the test became test_dir_surfaces_exclude_sourcetype at a5c6d82 \u2014 the row describes the superseded D1 era",
@@ -207,12 +207,11 @@ CITATION_DEBT: dict = {
     },
     "0018": {
         "test_base_6_proceeds_through_the_audited_operation": "stale_version: the head moved past v7 after acceptance; the live node is test_base_7_proceeds_through_the_audited_operation",
-        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base over bases 1\u2013HEAD-2 (renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024)",
+        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: the head moved past v7 after acceptance; the live node is test_every_base_mints_its_own_rung_and_only_that_rung over bases 1\u2013HEAD-2 (renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024)",
         "test_below_v6_open_unchanged": "stale_version: the head moved past v7 after acceptance; the live node is test_below_v7_open_unchanged",
-        "test_every_rung_from_every_base": "owed_at_implementation: v9 §4j's I33 (populated, release-authored fixtures walked rung by rung); the amendment's design is accepted, its implementation is not yet scheduled (the owner schedules it)"
     },
     "0019": {
-        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: quoted from 0018's final-form amendment; the head moved past v7 after acceptance (live node test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base; renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024)",
+        "test_below_v6_base_refuses_with_the_ladder_message": "stale_version: quoted from 0018's final-form amendment; the head moved past v7 after acceptance (live node test_every_base_mints_its_own_rung_and_only_that_rung; renamed from test_below_v7_base_refuses_with_the_ladder_message at bbeb024)",
         "test_below_v6_open_unchanged": "stale_version: quoted from 0018's final-form amendment; the head moved past v7 after acceptance (live node test_below_v7_open_unchanged)"
     },
     "0020": {

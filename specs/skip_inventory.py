@@ -283,6 +283,10 @@ INVENTORY = [
      "git-checkout", "specs/0048 §6 (the implementation's mutation table, the 0003/obligations shape): the no-op "
      "control's run snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has "
      "none, so the cell cannot run there — CI is a checkout, where it always runs"),
+    ("tests/test_0018_implementation_mutants.py", "skipif", "not _is_checkout()",
+     "git-checkout", "specs/0018 §4j.8 (the implementation's mutation table, the 0003/obligations shape): the no-op "
+     "control's run snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has "
+     "none, so the cell cannot run there — CI is a checkout, where it always runs"),
     ("tests/test_0003_within_episode_mutants.py", "skipif", "not _is_checkout()",
      "git-checkout", "specs/0003 within-episode §6 (the held minor release's mutation table): the no-op control's run "
      "snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has none, so the cell "
@@ -625,6 +629,8 @@ EMITTED = {
     ("tests/test_0003_within_episode_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_0048_implementation_mutants.py", "not _is_checkout()"):
+        ("a git-less copy has none",),
+    ("tests/test_0018_implementation_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_0041_mutation_campaign.py", "not _is_checkout()"):
         ("a git-less copy has none",),

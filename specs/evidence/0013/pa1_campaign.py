@@ -354,7 +354,7 @@ C = lambda name: f"{_CELLS_REL}::{name}"                                     # n
 _ID_LINE = '    _refuse_unless(run, STEP_IDENTITY, _identity_problems(run.identity_pre, run.identity_post))\n'
 _STAMP_REFUSE = ('    _refuse_unless(run, STEP_STAMP, [f"user_version reads {run.stamped}, not {run.target}"]\n'
                  '                   if run.stamped != run.target else [])\n')
-_LAST_ENTRY = '    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges),\n)\n'
+_LAST_ENTRY = '    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges, (STEP_ARITY_EDGES,)),\n)\n'
 
 # (id, the invariant it attacks, [(anchor, replacement), ...] in migration.py, honest nodes, the NAMED killing cell,
 #  what it reintroduces)
@@ -391,9 +391,9 @@ MUTANTS = [
      BOTH, C("test_cell_a_perturbed_stamp_refuses_at_the_stamp"),
      "the stamp postcondition reads the value the step meant to write, not the database"),
     ("M123-identity-checked-only-at-the-end", "M123",
-     [('    ForwardEntry(0, 5, "read", _read_identity_post),\n    ForwardEntry(0, 5, "check", _check_identity),\n', ""),
-      (_LAST_ENTRY, '    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges),\n'
-                    '    ForwardEntry(0, 5, "read", _read_identity_post),\n    ForwardEntry(0, 5, "check", _check_identity),\n)\n')],
+     [('    ForwardEntry(0, 5, "read", _read_identity_post, (_check_identity,)),\n    ForwardEntry(0, 5, "check", _check_identity, (STEP_IDENTITY,)),\n', ""),
+      (_LAST_ENTRY, '    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges, (STEP_ARITY_EDGES,)),\n'
+                    '    ForwardEntry(0, 5, "read", _read_identity_post, (_check_identity,)),\n    ForwardEntry(0, 5, "check", _check_identity, (STEP_IDENTITY,)),\n)\n')],
      BOTH, C("test_cell_a_perturbed_store_identity_refuses_at_its_step"),
      "the identity postcondition run once, at the end: it still names its step, after later steps wrote"),
     ("M123-failure-commits", "M123",

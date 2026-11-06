@@ -170,9 +170,8 @@ def test_the_below_head_remedy_names_only_routes_that_work(below):
         except sv.PackageConsistencyError as ex:
             refusal = str(ex)
     for text in [refusal] + msgs:
-        assert "migrate_store(path)" in text and "back it up" in text, text
-        assert f"migrates only a v{sv.SCHEMA_VERSION - 1} store" in text, text
-        assert "--db" not in text and "no migration hook" not in text, text
+        assert "veracium migrate --db" in text and "back it up" in text, text
+        assert "migrates only" not in text and "no migration hook" not in text, text
 
 
 def test_a_package_consistency_error_is_not_labelled_below_head(monkeypatch):
@@ -196,7 +195,7 @@ def test_a_below_head_store_is_reported_without_opening_the_store_class():
         _plant(db, f"PRAGMA user_version = {sv.SCHEMA_VERSION - 1}")
         rep = doctor.diagnose(db)
         assert rep.readable and rep.user_version == sv.SCHEMA_VERSION - 1 and rep.exit_code == 1
-        assert any("below this build's head" in m and "migrate_store(path)" in m for m in _messages(rep, "version"))
+        assert any("below this build's head" in m and "veracium migrate --db" in m for m in _messages(rep, "version"))
         assert any("skipped: the constructor refused the snapshot" in m for m in _messages(rep, "revocation"))
         # the two other refusals the constructor can give, reported the same way
         for pragma, needle, version in (("PRAGMA user_version = 0", "foreign-shape (found=0", 0),

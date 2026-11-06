@@ -21,6 +21,7 @@ import pathlib
 import sqlite3
 import subprocess
 import sys
+import urllib.parse
 
 import pytest
 
@@ -47,11 +48,12 @@ def test_the_gate_passes_the_clean_ladder_on_every_path_and_entry(tmp_path):
     assert report["problems"] == [], "\n".join(report["problems"][:40])
     paths = {(p["entry"], p["path"]): p for p in report["paths"]}
     labels = [lab for lab, *_ in gate._pa1().lib()["paths"]()]
-    base15 = [lab for lab, b, *_ in gate._pa1().lib()["paths"]() if b == sv.SCHEMA_VERSION - 1]
-    assert len(labels) >= 48 and base15
+    assert len(labels) >= 48
     for lab in labels:                                                  # C1: every PA1 fixture migrates
         assert paths[("migrate_store", lab)]["outcome"] == "migrated", paths[("migrate_store", lab)]
-    for lab in base15:                                                  # the orchestrator mints only for head-1
+    assert {lab for e, lab in paths if e == "release"} >= set(labels), "a release base is missing from the inventory"
+    assert paths[("release", "D-intermediate")]["classes"].get("b1", 0) >= 1      # I39: repaired against `t`, below head
+    for lab in labels:                                                  # 0018 §4j, I39: every release base, one rung each
         assert paths[("release", lab)]["outcome"] == "migrated", paths[("release", lab)]
     for entry in ("migrate_store", "release"):
         c2, c3 = paths[(entry, "C2-wrong")], paths[(entry, "C3-missing")]
@@ -296,6 +298,7 @@ _CONNECT_FORMS = {   # SA-R3-01 (round 3): (args, kw) that connect must refuse B
     "factory-positional": ((5.0, 0, None, True, _Constructed), {}),
     "another-keyword": ((), {"detect_types": sqlite3.PARSE_DECLTYPES}),
     "a-str-timeout": ((), {"timeout": "5"}),
+    "uri-not-true": ((), {"uri": 1}),
 }
 
 
@@ -316,6 +319,64 @@ def test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs(tm
     census.connect(census.store, (), {"timeout": 5.0}).close()
     census.connect(census.store, (), {}).close()
     assert len(census.reals) == 3 and len(census.refusals) == 1
+
+
+_URI_FORMS = {   # 0018 §4j's one URI, and what a URI could otherwise do: each refused before sqlite3.connect runs
+    "creates": "file:{p}?mode=rwc",
+    "read-only": "file:{p}?mode=ro",
+    "memory": "file:{p}?mode=memory",
+    "no-mode": "file:{p}",
+    "a-second-parameter": "file:{p}?mode=rw&cache=shared",
+    "immutable-first": "file:{p}?immutable=1&mode=rw",
+    "a-vfs": "file:{p}?vfs=unix-none&mode=rw",
+    "a-parameter-inside": "file:{p}?vfs=unix-none?mode=rw",
+    "a-fragment": "file:{p}#x?mode=rw",
+    "an-authority": "file://localhost{p}?mode=rw",
+    "a-relative-path": "file:s.db?mode=rw",
+    "not-a-file-uri": "{p}?mode=rw",
+}
+
+
+@pytest.mark.parametrize("form", sorted(_URI_FORMS))
+def test_connect_admits_only_the_rungs_uri_form(tmp_path, form):
+    """0018 §4j: `uri=True` opens the store without creating it, and it is the one route a URI's parameters could change
+    how or what SQLite opens, so the census reads the URI. Control: the rung's form connects and is held to the store."""
+    census, conn = _census(tmp_path)
+    conn.close()
+    quoted = urllib.parse.quote_from_bytes(os.fsencode(census.store))
+    with pytest.raises(g.ChannelRefused):
+        census.connect(_URI_FORMS[form].format(p=quoted), (), {"uri": True})
+    assert len(census.reals) == 1 and census.refusals[-1][0].startswith("connect with the URI "), census.refusals
+    census.connect(f"file:{quoted}?mode=rw", (), {"uri": True}).close()
+    assert len(census.reals) == 2 and census.problems == [], census.problems
+
+
+def test_a_rung_uri_naming_another_file_is_recorded_as_not_the_store(tmp_path):
+    """The URI's path is decoded before the store check, so percent-encoding is no way past it. Control: the store's own URI."""
+    census, conn = _census(tmp_path)
+    conn.close()
+    other = tmp_path / "a b?other.db"
+    sqlite3.connect(other).close()
+    census.connect("file:" + urllib.parse.quote_from_bytes(os.fsencode(other)) + "?mode=rw", (), {"uri": True}).close()
+    assert len(census.problems) == 1 and "not the store" in census.problems[0], census.problems
+    census.connect("file:" + urllib.parse.quote_from_bytes(os.fsencode(census.store)) + "?mode=rw", (), {"uri": True}).close()
+    assert len(census.problems) == 1, census.problems
+
+
+def test_a_truthy_uri_that_is_not_true_is_refused_on_the_rung_s_own_form(tmp_path):
+    """`uri` is exactly True: a truthy value with a well-formed URI otherwise reaches sqlite3.connect."""
+    census, conn = _census(tmp_path)
+    conn.close()
+    with pytest.raises(g.ChannelRefused):
+        census.connect("file:" + urllib.parse.quote_from_bytes(os.fsencode(census.store)) + "?mode=rw", (), {"uri": 1})
+    assert census.refusals[-1][0] == "connect with a uri of 1", census.refusals
+
+
+def test_replay_opens_the_copy_whatever_uri_the_recorded_connect_named(tmp_path):
+    """A rung's recorded `uri=True` reaches the replay's own connect and changes nothing, because the copy's path has no `file:` prefix."""
+    copy = tmp_path / "copy.db"
+    sqlite3.connect(copy).close()
+    assert g.replay([g.Event("connect", 0, args=(), kw={"uri": True, "cached_statements": 0})], str(copy)) == []
 
 
 def _runtime_sqlite3_names(path):

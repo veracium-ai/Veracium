@@ -373,7 +373,7 @@
  ],
  "campaign": {
   "defined": 546,
-  "pin_digest": "75d28b9c0fddeb6f5b70a17dd8dd5b277e83b3b42a935e274570aed84704e4cc",
+  "pin_digest": "e302e1e9e9c0291037f231b422e9b6414f25207e4bc42ff2c4dcf05e4255479d",
   "results": 546,
   "retired": [
    {
@@ -396,7 +396,7 @@
    "killed": 546,
    "mutants": 546
   },
-  "tree_digest": "75d28b9c0fddeb6f5b70a17dd8dd5b277e83b3b42a935e274570aed84704e4cc"
+  "tree_digest": "e302e1e9e9c0291037f231b422e9b6414f25207e4bc42ff2c4dcf05e4255479d"
  },
  "findings_unbound_kills": [],
  "gates": {
@@ -1389,7 +1389,7 @@
       "why": "the backfilled row is filed under `reply`, so the pre-upgrade id no longer conflicts on reply naming confirm"
      },
      "mutant": "T12 (the registry scenario on a migrated store: the shared body and the v16 backfill) :: §2a: the backfill files a pre-upgrade confirmation under another verb",
-     "site": "src/veracium/store/migration.py::_apply_forward"
+     "site": "src/veracium/store/migration.py::_data_registry"
     },
     {
      "annotation": {
@@ -1399,7 +1399,7 @@
       "why": "no registry row is backfilled, so a pre-upgrade confirm id is free for reply (Q3's mutant, migrate without the backfill)"
      },
      "mutant": "T12 (the registry scenario on a migrated store: the shared body and the v16 backfill) :: §2a: the v16 backfill skipped (and its check)",
-     "site": "src/veracium/store/migration.py::_apply_forward"
+     "site": "src/veracium/store/migration.py::_data_registry"
     }
    ],
    "bound": {
@@ -1709,7 +1709,7 @@
    "bound": {
     "tests/test_0018_orchestrator.py::test_base_7_proceeds_through_the_audited_operation": "named by the row (declared rename of test_base_6_proceeds_through_the_audited_operation)",
     "tests/test_0018_orchestrator.py::test_below_v7_open_unchanged": "named by the row (declared rename of test_below_v6_open_unchanged)",
-    "tests/test_0018_orchestrator.py::test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base": "named by the row (declared rename of test_below_v6_base_refuses_with_the_ladder_message)",
+    "tests/test_0018_orchestrator.py::test_every_base_mints_its_own_rung_and_only_that_rung": "named by the row (declared rename of test_below_v6_base_refuses_with_the_ladder_message)",
     "tests/test_0018_orchestrator.py::test_preflight_matrix_total": "named by the row"
    },
    "kills": [
@@ -1726,7 +1726,7 @@
     {
      "annotation": null,
      "mutant": "0018 I14 (the mint race closes by the EXACT §4c sequence) :: I14: a fourth mint attempt (re-resolution after the third failure)",
-     "site": "src/veracium/store/release_migration.py::run_release_migration"
+     "site": "src/veracium/store/release_migration.py::run_release_rung"
     }
    ],
    "bound": {
@@ -1827,13 +1827,23 @@
     {
      "annotation": null,
      "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
-     "site": "src/veracium/cli.py::_migrate"
+     "site": "src/veracium/cli.py::_migrate_package_escape"
     }
    ],
    "bound": {
+    "tests/test_migrate_cli.py::test_a_committed_error_is_counted_once_and_stops_the_walk": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_pre_mint_escape_after_two_rungs_reuses_no_earlier_id": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_read_error_prints_its_state_as_a_state_and_the_version_as_unknown": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_v13_store_walks_three_rungs_with_three_ids_and_three_records": "in the file the row names",
+    "tests/test_migrate_cli.py::test_a_write_error_with_committed_facts_is_counted_once": "in the file the row names",
+    "tests/test_migrate_cli.py::test_an_unchanged_current_at_the_target_continues_and_is_not_counted": "in the file the row names",
+    "tests/test_migrate_cli.py::test_an_unstamped_v1_store_walks_every_rung": "in the file the row names",
     "tests/test_migrate_cli.py::test_audit_read_error_exits_3_with_the_derived_state": "in the file the row names",
     "tests/test_migrate_cli.py::test_audit_write_error_exits_3_with_its_carried_facts": "in the file the row names",
-    "tests/test_migrate_cli.py::test_below_v7_store_exits_1_with_the_ladder": "in the file the row names",
     "tests/test_migrate_cli.py::test_invalid_backup_token_exit_2_with_the_grammar": "in the file the row names",
     "tests/test_migrate_cli.py::test_migrate_verb_migrates_a_v7_store": "in the file the row names",
     "tests/test_migrate_cli.py::test_migrate_verb_reports_a_current_store_as_a_no_op": "in the file the row names",
@@ -1841,10 +1851,23 @@
     "tests/test_migrate_cli.py::test_missing_flags_exit_2_with_usage": "in the file the row names",
     "tests/test_migrate_cli.py::test_missing_store_exits_1_as_the_missing_refusal": "in the file the row names",
     "tests/test_migrate_cli.py::test_newer_store_exits_1": "in the file the row names",
+    "tests/test_migrate_cli.py::test_one_attestation_object_is_admitted_at_every_call": "in the file the row names",
     "tests/test_migrate_cli.py::test_package_escape_end_to_end_recorded_route": "in the file the row names",
-    "tests/test_migrate_cli.py::test_package_escape_routes_exit_3": "in the file the row names"
+    "tests/test_migrate_cli.py::test_package_escape_routes_exit_3": "in the file the row names",
+    "tests/test_migrate_cli.py::test_state_unknown_says_query_the_id_before_any_rerun": "in the file the row names",
+    "tests/test_migrate_cli.py::test_unknown_facts_print_unknown_never_the_previous_rungs_version": "in the file the row names"
    },
    "kills": [
+    {
+     "kind": "assertion",
+     "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
+     "node": "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback"
+    },
+    {
+     "kind": "assertion",
+     "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
+     "node": "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback"
+    },
     {
      "kind": "assertion",
      "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
@@ -1943,7 +1966,7 @@
     {
      "annotation": null,
      "mutant": "T5-2 (0044 §4f / 0018 §4a: the v16 step — era, inventories, I24, F2) :: INV-I24: restore (reactivate) inside the step",
-     "site": "src/veracium/store/migration.py::_apply_forward"
+     "site": "src/veracium/store/migration.py::_data_arity_inventory"
     }
    ],
    "bound": {
@@ -2208,7 +2231,7 @@
     {
      "annotation": null,
      "mutant": "0018 I14 (the mint race closes by the EXACT §4c sequence) :: I14: a fourth mint attempt (re-resolution after the third failure)",
-     "site": "src/veracium/store/release_migration.py::run_release_migration"
+     "site": "src/veracium/store/release_migration.py::run_release_rung"
     },
     {
      "annotation": null,
@@ -2233,7 +2256,7 @@
     {
      "annotation": null,
      "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
-     "site": "src/veracium/cli.py::_migrate"
+     "site": "src/veracium/cli.py::_migrate_package_escape"
     },
     {
      "annotation": null,
@@ -2263,7 +2286,7 @@
     "tests/test_0018_orchestrator.py::test_base_7_proceeds_through_the_audited_operation": "bound to I13, which this row stands for",
     "tests/test_0018_orchestrator.py::test_below_v7_open_unchanged": "bound to I13, which this row stands for",
     "tests/test_0018_orchestrator.py::test_delegated_routing_total": "bound to I21, which this row stands for",
-    "tests/test_0018_orchestrator.py::test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base": "bound to I13, which this row stands for",
+    "tests/test_0018_orchestrator.py::test_every_base_mints_its_own_rung_and_only_that_rung": "bound to I13, which this row stands for",
     "tests/test_0018_orchestrator.py::test_migration_result_truth_table": "bound to I15, which this row stands for",
     "tests/test_0018_orchestrator.py::test_mint_race_reclassifies": "bound to I14, which this row stands for",
     "tests/test_0018_orchestrator.py::test_new_outcomes_are_excluded_from_terminal_facts": "bound to I20, which this row stands for",
@@ -2271,9 +2294,19 @@
     "tests/test_0018_orchestrator.py::test_preflight_matrix_total": "bound to I13, which this row stands for",
     "tests/test_0018_orchestrator.py::test_readback_result_contract": "bound to I23, which this row stands for",
     "tests/test_0018_orchestrator.py::test_resolution_is_reason_labeling_only": "bound to I18, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_committed_error_is_counted_once_and_stops_the_walk": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_postcondition_failure_at_rung_two_leaves_rung_one_whole_and_a_repaired_build_resumes": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_pre_mint_escape_after_two_rungs_reuses_no_earlier_id": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_read_error_prints_its_state_as_a_state_and_the_version_as_unknown": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_v13_store_walks_three_rungs_with_three_ids_and_three_records": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_a_write_error_with_committed_facts_is_counted_once": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_an_unchanged_current_at_the_target_continues_and_is_not_counted": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_an_unstamped_v1_store_walks_every_rung": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_audit_read_error_exits_3_with_the_derived_state": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_audit_write_error_exits_3_with_its_carried_facts": "bound to I19, which this row stands for",
-    "tests/test_migrate_cli.py::test_below_v7_store_exits_1_with_the_ladder": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_invalid_backup_token_exit_2_with_the_grammar": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_migrate_verb_migrates_a_v7_store": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_migrate_verb_reports_a_current_store_as_a_no_op": "bound to I19, which this row stands for",
@@ -2281,8 +2314,11 @@
     "tests/test_migrate_cli.py::test_missing_flags_exit_2_with_usage": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_missing_store_exits_1_as_the_missing_refusal": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_newer_store_exits_1": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_one_attestation_object_is_admitted_at_every_call": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_package_escape_end_to_end_recorded_route": "bound to I19, which this row stands for",
-    "tests/test_migrate_cli.py::test_package_escape_routes_exit_3": "bound to I19, which this row stands for"
+    "tests/test_migrate_cli.py::test_package_escape_routes_exit_3": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_state_unknown_says_query_the_id_before_any_rerun": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_unknown_facts_print_unknown_never_the_previous_rungs_version": "bound to I19, which this row stands for"
    },
    "kills": [
     {
@@ -2314,6 +2350,16 @@
      "kind": "assertion",
      "mutant": "0018 I18 (the resolution evidence is reason-labeling only) :: I18: the evidence's fingerprint carried into the authority (authority-relevant)",
      "node": "tests/test_0018_orchestrator.py::test_resolution_is_reason_labeling_only"
+    },
+    {
+     "kind": "assertion",
+     "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
+     "node": "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback"
+    },
+    {
+     "kind": "assertion",
+     "mutant": "0018 I19 (the CLI contract: the five exit-3 package routes) :: I19: the recorded package route printed as unavailable",
+     "node": "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback"
     },
     {
      "kind": "assertion",
@@ -2771,7 +2817,7 @@
       "why": "the backfill rewrites the marker into a different digest (RR7's mutant, copy the live digest)"
      },
      "mutant": "R-A read, B4/B5: IO-II-3 at T4's states, and RR4 :: RR7: the backfill writes a fresh digest, not a redacted confirmation's marker",
-     "site": "src/veracium/store/migration.py::_apply_forward"
+     "site": "src/veracium/store/migration.py::_data_registry"
     }
    ],
    "bound": {
@@ -3180,12 +3226,12 @@
     {
      "annotation": null,
      "mutant": "T5-2 (0044 §4f / 0018 §4a: the v16 step — era, inventories, I24, F2) :: INV-A19: inventory by a clock (invalidated_at before the era)",
-     "site": "src/veracium/store/migration.py::_apply_forward"
+     "site": "src/veracium/store/migration.py::_data_arity_inventory"
     },
     {
      "annotation": null,
      "mutant": "T5-2 (0044 §4f / 0018 §4a: the v16 step — era, inventories, I24, F2) :: INV-A19: inventory every superseded retirement, whatever its relation",
-     "site": "src/veracium/store/migration.py::_apply_forward"
+     "site": "src/veracium/store/migration.py::_data_arity_inventory"
     },
     {
      "annotation": null,

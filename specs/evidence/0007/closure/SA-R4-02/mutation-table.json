@@ -1,5 +1,5 @@
 {
- "body_sha256": "aafd4643cc79c39342259539fa82c4cbc1daddbd46914d25c281343ad1cc5f7d",
+ "body_sha256": "be34e94f22913b82807beb4a307c364b126f2e330b78b673752d3f04bad93bcf",
  "controls": [
   {
    "anchor_counts": [
@@ -55,7 +55,7 @@
     "passed": 6
    }
   },
-  "commit": "bfe14549034cbf544ec6eb6848a140766a60a3ff",
+  "commit": "8d16497f40a3c39f1ea5e08ad201de4a2ccd1edd",
   "control_definitions": {
    "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
   },
@@ -90,16 +90,8 @@
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/a_matrix_mutants.py",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "specs/evidence/0013/a_matrix/mutation-table.json"
   ]
  },
  "rows": [
@@ -143,7 +135,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.98s",
+   "pytest": "5 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: a same-key current record the production validator rejects is replaced, never refused"

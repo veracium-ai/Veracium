@@ -129,95 +129,27 @@ def _valid_facts(outcome: str) -> rm.TerminalFacts:
 # I13 — the preflight matrix is TOTAL
 # ==========================================================================
 
-def _v6_literal_ladder(base: int) -> str:
-    """THE SUPERSEDED DIAGNOSTIC (0019 rider's literal head-8 sentences), kept as the MUTANT the
-    derived-diagnostic test must fail on: every base above 5 was reported as "v6"."""
-    if base <= 5:
-        return (f"store resolves to base v{base}, below this release's supported migration "
-                f"source (v{rm._MINT_BASE}): migrate to v6 on a ≤0.8.x release, then to v7 on a "
-                f"0.9.x/0019-era release, then run this release's migration")
-    return (f"store resolves to base v6, below this release's supported migration source "
-            f"(v{rm._MINT_BASE}): migrate to v7 on a 0019-era release first")
-
-
-def _ladder_problems(base: int, diag: str) -> list:
-    """What a correct ladder diagnostic for `base` must carry — the property, not the wording."""
-    p = []
-    named = re.findall(r"resolves to base v(\d+)", diag)
-    if named != [str(base)]:
-        p.append(f"names base {named}, resolved base is {base}")
-    if f"(v{rm._MINT_BASE})" not in diag:
-        p.append("does not name the mint base")
-    if f"{rm._MINT_BASE - base} intermediate migration(s)" not in diag:
-        p.append("does not state the number of intermediate migrations")
-    for v in range(base + 1, rm._MINT_BASE + 1):
-        if f"v{v} on " not in diag:
-            p.append(f"rung v{v} not named")
-    if "migrate_store(path)" not in diag:
-        p.append("does not name the library route")
-    return p
-
-
-@pytest.mark.parametrize("base", list(range(1, rm._MINT_BASE)))
-def test_every_unsupported_base_refuses_with_a_ladder_diagnostic_derived_from_that_base(base):
-    """Every base 1..HEAD-2 → `unsupported-base` (returned, never raised), NO authority, ZERO
-    audit rows, bytes+stamp unchanged — and the diagnostic names THAT base, the mint base, every
-    rung to it, and the library route (amended 2026-09-18: the rider's literal text said "v6"
-    for every base above 5 once the head passed 8, and sent operators to releases for head 8)."""
+@pytest.mark.parametrize("base", list(range(1, rm._HEAD)))
+def test_every_base_mints_its_own_rung_and_only_that_rung(base):
+    """0018 §4j.6.4a: every resolved base proceeds to minting `b → b+1`. `unsupported-base`, and the ladder diagnostic the
+    rider's literal sentences once carried, have no cell left at this head; the walk is `tests/test_0018_rungs_t3.py`'s."""
     p = _store_at(base)
-    before = _bytes(p)
     r = rm.run_release_migration(p, host_attestation=ATT)
-    assert r.outcome == "unsupported-base"
-    assert (r.store_changed, r.transaction_committed) == (False, False)
-    assert r.resulting_state == "source"
-    assert r.resulting_version == base
-    assert _ladder_problems(base, r.diagnostic) == [], r.diagnostic
-    assert _bytes(p) == before
-    assert _no_audit(p)
+    assert (r.outcome, r.store_changed, r.transaction_committed) == ("migrated", True, True)
+    assert (r.resulting_state, r.resulting_version) == ("destination", base + 1)
 
 
-def test_the_ladder_diagnostic_names_unwalkable_rungs_from_the_shipped_record_and_fails_closed():
-    """A rung the shipped record names no release for is NAMED as such (the record has gaps:
-    stamp-only bumps and releases probed without a schema version); with the record unreadable,
-    every rung reads as unnamed rather than being invented."""
-    heads = rm._release_heads()
-    assert heads and all(isinstance(v, int) for v in heads)
-    gaps = [v for v in range(2, rm._MINT_BASE + 1) if v not in heads]
-    d = rm._ladder_diagnostic(1)
-    for v in gaps:
-        assert f"v{v} on a release the shipped record does not name" in d
-    if gaps:
-        assert "cannot be planned from the record alone" in d
-    for v in (v for v in range(2, rm._MINT_BASE + 1) if v in heads):
-        assert f"v{v} on {heads[v][0]}" in d
-    import unittest.mock as m
-    with m.patch.object(rm.sv, "RELEASES", pathlib.Path("/nonexistent/legacy_stores.json")):
-        assert rm._release_heads() == {}
-        d0 = rm._ladder_diagnostic(rm._MINT_BASE - 1)
-        assert f"v{rm._MINT_BASE} on a release the shipped record does not name" in d0 and "resolves to base v" + str(rm._MINT_BASE - 1) in d0
-
-
-@pytest.mark.parametrize("base", list(range(1, rm._MINT_BASE)))
-def test_the_superseded_literal_ladder_fails_the_derived_property_on_every_base(base):
-    """The mutant: the rider's literal sentences fail the property on EVERY base — above 5 they
-    name the wrong base; at every base they name no rung to the mint base and no library route."""
-    problems = _ladder_problems(base, _v6_literal_ladder(base))
-    assert problems, f"the literal ladder passed at base {base}"
-    if base > 6:
-        assert any("names base ['6']" in x for x in problems)
-
-
-def test_unstamped_legacy_v1_resolves_without_stamping_and_takes_the_ladder():
-    """§4h: a legitimate unstamped store whose shape matches a
-    `legacy_base_versions()` entry resolves to that base WITHOUT being
-    stamped — and then takes the base-1 ladder cell."""
+def test_unstamped_legacy_v1_resolves_without_stamping_and_takes_the_first_rung():
+    """§4h: a legitimate unstamped store whose shape matches a `legacy_base_versions()` entry resolves to that base, the
+    preflight stamping nothing, and takes the first rung (0018 §4j.6.4e-ii row 2): the stamp written is the rung's."""
     p = _unstamped_v1()
     before = _bytes(p)
+    assert rm._preflight_classify(p)[0] == "mint"
+    assert _bytes(p) == before                      # the preflight never stamps
     r = rm.run_release_migration(p, host_attestation=ATT)
-    assert (r.outcome, r.resulting_version) == ("unsupported-base", 1)
-    assert _bytes(p) == before                      # never stamped
+    assert (r.outcome, r.resulting_version) == ("migrated", 2)
     assert sqlite3.connect(p).execute(
-        "PRAGMA user_version").fetchone()[0] == 0
+        "PRAGMA user_version").fetchone()[0] == 2
 
 
 def test_below_v7_open_unchanged():
@@ -440,9 +372,9 @@ def test_mint_race_reclassifies(monkeypatch):
 
     real_classify = rm._preflight_classify
 
-    def counting_classify(path):
+    def counting_classify(path, seen=None):
         calls.append("resolve")
-        return real_classify(path)
+        return real_classify(path, seen)
 
     def failing_mint(path, attestation, *, resolved):
         calls.append("mint")
@@ -518,10 +450,12 @@ def test_mint_source_unaccepted_when_observation_matches_but_shape_rejected(
 
 def test_migration_result_truth_table():
     MR = rm.MigrationResult
-    # every preflight row, all FIFTEEN (unsupported-base parametrized 1–6)
-    for base in range(1, 7):
-        MR("unsupported-base", False, False, "source", base, "d")
+    # every preflight row; `unsupported-base` has none at this head (0018 §4j.6.4a), so every base refuses below
+    for base in range(1, HEAD):
+        with pytest.raises(ValueError):
+            MR("unsupported-base", False, False, "source", base, "d")
     MR("current", False, False, "destination", HEAD, "d")   # clean
+    MR("current", False, False, "destination", MINT_BASE, "d")   # a DELEGATED current carries its record's t (§4j.6.4e-i)
     MR("current", True, True, "destination", HEAD, "d")     # with repair
     MR("migration-source-missing", False, False, "missing", None, "d")
     MR("migration-source-missing", False, False, "unaccepted", None, "d")
@@ -546,7 +480,7 @@ def test_migration_result_truth_table():
         ("unsupported-base", False, False, "source", MINT_BASE, "d"),  # the mint base is never
         ("unsupported-base", False, False, "source", None, "d"),
         ("unsupported-base", True, True, "source", 3, "d"),
-        ("current", False, False, "destination", MINT_BASE, "d"),  # wrong ver
+        ("current", False, False, "destination", 1, "d"),  # no rung lands on v1
         ("mint-contention", None, None, "unknown", None, "d"),
         ("migration-audit-unavailable", None, None, "unknown", None, "d"),
         ("migrated", False, False, "destination", HEAD, "d"),    # no-change
@@ -949,7 +883,7 @@ def test_package_escape_propagates_on_both_routes(monkeypatch):
     # pre-mint: the escape fires during the preflight
     p = _store_at(MINT_BASE)
 
-    def boom(path):
+    def boom(path, seen=None):
         raise PackageConsistencyError("pre-mint break")
     monkeypatch.setattr(rm, "_preflight_classify", boom)
     with pytest.raises(PackageConsistencyError) as ei:
@@ -960,9 +894,9 @@ def test_package_escape_propagates_on_both_routes(monkeypatch):
     # post-mint: the kernel escapes after the authority was minted
     import veracium.store.migration as mig
 
-    def kernel_boom(path, **kw):
+    def kernel_boom(*a, **kw):
         raise PackageConsistencyError("post-mint break")
-    monkeypatch.setattr(mig, "migrate_store", kernel_boom)
+    monkeypatch.setattr(rm, "_run_rung", kernel_boom)
     with pytest.raises(PackageConsistencyError) as ei:
         rm.run_release_migration(p, host_attestation=ATT)
     e = ei.value
@@ -974,7 +908,7 @@ def test_package_escape_propagates_on_both_routes(monkeypatch):
     # post-mint with the terminal write failing → unavailable (readback:
     # missing); the escape STILL propagates unchanged
     p = _store_at(MINT_BASE)
-    monkeypatch.setattr(mig, "migrate_store", kernel_boom)
+    monkeypatch.setattr(rm, "_run_rung", kernel_boom)
     monkeypatch.setattr(rm, "_write_terminal",
                         lambda *a, **k: (_ for _ in ()).throw(OSError("disk")))
     with pytest.raises(PackageConsistencyError) as ei:
@@ -985,7 +919,7 @@ def test_package_escape_propagates_on_both_routes(monkeypatch):
 
     # post-mint with a bound record carrying ANOTHER outcome → mismatched
     p = _store_at(MINT_BASE)
-    monkeypatch.setattr(mig, "migrate_store", kernel_boom)
+    monkeypatch.setattr(rm, "_run_rung", kernel_boom)
     monkeypatch.setattr(
         rm, "read_terminal",
         lambda op, *, audit_path: rm.ReadbackResult(

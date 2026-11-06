@@ -1680,61 +1680,55 @@ _ORACLE_RETURNABLE = {
 }
 
 
-def _result_oracle(outcome, ch, co, state, ver):
-    """Independent §4e legality: the preflight fixed rows for the two new
-    members, the fixed no-record rows for the two audit outcomes, and the
-    DEFERENCE law (flat 0013 terminal-facts legality at 7 → 8, reusing gate
-    1's independently-written `_ORACLE_OUTCOME_STATES`) for everything else."""
-    if outcome not in _ORACLE_RETURNABLE:
-        return False
-    if not (ver is None or type(ver) is int):    # bools are not versions
-        return False
-    if outcome == "unsupported-base":
-        # The §4e law, not a snapshot of it: a base is unsupported when it
-        # is at least two releases behind head, since the preflight passes
-        # ONLY head-1 to minting. The literal set (1..6) was written when
-        # head was 8 and silently became wrong at head 11 — the exhaustive
-        # enumeration caught the one cell that moved (base 9), which is
-        # what this gate is for. Stated from `sv.SCHEMA_VERSION` so it
-        # follows head; deliberately NOT imported from the production
-        # constant, which would make the oracle a mirror instead of a
-        # second opinion.
-        return (ch is False and co is False and state == "source"
-                and isinstance(ver, int) and 1 <= ver <= _RM_FROM - 1)
-    if outcome in ("mint-contention", "migration-audit-unavailable",
-                   "migration-audit-state-unknown"):
-        return (ch, co, state, ver) == (False, False, "unknown", None)
-    if state not in _STATES:
-        return False
+def _lawful_at(outcome, ch, co, state, ver, frm, to):
+    """Flat 0013 terminal-facts legality at one rung `frm → to`."""
     if ch != co:
         return False
     if ch is None:
         if not (state == "unknown" and ver is None):
             return False
     elif ch is True:
-        if not (state == "destination" and ver == _RM_TO):
+        if not (state == "destination" and ver == to):
             return False
     else:
         if state == "destination":
-            if ver != _RM_TO:
+            if ver != to:
                 return False
         elif state == "source":
-            if ver != _RM_FROM:
+            if ver != frm:
                 return False
         else:
             if ver is not None:
                 return False
     if outcome == "migrated" and not (ch is True and co is True):
         return False
-    if state not in _ORACLE_OUTCOME_STATES.get(outcome, {"unknown"}):
+    return state in _ORACLE_OUTCOME_STATES.get(outcome, {"unknown"})
+
+
+def _result_oracle(outcome, ch, co, state, ver):
+    """Independent §4e legality, widened for the adjacent rungs (0018 §4j.6.4e-iii, I15′): the fixed rows for the two audit
+    outcomes, and the DEFERENCE law for everything else at SOME rung `(b, b+1)`, reusing gate 1's independently-written
+    `_ORACLE_OUTCOME_STATES`. Stated from the registry and deliberately not imported from production, which would make the
+    oracle a mirror instead of a second opinion. `unsupported-base` is the bases below the first migratable one: every
+    version has accepted evidence and a kernel step at this head, so it has no lawful row."""
+    if outcome not in _ORACLE_RETURNABLE:
         return False
-    return True
+    if not (ver is None or type(ver) is int):    # bools are not versions
+        return False
+    if outcome == "unsupported-base":
+        return False
+    if outcome in ("mint-contention", "migration-audit-unavailable",
+                   "migration-audit-state-unknown"):
+        return (ch, co, state, ver) == (False, False, "unknown", None)
+    if state not in _STATES:
+        return False
+    return any(_lawful_at(outcome, ch, co, state, ver, b, b + 1) for b in range(1, _RM_TO))
 
 
 def test_migration_result_matches_the_independent_oracle():
     """Every cell of the whole small domain: the validating constructor's
     verdict must equal the independent oracle's. This pins the entire §4e
-    table, incl. all six `unsupported-base` rows, both `current` rows, both
+    table, incl. `unsupported-base` having no lawful row at this head, both `current` rows, both
     `migration-source-missing` forms, the four no-record rows, the tri-state
     delegated cells, and every rejection (`package-inconsistent`, made-up
     outcomes, wrong versions, bool-typed versions)."""
@@ -1799,9 +1793,9 @@ def _v7_store():
     import veracium.store.release_migration as _rm
     p = tempfile.mktemp(suffix=".db")
     c = sqlite3.connect(p)
-    for o in sv.SCHEMAS[_rm._MINT_BASE]:
+    for o in sv.SCHEMAS[(_rm._HEAD - 1)]:
         c.execute(o.ddl)
-    c.execute(f"PRAGMA user_version = {_rm._MINT_BASE}")
+    c.execute(f"PRAGMA user_version = {(_rm._HEAD - 1)}")
     c.commit()
     c.close()
     return p
@@ -1905,29 +1899,24 @@ _0018_INJECTIONS = [
      _expect_outcome("internal-error")),
     # --- the delegated kernel boundary ------------------------------------
     ("kernel-DatabaseError",
-     lambda: _swap(__import__("veracium.store.migration",
-                              fromlist=["migrate_store"]), "migrate_store",
+     lambda: _swap(rm, "_run_rung",
                    _rm_raiser(sqlite3.DatabaseError("kernel failure"))),
      _expect_outcome("migration-failed")),
     ("kernel-raw-defect",
-     lambda: _swap(__import__("veracium.store.migration",
-                              fromlist=["migrate_store"]), "migrate_store",
+     lambda: _swap(rm, "_run_rung",
                    _rm_raiser(AssertionError("library bug"))),
      _expect_outcome("internal-error")),
     ("kernel-package-escape",
-     lambda: _swap(__import__("veracium.store.migration",
-                              fromlist=["migrate_store"]), "migrate_store",
+     lambda: _swap(rm, "_run_rung",
                    _rm_raiser(sv.PackageConsistencyError("kernel break"))),
      _expect_package_escape),
     ("kernel-returns-a-bare-string",
-     lambda: _swap(__import__("veracium.store.migration",
-                              fromlist=["migrate_store"]), "migrate_store",
-                   lambda path, **kw: "migrated"),
+     lambda: _swap(rm, "_run_rung",
+                   lambda *a, **kw: "migrated"),
      _expect_outcome("internal-error")),
     ("kernel-returns-a-spoofed-subclass",
-     lambda: _swap(__import__("veracium.store.migration",
-                              fromlist=["migrate_store"]), "migrate_store",
-                   lambda path, **kw: _SpoofOpen(
+     lambda: _swap(rm, "_run_rung",
+                   lambda *a, **kw: _SpoofOpen(
                        "current", store_changed=True,
                        transaction_committed=True, resulting_version=8)),
      _expect_outcome("internal-error")),

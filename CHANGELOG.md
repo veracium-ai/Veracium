@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Changed: `veracium migrate` now upgrades a store written by any earlier release, one schema version at a time, each
+  step its own audited operation** (specs/0018 §4j). If a walk stops part-way, its last lines say why and whether running
+  `migrate` again is safe; where they say so, running it with this release or a newer one resumes the walk, and otherwise
+  they say what to inspect first. A part-walked store is usable only by migrating it with this release or a newer one, or
+  by restoring the backup you took before the walk. The flags and exit classes are unchanged. `migrate_store(path)` stays
+  the one-transaction route, and the open refusal and `veracium doctor` now name `veracium migrate` for every base.
+  **Limits:** the attestation is the host's assertion, unchanged, and a same-version, same-shape swap of the store is not
+  seen; a walk does `n` transactions where the library call does one; each rung's clock value is its own.
+
 ## 0.30.0 — 2026-11-06
 
 **A host on `SqliteStore` can now revoke a source it no longer trusts, and maintenance can no longer raise a fact's confidence.** The

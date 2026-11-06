@@ -6,7 +6,7 @@
   {
    "module": "veracium.store.migration",
    "function": "_apply_forward",
-   "line": 793,
+   "line": 840,
    "kind": "other",
    "via": "veracium.store.migration:_apply_forward"
   }

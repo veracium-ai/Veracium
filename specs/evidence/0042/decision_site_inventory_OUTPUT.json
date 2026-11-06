@@ -829,7 +829,7 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 582,
+   "line": 669,
    "module": "cli.py",
    "qualname": "<module>"
   },
@@ -4279,81 +4279,94 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 404,
+   "line": 407,
    "module": "store/migration.py",
    "qualname": "_check_v6_alter"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 421,
+   "line": 424,
    "module": "store/migration.py",
    "qualname": "_check_v8_alter"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 439,
+   "line": 442,
    "module": "store/migration.py",
    "qualname": "_check_v10_alter"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 495,
+   "line": 498,
    "module": "store/migration.py",
    "qualname": "_check_v16_conf_alter"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 562,
+   "line": 565,
    "module": "store/migration.py",
    "qualname": "_check_v16_red_alter"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 701,
+   "line": 704,
    "module": "store/migration.py",
    "qualname": "_alters"
   },
   {
+   "kind": "FILTER_RETURN",
+   "line": 825,
+   "module": "store/migration.py",
+   "qualname": "preimage_fields"
+  },
+  {
    "bare": false,
    "kind": "RAISE",
-   "line": 801,
+   "line": 826,
+   "module": "store/migration.py",
+   "qualname": "preimage_fields"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 848,
    "module": "store/migration.py",
    "qualname": "_apply_forward"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 822,
+   "line": 869,
    "module": "store/migration.py",
    "qualname": "_apply_forward"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 824,
+   "line": 871,
    "module": "store/migration.py",
    "qualname": "_apply_forward"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 919,
+   "line": 966,
    "module": "store/migration.py",
    "qualname": "_same_instant"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 921,
+   "line": 968,
    "module": "store/migration.py",
    "qualname": "_same_instant"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1079,
+   "line": 1126,
    "module": "store/migration.py",
    "qualname": "migrate_store"
   },
@@ -4373,208 +4386,208 @@
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 151,
+   "line": 150,
    "module": "store/release_migration.py",
    "qualname": "backup_token_ok"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 175,
+   "line": 174,
    "module": "store/release_migration.py",
    "qualname": "_path_encoding_problem"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 182,
+   "line": 181,
    "module": "store/release_migration.py",
    "qualname": "_usable_store_path"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 309,
+   "line": 308,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditWriteError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 313,
+   "line": 312,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditWriteError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 317,
+   "line": 316,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditWriteError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 320,
+   "line": 319,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditWriteError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 322,
+   "line": 321,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditWriteError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 356,
+   "line": 355,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditReadError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 358,
+   "line": 357,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditReadError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 361,
+   "line": 360,
    "module": "store/release_migration.py",
    "qualname": "MigrationAuditReadError.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 419,
+   "line": 418,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 422,
+   "line": 421,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 425,
+   "line": 424,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 428,
+   "line": 427,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 431,
+   "line": 430,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 435,
+   "line": 434,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 439,
+   "line": 438,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 442,
+   "line": 441,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 445,
+   "line": 444,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 448,
+   "line": 447,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 450,
+   "line": 449,
    "module": "store/release_migration.py",
    "qualname": "ReadbackResult.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 475,
+   "line": 474,
    "module": "store/release_migration.py",
    "qualname": "_load_audit"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 494,
+   "line": 493,
    "module": "store/release_migration.py",
    "qualname": "_write_attempted"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 518,
+   "line": 517,
    "module": "store/release_migration.py",
    "qualname": "_write_terminal"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 521,
+   "line": 520,
    "module": "store/release_migration.py",
    "qualname": "_write_terminal"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 524,
+   "line": 523,
    "module": "store/release_migration.py",
    "qualname": "_write_terminal"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 528,
+   "line": 527,
    "module": "store/release_migration.py",
    "qualname": "_write_terminal"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 615,
+   "line": 614,
    "module": "store/release_migration.py",
    "qualname": "MigrationAttestation.__new__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 706,
+   "line": 705,
    "module": "store/release_migration.py",
    "qualname": "PreflightResolution.__new__"
   },
@@ -4621,18 +4634,10 @@
    "qualname": "_observe"
   },
   {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 892,
+   "kind": "RETURN_NONE",
+   "line": 888,
    "module": "store/release_migration.py",
-   "qualname": "mint_release_authority"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 894,
-   "module": "store/release_migration.py",
-   "qualname": "mint_release_authority"
+   "qualname": "_mintable_base"
   },
   {
    "bare": false,
@@ -4651,114 +4656,197 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 905,
+   "line": 908,
    "module": "store/release_migration.py",
    "qualname": "mint_release_authority"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 912,
+   "line": 910,
    "module": "store/release_migration.py",
    "qualname": "mint_release_authority"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 935,
+   "line": 913,
    "module": "store/release_migration.py",
    "qualname": "mint_release_authority"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 940,
+   "line": 920,
    "module": "store/release_migration.py",
    "qualname": "mint_release_authority"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1105,
+   "line": 942,
+   "module": "store/release_migration.py",
+   "qualname": "mint_release_authority"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 947,
+   "module": "store/release_migration.py",
+   "qualname": "mint_release_authority"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1073,
    "module": "store/release_migration.py",
    "qualname": "_make_sink.sink"
   },
   {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1111,
+   "module": "store/release_migration.py",
+   "qualname": "_open_rung"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1114,
+   "module": "store/release_migration.py",
+   "qualname": "_open_rung"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1129,
+   "module": "store/release_migration.py",
+   "qualname": "_run_rung.older"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1136,
+   "module": "store/release_migration.py",
+   "qualname": "_run_rung.new"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1146,
+   "module": "store/release_migration.py",
+   "qualname": "_run_rung"
+  },
+  {
    "bare": true,
    "kind": "RAISE",
-   "line": 1163,
+   "line": 1204,
    "module": "store/release_migration.py",
    "qualname": "_kernel_call"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1232,
+   "line": 1273,
    "module": "store/release_migration.py",
    "qualname": "_route_delegated"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1235,
+   "line": 1276,
    "module": "store/release_migration.py",
    "qualname": "_route_delegated"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1246,
+   "line": 1287,
    "module": "store/release_migration.py",
    "qualname": "_route_delegated"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1253,
+   "line": 1294,
    "module": "store/release_migration.py",
    "qualname": "_route_delegated"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1254,
+   "line": 1295,
    "module": "store/release_migration.py",
    "qualname": "_route_delegated"
   },
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 1265,
+   "line": 1308,
    "module": "store/release_migration.py",
    "qualname": "_delegate"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1270,
+   "line": 1315,
    "module": "store/release_migration.py",
    "qualname": "_delegate"
   },
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 1338,
+   "line": 1320,
    "module": "store/release_migration.py",
-   "qualname": "run_release_migration"
+   "qualname": "_delegate"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1422,
+   "module": "store/release_migration.py",
+   "qualname": "RungReport.__new__"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1467,
+   "module": "store/release_migration.py",
+   "qualname": "_record_row"
+  },
+  {
+   "kind": "BOOL_RETURN",
+   "line": 1472,
+   "module": "store/release_migration.py",
+   "qualname": "_readback_is_bound"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1515,
+   "module": "store/release_migration.py",
+   "qualname": "classify_recovery"
   },
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 1340,
+   "line": 1566,
    "module": "store/release_migration.py",
-   "qualname": "run_release_migration"
+   "qualname": "run_release_rung"
   },
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 1373,
+   "line": 1568,
    "module": "store/release_migration.py",
-   "qualname": "run_release_migration"
+   "qualname": "run_release_rung"
+  },
+  {
+   "bare": true,
+   "kind": "RAISE",
+   "line": 1602,
+   "module": "store/release_migration.py",
+   "qualname": "run_release_rung"
   },
   {
    "kind": "BOOL_RETURN",
@@ -5128,317 +5216,324 @@
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 857,
+   "line": 858,
    "module": "store/schema_version.py",
    "qualname": "rebuildable_keys"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 952,
+   "line": 953,
    "module": "store/schema_version.py",
    "qualname": "identity"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 971,
+   "line": 972,
    "module": "store/schema_version.py",
    "qualname": "drift"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1058,
+   "line": 1059,
    "module": "store/schema_version.py",
    "qualname": "_probe_build"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1153,
+   "line": 1154,
    "module": "store/schema_version.py",
    "qualname": "manifestation_problems"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1194,
+   "line": 1195,
    "module": "store/schema_version.py",
    "qualname": "canonical_machine"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1211,
+   "line": 1212,
    "module": "store/schema_version.py",
    "qualname": "canonical_libc"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1228,
+   "line": 1229,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1232,
+   "line": 1233,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1239,
+   "line": 1240,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1243,
+   "line": 1244,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1255,
+   "line": 1256,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1259,
+   "line": 1260,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1261,
+   "line": 1262,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1263,
+   "line": 1264,
    "module": "store/schema_version.py",
    "qualname": "_pt_interp"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1309,
+   "line": 1310,
    "module": "store/schema_version.py",
    "qualname": "attestation_key"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1312,
+   "line": 1313,
    "module": "store/schema_version.py",
    "qualname": "attestation_key"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1314,
+   "line": 1315,
    "module": "store/schema_version.py",
    "qualname": "attestation_key"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1329,
+   "line": 1330,
    "module": "store/schema_version.py",
    "qualname": "_accepted_constructor_entry"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1332,
+   "line": 1333,
    "module": "store/schema_version.py",
    "qualname": "_accepted_constructor_entry"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1365,
+   "line": 1366,
    "module": "store/schema_version.py",
    "qualname": "verify_reproduction"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1369,
+   "line": 1370,
    "module": "store/schema_version.py",
    "qualname": "verify_reproduction"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1381,
+   "line": 1382,
    "module": "store/schema_version.py",
    "qualname": "verify_build"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1386,
+   "line": 1387,
    "module": "store/schema_version.py",
    "qualname": "verify_build"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1390,
+   "line": 1391,
    "module": "store/schema_version.py",
    "qualname": "verify_build"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1412,
+   "line": 1413,
    "module": "store/schema_version.py",
    "qualname": "attestations"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1415,
+   "line": 1416,
    "module": "store/schema_version.py",
    "qualname": "attestations"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1443,
+   "line": 1444,
    "module": "store/schema_version.py",
    "qualname": "record_commit"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 1548,
+   "line": 1549,
    "module": "store/schema_version.py",
    "qualname": "attested_key"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 1552,
+   "line": 1553,
    "module": "store/schema_version.py",
    "qualname": "attested_key"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 1554,
-   "module": "store/schema_version.py",
-   "qualname": "attested_key"
-  },
-  {
-   "kind": "BOOL_RETURN",
    "line": 1555,
    "module": "store/schema_version.py",
    "qualname": "attested_key"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1611,
+   "line": 1556,
+   "module": "store/schema_version.py",
+   "qualname": "attested_key"
+  },
+  {
+   "kind": "BOOL_RETURN",
+   "line": 1612,
    "module": "store/schema_version.py",
    "qualname": "runtime_refused"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1724,
+   "line": 1725,
    "module": "store/schema_version.py",
    "qualname": "accepted_digests"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1734,
+   "line": 1735,
    "module": "store/schema_version.py",
    "qualname": "accepted_provenance"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1823,
+   "line": 1824,
    "module": "store/schema_version.py",
    "qualname": "_event"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1904,
+   "line": 1905,
    "module": "store/schema_version.py",
    "qualname": "_validated_current"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1911,
+   "line": 1912,
    "module": "store/schema_version.py",
    "qualname": "_validated_current"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1919,
+   "line": 1920,
    "module": "store/schema_version.py",
    "qualname": "_validated_current"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 1923,
+   "line": 1924,
    "module": "store/schema_version.py",
    "qualname": "_validated_current"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1986,
+   "line": 1987,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1988,
+   "line": 1989,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1990,
+   "line": 1991,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1997,
+   "line": 1993,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2004,
+   "line": 2000,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2017,
+   "line": 2007,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2030,
+   "line": 2020,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2034,
+   "line": 2033,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2062,
+   "line": 2037,
+   "module": "store/schema_version.py",
+   "qualname": "open_versioned"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2064,
    "module": "store/schema_version.py",
    "qualname": "open_versioned"
   },
@@ -7057,11 +7152,11 @@
  ],
  "summary": {
   "by_kind": {
-   "BOOL_RETURN": 99,
-   "FILTER_RETURN": 62,
-   "RAISE": 682,
+   "BOOL_RETURN": 100,
+   "FILTER_RETURN": 63,
+   "RAISE": 693,
    "RETURN_FALSE": 110,
-   "RETURN_NONE": 109
+   "RETURN_NONE": 110
   },
   "kinds": [
    "RAISE",
@@ -7411,8 +7506,8 @@
    },
    "store/migration.py": {
     "BOOL_RETURN": 1,
-    "FILTER_RETURN": 4,
-    "RAISE": 17,
+    "FILTER_RETURN": 5,
+    "RAISE": 18,
     "RETURN_FALSE": 1,
     "RETURN_NONE": 1
    },
@@ -7424,11 +7519,11 @@
     "RETURN_NONE": 0
    },
    "store/release_migration.py": {
-    "BOOL_RETURN": 2,
+    "BOOL_RETURN": 3,
     "FILTER_RETURN": 0,
-    "RAISE": 53,
+    "RAISE": 62,
     "RETURN_FALSE": 0,
-    "RETURN_NONE": 1
+    "RETURN_NONE": 2
    },
    "store/revocation.py": {
     "BOOL_RETURN": 2,
@@ -7447,7 +7542,7 @@
    "store/schema_version.py": {
     "BOOL_RETURN": 2,
     "FILTER_RETURN": 6,
-    "RAISE": 30,
+    "RAISE": 31,
     "RETURN_FALSE": 4,
     "RETURN_NONE": 15
    },
@@ -7466,7 +7561,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1062,
+  "total": 1076,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

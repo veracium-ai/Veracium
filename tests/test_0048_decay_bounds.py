@@ -795,11 +795,11 @@ SRC_NONLITERAL = {
     ('veracium/store/edge_events.py:append_event', '3e25ffaa62d0012a435668ae6fb4c8bfa6b2122a6b3a1a824e1c1b850d45b70f'):
         (1, 'EVENT_INSERT_SQL', '00f9eeb97905ba10'),
     ('veracium/store/migration.py:_apply_forward', '7796f4f66361ff1cc7cafc731c207bb2ee15b9f7e1f47d8e4c79e9b8fb939d67'):
-        (1, "f'PRAGMA user_version = {entry.step}'", '9cc4e130603c2d2d'),
+        (1, "f'PRAGMA user_version = {entry.step}'", 'bbda67fc10f5ecab'),
     ('veracium/store/migration.py:_apply_forward', '827d5abbca003d06e59d3546e7bf9189eb9b743f863a72df04b49929409ab8f7'):
-        (1, 'entry.step', '9cc4e130603c2d2d'),
+        (1, 'entry.step', 'bbda67fc10f5ecab'),
     ('veracium/store/migration.py:_apply_forward', 'dc29d9ccfdb98bf9b34a25a44b096e4978cb32a6fb0a53246857c755bdd6f288'):
-        (1, 'entry.step.ddl', '9cc4e130603c2d2d'),
+        (1, 'entry.step.ddl', 'bbda67fc10f5ecab'),
     ('veracium/store/migration.py:_data_arity_inventory', '52ae70d7758a2043598287bcf7e3c91641da51f67278f73fa05155c369ddc28c'):
         (1, "f'SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id'", '3d63e4f075e13aea'),
     ('veracium/store/migration.py:_read_conf_after', '3f01b166ad2f4380f59e89aecde8502431db2a9604f8b46a5017aad3f9c4b070'):
@@ -835,7 +835,7 @@ SRC_NONLITERAL = {
     ('veracium/store/schema_version.py:manifest', 'e570e7c925fadb4580eb2e4ebaf2fe8b625768b9db63f9944145c77fef3f90b8'):
         (1, '_OBJECTS', '605a66d54de65139'),
     ('veracium/store/schema_version.py:open_versioned', 'bb4024dac0c6ee3c63c8899509bbacab1a9dc1dfc5c4b5d4f8f9caa0f999ebf9'):
-        (2, "f'PRAGMA user_version = {target}'", 'db0ec311ed5a1b74'),
+        (2, "f'PRAGMA user_version = {target}'", '97fe282024360f8a'),
     ('veracium/store/schema_version.py:verify_reproduction', 'f1faaebed47e985137dd526dd1df36ee06707c126d20e91259e9583d40926338'):
         (1, 'd', '9b13912394de2129'),
 }
@@ -859,7 +859,7 @@ DB_ADMITTED = {"DataError", "DatabaseError", "Error", "IntegrityError", "Interfa
 # the one same-named non-database read in src/: (module, containing function, receiver, attribute) -> that function's
 # whole digest. Round 6: a receiver's spelling proves nothing (`import shutil as args`), so the function is reviewed
 # and frozen, and the attribute may be read or passed but is never the function of a call
-DB_NAME_EXCEPTIONS = {("veracium/cli.py", "_migrate", "args", "backup"): "8b3470b8875f2ab808c23b3ac96052a49fd666276272cd6d0e1fc8ef15fe395a"}
+DB_NAME_EXCEPTIONS = {("veracium/cli.py", "_migrate", "args", "backup"): "a3449f0b50faa60c99970f93f188694ccbcde1ed853dcaa6d38992dff087b2a4"}
 # round 5 (W2): callable accessors reach an attribute with no attribute node. src/ uses none, so all refuse, by
 # attribute, by name and by import
 ACCESSORS = {"attrgetter", "methodcaller", "getattr_static"}
@@ -889,7 +889,7 @@ SRC_IMPORTS = {
     "mcp.server.fastmcp": {"FastMCP"},
     "mcp.server.mcpserver": {"MCPServer"},
     "msvcrt": {"LK_NBLCK", "LK_UNLCK", "locking"},
-    "os": {"O_CREAT", "O_RDWR", "close", "environ", "fsencode", "fstat", "fsync", "getpid", "lseek", "name", "open",
+    "os": {"O_CREAT", "O_RDWR", "close", "environ", "fsencode", "fstat", "fsync", "getpid", "lseek", "lstat", "name", "open",
         "path", "replace", "write"},
     "os.path": {"basename", "exists", "isabs", "join", "realpath"},
     "pathlib": {"Path"},
@@ -910,7 +910,8 @@ SRC_IMPORTS = {
     "types": {"MappingProxyType"},
     "typing": {"Any", "Callable", "Literal", "Mapping", "NamedTuple", "Optional", "Protocol", "TYPE_CHECKING",
         "get_args", "runtime_checkable"},
-    "urllib": {"request"},
+    "urllib": {"parse", "request"},
+    "urllib.parse": {"quote_from_bytes"},
     "urllib.request": {"Request", "urlopen"},
     "uuid": {"UUID", "uuid4"},
     "warnings": {"warn"},
@@ -1933,7 +1934,7 @@ _MIGRATION = "veracium/store/migration.py"
 
 # `_alters` and `plan` make every entry the table does not spell out: each frozen whole, function digest
 LADDER_FUNCTIONS = {"_alters": "307f6485a18cbd6e7dad340f3216ed896a6e1a34933e52dac31e11e69606dc99",
-                    "plan": "7c67d35d140fb5eaf7ad01dae8cedc517680a514466be3ac9cbfcdac19e1c924"}
+                    "plan": "82fc1b7502c2bc7567410d9fba5ec8bc3760436ec58c5abf9959e33395438f18"}
 TABLE_KINDS = {"read", "data", "check"}
 
 
@@ -1941,8 +1942,9 @@ def _ladder_problems(rel, t, par):
     """Research's B4, written once with 0018's table, closed over the grammar (its read of cad9e795). `conn.execute(entry.step)`
     reads a table entry, so no binding reaches a statement in it, and the statements are read where they stand:
     - an `ALTERS_*` name is bound once, by a plain assignment at module level, to a tuple of literal `ADD COLUMN` statements;
-    - each element of `FORWARD_ENTRIES` is `*_alters(lo, v, ALTERS_*)` or a four-positional `ForwardEntry` of a table kind
-      naming a function; a `ForwardEntry` made anywhere else is made in `_alters` or `plan`, each frozen whole."""
+    - each element of `FORWARD_ENTRIES` is `*_alters(lo, v, ALTERS_*)` or a five-positional `ForwardEntry` of a table kind
+      naming a function, its fifth a tuple of names and literal strings (0013 §5g.1's `fields`, data the step reads and no
+      code it runs); a `ForwardEntry` made anywhere else is made in `_alters` or `plan`, each frozen whole."""
     bad = []
     at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
     alters = lambda n: isinstance(n, ast.Name) and n.id.startswith("ALTERS_")
@@ -1973,8 +1975,10 @@ def _ladder_problems(rel, t, par):
                 if not (len(e.value.args) == 3 and not e.value.keywords and alters(e.value.args[2])):
                     bad.append(f"{at(e)}: `_alters` of something other than a frozen `ALTERS_*` tuple")
                 continue
-            ok = (isinstance(e, ast.Call) and getattr(e.func, "id", None) == "ForwardEntry" and len(e.args) == 4 and not e.keywords
-                  and isinstance(e.args[2], ast.Constant) and e.args[2].value in TABLE_KINDS and isinstance(e.args[3], ast.Name))
+            ok = (isinstance(e, ast.Call) and getattr(e.func, "id", None) == "ForwardEntry" and len(e.args) == 5 and not e.keywords
+                  and isinstance(e.args[2], ast.Constant) and e.args[2].value in TABLE_KINDS and isinstance(e.args[3], ast.Name)
+                  and isinstance(e.args[4], ast.Tuple)
+                  and all(isinstance(x, ast.Name) or (isinstance(x, ast.Constant) and isinstance(x.value, str)) for x in e.args[4].elts))
             if ok:
                 listed.add(id(e))
             else:
@@ -3078,26 +3082,31 @@ def test_a_ladder_table_statement_is_refused_statically(line):
     assert any(_NOT_ADD in b for b in bad), bad
 
 
-_ROW = "    ForwardEntry(0, 3, \"read\", _read_episodes_before),\n"
+_ROW = "    ForwardEntry(0, 3, \"read\", _read_episodes_before, (_check_chains,)),\n"
 _ELEMENT = "a table element that is neither"
 _U = '"UPDATE edges SET json=json"'
 
 
 @pytest.mark.parametrize("old, new, why", [
     ("*_alters(2, 16, ALTERS_V15_TO_V16),", f"*_alters(2, 16, ({_U},)),", "`_alters` of something other than"),
-    ("*_alters(2, 16, ALTERS_V15_TO_V16),", f'ForwardEntry(2, 16, "alter", {_U}),', _ELEMENT),
-    (_ROW, _ROW + f'    ForwardEntry(lo=0, v=3, kind="read", step=_read_episodes_before),\n', _ELEMENT),
-    (_ROW, _ROW + f'    ForwardEntry(0, 3, "add", _read_episodes_before),\n', _ELEMENT),
-    (_ROW, _ROW + f'    ForwardEntry(0, 3, "stamp", 16),\n', _ELEMENT),
-    (_ROW, _ROW + f'    ForwardEntry(0, 3, "sideways", _read_episodes_before),\n', _ELEMENT),
-    (_ROW, _ROW + f'    ForwardEntry(0, 3, "data", lambda conn, run: conn.execute({_U})),\n', _ELEMENT),
-    (_ROW, _ROW + f'    *[ForwardEntry(0, 3, "alter", {_U})],\n', _ELEMENT),
+    ("*_alters(2, 16, ALTERS_V15_TO_V16),", f'ForwardEntry(2, 16, "alter", {_U}, ()),', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(lo=0, v=3, kind="read", step=_read_episodes_before, fields=(_check_chains,)),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "add", _read_episodes_before, ()),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "stamp", 16, ()),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "sideways", _read_episodes_before, ()),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "data", lambda conn, run: conn.execute({_U}), ()),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "read", _read_episodes_before),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "read", _read_episodes_before, [_check_chains]),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "read", _read_episodes_before, (lambda: {_U},)),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "read", _read_episodes_before, (_check_chains(),)),\n', _ELEMENT),
+    (_ROW, _ROW + f'    *[ForwardEntry(0, 3, "alter", {_U}, ())],\n', _ELEMENT),
     ('    return [ForwardEntry(lo, v, "alter", s) for s in statements]\n',
      f'    return [ForwardEntry(lo, v, "alter", {_U}) for s in statements]\n', "it makes the table's entries"),
     ('            + [ForwardEntry(0, target, "stamp", target),', f'            + [ForwardEntry(0, target, "alter", {_U}), ForwardEntry(0, target, "stamp", target),',
      "it makes the table's entries"),
     ("def _alters(lo, v, statements):\n", f'_MORE = ForwardEntry(0, 3, "alter", {_U})\n\n\ndef _alters(lo, v, statements):\n', "outside the table and the functions"),
-], ids=["a literal through _alters", "an alter by hand", "keywords", "add in the table", "stamp in the table", "an unknown kind", "a lambda",
+], ids=["a literal through _alters", "an alter by hand", "keywords", "add in the table", "stamp in the table", "an unknown kind", "a lambda", "four fields",
+        "a list of fields", "a lambda in the fields", "a call in the fields",
         "a starred list", "_alters's body", "plan's body", "an entry made beside the table"])
 def test_an_entry_comes_only_from_the_table_s_grammar(old, new, why):
     assert not any(why in b for b in _gate(SQLITE.read_text(), _r5_others(_MIG, old, old)))

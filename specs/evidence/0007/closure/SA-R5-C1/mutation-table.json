@@ -1,5 +1,5 @@
 {
- "body_sha256": "ed8e13ae52094cb1f0dacb0d694b003c14fe949232c806e1b897d6e8b22633f3",
+ "body_sha256": "7b132589e961aa28ed2ccca58127b03ef02ab50c441f47cb6aefff4272a15a21",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "bfe14549034cbf544ec6eb6848a140766a60a3ff",
+  "commit": "8d16497f40a3c39f1ea5e08ad201de4a2ccd1edd",
   "control_definitions": {
    "NOOP-SA-R5-C1-attestation_job": "c8777444888bf4662195743519ae4812aa42f6f93dfcfe7e3bb9943408be0934"
   },
@@ -81,15 +81,8 @@
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/a_matrix_mutants.py",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "specs/evidence/0013/a_matrix/mutation-table.json"
   ]
  },
  "rows": [
@@ -124,7 +117,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.68s",
+   "pytest": "2 failed in 7.85s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded read boundary: an XML declaration naming no text codec raises LookupError out of decide"

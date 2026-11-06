@@ -1,5 +1,5 @@
 {
- "body_sha256": "08906479d9f8cf35354c9862050a203d5c6c9c932a17845bec88050f55d47202",
+ "body_sha256": "f15d5e781d8891514f0ae6128a8e07a9c5be2bec627ec09486ac62475cb7b06f",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
   "control_definitions": {
    "NOOP-0048-R1-03-lifecycle": "d63de9fe82c4dd7688a7f9fc2857b5604e96db18be7c76bea5deb5c64c915402"
   },
@@ -63,7 +63,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
-   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
   },
   "finding": "0048-R1-03",
   "honest_nodes": [
@@ -74,10 +74,27 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0048-decay-never-raises-confidence.md",
-   "specs/closure_findings.py",
-   "specs/render_closure.py",
-   "specs/reviews.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -114,7 +131,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.37s",
+   "pytest": "2 failed in 1.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the validation moved back inside the DECAY branch: the TRANSIENT edge listed first is lapsed before the refusal"
@@ -147,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 1.35s",
    "reason": null,
    "reason_seen": null,
    "what": "a ValueError from the transition swallowed (the shipped `except ValueError` shape)"
@@ -162,6 +179,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 14
+  "seconds": 17
  }
 }

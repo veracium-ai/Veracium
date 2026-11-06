@@ -262,6 +262,9 @@ MUTANTS = [
      [C("test_the_clean_control_admits_a_call_whose_nested_pragma_traces_twice")], [ROUTE("connection.blobopen")],
      "the call traced more than once", "§5f.1 rule 3: a per-call trace count refuses the nested table-valued pragma"),
     # ---- tree mutants: the ladder (INV-SA10's mutation row; stage-1 decision 5) ----------------------------------
+    ("tree-a-rung-stamps-another-version", "tree", MIGRATION,
+     [('ForwardEntry(0, target, "stamp", target)', 'ForwardEntry(0, target, "stamp", target if target == SCHEMA_VERSION else target + 1)')],
+     [CLEAN_GATE], [PARAMS], None, "I39: a rung stamps a valid version that is not its target"),
     ("tree-unmapped-write", "tree", MIGRATION,
      [(_STAMP_REFUSE, _STAMP_REFUSE + _NO_OP_WRITE)],
      [HARNESS], [ROUTE("connection.blobopen")], "a row write on ['episodes'] maps to 0 steps",
@@ -290,6 +293,7 @@ _FACTORY = ("class _ReviewerFactory(sqlite3.Connection):\n    def __init__(self,
             "        self.execute(\"UPDATE episodes SET json = json_set(json, '$.summary', 'factory mutation')\")\n"
             "        self.commit()\n\n\n")
 _CF = lambda f: C(f"test_connect_refuses_a_factory_or_any_extra_argument_before_anything_runs[{f}]")      # noqa: E731
+_UF = lambda f: C(f"test_connect_admits_only_the_rungs_uri_form[{f}]")                                   # noqa: E731
 _SETV = lambda i: C(f"test_a_settable_attribute_takes_only_its_closed_values[{i}]")                         # noqa: E731
 _RPL = lambda f: C(f"test_replay_never_runs_recorded_caller_behaviour[{f}]")                                # noqa: E731
 _SEAM = C("test_the_module_seam_exposes_connect_and_what_the_ladder_reads_and_nothing_else")
@@ -336,6 +340,30 @@ MUTANTS += [
        'before sqlite3.connect, so no factory ever runs\n            raise self.refuse(f"connect with {bad}", site)\n', "")],
      [_CF("factory-keyword"), _CF("factory-positional")], [_SETV("row_factory-Row")], None,
      "the shipped connect: the caller's arguments, factory included, reach sqlite3.connect"),
+    ("rung-judged-at-head", "gate", GATE,
+     [('    if target is None and entry == "release":\n        target = release_target(label)\n', "")],
+     [CLEAN_GATE], [_CF("factory-keyword")], None,
+     "a release path is judged at the head, so every rung below it reads as a stamp that missed: the gate cannot bind the target"),
+    ("release-base-dropped", "gate", GATE,
+     [('    for lab, b, _a, stamped in pa1.lib()["paths"]():      # 0018 §4j, I39: every release base, one rung each, at its own target\n        out.append(',
+       '    for lab, b, _a, stamped in pa1.lib()["paths"]():      # 0018 §4j, I39: every release base, one rung each, at its own target\n'
+       '        if b == 7:\n            continue\n        out.append(')],
+     [CLEAN_GATE], [_CF("factory-keyword")], None, "I39: a release base is dropped from the inventory, so its rung runs under no census"),
+    ("rung-uri-any-form-admitted", "gate", GATE,
+     [('            if names is None:\n                raise self.refuse(f"connect with the URI {database!r}", site)\n', "")],
+     [_UF("creates"), _UF("a-vfs"), _UF("a-second-parameter")], [_CF("factory-keyword")], None,
+     "a URI of any form reaches sqlite3.connect: `mode=rwc` creates the store, and a VFS or a parameter changes how it opens"),
+    ("rung-uri-not-decoded", "gate", GATE,
+     [('            names = rung_uri_path(database)\n', '            names = database if rung_uri_path(database) else None\n')],
+     [C("test_a_rung_uri_naming_another_file_is_recorded_as_not_the_store")],
+     [_CF("factory-keyword")], None, "the store check reads the undecoded URI, so it cannot say which file a rung opened"),
+    ("rung-uri-parameters-unread", "gate", GATE,
+     [('    if "?" in body or "#" in body or body.startswith("//"):\n        return None\n', "")],
+     [_UF("a-fragment"), _UF("an-authority")], [_CF("factory-keyword")], None,
+     "a query parameter, a fragment or an authority rides inside a URI that ends `?mode=rw`"),
+    ("rung-uri-true-not-required", "gate", GATE,
+     [('    if "uri" in kw and kw["uri"] is not True:\n        return f"a uri of {kw[\'uri\']!r}"\n', "")],
+     [C("test_a_truthy_uri_that_is_not_true_is_refused_on_the_rung_s_own_form")], [_UF("creates")], None, "a truthy `uri` skips the exact-True rule"),
     ("sa-r3-01-the-seam-forwards-the-module", "gate", GATE,
      [('        if n in SEAM_ATTRS:\n            return getattr(sqlite3, n)\n'
        '        raise self._census.refuse(f"sqlite3.{n} through the module seam")\n', "        return getattr(sqlite3, n)\n")],
@@ -418,9 +446,9 @@ MUTANTS += [
        '    for mode, c in (("wrong", "C2"), ("missing", "C3")):\n',
        '    out = [(lab, "migrate_store", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))) for lab in labels]\n'
        '    for mode, c in (("missing", "C3"),):\n'),
-      ('            out.append((lab, "release", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))))\n'
+      ('        out.append((lab, "release", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))))\n'
        '    for mode, c in (("wrong", "C2"), ("missing", "C3")):\n',
-       '            out.append((lab, "release", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))))\n'
+       '        out.append((lab, "release", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))))\n'
        '    for mode, c in (("missing", "C3"),):\n')],
      [CLEAN_GATE], [HARNESS], "C2: no (b2) statement carrying a DROP_INDEX action was observed",
      "C2: a gate with no C2 fixture (`wrong`) in scope, on either entry: the clean ladder then fails as no (b2) "

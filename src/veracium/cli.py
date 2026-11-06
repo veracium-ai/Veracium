@@ -346,7 +346,8 @@ def _migrate(args) -> int:
     re-dispositioned from the direct-`migrate_store` contract to the
     orchestrator. Flags, never prompts: `--i-have-quiesced` and `--backup REF`
     are the operator's explicit assertions, both required on the migration
-    path. Exit codes: 0 = migrated/current · 1 = every refusal outcome ·
+    path. It walks one rung at a time (specs/0018 §4j). Exit codes: 0 = the
+    store is current at head · 1 = a refusal, or an unexpected-base stop ·
     2 = usage / invalid attestation · 3 = a named loud escape
     (MigrationAuditWriteError / MigrationAuditReadError /
     PackageConsistencyError). Reporting stays on the STRUCTURED result fields
@@ -354,7 +355,6 @@ def _migrate(args) -> int:
     state on the escape paths is labeled recorded, derived, or unavailable."""
     import sys
     from .store import release_migration as rm
-    from .store.schema_version import PackageConsistencyError
     if not args.i_have_quiesced or args.backup is None:
         print("usage: veracium migrate --db X --i-have-quiesced --backup REF\n"
               "the migration path requires BOTH flags: --i-have-quiesced (the "
@@ -368,50 +368,137 @@ def _migrate(args) -> int:
               f"(1-128 ASCII, no whitespace)", file=sys.stderr)
         return 2
     attestation = rm.MigrationAttestation(quiesced=True, backup_ref=args.backup)
-    try:
-        r = rm.run_release_migration(args.db, host_attestation=attestation)
-    except rm.MigrationAuditWriteError as e:
-        print(f"MigrationAuditWriteError: {e}", file=sys.stderr)
-        print(f"operation_id: {e.operation_id}", file=sys.stderr)
-        print(f"resulting_state: {e.resulting_state} (recorded)",
-              file=sys.stderr)
-        print(f"store_changed: {e.store_changed}  transaction_committed: "
-              f"{e.committed}  resulting_version: {e.resulting_version}  "
-              f"audit_committed: {e.audit_committed}", file=sys.stderr)
-        return 3
-    except rm.MigrationAuditReadError as e:
-        print(f"MigrationAuditReadError: {e}", file=sys.stderr)
-        print(f"operation_id: {e.operation_id}", file=sys.stderr)
-        print(f"resulting_state: {e.derived_resulting_state} "
-              f"(derived-from-outcome)", file=sys.stderr)
-        return 3
-    except PackageConsistencyError as e:
-        # the accepted package exception itself carries no facts and the CLI
-        # never invents them (0018 §4g, external R2-6/R3-5): the five routes.
-        route = getattr(e, "readback_route", "pre-mint")
-        print(f"PackageConsistencyError: {e}", file=sys.stderr)
-        if route == "pre-mint":
-            print("resulting_state: unavailable (pre-mint: no operation "
-                  "minted)", file=sys.stderr)
-        elif route == "recorded":
-            f = e.recorded_facts
-            print(f"resulting_state: {f.resulting_state} (recorded)",
-                  file=sys.stderr)
-            print(f"store_changed: {f.store_changed}  transaction_committed: "
-                  f"{f.transaction_committed}  resulting_version: "
-                  f"{f.resulting_version}", file=sys.stderr)
-        else:
-            print(f"resulting_state: unavailable (readback: {route})",
-                  file=sys.stderr)
-        return 3
+    return _migrate_walk(args.db, attestation)
+
+
+def _facts_of(r):
+    return (r.store_changed, r.transaction_committed, r.resulting_state, r.resulting_version)
+
+
+def _migrate_last_lines(committed, decision, version, *, err=False) -> None:
+    """0018 §4g's last lines: the rungs THIS walk committed, counted by facts and never by printed lines; the stopping row's
+    action id and its prose; whether a rerun is safe; and the store's version, or `unknown`."""
+    import sys
+    from .store import release_migration as rm
+    stream = sys.stderr if err else None
+    ids = ", ".join(committed) if committed else "none"
+    print(f"rungs committed by this walk: {len(committed)} ({ids})", file=stream)
+    for action in decision.actions:
+        if action == "audit-record-not-published":
+            print("action: audit-record-not-published: the terminal record was not published", file=stream)
+            continue
+        rerun, prose = rm.RECOVERY_PROSE[action]
+        print(f"action: {action}: {prose}", file=stream)
+        print(f"rerun: {rerun}", file=stream)
+    print(f"store version: {version}", file=stream)
+
+
+def _version_of(state, version) -> str:
+    return f"v{version}" if state in ("source", "destination") and version is not None else "unknown"
+
+
+def _migrate_walk(path, attestation) -> int:
+    """The walk (0018 §4j.6.4g): one rung per call, under the ONE attestation. The bound holds by construction: `expect` rises by
+    one per continued rung, and at HEAD the next call can only report `current` or stop. An id is counted when its validated facts
+    are `(True, True)`, before the decision to continue, so a committed error is counted once and still stops the walk."""
+    import sys
+    from .store import release_migration as rm
+    from .store.schema_version import PackageConsistencyError
+    expect, committed = None, []
+    while True:
+        try:
+            rep = rm.run_release_rung(path, host_attestation=attestation, expect_base=expect)
+        except rm.MigrationAuditWriteError as e:
+            op, frm, to = e.rung_context
+            f = e.facts
+            d = rm.classify_recovery("write-error", f.outcome, (f.store_changed, f.transaction_committed, f.resulting_state,
+                                                                f.resulting_version), to)
+            if d.counted:
+                committed.append(op)
+            print(f"MigrationAuditWriteError: {e}", file=sys.stderr)
+            print(f"rung v{frm} -> v{to} (operation {op}): its terminal record was not published", file=sys.stderr)
+            print(f"operation_id: {op}", file=sys.stderr)
+            print(f"resulting_state: {e.resulting_state} (recorded)", file=sys.stderr)
+            print(f"store_changed: {e.store_changed}  transaction_committed: {e.committed}  resulting_version: "
+                  f"{e.resulting_version}  audit_committed: {e.audit_committed}", file=sys.stderr)
+            _migrate_last_lines(committed, d, _version_of(e.resulting_state, e.resulting_version), err=True)
+            return 3
+        except rm.MigrationAuditReadError as e:
+            op, frm, to = e.rung_context
+            d = rm.classify_recovery("read-error")
+            print(f"MigrationAuditReadError: {e}", file=sys.stderr)
+            print(f"rung v{frm} -> v{to} (operation {op}): not counted, and the store may be at v{to} regardless", file=sys.stderr)
+            print(f"operation_id: {op}", file=sys.stderr)
+            print(f"resulting_state: {e.derived_resulting_state} (derived-from-outcome)", file=sys.stderr)
+            _migrate_last_lines(committed, d, "unknown", err=True)
+            return 3
+        except PackageConsistencyError as e:
+            return _migrate_package_escape(e, committed)
+        if rep.kind == "unexpected-base":
+            d = rm.classify_recovery("unexpected-base")
+            print(f"outcome: unexpected-base: observed v{rep.preflight_base} where v{rep.expected_base} was expected")
+            _migrate_last_lines(committed, d, "unknown")
+            return 1
+        r = rep.result
+        if rep.kind == "preflight":
+            d = rm.classify_recovery("preflight", r.outcome, _facts_of(r))
+            _migrate_report(r)
+            _migrate_last_lines(committed, d, _version_of(r.resulting_state, r.resulting_version))
+            return 0 if d.row == "P0" else 1
+        d = rm.classify_recovery("delegated", r.outcome, _facts_of(r), rep.to_version)
+        if d.counted:
+            committed.append(rep.operation_id)
+        if d.row in ("C1", "U0"):
+            print(f"rung v{rep.from_version} -> v{rep.to_version}: {r.outcome} (operation {rep.operation_id})")
+            expect = rep.to_version
+            continue
+        _migrate_report(r)
+        version = _version_of(r.resulting_state, r.resulting_version)
+        if d.row == "C2":
+            version = f"v{r.resulting_version}, recorded: committed with {r.outcome}"
+        elif d.row in ("K", "U2", "U3", "U4", "U6") or d.row.startswith("N"):
+            version = "unknown"
+        _migrate_last_lines(committed, d, version)
+        return 1
+
+
+def _migrate_report(r) -> None:
+    """The stopping result's structured fields: facts are never inferred from the label (0013 r8-f3)."""
     print(f"outcome: {r.outcome}")
-    print(f"store_changed: {r.store_changed}  transaction_committed: "
-          f"{r.transaction_committed}")
-    print(f"resulting_state: {r.resulting_state}  resulting_version: "
-          f"{r.resulting_version}")
+    print(f"store_changed: {r.store_changed}  transaction_committed: {r.transaction_committed}")
+    print(f"resulting_state: {r.resulting_state}  resulting_version: {r.resulting_version}")
     if r.diagnostic:
         print(r.diagnostic)
-    return 0 if r.outcome in ("migrated", "current") else 1
+
+
+def _migrate_package_escape(e, committed) -> int:
+    """§7 E3 and E4. The accepted package exception carries no facts of its own and the CLI never invents them (0018 §4g, external
+    R2-6/R3-5). A readback counts only when it is a valid record bound to this escape, at the minted endpoints."""
+    import sys
+    from .store import release_migration as rm
+    context = e.rung_context
+    route = getattr(e, "readback_route", "pre-mint")
+    print(f"PackageConsistencyError: {e}", file=sys.stderr)
+    if context is None:
+        print("resulting_state: unavailable (pre-mint: no operation minted)", file=sys.stderr)
+        _migrate_last_lines(committed, rm.classify_recovery("package-pre-mint"), "unavailable (pre-mint: no operation minted)", err=True)
+        return 3
+    op, frm, to = context
+    print(f"rung v{frm} -> v{to} (operation {op})", file=sys.stderr)
+    f = e.recorded_facts if route == "recorded" else None
+    d = rm.classify_recovery("package-post-mint", minted=(frm, to), readback_facts=f)
+    if d.counted:
+        committed.append(op)
+    if rm._readback_is_bound(f, (frm, to)):
+        print(f"resulting_state: {f.resulting_state} (recorded)", file=sys.stderr)
+        print(f"store_changed: {f.store_changed}  transaction_committed: {f.transaction_committed}  resulting_version: "
+              f"{f.resulting_version}", file=sys.stderr)
+        _migrate_last_lines(committed, d, f"{_version_of(f.resulting_state, f.resulting_version)}, recorded", err=True)
+    else:
+        shown = "mismatched" if route == "recorded" else route      # recorded at other endpoints: not bound to this escape
+        print(f"resulting_state: unavailable (readback: {shown})", file=sys.stderr)
+        _migrate_last_lines(committed, d, f"unavailable (readback: {shown})", err=True)
+    return 3
 
 
 def main(argv=None) -> int:

@@ -36,3 +36,7 @@ across the routes the walk kept. It keeps one route per (origin, shape), so this
 `record_outcome` and `append_outcome_if_head` routes were not tried. No data step past base 1 reads `episodes`, and stores from
 origin v0.4.8 carry the row to every later shape. One SQLite and one
 interpreter wrote all of them (recorded in `manifest.json`), so this does not measure a store written by an older SQLite.
+
+**The vector file.** `digest_vectors.json` issues the rungs' preimages for the first time. 0013 v40's fourth edit changed the `read` field of the preimage §5g.1 calls frozen, before any vector existed, so no issued digest moved: a `read` entry now carries one field per check in its `feeds`. `direct` pins three whole plans for their order only; it is a cell, and no part of the frozen preimages.
+
+**One input the fixtures cannot give.** The v2→v3 `observed_at` fill is reached by no release-authored store: every outcome episode a release wrote already carries `observed_at`. So `test_the_v3_observed_at_fill_is_rung_three_s_read` and `test_a_data_entry_issues_zero_or_more_writes_on_a_v2_fixture` use a hand-made legacy row, and the manifest's `not_release_authored` says so.

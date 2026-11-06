@@ -77,6 +77,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import urllib.parse
 import tempfile
 from typing import Optional
 
@@ -150,11 +151,13 @@ SET_VALUES = {"isolation_level": (None, "", "DEFERRED", "IMMEDIATE", "EXCLUSIVE"
 caller-supplied connection behavior"): a settable attribute takes a value from a CLOSED set. `isolation_level` is an
 exact str or None; a factory is compared BY IDENTITY, so a Python function is never a row or text factory and replay
 never re-runs one. The ladder sets only `isolation_level` (schema_version.open_versioned: None, then its prior value)."""
-CONNECT_KW = frozenset({"timeout"})
+CONNECT_KW = frozenset({"timeout", "uri"})
 """SA-R3-01 (round 3): the census's connect admits the store path and a numeric timeout and nothing else. A `factory`
 (keyword or positional), any positional extra and every other keyword are executable or connection-shaping caller
 input, refused BEFORE `sqlite3.connect` runs: no constructor executes outside the authorizer and the trace, and replay
-never re-invokes one. The seamed callers pass `path` (migration.py) or `path, timeout=` (release_migration.py)."""
+never re-invokes one. The seamed callers pass `path` (migration.py) or `path, timeout=` (release_migration.py). 0018 §4j's
+rung opens `file:<percent-encoded path>?mode=rw, uri=True` so it cannot create the store: `uri` is exactly True, and
+`rung_uri_path` holds the URI to that one form, so a URI never selects another mode, a VFS or another file."""
 SEAM_ATTRS = frozenset({"Error", "DatabaseError", "OperationalError"})
 """SA-R3-01, research's stage-1 read: what the module seam exposes besides `connect`, which the census runs. It was the
 whole module, so `sqlite3.Connection(path)` wrote with no census at all. These three are every `sqlite3.<name>` the
@@ -171,7 +174,21 @@ def connect_args_problem(args, kw) -> str | None:
         return f"the keyword argument(s) {extra} (only {sorted(CONNECT_KW)} is admitted)"
     if "timeout" in kw and type(kw["timeout"]) not in (int, float):
         return f"a timeout of type {type(kw['timeout']).__name__}"
+    if "uri" in kw and kw["uri"] is not True:
+        return f"a uri of {kw['uri']!r}"
     return None
+
+
+def rung_uri_path(database):
+    """The file a rung's `file:<percent-encoded path>?mode=rw` names, or None for any other string: no second query
+    parameter, no fragment, no authority, and a path that is absolute once decoded."""
+    if type(database) is not str or not database.startswith("file:") or not database.endswith("?mode=rw"):
+        return None
+    body = database[len("file:"):-len("?mode=rw")]
+    if "?" in body or "#" in body or body.startswith("//"):
+        return None
+    path = os.fsdecode(urllib.parse.unquote_to_bytes(body))
+    return path if os.path.isabs(path) else None
 
 
 def set_value_ok(name, value) -> bool:
@@ -317,7 +334,12 @@ class Census:
         bad = connect_args_problem(args, kw)
         if bad:                                   # SA-R3-01: before sqlite3.connect, so no factory ever runs
             raise self.refuse(f"connect with {bad}", site)
-        if not isinstance(database, (str, os.PathLike)) or os.path.realpath(database) != self.store:
+        names = database
+        if kw.get("uri"):                         # 0018 §4j: the one URI form, decoded, so the store check reads the file it opens
+            names = rung_uri_path(database)
+            if names is None:
+                raise self.refuse(f"connect with the URI {database!r}", site)
+        if not isinstance(names, (str, os.PathLike)) or os.path.realpath(names) != self.store:
             self.problems.append(f"connect to {database!r} from {site.by if site else '?'}: not the store")
         kw2 = dict(kw)
         kw2["cached_statements"] = 0
@@ -883,6 +905,24 @@ def drifted(path: str, mode: str) -> None:
         c.close()
 
 
+def drifted_below_head(path: str, b: int) -> None:
+    """I39: a store stamped `b`, accepted there, with every rebuildable index of `b` dropped, so the rung's repair runs below head and
+    has to rebuild from `SCHEMAS[b + 1]`. The constructors are the base's own."""
+    from veracium.store import schema_version as sv
+    _clear(path)
+    c = sqlite3.connect(path)
+    try:
+        for o in sv.SCHEMAS[b]:
+            c.execute(o.ddl)
+        for o in sv.SCHEMAS[b]:
+            if o.key[0] == "index" and o.policy == sv.REBUILDABLE:
+                c.execute(f"DROP INDEX {o.key[1]}")
+        c.execute(f"PRAGMA user_version = {b}")
+        c.commit()
+    finally:
+        c.close()
+
+
 def gate_paths():
     """[(label, entry, builder)]: builder(path) writes the fixture; entry is "migrate_store" or "release"."""
     from veracium.store import schema_version as sv
@@ -891,12 +931,18 @@ def gate_paths():
     out = [(lab, "migrate_store", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))) for lab in labels]
     for mode, c in (("wrong", "C2"), ("missing", "C3")):
         out.append((f"{c}-{mode}", "migrate_store", lambda p, mode=mode: drifted(p, mode)))
-    for lab, b, _a, stamped in pa1.lib()["paths"]():
-        if b == sv.SCHEMA_VERSION - 1:
-            out.append((lab, "release", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))))
+    for lab, b, _a, stamped in pa1.lib()["paths"]():      # 0018 §4j, I39: every release base, one rung each, at its own target
+        out.append((lab, "release", lambda p, lab=lab: (_clear(p), pa1.fresh_fixture(p, lab))))
     for mode, c in (("wrong", "C2"), ("missing", "C3")):
         out.append((f"{c}-{mode}", "release", lambda p, mode=mode: drifted(p, mode)))
+    out.append(("D-intermediate", "release", lambda p: drifted_below_head(p, 13)))    # I39: drift repaired against `t`, not head
     return out
+
+
+def release_target(label):
+    """The rung a release path must run, from the fixture's declared base and never from the run: `b + 1`, or None for a path
+    that declares no base (C2, C3: a store already at head). So a rung that stamps anything else is judged against `b + 1`."""
+    return {"D-intermediate": 14, **{lab: b + 1 for lab, b, _a, _st in _pa1().lib()["paths"]()}}.get(label)
 
 
 def run_entry(store: str, entry: str, census: Census):
@@ -941,6 +987,8 @@ def run_path(label, entry, builder, work, *, proxy_factory=None, inject=None, bu
     shutil.copyfile(store, pre)
     census = Census(store, proxy_factory)
     result, exc = run_entry(store, entry, census)
+    if target is None and entry == "release":
+        target = release_target(label)
     bound = sv.SCHEMA_VERSION if target is None else target
     classes, steps, label_fn = text_classes(bound), pa1._steps(), pa1.lib()["_kind"]
     calls = [e for e in census.events if e.kind == "call"]

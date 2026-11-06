@@ -1,0 +1,2230 @@
+{
+ "direct": {
+  "1": [
+   [
+    "clock"
+   ],
+   [
+    "add",
+    "table",
+    "confirmations",
+    "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    origin TEXT NOT NULL DEFAULT 'local', recorded_correlation_id TEXT,\n    origin_store TEXT, origin_user TEXT, origin_act_id TEXT, act_seq INTEGER,\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_confirmations_edge",
+    "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "consolidation_ops",
+    "CREATE TABLE consolidation_ops (\n    operation_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    fence INTEGER NOT NULL, state TEXT NOT NULL, owner TEXT NOT NULL,\n    lease_duration INTEGER NOT NULL, lease_expires_at TEXT NOT NULL,\n    claimed_ids TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_consolidation_ops_user_state",
+    "CREATE INDEX ix_consolidation_ops_user_state ON consolidation_ops(user_id, state)"
+   ],
+   [
+    "add",
+    "table",
+    "supersession_refusals",
+    "CREATE TABLE supersession_refusals (\n    refusal_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    prior_edge_id TEXT NOT NULL, incoming_edge_id TEXT NOT NULL, relation TEXT NOT NULL,\n    prior_effective INTEGER NOT NULL, incoming_effective INTEGER NOT NULL,\n    rule_version TEXT NOT NULL, created_at TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_supersession_refusals_user",
+    "CREATE INDEX ix_supersession_refusals_user ON supersession_refusals(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "supersession_operations",
+    "CREATE TABLE supersession_operations (\n    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,\n    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,\n    request_digest TEXT, response TEXT,\n    outcome_digest_version INTEGER NOT NULL DEFAULT 1,\n    request_digest_domain TEXT,\n    PRIMARY KEY (user_id, operation_id)\n)"
+   ],
+   [
+    "add",
+    "table",
+    "store_identity",
+    "CREATE TABLE store_identity (\n    id INTEGER PRIMARY KEY CHECK(id = 1), origin TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "contribution_ledger",
+    "CREATE TABLE contribution_ledger (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,\n    site TEXT NOT NULL,\n    identity_digest TEXT, evidence_ref_digest TEXT,\n    payload TEXT NOT NULL, op_key TEXT,\n    created_at TEXT NOT NULL,\n    contributor_type TEXT, contributor_ref TEXT\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_contribution_ledger_survivor",
+    "CREATE INDEX ix_contribution_ledger_survivor ON contribution_ledger(user_id, survivor_type, survivor_id)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_contribution_ledger_source",
+    "CREATE INDEX ix_contribution_ledger_source ON contribution_ledger(user_id, identity_digest)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_contribution_ledger_op_key",
+    "CREATE UNIQUE INDEX ix_contribution_ledger_op_key ON contribution_ledger(op_key) WHERE op_key IS NOT NULL"
+   ],
+   [
+    "add",
+    "table",
+    "source_revocations",
+    "CREATE TABLE source_revocations (\n    user_id TEXT NOT NULL, seq INTEGER NOT NULL,\n    identity_digest TEXT NOT NULL,\n    action TEXT NOT NULL CHECK(action IN ('revoke','lift')),\n    at TEXT NOT NULL, reason TEXT NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_source_revocations_user_digest",
+    "CREATE INDEX ix_source_revocations_user_digest ON source_revocations(user_id, identity_digest)"
+   ],
+   [
+    "add",
+    "table",
+    "edge_embedding",
+    "CREATE TABLE edge_embedding (\n    edge_id        TEXT    NOT NULL,\n    user_id        TEXT    NOT NULL,\n    embedder_id    TEXT    NOT NULL,\n    content_digest TEXT    NOT NULL,\n    dim            INTEGER NOT NULL,\n    vec            BLOB    NOT NULL,\n    built_at       TEXT    NOT NULL,\n    PRIMARY KEY (edge_id, embedder_id, content_digest)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_edge_embedding_lookup",
+    "CREATE INDEX ix_edge_embedding_lookup ON edge_embedding(user_id, embedder_id, dim)"
+   ],
+   [
+    "add",
+    "table",
+    "edge_event",
+    "CREATE TABLE edge_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    edge_id     TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_edge_event_lookup",
+    "CREATE INDEX ix_edge_event_lookup ON edge_event(user_id, edge_id, seq)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_edge_event_txn",
+    "CREATE INDEX ix_edge_event_txn ON edge_event(user_id, txn)"
+   ],
+   [
+    "add",
+    "table",
+    "store_epoch",
+    "CREATE TABLE store_epoch (\n    id INTEGER PRIMARY KEY CHECK(id = 1), started_at TEXT NOT NULL, schema_at INTEGER NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "policy_receipt",
+    "CREATE TABLE policy_receipt (\n    user_id        TEXT NOT NULL,\n    recall_id      TEXT NOT NULL,\n    policy_id      TEXT NOT NULL,\n    policy_version TEXT NOT NULL,\n    recorded_at    TEXT NOT NULL,\n    receipt        TEXT NOT NULL,\n    PRIMARY KEY (user_id, recall_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_policy_receipt_time",
+    "CREATE INDEX ix_policy_receipt_time ON policy_receipt(user_id, recorded_at)"
+   ],
+   [
+    "add",
+    "table",
+    "episode_event",
+    "CREATE TABLE episode_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    episode_id  TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_episode_event_lookup",
+    "CREATE INDEX ix_episode_event_lookup ON episode_event(user_id, episode_id, seq)"
+   ],
+   [
+    "add",
+    "table",
+    "redactions",
+    "CREATE TABLE redactions (\n    id                   TEXT NOT NULL PRIMARY KEY,\n    user_id              TEXT NOT NULL,\n    target_kind          TEXT NOT NULL,\n    target_id            TEXT NOT NULL,\n    fields               TEXT NOT NULL,\n    marker_version       INTEGER NOT NULL,\n    reason               TEXT NOT NULL,\n    store_version_before INTEGER NOT NULL,\n    store_version_after  INTEGER NOT NULL,\n    event_ref            TEXT,\n    recorded_at          TEXT NOT NULL,\n    source_body          TEXT,\n    source_origin        TEXT,\n    source_user          TEXT,\n    source_event_ref     TEXT,\n    state                TEXT NOT NULL DEFAULT 'applied',\n    pending_reason       TEXT\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_redactions_target",
+    "CREATE INDEX ix_redactions_target ON redactions(user_id, target_kind, target_id)"
+   ],
+   [
+    "add",
+    "table",
+    "request_registry",
+    "CREATE TABLE request_registry (\n    user_id        TEXT NOT NULL,\n    correlation_id TEXT NOT NULL,\n    verb           TEXT NOT NULL,\n    target_edge_id TEXT NOT NULL,\n    request_digest TEXT NOT NULL,\n    result_ref     TEXT NOT NULL,\n    written_at     TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_request_registry_target",
+    "CREATE INDEX ix_request_registry_target ON request_registry(user_id, target_edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "replies",
+    "CREATE TABLE replies (\n    id                      TEXT NOT NULL PRIMARY KEY,\n    user_id                 TEXT NOT NULL,\n    edge_id                 TEXT NOT NULL,\n    kind                    TEXT NOT NULL CHECK (kind IN ('challenge', 'context', 'withdrawn-consent', 'resolve')),\n    target                  TEXT,\n    text                    TEXT,\n    actor                   TEXT NOT NULL,\n    correlation_id          TEXT NOT NULL,\n    request_digest          TEXT NOT NULL,\n    origin                  TEXT NOT NULL CHECK (origin IN ('local', 'imported', 'restored')),\n    recorded_correlation_id TEXT,\n    origin_store            TEXT,\n    origin_user             TEXT,\n    origin_act_id           TEXT,\n    act_seq                 INTEGER,\n    written_at              TEXT NOT NULL,\n    CHECK ((kind = 'resolve') = (target IS NOT NULL)),\n    CHECK ((kind = 'resolve') = (text IS NULL)),\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_replies_edge",
+    "CREATE INDEX ix_replies_edge ON replies(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "index",
+    "ux_replies_resolve",
+    "CREATE UNIQUE INDEX ux_replies_resolve ON replies(user_id, target) WHERE kind = 'resolve'"
+   ],
+   [
+    "add",
+    "table",
+    "act_counter",
+    "CREATE TABLE act_counter (\n    id       INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    next_seq INTEGER NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "arity_era",
+    "CREATE TABLE arity_era (\n    id           INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    effective_at TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "arity_inventory",
+    "CREATE TABLE arity_inventory (\n    edge_id            TEXT NOT NULL PRIMARY KEY,\n    user_id            TEXT NOT NULL,\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_arity_inventory_user",
+    "CREATE INDEX ix_arity_inventory_user ON arity_inventory(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "refusal_inventory",
+    "CREATE TABLE refusal_inventory (\n    refusal_id TEXT NOT NULL PRIMARY KEY,\n    user_id    TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_refusal_inventory_user",
+    "CREATE INDEX ix_refusal_inventory_user ON refusal_inventory(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_outcome",
+    "CREATE TABLE migration_outcome (\n    plan_id            TEXT NOT NULL,\n    user_id            TEXT NOT NULL,\n    edge_id            TEXT NOT NULL,\n    outcome            TEXT NOT NULL CHECK (outcome IN ('restored', 'withheld_revoked')),\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL,\n    successor_evidence TEXT NOT NULL,\n    applicable         INTEGER NOT NULL CHECK (applicable IN (0, 1)),\n    origin             TEXT NOT NULL CHECK (origin IN ('local', 'restored', 'imported')),\n    outcome_uid        TEXT NOT NULL UNIQUE,\n    undone_at          TEXT,\n    undo_request_ref   TEXT,\n    op_id              TEXT,\n    UNIQUE(plan_id, edge_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_migration_outcome_edge",
+    "CREATE INDEX ix_migration_outcome_edge ON migration_outcome(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_run",
+    "CREATE TABLE migration_run (\n    plan_id      TEXT NOT NULL,\n    user_id      TEXT NOT NULL,\n    op_id        TEXT NOT NULL,\n    committed_at TEXT NOT NULL,\n    PRIMARY KEY(plan_id, user_id)\n)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_op",
+    "CREATE TABLE migration_op (\n    op_id         TEXT NOT NULL PRIMARY KEY,\n    mode          TEXT NOT NULL CHECK (mode IN ('plan_only', 'restore', 'import-convert')),\n    inputs_digest TEXT NOT NULL,\n    admitted_at   TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "plan_header",
+    "CREATE TABLE plan_header (\n    id              INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    plan_id         TEXT NOT NULL UNIQUE,\n    effective_at    TEXT NOT NULL,\n    registry_digest TEXT NOT NULL,\n    op_id           TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "reclassification_plan",
+    "CREATE TABLE reclassification_plan (\n    plan_id    TEXT NOT NULL,\n    relation   TEXT NOT NULL,\n    from_arity TEXT NOT NULL CHECK (from_arity = 'single'),\n    to_arity   TEXT NOT NULL CHECK (to_arity = 'multi'),\n    PRIMARY KEY(plan_id, relation)\n)"
+   ],
+   [
+    "read",
+    "v2-v3-outcome-chains"
+   ],
+   [
+    "data",
+    "v2-v3-outcome-chains"
+   ],
+   [
+    "check",
+    "v2-v3-outcome-chains"
+   ],
+   [
+    "data",
+    "v3-v4-wiki-drop"
+   ],
+   [
+    "read",
+    "v3-v4-wiki-drop"
+   ],
+   [
+    "check",
+    "v3-v4-wiki-drop"
+   ],
+   [
+    "read",
+    "store-identity"
+   ],
+   [
+    "data",
+    "store-identity"
+   ],
+   [
+    "read",
+    "store-identity"
+   ],
+   [
+    "check",
+    "store-identity"
+   ],
+   [
+    "read",
+    "v13-baseline"
+   ],
+   [
+    "read",
+    "v13-baseline"
+   ],
+   [
+    "data",
+    "v13-baseline"
+   ],
+   [
+    "check",
+    "v13-baseline"
+   ],
+   [
+    "read",
+    "store-epoch"
+   ],
+   [
+    "data",
+    "store-epoch"
+   ],
+   [
+    "read",
+    "store-epoch"
+   ],
+   [
+    "check",
+    "store-epoch"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "data",
+    "v16-act-counter"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "check",
+    "v16-act-counter"
+   ],
+   [
+    "read",
+    "v16-registry-backfill"
+   ],
+   [
+    "data",
+    "v16-registry-backfill"
+   ],
+   [
+    "read",
+    "v16-registry-backfill"
+   ],
+   [
+    "check",
+    "v16-registry-backfill"
+   ],
+   [
+    "read",
+    "v16-act-columns"
+   ],
+   [
+    "check",
+    "v16-act-columns"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "check",
+    "v16-act-counter"
+   ],
+   [
+    "data",
+    "v16-notice-state"
+   ],
+   [
+    "read",
+    "v16-notice-state"
+   ],
+   [
+    "check",
+    "v16-notice-state"
+   ],
+   [
+    "read",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-era"
+   ],
+   [
+    "data",
+    "v16-arity-era"
+   ],
+   [
+    "read",
+    "v16-arity-era"
+   ],
+   [
+    "check",
+    "v16-arity-era"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "data",
+    "v16-arity-inventory"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "data",
+    "v16-refusal-inventory"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "check",
+    "v16-refusal-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "stamp",
+    "16"
+   ],
+   [
+    "read",
+    "stamp"
+   ],
+   [
+    "check",
+    "stamp"
+   ]
+  ],
+  "13": [
+   [
+    "clock"
+   ],
+   [
+    "add",
+    "table",
+    "policy_receipt",
+    "CREATE TABLE policy_receipt (\n    user_id        TEXT NOT NULL,\n    recall_id      TEXT NOT NULL,\n    policy_id      TEXT NOT NULL,\n    policy_version TEXT NOT NULL,\n    recorded_at    TEXT NOT NULL,\n    receipt        TEXT NOT NULL,\n    PRIMARY KEY (user_id, recall_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_policy_receipt_time",
+    "CREATE INDEX ix_policy_receipt_time ON policy_receipt(user_id, recorded_at)"
+   ],
+   [
+    "add",
+    "table",
+    "episode_event",
+    "CREATE TABLE episode_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    episode_id  TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_episode_event_lookup",
+    "CREATE INDEX ix_episode_event_lookup ON episode_event(user_id, episode_id, seq)"
+   ],
+   [
+    "add",
+    "table",
+    "redactions",
+    "CREATE TABLE redactions (\n    id                   TEXT NOT NULL PRIMARY KEY,\n    user_id              TEXT NOT NULL,\n    target_kind          TEXT NOT NULL,\n    target_id            TEXT NOT NULL,\n    fields               TEXT NOT NULL,\n    marker_version       INTEGER NOT NULL,\n    reason               TEXT NOT NULL,\n    store_version_before INTEGER NOT NULL,\n    store_version_after  INTEGER NOT NULL,\n    event_ref            TEXT,\n    recorded_at          TEXT NOT NULL,\n    source_body          TEXT,\n    source_origin        TEXT,\n    source_user          TEXT,\n    source_event_ref     TEXT,\n    state                TEXT NOT NULL DEFAULT 'applied',\n    pending_reason       TEXT\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_redactions_target",
+    "CREATE INDEX ix_redactions_target ON redactions(user_id, target_kind, target_id)"
+   ],
+   [
+    "add",
+    "table",
+    "request_registry",
+    "CREATE TABLE request_registry (\n    user_id        TEXT NOT NULL,\n    correlation_id TEXT NOT NULL,\n    verb           TEXT NOT NULL,\n    target_edge_id TEXT NOT NULL,\n    request_digest TEXT NOT NULL,\n    result_ref     TEXT NOT NULL,\n    written_at     TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_request_registry_target",
+    "CREATE INDEX ix_request_registry_target ON request_registry(user_id, target_edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "replies",
+    "CREATE TABLE replies (\n    id                      TEXT NOT NULL PRIMARY KEY,\n    user_id                 TEXT NOT NULL,\n    edge_id                 TEXT NOT NULL,\n    kind                    TEXT NOT NULL CHECK (kind IN ('challenge', 'context', 'withdrawn-consent', 'resolve')),\n    target                  TEXT,\n    text                    TEXT,\n    actor                   TEXT NOT NULL,\n    correlation_id          TEXT NOT NULL,\n    request_digest          TEXT NOT NULL,\n    origin                  TEXT NOT NULL CHECK (origin IN ('local', 'imported', 'restored')),\n    recorded_correlation_id TEXT,\n    origin_store            TEXT,\n    origin_user             TEXT,\n    origin_act_id           TEXT,\n    act_seq                 INTEGER,\n    written_at              TEXT NOT NULL,\n    CHECK ((kind = 'resolve') = (target IS NOT NULL)),\n    CHECK ((kind = 'resolve') = (text IS NULL)),\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_replies_edge",
+    "CREATE INDEX ix_replies_edge ON replies(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "index",
+    "ux_replies_resolve",
+    "CREATE UNIQUE INDEX ux_replies_resolve ON replies(user_id, target) WHERE kind = 'resolve'"
+   ],
+   [
+    "add",
+    "table",
+    "act_counter",
+    "CREATE TABLE act_counter (\n    id       INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    next_seq INTEGER NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "arity_era",
+    "CREATE TABLE arity_era (\n    id           INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    effective_at TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "arity_inventory",
+    "CREATE TABLE arity_inventory (\n    edge_id            TEXT NOT NULL PRIMARY KEY,\n    user_id            TEXT NOT NULL,\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_arity_inventory_user",
+    "CREATE INDEX ix_arity_inventory_user ON arity_inventory(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "refusal_inventory",
+    "CREATE TABLE refusal_inventory (\n    refusal_id TEXT NOT NULL PRIMARY KEY,\n    user_id    TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_refusal_inventory_user",
+    "CREATE INDEX ix_refusal_inventory_user ON refusal_inventory(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_outcome",
+    "CREATE TABLE migration_outcome (\n    plan_id            TEXT NOT NULL,\n    user_id            TEXT NOT NULL,\n    edge_id            TEXT NOT NULL,\n    outcome            TEXT NOT NULL CHECK (outcome IN ('restored', 'withheld_revoked')),\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL,\n    successor_evidence TEXT NOT NULL,\n    applicable         INTEGER NOT NULL CHECK (applicable IN (0, 1)),\n    origin             TEXT NOT NULL CHECK (origin IN ('local', 'restored', 'imported')),\n    outcome_uid        TEXT NOT NULL UNIQUE,\n    undone_at          TEXT,\n    undo_request_ref   TEXT,\n    op_id              TEXT,\n    UNIQUE(plan_id, edge_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_migration_outcome_edge",
+    "CREATE INDEX ix_migration_outcome_edge ON migration_outcome(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_run",
+    "CREATE TABLE migration_run (\n    plan_id      TEXT NOT NULL,\n    user_id      TEXT NOT NULL,\n    op_id        TEXT NOT NULL,\n    committed_at TEXT NOT NULL,\n    PRIMARY KEY(plan_id, user_id)\n)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_op",
+    "CREATE TABLE migration_op (\n    op_id         TEXT NOT NULL PRIMARY KEY,\n    mode          TEXT NOT NULL CHECK (mode IN ('plan_only', 'restore', 'import-convert')),\n    inputs_digest TEXT NOT NULL,\n    admitted_at   TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "plan_header",
+    "CREATE TABLE plan_header (\n    id              INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    plan_id         TEXT NOT NULL UNIQUE,\n    effective_at    TEXT NOT NULL,\n    registry_digest TEXT NOT NULL,\n    op_id           TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "reclassification_plan",
+    "CREATE TABLE reclassification_plan (\n    plan_id    TEXT NOT NULL,\n    relation   TEXT NOT NULL,\n    from_arity TEXT NOT NULL CHECK (from_arity = 'single'),\n    to_arity   TEXT NOT NULL CHECK (to_arity = 'multi'),\n    PRIMARY KEY(plan_id, relation)\n)"
+   ],
+   [
+    "read",
+    "v16-registry-backfill",
+    "v16-act-columns"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin TEXT NOT NULL DEFAULT 'local'"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN recorded_correlation_id TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin_store TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin_user TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin_act_id TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN act_seq INTEGER"
+   ],
+   [
+    "read",
+    "v16-alter-path"
+   ],
+   [
+    "check",
+    "v16-alter-path",
+    "confirmations"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "data",
+    "v16-act-counter"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "check",
+    "v16-act-counter"
+   ],
+   [
+    "read",
+    "v16-registry-backfill"
+   ],
+   [
+    "data",
+    "v16-registry-backfill"
+   ],
+   [
+    "read",
+    "v16-registry-backfill"
+   ],
+   [
+    "check",
+    "v16-registry-backfill"
+   ],
+   [
+    "read",
+    "v16-act-columns"
+   ],
+   [
+    "check",
+    "v16-act-columns"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "check",
+    "v16-act-counter"
+   ],
+   [
+    "data",
+    "v16-notice-state"
+   ],
+   [
+    "read",
+    "v16-notice-state"
+   ],
+   [
+    "check",
+    "v16-notice-state"
+   ],
+   [
+    "read",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-era"
+   ],
+   [
+    "data",
+    "v16-arity-era"
+   ],
+   [
+    "read",
+    "v16-arity-era"
+   ],
+   [
+    "check",
+    "v16-arity-era"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "data",
+    "v16-arity-inventory"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "data",
+    "v16-refusal-inventory"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "check",
+    "v16-refusal-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "stamp",
+    "16"
+   ],
+   [
+    "read",
+    "stamp"
+   ],
+   [
+    "check",
+    "stamp"
+   ]
+  ],
+  "4": [
+   [
+    "clock"
+   ],
+   [
+    "add",
+    "table",
+    "store_identity",
+    "CREATE TABLE store_identity (\n    id INTEGER PRIMARY KEY CHECK(id = 1), origin TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "contribution_ledger",
+    "CREATE TABLE contribution_ledger (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,\n    site TEXT NOT NULL,\n    identity_digest TEXT, evidence_ref_digest TEXT,\n    payload TEXT NOT NULL, op_key TEXT,\n    created_at TEXT NOT NULL,\n    contributor_type TEXT, contributor_ref TEXT\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_contribution_ledger_survivor",
+    "CREATE INDEX ix_contribution_ledger_survivor ON contribution_ledger(user_id, survivor_type, survivor_id)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_contribution_ledger_source",
+    "CREATE INDEX ix_contribution_ledger_source ON contribution_ledger(user_id, identity_digest)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_contribution_ledger_op_key",
+    "CREATE UNIQUE INDEX ix_contribution_ledger_op_key ON contribution_ledger(op_key) WHERE op_key IS NOT NULL"
+   ],
+   [
+    "add",
+    "table",
+    "source_revocations",
+    "CREATE TABLE source_revocations (\n    user_id TEXT NOT NULL, seq INTEGER NOT NULL,\n    identity_digest TEXT NOT NULL,\n    action TEXT NOT NULL CHECK(action IN ('revoke','lift')),\n    at TEXT NOT NULL, reason TEXT NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_source_revocations_user_digest",
+    "CREATE INDEX ix_source_revocations_user_digest ON source_revocations(user_id, identity_digest)"
+   ],
+   [
+    "add",
+    "table",
+    "edge_embedding",
+    "CREATE TABLE edge_embedding (\n    edge_id        TEXT    NOT NULL,\n    user_id        TEXT    NOT NULL,\n    embedder_id    TEXT    NOT NULL,\n    content_digest TEXT    NOT NULL,\n    dim            INTEGER NOT NULL,\n    vec            BLOB    NOT NULL,\n    built_at       TEXT    NOT NULL,\n    PRIMARY KEY (edge_id, embedder_id, content_digest)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_edge_embedding_lookup",
+    "CREATE INDEX ix_edge_embedding_lookup ON edge_embedding(user_id, embedder_id, dim)"
+   ],
+   [
+    "add",
+    "table",
+    "edge_event",
+    "CREATE TABLE edge_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    edge_id     TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_edge_event_lookup",
+    "CREATE INDEX ix_edge_event_lookup ON edge_event(user_id, edge_id, seq)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_edge_event_txn",
+    "CREATE INDEX ix_edge_event_txn ON edge_event(user_id, txn)"
+   ],
+   [
+    "add",
+    "table",
+    "store_epoch",
+    "CREATE TABLE store_epoch (\n    id INTEGER PRIMARY KEY CHECK(id = 1), started_at TEXT NOT NULL, schema_at INTEGER NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "policy_receipt",
+    "CREATE TABLE policy_receipt (\n    user_id        TEXT NOT NULL,\n    recall_id      TEXT NOT NULL,\n    policy_id      TEXT NOT NULL,\n    policy_version TEXT NOT NULL,\n    recorded_at    TEXT NOT NULL,\n    receipt        TEXT NOT NULL,\n    PRIMARY KEY (user_id, recall_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_policy_receipt_time",
+    "CREATE INDEX ix_policy_receipt_time ON policy_receipt(user_id, recorded_at)"
+   ],
+   [
+    "add",
+    "table",
+    "episode_event",
+    "CREATE TABLE episode_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    episode_id  TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_episode_event_lookup",
+    "CREATE INDEX ix_episode_event_lookup ON episode_event(user_id, episode_id, seq)"
+   ],
+   [
+    "add",
+    "table",
+    "redactions",
+    "CREATE TABLE redactions (\n    id                   TEXT NOT NULL PRIMARY KEY,\n    user_id              TEXT NOT NULL,\n    target_kind          TEXT NOT NULL,\n    target_id            TEXT NOT NULL,\n    fields               TEXT NOT NULL,\n    marker_version       INTEGER NOT NULL,\n    reason               TEXT NOT NULL,\n    store_version_before INTEGER NOT NULL,\n    store_version_after  INTEGER NOT NULL,\n    event_ref            TEXT,\n    recorded_at          TEXT NOT NULL,\n    source_body          TEXT,\n    source_origin        TEXT,\n    source_user          TEXT,\n    source_event_ref     TEXT,\n    state                TEXT NOT NULL DEFAULT 'applied',\n    pending_reason       TEXT\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_redactions_target",
+    "CREATE INDEX ix_redactions_target ON redactions(user_id, target_kind, target_id)"
+   ],
+   [
+    "add",
+    "table",
+    "request_registry",
+    "CREATE TABLE request_registry (\n    user_id        TEXT NOT NULL,\n    correlation_id TEXT NOT NULL,\n    verb           TEXT NOT NULL,\n    target_edge_id TEXT NOT NULL,\n    request_digest TEXT NOT NULL,\n    result_ref     TEXT NOT NULL,\n    written_at     TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_request_registry_target",
+    "CREATE INDEX ix_request_registry_target ON request_registry(user_id, target_edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "replies",
+    "CREATE TABLE replies (\n    id                      TEXT NOT NULL PRIMARY KEY,\n    user_id                 TEXT NOT NULL,\n    edge_id                 TEXT NOT NULL,\n    kind                    TEXT NOT NULL CHECK (kind IN ('challenge', 'context', 'withdrawn-consent', 'resolve')),\n    target                  TEXT,\n    text                    TEXT,\n    actor                   TEXT NOT NULL,\n    correlation_id          TEXT NOT NULL,\n    request_digest          TEXT NOT NULL,\n    origin                  TEXT NOT NULL CHECK (origin IN ('local', 'imported', 'restored')),\n    recorded_correlation_id TEXT,\n    origin_store            TEXT,\n    origin_user             TEXT,\n    origin_act_id           TEXT,\n    act_seq                 INTEGER,\n    written_at              TEXT NOT NULL,\n    CHECK ((kind = 'resolve') = (target IS NOT NULL)),\n    CHECK ((kind = 'resolve') = (text IS NULL)),\n    UNIQUE(user_id, correlation_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_replies_edge",
+    "CREATE INDEX ix_replies_edge ON replies(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "index",
+    "ux_replies_resolve",
+    "CREATE UNIQUE INDEX ux_replies_resolve ON replies(user_id, target) WHERE kind = 'resolve'"
+   ],
+   [
+    "add",
+    "table",
+    "act_counter",
+    "CREATE TABLE act_counter (\n    id       INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    next_seq INTEGER NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "arity_era",
+    "CREATE TABLE arity_era (\n    id           INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    effective_at TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "arity_inventory",
+    "CREATE TABLE arity_inventory (\n    edge_id            TEXT NOT NULL PRIMARY KEY,\n    user_id            TEXT NOT NULL,\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_arity_inventory_user",
+    "CREATE INDEX ix_arity_inventory_user ON arity_inventory(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "refusal_inventory",
+    "CREATE TABLE refusal_inventory (\n    refusal_id TEXT NOT NULL PRIMARY KEY,\n    user_id    TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_refusal_inventory_user",
+    "CREATE INDEX ix_refusal_inventory_user ON refusal_inventory(user_id)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_outcome",
+    "CREATE TABLE migration_outcome (\n    plan_id            TEXT NOT NULL,\n    user_id            TEXT NOT NULL,\n    edge_id            TEXT NOT NULL,\n    outcome            TEXT NOT NULL CHECK (outcome IN ('restored', 'withheld_revoked')),\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL,\n    successor_evidence TEXT NOT NULL,\n    applicable         INTEGER NOT NULL CHECK (applicable IN (0, 1)),\n    origin             TEXT NOT NULL CHECK (origin IN ('local', 'restored', 'imported')),\n    outcome_uid        TEXT NOT NULL UNIQUE,\n    undone_at          TEXT,\n    undo_request_ref   TEXT,\n    op_id              TEXT,\n    UNIQUE(plan_id, edge_id)\n)"
+   ],
+   [
+    "add",
+    "index",
+    "ix_migration_outcome_edge",
+    "CREATE INDEX ix_migration_outcome_edge ON migration_outcome(user_id, edge_id)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_run",
+    "CREATE TABLE migration_run (\n    plan_id      TEXT NOT NULL,\n    user_id      TEXT NOT NULL,\n    op_id        TEXT NOT NULL,\n    committed_at TEXT NOT NULL,\n    PRIMARY KEY(plan_id, user_id)\n)"
+   ],
+   [
+    "add",
+    "table",
+    "migration_op",
+    "CREATE TABLE migration_op (\n    op_id         TEXT NOT NULL PRIMARY KEY,\n    mode          TEXT NOT NULL CHECK (mode IN ('plan_only', 'restore', 'import-convert')),\n    inputs_digest TEXT NOT NULL,\n    admitted_at   TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "plan_header",
+    "CREATE TABLE plan_header (\n    id              INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    plan_id         TEXT NOT NULL UNIQUE,\n    effective_at    TEXT NOT NULL,\n    registry_digest TEXT NOT NULL,\n    op_id           TEXT NOT NULL\n)"
+   ],
+   [
+    "add",
+    "table",
+    "reclassification_plan",
+    "CREATE TABLE reclassification_plan (\n    plan_id    TEXT NOT NULL,\n    relation   TEXT NOT NULL,\n    from_arity TEXT NOT NULL CHECK (from_arity = 'single'),\n    to_arity   TEXT NOT NULL CHECK (to_arity = 'multi'),\n    PRIMARY KEY(plan_id, relation)\n)"
+   ],
+   [
+    "read",
+    "store-identity"
+   ],
+   [
+    "data",
+    "store-identity"
+   ],
+   [
+    "read",
+    "store-identity"
+   ],
+   [
+    "check",
+    "store-identity"
+   ],
+   [
+    "alter",
+    "ALTER TABLE supersession_operations ADD COLUMN request_digest TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE supersession_operations ADD COLUMN response TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE supersession_operations ADD COLUMN outcome_digest_version INTEGER NOT NULL DEFAULT 1"
+   ],
+   [
+    "read",
+    "v6-alter-path"
+   ],
+   [
+    "check",
+    "v6-alter-path",
+    "supersession_operations"
+   ],
+   [
+    "alter",
+    "ALTER TABLE supersession_operations ADD COLUMN request_digest_domain TEXT"
+   ],
+   [
+    "read",
+    "v10-alter-path"
+   ],
+   [
+    "check",
+    "v10-alter-path",
+    "supersession_operations"
+   ],
+   [
+    "read",
+    "v13-baseline"
+   ],
+   [
+    "read",
+    "v13-baseline"
+   ],
+   [
+    "data",
+    "v13-baseline"
+   ],
+   [
+    "check",
+    "v13-baseline"
+   ],
+   [
+    "read",
+    "store-epoch"
+   ],
+   [
+    "data",
+    "store-epoch"
+   ],
+   [
+    "read",
+    "store-epoch"
+   ],
+   [
+    "check",
+    "store-epoch"
+   ],
+   [
+    "read",
+    "v16-registry-backfill",
+    "v16-act-columns"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin TEXT NOT NULL DEFAULT 'local'"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN recorded_correlation_id TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin_store TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin_user TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN origin_act_id TEXT"
+   ],
+   [
+    "alter",
+    "ALTER TABLE confirmations ADD COLUMN act_seq INTEGER"
+   ],
+   [
+    "read",
+    "v16-alter-path"
+   ],
+   [
+    "check",
+    "v16-alter-path",
+    "confirmations"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "data",
+    "v16-act-counter"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "check",
+    "v16-act-counter"
+   ],
+   [
+    "read",
+    "v16-registry-backfill"
+   ],
+   [
+    "data",
+    "v16-registry-backfill"
+   ],
+   [
+    "read",
+    "v16-registry-backfill"
+   ],
+   [
+    "check",
+    "v16-registry-backfill"
+   ],
+   [
+    "read",
+    "v16-act-columns"
+   ],
+   [
+    "check",
+    "v16-act-columns"
+   ],
+   [
+    "read",
+    "v16-act-counter"
+   ],
+   [
+    "check",
+    "v16-act-counter"
+   ],
+   [
+    "data",
+    "v16-notice-state"
+   ],
+   [
+    "read",
+    "v16-notice-state"
+   ],
+   [
+    "check",
+    "v16-notice-state"
+   ],
+   [
+    "read",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-era"
+   ],
+   [
+    "data",
+    "v16-arity-era"
+   ],
+   [
+    "read",
+    "v16-arity-era"
+   ],
+   [
+    "check",
+    "v16-arity-era"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "data",
+    "v16-arity-inventory"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "read",
+    "v16-arity-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "data",
+    "v16-refusal-inventory"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "read",
+    "v16-refusal-inventory"
+   ],
+   [
+    "check",
+    "v16-refusal-inventory"
+   ],
+   [
+    "check",
+    "v16-arity-edges-unchanged"
+   ],
+   [
+    "stamp",
+    "16"
+   ],
+   [
+    "read",
+    "stamp"
+   ],
+   [
+    "check",
+    "stamp"
+   ]
+  ]
+ },
+ "grammar": "0018-rung-steps-v1",
+ "rungs": {
+  "1": {
+   "digest": "839b5513de9260e0cd895c8417189bbe710c9916f37977e98911c9c563450d9c",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "confirmations",
+     "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_confirmations_edge",
+     "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)"
+    ],
+    [
+     "stamp",
+     "2"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000001310000000000000001320000000000000001360000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c65000000000000000d636f6e6669726d6174696f6e730000000000000120435245415445205441424c4520636f6e6669726d6174696f6e7320280a2020202069642054455854204e4f54204e554c4c205052494d415259204b45592c20757365725f69642054455854204e4f54204e554c4c2c20656467655f69642054455854204e4f54204e554c4c2c0a20202020636f6e6669726d65645f61742054455854204e4f54204e554c4c2c206163746f722054455854204e4f54204e554c4c2c2063616c6c5f706174682054455854204e4f54204e554c4c2c0a20202020636f7272656c6174696f6e5f69642054455854204e4f54204e554c4c2c20726571756573745f6469676573742054455854204e4f54204e554c4c2c0a20202020554e4951554528757365725f69642c20636f7272656c6174696f6e5f6964290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001569785f636f6e6669726d6174696f6e735f65646765000000000000004543524541544520494e4445582069785f636f6e6669726d6174696f6e735f65646765204f4e20636f6e6669726d6174696f6e7328757365725f69642c20656467655f69642900000000000000057374616d7000000000000000013100000000000000013200000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 2
+  },
+  "10": {
+   "digest": "41fa510fd8a0dc793c3c08aa555a0d80e7d7690ce80d4333e1b845de6c5d1cb3",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "stamp",
+     "11"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d763100000000000000023130000000000000000231310000000000000001340000000000000005636c6f636b00000000000000013000000000000000057374616d700000000000000001310000000000000002313100000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 11
+  },
+  "11": {
+   "digest": "b24d938d5ad7ed6a04b5bc44b923d45466db0f1e32fe7871d2f96ad575619af5",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "edge_embedding",
+     "CREATE TABLE edge_embedding (\n    edge_id        TEXT    NOT NULL,\n    user_id        TEXT    NOT NULL,\n    embedder_id    TEXT    NOT NULL,\n    content_digest TEXT    NOT NULL,\n    dim            INTEGER NOT NULL,\n    vec            BLOB    NOT NULL,\n    built_at       TEXT    NOT NULL,\n    PRIMARY KEY (edge_id, embedder_id, content_digest)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_edge_embedding_lookup",
+     "CREATE INDEX ix_edge_embedding_lookup ON edge_embedding(user_id, embedder_id, dim)"
+    ],
+    [
+     "stamp",
+     "12"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d763100000000000000023131000000000000000231320000000000000001360000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c65000000000000000e656467655f656d62656464696e670000000000000159435245415445205441424c4520656467655f656d62656464696e6720280a20202020656467655f6964202020202020202054455854202020204e4f54204e554c4c2c0a20202020757365725f6964202020202020202054455854202020204e4f54204e554c4c2c0a20202020656d6265646465725f69642020202054455854202020204e4f54204e554c4c2c0a20202020636f6e74656e745f6469676573742054455854202020204e4f54204e554c4c2c0a2020202064696d202020202020202020202020494e5445474552204e4f54204e554c4c2c0a20202020766563202020202020202020202020424c4f42202020204e4f54204e554c4c2c0a202020206275696c745f61742020202020202054455854202020204e4f54204e554c4c2c0a202020205052494d415259204b45592028656467655f69642c20656d6265646465725f69642c20636f6e74656e745f646967657374290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001869785f656467655f656d62656464696e675f6c6f6f6b7570000000000000005243524541544520494e4445582069785f656467655f656d62656464696e675f6c6f6f6b7570204f4e20656467655f656d62656464696e6728757365725f69642c20656d6265646465725f69642c2064696d2900000000000000057374616d700000000000000001310000000000000002313200000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 12
+  },
+  "12": {
+   "digest": "35c34a4219b09b91746c6ff6cf72ef457103e77651269c0ec2c2cac51e48416b",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "edge_event",
+     "CREATE TABLE edge_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    edge_id     TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_edge_event_lookup",
+     "CREATE INDEX ix_edge_event_lookup ON edge_event(user_id, edge_id, seq)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_edge_event_txn",
+     "CREATE INDEX ix_edge_event_txn ON edge_event(user_id, txn)"
+    ],
+    [
+     "add",
+     "table",
+     "store_epoch",
+     "CREATE TABLE store_epoch (\n    id INTEGER PRIMARY KEY CHECK(id = 1), started_at TEXT NOT NULL, schema_at INTEGER NOT NULL\n)"
+    ],
+    [
+     "read",
+     "v13-baseline"
+    ],
+    [
+     "read",
+     "v13-baseline"
+    ],
+    [
+     "data",
+     "v13-baseline"
+    ],
+    [
+     "check",
+     "v13-baseline"
+    ],
+    [
+     "read",
+     "store-epoch"
+    ],
+    [
+     "data",
+     "store-epoch"
+    ],
+    [
+     "read",
+     "store-epoch"
+    ],
+    [
+     "check",
+     "store-epoch"
+    ],
+    [
+     "stamp",
+     "13"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000002313200000000000000023133000000000000000231360000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c65000000000000000a656467655f6576656e74000000000000013e435245415445205441424c4520656467655f6576656e7420280a20202020757365725f6964202020202054455854202020204e4f54204e554c4c2c0a20202020736571202020202020202020494e5445474552204e4f54204e554c4c2c0a2020202074786e202020202020202020494e5445474552204e4f54204e554c4c2c0a20202020656467655f6964202020202054455854202020204e4f54204e554c4c2c0a202020206b696e64202020202020202054455854202020204e4f54204e554c4c2c0a20202020726561736f6e202020202020544558542c0a2020202073746174652020202020202054455854202020204e4f54204e554c4c2c0a202020207265636f726465645f61742054455854202020204e4f54204e554c4c2c0a202020205052494d415259204b45592028757365725f69642c20736571290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001469785f656467655f6576656e745f6c6f6f6b7570000000000000004643524541544520494e4445582069785f656467655f6576656e745f6c6f6f6b7570204f4e20656467655f6576656e7428757365725f69642c20656467655f69642c207365712900000000000000036164640000000000000001330000000000000005696e646578000000000000001169785f656467655f6576656e745f74786e000000000000003a43524541544520494e4445582069785f656467655f6576656e745f74786e204f4e20656467655f6576656e7428757365725f69642c2074786e29000000000000000361646400000000000000013300000000000000057461626c65000000000000000b73746f72655f65706f6368000000000000007b435245415445205441424c452073746f72655f65706f636820280a20202020696420494e5445474552205052494d415259204b455920434845434b286964203d2031292c20737461727465645f61742054455854204e4f54204e554c4c2c20736368656d615f617420494e5445474552204e4f54204e554c4c0a29000000000000000472656164000000000000000131000000000000000c7631332d626173656c696e65000000000000000472656164000000000000000131000000000000000c7631332d626173656c696e65000000000000000464617461000000000000000131000000000000000c7631332d626173656c696e650000000000000005636865636b000000000000000131000000000000000c7631332d626173656c696e65000000000000000472656164000000000000000131000000000000000b73746f72652d65706f6368000000000000000464617461000000000000000131000000000000000b73746f72652d65706f6368000000000000000472656164000000000000000131000000000000000b73746f72652d65706f63680000000000000005636865636b000000000000000131000000000000000b73746f72652d65706f636800000000000000057374616d700000000000000001310000000000000002313300000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 13
+  },
+  "13": {
+   "digest": "9f98611cac091278e4710e19d713c0d2ae2fbe1b0d2ce9a982e5c8464eb76af2",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "policy_receipt",
+     "CREATE TABLE policy_receipt (\n    user_id        TEXT NOT NULL,\n    recall_id      TEXT NOT NULL,\n    policy_id      TEXT NOT NULL,\n    policy_version TEXT NOT NULL,\n    recorded_at    TEXT NOT NULL,\n    receipt        TEXT NOT NULL,\n    PRIMARY KEY (user_id, recall_id)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_policy_receipt_time",
+     "CREATE INDEX ix_policy_receipt_time ON policy_receipt(user_id, recorded_at)"
+    ],
+    [
+     "stamp",
+     "14"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d763100000000000000023133000000000000000231340000000000000001360000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c65000000000000000e706f6c6963795f726563656970740000000000000110435245415445205441424c4520706f6c6963795f7265636569707420280a20202020757365725f6964202020202020202054455854204e4f54204e554c4c2c0a20202020726563616c6c5f696420202020202054455854204e4f54204e554c4c2c0a20202020706f6c6963795f696420202020202054455854204e4f54204e554c4c2c0a20202020706f6c6963795f76657273696f6e2054455854204e4f54204e554c4c2c0a202020207265636f726465645f61742020202054455854204e4f54204e554c4c2c0a2020202072656365697074202020202020202054455854204e4f54204e554c4c2c0a202020205052494d415259204b45592028757365725f69642c20726563616c6c5f6964290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001669785f706f6c6963795f726563656970745f74696d65000000000000004b43524541544520494e4445582069785f706f6c6963795f726563656970745f74696d65204f4e20706f6c6963795f7265636569707428757365725f69642c207265636f726465645f61742900000000000000057374616d700000000000000001310000000000000002313400000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 14
+  },
+  "14": {
+   "digest": "3e87699c71620ba1675af3554d49390cdf5af1cff00e4bef15193bc248d08f69",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "episode_event",
+     "CREATE TABLE episode_event (\n    user_id     TEXT    NOT NULL,\n    seq         INTEGER NOT NULL,\n    txn         INTEGER NOT NULL,\n    episode_id  TEXT    NOT NULL,\n    kind        TEXT    NOT NULL,\n    reason      TEXT,\n    state       TEXT    NOT NULL,\n    recorded_at TEXT    NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_episode_event_lookup",
+     "CREATE INDEX ix_episode_event_lookup ON episode_event(user_id, episode_id, seq)"
+    ],
+    [
+     "add",
+     "table",
+     "redactions",
+     "CREATE TABLE redactions (\n    id                   TEXT NOT NULL PRIMARY KEY,\n    user_id              TEXT NOT NULL,\n    target_kind          TEXT NOT NULL,\n    target_id            TEXT NOT NULL,\n    fields               TEXT NOT NULL,\n    marker_version       INTEGER NOT NULL,\n    reason               TEXT NOT NULL,\n    store_version_before INTEGER NOT NULL,\n    store_version_after  INTEGER NOT NULL,\n    event_ref            TEXT,\n    recorded_at          TEXT NOT NULL,\n    source_body          TEXT,\n    source_origin        TEXT,\n    source_user          TEXT,\n    source_event_ref     TEXT\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_redactions_target",
+     "CREATE INDEX ix_redactions_target ON redactions(user_id, target_kind, target_id)"
+    ],
+    [
+     "stamp",
+     "15"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d763100000000000000023134000000000000000231350000000000000001380000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c65000000000000000d657069736f64655f6576656e740000000000000141435245415445205441424c4520657069736f64655f6576656e7420280a20202020757365725f6964202020202054455854202020204e4f54204e554c4c2c0a20202020736571202020202020202020494e5445474552204e4f54204e554c4c2c0a2020202074786e202020202020202020494e5445474552204e4f54204e554c4c2c0a20202020657069736f64655f6964202054455854202020204e4f54204e554c4c2c0a202020206b696e64202020202020202054455854202020204e4f54204e554c4c2c0a20202020726561736f6e202020202020544558542c0a2020202073746174652020202020202054455854202020204e4f54204e554c4c2c0a202020207265636f726465645f61742054455854202020204e4f54204e554c4c2c0a202020205052494d415259204b45592028757365725f69642c20736571290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001769785f657069736f64655f6576656e745f6c6f6f6b7570000000000000004f43524541544520494e4445582069785f657069736f64655f6576656e745f6c6f6f6b7570204f4e20657069736f64655f6576656e7428757365725f69642c20657069736f64655f69642c2073657129000000000000000361646400000000000000013300000000000000057461626c65000000000000000a726564616374696f6e73000000000000025a435245415445205441424c4520726564616374696f6e7320280a2020202069642020202020202020202020202020202020202054455854204e4f54204e554c4c205052494d415259204b45592c0a20202020757365725f6964202020202020202020202020202054455854204e4f54204e554c4c2c0a202020207461726765745f6b696e642020202020202020202054455854204e4f54204e554c4c2c0a202020207461726765745f696420202020202020202020202054455854204e4f54204e554c4c2c0a202020206669656c647320202020202020202020202020202054455854204e4f54204e554c4c2c0a202020206d61726b65725f76657273696f6e20202020202020494e5445474552204e4f54204e554c4c2c0a20202020726561736f6e20202020202020202020202020202054455854204e4f54204e554c4c2c0a2020202073746f72655f76657273696f6e5f6265666f726520494e5445474552204e4f54204e554c4c2c0a2020202073746f72655f76657273696f6e5f61667465722020494e5445474552204e4f54204e554c4c2c0a202020206576656e745f726566202020202020202020202020544558542c0a202020207265636f726465645f61742020202020202020202054455854204e4f54204e554c4c2c0a20202020736f757263655f626f647920202020202020202020544558542c0a20202020736f757263655f6f726967696e2020202020202020544558542c0a20202020736f757263655f7573657220202020202020202020544558542c0a20202020736f757263655f6576656e745f7265662020202020544558540a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001469785f726564616374696f6e735f746172676574000000000000005043524541544520494e4445582069785f726564616374696f6e735f746172676574204f4e20726564616374696f6e7328757365725f69642c207461726765745f6b696e642c207461726765745f69642900000000000000057374616d700000000000000001310000000000000002313500000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 15
+  },
+  "15": {
+   "digest": "1f5040fe13b4d901b3d62d4371b6bf1f1301fba3f4b6a1703b2bfa972628930d",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "request_registry",
+     "CREATE TABLE request_registry (\n    user_id        TEXT NOT NULL,\n    correlation_id TEXT NOT NULL,\n    verb           TEXT NOT NULL,\n    target_edge_id TEXT NOT NULL,\n    request_digest TEXT NOT NULL,\n    result_ref     TEXT NOT NULL,\n    written_at     TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_request_registry_target",
+     "CREATE INDEX ix_request_registry_target ON request_registry(user_id, target_edge_id)"
+    ],
+    [
+     "add",
+     "table",
+     "replies",
+     "CREATE TABLE replies (\n    id                      TEXT NOT NULL PRIMARY KEY,\n    user_id                 TEXT NOT NULL,\n    edge_id                 TEXT NOT NULL,\n    kind                    TEXT NOT NULL CHECK (kind IN ('challenge', 'context', 'withdrawn-consent', 'resolve')),\n    target                  TEXT,\n    text                    TEXT,\n    actor                   TEXT NOT NULL,\n    correlation_id          TEXT NOT NULL,\n    request_digest          TEXT NOT NULL,\n    origin                  TEXT NOT NULL CHECK (origin IN ('local', 'imported', 'restored')),\n    recorded_correlation_id TEXT,\n    origin_store            TEXT,\n    origin_user             TEXT,\n    origin_act_id           TEXT,\n    act_seq                 INTEGER,\n    written_at              TEXT NOT NULL,\n    CHECK ((kind = 'resolve') = (target IS NOT NULL)),\n    CHECK ((kind = 'resolve') = (text IS NULL)),\n    UNIQUE(user_id, correlation_id)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_replies_edge",
+     "CREATE INDEX ix_replies_edge ON replies(user_id, edge_id)"
+    ],
+    [
+     "add",
+     "index",
+     "ux_replies_resolve",
+     "CREATE UNIQUE INDEX ux_replies_resolve ON replies(user_id, target) WHERE kind = 'resolve'"
+    ],
+    [
+     "add",
+     "table",
+     "act_counter",
+     "CREATE TABLE act_counter (\n    id       INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    next_seq INTEGER NOT NULL\n)"
+    ],
+    [
+     "add",
+     "table",
+     "arity_era",
+     "CREATE TABLE arity_era (\n    id           INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    effective_at TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "table",
+     "arity_inventory",
+     "CREATE TABLE arity_inventory (\n    edge_id            TEXT NOT NULL PRIMARY KEY,\n    user_id            TEXT NOT NULL,\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_arity_inventory_user",
+     "CREATE INDEX ix_arity_inventory_user ON arity_inventory(user_id)"
+    ],
+    [
+     "add",
+     "table",
+     "refusal_inventory",
+     "CREATE TABLE refusal_inventory (\n    refusal_id TEXT NOT NULL PRIMARY KEY,\n    user_id    TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_refusal_inventory_user",
+     "CREATE INDEX ix_refusal_inventory_user ON refusal_inventory(user_id)"
+    ],
+    [
+     "add",
+     "table",
+     "migration_outcome",
+     "CREATE TABLE migration_outcome (\n    plan_id            TEXT NOT NULL,\n    user_id            TEXT NOT NULL,\n    edge_id            TEXT NOT NULL,\n    outcome            TEXT NOT NULL CHECK (outcome IN ('restored', 'withheld_revoked')),\n    pre_invalidated_at TEXT NOT NULL,\n    pre_reason         TEXT NOT NULL,\n    successor_evidence TEXT NOT NULL,\n    applicable         INTEGER NOT NULL CHECK (applicable IN (0, 1)),\n    origin             TEXT NOT NULL CHECK (origin IN ('local', 'restored', 'imported')),\n    outcome_uid        TEXT NOT NULL UNIQUE,\n    undone_at          TEXT,\n    undo_request_ref   TEXT,\n    op_id              TEXT,\n    UNIQUE(plan_id, edge_id)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_migration_outcome_edge",
+     "CREATE INDEX ix_migration_outcome_edge ON migration_outcome(user_id, edge_id)"
+    ],
+    [
+     "add",
+     "table",
+     "migration_run",
+     "CREATE TABLE migration_run (\n    plan_id      TEXT NOT NULL,\n    user_id      TEXT NOT NULL,\n    op_id        TEXT NOT NULL,\n    committed_at TEXT NOT NULL,\n    PRIMARY KEY(plan_id, user_id)\n)"
+    ],
+    [
+     "add",
+     "table",
+     "migration_op",
+     "CREATE TABLE migration_op (\n    op_id         TEXT NOT NULL PRIMARY KEY,\n    mode          TEXT NOT NULL CHECK (mode IN ('plan_only', 'restore', 'import-convert')),\n    inputs_digest TEXT NOT NULL,\n    admitted_at   TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "table",
+     "plan_header",
+     "CREATE TABLE plan_header (\n    id              INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),\n    plan_id         TEXT NOT NULL UNIQUE,\n    effective_at    TEXT NOT NULL,\n    registry_digest TEXT NOT NULL,\n    op_id           TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "table",
+     "reclassification_plan",
+     "CREATE TABLE reclassification_plan (\n    plan_id    TEXT NOT NULL,\n    relation   TEXT NOT NULL,\n    from_arity TEXT NOT NULL CHECK (from_arity = 'single'),\n    to_arity   TEXT NOT NULL CHECK (to_arity = 'multi'),\n    PRIMARY KEY(plan_id, relation)\n)"
+    ],
+    [
+     "read",
+     "v16-registry-backfill",
+     "v16-act-columns"
+    ],
+    [
+     "alter",
+     "ALTER TABLE confirmations ADD COLUMN origin TEXT NOT NULL DEFAULT 'local'"
+    ],
+    [
+     "alter",
+     "ALTER TABLE confirmations ADD COLUMN recorded_correlation_id TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE confirmations ADD COLUMN origin_store TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE confirmations ADD COLUMN origin_user TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE confirmations ADD COLUMN origin_act_id TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE confirmations ADD COLUMN act_seq INTEGER"
+    ],
+    [
+     "read",
+     "v16-alter-path"
+    ],
+    [
+     "check",
+     "v16-alter-path",
+     "confirmations"
+    ],
+    [
+     "read",
+     "v16-act-counter"
+    ],
+    [
+     "data",
+     "v16-act-counter"
+    ],
+    [
+     "read",
+     "v16-act-counter"
+    ],
+    [
+     "check",
+     "v16-act-counter"
+    ],
+    [
+     "read",
+     "v16-registry-backfill"
+    ],
+    [
+     "data",
+     "v16-registry-backfill"
+    ],
+    [
+     "read",
+     "v16-registry-backfill"
+    ],
+    [
+     "check",
+     "v16-registry-backfill"
+    ],
+    [
+     "read",
+     "v16-act-columns"
+    ],
+    [
+     "check",
+     "v16-act-columns"
+    ],
+    [
+     "read",
+     "v16-act-counter"
+    ],
+    [
+     "check",
+     "v16-act-counter"
+    ],
+    [
+     "read",
+     "v16-notice-state"
+    ],
+    [
+     "alter",
+     "ALTER TABLE redactions ADD COLUMN state TEXT NOT NULL DEFAULT 'applied'"
+    ],
+    [
+     "alter",
+     "ALTER TABLE redactions ADD COLUMN pending_reason TEXT"
+    ],
+    [
+     "read",
+     "v16-alter-path"
+    ],
+    [
+     "check",
+     "v16-alter-path",
+     "redactions"
+    ],
+    [
+     "data",
+     "v16-notice-state"
+    ],
+    [
+     "read",
+     "v16-notice-state"
+    ],
+    [
+     "check",
+     "v16-notice-state"
+    ],
+    [
+     "read",
+     "v16-arity-edges-unchanged",
+     "v16-arity-edges-unchanged",
+     "v16-arity-edges-unchanged"
+    ],
+    [
+     "read",
+     "v16-arity-edges-unchanged",
+     "v16-arity-edges-unchanged",
+     "v16-arity-edges-unchanged"
+    ],
+    [
+     "read",
+     "v16-arity-era"
+    ],
+    [
+     "data",
+     "v16-arity-era"
+    ],
+    [
+     "read",
+     "v16-arity-era"
+    ],
+    [
+     "check",
+     "v16-arity-era"
+    ],
+    [
+     "check",
+     "v16-arity-edges-unchanged"
+    ],
+    [
+     "read",
+     "v16-arity-inventory"
+    ],
+    [
+     "data",
+     "v16-arity-inventory"
+    ],
+    [
+     "read",
+     "v16-arity-inventory"
+    ],
+    [
+     "read",
+     "v16-arity-inventory"
+    ],
+    [
+     "check",
+     "v16-arity-inventory"
+    ],
+    [
+     "check",
+     "v16-arity-edges-unchanged"
+    ],
+    [
+     "read",
+     "v16-refusal-inventory"
+    ],
+    [
+     "data",
+     "v16-refusal-inventory"
+    ],
+    [
+     "read",
+     "v16-refusal-inventory"
+    ],
+    [
+     "read",
+     "v16-refusal-inventory"
+    ],
+    [
+     "check",
+     "v16-refusal-inventory"
+    ],
+    [
+     "check",
+     "v16-arity-edges-unchanged"
+    ],
+    [
+     "stamp",
+     "16"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000002313500000000000000023136000000000000000236390000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c650000000000000010726571756573745f72656769737472790000000000000133435245415445205441424c4520726571756573745f726567697374727920280a20202020757365725f6964202020202020202054455854204e4f54204e554c4c2c0a20202020636f7272656c6174696f6e5f69642054455854204e4f54204e554c4c2c0a2020202076657262202020202020202020202054455854204e4f54204e554c4c2c0a202020207461726765745f656467655f69642054455854204e4f54204e554c4c2c0a20202020726571756573745f6469676573742054455854204e4f54204e554c4c2c0a20202020726573756c745f726566202020202054455854204e4f54204e554c4c2c0a202020207772697474656e5f6174202020202054455854204e4f54204e554c4c2c0a20202020554e4951554528757365725f69642c20636f7272656c6174696f6e5f6964290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001a69785f726571756573745f72656769737472795f746172676574000000000000005443524541544520494e4445582069785f726571756573745f72656769737472795f746172676574204f4e20726571756573745f726567697374727928757365725f69642c207461726765745f656467655f696429000000000000000361646400000000000000013300000000000000057461626c6500000000000000077265706c69657300000000000003a1435245415445205441424c45207265706c69657320280a2020202069642020202020202020202020202020202020202020202054455854204e4f54204e554c4c205052494d415259204b45592c0a20202020757365725f6964202020202020202020202020202020202054455854204e4f54204e554c4c2c0a20202020656467655f6964202020202020202020202020202020202054455854204e4f54204e554c4c2c0a202020206b696e64202020202020202020202020202020202020202054455854204e4f54204e554c4c20434845434b20286b696e6420494e2028276368616c6c656e6765272c2027636f6e74657874272c202777697468647261776e2d636f6e73656e74272c20277265736f6c76652729292c0a20202020746172676574202020202020202020202020202020202020544558542c0a20202020746578742020202020202020202020202020202020202020544558542c0a202020206163746f722020202020202020202020202020202020202054455854204e4f54204e554c4c2c0a20202020636f7272656c6174696f6e5f69642020202020202020202054455854204e4f54204e554c4c2c0a20202020726571756573745f6469676573742020202020202020202054455854204e4f54204e554c4c2c0a202020206f726967696e20202020202020202020202020202020202054455854204e4f54204e554c4c20434845434b20286f726967696e20494e2028276c6f63616c272c2027696d706f72746564272c2027726573746f7265642729292c0a202020207265636f726465645f636f7272656c6174696f6e5f696420544558542c0a202020206f726967696e5f73746f7265202020202020202020202020544558542c0a202020206f726967696e5f7573657220202020202020202020202020544558542c0a202020206f726967696e5f6163745f69642020202020202020202020544558542c0a202020206163745f7365712020202020202020202020202020202020494e54454745522c0a202020207772697474656e5f6174202020202020202020202020202054455854204e4f54204e554c4c2c0a20202020434845434b2028286b696e64203d20277265736f6c76652729203d2028746172676574204953204e4f54204e554c4c29292c0a20202020434845434b2028286b696e64203d20277265736f6c76652729203d202874657874204953204e554c4c29292c0a20202020554e4951554528757365725f69642c20636f7272656c6174696f6e5f6964290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000000f69785f7265706c6965735f65646765000000000000003943524541544520494e4445582069785f7265706c6965735f65646765204f4e207265706c69657328757365725f69642c20656467655f69642900000000000000036164640000000000000001330000000000000005696e646578000000000000001275785f7265706c6965735f7265736f6c7665000000000000005943524541544520554e4951554520494e4445582075785f7265706c6965735f7265736f6c7665204f4e207265706c69657328757365725f69642c2074617267657429205748455245206b696e64203d20277265736f6c766527000000000000000361646400000000000000013300000000000000057461626c65000000000000000b6163745f636f756e7465720000000000000074435245415445205441424c45206163745f636f756e74657220280a20202020696420202020202020494e5445474552204e4f54204e554c4c205052494d415259204b455920434845434b20286964203d2031292c0a202020206e6578745f73657120494e5445474552204e4f54204e554c4c0a29000000000000000361646400000000000000013300000000000000057461626c65000000000000000961726974795f6572610000000000000077435245415445205441424c452061726974795f65726120280a2020202069642020202020202020202020494e5445474552204e4f54204e554c4c205052494d415259204b455920434845434b20286964203d2031292c0a202020206566666563746976655f61742054455854204e4f54204e554c4c0a29000000000000000361646400000000000000013300000000000000057461626c65000000000000000f61726974795f696e76656e746f727900000000000000c3435245415445205441424c452061726974795f696e76656e746f727920280a20202020656467655f696420202020202020202020202054455854204e4f54204e554c4c205052494d415259204b45592c0a20202020757365725f696420202020202020202020202054455854204e4f54204e554c4c2c0a202020207072655f696e76616c6964617465645f61742054455854204e4f54204e554c4c2c0a202020207072655f726561736f6e20202020202020202054455854204e4f54204e554c4c0a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001769785f61726974795f696e76656e746f72795f75736572000000000000004043524541544520494e4445582069785f61726974795f696e76656e746f72795f75736572204f4e2061726974795f696e76656e746f727928757365725f696429000000000000000361646400000000000000013300000000000000057461626c6500000000000000117265667573616c5f696e76656e746f72790000000000000069435245415445205441424c45207265667573616c5f696e76656e746f727920280a202020207265667573616c5f69642054455854204e4f54204e554c4c205052494d415259204b45592c0a20202020757365725f69642020202054455854204e4f54204e554c4c0a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001969785f7265667573616c5f696e76656e746f72795f75736572000000000000004443524541544520494e4445582069785f7265667573616c5f696e76656e746f72795f75736572204f4e207265667573616c5f696e76656e746f727928757365725f696429000000000000000361646400000000000000013300000000000000057461626c6500000000000000116d6967726174696f6e5f6f7574636f6d6500000000000002a1435245415445205441424c45206d6967726174696f6e5f6f7574636f6d6520280a20202020706c616e5f696420202020202020202020202054455854204e4f54204e554c4c2c0a20202020757365725f696420202020202020202020202054455854204e4f54204e554c4c2c0a20202020656467655f696420202020202020202020202054455854204e4f54204e554c4c2c0a202020206f7574636f6d6520202020202020202020202054455854204e4f54204e554c4c20434845434b20286f7574636f6d6520494e202827726573746f726564272c20277769746868656c645f7265766f6b65642729292c0a202020207072655f696e76616c6964617465645f61742054455854204e4f54204e554c4c2c0a202020207072655f726561736f6e20202020202020202054455854204e4f54204e554c4c2c0a20202020737563636573736f725f65766964656e63652054455854204e4f54204e554c4c2c0a202020206170706c696361626c65202020202020202020494e5445474552204e4f54204e554c4c20434845434b20286170706c696361626c6520494e2028302c203129292c0a202020206f726967696e2020202020202020202020202054455854204e4f54204e554c4c20434845434b20286f726967696e20494e2028276c6f63616c272c2027726573746f726564272c2027696d706f727465642729292c0a202020206f7574636f6d655f756964202020202020202054455854204e4f54204e554c4c20554e495155452c0a20202020756e646f6e655f617420202020202020202020544558542c0a20202020756e646f5f726571756573745f726566202020544558542c0a202020206f705f69642020202020202020202020202020544558542c0a20202020554e4951554528706c616e5f69642c20656467655f6964290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001969785f6d6967726174696f6e5f6f7574636f6d655f65646765000000000000004d43524541544520494e4445582069785f6d6967726174696f6e5f6f7574636f6d655f65646765204f4e206d6967726174696f6e5f6f7574636f6d6528757365725f69642c20656467655f696429000000000000000361646400000000000000013300000000000000057461626c65000000000000000d6d6967726174696f6e5f72756e00000000000000c0435245415445205441424c45206d6967726174696f6e5f72756e20280a20202020706c616e5f696420202020202054455854204e4f54204e554c4c2c0a20202020757365725f696420202020202054455854204e4f54204e554c4c2c0a202020206f705f6964202020202020202054455854204e4f54204e554c4c2c0a20202020636f6d6d69747465645f61742054455854204e4f54204e554c4c2c0a202020205052494d415259204b455928706c616e5f69642c20757365725f6964290a29000000000000000361646400000000000000013300000000000000057461626c65000000000000000c6d6967726174696f6e5f6f7000000000000000e7435245415445205441424c45206d6967726174696f6e5f6f7020280a202020206f705f696420202020202020202054455854204e4f54204e554c4c205052494d415259204b45592c0a202020206d6f64652020202020202020202054455854204e4f54204e554c4c20434845434b20286d6f646520494e202827706c616e5f6f6e6c79272c2027726573746f7265272c2027696d706f72742d636f6e766572742729292c0a20202020696e707574735f6469676573742054455854204e4f54204e554c4c2c0a2020202061646d69747465645f617420202054455854204e4f54204e554c4c0a29000000000000000361646400000000000000013300000000000000057461626c65000000000000000b706c616e5f68656164657200000000000000ef435245415445205441424c4520706c616e5f68656164657220280a2020202069642020202020202020202020202020494e5445474552204e4f54204e554c4c205052494d415259204b455920434845434b20286964203d2031292c0a20202020706c616e5f696420202020202020202054455854204e4f54204e554c4c20554e495155452c0a202020206566666563746976655f61742020202054455854204e4f54204e554c4c2c0a2020202072656769737472795f6469676573742054455854204e4f54204e554c4c2c0a202020206f705f6964202020202020202020202054455854204e4f54204e554c4c0a29000000000000000361646400000000000000013300000000000000057461626c6500000000000000157265636c617373696669636174696f6e5f706c616e00000000000000fa435245415445205441424c45207265636c617373696669636174696f6e5f706c616e20280a20202020706c616e5f69642020202054455854204e4f54204e554c4c2c0a2020202072656c6174696f6e20202054455854204e4f54204e554c4c2c0a2020202066726f6d5f61726974792054455854204e4f54204e554c4c20434845434b202866726f6d5f6172697479203d202773696e676c6527292c0a20202020746f5f617269747920202054455854204e4f54204e554c4c20434845434b2028746f5f6172697479203d20276d756c746927292c0a202020205052494d415259204b455928706c616e5f69642c2072656c6174696f6e290a2900000000000000047265616400000000000000013200000000000000157631362d72656769737472792d6261636b66696c6c000000000000000f7631362d6163742d636f6c756d6e730000000000000005616c7465720000000000000001310000000000000049414c544552205441424c4520636f6e6669726d6174696f6e732041444420434f4c554d4e206f726967696e2054455854204e4f54204e554c4c2044454641554c5420276c6f63616c270000000000000005616c7465720000000000000001310000000000000041414c544552205441424c4520636f6e6669726d6174696f6e732041444420434f4c554d4e207265636f726465645f636f7272656c6174696f6e5f696420544558540000000000000005616c7465720000000000000001310000000000000036414c544552205441424c4520636f6e6669726d6174696f6e732041444420434f4c554d4e206f726967696e5f73746f726520544558540000000000000005616c7465720000000000000001310000000000000035414c544552205441424c4520636f6e6669726d6174696f6e732041444420434f4c554d4e206f726967696e5f7573657220544558540000000000000005616c7465720000000000000001310000000000000037414c544552205441424c4520636f6e6669726d6174696f6e732041444420434f4c554d4e206f726967696e5f6163745f696420544558540000000000000005616c7465720000000000000001310000000000000034414c544552205441424c4520636f6e6669726d6174696f6e732041444420434f4c554d4e206163745f73657120494e5445474552000000000000000472656164000000000000000131000000000000000e7631362d616c7465722d706174680000000000000005636865636b000000000000000132000000000000000e7631362d616c7465722d70617468000000000000000d636f6e6669726d6174696f6e73000000000000000472656164000000000000000131000000000000000f7631362d6163742d636f756e746572000000000000000464617461000000000000000131000000000000000f7631362d6163742d636f756e746572000000000000000472656164000000000000000131000000000000000f7631362d6163742d636f756e7465720000000000000005636865636b000000000000000131000000000000000f7631362d6163742d636f756e74657200000000000000047265616400000000000000013100000000000000157631362d72656769737472792d6261636b66696c6c00000000000000046461746100000000000000013100000000000000157631362d72656769737472792d6261636b66696c6c00000000000000047265616400000000000000013100000000000000157631362d72656769737472792d6261636b66696c6c0000000000000005636865636b00000000000000013100000000000000157631362d72656769737472792d6261636b66696c6c000000000000000472656164000000000000000131000000000000000f7631362d6163742d636f6c756d6e730000000000000005636865636b000000000000000131000000000000000f7631362d6163742d636f6c756d6e73000000000000000472656164000000000000000131000000000000000f7631362d6163742d636f756e7465720000000000000005636865636b000000000000000131000000000000000f7631362d6163742d636f756e74657200000000000000047265616400000000000000013100000000000000107631362d6e6f746963652d73746174650000000000000005616c7465720000000000000001310000000000000047414c544552205441424c4520726564616374696f6e732041444420434f4c554d4e2073746174652054455854204e4f54204e554c4c2044454641554c5420276170706c696564270000000000000005616c7465720000000000000001310000000000000035414c544552205441424c4520726564616374696f6e732041444420434f4c554d4e2070656e64696e675f726561736f6e2054455854000000000000000472656164000000000000000131000000000000000e7631362d616c7465722d706174680000000000000005636865636b000000000000000132000000000000000e7631362d616c7465722d70617468000000000000000a726564616374696f6e7300000000000000046461746100000000000000013100000000000000107631362d6e6f746963652d737461746500000000000000047265616400000000000000013100000000000000107631362d6e6f746963652d73746174650000000000000005636865636b00000000000000013100000000000000107631362d6e6f746963652d737461746500000000000000047265616400000000000000013300000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000047265616400000000000000013300000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000197631362d61726974792d65646765732d756e6368616e676564000000000000000472656164000000000000000131000000000000000d7631362d61726974792d657261000000000000000464617461000000000000000131000000000000000d7631362d61726974792d657261000000000000000472656164000000000000000131000000000000000d7631362d61726974792d6572610000000000000005636865636b000000000000000131000000000000000d7631362d61726974792d6572610000000000000005636865636b00000000000000013100000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000047265616400000000000000013100000000000000137631362d61726974792d696e76656e746f727900000000000000046461746100000000000000013100000000000000137631362d61726974792d696e76656e746f727900000000000000047265616400000000000000013100000000000000137631362d61726974792d696e76656e746f727900000000000000047265616400000000000000013100000000000000137631362d61726974792d696e76656e746f72790000000000000005636865636b00000000000000013100000000000000137631362d61726974792d696e76656e746f72790000000000000005636865636b00000000000000013100000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000047265616400000000000000013100000000000000157631362d7265667573616c2d696e76656e746f727900000000000000046461746100000000000000013100000000000000157631362d7265667573616c2d696e76656e746f727900000000000000047265616400000000000000013100000000000000157631362d7265667573616c2d696e76656e746f727900000000000000047265616400000000000000013100000000000000157631362d7265667573616c2d696e76656e746f72790000000000000005636865636b00000000000000013100000000000000157631362d7265667573616c2d696e76656e746f72790000000000000005636865636b00000000000000013100000000000000197631362d61726974792d65646765732d756e6368616e67656400000000000000057374616d700000000000000001310000000000000002313600000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 16
+  },
+  "2": {
+   "digest": "064497a6f8ec72be1234b895f0a20194321ef6a284afa1f0f4140f8b8e3d095e",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "consolidation_ops",
+     "CREATE TABLE consolidation_ops (\n    operation_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    fence INTEGER NOT NULL, state TEXT NOT NULL, owner TEXT NOT NULL,\n    lease_duration INTEGER NOT NULL, lease_expires_at TEXT NOT NULL,\n    claimed_ids TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_consolidation_ops_user_state",
+     "CREATE INDEX ix_consolidation_ops_user_state ON consolidation_ops(user_id, state)"
+    ],
+    [
+     "read",
+     "v2-v3-outcome-chains"
+    ],
+    [
+     "data",
+     "v2-v3-outcome-chains"
+    ],
+    [
+     "check",
+     "v2-v3-outcome-chains"
+    ],
+    [
+     "stamp",
+     "3"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000001320000000000000001330000000000000001390000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c650000000000000011636f6e736f6c69646174696f6e5f6f7073000000000000010e435245415445205441424c4520636f6e736f6c69646174696f6e5f6f707320280a202020206f7065726174696f6e5f69642054455854204e4f54204e554c4c205052494d415259204b45592c20757365725f69642054455854204e4f54204e554c4c2c0a2020202066656e636520494e5445474552204e4f54204e554c4c2c2073746174652054455854204e4f54204e554c4c2c206f776e65722054455854204e4f54204e554c4c2c0a202020206c656173655f6475726174696f6e20494e5445474552204e4f54204e554c4c2c206c656173655f657870697265735f61742054455854204e4f54204e554c4c2c0a20202020636c61696d65645f6964732054455854204e4f54204e554c4c0a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001f69785f636f6e736f6c69646174696f6e5f6f70735f757365725f7374617465000000000000005143524541544520494e4445582069785f636f6e736f6c69646174696f6e5f6f70735f757365725f7374617465204f4e20636f6e736f6c69646174696f6e5f6f707328757365725f69642c20737461746529000000000000000472656164000000000000000131000000000000001476322d76332d6f7574636f6d652d636861696e73000000000000000464617461000000000000000131000000000000001476322d76332d6f7574636f6d652d636861696e730000000000000005636865636b000000000000000131000000000000001476322d76332d6f7574636f6d652d636861696e7300000000000000057374616d7000000000000000013100000000000000013300000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 3
+  },
+  "3": {
+   "digest": "63309f98289708aa6f7ca14c44a2c47fc965f67fa6ae633198c65248022192c2",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "supersession_refusals",
+     "CREATE TABLE supersession_refusals (\n    refusal_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    prior_edge_id TEXT NOT NULL, incoming_edge_id TEXT NOT NULL, relation TEXT NOT NULL,\n    prior_effective INTEGER NOT NULL, incoming_effective INTEGER NOT NULL,\n    rule_version TEXT NOT NULL, created_at TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_supersession_refusals_user",
+     "CREATE INDEX ix_supersession_refusals_user ON supersession_refusals(user_id)"
+    ],
+    [
+     "add",
+     "table",
+     "supersession_operations",
+     "CREATE TABLE supersession_operations (\n    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,\n    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,\n    PRIMARY KEY (user_id, operation_id)\n)"
+    ],
+    [
+     "data",
+     "v3-v4-wiki-drop"
+    ],
+    [
+     "read",
+     "v3-v4-wiki-drop"
+    ],
+    [
+     "check",
+     "v3-v4-wiki-drop"
+    ],
+    [
+     "stamp",
+     "4"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d7631000000000000000133000000000000000134000000000000000231300000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c650000000000000015737570657273657373696f6e5f7265667573616c730000000000000144435245415445205441424c4520737570657273657373696f6e5f7265667573616c7320280a202020207265667573616c5f69642054455854204e4f54204e554c4c205052494d415259204b45592c20757365725f69642054455854204e4f54204e554c4c2c0a202020207072696f725f656467655f69642054455854204e4f54204e554c4c2c20696e636f6d696e675f656467655f69642054455854204e4f54204e554c4c2c2072656c6174696f6e2054455854204e4f54204e554c4c2c0a202020207072696f725f65666665637469766520494e5445474552204e4f54204e554c4c2c20696e636f6d696e675f65666665637469766520494e5445474552204e4f54204e554c4c2c0a2020202072756c655f76657273696f6e2054455854204e4f54204e554c4c2c20637265617465645f61742054455854204e4f54204e554c4c0a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001d69785f737570657273657373696f6e5f7265667573616c735f75736572000000000000004c43524541544520494e4445582069785f737570657273657373696f6e5f7265667573616c735f75736572204f4e20737570657273657373696f6e5f7265667573616c7328757365725f696429000000000000000361646400000000000000013300000000000000057461626c650000000000000017737570657273657373696f6e5f6f7065726174696f6e7300000000000000c7435245415445205441424c4520737570657273657373696f6e5f6f7065726174696f6e7320280a20202020757365725f69642054455854204e4f54204e554c4c2c206f7065726174696f6e5f69642054455854204e4f54204e554c4c2c0a202020206c6f676963616c5f726571756573745f6469676573742054455854204e4f54204e554c4c2c207374617475732054455854204e4f54204e554c4c2c0a202020205052494d415259204b45592028757365725f69642c206f7065726174696f6e5f6964290a29000000000000000464617461000000000000000131000000000000000f76332d76342d77696b692d64726f70000000000000000472656164000000000000000131000000000000000f76332d76342d77696b692d64726f700000000000000005636865636b000000000000000131000000000000000f76332d76342d77696b692d64726f7000000000000000057374616d7000000000000000013100000000000000013400000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 4
+  },
+  "4": {
+   "digest": "171138b1e0694107abf4519551223b5b2ddcd7e562b75f723f4e7f0681afd005",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "store_identity",
+     "CREATE TABLE store_identity (\n    id INTEGER PRIMARY KEY CHECK(id = 1), origin TEXT NOT NULL\n)"
+    ],
+    [
+     "read",
+     "store-identity"
+    ],
+    [
+     "data",
+     "store-identity"
+    ],
+    [
+     "read",
+     "store-identity"
+    ],
+    [
+     "check",
+     "store-identity"
+    ],
+    [
+     "stamp",
+     "5"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000001340000000000000001350000000000000001390000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c65000000000000000e73746f72655f6964656e74697479000000000000005e435245415445205441424c452073746f72655f6964656e7469747920280a20202020696420494e5445474552205052494d415259204b455920434845434b286964203d2031292c206f726967696e2054455854204e4f54204e554c4c0a29000000000000000472656164000000000000000131000000000000000e73746f72652d6964656e74697479000000000000000464617461000000000000000131000000000000000e73746f72652d6964656e74697479000000000000000472656164000000000000000131000000000000000e73746f72652d6964656e746974790000000000000005636865636b000000000000000131000000000000000e73746f72652d6964656e7469747900000000000000057374616d7000000000000000013100000000000000013500000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 5
+  },
+  "5": {
+   "digest": "1bd14f23a47485375310865087384e7e80d0ec228cb2d1a3c20785f1df35237d",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "contribution_ledger",
+     "CREATE TABLE contribution_ledger (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,\n    site TEXT NOT NULL,\n    identity_digest TEXT, evidence_ref_digest TEXT,\n    payload TEXT NOT NULL, op_key TEXT,\n    created_at TEXT NOT NULL\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_contribution_ledger_survivor",
+     "CREATE INDEX ix_contribution_ledger_survivor ON contribution_ledger(user_id, survivor_type, survivor_id)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_contribution_ledger_source",
+     "CREATE INDEX ix_contribution_ledger_source ON contribution_ledger(user_id, identity_digest)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_contribution_ledger_op_key",
+     "CREATE UNIQUE INDEX ix_contribution_ledger_op_key ON contribution_ledger(op_key) WHERE op_key IS NOT NULL"
+    ],
+    [
+     "alter",
+     "ALTER TABLE supersession_operations ADD COLUMN request_digest TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE supersession_operations ADD COLUMN response TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE supersession_operations ADD COLUMN outcome_digest_version INTEGER NOT NULL DEFAULT 1"
+    ],
+    [
+     "read",
+     "v6-alter-path"
+    ],
+    [
+     "check",
+     "v6-alter-path",
+     "supersession_operations"
+    ],
+    [
+     "stamp",
+     "6"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d7631000000000000000135000000000000000136000000000000000231330000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c650000000000000013636f6e747269627574696f6e5f6c6564676572000000000000012a435245415445205441424c4520636f6e747269627574696f6e5f6c656467657220280a2020202069642054455854204e4f54204e554c4c205052494d415259204b45592c20757365725f69642054455854204e4f54204e554c4c2c0a202020207375727669766f725f747970652054455854204e4f54204e554c4c2c207375727669766f725f69642054455854204e4f54204e554c4c2c0a20202020736974652054455854204e4f54204e554c4c2c0a202020206964656e746974795f64696765737420544558542c2065766964656e63655f7265665f64696765737420544558542c0a202020207061796c6f61642054455854204e4f54204e554c4c2c206f705f6b657920544558542c0a20202020637265617465645f61742054455854204e4f54204e554c4c0a2900000000000000036164640000000000000001330000000000000005696e646578000000000000001f69785f636f6e747269627574696f6e5f6c65646765725f7375727669766f72000000000000006843524541544520494e4445582069785f636f6e747269627574696f6e5f6c65646765725f7375727669766f72204f4e20636f6e747269627574696f6e5f6c656467657228757365725f69642c207375727669766f725f747970652c207375727669766f725f69642900000000000000036164640000000000000001330000000000000005696e646578000000000000001d69785f636f6e747269627574696f6e5f6c65646765725f736f75726365000000000000005b43524541544520494e4445582069785f636f6e747269627574696f6e5f6c65646765725f736f75726365204f4e20636f6e747269627574696f6e5f6c656467657228757365725f69642c206964656e746974795f6469676573742900000000000000036164640000000000000001330000000000000005696e646578000000000000001d69785f636f6e747269627574696f6e5f6c65646765725f6f705f6b6579000000000000006943524541544520554e4951554520494e4445582069785f636f6e747269627574696f6e5f6c65646765725f6f705f6b6579204f4e20636f6e747269627574696f6e5f6c6564676572286f705f6b657929205748455245206f705f6b6579204953204e4f54204e554c4c0000000000000005616c7465720000000000000001310000000000000042414c544552205441424c4520737570657273657373696f6e5f6f7065726174696f6e732041444420434f4c554d4e20726571756573745f64696765737420544558540000000000000005616c746572000000000000000131000000000000003c414c544552205441424c4520737570657273657373696f6e5f6f7065726174696f6e732041444420434f4c554d4e20726573706f6e736520544558540000000000000005616c7465720000000000000001310000000000000060414c544552205441424c4520737570657273657373696f6e5f6f7065726174696f6e732041444420434f4c554d4e206f7574636f6d655f6469676573745f76657273696f6e20494e5445474552204e4f54204e554c4c2044454641554c542031000000000000000472656164000000000000000131000000000000000d76362d616c7465722d706174680000000000000005636865636b000000000000000132000000000000000d76362d616c7465722d706174680000000000000017737570657273657373696f6e5f6f7065726174696f6e7300000000000000057374616d7000000000000000013100000000000000013600000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 6
+  },
+  "6": {
+   "digest": "601b8520775fb341f78a198a74fbaed0ae854190b1fa756380c565390ca11115",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "stamp",
+     "7"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000001360000000000000001370000000000000001340000000000000005636c6f636b00000000000000013000000000000000057374616d7000000000000000013100000000000000013700000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 7
+  },
+  "7": {
+   "digest": "4ed1b14479336dceeb7059974e16615ac780e6480441fc164273bd71d8ca6b0e",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "alter",
+     "ALTER TABLE contribution_ledger ADD COLUMN contributor_type TEXT"
+    ],
+    [
+     "alter",
+     "ALTER TABLE contribution_ledger ADD COLUMN contributor_ref TEXT"
+    ],
+    [
+     "read",
+     "v8-alter-path"
+    ],
+    [
+     "check",
+     "v8-alter-path",
+     "contribution_ledger"
+    ],
+    [
+     "stamp",
+     "8"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000001370000000000000001380000000000000001380000000000000005636c6f636b0000000000000001300000000000000005616c7465720000000000000001310000000000000040414c544552205441424c4520636f6e747269627574696f6e5f6c65646765722041444420434f4c554d4e20636f6e7472696275746f725f7479706520544558540000000000000005616c746572000000000000000131000000000000003f414c544552205441424c4520636f6e747269627574696f6e5f6c65646765722041444420434f4c554d4e20636f6e7472696275746f725f7265662054455854000000000000000472656164000000000000000131000000000000000d76382d616c7465722d706174680000000000000005636865636b000000000000000132000000000000000d76382d616c7465722d706174680000000000000013636f6e747269627574696f6e5f6c656467657200000000000000057374616d7000000000000000013100000000000000013800000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 8
+  },
+  "8": {
+   "digest": "595c518bafd909449ac8e435f6880308b7b3d96dafb3988b274ba46878cbf0e6",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "add",
+     "table",
+     "source_revocations",
+     "CREATE TABLE source_revocations (\n    user_id TEXT NOT NULL, seq INTEGER NOT NULL,\n    identity_digest TEXT NOT NULL,\n    action TEXT NOT NULL CHECK(action IN ('revoke','lift')),\n    at TEXT NOT NULL, reason TEXT NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)"
+    ],
+    [
+     "add",
+     "index",
+     "ix_source_revocations_user_digest",
+     "CREATE INDEX ix_source_revocations_user_digest ON source_revocations(user_id, identity_digest)"
+    ],
+    [
+     "stamp",
+     "9"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d76310000000000000001380000000000000001390000000000000001360000000000000005636c6f636b000000000000000130000000000000000361646400000000000000013300000000000000057461626c650000000000000012736f757263655f7265766f636174696f6e7300000000000000ff435245415445205441424c4520736f757263655f7265766f636174696f6e7320280a20202020757365725f69642054455854204e4f54204e554c4c2c2073657120494e5445474552204e4f54204e554c4c2c0a202020206964656e746974795f6469676573742054455854204e4f54204e554c4c2c0a20202020616374696f6e2054455854204e4f54204e554c4c20434845434b28616374696f6e20494e2028277265766f6b65272c276c6966742729292c0a2020202061742054455854204e4f54204e554c4c2c20726561736f6e2054455854204e4f54204e554c4c2c0a202020205052494d415259204b45592028757365725f69642c20736571290a2900000000000000036164640000000000000001330000000000000005696e646578000000000000002169785f736f757263655f7265766f636174696f6e735f757365725f646967657374000000000000005e43524541544520494e4445582069785f736f757263655f7265766f636174696f6e735f757365725f646967657374204f4e20736f757263655f7265766f636174696f6e7328757365725f69642c206964656e746974795f6469676573742900000000000000057374616d7000000000000000013100000000000000013900000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 9
+  },
+  "9": {
+   "digest": "3a1d8c30515bb5427d442e249ba978f90aa4ad4e94fef5805ca20657281ddedf",
+   "entries": [
+    [
+     "clock"
+    ],
+    [
+     "alter",
+     "ALTER TABLE supersession_operations ADD COLUMN request_digest_domain TEXT"
+    ],
+    [
+     "read",
+     "v10-alter-path"
+    ],
+    [
+     "check",
+     "v10-alter-path",
+     "supersession_operations"
+    ],
+    [
+     "stamp",
+     "10"
+    ],
+    [
+     "read",
+     "stamp"
+    ],
+    [
+     "check",
+     "stamp"
+    ]
+   ],
+   "preimage": "0000000000000012303031382d72756e672d73746570732d7631000000000000000139000000000000000231300000000000000001370000000000000005636c6f636b0000000000000001300000000000000005616c7465720000000000000001310000000000000049414c544552205441424c4520737570657273657373696f6e5f6f7065726174696f6e732041444420434f4c554d4e20726571756573745f6469676573745f646f6d61696e2054455854000000000000000472656164000000000000000131000000000000000e7631302d616c7465722d706174680000000000000005636865636b000000000000000132000000000000000e7631302d616c7465722d706174680000000000000017737570657273657373696f6e5f6f7065726174696f6e7300000000000000057374616d700000000000000001310000000000000002313000000000000000047265616400000000000000013100000000000000057374616d700000000000000005636865636b00000000000000013100000000000000057374616d70",
+   "to": 10
+  }
+ }
+}

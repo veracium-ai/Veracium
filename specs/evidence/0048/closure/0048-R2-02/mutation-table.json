@@ -1,5 +1,5 @@
 {
- "body_sha256": "e92044e223549beadd2bf5492bff1e8b9b1cd4052cf2f42f5e4a50b8d355efb9",
+ "body_sha256": "2f6a9bde5c3379ba18da842cee965b923fe44ca5dcb83c7c3338681258f6c366",
  "controls": [
   {
    "anchor_counts": [
@@ -75,7 +75,7 @@
     "passed": 4
    }
   },
-  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
   "control_definitions": {
    "NOOP-0048-R2-02-lifecycle": "d537339c6f57023de7cf99e557f2c6277c4e1a8b6cc66fdbb0ab8ffc4b3146cd",
    "NOOP-0048-R2-02-sqlite": "e0e2ad3d31112776b6940dddd4847a5d8e053541c14500987f45c5b118701b6d"
@@ -92,7 +92,7 @@
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
   },
   "finding": "0048-R2-02",
   "honest_nodes": [
@@ -104,10 +104,29 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0048-decay-never-raises-confidence.md",
-   "specs/closure_findings.py",
-   "specs/render_closure.py",
-   "specs/reviews.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -142,7 +161,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.30s",
+   "pytest": "2 failed in 1.85s",
    "reason": null,
    "reason_seen": null,
    "what": "a retained decay counted as `decayed` (R2-02)"
@@ -178,7 +197,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.31s",
+   "pytest": "2 failed in 1.65s",
    "reason": null,
    "reason_seen": null,
    "what": "below the floor, the decayed confidence stored before the retirement (R2-02)"
@@ -211,7 +230,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.32s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor comparison inclusive: a decay at the floor retires"
@@ -226,6 +245,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 19
+  "seconds": 26
  }
 }

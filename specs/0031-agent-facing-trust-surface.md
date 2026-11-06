@@ -567,7 +567,7 @@ The connection-path inventory (executed grep, both seats):
 | site | class | can touch the proposal tables? |
 |---|---|---|
 | `store/sqlite.py:61` | THE constructor | yes — the sentinel's current coverage |
-| `store/release_migration.py:811`, `:1013` | file-backed, migration | **YES** — migrations open the canonical store file |
+| `store/release_migration.py:834`, `:1036`, `:1106` | file-backed, migration | **YES** — migrations open the canonical store file |
 | `store/migration.py:243` | file-backed, legacy migration | **YES** |
 | `store/schema_version.py:604/:652/:1233/:1241` | `:memory:` scratch | no — never see a persistent file |
 

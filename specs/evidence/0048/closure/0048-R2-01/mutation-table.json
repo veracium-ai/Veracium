@@ -1,5 +1,5 @@
 {
- "body_sha256": "591d52437beb7fe70e5e357a711ae6f28d647c4f1272e701e797c02b9240eee4",
+ "body_sha256": "1a2b3460541cc85477fcbbec0c70e134def4d7257b25a556e5f0132627e9bee8",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
   "control_definitions": {
    "NOOP-0048-R2-01-test_0048_decay_bounds": "8801c0a0050c9e5c121e38458c399a3fb45804d89d17b4200ae54697e0131d57"
   },
@@ -54,7 +54,7 @@
    "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
   },
   "finding": "0048-R2-01",
   "honest_nodes": [
@@ -65,10 +65,28 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0048-decay-never-raises-confidence.md",
-   "specs/closure_findings.py",
-   "specs/render_closure.py",
-   "specs/reviews.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -101,7 +119,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.43s",
+   "pytest": "1 failed in 8.57s",
    "reason": null,
    "reason_seen": null,
    "what": "an execute-family attribute held in a name is let through: R2-01's alias of `connection.execute`"
@@ -116,6 +134,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 57
+  "seconds": 78
  }
 }

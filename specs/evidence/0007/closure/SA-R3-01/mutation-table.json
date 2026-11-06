@@ -1,5 +1,5 @@
 {
- "body_sha256": "34f3036e66ef398e3f24cfe6e178c9391358fa1df50baf146ea68c6e7452e8ab",
+ "body_sha256": "24af86c08442a3b46ad288fc2ac7139c8326a0cb02d1c2f811cd7285df006b6d",
  "controls": [
   {
    "anchor_counts": [
@@ -61,7 +61,7 @@
     "passed": 9
    }
   },
-  "commit": "bfe14549034cbf544ec6eb6848a140766a60a3ff",
+  "commit": "8d16497f40a3c39f1ea5e08ad201de4a2ccd1edd",
   "control_definitions": {
    "NOOP-SA-R3-01-sa10_gate": "2f108c8c5252acc1055d23401d2f059447456ea8cc805318b9be162b3fe37401"
   },
@@ -73,11 +73,11 @@
   },
   "digests": {
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
-   "specs/evidence/0013/sa10_gate.py": "9045b8e63e15819ba5bba7072816b429af23ebe6e376fbfb751fcad413eb1c02",
-   "specs/evidence/0013/sa10_mutants.py": "f08498fcb810931e34bf9875196d7a3d00ecb0bfe46313f81b2b696f6945e563",
+   "specs/evidence/0013/sa10_gate.py": "8a03d9f2f6f3a705bf6bcfa6e247141c6bb75dbe08de4b9d8edd2baf38ca746d",
+   "specs/evidence/0013/sa10_mutants.py": "019e0a281a850c11d9886263fbe7fbb535c9dd5219cd2dcac6c9379075e2ab1c",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "tests/test_0013_sa10_gate.py": "c5bd79067b705a91b2e507e4fc99c0b11c856fad7067a0d398cd53ec2ebf5b91"
+   "tests/test_0013_sa10_gate.py": "d53162cb366fc98da7dd555e7e3f8fb45372e867afe3e244a0778417493834d9"
   },
   "finding": "SA-R3-01",
   "honest_nodes": [
@@ -95,22 +95,8 @@
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0007/sa_mutants.py",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/a_matrix_mutants.py",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "specs/evidence/0013/a_matrix/mutation-table.json"
   ]
  },
  "rows": [
@@ -178,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped seam: every sqlite3 attribute but connect forwarded"
@@ -214,7 +200,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.58s",
+   "pytest": "2 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "a settable attribute takes any value, a Python factory included"
@@ -251,7 +237,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.28s",
+   "pytest": "2 failed in 0.30s",
    "reason": null,
    "reason_seen": null,
    "what": "replay re-runs a recorded connect's arguments and a recorded set's value"
@@ -266,6 +252,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 13
+  "seconds": 14
  }
 }

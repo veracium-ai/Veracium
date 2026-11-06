@@ -740,11 +740,11 @@
    ],
    "control_after": {
     "exit": 0,
-    "passed": 16
+    "passed": 32
    },
    "control_before": {
     "exit": 0,
-    "passed": 16
+    "passed": 32
    },
    "group": "0018 I19 (the CLI contract: the five exit-3 package routes)"
   },
@@ -1718,7 +1718,7 @@
    "group": "R-II r2 RII-01 (INV-R18: the wiki bound to the call's own challenge snapshot)"
   }
  ],
- "pin_digest": "75d28b9c0fddeb6f5b70a17dd8dd5b277e83b3b42a935e274570aed84704e4cc",
+ "pin_digest": "e302e1e9e9c0291037f231b422e9b6414f25207e4bc42ff2c4dcf05e4255479d",
  "rows": [
   {
    "anchor_count": 1,
@@ -3637,7 +3637,7 @@
     "tests/test_0008_request_registry.py::test_every_base_migrates_and_the_step_writes_exactly_its_inventory[9]",
     "tests/test_0008_request_registry.py::test_the_two_confirmations_variants_mean_the_same_columns"
    ],
-   "def_digest": "037c22d68c4231744e4712cc533f40fe3337a609a9e47aebc01a82ea9fb09cb1",
+   "def_digest": "c80ee0a2a426528cdc62b234520d91596e19e488d6562497c3460b27b0014f1f",
    "file": "src/veracium/store/migration.py",
    "group": "T3 (0008 v7/v8: the request registry, the act counter, schema v16)",
    "kill_kind": "assertion",
@@ -3692,7 +3692,7 @@
     "tests/test_0008_request_registry.py::test_every_base_migrates_and_the_step_writes_exactly_its_inventory[9]",
     "tests/test_0008_request_registry.py::test_the_two_confirmations_variants_mean_the_same_columns"
    ],
-   "def_digest": "9729fd4bff270fbb7a41bc3ab92a25129e35fd6d3d6f4afbab5b28f101a00037",
+   "def_digest": "1e6317c308f19fc4c159437e0606cbbf4b98c79cf5063e0240acf0be033837bb",
    "file": "src/veracium/store/migration.py",
    "group": "T3 (0008 v7/v8: the request registry, the act counter, schema v16)",
    "kill_kind": "assertion",
@@ -3711,7 +3711,7 @@
     "tests/test_0008_request_registry.py::test_each_step_mutant_refuses_at_its_step_and_nothing_lands[M1: a legacy act gets a synthesized position-CREATE TEMP TRIGGER m AFTER INSERT ON request_registry BEGIN UPDATE confirmations SET act_seq = rowid WHERE id = NEW.result_ref; END-v16-act-columns]",
     "tests/test_0008_request_registry.py::test_each_step_mutant_refuses_at_its_step_and_nothing_lands[a confirmation's own column changes-CREATE TEMP TRIGGER m AFTER INSERT ON request_registry BEGIN UPDATE confirmations SET actor = 'system' WHERE id = NEW.result_ref; END-v16-act-columns]"
    ],
-   "def_digest": "2e60ebab19ec993601e58f0d535ab817f2c09f27fbca9dcb21845dad55b9f69b",
+   "def_digest": "84bd6657b604df2ce555c669ef9f29b1a4535f85e185ed7f497277797eeaa5a6",
    "file": "src/veracium/store/migration.py",
    "group": "T3 (0008 v7/v8: the request registry, the act counter, schema v16)",
    "kill_kind": "expected-refusal-missing",
@@ -4972,7 +4972,7 @@
    "cells_failed": [
     "tests/test_0018_orchestrator.py::test_resolution_is_reason_labeling_only"
    ],
-   "def_digest": "602055e763700f33dc156aaa722f1fca3c1f090ef400aecd9640f2b5a530ecd8",
+   "def_digest": "9d970bd77bdc26b72656ad078e5395bee54613d5c9924bb1f9f24284e5053e63",
    "file": "src/veracium/store/release_migration.py",
    "group": "0018 I18 (the resolution evidence is reason-labeling only)",
    "kill_kind": "assertion",
@@ -6579,14 +6579,18 @@
   {
    "anchor_count": 1,
    "cell_kinds": {
+    "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback[bound committed]": "assertion",
+    "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback[bound unchanged]": "assertion",
     "tests/test_migrate_cli.py::test_package_escape_end_to_end_recorded_route": "assertion",
     "tests/test_migrate_cli.py::test_package_escape_routes_exit_3[recorded]": "assertion"
    },
    "cells_failed": [
+    "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback[bound committed]",
+    "tests/test_migrate_cli.py::test_a_post_mint_package_escape_counts_only_a_bound_committed_readback[bound unchanged]",
     "tests/test_migrate_cli.py::test_package_escape_end_to_end_recorded_route",
     "tests/test_migrate_cli.py::test_package_escape_routes_exit_3[recorded]"
    ],
-   "def_digest": "7ffb33cb2f60b9e84e370945e1b1cf5762f2a8035b827cfd793b34dd8ee7bfee",
+   "def_digest": "ae762a57f8bf7ef2cd22312de486f6bb189ee4bc791257181b9c023520ae03ce",
    "file": "src/veracium/cli.py",
    "group": "0018 I19 (the CLI contract: the five exit-3 package routes)",
    "kill_kind": "assertion",
@@ -6640,7 +6644,7 @@
     "tests/test_0044_t5_era.py::test_the_step_inventories_every_refusal_and_a_fresh_store_has_empty_inventories",
     "tests/test_0044_t5_era.py::test_the_step_inventories_exactly_the_superseded_retirements_under_the_three_names"
    ],
-   "def_digest": "8aa4ebc0d119acd17cc4b470c0fb499fe75c3b4781310befce798d493530aaeb",
+   "def_digest": "bc506906ea71e27c182ce931751c872e5b21381624c2fd062a7cadc67e5e8019",
    "file": "src/veracium/store/migration.py",
    "group": "T5-2 (0044 \u00a74f / 0018 \u00a74a: the v16 step \u2014 era, inventories, I24, F2)",
    "kill_kind": "assertion",
@@ -6677,7 +6681,7 @@
     "tests/test_0044_t5_era.py::test_the_step_inventories_every_refusal_and_a_fresh_store_has_empty_inventories",
     "tests/test_0044_t5_era.py::test_the_step_inventories_exactly_the_superseded_retirements_under_the_three_names"
    ],
-   "def_digest": "8cf9ef8c985fe90813ab0eb6a1f1f89560d9dc59eb29c40ae43a4a70f6f45d83",
+   "def_digest": "ec5c4fa3e47355f9e10ec2d35f04d827e2bd0758e2af0d3270de79d064d82a24",
    "file": "src/veracium/store/migration.py",
    "group": "T5-2 (0044 \u00a74f / 0018 \u00a74a: the v16 step \u2014 era, inventories, I24, F2)",
    "kill_kind": "assertion",
@@ -6692,7 +6696,7 @@
    "cells_failed": [
     "tests/test_0044_t5_era.py::test_the_step_inventories_every_refusal_and_a_fresh_store_has_empty_inventories"
    ],
-   "def_digest": "de74898eb0c937d8b2e5c34bf4243aef43c014bab5eb3f8592d994099346cfd4",
+   "def_digest": "2a9c5b897dcb19eb5c687a82803e6baeb7c3405d6f114bd624e9006da3b80a3f",
    "file": "src/veracium/store/migration.py",
    "group": "T5-2 (0044 \u00a74f / 0018 \u00a74a: the v16 step \u2014 era, inventories, I24, F2)",
    "kill_kind": "assertion",
@@ -6747,7 +6751,7 @@
     "tests/test_0044_t5_era.py::test_the_step_inventories_every_refusal_and_a_fresh_store_has_empty_inventories",
     "tests/test_0044_t5_era.py::test_the_step_inventories_exactly_the_superseded_retirements_under_the_three_names"
    ],
-   "def_digest": "0e7789d149eee5cc1e9af581a55656b3b9fc06869a6ad5103c8edfb38570a6de",
+   "def_digest": "f2a2a6c392f93e02f7c7544e5b8a3232660fa16ca81014c25d4b3b9948c3a319",
    "file": "src/veracium/store/migration.py",
    "group": "T5-2 (0044 \u00a74f / 0018 \u00a74a: the v16 step \u2014 era, inventories, I24, F2)",
    "kill_kind": "assertion",
@@ -6786,7 +6790,7 @@
     "tests/test_0044_t5_era.py::test_the_step_inventories_every_refusal_and_a_fresh_store_has_empty_inventories",
     "tests/test_0044_t5_era.py::test_the_step_inventories_exactly_the_superseded_retirements_under_the_three_names"
    ],
-   "def_digest": "5e4d4eba16904218836caf313cb28fa60f44184332a5c603481895ebf913adcb",
+   "def_digest": "78d4d31993efc5fb060d60b99d0f67d5716a5cdc5cd7c9cc069e31d9e4d9425b",
    "file": "src/veracium/store/migration.py",
    "group": "T5-2 (0044 \u00a74f / 0018 \u00a74a: the v16 step \u2014 era, inventories, I24, F2)",
    "kill_kind": "assertion",
@@ -9598,7 +9602,7 @@
    "cells_failed": [
     "tests/test_0044_t7_stage2_items.py::test_n1_an_unencodable_or_oversized_path_is_each_entrys_own_refusal[lone-surrogate-run_release_migration]"
    ],
-   "def_digest": "7ff6cff5e7d3f94869422291e1e5b3321da581ddc3831c13429ba818fdf529c0",
+   "def_digest": "73f2282ce3a7aea69148d6dd4bcfed4f807460904c9f70a8761c0f80878c3db9",
    "file": "src/veracium/store/release_migration.py",
    "group": "T7-1 N1 (one path predicate, four entries)",
    "kill_kind": "assertion",
@@ -11029,7 +11033,7 @@
    "cells_failed": [
     "tests/test_0044_t12_fixes.py::test_n3_a_row_whose_column_and_json_disagree_refuses_the_v16_step"
    ],
-   "def_digest": "327b1625fade72477bcbae7724a91858c7b426027cd86add9210a1249ce48a9d",
+   "def_digest": "9c96198bc5bc1d66e38fa66ff360d1b7c953f523330023c4b859b0ecbb50405b",
    "file": "src/veracium/store/migration.py",
    "group": "T12 (the carried fixes: T5 S2 N2/N3, T6 S2 F5; the side finding; the act noun)",
    "kill_kind": "expected-refusal-missing",
@@ -11189,7 +11193,7 @@
    "cells_failed": [
     "tests/test_0018_orchestrator.py::test_migration_result_truth_table"
    ],
-   "def_digest": "94892ab4b7b24adc80daa105ad30544cbdc3660cc4b0ce9c97b986d9d86483dc",
+   "def_digest": "bac0d1dde43b291b957d7717c6055a8738a1feeeb01db2c50fe54b6ecfe92421",
    "file": "src/veracium/store/release_migration.py",
    "group": "0018 I15 (MigrationResult carriers are table-only)",
    "kill_kind": "expected-refusal-missing",
@@ -12404,7 +12408,7 @@
     "tests/test_0044_t12_registry_scenario.py::test_the_request_grammar_is_one_for_all_three_verbs_on_the_migrated_store[reply]",
     "tests/test_0044_t12_registry_scenario.py::test_the_request_grammar_is_one_for_all_three_verbs_on_the_migrated_store[undo]"
    ],
-   "def_digest": "09f6784b10290547f7f6a548bdc00f44e2eec846d71f48dde653d14cb22e3dfc",
+   "def_digest": "9328a4d9ed08504d61e9beebf47690506858a193178221a85137115c4bcebbd1",
    "file": "src/veracium/store/migration.py",
    "group": "T12 (the registry scenario on a migrated store: the shared body and the v16 backfill)",
    "kill_kind": "assertion",

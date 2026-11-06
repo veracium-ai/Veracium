@@ -193,8 +193,8 @@ def _open_snapshot(rep: Report, path: str, tmpdir: str):
         m = _FOUND.search(str(ex))
         rep.user_version = int(m.group(1) or m.group(2)) if m else None
         if rep.user_version is not None and 0 < rep.user_version < sv.SCHEMA_VERSION:
-            # the refusal names the remedy that works on this store (migrate_store; the CLI from HEAD-1 alone, the
-            # owner's ruling 2026-11-02, "Steps + interim fix") — one carrier, so the two cannot disagree
+            # the refusal names the remedy that works on this store (`veracium migrate`, 0018 §4j.6.4g) — one
+            # carrier, so the two cannot disagree
             rep.add("version", "error", f"below this build's head: {ex}")
         else:
             # the constructor's other two PackageConsistencyErrors are about the PACKAGE, not the store's version

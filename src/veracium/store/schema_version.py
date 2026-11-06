@@ -844,13 +844,14 @@ SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
            16: SCHEMA_V16}
 
 SCHEMA_VERSION = 16
-FIRST_MIGRATABLE = 1          # the oldest base a rung may start from (0018 §4j): every base today, so nothing is below it
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
 which version received mutable treatment in the generated artifact (round 5,
 finding 5). Bumped 1→2 for `specs/0008`'s `confirmations` table, installed by the
 `specs/0013` v1→v2 offline migration."""
+
+FIRST_MIGRATABLE = 1          # the oldest base a rung may start from (0018 §4j): every base today, so nothing is below it
 
 
 def rebuildable_keys(version: int = SCHEMA_VERSION) -> set:
@@ -1988,6 +1989,8 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
             raise ValueError(f"migrate_to {migrate_to} is outside {FIRST_MIGRATABLE + 1}..{SCHEMA_VERSION}")
         if migrate_to < SCHEMA_VERSION and older is None:
             raise ValueError("a migration target below head requires the migration hook")
+        if migrate_to < SCHEMA_VERSION and new is None:
+            raise ValueError("a migration target below head requires the new-row hook")
     target = SCHEMA_VERSION if migrate_to is None else migrate_to
     spath = str(path)
     # os.fsencode, not str.encode: a valid POSIX filename with non-UTF-8
@@ -2033,7 +2036,8 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                     if found > target:
                         raise _SITE_OPEN_NEWER.fire(StoreVersionError(
                             spath, found, target, "newer",
-                            diff="this build cannot know what it does not know; "
+                            diff=f"v{found} is newer than this rung's target v{target}" if target < SCHEMA_VERSION
+                            else "this build cannot know what it does not know; "
                                  "install a build whose SCHEMA_VERSION covers the store"))
 
                 if found == target:
@@ -2055,19 +2059,15 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                     # hook the row is a package-consistency impossibility —
                     # unreachable while SCHEMA_VERSION == 1 — not a store property.
                     if older is None:
-                        # the remedy names only routes that work on this store (the owner's
-                        # ruling, 2026-11-02, "Steps + interim fix": until 0018's adjacent-rungs
-                        # amendment lands, the CLI mints from HEAD-1 alone, so it is named
-                        # for that base only)
+                        # the remedy names the route that works on every base (0018 §4j.6.4g):
+                        # the CLI walks from any base at or above FIRST_MIGRATABLE
                         raise PackageConsistencyError(
                             f"store {spath!r} is stamped v{found} and this build "
                             f"is v{target}: opening does not migrate (specs/0013). "
                             f"Migrate it offline first: stop every process using the file, "
-                            f"back it up, then run "
-                            f"veracium.store.migration.migrate_store(path), which applies "
-                            f"every step to v{target} in one call. The `veracium "
-                            f"migrate` command migrates only a v{target - 1} store in "
-                            f"this release")
+                            f"back it up, then run `veracium migrate --db ... "
+                            f"--i-have-quiesced --backup REF`, which walks it to v{target} "
+                            f"one schema version at a time")
                     older(conn, spath, found, objs, found, runtime=status)
                     _validated_current(conn, spath, found, require_stamp=True, target=target)
                     result = OpenResult("migrated", store_changed=True,
@@ -2121,8 +2121,8 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                             spath, found, target, "migration-required",
                             diff=f"store resolves to base version {base}, below the "
                                  f"head version {target}; migration is OFFLINE "
-                                 f"(specs/0013 §5b) — quiesce access and run "
-                                 f"veracium.store.migration.migrate_store(path)"), "migration-required")
+                                 f"(specs/0013 §5b) — quiesce access and run `veracium migrate "
+                                 f"--db ... --i-have-quiesced --backup REF`"), "migration-required")
                     older(conn, spath, found, objs, base, runtime=status)
                     _validated_current(conn, spath, found, require_stamp=True, target=target)
                     result = OpenResult("migrated", store_changed=True,

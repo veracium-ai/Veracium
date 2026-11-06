@@ -340,6 +340,11 @@ def _cell_release(p):
     return rm.run_release_migration(p, host_attestation=rm.MigrationAttestation(quiesced=True, backup_ref="t")).outcome
 
 
+def _cell_rung(p):
+    import veracium.store.release_migration as rm
+    return rm.run_release_rung(p, host_attestation=rm.MigrationAttestation(quiesced=True, backup_ref="t")).result.outcome
+
+
 def _cell_dm_preflight(p):
     import veracium.store.data_migration as dm
     canonical, res = dm._preflight(p, "op-1")
@@ -359,6 +364,7 @@ GATE_CELLS = {
     ("store/migration.py", "migrate_store"): _cell_migrate,
     ("store/release_migration.py", "_repair_current"): _cell_repair,
     ("store/release_migration.py", "_classify_or_intercept"): _cell_release,
+    ("store/release_migration.py", "_run_rung"): _cell_rung,
     ("store/data_migration.py", "_preflight"): _cell_dm_preflight,
     ("store/data_migration.py", "_read_only"): _cell_dm_read,
 }

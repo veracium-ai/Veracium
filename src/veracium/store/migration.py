@@ -310,11 +310,14 @@ def _mig_event(kind: str, mid: str, path: str, from_v: int,
 class ForwardEntry(NamedTuple):
     """One step of the forward migration (0013 §5g.1): its guard, `lo <= base < v <= target`, and its DECLARED kind, never
     inferred from a run, since a data step on an empty store writes nothing. `step` is the frozen statement of an `alter`, the
-    schema object of an `add`, the version of a `stamp`, and the named function of a `read`, `data` or `check`."""
+    schema object of an `add`, the version of a `stamp`, and the named function of a `read`, `data` or `check`. `fields` is what the
+    digest's preimage names (0013 §5g.1): a `data` step's `STEP_*`; a `check`'s `STEP_*`, or a byte check's site tag and table;
+    and for a `read`, `feeds`, the check functions it serves, in table order, each named once however often it repeats."""
     lo: int
     v: int
     kind: str
     step: object
+    fields: tuple = ()
 
 
 class _Forward:
@@ -707,75 +710,75 @@ def _alters(lo, v, statements):
 # attestation and an episode event exist only once the operation that writes them runs on an open store, so neither has a
 # data step, and rows already holding marker bytes are UNATTESTED markers (ruled v7), enumerated by `unattested_marker_report`.
 FORWARD_ENTRIES = (
-    ForwardEntry(0, 3, "read", _read_episodes_before),
-    ForwardEntry(0, 3, "data", _data_outcome_chains),
-    ForwardEntry(0, 3, "check", _check_chains),
-    ForwardEntry(0, 4, "data", _data_wiki),
-    ForwardEntry(0, 4, "read", _read_wiki_left),
-    ForwardEntry(0, 4, "check", _check_wiki),
-    ForwardEntry(0, 5, "read", _read_identity_pre),
-    ForwardEntry(0, 5, "data", _data_identity),
-    ForwardEntry(0, 5, "read", _read_identity_post),
-    ForwardEntry(0, 5, "check", _check_identity),
+    ForwardEntry(0, 3, "read", _read_episodes_before, (_check_chains,)),
+    ForwardEntry(0, 3, "data", _data_outcome_chains, (STEP_CHAINS,)),
+    ForwardEntry(0, 3, "check", _check_chains, (STEP_CHAINS,)),
+    ForwardEntry(0, 4, "data", _data_wiki, (STEP_WIKI,)),
+    ForwardEntry(0, 4, "read", _read_wiki_left, (_check_wiki,)),
+    ForwardEntry(0, 4, "check", _check_wiki, (STEP_WIKI,)),
+    ForwardEntry(0, 5, "read", _read_identity_pre, (_check_identity,)),
+    ForwardEntry(0, 5, "data", _data_identity, (STEP_IDENTITY,)),
+    ForwardEntry(0, 5, "read", _read_identity_post, (_check_identity,)),
+    ForwardEntry(0, 5, "check", _check_identity, (STEP_IDENTITY,)),
     *_alters(4, 6, ALTERS_V5_TO_V6),
-    ForwardEntry(4, 6, "read", _read_v6_stored),
-    ForwardEntry(4, 6, "check", _check_v6_alter),
+    ForwardEntry(4, 6, "read", _read_v6_stored, (_check_v6_alter,)),
+    ForwardEntry(4, 6, "check", _check_v6_alter, ("v6-alter-path", "supersession_operations",)),
     *_alters(6, 8, ALTERS_V7_TO_V8),
-    ForwardEntry(6, 8, "read", _read_v8_stored),
-    ForwardEntry(6, 8, "check", _check_v8_alter),
+    ForwardEntry(6, 8, "read", _read_v8_stored, (_check_v8_alter,)),
+    ForwardEntry(6, 8, "check", _check_v8_alter, ("v8-alter-path", "contribution_ledger",)),
     *_alters(4, 10, ALTERS_V9_TO_V10),
-    ForwardEntry(4, 10, "read", _read_v10_stored),
-    ForwardEntry(4, 10, "check", _check_v10_alter),
-    ForwardEntry(0, 13, "read", _read_baseline_edges),
-    ForwardEntry(0, 13, "read", _read_baseline_events),
-    ForwardEntry(0, 13, "data", _data_baselines),
-    ForwardEntry(0, 13, "check", _check_baseline),
-    ForwardEntry(0, 13, "read", _read_epoch_pre),
-    ForwardEntry(0, 13, "data", _data_epoch),
-    ForwardEntry(0, 13, "read", _read_epoch_post),
-    ForwardEntry(0, 13, "check", _check_epoch),
-    ForwardEntry(2, 16, "read", _read_conf_before),
+    ForwardEntry(4, 10, "read", _read_v10_stored, (_check_v10_alter,)),
+    ForwardEntry(4, 10, "check", _check_v10_alter, ("v10-alter-path", "supersession_operations",)),
+    ForwardEntry(0, 13, "read", _read_baseline_edges, (_check_baseline,)),
+    ForwardEntry(0, 13, "read", _read_baseline_events, (_check_baseline,)),
+    ForwardEntry(0, 13, "data", _data_baselines, (STEP_BASELINE,)),
+    ForwardEntry(0, 13, "check", _check_baseline, (STEP_BASELINE,)),
+    ForwardEntry(0, 13, "read", _read_epoch_pre, (_check_epoch,)),
+    ForwardEntry(0, 13, "data", _data_epoch, (STEP_EPOCH,)),
+    ForwardEntry(0, 13, "read", _read_epoch_post, (_check_epoch,)),
+    ForwardEntry(0, 13, "check", _check_epoch, (STEP_EPOCH,)),
+    ForwardEntry(2, 16, "read", _read_conf_before, (_check_registry, _check_act_columns,)),
     *_alters(2, 16, ALTERS_V15_TO_V16),
-    ForwardEntry(2, 16, "read", _read_v16_conf_stored),
-    ForwardEntry(2, 16, "check", _check_v16_conf_alter),
-    ForwardEntry(0, 16, "read", _read_counter_before),
-    ForwardEntry(0, 16, "data", _data_act_counter),
-    ForwardEntry(0, 16, "read", _read_counter),
-    ForwardEntry(0, 16, "check", _check_act_counter),
-    ForwardEntry(0, 16, "read", _read_registry_before),
-    ForwardEntry(0, 16, "data", _data_registry),
-    ForwardEntry(0, 16, "read", _read_registry),
-    ForwardEntry(0, 16, "check", _check_registry),
-    ForwardEntry(0, 16, "read", _read_conf_after),
-    ForwardEntry(0, 16, "check", _check_act_columns),
-    ForwardEntry(0, 16, "read", _read_counter),
-    ForwardEntry(0, 16, "check", _check_act_counter),
-    ForwardEntry(15, 16, "read", _read_red_before),
+    ForwardEntry(2, 16, "read", _read_v16_conf_stored, (_check_v16_conf_alter,)),
+    ForwardEntry(2, 16, "check", _check_v16_conf_alter, ("v16-alter-path", "confirmations",)),
+    ForwardEntry(0, 16, "read", _read_counter_before, (_check_act_counter,)),
+    ForwardEntry(0, 16, "data", _data_act_counter, (STEP_ACT_COUNTER,)),
+    ForwardEntry(0, 16, "read", _read_counter, (_check_act_counter,)),
+    ForwardEntry(0, 16, "check", _check_act_counter, (STEP_ACT_COUNTER,)),
+    ForwardEntry(0, 16, "read", _read_registry_before, (_check_registry,)),
+    ForwardEntry(0, 16, "data", _data_registry, (STEP_REGISTRY,)),
+    ForwardEntry(0, 16, "read", _read_registry, (_check_registry,)),
+    ForwardEntry(0, 16, "check", _check_registry, (STEP_REGISTRY,)),
+    ForwardEntry(0, 16, "read", _read_conf_after, (_check_act_columns,)),
+    ForwardEntry(0, 16, "check", _check_act_columns, (STEP_ACT_COLUMNS,)),
+    ForwardEntry(0, 16, "read", _read_counter, (_check_act_counter,)),
+    ForwardEntry(0, 16, "check", _check_act_counter, (STEP_ACT_COUNTER,)),
+    ForwardEntry(15, 16, "read", _read_red_before, (_check_notice_state,)),
     *_alters(15, 16, ALTERS_V15_TO_V16_REDACTIONS),
-    ForwardEntry(15, 16, "read", _read_v16_red_stored),
-    ForwardEntry(15, 16, "check", _check_v16_red_alter),
-    ForwardEntry(0, 16, "data", _data_notice_state),
-    ForwardEntry(0, 16, "read", _read_red_after),
-    ForwardEntry(0, 16, "check", _check_notice_state),
-    ForwardEntry(0, 16, "read", _read_edges_pin),
-    ForwardEntry(0, 16, "read", _read_events_pin),
-    ForwardEntry(0, 16, "read", _read_era_before),
-    ForwardEntry(0, 16, "data", _data_arity_era),
-    ForwardEntry(0, 16, "read", _read_era),
-    ForwardEntry(0, 16, "check", _check_arity_era),
-    ForwardEntry(0, 16, "check", _check_arity_era_edges),
-    ForwardEntry(0, 16, "read", _read_inventory_before),
-    ForwardEntry(0, 16, "data", _data_arity_inventory),
-    ForwardEntry(0, 16, "read", _read_named_edges),
-    ForwardEntry(0, 16, "read", _read_inventory),
-    ForwardEntry(0, 16, "check", _check_arity_inventory),
-    ForwardEntry(0, 16, "check", _check_arity_inventory_edges),
-    ForwardEntry(0, 16, "read", _read_refusals_before),
-    ForwardEntry(0, 16, "data", _data_refusal_inventory),
-    ForwardEntry(0, 16, "read", _read_refusals),
-    ForwardEntry(0, 16, "read", _read_refusal_inventory),
-    ForwardEntry(0, 16, "check", _check_refusal_inventory),
-    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges),
+    ForwardEntry(15, 16, "read", _read_v16_red_stored, (_check_v16_red_alter,)),
+    ForwardEntry(15, 16, "check", _check_v16_red_alter, ("v16-alter-path", "redactions",)),
+    ForwardEntry(0, 16, "data", _data_notice_state, (STEP_NOTICE_STATE,)),
+    ForwardEntry(0, 16, "read", _read_red_after, (_check_notice_state,)),
+    ForwardEntry(0, 16, "check", _check_notice_state, (STEP_NOTICE_STATE,)),
+    ForwardEntry(0, 16, "read", _read_edges_pin, (_check_arity_era_edges, _check_arity_inventory_edges, _check_refusal_inventory_edges,)),
+    ForwardEntry(0, 16, "read", _read_events_pin, (_check_arity_era_edges, _check_arity_inventory_edges, _check_refusal_inventory_edges,)),
+    ForwardEntry(0, 16, "read", _read_era_before, (_check_arity_era,)),
+    ForwardEntry(0, 16, "data", _data_arity_era, (STEP_ARITY_ERA,)),
+    ForwardEntry(0, 16, "read", _read_era, (_check_arity_era,)),
+    ForwardEntry(0, 16, "check", _check_arity_era, (STEP_ARITY_ERA,)),
+    ForwardEntry(0, 16, "check", _check_arity_era_edges, (STEP_ARITY_EDGES,)),
+    ForwardEntry(0, 16, "read", _read_inventory_before, (_check_arity_inventory,)),
+    ForwardEntry(0, 16, "data", _data_arity_inventory, (STEP_ARITY_INVENTORY,)),
+    ForwardEntry(0, 16, "read", _read_named_edges, (_check_arity_inventory,)),
+    ForwardEntry(0, 16, "read", _read_inventory, (_check_arity_inventory,)),
+    ForwardEntry(0, 16, "check", _check_arity_inventory, (STEP_ARITY_INVENTORY,)),
+    ForwardEntry(0, 16, "check", _check_arity_inventory_edges, (STEP_ARITY_EDGES,)),
+    ForwardEntry(0, 16, "read", _read_refusals_before, (_check_refusal_inventory,)),
+    ForwardEntry(0, 16, "data", _data_refusal_inventory, (STEP_REFUSAL_INVENTORY,)),
+    ForwardEntry(0, 16, "read", _read_refusals, (_check_refusal_inventory,)),
+    ForwardEntry(0, 16, "read", _read_refusal_inventory, (_check_refusal_inventory,)),
+    ForwardEntry(0, 16, "check", _check_refusal_inventory, (STEP_REFUSAL_INVENTORY,)),
+    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges, (STEP_ARITY_EDGES,)),
 )
 
 
@@ -786,8 +789,52 @@ def plan(base: int, target: int) -> list:
     return ([ForwardEntry(0, target, "clock", None)]
             + [ForwardEntry(0, target, "add", o) for o in SCHEMAS[target] if o.key not in have]
             + [e for e in FORWARD_ENTRIES if e.lo <= base < e.v <= target]
-            + [ForwardEntry(0, target, "stamp", target), ForwardEntry(0, target, "read", _read_stamped),
-               ForwardEntry(0, target, "check", _check_stamp)])
+            + [ForwardEntry(0, target, "stamp", target), ForwardEntry(0, target, "read", _read_stamped, (_check_stamp,)),
+               ForwardEntry(0, target, "check", _check_stamp, (STEP_STAMP,))])
+
+
+def _segment(value) -> bytes:
+    """0018 §4b's framing: the byte length as an 8-byte big-endian integer, then the bytes. Text is UTF-8; an integer is ASCII decimal."""
+    data = str(value).encode("utf-8")
+    return len(data).to_bytes(8, "big") + data
+
+
+def _check_first_fields() -> dict:
+    """Each check function's first field: what a `read` entry's preimage names for it."""
+    out = {_check_stamp: STEP_STAMP}
+    for e in FORWARD_ENTRIES:
+        if e.kind == "check":
+            out[e.step] = e.fields[0]
+    return out
+
+
+def preimage_fields(entry) -> list:
+    """An entry's field list in the frozen preimage (0013 §5g.1)."""
+    if entry.kind == "add":
+        return [entry.step.key[0], entry.step.key[1], entry.step.ddl]
+    if entry.kind == "alter":
+        return [entry.step]
+    if entry.kind == "clock":
+        return []
+    if entry.kind == "stamp":
+        return [entry.step]
+    if entry.kind in ("data", "check"):
+        return list(entry.fields)
+    if entry.kind == "read":
+        first = _check_first_fields()
+        return [first[c] for c in entry.fields]
+    raise ValueError(f"a forward entry of unknown kind {entry.kind!r}")
+
+
+def plan_preimage(base: int, target: int) -> bytes:
+    """The bytes `migration_digest` hashes: `0018-rung-steps-v1`, `b`, `t`, the entry count, then each entry as its kind, its field
+    count and its fields, every one a segment (0013 §5g.1)."""
+    entries = plan(base, target)
+    out = [_segment("0018-rung-steps-v1"), _segment(base), _segment(target), _segment(len(entries))]
+    for e in entries:
+        fields = preimage_fields(e)
+        out += [_segment(e.kind), _segment(len(fields))] + [_segment(f) for f in fields]
+    return b"".join(out)
 
 
 def _apply_forward(conn: sqlite3.Connection, base: int, target: int = SCHEMA_VERSION) -> None:

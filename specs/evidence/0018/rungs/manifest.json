@@ -3751,5 +3751,8 @@
  ],
  "not_seen": {
   "UPDATE redactions": "no released base holds `redactions`, so no release-authored fixture can carry a row: v16-notice-state and the redactions ALTERs stay on PA1's synthetic row, a limit of release-authored"
+ },
+ "not_release_authored": {
+  "v2 outcome episode without observed_at": "hand-made in tests/test_0018_rungs_t5.py: no release-authored fixture reaches the v2→v3 fill, because every outcome episode a release wrote carries observed_at"
  }
 }

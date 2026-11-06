@@ -37,6 +37,10 @@ def _hook(target):
     return older
 
 
+def _no_new(conn, path, found, objs):
+    raise AssertionError("a rung never creates a store")
+
+
 @pytest.mark.parametrize("bad", [True, False, 3.0, "3", type("I", (int,), {})(3)], ids=["True", "False", "a float", "a str", "an int subclass"])
 def test_a_target_of_the_wrong_type_refuses_before_the_store_is_touched(bad):
     conn = sqlite3.connect(":memory:")
@@ -57,6 +61,25 @@ def test_a_target_below_head_needs_the_hook():
     conn = sqlite3.connect(":memory:")
     with pytest.raises(ValueError, match="a migration target below head requires the migration hook"):
         sv.open_versioned(conn, ":memory:", migrate_to=HEAD - 1)
+
+
+def test_a_target_below_head_needs_the_new_row_hook(tmp_path):
+    """Research's read of 79e051ff: with `new=None` the new row would make a brand-new store at the target, which no row allows."""
+    path = str(tmp_path / "e.db")
+    conn = sqlite3.connect(path)
+    with pytest.raises(ValueError, match="a migration target below head requires the new-row hook"):
+        sv.open_versioned(conn, path, migrate_to=5, older=_hook(5))
+    assert conn.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()[0] == 0
+
+
+def test_a_store_above_the_rung_s_target_is_never_told_to_install_a_build(tmp_path):
+    """Row 7b: scoped to the rung's target, nothing written, never a backward step."""
+    path = str(tmp_path / "s.db")
+    conn = _store(path, HEAD)
+    with pytest.raises(sv.StoreVersionError) as ei:
+        sv.open_versioned(conn, path, migrate_to=HEAD - 1, older=_hook(HEAD - 1), new=_no_new, allow_adopt=False)
+    assert ei.value.reason == "newer" and f"v{HEAD} is newer than this rung's target v{HEAD - 1}" in str(ei.value)
+    assert "install" not in str(ei.value) and conn.execute("PRAGMA user_version").fetchone()[0] == HEAD
 
 
 def test_the_argument_is_checked_before_the_runtime_gate(monkeypatch):
@@ -84,7 +107,7 @@ def test_head_as_the_target_is_none_in_every_respect(tmp_path, hook):
 def test_one_rung_lands_on_an_accepted_shape_at_its_target(tmp_path, t):
     path = str(tmp_path / "s.db")
     conn = _store(path, t - 1)
-    r = sv.open_versioned(conn, path, migrate_to=t, older=_hook(t), allow_adopt=False)
+    r = sv.open_versioned(conn, path, migrate_to=t, older=_hook(t), new=_no_new, allow_adopt=False)
     assert r == "migrated" and r.resulting_version == t
     assert conn.execute("PRAGMA user_version").fetchone()[0] == t
     assert sv.digest(sv.manifest(conn), t) in sv.accepted_digests(t)
@@ -101,7 +124,7 @@ def test_the_runtime_gate_never_sees_the_target(tmp_path, monkeypatch):
     monkeypatch.setattr(sv, "attestation_revision", revision)
     path = str(tmp_path / "s.db")
     conn = _store(path, HEAD - 2)
-    assert sv.open_versioned(conn, path, migrate_to=HEAD - 1, older=_hook(HEAD - 1), allow_adopt=False).resulting_version == HEAD - 1
+    assert sv.open_versioned(conn, path, migrate_to=HEAD - 1, older=_hook(HEAD - 1), new=_no_new, allow_adopt=False).resulting_version == HEAD - 1
     assert all(HEAD - 1 not in a and HEAD - 1 not in k.values() for a, k in seen), seen
 
 

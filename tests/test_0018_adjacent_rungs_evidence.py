@@ -23,7 +23,11 @@ def test_check_a2_facts_reproduces_its_recorded_output_and_controls():
     r = _run(EV / "research-v0.3" / "check_a2_facts.py")
     assert r.returncode == 0, r.stderr[-400:]
     recorded = (EV / "research-v0.3" / "check-a2-facts-67bbba6.out").read_text()
-    assert r.stdout == recorded, "check_a2_facts.py no longer prints its recorded output"
+    # the one line the amendment moves on purpose (§4j.3's widened `MigrationResult`): at the pin a committed result at v14 was refused
+    refused = "pin MigrationResult (migrated, v14): refused: MigrationResult outside the 0018 §4e table: a committed change is at version 16\n"
+    assert recorded.count(refused) == 1
+    assert r.stdout == recorded.replace(refused, "pin MigrationResult (migrated, v14): accepted\n"), \
+        "check_a2_facts.py no longer prints its recorded output"
     assert "controls refused: [True, True, True, True, True]" in r.stdout
 
 
