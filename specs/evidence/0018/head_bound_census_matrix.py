@@ -18,9 +18,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 tree, expected, scratch = (pathlib.Path(a).resolve() for a in sys.argv[1:4])
 scratch.mkdir(parents=True, exist_ok=False)
 MIG, SV, EE = "veracium/store/migration.py", "veracium/store/schema_version.py", "veracium/store/edge_events.py"
-BASE_KEYS = "        run = _Forward(base)\n"
+BASE_KEYS = "        run = _Forward(base, target)\n"
 PENDING = "        pending: dict = {}\n"
-L63 = '        super().__init__("", base, SCHEMA_VERSION, "unsupported-migration",\n'
+L63 = 'def _apply_forward(conn: sqlite3.Connection, base: int, target: int = SCHEMA_VERSION) -> None:\n'
 NEXT_SEQ = '    serialized (the PK is a backstop only, §4a)."""\n'
 
 
@@ -51,8 +51,8 @@ CASES = [
      {EE: [on_line(NEXT_SEQ, "_plant = _SVX")]}, {EE: "from .schema_version import SCHEMA_VERSION as _SVX\n"}, "next_seq"),
     ("PLANT a reference in a raised error's base __init__ (StoreVersionError, schema_version.py)", "REFUSE",
      {}, {}, "StoreVersionError.__init__"),            # filled below: needs the __init__'s first body line
-    ("PLANT one listed reference deleted (L63 head replaced by a literal)", "REFUSE",
-     {MIG: [(L63, L63.replace("SCHEMA_VERSION", "16"))]}, {}, "MigrationPostconditionError.__init__"),
+    ("PLANT the one listed reference deleted (the target's default replaced by a literal)", "REFUSE",
+     {MIG: [(L63, L63.replace("SCHEMA_VERSION", "16"))]}, {}, "_apply_forward"),
     ("PLANT a step named only in FORWARD_ENTRIES (research's stage-1 finding)", "REFUSE",
      {}, {MIG: "def _step_plant(conn):\n    return SCHEMA_VERSION\n\n\nFORWARD_ENTRIES = (('p', _step_plant),)\n"}, "_step_plant"),
     ("PLANT a step the table names by a STRING", "REFUSE",

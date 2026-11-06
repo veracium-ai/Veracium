@@ -351,9 +351,9 @@ H_ABSENT = f"{_CELLS_REL}::test_honest_a_legacy_row_lacking_observed_at_migrates
 BOTH = (H_PRESENT, H_ABSENT)
 C = lambda name: f"{_CELLS_REL}::{name}"                                     # noqa: E731
 
-_ID_LINE = '    _refuse_unless(run.base, STEP_IDENTITY, _identity_problems(run.identity_pre, run.identity_post))\n'
-_STAMP_REFUSE = ('    _refuse_unless(run.base, STEP_STAMP, [f"user_version reads {run.stamped}, not {SCHEMA_VERSION}"]\n'
-                 '                   if run.stamped != SCHEMA_VERSION else [])\n')
+_ID_LINE = '    _refuse_unless(run, STEP_IDENTITY, _identity_problems(run.identity_pre, run.identity_post))\n'
+_STAMP_REFUSE = ('    _refuse_unless(run, STEP_STAMP, [f"user_version reads {run.stamped}, not {run.target}"]\n'
+                 '                   if run.stamped != run.target else [])\n')
 _LAST_ENTRY = '    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges),\n)\n'
 
 # (id, the invariant it attacks, [(anchor, replacement), ...] in migration.py, honest nodes, the NAMED killing cell,
@@ -387,7 +387,7 @@ MUTANTS = [
      (H_ABSENT,), C("test_cell_a_present_observed_at_is_kept"),
      "a present observed_at overwritten with the migration's clock"),
     ("M123-own-variable", "M123",
-     [('    run.stamped = conn.execute("PRAGMA user_version").fetchone()[0]\n', "    run.stamped = SCHEMA_VERSION\n")],
+     [('    run.stamped = conn.execute("PRAGMA user_version").fetchone()[0]\n', "    run.stamped = run.target\n")],
      BOTH, C("test_cell_a_perturbed_stamp_refuses_at_the_stamp"),
      "the stamp postcondition reads the value the step meant to write, not the database"),
     ("M123-identity-checked-only-at-the-end", "M123",
@@ -397,7 +397,7 @@ MUTANTS = [
      BOTH, C("test_cell_a_perturbed_store_identity_refuses_at_its_step"),
      "the identity postcondition run once, at the end: it still names its step, after later steps wrote"),
     ("M123-failure-commits", "M123",
-     [(_STAMP_REFUSE, "    if run.stamped != SCHEMA_VERSION:\n"
+     [(_STAMP_REFUSE, "    if run.stamped != run.target:\n"
                       '        conn.execute("COMMIT"); conn.execute("BEGIN IMMEDIATE")\n' + _STAMP_REFUSE)],
      BOTH, C("test_cell_a_perturbed_stamp_refuses_at_the_stamp"),
      "a failed postcondition commits the migration's writes before refusing"),
@@ -411,20 +411,20 @@ MUTANTS = [
      [("                     (converted.model_dump_json(), eid))\n", "                     (converted.model_dump_json()[:-1], eid))\n")],
      (f"{_CELLS_REL}::test_honest_a_store_above_v3_migrates",), C("test_cell_a_legacy_row_in_isoformat_plus0000_form_migrates"),
      "research stage-2 F2: the step writes a row that is not JSON; the postcondition must refuse, never raise"),
-    ("del-chains", "M121", [("    _check_outcome_chains(conn, run.base, run.episodes_before, run.now)\n", "    pass\n")],
+    ("del-chains", "M121", [("    _check_outcome_chains(conn, run, run.episodes_before, run.now)\n", "    pass\n")],
      BOTH, C("test_cell_a_perturbed_outcome_chain_refuses_at_its_step"), "the chain step's postcondition removed"),
     ("del-wiki", "M122",
-     [('    _refuse_unless(run.base, STEP_WIKI, [f"wiki holds {left} row(s) after the drop"] if left else [])\n',
+     [('    _refuse_unless(run, STEP_WIKI, [f"wiki holds {left} row(s) after the drop"] if left else [])\n',
        "    pass\n")],
      BOTH, C("test_cell_a_skipped_wiki_drop_refuses_at_its_step"), "the wiki step's postcondition removed"),
     ("del-identity", "M118", [(_ID_LINE, "    pass\n")],
      BOTH, C("test_cell_a_perturbed_store_identity_refuses_at_its_step"), "the identity step's postcondition removed"),
     ("del-baseline", "M120",
-     [("    _refuse_unless(run.base, STEP_BASELINE, _baseline_problems(conn, run.baseline_edges, {r[0] for r in run.events_before}, "
+     [("    _refuse_unless(run, STEP_BASELINE, _baseline_problems(conn, run.baseline_edges, {r[0] for r in run.events_before}, "
        "run.now))\n", "    pass\n")],
      BOTH, C("test_cell_a_perturbed_baseline_event_refuses_at_its_step"), "the baseline step's postcondition removed"),
     ("del-epoch", "M119",
-     [('    _refuse_unless(run.base, STEP_EPOCH, _epoch_problems(run.epoch_pre, run.epoch_post, run.now))\n', "    pass\n")],
+     [('    _refuse_unless(run, STEP_EPOCH, _epoch_problems(run.epoch_pre, run.epoch_post, run.now))\n', "    pass\n")],
      BOTH, C("test_cell_a_skipped_store_epoch_refuses_at_its_step"), "the epoch step's postcondition removed"),
     ("del-stamp", "M117", [(_STAMP_REFUSE, "    pass\n")],
      BOTH, C("test_cell_a_perturbed_stamp_refuses_at_the_stamp"), "the stamp's postcondition removed"),

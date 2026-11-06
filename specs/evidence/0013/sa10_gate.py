@@ -555,11 +555,12 @@ class _Seam:
 # implementation and its required mutant-backed acceptance checks, not another design round." (round 2) and
 # "Round 2's design acceptance remains in force." (round 5)
 # Widening either text class is reopening design review, not a constant edit.
-def text_classes():
-    """The text classes from the tree's own constants: (a) ALTERS_* members, (b1) head table/index constructors,
-    (b2) `DROP INDEX IF EXISTS <head rebuildable index>`."""
+def text_classes(target=None):
+    """The text classes from the tree's own constants: (a) ALTERS_* members, (b1) the target's table/index constructors,
+    (b2) `DROP INDEX IF EXISTS <the target's rebuildable index>`. The target is the operation's: head, unless a rung says
+    otherwise (0013 §5g.2; 0018 §2a's SA10 rows move with the target)."""
     from veracium.store import schema_version as sv
-    head = sv.SCHEMAS[sv.SCHEMA_VERSION]
+    head = sv.SCHEMAS[sv.SCHEMA_VERSION if target is None else target]
     alters = {s for n in dir(sv) if n.startswith("ALTERS_") and isinstance(getattr(sv, n), tuple)
               for s in getattr(sv, n)}
     b1 = {o.ddl for o in head if o.key[0] in ("table", "index")}
@@ -925,7 +926,7 @@ def outcome_of(result, exc) -> str:
     return str(getattr(result, "outcome", result))
 
 
-def run_path(label, entry, builder, work, *, proxy_factory=None, inject=None, build=None) -> dict:
+def run_path(label, entry, builder, work, *, proxy_factory=None, inject=None, build=None, target=None) -> dict:
     """One gate path. `inject`, if given, is called as inject(store) inside the seam's lifetime by the caller's own
     monkeypatching (the tests' controls); the gate itself never calls it."""
     from veracium.store import schema_version as sv
@@ -940,13 +941,14 @@ def run_path(label, entry, builder, work, *, proxy_factory=None, inject=None, bu
     shutil.copyfile(store, pre)
     census = Census(store, proxy_factory)
     result, exc = run_entry(store, entry, census)
-    classes, steps, label_fn = text_classes(), pa1._steps(), pa1.lib()["_kind"]
+    bound = sv.SCHEMA_VERSION if target is None else target
+    classes, steps, label_fn = text_classes(bound), pa1._steps(), pa1.lib()["_kind"]
     calls = [e for e in census.events if e.kind == "call"]
     tally = collections.Counter()
     problems = list(census.problems)
     b2_with_drop = 0
     for rec in calls:
-        cls, probs = classify(rec, classes, steps, label_fn, sv.SCHEMA_VERSION)
+        cls, probs = classify(rec, classes, steps, label_fn, bound)
         rec.cls = cls
         tally[cls] += 1
         problems += probs

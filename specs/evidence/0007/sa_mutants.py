@@ -79,7 +79,7 @@ GATE_FILE = "specs/evidence/0013/sa10_gate.py"
 PA1_CELLS = "tests/test_0013_pa1_campaign_cells.py"
 SA10_CELLS = "tests/test_0013_sa10_gate.py"
 _OLDER = ("                    older(conn, spath, found, objs, found, runtime=status)\n"
-          "                    _validated_current(conn, spath, found, require_stamp=True)\n")
+          "                    _validated_current(conn, spath, found, require_stamp=True, target=target)\n")
 P1 = lambda s: R(f"test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[{s}]")   # noqa: E731
 P3 = lambda s: R(f"test_p3_a_stamp_below_head_is_refused_by_revalidation_and_rolls_back[{s}]")        # noqa: E731
 
@@ -94,10 +94,10 @@ MUTANTS = [
      "a matching attestation record short-circuits verification"),
     ("sa1-open-decides-shape-first", "product", SV,
      [(_OPEN_GATE, ""),
-      ("                if found == SCHEMA_VERSION:\n                    repaired = _validated_current(conn, spath, found)",
+      ("                if found == target:\n                    repaired = _validated_current(conn, spath, found, target=target)",
        "                " + _OPEN_GATE.replace("\n    ", "\n                    ").replace("    with ", "with ", 1)
        .replace("\n                    warn_unattested", "\n                warn_unattested")
-       + "                if found == SCHEMA_VERSION:\n                    repaired = _validated_current(conn, spath, found)")],
+       + "                if found == target:\n                    repaired = _validated_current(conn, spath, found, target=target)")],
      [GATE("store/sqlite.py:__init__")], [], None,
      "open_versioned decides the version (invalid, newer) before measuring the build"),
     ("sa1-preflight-decides-shape-first", "product", REL,
@@ -291,9 +291,9 @@ MUTANTS += [
      [f"{SA10_CELLS}::test_the_gate_passes_the_clean_ladder_on_every_path_and_entry"], [], None,
      "the gate attributes sites in migration.py only: it then refuses a correct tree"),
     ("sa10-a-vacuous-postcondition", "product", MIG,
-     [('    _refuse_unless(run.base, STEP_STAMP, [f"user_version reads {run.stamped}, not {SCHEMA_VERSION}"]\n'
-       '                   if run.stamped != SCHEMA_VERSION else [])',
-       "    _refuse_unless(run.base, STEP_STAMP, [])")],
+     [('    _refuse_unless(run, STEP_STAMP, [f"user_version reads {run.stamped}, not {run.target}"]\n'
+       '                   if run.stamped != run.target else [])',
+       "    _refuse_unless(run, STEP_STAMP, [])")],
      [f"{PA1_CELLS}::test_cell_a_perturbed_stamp_refuses_at_the_stamp"], [], None,
      "the stamp's postcondition made vacuous: its problems are always empty"),
     ("sa10-a-step-with-no-matcher", "product", MIG,
@@ -312,7 +312,7 @@ MUTANTS += [
                               "                    _validated_current("))],
      [P3("verified"), P3("attested")], [], None, "the migration commits before it revalidates"),
     ("sa10-verified-takes-fewer-checks", "product", SV,
-     [(_OLDER, _OLDER.replace("require_stamp=True)", "require_stamp=status.status == \"attested\")"))],
+     [(_OLDER, _OLDER.replace("require_stamp=True,", "require_stamp=status.status == \"attested\","))],
      [P1("verified")], [], None, "a verified build revalidates without the stamp requirement"),
 ]
 

@@ -870,7 +870,7 @@ def _visible(**over):
 DECLINES.update({
     "store.migration.version": lambda mp: _raises(StoreVersionError, _migration._apply_forward, _sqlite3.connect(":memory:"), 99),
     "store.migration.postcondition": lambda mp: _raises(                                     # specs/0013 §4f (v33)
-        _migration.MigrationPostconditionError, _migration._refuse_unless, 4, _migration.STEP_IDENTITY,
+        _migration.MigrationPostconditionError, _migration._refuse_unless, _migration._Forward(4, 16), _migration.STEP_IDENTITY,
         ["the probe's failed postcondition"]),
     "store.migration.duplicate-outcome-chain": lambda mp: _raises(
         _migration.DuplicateOutcomeChainError, _migration._migrate_outcome_chains, _v2_conn_with_duplicate_legacy_outcome()),

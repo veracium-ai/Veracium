@@ -83,8 +83,8 @@ PARAMS = C("test_parameters_are_recorded_by_value_and_replay_compares_every_outc
 CLEAN_GATE = C("test_the_gate_passes_the_clean_ladder_on_every_path_and_entry")
 RELEASE_SEAM = C("test_release_migration_opens_its_connections_through_the_seam")
 
-_STAMP_REFUSE = ('    _refuse_unless(run.base, STEP_STAMP, [f"user_version reads {run.stamped}, not {SCHEMA_VERSION}"]\n'
-                 '                   if run.stamped != SCHEMA_VERSION else [])\n')
+_STAMP_REFUSE = ('    _refuse_unless(run, STEP_STAMP, [f"user_version reads {run.stamped}, not {run.target}"]\n'
+                 '                   if run.stamped != run.target else [])\n')
 _NO_OP_WRITE = '    conn.execute("UPDATE episodes SET json = json")\n'
 
 # (id, kind, file, [(anchor, replacement)], named cells (EVERY one must fail), honest probes, reason or None, what)
@@ -472,7 +472,7 @@ MUTANTS += [
 # (id, file, [(anchor, replacement)], named cells, what, the outcome the classifier must give)
 CONTROLS = [
     ("CTRL-unrelated-TypeError", GATE,
-     [("def text_classes():\n", "def text_classes():\n"
+     [("def text_classes(target=None):\n", "def text_classes(target=None):\n"
        '    raise TypeError("an unrelated execution failure (classifier negative control)")\n')],
      [C("test_n1_the_reviewers_drop_and_recreate_at_a_declared_site_is_refused"), HARNESS],
      "an UNRELATED TypeError in the gate's text classes: every path raises for no reason a cell names",

@@ -1,5 +1,5 @@
 {
- "body_sha256": "c073744a2bb0e84eb13fffa05b67db2846067b2397683456371bc0e97924313e",
+ "body_sha256": "79f093d2dde3209e75ec10679838793c70d5465b0fa87cc077199d335af450fa",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "691ace2b70edbd21a1672116a52ad83dffaf86d2",
+  "commit": "bfe14549034cbf544ec6eb6848a140766a60a3ff",
   "control_definitions": {
    "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
   },
@@ -74,7 +74,18 @@
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0007/sa_mutants.py",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/a_matrix_mutants.py",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0013/sa10_mutants.py",
+   "specs/evidence/0048/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -106,7 +117,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.00s",
+   "pytest": "1 failed in 2.91s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
@@ -121,6 +132,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 22
+  "seconds": 21
  }
 }

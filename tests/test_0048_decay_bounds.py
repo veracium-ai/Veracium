@@ -795,11 +795,11 @@ SRC_NONLITERAL = {
     ('veracium/store/edge_events.py:append_event', '3e25ffaa62d0012a435668ae6fb4c8bfa6b2122a6b3a1a824e1c1b850d45b70f'):
         (1, 'EVENT_INSERT_SQL', '00f9eeb97905ba10'),
     ('veracium/store/migration.py:_apply_forward', '7796f4f66361ff1cc7cafc731c207bb2ee15b9f7e1f47d8e4c79e9b8fb939d67'):
-        (1, "f'PRAGMA user_version = {entry.step}'", '15ddcbb81be339fb'),
+        (1, "f'PRAGMA user_version = {entry.step}'", '9cc4e130603c2d2d'),
     ('veracium/store/migration.py:_apply_forward', '827d5abbca003d06e59d3546e7bf9189eb9b743f863a72df04b49929409ab8f7'):
-        (1, 'entry.step', '15ddcbb81be339fb'),
+        (1, 'entry.step', '9cc4e130603c2d2d'),
     ('veracium/store/migration.py:_apply_forward', 'dc29d9ccfdb98bf9b34a25a44b096e4978cb32a6fb0a53246857c755bdd6f288'):
-        (1, 'entry.step.ddl', '15ddcbb81be339fb'),
+        (1, 'entry.step.ddl', '9cc4e130603c2d2d'),
     ('veracium/store/migration.py:_data_arity_inventory', '52ae70d7758a2043598287bcf7e3c91641da51f67278f73fa05155c369ddc28c'):
         (1, "f'SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id'", '3d63e4f075e13aea'),
     ('veracium/store/migration.py:_read_conf_after', '3f01b166ad2f4380f59e89aecde8502431db2a9604f8b46a5017aad3f9c4b070'):
@@ -834,8 +834,8 @@ SRC_NONLITERAL = {
         (1, 'o.ddl', '97ef93adf55329e6'),
     ('veracium/store/schema_version.py:manifest', 'e570e7c925fadb4580eb2e4ebaf2fe8b625768b9db63f9944145c77fef3f90b8'):
         (1, '_OBJECTS', '605a66d54de65139'),
-    ('veracium/store/schema_version.py:open_versioned', '1215f2ca4ee774c18f1c4348eb427fe9dfa2bc707aa6d3eaffb18a992a18fda8'):
-        (2, "f'PRAGMA user_version = {SCHEMA_VERSION}'", 'e834319b11c214cc'),
+    ('veracium/store/schema_version.py:open_versioned', 'bb4024dac0c6ee3c63c8899509bbacab1a9dc1dfc5c4b5d4f8f9caa0f999ebf9'):
+        (2, "f'PRAGMA user_version = {target}'", 'db0ec311ed5a1b74'),
     ('veracium/store/schema_version.py:verify_reproduction', 'f1faaebed47e985137dd526dd1df36ee06707c126d20e91259e9583d40926338'):
         (1, 'd', '9b13912394de2129'),
 }

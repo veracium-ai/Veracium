@@ -1,5 +1,5 @@
 {
- "body_sha256": "80725ab6df0396d74848a418a22b8927a45e40dffa5aa06218a23cfc50cad985",
+ "body_sha256": "5cc52c945cb3c9186cd5c73d9a4b25c1e787c0c872364b592ca0ad7318246490",
  "controls": [
   {
    "anchor_counts": [
@@ -88,20 +88,20 @@
     "passed": 44
    }
   },
-  "commit": "691ace2b70edbd21a1672116a52ad83dffaf86d2",
+  "commit": "bfe14549034cbf544ec6eb6848a140766a60a3ff",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "bc3348cb71e3e1d56445e29d0b8f2fda2c72563c6b9bb349a9e9cf530d0ee10d"
   },
   "definitions": {
-   "sa1-open-decides-shape-first": "295e9d05d8eff257ee2d547a4c8795a4b08a1dc91276916c8a67733a4cda39bc",
+   "sa1-open-decides-shape-first": "b125ef0fe3607d15575fcfb272b8149e6394e16daf2c762ef3ca6f5d027d0e68",
    "sa1-preflight-decides-shape-first": "307372c57c0c52386ca3c9757a78ea9d0df8f7d50b8b4b59a827ec4095ef5308",
    "sa1-skip-verification-when-attested": "99397e8601ac528e6aa99744921312c43b41438163539f11b4a07a1cb65a485f",
    "sa10-a-step-with-no-matcher": "b917699aa5d161bbed73603479898aac51d7012da5717493b038df6d4f867ee3",
-   "sa10-a-vacuous-postcondition": "e383c4b95934c1a0dbcf8d1d7499a03028b16a4142ae837bdab770a6cb35dca6",
-   "sa10-commit-before-revalidating": "a2fec9de94e02c9b6e567ce7e88f116f46d15ac6085b9a8f84fe025140b1c218",
+   "sa10-a-vacuous-postcondition": "e2273c8a233e5502dfb3dae88a623d4cb9dd146b1ed2ea2619752b869ba19a6b",
+   "sa10-commit-before-revalidating": "db0ee439e8863ddc751b51042a7d9e1b7b3123f6ef08d53ae7301c4923c2482e",
    "sa10-narrow-the-site-scope": "01bc1cc0538aba5387120b39c054b1f5d3d84d2c3ef9bd34277738099c62ec0e",
-   "sa10-skip-the-byte-match-unattested": "8ed4edcf5c931028b4652dc95a0ecfce512374a50e8503c983f52ffd2060d917",
-   "sa10-verified-takes-fewer-checks": "68a8da332b283acdb64dc0fdc600791ea605eae12719aad6243267122e39b29a",
+   "sa10-skip-the-byte-match-unattested": "caf96c6b1e1d650c948c74206e0fcc35c929f9fe1a936f7cab2b1f96ca965c9a",
+   "sa10-verified-takes-fewer-checks": "fecf93ffb7b54b2d7fcb8f714ce8ac465999e0fc40fe3667e821874300a374db",
    "sa11-attested-on-a-verified-build": "bc68e7398ec97f1a2b622152f3bd26d4adcf227501096799e52d5a73586f2e1f",
    "sa11-omit-the-key": "204cac7ed3edddf9bbd0304c4aa602501728aa317b7e46ceccd6898d438ef4b8",
    "sa12-a-short-segment-read-as-a-name": "4e6a0b3f275942d3a6d4b920853386efd7970c75b2324523d1027d15635dd95c",
@@ -148,22 +148,22 @@
   "digests": {
    "specs/0007-store-schema-versioning.md": "79c57d98713f4acf5b9d61429b322eb0dd7c2b3011d0d5f3eb4bae2972e16148",
    "specs/0013-store-migrations.md": "60e1ee1206dca6e9f0d94f04beec13e9e736ec261aedc06d6b4c8672a215f940",
-   "specs/evidence/0007/sa_mutants.py": "6c336aeae73a4b52e359e1aa9de6c371bee6ee1c83f38d2a23a201bc6dbad551",
-   "specs/evidence/0013/pa1_campaign.py": "36a3c5f11dcf54f888bcb43760388e3c72b719db6e57f244a2983f71e74649af",
-   "specs/evidence/0013/sa10_gate.py": "5240de83b2eb282e4d13566c4dc28e07185d4394ae2c129f2b946bfd8656e4b9",
+   "specs/evidence/0007/sa_mutants.py": "f7ba3d856cc2a26737a52246edbe56040025056a894630d936c239217b51c481",
+   "specs/evidence/0013/pa1_campaign.py": "5e6b1d436d1a713a17f8cd3f508fa7b1d0725e3aaed0f363614724b380337f84",
+   "specs/evidence/0013/sa10_gate.py": "9045b8e63e15819ba5bba7072816b429af23ebe6e376fbfb751fcad413eb1c02",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "specs/schema_evidence.py": "0a7c8716da03616d6a8c814d8ce0b76dab91c444c97d154dc1d9d891197c6a29",
    "specs/skip_inventory.py": "ac6b10fb83fb9adde631672b633e88020a2a63eadb6a3c6409a1b541c45ec584",
    "src/veracium/doctor.py": "5dd61a2af0b7ddab2d90145825d78958878db8726754d770a03a50d926d70d06",
-   "src/veracium/store/migration.py": "7b9be88e25913c58db94536d5503f20a7869e94a8e2dd3e38b8039f0a5451109",
+   "src/veracium/store/migration.py": "ee1e5ed75df8f3a9ea96e2cc7b9b636cab96ea82cb752070925e96cc7429f63f",
    "src/veracium/store/near_misses.py": "0fd9a18b22fc50c6c576610b714538ff0a1753546d6f15c1cb1b924b1623e07e",
    "src/veracium/store/release_migration.py": "0e750325e0347d02dfea19dedecdc6c3bd0bce2733a25556f8df52a7e83f1ce4",
-   "src/veracium/store/schema_version.py": "11b330314aa5ec69d4aaccc3bf2e91749738e762bb21576159b54130ecbe0021",
+   "src/veracium/store/schema_version.py": "3fc33a009034ab07685ed9444049de9de9ba0b6e5be502153a53b8a276cc753b",
    "tests/test_0007_attestation_jobs.py": "541d6cdf2f33379184f9e7849bd5029245635d955f800141b99b52f632ef2bc4",
    "tests/test_0007_attestation_writer.py": "33b011f5e0054562f72d789dd7433c7ecc0e794902aae73de80ab9a94c7f4b19",
    "tests/test_0007_doctor_nearest.py": "bca68d7a002bcec24612d2f82bd8f86e41aa02d01b6d20eb259ce6126b326959",
-   "tests/test_0007_runtime_status.py": "52d3ae22656bcf88108c358e897967b69df1c9e19affb92b4439863a72692d04",
+   "tests/test_0007_runtime_status.py": "f73566e4c955fd44e6424f8960cb91d0e7e82e9e5e1eccb01c46ec55c08ba954",
    "tests/test_0013_pa1_campaign_cells.py": "0df0af6e7812e379fab5c64f8c72528f015a114baeee652bd83350f25ec961b5",
    "tests/test_0013_sa10_gate.py": "c5bd79067b705a91b2e507e4fc99c0b11c856fad7067a0d398cd53ec2ebf5b91",
    "tests/test_schema_model.py": "3c20647e07ed47240f42553846d25f15671343209d89527552b7f041907a3b0e",
@@ -175,7 +175,29 @@
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0007/sa_mutants.py",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/a_matrix_mutants.py",
+   "specs/evidence/0013/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0013/sa10_mutants.py",
+   "specs/evidence/0048/implementation/mutation-table.json"
+  ]
  },
  "rows": [
   {
@@ -204,7 +226,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.50s",
    "reason": null,
    "reason_seen": null,
    "what": "a matching attestation record short-circuits verification"
@@ -221,7 +243,7 @@
    "cells_failed": [
     "tests/test_0007_runtime_status.py::test_a_refused_build_is_refused_before_any_version_decision[store/sqlite.py:__init__]"
    ],
-   "definition_sha256": "295e9d05d8eff257ee2d547a4c8795a4b08a1dc91276916c8a67733a4cda39bc",
+   "definition_sha256": "b125ef0fe3607d15575fcfb272b8149e6394e16daf2c762ef3ca6f5d027d0e68",
    "file": "src/veracium/store/schema_version.py",
    "finding": "INV-SA1-SA12",
    "good": true,
@@ -236,7 +258,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "open_versioned decides the version (invalid, newer) before measuring the build"
@@ -268,7 +290,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the release preflight decides the version before measuring the build"
@@ -302,7 +324,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.66s",
+   "pytest": "2 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "accept on reproduction alone: discrimination dropped"
@@ -333,7 +355,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "accept on probes alone: reproduction and discrimination dropped"
@@ -364,7 +386,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception inside verification returns verified"
@@ -395,7 +417,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "reproduction compares digests only (S69's rebuildable-index hole)"
@@ -430,7 +452,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.72s",
+   "pytest": "2 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "reproduction compares the build against its own manifestation, not the accepted evidence"
@@ -461,7 +483,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "one required near-miss dropped from the set"
@@ -495,7 +517,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a near-miss equal to an accepted head shape passes"
@@ -526,7 +548,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "a runtime record's manifestation joins the accepted set (the withdrawn union's entry form)"
@@ -557,7 +579,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "S66's single-active rule resurrected: a second key poisons the artifact"
@@ -588,7 +610,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.49s",
    "reason": null,
    "reason_seen": null,
    "what": "one key with different evidence is accepted"
@@ -619,7 +641,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "an in-suite skip left in the rewrite class"
@@ -650,7 +672,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the release check passes a bootstrap record (v21)"
@@ -681,7 +703,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "warn on every open"
@@ -712,7 +734,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "warn on an attested build"
@@ -743,7 +765,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "never warn"
@@ -774,7 +796,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the refusal text names schema_evidence.py"
@@ -805,7 +827,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the refusal text omits the failing step"
@@ -837,7 +859,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "doctor reports the SQLite status after opening a store"
@@ -868,7 +890,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "doctor reports a verified build at warn (doctor then exits 1 for every uv user)"
@@ -900,7 +922,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the attempted and committed events carry no runtime"
@@ -931,7 +953,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.68s",
+   "pytest": "1 failed, 1 warning in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's migration records attested"
@@ -962,7 +984,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "match on version and source id alone"
@@ -993,7 +1015,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.70s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile-options digest left out of the key"
@@ -1055,7 +1077,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the options read somewhere other than the one probe of the store's own library"
@@ -1086,7 +1108,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "machine dropped from the key"
@@ -1117,7 +1139,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "system dropped from the key"
@@ -1148,7 +1170,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "libc dropped from the key"
@@ -1179,7 +1201,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "libc read from platform.libc_ver()"
@@ -1210,7 +1232,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "machine taken from the CI runner's label"
@@ -1241,7 +1263,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"
@@ -1303,7 +1325,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "PT_INTERP read from a 1 MiB window at the start of the file (v22; run 1's aarch64 and musl builds)"
@@ -1337,7 +1359,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.58s",
+   "pytest": "2 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "a short or unterminated PT_INTERP read as a name (v22)"
@@ -1369,7 +1391,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "an unreadable key field matches a record carrying the same None"
@@ -1400,7 +1422,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 15.03s",
+   "pytest": "1 failed in 14.31s",
    "reason": null,
    "reason_seen": null,
    "what": "the gate attributes sites in migration.py only: it then refuses a correct tree"
@@ -1416,7 +1438,7 @@
    "cells_failed": [
     "tests/test_0013_pa1_campaign_cells.py::test_cell_a_perturbed_stamp_refuses_at_the_stamp"
    ],
-   "definition_sha256": "e383c4b95934c1a0dbcf8d1d7499a03028b16a4142ae837bdab770a6cb35dca6",
+   "definition_sha256": "e2273c8a233e5502dfb3dae88a623d4cb9dd146b1ed2ea2619752b869ba19a6b",
    "file": "src/veracium/store/migration.py",
    "finding": "INV-SA1-SA12",
    "good": true,
@@ -1431,7 +1453,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the stamp's postcondition made vacuous: its problems are always empty"
@@ -1462,7 +1484,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a STEP_* name the campaign has no matcher for"
@@ -1480,7 +1502,7 @@
     "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]",
     "tests/test_0007_runtime_status.py::test_p3_a_stamp_below_head_is_refused_by_revalidation_and_rolls_back[verified]"
    ],
-   "definition_sha256": "8ed4edcf5c931028b4652dc95a0ecfce512374a50e8503c983f52ffd2060d917",
+   "definition_sha256": "caf96c6b1e1d650c948c74206e0fcc35c929f9fe1a936f7cab2b1f96ca965c9a",
    "file": "src/veracium/store/schema_version.py",
    "finding": "INV-SA1-SA12",
    "good": true,
@@ -1514,7 +1536,7 @@
     "tests/test_0007_runtime_status.py::test_p3_a_stamp_below_head_is_refused_by_revalidation_and_rolls_back[attested]",
     "tests/test_0007_runtime_status.py::test_p3_a_stamp_below_head_is_refused_by_revalidation_and_rolls_back[verified]"
    ],
-   "definition_sha256": "a2fec9de94e02c9b6e567ce7e88f116f46d15ac6085b9a8f84fe025140b1c218",
+   "definition_sha256": "db0ee439e8863ddc751b51042a7d9e1b7b3123f6ef08d53ae7301c4923c2482e",
    "file": "src/veracium/store/schema_version.py",
    "finding": "INV-SA1-SA12",
    "good": true,
@@ -1530,7 +1552,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed, 1 warning in 0.75s",
+   "pytest": "2 failed, 1 warning in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the migration commits before it revalidates"
@@ -1546,7 +1568,7 @@
    "cells_failed": [
     "tests/test_0007_runtime_status.py::test_p1_a_verified_build_migrates_a_base_store_as_the_attested_build_does[verified]"
    ],
-   "definition_sha256": "68a8da332b283acdb64dc0fdc600791ea605eae12719aad6243267122e39b29a",
+   "definition_sha256": "fecf93ffb7b54b2d7fcb8f714ce8ac465999e0fc40fe3667e821874300a374db",
    "file": "src/veracium/store/schema_version.py",
    "finding": "INV-SA1-SA12",
    "good": true,
@@ -1561,7 +1583,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.73s",
+   "pytest": "1 failed, 1 warning in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build revalidates without the stamp requirement"
@@ -1592,7 +1614,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.50s",
    "reason": null,
    "reason_seen": null,
    "what": "the listing omits the source-id part"
@@ -1623,7 +1645,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.47s",
+   "pytest": "1 failed in 0.44s",
    "reason": null,
    "reason_seen": null,
    "what": "an unreadable field counted as matching"
@@ -1654,7 +1676,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.47s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "a record of another SQLite version is a candidate"
@@ -1685,7 +1707,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.44s",
    "reason": null,
    "reason_seen": null,
    "what": "a tie broken by the artifact's order instead of the listing's"
@@ -1716,7 +1738,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.44s",
    "reason": null,
    "reason_seen": null,
    "what": "a record named when none has the version"
@@ -1747,7 +1769,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.47s",
+   "pytest": "1 failed in 0.45s",
    "reason": null,
    "reason_seen": null,
    "what": "the nearest line emitted on an attested build"
@@ -1778,7 +1800,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.45s",
    "reason": null,
    "reason_seen": null,
    "what": "the comparison omits a key field (the compile-options digest and the feature probes)"
@@ -1793,6 +1815,6 @@
   "good": 51,
   "killed": 51,
   "rows": 51,
-  "seconds": 126
+  "seconds": 120
  }
 }

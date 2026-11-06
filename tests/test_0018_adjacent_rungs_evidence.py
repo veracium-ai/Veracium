@@ -50,12 +50,12 @@ def test_the_repository_census_sees_a_table_and_refuses_each_plant(tmp_path):
     goes blind on a table (research's stage-1 read: a one-entry table read 21 references as 0, and a blind census and a
     clean one print the same), so this one follows a function merely referenced and reads module-level values like
     function bodies, through imports, class attributes included. Its matrix plants each form, research's fourteen other
-    table shapes among them, and runs its controls. The kernel is a table now: 8 references, the guards, the stamp and five raises having
-    moved into `plan(base, SCHEMA_VERSION)` and one `except`. The comparison with the RUNTIME table is tests/test_0018_rungs_t1.py's."""
+    table shapes among them, and runs its controls. The kernel takes a target now: 1 reference, the default of `target`, as T2-EXPECTATION.md stated before the code; the rest having
+    moved to `target`. The comparison with the RUNTIME table is tests/test_0018_rungs_t1.py's."""
     census = ROOT / "specs/evidence/0018/head_bound_census.py"
     expected = ROOT / "specs/evidence/0018/head_bound_census.expected.json"
     r = _run(census, ROOT, "--check", expected)
-    assert r.returncode == 0 and r.stdout.startswith("CENSUS EQUAL: 8 references"), r.stdout + r.stderr[-300:]
+    assert r.returncode == 0 and r.stdout.startswith("CENSUS EQUAL: 1 references"), r.stdout + r.stderr[-300:]
     m = _run(ROOT / "specs/evidence/0018/head_bound_census_matrix.py", ROOT, expected, tmp_path / "matrix")
     assert m.returncode == 0, m.stdout[-600:] + m.stderr[-300:]
     assert m.stdout.rstrip().endswith("CENSUS MATRIX: 31 cases, 0 not as expected")

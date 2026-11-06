@@ -1,62 +1,13 @@
 {
  "root": "veracium.store.migration:_apply_forward",
  "definer": "veracium.store.schema_version",
- "count": 8,
+ "count": 1,
  "references": [
-  {
-   "module": "veracium.store.migration",
-   "function": "MigrationPostconditionError.__init__",
-   "line": 64,
-   "kind": "error-default",
-   "via": "veracium.store.migration:FORWARD_ENTRIES -> veracium.store.migration:<module>.FORWARD_ENTRIES -> veracium.store.migration:_check_refusal_inventory_edges -> veracium.store.migration:_edges_unchanged -> veracium.store.migration:_refuse_unless -> veracium.store.migration:MigrationPostconditionError.__init__"
-  },
-  {
-   "module": "veracium.store.migration",
-   "function": "_check_stamp",
-   "line": 690,
-   "kind": "other",
-   "via": "veracium.store.migration:_apply_forward -> veracium.store.migration:plan -> veracium.store.migration:_check_stamp"
-  },
-  {
-   "module": "veracium.store.migration",
-   "function": "_check_stamp",
-   "line": 691,
-   "kind": "other",
-   "via": "veracium.store.migration:_apply_forward -> veracium.store.migration:plan -> veracium.store.migration:_check_stamp"
-  },
   {
    "module": "veracium.store.migration",
    "function": "_apply_forward",
    "line": 793,
-   "kind": "guard",
-   "via": "veracium.store.migration:_apply_forward"
-  },
-  {
-   "module": "veracium.store.migration",
-   "function": "_apply_forward",
-   "line": 795,
-   "kind": "error-argument",
-   "via": "veracium.store.migration:_apply_forward"
-  },
-  {
-   "module": "veracium.store.migration",
-   "function": "_apply_forward",
-   "line": 796,
-   "kind": "error-argument",
-   "via": "veracium.store.migration:_apply_forward"
-  },
-  {
-   "module": "veracium.store.migration",
-   "function": "_apply_forward",
-   "line": 800,
    "kind": "other",
-   "via": "veracium.store.migration:_apply_forward"
-  },
-  {
-   "module": "veracium.store.migration",
-   "function": "_apply_forward",
-   "line": 816,
-   "kind": "error-argument",
    "via": "veracium.store.migration:_apply_forward"
   }
  ],

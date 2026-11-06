@@ -111,7 +111,7 @@ _DUPLICATE = ('''            else:
                 problems.append("duplicate path record for one selection key")
 ''')
 _OLDER = ("                    older(conn, spath, found, objs, found, runtime=status)\n"
-          "                    _validated_current(conn, spath, found, require_stamp=True)\n")
+          "                    _validated_current(conn, spath, found, require_stamp=True, target=target)\n")
 _HONEST_P = [P1("attested"), P3("attested")]          # the attested build's own cells: the clean path a P mutant keeps
 
 # (id, kind, file, [(anchor, replacement)], named cells (EVERY one must fail), honest probes, reason or None, what)
@@ -233,7 +233,7 @@ MUTANTS = [
                               "                    _validated_current("))],
      CASE_CELLS["P3"], _HONEST_P, None, "a verified build's migration commits before _validated_current runs"),
     ("p3-require-stamp-false-verified", "product", SV,
-     [(_OLDER, _OLDER.replace("require_stamp=True)", "require_stamp=status.status != \"verified\")"))],
+     [(_OLDER, _OLDER.replace("require_stamp=True,", "require_stamp=status.status != \"verified\","))],
      CASE_CELLS["P3"], _HONEST_P, None, "a verified build's revalidation passes require_stamp=False"),
 ]
 

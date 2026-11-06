@@ -22,6 +22,6 @@ Today the repository census reads 8 references to the head in the forward step's
 - `_check_stamp` reads `run.target`;
 - `MigrationPostconditionError` takes its expected version as an argument with no default, so the constructor names no head.
 
-`_refuse_unless` keeps its three arguments: `test_0013_sa10_gate.py` and `test_0007_runtime_status.py` patch it with three, so the
-target reaches the error some other way. If the census reads anything but this one reference, T2 is wrong or this file is, and
+`_refuse_unless` keeps its three arguments, its first now `run` (research, 74add182): test_0007's patch passes it through unread, so
+the error is built once, at the fire, with `run.target`. (This line first said two files patch it; T1 moved test_0013's hook.) If the census reads anything but this one reference, T2 is wrong or this file is, and
 this file changes only with a stated reason.
