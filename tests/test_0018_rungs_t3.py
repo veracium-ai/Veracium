@@ -276,3 +276,75 @@ def test_feeds_is_what_each_check_really_reads():
     for e in reads:
         written = attrs(e.step)[1]
         assert list(e.fields) == [c for c in checks if attrs(c)[0] & written], e.step.__name__
+
+
+# ---- the original preserved (round 1's closure checks on the unstamped first rung; v9's "original-preservation checks") ------
+def _legacy(path):
+    """An unstamped v1 store holding a row, so a rollback has data to keep."""
+    p = _store(path, 1, stamp=0)
+    c = sqlite3.connect(p)
+    c.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,quarantined,json) VALUES('e','u','s','r','o',1,0,'{}')")
+    c.commit()
+    c.close()
+    return p
+
+
+def _bytes(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def _dump(path):
+    c = sqlite3.connect(path)
+    try:
+        return list(c.iterdump())
+    finally:
+        c.close()
+
+
+def test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp(tmp_path):
+    """Resolving and minting read the store and never write it: a rung stopped at the expectation leaves the file byte for byte."""
+    p = _legacy(tmp_path / "s.db")
+    before = _bytes(p)
+    r = rm.run_release_rung(p, host_attestation=ATT, expect_base=7)
+    assert r.kind == "unexpected-base" and r.preflight_base == 1 and _stamp(p) == 0 and _bytes(p) == before
+    _authority(p, 1)
+    assert _stamp(p) == 0 and _bytes(p) == before
+
+
+def test_a_first_rung_that_fails_restores_the_original_stamp_and_data(tmp_path, monkeypatch):
+    """Rollback leaves the ORIGINAL raw stamp: 0 on an unstamped store, not `t-1`, with every row as it was."""
+    p = _legacy(tmp_path / "s.db")
+    before = _dump(p)
+    monkeypatch.setattr(M, "_check_stamp", lambda conn, run: M._refuse_unless(run, M.STEP_STAMP, ["planted"]))
+    r = rm.run_release_rung(p, host_attestation=ATT)
+    assert r.result.outcome == "unsupported-migration" and _facts(r.result)[:2] == (False, False)
+    assert _stamp(p) == 0 and _dump(p) == before
+
+
+def test_an_invalid_unstamped_shape_refuses_at_the_preflight_and_is_untouched(tmp_path):
+    p = str(tmp_path / "s.db")
+    c = sqlite3.connect(p)
+    c.execute("CREATE TABLE foreign_thing (x)")
+    c.close()
+    before = _bytes(p)
+    r = rm.run_release_rung(p, host_attestation=ATT)
+    assert r.kind == "preflight" and r.result.outcome == "foreign-shape" and _stamp(p) == 0 and _bytes(p) == before
+
+
+@pytest.mark.parametrize("b, stamp", [(1, 0), (13, None)], ids=["unstamped first rung", "stamped middle rung"])
+def test_forged_resolution_evidence_cannot_alter_a_rung(tmp_path, b, stamp):
+    """Under both real-store conditions: on a good store a forged resolution mints the same endpoints from the store's own observation,
+    and on a failing one it refuses for the same reason as the genuine evidence."""
+    p = _store(tmp_path / "s.db", b, stamp=stamp)
+    canonical = os.path.realpath(p)
+    genuine, forged = rm.PreflightResolution(canonical, b, "0" * 64), rm.PreflightResolution(canonical, b, "ab" * 32)
+    a, f = (rm.mint_release_authority(p, ATT, resolved=x) for x in (genuine, forged))
+    assert (a.from_version, a.to_version, a.source_digest) == (f.from_version, f.to_version, f.source_digest) == (b, b + 1, a.source_digest)
+    os.remove(p)
+    reasons = []
+    for x in (genuine, forged):
+        with pytest.raises(rm.MintError) as e:
+            rm.mint_release_authority(p, ATT, resolved=x)
+        reasons.append(e.value.reason)
+    assert reasons[0] == reasons[1], reasons
