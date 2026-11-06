@@ -1,0 +1,231 @@
+{
+ "body_sha256": "e92044e223549beadd2bf5492bff1e8b9b1cd4052cf2f42f5e4a50b8d355efb9",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+   ],
+   "definition_sha256": "d537339c6f57023de7cf99e557f2c6277c4e1a8b6cc66fdbb0ab8ffc4b3146cd",
+   "expected": "SURVIVED",
+   "file": "src/veracium/lifecycle.py",
+   "good": true,
+   "id": "NOOP-0048-R2-02-lifecycle",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def expire(': the bytes change, the behaviour does not"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]"
+   ],
+   "definition_sha256": "e0e2ad3d31112776b6940dddd4847a5d8e053541c14500987f45c5b118701b6d",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/sqlite.py",
+   "good": true,
+   "id": "NOOP-0048-R2-02-sqlite",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _validated_edge_json(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0048-R2-02": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "control_definitions": {
+   "NOOP-0048-R2-02-lifecycle": "d537339c6f57023de7cf99e557f2c6277c4e1a8b6cc66fdbb0ab8ffc4b3146cd",
+   "NOOP-0048-R2-02-sqlite": "e0e2ad3d31112776b6940dddd4847a5d8e053541c14500987f45c5b118701b6d"
+  },
+  "definitions": {
+   "N4i-below-the-floor-the-decayed-value-stored": "49fa97e4d1fd180040faa440b6a5e1bcf39744611fcda71d153249a687a6e87d",
+   "N4i-floor-comparison-inclusive": "6e6dabfc94563e1ece8f8b58929249bb38758bb22db3f7e039cc438f7eab392b",
+   "N4i-retained-decay-counted": "7affbea9a1049ce0b2a6434f63c49ea2e66523deec47ffacbd6b1cb30d38e3a0"
+  },
+  "digests": {
+   "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
+   "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
+   "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
+   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+  },
+  "finding": "0048-R2-02",
+  "honest_nodes": [
+   "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
+   "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0048",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0048-decay-never-raises-confidence.md",
+   "specs/closure_findings.py",
+   "specs/render_closure.py",
+   "specs/reviews.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+   ],
+   "definition_sha256": "7affbea9a1049ce0b2a6434f63c49ea2e66523deec47ffacbd6b1cb30d38e3a0",
+   "file": "src/veracium/lifecycle.py",
+   "finding": "0048-R2-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]"
+   ],
+   "id": "N4i-retained-decay-counted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 1.30s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a retained decay counted as `decayed` (R2-02)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]"
+   ],
+   "definition_sha256": "49fa97e4d1fd180040faa440b6a5e1bcf39744611fcda71d153249a687a6e87d",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "0048-R2-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+   ],
+   "id": "N4i-below-the-floor-the-decayed-value-stored",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[below the floor]",
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[factor 0, floor 0.3]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 1.31s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "below the floor, the decayed confidence stored before the retirement (R2-02)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]"
+   ],
+   "definition_sha256": "6e6dabfc94563e1ece8f8b58929249bb38758bb22db3f7e039cc438f7eab392b",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "0048-R2-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[retained]"
+   ],
+   "id": "N4i-floor-comparison-inclusive",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_decay_keeps_the_shipped_result[exactly at the floor]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.00s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the floor comparison inclusive: a decay at the floor retires"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 3
+  },
+  "controls": 2,
+  "controls_good": 2,
+  "good": 3,
+  "killed": 3,
+  "rows": 3,
+  "seconds": 19
+ }
+}

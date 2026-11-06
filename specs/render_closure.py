@@ -29,7 +29,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SPECS = ROOT / "specs"
-TRACKED = ("0001", "0007", "0022", "0023", "0024", "0025", "0028", "0030", "0031", "0037", "0038", "0039", "0041", "0042", "0043")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3); 0007 at the SQLite attestation amendment's implementation-acceptance fold (2026-11-01)
+TRACKED = ("0001", "0007", "0022", "0023", "0024", "0025", "0028", "0030", "0031", "0037", "0038", "0039", "0041", "0048", "0042", "0043")     # the specs whose ledgers this gate governs — the L-pair joined at acceptance (round 12); 0001 at its first sealed RETURN (round 3); 0007 at the SQLite attestation amendment's implementation-acceptance fold (2026-11-01)
 
 # Specs whose returned verdicts are recorded WITHOUT `raised`, on purpose, and why. A spec still in design review, or
 # design-accepted with implementation obligations, cannot declare its raised ids yet: every declared id needs a closure row (completeness), and
@@ -40,8 +40,6 @@ DEFERRED_RAISED = {
     "0044": "design ACCEPTED at external round 4 (2026-10-13), returned at rounds 1-3 (2026-10-10, 2026-10-11, 2026-10-13), the 0029 amendment's design accepted at round 2 and the 0003 amendment's at round 3; raised 0044-R1-01..0044-R1-10 (R1-07..R1-09 on the 0003 amendment, R1-10 shared), 0044-R2-01..0044-R2-09 (R2-03 on the 0018 amendment and R2-09 on the 0003 amendment alone) and 0044-R3-01..0044-R3-03 (R3-03 also on the 0018 amendment), declared, with their closure rows, at the implementation-acceptance fold",
     "0045": "design ACCEPTED jointly with 0047 at external round 4 (2026-10-13), returned at rounds 1-3, the 0019 nonuser-refusal amendment's narrowed design accepted at round 2 and retained at rounds 3-4; round 3 raised no 0045 id; raised 0045-R1-01, -02, -03, -04, -05, -08, -09, -10 (R1-04, R1-05, R1-08, R1-09 via the 0019 amendment; R1-03, R1-05, R1-08, R1-10 are also 0047's) and 0045-R2-01, declared, with their closure rows, at the implementation-acceptance fold",
     "0047": "design ACCEPTED jointly with 0045 at external round 4 (2026-10-13), returned at rounds 1-3 (2026-10-10, 2026-10-11, 2026-10-13); raised 0047-R1-03, -05, -06, -07, -08, -10, 0047-R2-02..0047-R2-06 (R2-01 is 0045's by the verdict's table) and 0047-R3-01, -02 (R3-01 also on the 0008 and 0041 amendments, R3-02 also on the 0008 amendment), declared, with their closure rows, at the implementation-acceptance fold",
-    "0048": "design accepted at external round 2 (2026-10-12) with two implementation obligations (R2-01, R2-02); "
-            "R1-01..R1-05 and R2-01..R2-02 are declared, with their closure rows, at the implementation-acceptance fold",
 }
 
 

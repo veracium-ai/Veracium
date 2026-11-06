@@ -1,0 +1,121 @@
+{
+ "body_sha256": "591d52437beb7fe70e5e357a711ae6f28d647c4f1272e701e797c02b9240eee4",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason[(b) the reviewer's alias of execute, with constructed SQL]"
+   ],
+   "definition_sha256": "8801c0a0050c9e5c121e38458c399a3fb45804d89d17b4200ae54697e0131d57",
+   "expected": "SURVIVED",
+   "file": "tests/test_0048_decay_bounds.py",
+   "good": true,
+   "id": "NOOP-0048-R2-01-test_0048_decay_bounds",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason[(b) the reviewer's alias of execute, with constructed SQL]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _digest(node) -> str:': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0048-R2-01": [
+    "tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason[(b) the reviewer's alias of execute, with constructed SQL]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 2,
+    "ok": true,
+    "passed": 2
+   },
+   "last": {
+    "of": 2,
+    "ok": true,
+    "passed": 2
+   }
+  },
+  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "control_definitions": {
+   "NOOP-0048-R2-01-test_0048_decay_bounds": "8801c0a0050c9e5c121e38458c399a3fb45804d89d17b4200ae54697e0131d57"
+  },
+  "definitions": {
+   "R2-01-an-alias-of-execute-passes": "67d5b2ea4446593d3783f1a595e2f94814065ad803cbec09842e87ee13af1fc0"
+  },
+  "digests": {
+   "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+  },
+  "finding": "0048-R2-01",
+  "honest_nodes": [
+   "tests/test_0048_decay_bounds.py::test_a_closure_over_a_methods_self_is_the_method_s"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0048",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0048-decay-never-raises-confidence.md",
+   "specs/closure_findings.py",
+   "specs/render_closure.py",
+   "specs/reviews.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason[(b) the reviewer's alias of execute, with constructed SQL]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason[(b) the reviewer's alias of execute, with constructed SQL]"
+   ],
+   "definition_sha256": "67d5b2ea4446593d3783f1a595e2f94814065ad803cbec09842e87ee13af1fc0",
+   "file": "tests/test_0048_decay_bounds.py",
+   "finding": "0048-R2-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_closure_over_a_methods_self_is_the_method_s"
+   ],
+   "id": "R2-01-an-alias-of-execute-passes",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason[(b) the reviewer's alias of execute, with constructed SQL]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 6.43s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an execute-family attribute held in a name is let through: R2-01's alias of `connection.execute`"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "gate": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 57
+ }
+}

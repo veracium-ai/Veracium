@@ -1,0 +1,195 @@
+{
+ "body_sha256": "4b74a46f4d5b839c05b9d82db3e980a2e81bae374d0b6f9a739bd969953c6be8",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[lapse]"
+   ],
+   "definition_sha256": "58af8cd46e0530858f5a9ff275a3988be0b37ebaa81ea4484cce7d54c504761f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/lifecycle.py",
+   "good": true,
+   "id": "NOOP-0048-R1-02-lifecycle",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[lapse]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def expire(': the bytes change, the behaviour does not"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]"
+   ],
+   "definition_sha256": "94835607491707ed52493817d4c730fe5dd514975334291247515e3f3eee671f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/sqlite.py",
+   "good": true,
+   "id": "NOOP-0048-R1-02-sqlite",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _validated_edge_json(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0048-R1-02": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[lapse]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "control_definitions": {
+   "NOOP-0048-R1-02-lifecycle": "58af8cd46e0530858f5a9ff275a3988be0b37ebaa81ea4484cce7d54c504761f",
+   "NOOP-0048-R1-02-sqlite": "94835607491707ed52493817d4c730fe5dd514975334291247515e3f3eee671f"
+  },
+  "definitions": {
+   "N4h-conditional-on-the-row-as-read": "9e5b1588ddba5d4ff50596631c39927c741006eeb84605ec96837c6cb458f414",
+   "N4h-decided-from-the-listing": "ff22e293db2cf31ca8b5d2a94bccd0ae3a95986b2588ee90ee5fd0f40ef00724"
+  },
+  "digests": {
+   "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
+   "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
+   "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
+   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+  },
+  "finding": "0048-R1-02",
+  "honest_nodes": [
+   "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
+   "tests/test_0048_decay_bounds.py::test_lapse_and_confirm_keep_their_shipped_counts"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0048",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0048-decay-never-raises-confidence.md",
+   "specs/closure_findings.py",
+   "specs/render_closure.py",
+   "specs/reviews.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[lapse]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[lapse]"
+   ],
+   "definition_sha256": "ff22e293db2cf31ca8b5d2a94bccd0ae3a95986b2588ee90ee5fd0f40ef00724",
+   "file": "src/veracium/lifecycle.py",
+   "finding": "0048-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_lapse_and_confirm_keep_their_shipped_counts"
+   ],
+   "id": "N4h-decided-from-the-listing",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[lapse]",
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 2.33s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "THE SUPERSEDED IMPLEMENTATION: the shipped expire() body, deciding from its listing and writing the copy back"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]"
+   ],
+   "definition_sha256": "9e5b1588ddba5d4ff50596631c39927c741006eeb84605ec96837c6cb458f414",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "0048-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]"
+   ],
+   "id": "N4h-conditional-on-the-row-as-read",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[decay]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.26s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 2
+  },
+  "controls": 2,
+  "controls_good": 2,
+  "good": 2,
+  "killed": 2,
+  "rows": 2,
+  "seconds": 19
+ }
+}

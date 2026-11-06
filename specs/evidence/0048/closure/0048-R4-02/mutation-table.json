@@ -1,0 +1,134 @@
+{
+ "body_sha256": "1491b2341e5fc7348757e44b8572c30254ec811699f3e33afdaa8008c578a5e8",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[-10**5000-confidence_floor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[+10**5000-decay_factor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_hold_on_assignment[+10**5000-confidence_floor]"
+   ],
+   "definition_sha256": "22960b89cf4392aaaa3c201a3c4bb885095358cfba4f3c21cadaa41097859190",
+   "expected": "SURVIVED",
+   "file": "src/veracium/config.py",
+   "good": true,
+   "id": "NOOP-0048-R4-02-config",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[-10**5000-confidence_floor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[+10**5000-decay_factor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_hold_on_assignment[+10**5000-confidence_floor]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def validate_decay_bound(': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0048-R4-02": [
+    "tests/test_0048_decay_bounds.py::test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[-10**5000-confidence_floor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[+10**5000-decay_factor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_hold_on_assignment[+10**5000-confidence_floor]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "control_definitions": {
+   "NOOP-0048-R4-02-config": "22960b89cf4392aaaa3c201a3c4bb885095358cfba4f3c21cadaa41097859190"
+  },
+  "definitions": {
+   "R4-02-the-value-rendered-unbounded": "8a8654d06ebb3d0103d8124b45717b4b3a40b927d069e40431c454289d41cff0"
+  },
+  "digests": {
+   "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
+   "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/config.py": "a510123ae142da13952aa1ffabcf2d89099525ff87b2fcb8baf289964f0d96c9",
+   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+  },
+  "finding": "0048-R4-02",
+  "honest_nodes": [
+   "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[1.5-decay_factor]"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0048",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0048-decay-never-raises-confidence.md",
+   "specs/closure_findings.py",
+   "specs/render_closure.py",
+   "specs/reviews.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[-10**5000-confidence_floor]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[+10**5000-decay_factor]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_hold_on_assignment[+10**5000-confidence_floor]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[-10**5000-confidence_floor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[+10**5000-decay_factor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_hold_on_assignment[+10**5000-confidence_floor]"
+   ],
+   "definition_sha256": "8a8654d06ebb3d0103d8124b45717b4b3a40b927d069e40431c454289d41cff0",
+   "file": "src/veracium/config.py",
+   "finding": "0048-R4-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[1.5-decay_factor]"
+   ],
+   "id": "R4-02-the-value-rendered-unbounded",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_config_bounds_are_validated[+10**5000-decay_factor]",
+    "tests/test_0048_decay_bounds.py::test_a_refusal_beyond_the_rendering_limit_names_the_field_and_the_value[-10**5000-confidence_floor]",
+    "tests/test_0048_decay_bounds.py::test_config_bounds_hold_on_assignment[+10**5000-confidence_floor]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.68s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the refused value rendered by repr again: beyond the 4,300-digit limit the rendering's own ValueError replaces the refusal naming the field (R4-02)"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 10
+ }
+}

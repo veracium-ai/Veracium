@@ -1,0 +1,126 @@
+{
+ "body_sha256": "d4021ab76716309d59af1c66e3bef07d88be00ae65dc27771de592d4d0f54460",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P12 method-shaped, no such member]",
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P13 method-shaped, its own _rows member]"
+   ],
+   "definition_sha256": "0cfe4e051dd6d08fed6ecbd72e9f10a251045ebf676a8406a4e8b2f19a4cf7fd",
+   "expected": "SURVIVED",
+   "file": "tests/test_0048_decay_bounds.py",
+   "good": true,
+   "id": "NOOP-0048-R5-01-test_0048_decay_bounds",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P12 method-shaped, no such member]",
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P13 method-shaped, its own _rows member]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _digest(node) -> str:': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0048-R5-01": [
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P12 method-shaped, no such member]",
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P13 method-shaped, its own _rows member]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   },
+   "last": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   }
+  },
+  "commit": "1ba2a698bb1cfb9864db84a11632719d6da90212",
+  "control_definitions": {
+   "NOOP-0048-R5-01-test_0048_decay_bounds": "0cfe4e051dd6d08fed6ecbd72e9f10a251045ebf676a8406a4e8b2f19a4cf7fd"
+  },
+  "definitions": {
+   "R5-01-the-self-exemption-restored": "b567bb58bc97a5bd9dcbd23e20310d1e9d56a79593e0712b2106589bf8cd24af"
+  },
+  "digests": {
+   "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "tests/test_0048_decay_bounds.py": "6eab51f48992605121587e9f7d0ea5537f3456b67169496a0ba9041429dc732c"
+  },
+  "finding": "0048-R5-01",
+  "honest_nodes": [
+   "tests/test_0048_decay_bounds.py::test_a_closure_over_a_methods_self_is_the_method_s"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0048",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0048-decay-never-raises-confidence.md",
+   "specs/closure_findings.py",
+   "specs/render_closure.py",
+   "specs/reviews.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P12 method-shaped, no such member]": "assertion",
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P13 method-shaped, its own _rows member]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P12 method-shaped, no such member]",
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P13 method-shaped, its own _rows member]"
+   ],
+   "definition_sha256": "b567bb58bc97a5bd9dcbd23e20310d1e9d56a79593e0712b2106589bf8cd24af",
+   "file": "tests/test_0048_decay_bounds.py",
+   "finding": "0048-R5-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0048_decay_bounds.py::test_a_closure_over_a_methods_self_is_the_method_s"
+   ],
+   "id": "R5-01-the-self-exemption-restored",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P12 method-shaped, no such member]",
+    "tests/test_0048_decay_bounds.py::test_each_receiver_form_has_its_stated_static_and_runtime_outcome[P13 method-shaped, its own _rows member]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 10.12s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "THE SUPERSEDED IMPLEMENTATION: a receiver spelled `self` is exempted without resolving what it denotes"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "gate": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 71
+ }
+}
