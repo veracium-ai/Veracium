@@ -27,7 +27,8 @@ from typing import Callable, NamedTuple, Optional
 from pydantic import BaseModel, TypeAdapter
 
 from ..schema import Episode
-from .schema_version import (RUNTIME_STATUSES, SCHEMA_VERSION, SCHEMAS, OpenResult,
+from .schema_version import (ALTERS_V15_TO_V16, ALTERS_V15_TO_V16_REDACTIONS, ALTERS_V5_TO_V6, ALTERS_V7_TO_V8,
+                             ALTERS_V9_TO_V10, RUNTIME_STATUSES, SCHEMA_VERSION, SCHEMAS, OpenResult,
                              PostCommitAuditError, StoreVersionError,
                              _AUDIT_STRING_CAP, _mint_store_identity, open_versioned)
 
@@ -306,288 +307,513 @@ def _mig_event(kind: str, mid: str, path: str, from_v: int,
         to_version=to_v, occurred_at=datetime.now(timezone.utc).isoformat(), runtime=runtime)
 
 
+class ForwardEntry(NamedTuple):
+    """One step of the forward migration (0013 §5g.1): its guard, `lo <= base < v <= target`, and its DECLARED kind, never
+    inferred from a run, since a data step on an empty store writes nothing. `step` is the frozen statement of an `alter`, the
+    schema object of an `add`, the version of a `stamp`, and the named function of a `read`, `data` or `check`."""
+    lo: int
+    v: int
+    kind: str
+    step: object
+
+
+class _Forward:
+    """One operation's working state: its base, the one clock read, and what a `read` entry captured for a later `check`."""
+
+    def __init__(self, base: int):
+        self.base = base
+        self.conf_before = []       # no `confirmations` below v2: its read is guarded, and an empty capture stands
+        self.red_before = []        # no `redactions` below v15, the same
+
+
+class _VersionFault(Exception):
+    """A step's byte check failed. `_apply_forward` turns it into the version refusal, so that site is consulted and fired in one
+    function (0042), once per operation, as it always was."""
+
+    def __init__(self, why: str, diff: str):
+        super().__init__(diff)
+        self.why, self.diff = why, diff
+
+
+def _read_episodes_before(conn, run):
+    run.episodes_before = dict(conn.execute("SELECT id, json FROM episodes").fetchall())
+
+
+def _data_outcome_chains(conn, run):
+    """specs/0009 §4f: crossing INTO v3 from below transforms legacy outcome episodes into honest chain roots (a DATA
+    migration the additive DDL cannot do)."""
+    _migrate_outcome_chains(conn, run.now)
+
+
+def _check_chains(conn, run):
+    _check_outcome_chains(conn, run.base, run.episodes_before, run.now)
+
+
+def _data_wiki(conn, run):
+    """specs/0003 §4c-ii / §7a: crossing INTO v4 must invalidate every wiki cache. A v3 store may hold a wiki compiled under
+    pre-0003 "one current value" semantics over a pair that is now a contention (§4e reorders PRE-EXISTING contentions), and
+    the additive-table migration would leave that cache judged fresh. Dropping the rows forces recompilation on first recall."""
+    _drop_wiki_cache(conn)
+
+
+def _read_wiki_left(conn, run):
+    run.wiki_left = conn.execute("SELECT COUNT(*) FROM wiki").fetchone()[0]
+
+
+def _check_wiki(conn, run):
+    left = run.wiki_left
+    _refuse_unless(run.base, STEP_WIKI, [f"wiki holds {left} row(s) after the drop"] if left else [])
+
+
+def _read_identity_pre(conn, run):
+    run.identity_pre = _rows(conn, "SELECT id, origin FROM store_identity")
+
+
+def _data_identity(conn, run):
+    """specs/0006 §4.2 / Migration: crossing INTO v5 mints the durable `store_identity` origin singleton, in the SAME
+    transaction. No per-record change and NO backfill: existing edge rows keep `origin` absent and resolve to it at read."""
+    _mint_store_identity(conn)
+
+
+def _read_identity_post(conn, run):
+    run.identity_post = _rows(conn, "SELECT id, origin FROM store_identity")
+
+
+def _check_identity(conn, run):
+    _refuse_unless(run.base, STEP_IDENTITY, _identity_problems(run.identity_pre, run.identity_post))
+
+
+def _read_v6_stored(conn, run):
+    run.stored = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' "
+        "AND name='supersession_operations'").fetchone()[0]
+
+
+def _check_v6_alter(conn, run):
+    """specs/0014 §4b/§7a: the repo's FIRST ALTER of an existing table, which the additive diff-by-key cannot express. The
+    stored DDL must byte-match the REVIEWED constant: the expectation was authored independently and authorized by review, and
+    the migration may not define its own destination. Bases 1-3 land on the CONSTRUCTOR manifest, equally accepted."""
+    from .schema_version import ALTER_PATH_V6_SQL
+    if run.stored != ALTER_PATH_V6_SQL:
+        raise _VersionFault("v6-alter-path",
+            "the v5->v6 ALTER produced DDL that does not byte-match the "
+            "reviewed expectation (0014 §4b) — the migration or runtime is "
+            "wrong; the expectation never moves")
+
+
+def _read_v8_stored(conn, run):
+    run.stored = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' "
+        "AND name='contribution_ledger'").fetchone()[0]
+
+
+def _check_v8_alter(conn, run):
+    """0019 rider (as amended by 0020/0021, C1–C3) / 0021 §7b: the typed contributor link. The expectation was recorded
+    independently (`specs/evidence/0020/schema_v8_evidence.txt` [2]) and the migration may not define its own destination."""
+    from .schema_version import ALTER_PATH_V8_SQL
+    if run.stored != ALTER_PATH_V8_SQL:
+        raise _VersionFault("v8-alter-path",
+            "the v7->v8 ALTER produced DDL that does not byte-match the "
+            "recorded evidence (0019 rider C2 / 0021 §7b) — the migration "
+            "or runtime is wrong; the expectation never moves")
+
+
+def _read_v10_stored(conn, run):
+    run.stored = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' "
+        "AND name='supersession_operations'").fetchone()[0]
+
+
+def _check_v10_alter(conn, run):
+    """specs/0025 §4b-v: the nullable cross-era domain column. TWO accepted expectations exist because v9 stores hold the table
+    in two accepted DDL variants. Migrated rows keep request_digest_domain NULL: the migration NEVER fabricates a domain."""
+    from .schema_version import ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL, ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL
+    if run.stored not in (ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
+                          ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL):
+        raise _VersionFault("v10-alter-path",
+            "the v9->v10 ALTER produced DDL matching NEITHER frozen "
+            "expectation (0025 §4b-v) — the migration or runtime is "
+            "wrong; the expectations never move")
+
+
+def _read_baseline_edges(conn, run):
+    run.baseline_edges = _rows(conn, "SELECT user_id, id, json FROM edges")
+
+
+def _read_baseline_events(conn, run):
+    run.events_before = _rows(conn, "SELECT rowid FROM edge_event")
+
+
+def _data_baselines(conn, run):
+    """specs/0029 §4e: crossing INTO v13 journals the EPOCH BASELINE, every pre-existing edge row once, as found (bytes), reason
+    NULL, one batch per user, in THIS transaction with the stamp: a crash-retry (base still 12) mints exactly one baseline."""
+    from .edge_events import journal_baselines
+    journal_baselines(conn, run.now_iso)                    # the migration's ONE clock read (B1)
+
+
+def _check_baseline(conn, run):
+    _refuse_unless(run.base, STEP_BASELINE, _baseline_problems(conn, run.baseline_edges, {r[0] for r in run.events_before}, run.now))
+
+
+def _read_epoch_pre(conn, run):
+    run.epoch_pre = _rows(conn, "SELECT id, started_at, schema_at FROM store_epoch")
+
+
+def _data_epoch(conn, run):
+    from .edge_events import mint_store_epoch
+    mint_store_epoch(conn, run.now_iso, 13)
+
+
+def _read_epoch_post(conn, run):
+    run.epoch_post = _rows(conn, "SELECT id, started_at, schema_at FROM store_epoch")
+
+
+def _check_epoch(conn, run):
+    _refuse_unless(run.base, STEP_EPOCH, _epoch_problems(run.epoch_pre, run.epoch_post, run.now))
+
+
+def _read_conf_before(conn, run):
+    run.conf_before = _rows(conn, f"SELECT {_CONF_V15_COLS} FROM confirmations")
+
+
+def _read_v16_conf_stored(conn, run):
+    run.stored = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='confirmations'").fetchone()[0]
+
+
+def _check_v16_conf_alter(conn, run):
+    """specs/0008 v7 §2a: bases 2..15 hold `confirmations` in SCHEMA_V2's DDL and cross the six ADD COLUMNs, byte-matched against
+    the frozen measured literal; base 1 had no table, and the additive diff created it in its v16 CONSTRUCTOR form."""
+    from .schema_version import ALTER_PATH_V16_CONFIRMATIONS_SQL
+    if run.stored != ALTER_PATH_V16_CONFIRMATIONS_SQL:
+        raise _VersionFault("v16-alter-path",
+            "the v15->v16 ALTER produced DDL that does not byte-match the frozen measured "
+            "expectation (0008 §2a) — the migration or runtime is wrong; the expectation never "
+            "moves")
+
+
+def _read_counter_before(conn, run):
+    run.counter_before = _rows(conn, "SELECT id, next_seq FROM act_counter")
+
+
+def _data_act_counter(conn, run):
+    """§6f: the counter's one row (1, 1). No legacy act receives a position, so the counter starts here."""
+    from .schema_version import mint_act_counter
+    mint_act_counter(conn)
+
+
+def _read_counter(conn, run):
+    run.counter = _rows(conn, "SELECT id, next_seq FROM act_counter")
+
+
+def _check_act_counter(conn, run):
+    _refuse_unless(run.base, STEP_ACT_COUNTER, _act_counter_problems(run.counter_before, run.counter))
+
+
+def _read_registry_before(conn, run):
+    run.registry_before = _rows(conn, f"SELECT {_REGISTRY_COLS} FROM request_registry")
+
+
+def _data_registry(conn, run):
+    """§6g: one `confirm` registry row per existing confirmation: its id, its edge, its digest BYTE-COPIED (the marker where 0041
+    already redacted it), result_ref = the confirmation id, written_at = the migration's one clock read."""
+    conn.execute(
+        "INSERT INTO request_registry(user_id, correlation_id, verb, target_edge_id, request_digest, "
+        "result_ref, written_at) SELECT user_id, correlation_id, 'confirm', edge_id, request_digest, id, ? "
+        "FROM confirmations", (run.now_iso,))
+
+
+def _read_registry(conn, run):
+    run.registry = _rows(conn, f"SELECT {_REGISTRY_COLS} FROM request_registry")
+
+
+def _check_registry(conn, run):
+    _refuse_unless(run.base, STEP_REGISTRY, _registry_backfill_problems(run.conf_before, run.registry_before, run.registry, run.now))
+
+
+def _read_conf_after(conn, run):
+    run.conf_after = _rows(conn, f"SELECT {_CONF_V15_COLS}, {_CONF_ACT_COLS} FROM confirmations")
+
+
+def _check_act_columns(conn, run):
+    """Research's B1: every pre-existing confirmation is byte-equal in its eight v15 columns, `local`, and NULL in the five others:
+    an act recorded before the column existed has an UNKNOWN position, never a synthesized one."""
+    _refuse_unless(run.base, STEP_ACT_COLUMNS, _act_column_problems(run.conf_before, run.conf_after))
+
+
+def _read_red_before(conn, run):
+    run.red_before = _rows(conn, f"SELECT {_RED_V15_COLS} FROM redactions")
+
+
+def _read_v16_red_stored(conn, run):
+    run.stored = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='redactions'").fetchone()[0]
+
+
+def _check_v16_red_alter(conn, run):
+    from .schema_version import ALTER_PATH_V16_REDACTIONS_SQL
+    if run.stored != ALTER_PATH_V16_REDACTIONS_SQL:
+        raise _VersionFault("v16-alter-path",
+            "the v15->v16 ALTER of redactions produced DDL that does not byte-match the frozen measured "
+            "expectation (0041 §11.6.6) — the migration or runtime is wrong; the expectation never "
+            "moves")
+
+
+def _data_notice_state(conn, run):
+    """specs/0041 §11.6.6 (T4): every redaction row gets its NOTICE STATE, by the rule today's readers already apply: `standing`
+    iff it has no event and a source identity, `applied` otherwise. No row is `pending`: the v15 hotfix's default path wrote none."""
+    conn.execute("UPDATE redactions SET state='standing' WHERE event_ref IS NULL AND source_origin IS NOT NULL")
+
+
+def _read_red_after(conn, run):
+    run.red_after = _rows(conn, f"SELECT {_RED_V15_COLS}, state, pending_reason FROM redactions")
+
+
+def _check_notice_state(conn, run):
+    _refuse_unless(run.base, STEP_NOTICE_STATE, _notice_state_problems(run.red_before, run.red_after))
+
+
+def _read_edges_pin(conn, run):
+    """specs/0044 §4f / 0018 amendment §4a (T5): the ARITY ERA and its two INVENTORIES are the operation-era boundary, never decided
+    from a timestamp. Each block's postcondition reads the database's own bytes, and the step changes no edge and no journal
+    event (INV-I24), checked after every block against these two pins."""
+    run.edges_pin = _rows(conn, "SELECT * FROM edges ORDER BY id")
+
+
+def _read_events_pin(conn, run):
+    run.events_pin = _rows(conn, "SELECT rowid, * FROM edge_event ORDER BY rowid")
+
+
+def _edges_unchanged(conn, run, block: str) -> None:
+    post_e = _rows(conn, "SELECT * FROM edges ORDER BY id")
+    post_v = _rows(conn, "SELECT rowid, * FROM edge_event ORDER BY rowid")
+    _refuse_unless(run.base, STEP_ARITY_EDGES,
+                   ([f"{block}: the edges table changed"] if post_e != run.edges_pin else [])
+                   + ([f"{block}: the edge journal changed"] if post_v != run.events_pin else []))
+
+
+def _read_era_before(conn, run):
+    run.era_before = _rows(conn, "SELECT id, effective_at FROM arity_era")
+
+
+def _data_arity_era(conn, run):
+    """Step 7: the era, the migration's ONE clock read (D5)."""
+    from .schema_version import mint_arity_era
+    mint_arity_era(conn, run.now_iso)
+
+
+def _read_era(conn, run):
+    run.era = _rows(conn, "SELECT id, effective_at FROM arity_era")
+
+
+def _check_arity_era(conn, run):
+    _refuse_unless(run.base, STEP_ARITY_ERA, _arity_era_problems(run.era_before, run.era, run.now))
+
+
+def _check_arity_era_edges(conn, run):
+    _edges_unchanged(conn, run, STEP_ARITY_ERA)
+
+
+def _named_relations():
+    """The selection reads the relation COLUMN OR the json's relation (research's T5 S2 N3): a row whose two disagree is SEEN,
+    so the check refuses it (F2's column = json rule) instead of the step passing it by."""
+    from .lifetime import RECLASSIFIED_RELATIONS
+    marks = ",".join("?" * len(RECLASSIFIED_RELATIONS))
+    return (f"(relation IN ({marks}) OR json_extract(json, '$.relation') IN ({marks}))", tuple(RECLASSIFIED_RELATIONS) * 2)
+
+
+def _read_inventory_before(conn, run):
+    run.inv_before = _rows(conn, "SELECT edge_id FROM arity_inventory")
+
+
+def _data_arity_inventory(conn, run):
+    """Step 8: the arity inventory, selected by the DEFAULT NAMES; the predicate is `lifetime.retirement`."""
+    from .lifetime import SUPERSEDED, retirement
+    named, named_args = _named_relations()
+    for eid, uid, blob in _rows(conn, f"SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id",
+                                named_args):
+        ret = retirement(json.loads(blob))
+        if ret is not None and ret[1] == SUPERSEDED:
+            conn.execute("INSERT INTO arity_inventory(edge_id, user_id, pre_invalidated_at, pre_reason) "
+                         "VALUES(?, ?, ?, ?)", (eid, uid, ret[0], ret[1]))
+
+
+def _read_named_edges(conn, run):
+    named, named_args = _named_relations()
+    run.named_edges = _rows(conn, f"SELECT id, user_id, relation, active, json FROM edges WHERE {named}", named_args)
+
+
+def _read_inventory(conn, run):
+    run.inventory = _rows(conn, "SELECT edge_id, user_id, pre_invalidated_at, pre_reason FROM arity_inventory")
+
+
+def _check_arity_inventory(conn, run):
+    _refuse_unless(run.base, STEP_ARITY_INVENTORY, _arity_inventory_problems(run.inv_before, run.named_edges, run.inventory))
+
+
+def _check_arity_inventory_edges(conn, run):
+    _edges_unchanged(conn, run, STEP_ARITY_INVENTORY)
+
+
+def _read_refusals_before(conn, run):
+    run.ref_before = _rows(conn, "SELECT refusal_id FROM refusal_inventory")
+
+
+def _data_refusal_inventory(conn, run):
+    """Step 9: the refusal inventory, EVERY refusal that exists (0044 §4f, 0018 §4a; research's R3: §4d gates retention on the three
+    names, so the inventory is not filtered by them)."""
+    conn.execute("INSERT INTO refusal_inventory(refusal_id, user_id) "
+                 "SELECT refusal_id, user_id FROM supersession_refusals")
+
+
+def _read_refusals(conn, run):
+    run.refusals = _rows(conn, "SELECT refusal_id, user_id FROM supersession_refusals")
+
+
+def _read_refusal_inventory(conn, run):
+    run.refusal_inventory = _rows(conn, "SELECT refusal_id, user_id FROM refusal_inventory")
+
+
+def _check_refusal_inventory(conn, run):
+    _refuse_unless(run.base, STEP_REFUSAL_INVENTORY, _refusal_inventory_problems(run.ref_before, run.refusals, run.refusal_inventory))
+
+
+def _check_refusal_inventory_edges(conn, run):
+    _edges_unchanged(conn, run, STEP_REFUSAL_INVENTORY)
+
+
+def _read_stamped(conn, run):
+    run.stamped = conn.execute("PRAGMA user_version").fetchone()[0]
+
+
+def _check_stamp(conn, run):
+    _refuse_unless(run.base, STEP_STAMP, [f"user_version reads {run.stamped}, not {SCHEMA_VERSION}"]
+                   if run.stamped != SCHEMA_VERSION else [])
+
+
+def _alters(lo, v, statements):
+    return [ForwardEntry(lo, v, "alter", s) for s in statements]
+
+
+# 0013 §5g.1: the kernel's steps, one ordered table at statement granularity. Both routes consume it: there is no second, inline
+# encoding, and a step that is not in the table does not run on either. A guard is the condition the code wrote around the
+# step; a nested condition on `base` is that entry's own `lo`. v14 and v15 add objects and nothing else: a receipt, an
+# attestation and an episode event exist only once the operation that writes them runs on an open store, so neither has a
+# data step, and rows already holding marker bytes are UNATTESTED markers (ruled v7), enumerated by `unattested_marker_report`.
+FORWARD_ENTRIES = (
+    ForwardEntry(0, 3, "read", _read_episodes_before),
+    ForwardEntry(0, 3, "data", _data_outcome_chains),
+    ForwardEntry(0, 3, "check", _check_chains),
+    ForwardEntry(0, 4, "data", _data_wiki),
+    ForwardEntry(0, 4, "read", _read_wiki_left),
+    ForwardEntry(0, 4, "check", _check_wiki),
+    ForwardEntry(0, 5, "read", _read_identity_pre),
+    ForwardEntry(0, 5, "data", _data_identity),
+    ForwardEntry(0, 5, "read", _read_identity_post),
+    ForwardEntry(0, 5, "check", _check_identity),
+    *_alters(4, 6, ALTERS_V5_TO_V6),
+    ForwardEntry(4, 6, "read", _read_v6_stored),
+    ForwardEntry(4, 6, "check", _check_v6_alter),
+    *_alters(6, 8, ALTERS_V7_TO_V8),
+    ForwardEntry(6, 8, "read", _read_v8_stored),
+    ForwardEntry(6, 8, "check", _check_v8_alter),
+    *_alters(4, 10, ALTERS_V9_TO_V10),
+    ForwardEntry(4, 10, "read", _read_v10_stored),
+    ForwardEntry(4, 10, "check", _check_v10_alter),
+    ForwardEntry(0, 13, "read", _read_baseline_edges),
+    ForwardEntry(0, 13, "read", _read_baseline_events),
+    ForwardEntry(0, 13, "data", _data_baselines),
+    ForwardEntry(0, 13, "check", _check_baseline),
+    ForwardEntry(0, 13, "read", _read_epoch_pre),
+    ForwardEntry(0, 13, "data", _data_epoch),
+    ForwardEntry(0, 13, "read", _read_epoch_post),
+    ForwardEntry(0, 13, "check", _check_epoch),
+    ForwardEntry(2, 16, "read", _read_conf_before),
+    *_alters(2, 16, ALTERS_V15_TO_V16),
+    ForwardEntry(2, 16, "read", _read_v16_conf_stored),
+    ForwardEntry(2, 16, "check", _check_v16_conf_alter),
+    ForwardEntry(0, 16, "read", _read_counter_before),
+    ForwardEntry(0, 16, "data", _data_act_counter),
+    ForwardEntry(0, 16, "read", _read_counter),
+    ForwardEntry(0, 16, "check", _check_act_counter),
+    ForwardEntry(0, 16, "read", _read_registry_before),
+    ForwardEntry(0, 16, "data", _data_registry),
+    ForwardEntry(0, 16, "read", _read_registry),
+    ForwardEntry(0, 16, "check", _check_registry),
+    ForwardEntry(0, 16, "read", _read_conf_after),
+    ForwardEntry(0, 16, "check", _check_act_columns),
+    ForwardEntry(0, 16, "read", _read_counter),
+    ForwardEntry(0, 16, "check", _check_act_counter),
+    ForwardEntry(15, 16, "read", _read_red_before),
+    *_alters(15, 16, ALTERS_V15_TO_V16_REDACTIONS),
+    ForwardEntry(15, 16, "read", _read_v16_red_stored),
+    ForwardEntry(15, 16, "check", _check_v16_red_alter),
+    ForwardEntry(0, 16, "data", _data_notice_state),
+    ForwardEntry(0, 16, "read", _read_red_after),
+    ForwardEntry(0, 16, "check", _check_notice_state),
+    ForwardEntry(0, 16, "read", _read_edges_pin),
+    ForwardEntry(0, 16, "read", _read_events_pin),
+    ForwardEntry(0, 16, "read", _read_era_before),
+    ForwardEntry(0, 16, "data", _data_arity_era),
+    ForwardEntry(0, 16, "read", _read_era),
+    ForwardEntry(0, 16, "check", _check_arity_era),
+    ForwardEntry(0, 16, "check", _check_arity_era_edges),
+    ForwardEntry(0, 16, "read", _read_inventory_before),
+    ForwardEntry(0, 16, "data", _data_arity_inventory),
+    ForwardEntry(0, 16, "read", _read_named_edges),
+    ForwardEntry(0, 16, "read", _read_inventory),
+    ForwardEntry(0, 16, "check", _check_arity_inventory),
+    ForwardEntry(0, 16, "check", _check_arity_inventory_edges),
+    ForwardEntry(0, 16, "read", _read_refusals_before),
+    ForwardEntry(0, 16, "data", _data_refusal_inventory),
+    ForwardEntry(0, 16, "read", _read_refusals),
+    ForwardEntry(0, 16, "read", _read_refusal_inventory),
+    ForwardEntry(0, 16, "check", _check_refusal_inventory),
+    ForwardEntry(0, 16, "check", _check_refusal_inventory_edges),
+)
+
+
+def plan(base: int, target: int) -> list:
+    """What an operation from `base` to `target` runs (0013 §5g.1): the clock, the objects `SCHEMAS[target]` adds over
+    `SCHEMAS[base]` in its own order, every table entry whose guard holds, then the stamp, with the read and the check of it."""
+    have = {o.key for o in SCHEMAS[base]}
+    return ([ForwardEntry(0, target, "clock", None)]
+            + [ForwardEntry(0, target, "add", o) for o in SCHEMAS[target] if o.key not in have]
+            + [e for e in FORWARD_ENTRIES if e.lo <= base < e.v <= target]
+            + [ForwardEntry(0, target, "stamp", target), ForwardEntry(0, target, "read", _read_stamped),
+               ForwardEntry(0, target, "check", _check_stamp)])
+
+
 def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
-    """Bring a `base`-version store to the current version, INSIDE the open write
-    transaction. Every migration so far is purely ADDITIVE — new whole objects, never
-    an ALTER of an existing row/table: v1→v2 adds the `confirmations` table
-    (`specs/0008` §6d); v2→v3 adds the `consolidation_ops` table (`specs/0010` §4a) and
-    carries `specs/0009`'s new Episode fields in the existing `episodes.json` blob. So a
-    below-head store is brought forward by applying exactly the objects the head schema
-    has and `base` lacks (keyed by typed key), then stamping. A store two versions back
-    (v1→v3) gets BOTH deltas in one apply, because the object set is diffed against the
-    actual base, not a fixed step. `open_versioned` revalidates the result against the
-    head validator before committing, so a wrong DDL cannot land."""
+    """Bring a `base`-version store to the current version, INSIDE the open write transaction, by running `plan(base, head)`: new
+    whole objects for what the head adds over `base` (keyed by typed key, so a store two versions back gets both deltas in one
+    apply, because the object set is diffed against the actual base, not a fixed step), then the guarded steps, then the stamp.
+    `open_versioned` revalidates the result against the head validator before committing, so a wrong DDL cannot land."""
     with _SITE_MIGRATION_VERSION.consult():
         if base not in SCHEMAS or base >= SCHEMA_VERSION:
             raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
                 "", base, SCHEMA_VERSION, "unsupported-migration",
                 diff=f"no migration path from base {base} to head {SCHEMA_VERSION} "
                      f"is defined"), "unsupported-base")
-        # 0013 §4f (B1): the migration's ONE clock read, before any step — the v2→v3 fill, the v13 baseline and the
-        # store epoch all carry this value, so `store_epoch.started_at` records what filled `observed_at`.
-        now = _clock()
-        now_iso = now.isoformat()
-        base_keys = {o.key for o in SCHEMAS[base]}
-        for o in SCHEMAS[SCHEMA_VERSION]:
-            if o.key not in base_keys:                     # only what the head ADDS over base
-                conn.execute(o.ddl)
-        # specs/0009 §4f: crossing INTO v3 from below also transforms legacy outcome
-        # episodes into honest chain roots (a DATA migration the additive DDL cannot do).
-        # Guarded to base<3<=head so a future v3→v4 bump never re-roots valid v3 chains.
-        if base < 3 <= SCHEMA_VERSION:
-            before = dict(conn.execute("SELECT id, json FROM episodes").fetchall())
-            _migrate_outcome_chains(conn, now)
-            _check_outcome_chains(conn, base, before, now)
-        # specs/0003 §4c-ii / §7a: crossing INTO v4 must invalidate every wiki cache. A v3
-        # store may hold a wiki compiled under pre-0003 "one current value" semantics over a
-        # pair that is now a contention (§4e reorders PRE-EXISTING contentions), and the
-        # additive-table migration would leave that cache judged fresh. Dropping the cached
-        # rows forces recompilation on the first recall after migration, not eight writes
-        # later. A DATA step the additive DDL cannot express — the same shape as the outcome
-        # re-rooting above. Guarded base<4<=head so it fires exactly once, on the v3→v4 cross.
-        if base < 4 <= SCHEMA_VERSION:
-            _drop_wiki_cache(conn)
-            left = conn.execute("SELECT COUNT(*) FROM wiki").fetchone()[0]
-            _refuse_unless(base, STEP_WIKI, [f"wiki holds {left} row(s) after the drop"] if left else [])
-        # specs/0006 §4.2 / Migration: crossing INTO v5 mints the durable `store_identity`
-        # origin singleton, transactionally, in the SAME migration transaction. A DATA step
-        # the additive `store_identity` table DDL cannot express (the table is empty until
-        # its one row exists). No per-record change and NO backfill — existing edge rows keep
-        # `origin` absent and resolve to this singleton at read (§4 rule 6). Guarded
-        # base<5<=head so it fires exactly once, on the v4→v5 cross.
-        if base < 5 <= SCHEMA_VERSION:
-            pre = _rows(conn, "SELECT id, origin FROM store_identity")
-            _mint_store_identity(conn)
-            _refuse_unless(base, STEP_IDENTITY, _identity_problems(pre, _rows(conn, "SELECT id, origin FROM store_identity")))
-        # specs/0014 §4b/§7a: crossing INTO v6 ALTERs `supersession_operations` — the repo's
-        # FIRST ALTER of an existing table, which the additive diff-by-key above cannot
-        # express (the table's typed key exists in the base, so its CHANGED DDL is invisible
-        # to the object diff). The three ADD COLUMNs run in the frozen order; the DEFAULT 1
-        # on `outcome_digest_version` both makes the ALTER legal on a populated table and IS
-        # the migration stamp (every pre-upgrade receipt reads version 1 — the pre-split
-        # digest projection; post-upgrade writes stamp 2 explicitly). The resulting stored
-        # DDL must byte-match the REVIEWED constant `ALTER_PATH_V6_SQL` (0014 §4b): the
-        # expectation was authored independently and authorized by review — a mismatch here
-        # means this migration (or the runtime) is wrong, and `open_versioned`'s
-        # revalidation against `accepted_digests(6)` (which carries the reviewed ALTER-path
-        # manifest per `0013` §4e) refuses the result rather than adopting it.
-        # Guarded 4 <= base: `supersession_operations` entered the schema at v4, so only
-        # v4/v5 bases carry a table to ALTER — for bases 1-3 the additive diff above already
-        # created the table in its v6 CONSTRUCTOR form (columns inline), and those paths
-        # land on the CONSTRUCTOR manifest, which is equally accepted.
-        if 4 <= base < 6 <= SCHEMA_VERSION:
-            from .schema_version import ALTERS_V5_TO_V6, ALTER_PATH_V6_SQL
-            for stmt in ALTERS_V5_TO_V6:
-                conn.execute(stmt)
-            stored = conn.execute(
-                "SELECT sql FROM sqlite_master WHERE type='table' "
-                "AND name='supersession_operations'").fetchone()[0]
-            if stored != ALTER_PATH_V6_SQL:
-                raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
-                    "", base, SCHEMA_VERSION, "unsupported-migration",
-                    diff="the v5->v6 ALTER produced DDL that does not byte-match the "
-                         "reviewed expectation (0014 §4b) — the migration or runtime is "
-                         "wrong; the expectation never moves"), "v6-alter-path")
-        # 0019 rider (as amended by 0020/0021, C1–C3) / 0021 §7b: crossing INTO v8 ALTERs
-        # `contribution_ledger` — the typed contributor link (`contributor_type TEXT`,
-        # `contributor_ref TEXT`, nullable; legacy rows NULL). The same shape as the v6
-        # block above: the table's typed key exists in the base, so its CHANGED DDL is
-        # invisible to the additive object diff. The two ADD COLUMNs are the migration's
-        # 0013-declared steps, sha-pinned in the RECORDED evidence
-        # (`specs/evidence/0020/schema_v8_evidence.txt` [4]); the resulting stored DDL
-        # must byte-match the recorded ALTER-path manifestation (`ALTER_PATH_V8_SQL`,
-        # evidence [2]) — the expectation was recorded independently and the migration may
-        # not define its own destination (0013 §4c); `open_versioned`'s revalidation
-        # against `accepted_digests(8)` refuses a mismatched result rather than adopting
-        # it. Guarded 6 <= base: `contribution_ledger` entered the schema at v6, so only
-        # v6/v7 bases carry a table to ALTER — for bases ≤5 the additive diff above
-        # already created the table in its v8 CONSTRUCTOR form (columns inline), and
-        # those paths land on the CONSTRUCTOR manifest, which is equally accepted.
-        if 6 <= base < 8 <= SCHEMA_VERSION:
-            from .schema_version import ALTERS_V7_TO_V8, ALTER_PATH_V8_SQL
-            for stmt in ALTERS_V7_TO_V8:
-                conn.execute(stmt)
-            stored = conn.execute(
-                "SELECT sql FROM sqlite_master WHERE type='table' "
-                "AND name='contribution_ledger'").fetchone()[0]
-            if stored != ALTER_PATH_V8_SQL:
-                raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
-                    "", base, SCHEMA_VERSION, "unsupported-migration",
-                    diff="the v7->v8 ALTER produced DDL that does not byte-match the "
-                         "recorded evidence (0019 rider C2 / 0021 §7b) — the migration "
-                         "or runtime is wrong; the expectation never moves"), "v8-alter-path")
-        # specs/0025 §4b-v (the confirmed 0014 amendment): crossing INTO v10
-        # ALTERs `supersession_operations` — the nullable cross-era domain
-        # column. Same shape as the v6/v8 blocks: the table's typed key exists
-        # in the base (v4+), its CHANGED DDL is invisible to the additive diff,
-        # and the ONE ADD COLUMN's measured result must byte-match a frozen
-        # expectation. TWO accepted expectations exist because v9 stores hold
-        # the table in two accepted DDL variants (fresh-constructor vs the
-        # v5->v6 ALTER path); the migration may not define its own destination.
-        # Migrated rows keep request_digest_domain NULL — §4b-v's dual-domain
-        # comparison row; the migration NEVER fabricates a domain.
-        if 4 <= base < 10 <= SCHEMA_VERSION:
-            from .schema_version import (ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
-                                         ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL,
-                                         ALTERS_V9_TO_V10)
-            for stmt in ALTERS_V9_TO_V10:
-                conn.execute(stmt)
-            stored = conn.execute(
-                "SELECT sql FROM sqlite_master WHERE type='table' "
-                "AND name='supersession_operations'").fetchone()[0]
-            if stored not in (ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
-                              ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL):
-                raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
-                    "", base, SCHEMA_VERSION, "unsupported-migration",
-                    diff="the v9->v10 ALTER produced DDL matching NEITHER frozen "
-                         "expectation (0025 §4b-v) — the migration or runtime is "
-                         "wrong; the expectations never move"), "v10-alter-path")
-        # specs/0029 §4e: crossing INTO v13 journals the EPOCH BASELINE — every
-        # pre-existing edge row once, as found (bytes), reason NULL, one batch per
-        # user — and mints the per-store `store_epoch` row, in THIS transaction
-        # with the stamp: partial states are unrepresentable and a crash-retry
-        # (base still 12) mints exactly one baseline. A DATA step the additive
-        # DDL cannot express, the `store_identity` mint's shape. Guarded
-        # base<13<=head so it fires exactly once, on the v12→v13 cross.
-        if base < 13 <= SCHEMA_VERSION:
-            from .edge_events import journal_baselines, mint_store_epoch
-            edges = _rows(conn, "SELECT user_id, id, json FROM edges")
-            events_before = _rows(conn, "SELECT rowid FROM edge_event")
-            journal_baselines(conn, now_iso)                    # the migration's ONE clock read (B1)
-            _refuse_unless(base, STEP_BASELINE, _baseline_problems(conn, edges, {r[0] for r in events_before}, now))
-            pre = _rows(conn, "SELECT id, started_at, schema_at FROM store_epoch")
-            mint_store_epoch(conn, now_iso, 13)
-            _refuse_unless(base, STEP_EPOCH, _epoch_problems(pre, _rows(conn, "SELECT id, started_at, schema_at FROM store_epoch"), now))
-        # specs/0041 §4b/§4b-ii (v15): crossing INTO v15 adds `episode_event` and `redactions`
-        # — an attestation or an episode event exists only once the operation that writes
-        # them runs on an open v15 store, so there is no data step; rows already holding the
-        # marker bytes are UNATTESTED markers, admitted, neither refused nor quarantined
-        # (ruled v7) and enumerated by `unattested_marker_report` for the operator.
-        # specs/0027 §4g (v14): crossing INTO v14 adds the `policy_receipt` table
-        # and its index through the generic additive apply above and NOTHING else
-        # — a receipt is written only by a recall on an open v14 store, so there is
-        # no pre-existing data to carry and no row to mint. Stated here so the
-        # absence of a v14 step reads as a decision, not an omission.
-        # specs/0008 v7 §2a/§6f/§6g (amendment `0047/0008-request-registry`): crossing INTO v16 — the request
-        # registry, the act counter and the confirmations act columns, ONE step with three guarded blocks in the
-        # order (a) ALTER, (b) mint, (c) backfill. `request_registry` and `act_counter` were created EMPTY by the
-        # additive diff above on every path. Each block owes a postcondition (0013 §4f) read against the step's OWN
-        # pre-read, never against what the step wrote:
-        #   (a) bases 2..15 hold `confirmations` in SCHEMA_V2's DDL and cross the six ADD COLUMNs, byte-matched
-        #       against the frozen measured literal; base 1 had no table, and the additive diff created it in its
-        #       v16 CONSTRUCTOR form (the v6/v8 precedent), which is equally accepted;
-        #   (b) the counter's one row (1, 1): no legacy act receives a position (§6f), so the counter starts here;
-        #   (c) one `confirm` registry row per existing confirmation — its id, its edge, its digest BYTE-COPIED (the
-        #       marker where 0041 already redacted it), result_ref = the confirmation id, written_at = the
-        #       migration's one clock read (a write time, the same meaning for every verb; the original request's
-        #       time stays on the confirmation through result_ref).
-        # Then (research's B1): every pre-existing confirmation is byte-equal in its eight v15 columns, `local`, and
-        # NULL in the five others — an act recorded before the column existed has an UNKNOWN position, never a
-        # synthesized one — and the counter still reads (1, 1): the backfill takes no position.
-        if base < 16 <= SCHEMA_VERSION:
-            from .schema_version import ALTER_PATH_V16_CONFIRMATIONS_SQL, ALTERS_V15_TO_V16, mint_act_counter
-            conf_before = _rows(conn, f"SELECT {_CONF_V15_COLS} FROM confirmations") if base >= 2 else []
-            if base >= 2:
-                for stmt in ALTERS_V15_TO_V16:
-                    conn.execute(stmt)
-                stored = conn.execute(
-                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='confirmations'").fetchone()[0]
-                if stored != ALTER_PATH_V16_CONFIRMATIONS_SQL:
-                    raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
-                        "", base, SCHEMA_VERSION, "unsupported-migration",
-                        diff="the v15->v16 ALTER produced DDL that does not byte-match the frozen measured "
-                             "expectation (0008 §2a) — the migration or runtime is wrong; the expectation never "
-                             "moves"), "v16-alter-path")
-            counter_before = _rows(conn, "SELECT id, next_seq FROM act_counter")
-            mint_act_counter(conn)
-            _refuse_unless(base, STEP_ACT_COUNTER,
-                           _act_counter_problems(counter_before, _rows(conn, "SELECT id, next_seq FROM act_counter")))
-            registry_before = _rows(conn, f"SELECT {_REGISTRY_COLS} FROM request_registry")
-            conn.execute(
-                "INSERT INTO request_registry(user_id, correlation_id, verb, target_edge_id, request_digest, "
-                "result_ref, written_at) SELECT user_id, correlation_id, 'confirm', edge_id, request_digest, id, ? "
-                "FROM confirmations", (now_iso,))
-            _refuse_unless(base, STEP_REGISTRY, _registry_backfill_problems(
-                conf_before, registry_before, _rows(conn, f"SELECT {_REGISTRY_COLS} FROM request_registry"), now))
-            _refuse_unless(base, STEP_ACT_COLUMNS, _act_column_problems(
-                conf_before, _rows(conn, f"SELECT {_CONF_V15_COLS}, {_CONF_ACT_COLS} FROM confirmations")))
-            _refuse_unless(base, STEP_ACT_COUNTER,
-                           _act_counter_problems(counter_before, _rows(conn, "SELECT id, next_seq FROM act_counter")))
-            # specs/0041 §11.6.6 (T4): every redaction row gets its NOTICE STATE, by the rule today's readers already
-            # apply — `standing` iff it has no event and a source identity (the pre-v16 `_STANDING_SQL`), `applied`
-            # otherwise (a row with no event and no source counted as attested before v16, and still does). No row is
-            # `pending`: the v15 hotfix's default path wrote none. Only a base-15 store holds the table (it entered at
-            # v15) and crosses the ALTER; below it the additive diff created it, empty, in its v16 form.
-            from .schema_version import ALTER_PATH_V16_REDACTIONS_SQL, ALTERS_V15_TO_V16_REDACTIONS
-            red_before = _rows(conn, f"SELECT {_RED_V15_COLS} FROM redactions") if base >= 15 else []
-            if base >= 15:
-                for stmt in ALTERS_V15_TO_V16_REDACTIONS:
-                    conn.execute(stmt)
-                stored = conn.execute(
-                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='redactions'").fetchone()[0]
-                if stored != ALTER_PATH_V16_REDACTIONS_SQL:
-                    raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
-                        "", base, SCHEMA_VERSION, "unsupported-migration",
-                        diff="the v15->v16 ALTER of redactions produced DDL that does not byte-match the frozen measured "
-                             "expectation (0041 §11.6.6) — the migration or runtime is wrong; the expectation never "
-                             "moves"), "v16-alter-path")
-            conn.execute("UPDATE redactions SET state='standing' WHERE event_ref IS NULL AND source_origin IS NOT NULL")
-            _refuse_unless(base, STEP_NOTICE_STATE, _notice_state_problems(
-                red_before, _rows(conn, f"SELECT {_RED_V15_COLS}, state, pending_reason FROM redactions")))
-            # specs/0044 §4f / 0018 amendment §4a (T5): the ARITY ERA and its two INVENTORIES, in this transaction, after
-            # the notice-state block (nothing here reads coverage, N1). They are the operation-era boundary: what was
-            # retired `superseded` under the three default names, and every refusal, when THIS transaction commits —
-            # never decided from a timestamp (§4f: `invalidated_at` is a valid-time endpoint, not a commit time). Each
-            # block's postcondition reads the database's own bytes, independently of what the block wrote, and the
-            # step changes no edge and no journal event (INV-I24), checked after every block.
-            from .lifetime import RECLASSIFIED_RELATIONS, SUPERSEDED, retirement
-            from .schema_version import mint_arity_era
-            edges_pin = _rows(conn, "SELECT * FROM edges ORDER BY id")
-            events_pin = _rows(conn, "SELECT rowid, * FROM edge_event ORDER BY rowid")
-
-            def _edges_unchanged(block: str) -> None:
-                post_e = _rows(conn, "SELECT * FROM edges ORDER BY id")
-                post_v = _rows(conn, "SELECT rowid, * FROM edge_event ORDER BY rowid")
-                _refuse_unless(base, STEP_ARITY_EDGES,
-                               ([f"{block}: the edges table changed"] if post_e != edges_pin else [])
-                               + ([f"{block}: the edge journal changed"] if post_v != events_pin else []))
-            # step 7: the era, the migration's ONE clock read (D5)
-            era_before = _rows(conn, "SELECT id, effective_at FROM arity_era")
-            mint_arity_era(conn, now_iso)
-            _refuse_unless(base, STEP_ARITY_ERA,
-                           _arity_era_problems(era_before, _rows(conn, "SELECT id, effective_at FROM arity_era"), now))
-            _edges_unchanged(STEP_ARITY_ERA)
-            # step 8: the arity inventory, selected by the DEFAULT NAMES; the predicate is `lifetime.retirement`. The
-            # selection reads the relation COLUMN OR the json's relation (research's T5 S2 N3): a row whose two disagree
-            # is SEEN, so the check below refuses it (F2's column = json rule) instead of the step passing it by
-            marks = ",".join("?" * len(RECLASSIFIED_RELATIONS))
-            named = f"(relation IN ({marks}) OR json_extract(json, '$.relation') IN ({marks}))"
-            named_args = tuple(RECLASSIFIED_RELATIONS) * 2
-            inv_before = _rows(conn, "SELECT edge_id FROM arity_inventory")
-            for eid, uid, blob in _rows(conn, f"SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id",
-                                        named_args):
-                ret = retirement(json.loads(blob))
-                if ret is not None and ret[1] == SUPERSEDED:
-                    conn.execute("INSERT INTO arity_inventory(edge_id, user_id, pre_invalidated_at, pre_reason) "
-                                 "VALUES(?, ?, ?, ?)", (eid, uid, ret[0], ret[1]))
-            _refuse_unless(base, STEP_ARITY_INVENTORY, _arity_inventory_problems(
-                inv_before,
-                _rows(conn, f"SELECT id, user_id, relation, active, json FROM edges WHERE {named}", named_args),
-                _rows(conn, "SELECT edge_id, user_id, pre_invalidated_at, pre_reason FROM arity_inventory")))
-            _edges_unchanged(STEP_ARITY_INVENTORY)
-            # step 9: the refusal inventory — EVERY refusal that exists (0044 §4f, 0018 §4a; research's R3: §4d gates
-            # retention on the three names, so the inventory is not filtered by them)
-            ref_before = _rows(conn, "SELECT refusal_id FROM refusal_inventory")
-            conn.execute("INSERT INTO refusal_inventory(refusal_id, user_id) "
-                         "SELECT refusal_id, user_id FROM supersession_refusals")
-            _refuse_unless(base, STEP_REFUSAL_INVENTORY, _refusal_inventory_problems(
-                ref_before, _rows(conn, "SELECT refusal_id, user_id FROM supersession_refusals"),
-                _rows(conn, "SELECT refusal_id, user_id FROM refusal_inventory")))
-            _edges_unchanged(STEP_REFUSAL_INVENTORY)
-        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-        stamped = conn.execute("PRAGMA user_version").fetchone()[0]
-        _refuse_unless(base, STEP_STAMP, [f"user_version reads {stamped}, not {SCHEMA_VERSION}"]
-                       if stamped != SCHEMA_VERSION else [])
+        run = _Forward(base)
+        try:
+            for entry in plan(base, SCHEMA_VERSION):
+                if entry.kind == "clock":
+                    # 0013 §4f (B1): the migration's ONE clock read, before any step: the v2→v3 fill, the v13 baseline and the
+                    # store epoch all carry this value, so `store_epoch.started_at` records what filled `observed_at`.
+                    run.now = _clock()
+                    run.now_iso = run.now.isoformat()
+                elif entry.kind == "add":
+                    conn.execute(entry.step.ddl)
+                elif entry.kind == "alter":
+                    conn.execute(entry.step)
+                elif entry.kind == "stamp":
+                    conn.execute(f"PRAGMA user_version = {entry.step}")
+                else:
+                    entry.step(conn, run)
+        except _VersionFault as fault:
+            raise _SITE_MIGRATION_VERSION.fire(StoreVersionError(
+                "", base, SCHEMA_VERSION, "unsupported-migration", diff=fault.diff), fault.why) from None
 
 
 # the v16 step's columns, by name and in a fixed order: `confirmations`' eight v15 columns, its six act columns

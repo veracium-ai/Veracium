@@ -1,5 +1,5 @@
 {
- "body_sha256": "7da676175bb05fa26855f83da5d702a84fbcc22d6ab2d4a1b81496dc754591ac",
+ "body_sha256": "dd837314482f6a624e9e55b82137030edd2f058d439ae368883e487c8b4e5499",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 2
    }
   },
-  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
+  "commit": "691ace2b70edbd21a1672116a52ad83dffaf86d2",
   "control_definitions": {
    "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
   },
@@ -56,7 +56,7 @@
   },
   "digests": {
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
-   "specs/evidence/0007/sa_mutants.py": "c658a9549d36a29c11d049569ea0de4bc25b656c9a64ab41a21981915d28ecd8",
+   "specs/evidence/0007/sa_mutants.py": "6c336aeae73a4b52e359e1aa9de6c371bee6ee1c83f38d2a23a201bc6dbad551",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/store/schema_version.py": "11b330314aa5ec69d4aaccc3bf2e91749738e762bb21576159b54130ecbe0021",
@@ -69,11 +69,9 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0007-store-schema-versioning.md",
-   "specs/0013-store-migrations.md",
-   "specs/0018-release-migration-orchestrator.md",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json"
   ]
  },
  "rows": [
@@ -103,7 +101,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "machine dropped from the key"
@@ -134,7 +132,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"

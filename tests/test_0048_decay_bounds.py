@@ -794,26 +794,28 @@ SRC_NONLITERAL = {
         (1, "f'SELECT id, user_id, json FROM episodes {where}'", '9cc67749d8953e08'),
     ('veracium/store/edge_events.py:append_event', '3e25ffaa62d0012a435668ae6fb4c8bfa6b2122a6b3a1a824e1c1b850d45b70f'):
         (1, 'EVENT_INSERT_SQL', '00f9eeb97905ba10'),
-    ('veracium/store/migration.py:_apply_forward', '1215f2ca4ee774c18f1c4348eb427fe9dfa2bc707aa6d3eaffb18a992a18fda8'):
-        (1, "f'PRAGMA user_version = {SCHEMA_VERSION}'", 'bdfe325e1e6375ce'),
-    ('veracium/store/migration.py:_apply_forward', '2d110200e5595808793e3b6846c7c617b412b1e9c318c5f07fb3ee78ced6497c'):
-        (1, "f'SELECT {_RED_V15_COLS}, state, pending_reason FROM redactions'", '207b39664c8560e8'),
-    ('veracium/store/migration.py:_apply_forward', '36db0a761d117d0b8642c1deb33a0a415cde37727c9d97d42d35d253cfe5ef0a'):
-        (1, 'o.ddl', 'f6d6a716c772695f'),
-    ('veracium/store/migration.py:_apply_forward', '3f01b166ad2f4380f59e89aecde8502431db2a9604f8b46a5017aad3f9c4b070'):
-        (1, "f'SELECT {_CONF_V15_COLS}, {_CONF_ACT_COLS} FROM confirmations'", '01034d9c7d097119'),
-    ('veracium/store/migration.py:_apply_forward', '4a4fe4cc6f7dc95668bab05b8c6fa993bae999d2b47ab277793e1a320354b5de'):
-        (1, "f'SELECT id, user_id, relation, active, json FROM edges WHERE {named}'", '631938ef27fffab5'),
-    ('veracium/store/migration.py:_apply_forward', '52ae70d7758a2043598287bcf7e3c91641da51f67278f73fa05155c369ddc28c'):
-        (1, "f'SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id'", '631938ef27fffab5'),
-    ('veracium/store/migration.py:_apply_forward', '5fd0dd2e27462e8513c5103e98f8f36c436273f2b6d777d11a31300cbe7911fd'):
-        (1, "f'SELECT {_CONF_V15_COLS} FROM confirmations'", '9dcd9692ed07526d'),
-    ('veracium/store/migration.py:_apply_forward', 'b11a754c51fdd2817d36701eed6469279476290cf9e96146ab5f65acfd782496'):
-        (2, "f'SELECT {_REGISTRY_COLS} FROM request_registry'", 'dd8037958dd6597a'),
-    ('veracium/store/migration.py:_apply_forward', 'c0634dd354e5053a7fcf81a408092222722dba6046af6435842e1a58d3f8dff0'):
-        (1, "f'SELECT {_RED_V15_COLS} FROM redactions'", '207b39664c8560e8'),
-    ('veracium/store/migration.py:_apply_forward', 'e52a5027345445c1885bea37133401cc234649645eef1602c89e064958194204'):
-        (5, 'stmt', '357031eff692cb0b'),
+    ('veracium/store/migration.py:_apply_forward', '7796f4f66361ff1cc7cafc731c207bb2ee15b9f7e1f47d8e4c79e9b8fb939d67'):
+        (1, "f'PRAGMA user_version = {entry.step}'", '15ddcbb81be339fb'),
+    ('veracium/store/migration.py:_apply_forward', '827d5abbca003d06e59d3546e7bf9189eb9b743f863a72df04b49929409ab8f7'):
+        (1, 'entry.step', '15ddcbb81be339fb'),
+    ('veracium/store/migration.py:_apply_forward', 'dc29d9ccfdb98bf9b34a25a44b096e4978cb32a6fb0a53246857c755bdd6f288'):
+        (1, 'entry.step.ddl', '15ddcbb81be339fb'),
+    ('veracium/store/migration.py:_data_arity_inventory', '52ae70d7758a2043598287bcf7e3c91641da51f67278f73fa05155c369ddc28c'):
+        (1, "f'SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id'", '3d63e4f075e13aea'),
+    ('veracium/store/migration.py:_read_conf_after', '3f01b166ad2f4380f59e89aecde8502431db2a9604f8b46a5017aad3f9c4b070'):
+        (1, "f'SELECT {_CONF_V15_COLS}, {_CONF_ACT_COLS} FROM confirmations'", '5c4ec00660075665'),
+    ('veracium/store/migration.py:_read_conf_before', '5fd0dd2e27462e8513c5103e98f8f36c436273f2b6d777d11a31300cbe7911fd'):
+        (1, "f'SELECT {_CONF_V15_COLS} FROM confirmations'", '3b5a397c92fd8f1d'),
+    ('veracium/store/migration.py:_read_named_edges', '4a4fe4cc6f7dc95668bab05b8c6fa993bae999d2b47ab277793e1a320354b5de'):
+        (1, "f'SELECT id, user_id, relation, active, json FROM edges WHERE {named}'", '1d0f2e4698ae9aba'),
+    ('veracium/store/migration.py:_read_red_after', '2d110200e5595808793e3b6846c7c617b412b1e9c318c5f07fb3ee78ced6497c'):
+        (1, "f'SELECT {_RED_V15_COLS}, state, pending_reason FROM redactions'", 'a3fbf8035cd1a883'),
+    ('veracium/store/migration.py:_read_red_before', 'c0634dd354e5053a7fcf81a408092222722dba6046af6435842e1a58d3f8dff0'):
+        (1, "f'SELECT {_RED_V15_COLS} FROM redactions'", '529d01c8ebc78cc9'),
+    ('veracium/store/migration.py:_read_registry', 'b11a754c51fdd2817d36701eed6469279476290cf9e96146ab5f65acfd782496'):
+        (1, "f'SELECT {_REGISTRY_COLS} FROM request_registry'", '6d05565b7c151322'),
+    ('veracium/store/migration.py:_read_registry_before', 'b11a754c51fdd2817d36701eed6469279476290cf9e96146ab5f65acfd782496'):
+        (1, "f'SELECT {_REGISTRY_COLS} FROM request_registry'", 'da614baa291f79c3'),
     ('veracium/store/migration.py:_rows', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'):
         (1, 'sql', '15c100bc856f50f2'),
     ('veracium/store/migration.py:unattested_marker_report', '7bfafeef2fbae7cb3167a698387e39cba03e7e5160aa7ff3b3dccdb94a499062'):
@@ -1925,6 +1927,65 @@ def _annotation_problem(slot):
     return None
 
 
+_LADDER_HEAD = re.compile(r"ALTER TABLE [a-z_]+ ADD COLUMN ")
+_MIGRATION = "veracium/store/migration.py"
+
+
+# `_alters` and `plan` make every entry the table does not spell out: each frozen whole, function digest
+LADDER_FUNCTIONS = {"_alters": "307f6485a18cbd6e7dad340f3216ed896a6e1a34933e52dac31e11e69606dc99",
+                    "plan": "7c67d35d140fb5eaf7ad01dae8cedc517680a514466be3ac9cbfcdac19e1c924"}
+TABLE_KINDS = {"read", "data", "check"}
+
+
+def _ladder_problems(rel, t, par):
+    """Research's B4, written once with 0018's table, closed over the grammar (its read of cad9e795). `conn.execute(entry.step)`
+    reads a table entry, so no binding reaches a statement in it, and the statements are read where they stand:
+    - an `ALTERS_*` name is bound once, by a plain assignment at module level, to a tuple of literal `ADD COLUMN` statements;
+    - each element of `FORWARD_ENTRIES` is `*_alters(lo, v, ALTERS_*)` or a four-positional `ForwardEntry` of a table kind
+      naming a function; a `ForwardEntry` made anywhere else is made in `_alters` or `plan`, each frozen whole."""
+    bad = []
+    at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
+    alters = lambda n: isinstance(n, ast.Name) and n.id.startswith("ALTERS_")
+    bound = {}
+    for n in ast.walk(t):
+        if isinstance(n, ast.Name) and isinstance(n.ctx, (ast.Store, ast.Del)) and n.id.startswith("ALTERS_"):
+            bound[n.id] = bound.get(n.id, 0) + 1
+            holder = par.get(n)
+            if not (isinstance(holder, ast.Assign) and len(holder.targets) == 1 and holder.targets[0] is n
+                    and isinstance(par.get(holder), ast.Module) and isinstance(holder.value, ast.Tuple)):
+                bad.append(f"{at(n)}: `{n.id}` bound other than as a plain module-level tuple")
+                continue
+            for e in holder.value.elts:
+                if not (isinstance(e, ast.Constant) and isinstance(e.value, str) and _LADDER_HEAD.match(e.value)):
+                    bad.append(f"{at(e)}: a ladder statement that is not a literal ADD COLUMN: {ast.unparse(e)[:60]}")
+        if isinstance(n, ast.alias) and (n.asname or "").startswith("ALTERS_") and n.asname != n.name:
+            bad.append(f"{at(n)}: `{n.asname}` bound by an import of `{n.name}`")
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name in LADDER_FUNCTIONS and rel == _MIGRATION:
+            if _digest(n) != LADDER_FUNCTIONS[n.name]:
+                bad.append(f"{at(n)}: `{n.name}` changed: it makes the table's entries, so it is re-reviewed")
+    bad += [f"{rel}: `{k}` bound {c} times" for k, c in bound.items() if c > 1]
+    table = next((n.value for n in t.body if isinstance(n, ast.Assign) and any(getattr(x, "id", "") == "FORWARD_ENTRIES" for x in n.targets)), None)
+    listed = set()
+    if table is not None:
+        for e in table.elts if isinstance(table, ast.Tuple) else [table]:
+            if isinstance(e, ast.Starred) and isinstance(e.value, ast.Call) and getattr(e.value.func, "id", None) == "_alters":
+                listed.add(id(e.value))
+                if not (len(e.value.args) == 3 and not e.value.keywords and alters(e.value.args[2])):
+                    bad.append(f"{at(e)}: `_alters` of something other than a frozen `ALTERS_*` tuple")
+                continue
+            ok = (isinstance(e, ast.Call) and getattr(e.func, "id", None) == "ForwardEntry" and len(e.args) == 4 and not e.keywords
+                  and isinstance(e.args[2], ast.Constant) and e.args[2].value in TABLE_KINDS and isinstance(e.args[3], ast.Name))
+            if ok:
+                listed.add(id(e))
+            else:
+                bad.append(f"{at(e)}: a table element that is neither `_alters` nor a named read, data or check: {ast.unparse(e)[:60]}")
+    for n in ast.walk(t):
+        if isinstance(n, ast.Call) and id(n) not in listed and getattr(n.func, "id", None) in ("ForwardEntry", "_alters"):
+            if getattr(_scope_of(n, par), "name", "") not in LADDER_FUNCTIONS and not (table is not None and n in ast.walk(table)):
+                bad.append(f"{at(n)}: `{n.func.id}` outside the table and the functions frozen beside it")
+    return bad
+
+
 def _import_problems(rel, t, par, q):
     """N1-N5, N7, N8: what src/ may reach by name, over one module. Pure in its arguments and the tables."""
     bad = []
@@ -1978,7 +2039,8 @@ def _import_problems(rel, t, par, q):
 def _module_problems(rel, t, par, q, ix, denied, exec_names, guarded_literals, sq, own_index):
     """One module's share of `_package_problems`: (problems, {site key: times seen}). Pure in its arguments, so a matrix
     of mutants of one module re-reads only that module."""
-    bad, seen = _self_problems(rel, t, par, ix) + _import_problems(rel, t, par, q) + _own_problems(rel, t, par, q, own_index), {}
+    bad, seen = (_self_problems(rel, t, par, ix) + _import_problems(rel, t, par, q) + _own_problems(rel, t, par, q, own_index)
+                 + _ladder_problems(rel, t, par)), {}
     at = lambda n: f"{rel} L{getattr(n, 'lineno', '?')}"
     for n in ast.walk(t):
         if isinstance(n, ast.Attribute):
@@ -2067,7 +2129,7 @@ def _package_problems(source, tree, parent, idx, others) -> list:
     shared = (tuple(sorted(exec_names.items())), tuple(sorted(denied)), tuple(sorted(DB_NAME_EXCEPTIONS.items())),
               tuple(sorted(SRC_NONLITERAL.items())), tuple(sorted((k, tuple(sorted(v))) for k, v in SRC_IMPORTS.items())),
               tuple(sorted(SRC_DUNDERS)), tuple(sorted(REACH_NAMES)), tuple(sorted(OWN_MODULE_VALUES.items())),
-              tuple(sorted(TYPE_ADAPTER_SITE.items())), tuple(sorted(IMPORT_SITES.items())), tuple(sorted(REACH_ATTRIBUTES)),
+              tuple(sorted(TYPE_ADAPTER_SITE.items())), tuple(sorted(IMPORT_SITES.items())), tuple(sorted(REACH_ATTRIBUTES)), tuple(sorted(LADDER_FUNCTIONS.items())),
               tuple(sorted(own_index.items())))
     for rel, text, tree_m, par_m, q_m, ix_m in mods:
         key = (rel, text, shared)
@@ -2999,14 +3061,65 @@ def test_a_name_parameter_reaching_sql_meets_the_head_rule(monkeypatch):
     assert len(bad) == 1 and "reaches SQL whose leading constant does not fix a SELECT" in bad[0], bad
 
 
-def test_a_ladder_table_statement_is_not_n4fs_and_sa10_refuses_it(tmp_path, monkeypatch):
-    """Research's B4, DECLARED: the five `conn.execute(stmt)` sites in `_apply_forward` read a for-target, so a statement
-    added to a ladder table moves no digest and N4f accepts it. Its governing check is SA10, by execution, and this cell
-    runs it, so the manifest's row rests on a run. A static head check over the tables is next round's, written once with
-    0018's table; when it lands, the first assertion here turns over, which is the point of stating it."""
-    anchor = "ALTERS_V15_TO_V16 = (\n"
-    split = '"UP" + "DATE ed" + "ges SET js" + "on=re" + "place(js" + "on, \'0.8\', \'1.8\')"'
-    assert _gate(SQLITE.read_text(), _r5_others("veracium/store/schema_version.py", anchor, anchor + f"    {split},\n")) == []
+_ALTERS_AT = "ALTERS_V15_TO_V16 = (\n"
+_SV = "veracium/store/schema_version.py"
+_MIG = "veracium/store/migration.py"
+_NOT_ADD = "a ladder statement that is not a literal ADD COLUMN"
+
+
+@pytest.mark.parametrize("line", ['"UP" + "DATE ed" + "ges SET js" + "on=re" + "place(js" + "on, \'0.8\', \'1.8\')"',
+                                  '"UPDATE edges SET json=replace(json, \'0.8\', \'1.8\')"', '"ALTER TABLE edges DROP COLUMN json"', "_NAME"],
+                         ids=["split", "literal", "another ALTER", "a name"])
+def test_a_ladder_table_statement_is_refused_statically(line):
+    """Research's B4, as the round-6 cell promised: when 0018's table landed its first assertion turned over. A statement added
+    to a ladder table is refused where it stands, split or not, and the table's reach is closed by `_alters`."""
+    assert not any(_NOT_ADD in b for b in _gate(SQLITE.read_text(), _r5_others(_SV, _ALTERS_AT, _ALTERS_AT)))
+    bad = _gate(SQLITE.read_text(), _r5_others(_SV, _ALTERS_AT, _ALTERS_AT + f"    {line},\n"))
+    assert any(_NOT_ADD in b for b in bad), bad
+
+
+_ROW = "    ForwardEntry(0, 3, \"read\", _read_episodes_before),\n"
+_ELEMENT = "a table element that is neither"
+_U = '"UPDATE edges SET json=json"'
+
+
+@pytest.mark.parametrize("old, new, why", [
+    ("*_alters(2, 16, ALTERS_V15_TO_V16),", f"*_alters(2, 16, ({_U},)),", "`_alters` of something other than"),
+    ("*_alters(2, 16, ALTERS_V15_TO_V16),", f'ForwardEntry(2, 16, "alter", {_U}),', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(lo=0, v=3, kind="read", step=_read_episodes_before),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "add", _read_episodes_before),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "stamp", 16),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "sideways", _read_episodes_before),\n', _ELEMENT),
+    (_ROW, _ROW + f'    ForwardEntry(0, 3, "data", lambda conn, run: conn.execute({_U})),\n', _ELEMENT),
+    (_ROW, _ROW + f'    *[ForwardEntry(0, 3, "alter", {_U})],\n', _ELEMENT),
+    ('    return [ForwardEntry(lo, v, "alter", s) for s in statements]\n',
+     f'    return [ForwardEntry(lo, v, "alter", {_U}) for s in statements]\n', "it makes the table's entries"),
+    ('            + [ForwardEntry(0, target, "stamp", target),', f'            + [ForwardEntry(0, target, "alter", {_U}), ForwardEntry(0, target, "stamp", target),',
+     "it makes the table's entries"),
+    ("def _alters(lo, v, statements):\n", f'_MORE = ForwardEntry(0, 3, "alter", {_U})\n\n\ndef _alters(lo, v, statements):\n', "outside the table and the functions"),
+], ids=["a literal through _alters", "an alter by hand", "keywords", "add in the table", "stamp in the table", "an unknown kind", "a lambda",
+        "a starred list", "_alters's body", "plan's body", "an entry made beside the table"])
+def test_an_entry_comes_only_from_the_table_s_grammar(old, new, why):
+    assert not any(why in b for b in _gate(SQLITE.read_text(), _r5_others(_MIG, old, old)))
+    bad = _gate(SQLITE.read_text(), _r5_others(_MIG, old, new))
+    assert any(why in b for b in bad), bad
+
+
+@pytest.mark.parametrize("new", [f"ALTERS_X: tuple = ({_U},)\n", f"ALTERS_V5_TO_V6 += ({_U},)\n", f"ALTERS_X = [{_U}]\n",
+                                 f"def f():\n    ALTERS_X = ({_U},)\n", f"for ALTERS_X in (({_U},),):\n    pass\n", "ALTERS_V5_TO_V6 = ()\n",
+                                 "from .schema import Episode as ALTERS_X\n"],
+                         ids=["annotated", "augmented", "a list", "in a function", "a for target", "bound twice", "an import"])
+def test_an_alters_name_is_bound_only_as_a_plain_tuple(new):
+    """Research's read of cad9e795: `ALTERS_X: tuple = (…)` and `ALTERS_X += (…)` passed a rule that read `ast.Assign`."""
+    text = (SRC / _SV).read_text()
+    assert not any("ALTERS_" in b for b in _gate(SQLITE.read_text(), _r5_others(_SV, _ALTERS_AT, _ALTERS_AT)))
+    bad = _gate(SQLITE.read_text(), {**_r5_others(_SV, _ALTERS_AT, _ALTERS_AT), _SV: text + "\n" + new})
+    assert any("ALTERS_" in b for b in bad), bad
+
+
+def test_sa10_still_refuses_a_ladder_statement_by_execution(tmp_path, monkeypatch):
+    """The second layer, kept: an `alter` entry that reached the table anyway is refused by SA10 on every base that runs it, and
+    v1, which never runs it, is clean. The table is frozen at import, so the plant goes into the table."""
     name = "veracium_sa10_gate"
     if name not in sys.modules:
         spec = importlib.util.spec_from_file_location(name, ROOT / "specs/evidence/0013/sa10_gate.py")
@@ -3014,9 +3127,10 @@ def test_a_ladder_table_statement_is_not_n4fs_and_sa10_refuses_it(tmp_path, monk
         sys.modules[name] = mod
         spec.loader.exec_module(mod)
     g = sys.modules[name]
-    from veracium.store import schema_version as sv
-    statement = "UPDATE edges SET json=replace(json, '0.8', '1.8')"
-    monkeypatch.setattr(sv, "ALTERS_V15_TO_V16", (statement,) + tuple(sv.ALTERS_V15_TO_V16))
+    import veracium.store.migration as mig
+    at = next(i for i, e in enumerate(mig.FORWARD_ENTRIES) if e.kind == "alter" and e.lo == 2)
+    plant = mig.ForwardEntry(2, 16, "alter", "UPDATE edges SET json=replace(json, '0.8', '1.8')")
+    monkeypatch.setattr(mig, "FORWARD_ENTRIES", mig.FORWARD_ENTRIES[:at] + (plant,) + mig.FORWARD_ENTRIES[at:])
     builders = {lab: b for lab, e, b in g.gate_paths() if e == "migrate_store"}
     for label in ("v2#0", "v15#0"):        # the table's two ends: the ladder runs it from every base from v2
         r = g.run_path(label, "migrate_store", builders[label], str(tmp_path / label))

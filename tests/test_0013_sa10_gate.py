@@ -675,7 +675,7 @@ def test_the_allowlist_refuses_each_connection_route_and_replay_still_sees_the_f
 
 # ---- the negative cells N1–N15, end to end (0013 §5f.1's table; 0007 I2) --------------------------------------------
 # Each statement is issued by the ladder's own connection INSIDE `_apply_forward`, after the stamp postcondition: what
-# a statement added after migration.py's `_refuse_unless(base, STEP_STAMP, ...)` would issue, at that declared site.
+# a statement added after migration.py's `_check_stamp` entry would issue, at that declared site.
 # The census attributes it to `_apply_forward` because the issuer is the nearest src frame. Each cell is demonstrated
 # red against the gate mutant §5f.1 names beside it by specs/evidence/0013/sa10_mutants.py.
 _AF = "veracium/store/migration.py:_apply_forward:"
@@ -683,13 +683,12 @@ _AF = "veracium/store/migration.py:_apply_forward:"
 
 def _after_stamp(monkeypatch, act):
     import veracium.store.migration as mig
-    real = mig._refuse_unless
+    real = mig._check_stamp
 
-    def hooked(base, step, problems):
-        real(base, step, problems)
-        if step == mig.STEP_STAMP:
-            act(sys._getframe(1).f_locals["conn"])
-    monkeypatch.setattr(mig, "_refuse_unless", hooked)
+    def hooked(conn, run):      # `_apply_forward` calls the stamp's check, so it stays the nearest src frame
+        real(conn, run)
+        act(conn)
+    monkeypatch.setattr(mig, "_check_stamp", hooked)
 
 
 def _n_run(tmp_path, monkeypatch, act, reals=None):

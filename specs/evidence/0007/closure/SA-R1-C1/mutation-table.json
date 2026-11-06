@@ -1,5 +1,5 @@
 {
- "body_sha256": "2598e75304241b2657ec97e6f4983beaad1c2901eb9d6a6e11339be0af9b9b54",
+ "body_sha256": "c26413d2520b6c50337bca37effaa18b65996257808a550c5bfaabe91d08a8a3",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
+  "commit": "691ace2b70edbd21a1672116a52ad83dffaf86d2",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -64,12 +64,10 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0007-store-schema-versioning.md",
-   "specs/0013-store-migrations.md",
-   "specs/0018-release-migration-orchestrator.md",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json"
   ]
  },
  "rows": [

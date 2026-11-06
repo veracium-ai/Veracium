@@ -1,5 +1,5 @@
 {
- "body_sha256": "9eb4d1c7024f48b5ef7d771644ffa82cee4722451f966c6b059a606152e2e29e",
+ "body_sha256": "56aaeafbdb9291a99df25835060a0577ec42fffd27dac9a40fbd89d8d107c463",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "73fff144c293072010c09e8d6b4da0977313a1d9",
+  "commit": "691ace2b70edbd21a1672116a52ad83dffaf86d2",
   "control_definitions": {
    "NOOP-SA-R3-02-attestation_job": "35783f075a00f832b18479d6ce4fbfbbd04b700c55c82b001805aea6040ffde9"
   },
@@ -76,15 +76,13 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0007-store-schema-versioning.md",
-   "specs/0013-store-migrations.md",
-   "specs/0018-release-migration-orchestrator.md",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json"
   ]
  },
  "rows": [
@@ -119,7 +117,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.03s",
+   "pytest": "2 failed in 10.76s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded rule: the JUnit's modules compared with the rule's, its nodes never compared with the invocation's own collection"
@@ -155,7 +153,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.72s",
+   "pytest": "2 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite (the reviewer's deselect route)"
@@ -170,6 +168,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 61
+  "seconds": 64
  }
 }

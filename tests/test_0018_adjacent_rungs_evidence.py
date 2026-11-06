@@ -2,6 +2,7 @@
 carries. Their bytes are the reviewed (or both-seat-run) evidence and are never edited, so each one's P1 pointer is
 declared in its directory's MUTATION-MATRIX.txt, admitted by tests/test_spec_gate.py only while the directory's
 SHA256SUMS hashes to its pinned value (REVIEWED_EVIDENCE) and the file equals its SUMS line."""
+import shutil
 import pathlib
 import subprocess
 import sys
@@ -27,13 +28,18 @@ def test_check_a2_facts_reproduces_its_recorded_output_and_controls():
 
 
 def test_head_bound_census_refuses_each_planted_reference(tmp_path):
-    """dev-model/head_bound_census.py (R2-03): `--check` equals its expectation on this tree, and its matrix
-    (head_bound_census_matrix.py) plants nine changes, each refused by name, and runs three controls, each passing."""
+    """dev-model/head_bound_census.py (R2-03) is the design's census, and it follows calls by name, so it is blind to a table
+    (research's stage-1 read). Its claim is about the kernel it was written against, so it runs there: this tree with the
+    frozen body in place. `--check` equals its expectation, and its matrix plants nine changes, each refused by name, and runs
+    three controls. The live kernel is the repository census's, below."""
     census = EV / "dev-model" / "head_bound_census.py"
     expected = EV / "dev-model" / "head_bound_census.expected.json"
-    r = _run(census, ROOT, "--check", expected)
+    tree = tmp_path / "at-the-branch"
+    shutil.copytree(ROOT / "src", tree / "src", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copyfile(ROOT / "specs/evidence/0018/rungs/superseded/migration_at_branch.py", tree / "src/veracium/store/migration.py")
+    r = _run(census, tree, "--check", expected)
     assert r.returncode == 0 and r.stdout.startswith("CENSUS EQUAL: 21 references"), r.stdout + r.stderr[-300:]
-    m = _run(EV / "dev-model" / "head_bound_census_matrix.py", ROOT, expected, tmp_path / "matrix")
+    m = _run(EV / "dev-model" / "head_bound_census_matrix.py", tree, expected, tmp_path / "matrix")
     assert m.returncode == 0, m.stdout[-600:] + m.stderr[-300:]
     assert m.stdout.rstrip().endswith("CENSUS MATRIX: 12 cases, 0 not as expected")
     assert m.stdout.count("OK  PLANT") == 9 and sum(m.stdout.count(f"OK  {k}") for k in ("honest", "CONTROL")) == 3
@@ -44,11 +50,12 @@ def test_the_repository_census_sees_a_table_and_refuses_each_plant(tmp_path):
     goes blind on a table (research's stage-1 read: a one-entry table read 21 references as 0, and a blind census and a
     clean one print the same), so this one follows a function merely referenced and reads module-level values like
     function bodies, through imports, class attributes included. Its matrix plants each form, research's fourteen other
-    table shapes among them, and runs its controls. The comparison with the RUNTIME table is owed at T1, when one exists."""
+    table shapes among them, and runs its controls. The kernel is a table now: 8 references, the guards, the stamp and five raises having
+    moved into `plan(base, SCHEMA_VERSION)` and one `except`. The comparison with the RUNTIME table is tests/test_0018_rungs_t1.py's."""
     census = ROOT / "specs/evidence/0018/head_bound_census.py"
     expected = ROOT / "specs/evidence/0018/head_bound_census.expected.json"
     r = _run(census, ROOT, "--check", expected)
-    assert r.returncode == 0 and r.stdout.startswith("CENSUS EQUAL: 21 references"), r.stdout + r.stderr[-300:]
+    assert r.returncode == 0 and r.stdout.startswith("CENSUS EQUAL: 8 references"), r.stdout + r.stderr[-300:]
     m = _run(ROOT / "specs/evidence/0018/head_bound_census_matrix.py", ROOT, expected, tmp_path / "matrix")
     assert m.returncode == 0, m.stdout[-600:] + m.stderr[-300:]
     assert m.stdout.rstrip().endswith("CENSUS MATRIX: 31 cases, 0 not as expected")

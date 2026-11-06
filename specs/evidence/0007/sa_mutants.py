@@ -291,9 +291,9 @@ MUTANTS += [
      [f"{SA10_CELLS}::test_the_gate_passes_the_clean_ladder_on_every_path_and_entry"], [], None,
      "the gate attributes sites in migration.py only: it then refuses a correct tree"),
     ("sa10-a-vacuous-postcondition", "product", MIG,
-     [('        _refuse_unless(base, STEP_STAMP, [f"user_version reads {stamped}, not {SCHEMA_VERSION}"]\n'
-       '                       if stamped != SCHEMA_VERSION else [])',
-       "        _refuse_unless(base, STEP_STAMP, [])")],
+     [('    _refuse_unless(run.base, STEP_STAMP, [f"user_version reads {run.stamped}, not {SCHEMA_VERSION}"]\n'
+       '                   if run.stamped != SCHEMA_VERSION else [])',
+       "    _refuse_unless(run.base, STEP_STAMP, [])")],
      [f"{PA1_CELLS}::test_cell_a_perturbed_stamp_refuses_at_the_stamp"], [], None,
      "the stamp's postcondition made vacuous: its problems are always empty"),
     ("sa10-a-step-with-no-matcher", "product", MIG,

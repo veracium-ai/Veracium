@@ -996,11 +996,25 @@ def _function_sites(src_text: str, name: str, first: int) -> list:
     raise LookupError(f"no function {name} starting at line {first}")
 
 
-def site_coverage(all_calls) -> dict:
-    """Over every path: the functions the census saw issue a call, and in each, the call sites never observed."""
+def table_steps() -> list:
+    """(module, function, first line) of every function the kernel's table runs. Coverage is otherwise read only in a function
+    the census saw issue a call, so a step that normally issues none could hold a dead write nobody looks at (0018 T1: the
+    ladder was one busy function, and `tree-unreached-write` survived the split until this was written)."""
+    import veracium
+    import veracium.store.migration as mig
+    base = pathlib.Path(os.path.realpath(os.path.dirname(veracium.__file__))).parent
+    steps = [e.step for e in mig.FORWARD_ENTRIES if callable(e.step)] + [mig._read_stamped, mig._check_stamp]
+    return sorted({(str(pathlib.Path(os.path.realpath(f.__code__.co_filename)).relative_to(base)), f.__name__, f.__code__.co_firstlineno)
+                   for f in steps})
+
+
+def site_coverage(all_calls, roots=()) -> dict:
+    """Over every path: the functions the census saw issue a call, and `roots`, and in each, the call sites never observed."""
     import veracium
     base = pathlib.Path(os.path.realpath(os.path.dirname(veracium.__file__))).parent
     seen = collections.defaultdict(set)
+    for root in roots:
+        seen[root]                                  # a root is read whether or not a call was seen in it
     for rec in all_calls:
         if rec.site is not None and rec.how in ("execute", "executemany"):
             seen[(rec.site[0], rec.site[1], rec.site[2])].add(rec.site[3])
@@ -1027,7 +1041,7 @@ def run_gate(work: str, paths=None) -> dict:
         results.append(run_path(label, entry, builder, d, build=build))
     all_calls = [c for r in results for c in r["calls"]]
     problems = [f"{r['entry']} {r['path']}: {p}" for r in results for p in r["problems"]]
-    cov = site_coverage(all_calls)
+    cov = site_coverage(all_calls, table_steps())
     problems += [f"site never observed on any path: {s}" for s in cov["unobserved"]]
     ddl_seen = {(c.site[0], c.site[1]) for c in all_calls
                 if c.site and getattr(c, "cls", None) in ("a", "b1", "b2", "b2-noop", "OUTSIDE")}

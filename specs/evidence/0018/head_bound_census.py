@@ -215,7 +215,13 @@ def census(tree_root: pathlib.Path) -> list[dict]:
     work = [(ROOT[0], ROOT[1], mods[ROOT[0]].funcs[ROOT[1]], (f"{ROOT[0]}:{ROOT[1]}",), False)]
 
     def follow(m, node, path):
-        r = resolve_call(m, node)
+        take(resolve_call(m, node), path)
+        # a name bound here AND imported: a later import rebinds it, so neither is assumed to win and both are followed
+        if isinstance(node, ast.Name) and node.id in m.imported and m.imported[node.id][0] in mods:
+            src, attr = m.imported[node.id]
+            take(resolve_call(mods[src], ast.Name(id=attr, ctx=ast.Load())), path)
+
+    def take(r, path):
         if not r:
             return
         if r[0] == "func":

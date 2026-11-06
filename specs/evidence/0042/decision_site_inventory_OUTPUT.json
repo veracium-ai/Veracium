@@ -4199,141 +4199,154 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 86,
+   "line": 87,
    "module": "store/migration.py",
    "qualname": "_refuse_unless"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 91,
+   "line": 92,
    "module": "store/migration.py",
    "qualname": "_nested_models"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 156,
+   "line": 157,
    "module": "store/migration.py",
    "qualname": "_raw_object"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 198,
+   "line": 199,
    "module": "store/migration.py",
    "qualname": "_rows"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 228,
+   "line": 229,
    "module": "store/migration.py",
    "qualname": "_migrate_outcome_chains"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 237,
+   "line": 238,
    "module": "store/migration.py",
    "qualname": "_migrate_outcome_chains"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 286,
+   "line": 287,
    "module": "store/migration.py",
    "qualname": "migration_runtime"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 289,
+   "line": 290,
    "module": "store/migration.py",
    "qualname": "migration_runtime"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 291,
+   "line": 292,
    "module": "store/migration.py",
    "qualname": "migration_runtime"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 293,
+   "line": 294,
    "module": "store/migration.py",
    "qualname": "migration_runtime"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 300,
+   "line": 301,
    "module": "store/migration.py",
    "qualname": "_mig_event"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 303,
+   "line": 304,
    "module": "store/migration.py",
    "qualname": "_mig_event"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 322,
+   "line": 398,
+   "module": "store/migration.py",
+   "qualname": "_check_v6_alter"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 415,
+   "module": "store/migration.py",
+   "qualname": "_check_v8_alter"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 433,
+   "module": "store/migration.py",
+   "qualname": "_check_v10_alter"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 489,
+   "module": "store/migration.py",
+   "qualname": "_check_v16_conf_alter"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 556,
+   "module": "store/migration.py",
+   "qualname": "_check_v16_red_alter"
+  },
+  {
+   "kind": "FILTER_RETURN",
+   "line": 695,
+   "module": "store/migration.py",
+   "qualname": "_alters"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 794,
    "module": "store/migration.py",
    "qualname": "_apply_forward"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 386,
-   "module": "store/migration.py",
-   "qualname": "_apply_forward"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 414,
-   "module": "store/migration.py",
-   "qualname": "_apply_forward"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 440,
-   "module": "store/migration.py",
-   "qualname": "_apply_forward"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 496,
-   "module": "store/migration.py",
-   "qualname": "_apply_forward"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 529,
+   "line": 815,
    "module": "store/migration.py",
    "qualname": "_apply_forward"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 684,
+   "line": 910,
    "module": "store/migration.py",
    "qualname": "_same_instant"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 686,
+   "line": 912,
    "module": "store/migration.py",
    "qualname": "_same_instant"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 844,
+   "line": 1070,
    "module": "store/migration.py",
    "qualname": "migrate_store"
   },
@@ -7017,8 +7030,8 @@
  "summary": {
   "by_kind": {
    "BOOL_RETURN": 99,
-   "FILTER_RETURN": 61,
-   "RAISE": 677,
+   "FILTER_RETURN": 62,
+   "RAISE": 678,
    "RETURN_FALSE": 110,
    "RETURN_NONE": 109
   },
@@ -7370,8 +7383,8 @@
    },
    "store/migration.py": {
     "BOOL_RETURN": 1,
-    "FILTER_RETURN": 3,
-    "RAISE": 15,
+    "FILTER_RETURN": 4,
+    "RAISE": 16,
     "RETURN_FALSE": 1,
     "RETURN_NONE": 1
    },
@@ -7425,7 +7438,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1056,
+  "total": 1058,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

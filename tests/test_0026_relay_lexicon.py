@@ -1452,6 +1452,7 @@ def test_no_plain_json_load_at_evidence_boundaries():
     SQLITE_R2 = ("the 0007 SQLite attestation round-2 reviewed evidence, byte-identical to the sealed package; each "
                  "read is the instrument's own output (q.json, a census file) or a probe reading the product's committed "
                  "specs/generated artifact, never an input a verdict rests on")
+    RUNGS_OWN = "reads what this tooling itself just printed or committed, never a reviewer-supplied or external file"
     allow = {
         # file -> (EXACT plain-call count, why). No headroom exists:
         # a count above OR below the pin trips (0026-I11-1).
@@ -1493,6 +1494,13 @@ def test_no_plain_json_load_at_evidence_boundaries():
         "0018-adjacent-rungs/dev-model/model_v04.py": (1, ADJ_RUNGS),
         "0018-adjacent-rungs/dev-model/probe_m1_m2.py": (1, ADJ_RUNGS),
         "0018-adjacent-rungs/dev-model/probe_m1_m2.round2-observer.py": (1, ADJ_RUNGS),
+        "0018/head_bound_census.py": (1, RUNGS_OWN),
+        "0018/rungs/coverage.py": (2, RUNGS_OWN),
+        "0018/rungs/package.py": (2, RUNGS_OWN),
+        "0018/rungs/populate_release.py": (1, "reads a release's own stored row, the fixture it just wrote"),
+        "0018/rungs/superseded/migration_at_branch.py": (6, "the whole migration.py at the branch point, verbatim: frozen, the differential's left arm"),
+        "0018/rungs/t1_differential.py": (1, RUNGS_OWN),
+        "0018/rungs/walk.py": (4, RUNGS_OWN),
         "0051/holdout-h3/score_h3.py": (2, HOLDOUT_0051),
         "0051/holdout-h3/diagnose_h3.py": (1, HOLDOUT_0051),
         "0051/holdout-h4/score_h4.py": (2, HOLDOUT_0051),

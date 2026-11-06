@@ -83,9 +83,9 @@ PARAMS = C("test_parameters_are_recorded_by_value_and_replay_compares_every_outc
 CLEAN_GATE = C("test_the_gate_passes_the_clean_ladder_on_every_path_and_entry")
 RELEASE_SEAM = C("test_release_migration_opens_its_connections_through_the_seam")
 
-_STAMP_REFUSE = ('        _refuse_unless(base, STEP_STAMP, [f"user_version reads {stamped}, not {SCHEMA_VERSION}"]\n'
-                 '                       if stamped != SCHEMA_VERSION else [])\n')
-_NO_OP_WRITE = '        conn.execute("UPDATE episodes SET json = json")\n'
+_STAMP_REFUSE = ('    _refuse_unless(run.base, STEP_STAMP, [f"user_version reads {run.stamped}, not {SCHEMA_VERSION}"]\n'
+                 '                   if run.stamped != SCHEMA_VERSION else [])\n')
+_NO_OP_WRITE = '    conn.execute("UPDATE episodes SET json = json")\n'
 
 # (id, kind, file, [(anchor, replacement)], named cells (EVERY one must fail), honest probes, reason or None, what)
 MUTANTS = [
@@ -267,8 +267,8 @@ MUTANTS = [
      [HARNESS], [ROUTE("connection.blobopen")], "a row write on ['episodes'] maps to 0 steps",
      "a ladder write that maps to no step, after the stamp postcondition"),
     ("tree-unreached-write", "tree", MIGRATION,
-     [(_STAMP_REFUSE, _STAMP_REFUSE + "        if base == -1:\n    " + _NO_OP_WRITE)],
-     [CLEAN_GATE], [HARNESS], "site never observed on any path: veracium/store/migration.py:_apply_forward:",
+     [(_STAMP_REFUSE, _STAMP_REFUSE + "    if run.base == -1:\n    " + _NO_OP_WRITE)],
+     [CLEAN_GATE], [HARNESS], "site never observed on any path: veracium/store/migration.py:_check_stamp:",
      "the same write behind a condition no fixture satisfies (dev's mutant2-conditional): the site check alone"),
     ("tree-undeclared-ddl", "tree", MIGRATION,
      [('    conn.execute("DELETE FROM wiki")\n',

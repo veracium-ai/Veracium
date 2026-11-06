@@ -18,7 +18,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 tree, expected, scratch = (pathlib.Path(a).resolve() for a in sys.argv[1:4])
 scratch.mkdir(parents=True, exist_ok=False)
 MIG, SV, EE = "veracium/store/migration.py", "veracium/store/schema_version.py", "veracium/store/edge_events.py"
-BASE_KEYS = "        base_keys = {o.key for o in SCHEMAS[base]}\n"
+BASE_KEYS = "        run = _Forward(base)\n"
 PENDING = "        pending: dict = {}\n"
 L63 = '        super().__init__("", base, SCHEMA_VERSION, "unsupported-migration",\n'
 NEXT_SEQ = '    serialized (the PK is a backstop only, §4a)."""\n'

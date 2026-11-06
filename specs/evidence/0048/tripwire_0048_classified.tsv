@@ -91,7 +91,7 @@ edges-sql-not-a-json-write	src/veracium/doctor.py	str:edges	users = [r[0] for r 
 edges-sql-not-a-json-write	src/veracium/store/current_state.py	str:edges	"SELECT json FROM edges WHERE user_id=? AND id=?", (user_id, edge_id)).fetchone()
 edges-sql-not-a-json-write	src/veracium/store/edge_events.py	str:edges	"SELECT DISTINCT user_id FROM edges ORDER BY user_id")]
 edges-sql-not-a-json-write	src/veracium/store/edge_events.py	str:edges	"SELECT id, json FROM edges WHERE user_id=? ORDER BY rowid",
-edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	edges = _rows(conn, "SELECT user_id, id, json FROM edges")
+edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	run.baseline_edges = _rows(conn, "SELECT user_id, id, json FROM edges")
 edges-sql-not-a-json-write	src/veracium/store/revocation.py	str:edges	"SELECT json FROM edges WHERE user_id=?", (user_id,))]
 edges-sql-not-a-json-write	src/veracium/store/schema_version.py	str:edges	"CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)",
 edges-sql-not-a-json-write	src/veracium/store/schema_version.py	str:edges	"CREATE INDEX ix_edges_user_active ON edges(user_id, active)", REBUILDABLE),
@@ -304,11 +304,11 @@ verb-as-text	src/veracium/selfcheck.py	str:sql-write	r1 = mem.remember(uid, "Fee
 verb-as-text	src/veracium/selfcheck.py	str:sql-write	r2 = mem.remember(uid, "Feed update: the user moved to Porto.",
 verb-as-text	src/veracium/selfcheck.py	str:sql-write	r3 = mem.remember(uid, "Feed update: the user adopted a cat.",
 edges-text	src/veracium/store/migration.py	str:edges	STEP_ARITY_EDGES = "v16-arity-edges-unchanged"
-edges-text	src/veracium/store/migration.py	str:edges	([f"{block}: the edges table changed"] if post_e != edges_pin else [])
-edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	edges_pin = _rows(conn, "SELECT * FROM edges ORDER BY id")
+edges-text	src/veracium/store/migration.py	str:edges	([f"{block}: the edges table changed"] if post_e != run.edges_pin else [])
+edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	run.edges_pin = _rows(conn, "SELECT * FROM edges ORDER BY id")
 edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	post_e = _rows(conn, "SELECT * FROM edges ORDER BY id")
 edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	for eid, uid, blob in _rows(conn, f"SELECT id, user_id, json FROM edges WHERE {named} ORDER BY id",
-edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	_rows(conn, f"SELECT id, user_id, relation, active, json FROM edges WHERE {named}", named_args),
+edges-sql-not-a-json-write	src/veracium/store/migration.py	str:edges	run.named_edges = _rows(conn, f"SELECT id, user_id, relation, active, json FROM edges WHERE {named}", named_args)
 edges-sql-not-a-json-write	src/veracium/store/data_migration.py	str:edges	"SELECT COUNT(*) FROM arity_inventory i LEFT JOIN edges e ON e.id = i.edge_id "
 edges-sql-not-a-json-write	src/veracium/doctor.py	str:edges	q = ("SELECT i.edge_id FROM arity_inventory i LEFT JOIN edges e ON e.id = i.edge_id "
 sql-write-other-table	src/veracium/store/migration.py	str:sql-write	conn.execute("INSERT INTO arity_inventory(edge_id, user_id, pre_invalidated_at, pre_reason) "
