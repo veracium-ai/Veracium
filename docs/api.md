@@ -871,22 +871,24 @@ Close the underlying store.
 
 - **Rows already written out of range** (specs/0048 §10 Q2; a manual fix, by decision). No shipped
   configuration writes them: the shipped expiry table maps no class to `ExpiryBehavior.DECAY`. A host that EDITED
-  `schema.DEFAULT_EXPIRY` to map one, with a `decay_factor` above 1 or NaN, under a release before 0.30.0, can hold
-  edges whose stored confidence is above 1 or `null`; every read of that user's edges then raises pydantic's
-  `ValidationError` ("Input should be less than or equal to 1" or "Input should be a valid number"). 0.30.0 refuses
+  `schema.DEFAULT_EXPIRY` to map one, with a `decay_factor` above 1, not finite, or negative with a `confidence_floor`
+  at or below the product, under a release before 0.30.0, can hold edges whose stored confidence is above 1, below 0 or
+  `null`; every read of that user's edges then raises pydantic's `ValidationError` ("Input should be less than or
+  equal to 1", "Input should be greater than or equal to 0" or "Input should be a valid number"). 0.30.0 refuses
   new ones; it does not repair old ones. To repair, with every process stopped (the offline-migration rule) and a
   backup of the file taken first, set each such edge's confidence to the value you want it to hold, for example:
 
   ```sql
   UPDATE edges SET json = json_set(json, '$.provenance.confidence', 1.0)
    WHERE json_extract(json, '$.provenance.confidence') > 1
+      OR json_extract(json, '$.provenance.confidence') < 0
       OR json_extract(json, '$.provenance.confidence') IS NULL;
   ```
 
   This edits the current rows only. The store's change journal (specs/0029) keeps the state each write recorded, so
   an as-of read at a time before the repair can still meet the old value; the repair is not journalled and `doctor`
   does not report it. Choose the value yourself: 1.0 above restores the highest confidence, not the one the fact had
-  before the misconfigured run.
+  before the misconfigured run, and the statement sets every matched row to that one value.
 
 - **`require_source_id`** (`True`; specs/0006 §4 rule 9): when `True` (the default), `remember`
   refuses, before any write, third-party-authored evidence and declared third-party-

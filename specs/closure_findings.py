@@ -4690,7 +4690,7 @@ CLOSURES = [
      "$PY -m pytest tests/test_0048_decay_bounds.py::test_an_unrelated_write_refusal_inside_the_transition_still_raises tests/test_0048_decay_bounds.py::test_decay_config_refusal_writes_nothing'[0.5-2.0]' tests/test_0048_decay_bounds.py::test_decay_config_refusal_writes_nothing'[2.0-0.3]' -q -p no:randomly"),
     ("0048", "external", 2, '0048-R2-01',
      "Medium. The supplied model's writer gate silently accepted two unrecognized execution forms, `executemany` and an alias of `execute`.",
-     "N4f fails closed on the connection's receiver, every reference a form it resolves, an execute-family attribute never held (8c71f85d).",
+     "N4f fails closed on the connection's receiver, every reference a form it resolves, an execute-family attribute never held (8c71f85d). The table proves the alias half only. `executemany` is refused by more than one rule at once (`test_the_gate_refuses_each_unresolved_form[executemany]`): with it out of SQL_CALLS and the resolve-or-refuse rule off, the writer inventory and the outside-a-write-method rule still refuse the form, so removing any one survives.",
      '$PY -m pytest tests/test_0048_decay_bounds.py::test_the_gate_refuses_each_round_5_form_for_its_reason"[(b) the reviewer\'s alias of execute, with constructed SQL]" -q -p no:randomly'),
     ("0048", "external", 2, '0048-R2-02',
      'Preserve the existing decay result semantics when replacing the model.',
