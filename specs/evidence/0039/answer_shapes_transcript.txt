@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ ed4d98c90806b7490f7d32878ead7f184ee8d99f
+# generated 2026-09-12 against veracium @ 65662ede5dcf0066703ec5fe80501c38edce4aae
+# RE-PINNED 2026-11-06 (65662ede: the schema evidence records v0.30.0, one data row under src/; the body is byte-identical)
 # RE-PINNED 2026-11-05 0048 round 6 (ed4d98c9: scope_read.py's `_rows` method renamed `_membership_rows`, no behaviour change): bodies byte-identical; the pin moves to ed4d98c (from 5a38282).
 # RE-PINNED 2026-11-04 the _JSON_LAYOUT comment reworded in 5a38282 (store/sqlite.py, comment only, AST unchanged): bodies byte-identical; the pin moves to 5a38282 (from 0c7ad4a).
 # RE-PINNED 2026-11-04 0048 round 5 (0c7ad4aa: config.py's bounded `_shown` for R4-02, store/sqlite.py's `_JSON_LAYOUT` and the write method's layout check for R4-01 (a)) landed; 8c71f85d and f955ac04 on top move tests/ and evidence only: bodies byte-identical; the pin moves to 0c7ad4a (from 8c1f177).
