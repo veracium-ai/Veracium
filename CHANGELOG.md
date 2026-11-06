@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.30.0 — 2026-11-06
+
+**A host on `SqliteStore` can now revoke a source it no longer trusts, and maintenance can no longer raise a fact's confidence.** The
+source revocation machinery has shipped since 0.13.0, and this release adds the host methods over it. The maintenance
+fix also stops expiry from undoing a concurrent `confirm()`, and it asks one thing of a host with its own `Store`: add
+`expiry_transition`. Store schema stays 16 and the export format stays 14: a 0.29.0 store opens as it is.
 
 - **Added: `Memory.revoke_source`, `Memory.unrevoke_source` and `Memory.source_revocations`** (specs/0022 §4g and
   §7a, accepted; promised by its public-surface inventory and never shipped). A host can now revoke a source it no
@@ -13,30 +18,34 @@
   audit event (`revoke_source` / `unrevoke_source`: the digest, the action, the class counts, `complete`, and the
   retired, synthesized-retired, recomputed and reinstated counts), and nothing to telemetry. Library only: no CLI verb
   and no MCP tool (§3b). The machinery itself (`veracium.store.revocation.revoke_source`) has shipped since 0.13.0;
-  these are the host methods over it.
+  these are the host methods over it. They need `SqliteStore`: on any other store they raise `NotImplementedError`.
 
 - **Fixed: maintenance can no longer raise a fact's confidence, and expiry no longer undoes a concurrent
-  `confirm()`** (specs/0048, its design accepted at external round 2). Three changes:
-  - `MemoryConfig` refuses `decay_factor` and `confidence_floor` outside [0, 1], and NaN, ±inf and booleans, with
-    `ValueError` naming the field, at construction and on assignment (a refused assignment keeps the old value);
+  `confirm()`** (specs/0048, its implementation accepted at external round 6). Three changes:
+  - `MemoryConfig` refuses `decay_factor` and `confidence_floor` outside [0, 1], and NaN, ±inf, booleans and integers
+    too large for a float, with `ValueError` naming the field, at construction and on assignment (a refused assignment
+    keeps the old value);
     `maintain()`/`expire()` validate both at entry for any config object, before any edge is read, so a bad policy
     writes nothing. Before this, factor 2.0 on a fact at confidence 0.3 stored 0.6, and at 0.9 stored 1.8, after
     which every read of that user's edges raised.
-  - The store refuses to write an edge that violates a declared bound (a confidence outside [0, 1] or NaN), before
-    any SQL runs, on every path that writes an edge.
+  - `SqliteStore` refuses to write an edge that violates a declared bound (a confidence outside [0, 1] or NaN), before
+    any SQL runs. Every write of an edge's JSON now goes through one method, which validates the serialized bytes and
+    binds those same bytes. A static check of this release's source holds its writers to that method. The check is
+    finite, covering the source it was reviewed against, and it says nothing about a host's own `Store`.
   - Expiry decides each fact from its CURRENT stored state, inside one write transaction per fact. Before this,
     `maintain()` decided from a listing taken before its writes, so a `confirm()` that landed in between was reverted
     (the fact flagged again, its confirmation date rolled back), a fact confirmed a moment earlier could lapse, and
     a DECAY run could write back a stale, higher confidence over one another run had committed (measured: 0.45
     over 0.225). Counts and stored results are
     unchanged otherwise: `decayed` still counts decay-triggered retirements only, a fact decayed below the floor is
-    retired with its confidence unchanged, and lapsed/decayed retirements keep the compiled wiki, as before.
+    retired with its confidence unchanged, and lapsed/decayed retirements keep the compiled wiki as before, except
+    where a retirement ends a refusal contention, which drops it, as `invalidate_edge` does.
   **Who should take this:** hosts that run `maintain()` alongside user operations, set either bound, or map a
   volatility class to `ExpiryBehavior.DECAY` (with the shipped expiry table the decay path is not reached).
   **Who must act:** a host with its OWN `Store` implementation must add `expiry_transition` (its contract is on
   `veracium.store.base.Store.expiry_transition`); `maintain()` on a store without it raises `NotImplementedError`
   naming the method, and runs no expiry, rather than falling back to the unsafe path. A host that stored
-  out-of-range confidences under an earlier release (only possible with DECAY mapped and a factor above 1 or NaN):
+  out-of-range confidences under an earlier release (only possible with DECAY mapped and a factor above 1, not finite, or negative with a floor at or below the product):
   see "Rows already written out of range" in `docs/api.md`; this release does not repair them.
 
 - **Changed: `veracium doctor` names what it compares between this build and the attested ones** (specs/0007
