@@ -11,12 +11,17 @@ permissions:
 
 jobs:
   test:
-    name: pytest (py${{ matrix.python-version }})
+    # Lane split (2026-11-07, measured on a branch first, on the owner's word): the suite runs as five single-process,
+    # random-order shards. Each shard collects the whole suite and runs its share of modules, assigned by
+    # .github/ci_shard.py from the capture's per-module times; shard-check below proves the shares partition the
+    # collection. Cost: modules in different shards never interleave in one process.
+    name: pytest (py${{ matrix.python-version }}, ${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.14"]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -46,7 +51,16 @@ jobs:
         # session still gets its own numbered pytest-of-<user> directory under $RUNNER_TEMP, outside the package tree.
         env:
           TMPDIR: ${{ runner.temp }}
-        run: pytest -q
+          PYTHONPATH: .github
+          VERACIUM_CI_SHARD: ${{ matrix.shard }}/5
+          VERACIUM_CI_SHARD_REPORT: ${{ runner.temp }}/shard-report.json
+        run: pytest -q -p ci_shard
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shard-report-py${{ matrix.python-version }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/shard-report.json
+          if-no-files-found: error
         # The live LLM acceptance eval is opt-in (VERACIUM_EVAL=1) and needs a
         # provider + key, so it stays skipped here; the offline suite is the gate.
 
@@ -59,8 +73,12 @@ jobs:
     # version equals the floor pyproject.toml declares, so this job cannot
     # silently "pass" on another version; the whole suite also runs here so
     # the floor is a supported configuration, not a marketing claim.
-    name: pytest (pydantic floor)
+    name: pytest (pydantic floor, ${{ matrix.shard }}/5)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -82,7 +100,58 @@ jobs:
         env:
           VERACIUM_MIN_DEP_JOB: "1"
           TMPDIR: ${{ runner.temp }}          # the same, see "Run tests" above
-        run: pytest -q
+          PYTHONPATH: .github
+          VERACIUM_CI_SHARD: ${{ matrix.shard }}/5
+          VERACIUM_CI_SHARD_REPORT: ${{ runner.temp }}/shard-report.json
+        run: pytest -q -p ci_shard
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shard-report-floor-${{ matrix.shard }}
+          path: ${{ runner.temp }}/shard-report.json
+          if-no-files-found: error
+
+  shard-check:
+    # Refuses unless, for each lane, all five shards collected the same suite and computed the same assignment, their
+    # selections are disjoint, and their union is the whole collection: a share lost to a bad assignment cannot pass.
+    name: shards cover the suite once
+    needs: [test, min-deps]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shard-report-*
+          path: reports
+      - name: Check each lane's shards partition its collection
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          lanes = {}
+          for p in sorted(pathlib.Path("reports").glob("shard-report-*/shard-report.json")):
+              lane = p.parent.name.rsplit("-", 1)[0]
+              lanes.setdefault(lane, []).append(json.loads(p.read_text()))
+          bad = []
+          if sorted(lanes) != ["shard-report-floor", "shard-report-py3.14"]:
+              bad.append(f"lanes {sorted(lanes)}")
+          for lane, rs in sorted(lanes.items()):
+              ks = sorted(r["shard"] for r in rs)
+              if ks != [1, 2, 3, 4, 5] or {r["of"] for r in rs} != {5}:
+                  bad.append(f"{lane}: shards {ks}")
+              for key in ("collected", "collected_sha256", "assignment_sha256"):
+                  if len({r[key] for r in rs}) != 1:
+                      bad.append(f"{lane}: shards disagree on {key}")
+              sel = [i for r in rs for i in r["selected"]]
+              if len(sel) != len(set(sel)):
+                  bad.append(f"{lane}: {len(sel) - len(set(sel))} node(s) selected twice")
+              if len(set(sel)) != rs[0]["collected"]:
+                  bad.append(f"{lane}: {len(set(sel))} selected of {rs[0]['collected']} collected")
+              print(f"{lane}: {len(rs)} shards, {len(set(sel))} of {rs[0]['collected']} nodes, each once; "
+                    + ", ".join(f"{r['shard']}:{len(r['selected'])}" for r in sorted(rs, key=lambda r: r["shard"])))
+          if bad:
+              print("REFUSED:", *bad, sep="\n  ")
+              sys.exit(1)
+          PY
 
   build:
     name: build & twine check
