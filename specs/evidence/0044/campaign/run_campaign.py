@@ -24,6 +24,7 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -90,6 +91,7 @@ def run(root: pathlib.Path, out: pathlib.Path, shard: tuple) -> int:
 
     rows, groups_out, bad = [], [], 0
     for label, cells, mutants in GROUPS:
+        started = time.monotonic()           # each group's wall time, for packing shards by measured cost (owner's ruling, 2026-11-07)
         before = pytest(cells)
         g = {"group": label, "cells": cells, "control_before": {"exit": before["exit"], "passed": before["passed"]}}
         if before["exit"] != 0 or before["failed"] or before["errored"]:
@@ -120,6 +122,7 @@ def run(root: pathlib.Path, out: pathlib.Path, shard: tuple) -> int:
             print(f"  {row['outcome']:12} {name[:70]:70} {row.get('kill_kind') or ''}", flush=True)   # progress
         after = pytest(cells)
         g["control_after"] = {"exit": after["exit"], "passed": after["passed"]}
+        g["seconds"] = round(time.monotonic() - started, 1)   # an observation of this run, never a verdict input
         if after["exit"] != 0 or after["failed"] or after["errored"]:
             bad += 1
         groups_out.append(g)
