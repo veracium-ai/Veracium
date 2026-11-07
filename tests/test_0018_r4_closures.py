@@ -175,13 +175,13 @@ def test_an_append_once_refusal_is_n2_never_nothing_consumed(tmp_path, monkeypat
 # ---- R4-01: the terminal sink -------------------------------------------------------------------------------------------
 _TERMINAL_CASES = {
     # case: (how the terminal write fails, the carrier's audit_committed, the sentence printed, read_terminal's kind afterwards)
-    "fsync-before-rename": (False, "the terminal record was not published", "absent"),
-    "rename-not-performed": (False, "the terminal record was not published", "absent"),
+    "fsync-before-rename": (False, "the terminal record was not published; this tool does not repair it", "absent"),
+    "rename-not-performed": (False, "the terminal record was not published; this tool does not repair it", "absent"),
     "rename-took-effect": (True, "the terminal record was published; its write reported a failure", "record"),
-    "rename-took-effect-unreadable": (None, "the terminal record may not have been published", None),
+    "rename-took-effect-unreadable": (None, "the terminal record may not have been published; this tool does not repair it", None),
     # append-once refuses because this id already holds a terminal record: never "not published"
     "terminal-present-equal": (True, "the terminal record was published; its write reported a failure", "record"),
-    "terminal-present-other": (None, "the terminal record may not have been published", "record"),
+    "terminal-present-other": (None, "the terminal record may not have been published; this tool does not repair it", "record"),
 }
 
 
@@ -221,6 +221,9 @@ def test_a_failed_terminal_write_reports_what_it_established(tmp_path, monkeypat
     assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want_committed, (case, err)
     assert code == 3 and f"(operation {ids[0]}): its {sentence[4:]}" in err and f"action: audit-record-not-published: {sentence}" in err
     assert f"audit_committed: {want_committed}" in err
+    if want_committed is False:                   # §4j.9.7c fixes E1's sentence; both clauses, in its words
+        assert f"(operation {ids[0]}): its terminal record was not published; this tool does not repair it" in err
+    assert ("this tool does not repair it" in err) is (want_committed is not True)
     assert f"rungs committed by this walk: 1 ({ids[0]})" in err and "action: rerun-resumes-store: " in err
     assert _stamp(p) == b + 1
     if readback is not None:

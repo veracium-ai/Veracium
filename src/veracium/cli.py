@@ -378,9 +378,9 @@ def _facts_of(r):
 # E1's disclosure, by what the failed terminal write established (external R4-01): `audit_committed` is tri-state and the
 # sentence is never stronger than it. The escape and its store-side actions are the same in all three cases.
 _E1_PUBLICATION = {
-    False: "the terminal record was not published",
+    False: "the terminal record was not published; this tool does not repair it",       # §4j.9.7c's sentence, both clauses
     True: "the terminal record was published; its write reported a failure",
-    None: "the terminal record may not have been published",
+    None: "the terminal record may not have been published; this tool does not repair it",
 }
 
 

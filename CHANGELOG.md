@@ -13,7 +13,7 @@
   A failed audit write now reports only what it established: when the attempted record's rename may have taken
   effect, the walk says the operation MAY be consumed and prints the operation id to query before any rerun, instead
   of offering a rerun; when the terminal record's write fails, the last lines say whether that record was published,
-  was not, or may not have been. A rung's audit record is accepted only at that rung's own versions.
+  was not, or may not have been, and, unless it was, that this tool does not repair it. A rung's audit record is accepted only at that rung's own versions.
 
 ## 0.30.0 — 2026-11-06
 
