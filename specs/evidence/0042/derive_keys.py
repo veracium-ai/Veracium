@@ -144,6 +144,15 @@ if prev_rp is not None:
             cur = nl[int(o) - 1]
         else:
             hits = [l for l in nl if stmt_at(mod, l) == r["statement"]]
+            if len(hits) > 1:
+                # 2026-11-07 (0018 round 5): the group gained a candidate, and the entry's text occurs more than once in it
+                # (two bare `raise` lines in run_release_rung). The entry is the same OCCURRENCE of that text, counted in line
+                # order, provided the number of same-text statements in the group did not change; otherwise this refuses.
+                same_prev = sorted(x["line"] for x in prev_rows if x["key"].split(":", 1)[0] == mod
+                                   and tuple(x["key"].split(":", 1)[1].rsplit(":", 2)[:2]) == (q, k)
+                                   and x["statement"] == r["statement"])
+                assert len(same_prev) == len(hits), (r["key"], r["statement"][:60], hits, same_prev)
+                hits = [hits[same_prev.index(ln)]]
             assert len(hits) == 1, (r["key"], r["statement"][:60], hits)
             cur = hits[0]
         if (mod, cur) in ov_plan:
