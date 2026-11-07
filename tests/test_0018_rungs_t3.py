@@ -446,11 +446,19 @@ def test_a_committed_marker_that_fails_still_reports_the_rung_migrated(tmp_path,
 
 @pytest.mark.parametrize("b", RUNGS)
 def test_an_attempted_record_that_cannot_be_written_aborts_the_rung(tmp_path, monkeypatch, b):
-    """R1-05's failure before commit, at each rung: the store keeps its base, and the outcome is the no-record row."""
+    """R1-05's failure before commit, at each rung: the store keeps its base, and the outcome is the no-record row: N1 where the
+    write failed in the window that proves absence (the trail read, no record, before os.replace), N2 where the writer's failure
+    establishes nothing (external round 5, R5-01)."""
     p = _store(tmp_path / "s.db", b)
-    monkeypatch.setattr(rm, "_write_attempted", lambda *x, **k: (_ for _ in ()).throw(OSError("disk")))
+    stage = rm._stage_audit
+    monkeypatch.setattr(rm, "_stage_audit", lambda apath, data: (_ for _ in ()).throw(OSError("disk"))
+                        if any("attempted" in e for e in data.values()) else stage(apath, data))
     r = rm.run_release_rung(p, host_attestation=ATT)
     assert r.result.outcome == "migration-audit-unavailable" and _facts(r.result)[:2] == (False, False) and _stamp(p) == b
+    p = _store(tmp_path / "t.db", b)
+    monkeypatch.setattr(rm, "_write_attempted", lambda *x, **k: (_ for _ in ()).throw(OSError("disk")))
+    r = rm.run_release_rung(p, host_attestation=ATT)
+    assert r.result.outcome == "migration-audit-state-unknown" and _facts(r.result)[:2] == (False, False) and _stamp(p) == b
 
 
 def test_row_8b_is_unreachable_at_this_head():

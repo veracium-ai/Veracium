@@ -14,6 +14,9 @@
   effect, the walk says the operation MAY be consumed and prints the operation id to query before any rerun, instead
   of offering a rerun; when the terminal record's write fails, the last lines say whether that record was published,
   was not, or may not have been, and, unless it was, that this tool does not repair it. A rung's audit record is accepted only at that rung's own versions.
+  A failure to read the audit trail is never taken as proof that nothing was recorded: the walk says the operation
+  MAY be consumed (or that the trail must be inspected) instead of offering a rerun, and a store or trail in a
+  directory the process cannot search is reported as unopenable, never as missing.
 
 ## 0.30.0 — 2026-11-06
 

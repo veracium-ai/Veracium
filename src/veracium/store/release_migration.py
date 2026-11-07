@@ -465,14 +465,32 @@ def audit_trail_path(canonical_store_path: str) -> str:
     return canonical_store_path + _AUDIT_SUFFIX
 
 
+def _absent(path: str) -> bool:
+    """Absence is an `lstat` ENOENT (0013 §4f), never `os.path.exists`'s False, which any stat error also returns: inside an
+    unsearchable directory a file that exists reads as nothing there (round 5, research's S2, measured: exists False, stat
+    PermissionError). Any other OSError leaves the path PRESENT, for its reader to fail on as unresolved."""
+    try:
+        os.lstat(path)
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return False
+    return False
+
+
 def _load_audit(apath: str) -> dict:
-    if not os.path.exists(apath):
+    if _absent(apath):
         return {}
     with open(apath, encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError("audit trail is not a JSON object")
     return data
+
+
+class _NotPublished(Exception):
+    """The ONE proof that a writer published nothing (round 5, R5-01): the sidecar was READ, append-once found no record of this
+    kind for this id, and the failure came before `os.replace` was called. Every other failure of a writer is unresolved."""
 
 
 class _PublicationUnresolved(Exception):
@@ -485,32 +503,45 @@ class _AppendOnceRefused(RuntimeError):
     it IS a durable record for the id, so it never proves "nothing was consumed" (research's stage-1 read, round 5)."""
 
 
-def _store_audit(apath: str, data: dict) -> None:
+def _stage_audit(apath: str, data: dict) -> str:
+    """Write the whole new trail to the `.tmp` file beside it; the sidecar itself is untouched until `_publish_audit`."""
     tmp = apath + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, sort_keys=True, indent=1)
         f.flush()
         os.fsync(f.fileno())
+    return tmp
+
+
+def _publish_audit(tmp: str, apath: str) -> None:
     try:
         os.replace(tmp, apath)
     except Exception as exc:
         raise _PublicationUnresolved(_safe_repr(exc)) from exc
 
 
+def _store_audit(apath: str, data: dict) -> None:
+    _publish_audit(_stage_audit(apath, data), apath)
+
+
 def _write_attempted(apath: str, operation_id: str, event) -> None:
     """Record the kernel's `migration_attempted` event under this operation id
     (called INSIDE the kernel write transaction — a failure here aborts it)."""
-    data = _load_audit(apath)
+    data = _load_audit(apath)                   # a failure here establishes nothing about this id's record: unresolved
     entry = data.setdefault(operation_id, {})
     if "attempted" in entry:
         raise _AppendOnceRefused(f"append-once: operation {operation_id!r} already "
                                  f"has an attempted event")
-    entry["attempted"] = {
-        "event": event.event, "migration_id": event.migration_id,
-        "path": event.path, "from_version": event.from_version,
-        "to_version": event.to_version, "occurred_at": event.occurred_at,
-        "runtime": event.runtime._asdict()}            # 0013 INV-SA11: the sidecar copies the key
-    _store_audit(apath, data)
+    try:                                        # absence is now PROVEN, until os.replace is called
+        entry["attempted"] = {
+            "event": event.event, "migration_id": event.migration_id,
+            "path": event.path, "from_version": event.from_version,
+            "to_version": event.to_version, "occurred_at": event.occurred_at,
+            "runtime": event.runtime._asdict()}            # 0013 INV-SA11: the sidecar copies the key
+        tmp = _stage_audit(apath, data)
+    except Exception as exc:
+        raise _NotPublished(_safe_repr(exc)) from exc
+    _publish_audit(tmp, apath)
 
 
 def _write_committed_marker(apath: str, operation_id: str, event) -> None:
@@ -534,15 +565,19 @@ def _write_terminal(apath: str, operation_id: str, facts: TerminalFacts) -> None
                          + "; ".join(problems))
     if not (type(operation_id) is str and _OPERATION_RE.fullmatch(operation_id)):
         raise ValueError(f"operation_id {operation_id!r} is not op-<uuid4>")
-    data = _load_audit(apath)
+    data = _load_audit(apath)                   # a failure here establishes nothing about this id's record: unresolved
     entry = data.setdefault(operation_id, {})
     if "terminal" in entry:
         raise _AppendOnceRefused(f"append-once: operation {operation_id!r} already "
                                  f"has a terminal record")
-    entry["terminal"] = dict(zip(_TERMINAL_FIELDS, facts))
-    entry["terminal"]["occurred_at"] = canonical_timestamp(
-        datetime.now(timezone.utc))
-    _store_audit(apath, data)
+    try:                                        # absence is now PROVEN, until os.replace is called
+        entry["terminal"] = dict(zip(_TERMINAL_FIELDS, facts))
+        entry["terminal"]["occurred_at"] = canonical_timestamp(
+            datetime.now(timezone.utc))
+        tmp = _stage_audit(apath, data)
+    except Exception as exc:
+        raise _NotPublished(_safe_repr(exc)) from exc
+    _publish_audit(tmp, apath)
 
 
 def read_terminal(operation_id, *, audit_path) -> ReadbackResult:
@@ -561,7 +596,7 @@ def read_terminal(operation_id, *, audit_path) -> ReadbackResult:
             return ReadbackResult("malformed", None, _cap_problems(
                 [f"read-failed: audit_path must be a str, is "
                  f"{type(audit_path).__name__}"]))
-        if not os.path.exists(audit_path):
+        if _absent(audit_path):
             return ReadbackResult("absent", None, ())
         try:
             data = _load_audit(audit_path)
@@ -922,7 +957,7 @@ def mint_release_authority(path, attestation, *,
     if type(path) is not str or _store_path_problems(os.path.realpath(path)):
         raise TypeError(f"path {_safe_repr(path)} is not a usable store path")
     canonical = os.path.realpath(path)
-    if not os.path.exists(canonical):
+    if _absent(canonical):
         raise MintError("source-missing", f"nothing at {canonical!r}")
     try:
         found, objs = _observe(canonical)
@@ -980,7 +1015,7 @@ def _preflight_classify(path: str, seen: Optional[dict] = None):
     the base resolved, for `RungReport`: what a refusal leaves unresolved stays absent."""
     seen = {} if seen is None else seen
     canonical = os.path.realpath(path)
-    if not os.path.exists(canonical):
+    if _absent(canonical):
         return _intercept("migration-source-missing", False, False, "missing",
                           None, f"nothing at {canonical!r}")
     status = sv.runtime_status()                 # measured once, here (0007 §4g.6 4a; 0013 §5f.3)
@@ -1073,8 +1108,9 @@ def _reason_intercept(exc: "sv.StoreVersionError") -> MigrationResult:
 # the delegated path (0018 §4e/§4f)
 
 class _AuditSinkWriteFailed(Exception):
-    """The attempted-record write failed INSIDE the kernel transaction BEFORE `os.replace` was called — the sidecar is as it
-    was, proven by control flow, and the kernel rolls back; nothing is consumed (→ `migration-audit-unavailable`, N1)."""
+    """The attempted-record write published nothing, PROVEN: the trail was read with no attempted record for this id and the
+    write failed before `os.replace` (`_NotPublished`), or `os.replace` raised and a successful read-back shows none. The kernel
+    rolls back; nothing is consumed (→ `migration-audit-unavailable`, N1)."""
 
 
 class _AuditSinkStateUnknown(Exception):
@@ -1100,15 +1136,15 @@ def _make_sink(apath: str, operation_id: str):
         if getattr(event, "event", None) == "migration_attempted":
             try:
                 _write_attempted(apath, operation_id, event)
-            except _AppendOnceRefused as exc:
-                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc
-            except _PublicationUnresolved as exc:
+            except _NotPublished as exc:            # the one proof: read, no record, failed before os.replace
+                raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc
+            except _PublicationUnresolved as exc:   # os.replace raised: narrowed only by a successful read-back
                 if _attempted_proven_absent(apath, operation_id):
                     raise _AuditSinkWriteFailed(f"{_safe_repr(exc)}; read back: no attempted record for "
                                                 f"{operation_id}") from exc
                 raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc
-            except Exception as exc:
-                raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc
+            except Exception as exc:                # append-once, a failed load, anything else: nothing is proven
+                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc
         else:
             # best-effort committed marker; the TERMINAL record (written by
             # the orchestrator from the kernel's actual outcome) is the
@@ -1372,7 +1408,7 @@ def _terminal_published(exc, operation_id: str, apath: str, facts: "TerminalFact
     Append-once refuses BECAUSE this id already holds a terminal record (research's read of 9a502e59), so it is never `False`:
     the same read gives `True` for a record equal to the facts, and `None` otherwise. The escape is E1 in every case; only
     its disclosure differs."""
-    if not isinstance(exc, (_PublicationUnresolved, _AppendOnceRefused)):
+    if isinstance(exc, _NotPublished):           # the one proof (round 5, R5-01); every other failure takes the recovery read
         return False
     try:
         rb = read_terminal(operation_id, audit_path=apath)

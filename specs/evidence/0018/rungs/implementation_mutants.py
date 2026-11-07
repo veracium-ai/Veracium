@@ -37,7 +37,8 @@ TC = "tests/test_migrate_cli.py"
 T2 = "tests/test_0018_rungs_t2.py"
 PA1 = "tests/test_0013_pa1_campaign_cells.py"
 R4 = "tests/test_0018_r4_closures.py"
-DIGESTED = (MIG, RM, SV, CLI, GATE, T2, T3, T4, T5, TC, PA1, R4, "specs/evidence/0018/rungs/digest_vectors.json",
+R5 = "tests/test_0018_r5_closures.py"
+DIGESTED = (MIG, RM, SV, CLI, GATE, T2, T3, T4, T5, TC, PA1, R4, R5, "specs/evidence/0018/rungs/digest_vectors.json",
             "specs/evidence/0018/rungs/manifest.json", "specs/evidence/0018/rungs/fixtures.tar.xz",
             "specs/evidence/0018-adjacent-rungs/closure/recovery_v05.py",
             "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json",
@@ -56,6 +57,8 @@ EQUAL = lambda r: f"{T4}::test_the_classifier_equals_the_extracted_table_input_b
 HONEST = [CELL("test_a_store_at_head_makes_no_rung")]
 HONEST_T4 = [f"{T4}::test_the_classifier_takes_no_diagnostic"]
 CLOSE = lambda n: f"{R4}::{n}"                                                                       # noqa: E731
+CLOSE5 = lambda n: f"{R5}::{n}"                                                                      # noqa: E731
+_OFF_PLAN = "            for entry in plan(base, target):\n"
 _DISPATCH = '                elif entry.kind in ("read", "data", "check"):\n                    entry.step(conn, run)\n'
 _CLOCK_READ = "                    run.now = _clock()\n"
 
@@ -80,6 +83,41 @@ _CLOCK_FIRST = ('    return ([ForwardEntry(0, target, "clock", None)]\n         
 _CLOCK_AFTER = ('    return ([ForwardEntry(0, target, "add", o) for o in SCHEMAS[target] if o.key not in have]\n            + [ForwardEntry(0, target, "clock", None)]\n')
 
 MUTANTS = [
+    # ---- external round 5's closures (R5-01 with research's S1 and S2; R5-02): each row undoes one part of the fix -------------------
+    ("I35-an-unresolved-attempted-write-read-as-absence", "product", RM,
+     [("            except Exception as exc:                # append-once, a failed load, anything else: nothing is proven\n"
+       "                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc",
+       "            except Exception as exc:                # append-once, a failed load, anything else: nothing is proven\n"
+       "                raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc")],
+     [CLOSE5("test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-existing-transient]")], HONEST, None,
+     "R5-01: every failure of the attempted writer is N1 unless it is a recognized type, as round 5 shipped"),
+    ("I35-the-load-inside-the-proving-window", "product", RM,
+     [("    data = _load_audit(apath)                   # a failure here establishes nothing about this id's record: unresolved\n"
+       "    entry = data.setdefault(operation_id, {})\n    if \"attempted\" in entry:",
+       "    try:\n        data = _load_audit(apath)\n    except Exception as exc:\n        raise _NotPublished(_safe_repr(exc)) from exc\n"
+       "    entry = data.setdefault(operation_id, {})\n    if \"attempted\" in entry:")],
+     [CLOSE5("test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-existing-transient]")], HONEST, None,
+     "R5-01: the writer's initial load counts as proof of absence when it fails"),
+    ("I35-an-unresolved-terminal-write-reported-unpublished", "product", RM,
+     [("    if isinstance(exc, _NotPublished):           # the one proof (round 5, R5-01); every other failure takes the recovery read\n",
+       "    if not isinstance(exc, (_PublicationUnresolved, _AppendOnceRefused)):\n")],
+     [CLOSE5("test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-matching-transient]")], HONEST, None,
+     "R5-01: a terminal write that fails outside the proving window is False without a recovery read, as round 5 shipped"),
+    ("I35-absence-by-os-path-exists", "product", RM,
+     [("    try:\n        os.lstat(path)\n    except FileNotFoundError:\n        return True\n    except OSError:\n        return False\n    return False\n",
+       "    return not os.path.exists(path)\n")],
+     [CLOSE5("test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[1-attempted]"),
+      CLOSE5("test_preflight_never_reads_a_store_it_cannot_stat_as_missing[1]")], HONEST, None,
+     "S2 (research): absence is os.path.exists's False, which a stat error also returns, as every release did"),
+    ("I36-an-off-plan-entry-called", "product", MIG,
+     [(_OFF_PLAN, "            if base == 13 and target == 14:\n                _read_wiki_left(conn, run)\n" + _OFF_PLAN)],
+     [PLANNED], HONEST, None, "R5-02, the reviewer's mutant: a declared read entry this rung's plan does not hold is called at dispatch"),
+    ("I36-an-off-plan-entry-nested", "product", MIG,
+     [("def _check_stamp(conn, run):\n", "def _check_stamp(conn, run):\n    if run.base == 13 and run.target == 14:\n        _read_wiki_left(conn, run)\n")],
+     [PLANNED], HONEST, None, "R5-02 (research): the same off-plan entry, called from inside a planned check"),
+    ("I36-a-dispatcher-read-helper", "product", MIG,
+     [(_OFF_PLAN, '            _rows(conn, "SELECT count(*) FROM sqlite_master")\n' + _OFF_PLAN)],
+     [PLANNED, DIRECT], HONEST, None, "R5-02 (research): a migration.py helper that is not a step reads at dispatch level, and writes nothing"),
     # ---- external round 4's closures: each row reverts one fix, killed by the cell that names its case ------------------------
     ("I35-a-landed-attempted-rename-read-as-unwritten", "product", RM,
      [("                if _attempted_proven_absent(apath, operation_id):\n", "                if True:\n")],
@@ -87,8 +125,9 @@ MUTANTS = [
       CLOSE("test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]")], HONEST, None,
      "R4-01: a failed rename is N1 whether or not it published, as round 4 shipped"),
     ("I35-append-once-read-as-unwritten", "product", RM,
-     [("            except _AppendOnceRefused as exc:\n                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc\n",
-       "            except _AppendOnceRefused as exc:\n                raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc\n")],
+     [("            except Exception as exc:                # append-once, a failed load, anything else: nothing is proven\n",
+       "            except _AppendOnceRefused as exc:\n                raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc\n"
+       "            except Exception as exc:                # append-once, a failed load, anything else: nothing is proven\n")],
      [CLOSE("test_an_append_once_refusal_is_n2_never_nothing_consumed[1]")], HONEST, None,
      "R4-01: the record that refuses append-once is read as nothing consumed"),
     ("I35-a-published-terminal-record-reported-unpublished", "product", RM,
@@ -100,7 +139,8 @@ MUTANTS = [
      [CLOSE("test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]")], HONEST, None,
      "R4-01: a publication that cannot be read back is reported unpublished"),
     ("I35-a-present-terminal-record-reported-unpublished", "product", RM,
-     [("    if not isinstance(exc, (_PublicationUnresolved, _AppendOnceRefused)):\n", "    if not isinstance(exc, _PublicationUnresolved):\n")],
+     [("    if isinstance(exc, _NotPublished):           # the one proof (round 5, R5-01); every other failure takes the recovery read\n",
+       "    if isinstance(exc, (_NotPublished, _AppendOnceRefused)):\n")],
      [CLOSE("test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]")], HONEST, None,
      "R4-01 (research's read of 9a502e59): append-once on a terminal record that exists is reported unpublished"),
     ("I35-the-n2-id-not-printed", "product", CLI,
@@ -288,7 +328,7 @@ CONTROLS.append(("CTRL-unrelated-TypeError", CLI, [("def _facts_of(r):\n", 'def 
 SUBJECT_P = _protocol.Subject(
     spec="0018", finding="adjacent-rungs-implementation", table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium.store.migration", "veracium.store.release_migration", "veracium.store.schema_version", "veracium.cli"),
-    import_specs=(), cells_files=(T2, T3, T4, T5, TC, PA1, R4), kinds=("product", "gate"))
+    import_specs=(), cells_files=(T2, T3, T4, T5, TC, PA1, R4, R5), kinds=("product", "gate"))
 
 definition_sha = _protocol.definition_sha
 canonical = _protocol.canonical

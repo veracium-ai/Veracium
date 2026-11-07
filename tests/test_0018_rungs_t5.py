@@ -13,6 +13,7 @@ import shutil
 import sqlite3
 import sys
 import tarfile
+import threading
 
 import pytest
 
@@ -165,13 +166,19 @@ class _Trace:
 
     `acts` is observed apart from the plan, each kind by its own act, in time order: a read, data or check entry by a Python call
     event on its step's code object; a clock entry by a call of `_clock`; an add, alter or stamp entry by SQLite's trace of the
-    statement executed. `_same_acts` compares that with the plan, so a pure check dispatched twice or not at all, or a second clock
-    read, fails here even though it yields the same entries and writes nothing."""
+    statement executed. `_same_plan` compares that with the plan, so a pure check dispatched twice or not at all, or a second clock
+    read, fails here even though it yields the same entries and writes nothing.
+
+    The universe is NOT this operation's plan (external round 5, R5-02): every step any plan can name is observed, at any depth, so a
+    declared entry called where this rung's plan does not hold it is an act the comparison sees. Every other migration.py function the
+    dispatcher calls itself is recorded as a `dispatch` act, except `_DISPATCHER_OWN`'s, and every statement outside an entry's extent is
+    recorded as `sql`; statements inside an entry stay that entry's (unit 2 attributes their writes). No thread may start during a rung."""
 
     def __init__(self, monkeypatch):
         self.entries, self.writes, self.executed, self.active, self.inside = [], [], [], None, False
-        self.acts, self.codes = [], frozenset()
+        self.acts, self.codes, self.within, self.threads = [], _STEP_CODES, [], []
         real_plan, real_apply, real_clock = mig.plan, mig._apply_forward, mig._clock
+        dispatcher = real_apply.__code__
 
         def dispatched(b, t):
             for e in real_plan(b, t):
@@ -185,11 +192,20 @@ class _Trace:
 
         def ran(sql):                                # once per RUN, so it counts one
             self.executed.append((self.active, sql))
-            self.acts.append(("sql", sql))
+            if not self.within:                      # outside every entry's extent: the dispatcher's own statement
+                self.acts.append(("sql", sql))
 
-        def called(frame, event, arg):               # a step's own call event, whoever dispatches it
-            if event == "call" and frame.f_code in self.codes:
-                self.acts.append(("call", frame.f_code))
+        def called(frame, event, arg):               # a step's own call event, whoever dispatches it, at any depth
+            code = frame.f_code
+            if event == "call":
+                if code in self.codes:
+                    self.acts.append(("call", code))
+                    self.within.append(frame)
+                elif (not self.within and code.co_filename == _MIGRATION_FILE and frame.f_back is not None
+                      and frame.f_back.f_code is dispatcher and code not in _DISPATCHER_OWN):
+                    self.acts.append(("dispatch", code))
+            elif event == "return" and self.within and self.within[-1] is frame:
+                self.within.pop()
 
         def clock():
             if self.inside:
@@ -199,8 +215,10 @@ class _Trace:
         def apply_forward(conn, base, target=HEAD):
             conn.set_authorizer(self._authorize)     # once per PREPARE, so it classifies a statement
             conn.set_trace_callback(ran)
-            self.codes = frozenset(e.step.__code__ for e in real_plan(base, target) if e.kind in _CALLED)
+            # the universe, plus this plan's own steps as they stand (a cell may have replaced one, as the refusal cell does)
+            self.codes = _STEP_CODES | frozenset(e.step.__code__ for e in real_plan(base, target) if e.kind in _CALLED)
             self.inside = True
+            before = set(threading.enumerate())
             previous = sys.getprofile()
             sys.setprofile(called)
             try:
@@ -208,6 +226,7 @@ class _Trace:
             finally:
                 sys.setprofile(previous)
                 self.inside = False
+                self.threads.append(sorted(t.name for t in set(threading.enumerate()) - before))
                 conn.set_authorizer(None)
                 conn.set_trace_callback(None)
         monkeypatch.setattr(mig, "plan", plan)
@@ -220,6 +239,8 @@ class _Trace:
         self.writes.clear()
         self.executed.clear()
         self.acts.clear()
+        self.within.clear()
+        self.threads.clear()
 
     def _authorize(self, code, a, b, db, trigger):
         if self.inside:
@@ -277,6 +298,15 @@ def _store_at(path, version):
 
 
 _CALLED = ("read", "data", "check")
+_MIGRATION_FILE = mig.__file__
+# Every step any plan can name, across every pair a rung or the direct route can run: the universe the observer watches, not this
+# rung's plan (R5-02). Built from the real plan before any test patches it.
+_STEP_CODES = frozenset(e.step.__code__ for b in range(1, HEAD) for t in sorted({b + 1, HEAD}) for e in mig.plan(b, t)
+                        if e.kind in _CALLED) | frozenset(e.step.__code__ for e in mig.FORWARD_ENTRIES if e.kind in _CALLED)
+# The migration.py functions the dispatcher itself calls on every clean route, keyed by CODE OBJECT (measured over every rung and
+# direct route, bases 1 to 15: each once per route): the run's state object, the plan, the clock (whose read is its own act).
+_DISPATCHER_OWN = frozenset({mig._Forward.__init__.__code__, mig.plan.__code__, mig._clock.__code__})
+assert not (_DISPATCHER_OWN & _STEP_CODES), "a step on the dispatcher's own list would hide its own invocations"
 
 
 def _act_of(e):
@@ -299,18 +329,17 @@ def _acts_wanted(trace, b, t):
 
 
 def _acts_seen(trace, wanted):
-    """The observed acts, projected onto the plan's: every step call (`codes` holds only the plan's), every clock read, and every
-    statement whose text is one of the plan's add, alter or stamp statements. A check's or a data step's own SELECTs and UPDATEs are
-    not entry acts and are attributed by unit 2."""
-    statements = {a[1] for a in wanted if a[0] == "sql"}
-    return [a for a in trace.acts if a[0] != "sql" or a[1] in statements]
+    """The observed acts, unprojected (R5-02): every step call at any depth from the whole universe, every clock read, every call the
+    dispatcher makes to a migration.py function off its own list, and every statement outside an entry's extent. A step's own SELECTs
+    and UPDATEs are inside its extent, and unit 2 attributes their writes. `wanted` is unused: the comparison is the whole stream."""
+    return list(trace.acts)
 
 
 def _same_plan(trace, b, t):
     """Unit 1: the plan was enumerated in full and in order, AND each entry's act happened exactly once, in that order."""
     wanted = _acts_wanted(trace, b, t)
     return ([(e.kind, e.step) for e in trace.entries] == [(e.kind, e.step) for e in trace.real_plan(b, t)]
-            and _acts_seen(trace, wanted) == wanted)
+            and _acts_seen(trace, wanted) == wanted and all(not started for started in trace.threads))
 
 
 @pytest.mark.parametrize("name", FIXTURES[::7])

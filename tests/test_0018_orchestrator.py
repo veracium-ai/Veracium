@@ -1000,13 +1000,25 @@ def test_audit_write_error_is_loud(monkeypatch):
 
 def test_attempted_write_failure_is_the_no_record_row(monkeypatch):
     """The attempted-record write failing INSIDE the kernel transaction aborts
-    it: `migration-audit-unavailable` (False, False, unknown, None), the store
-    NOT migrated, no terminal error."""
+    it, the store NOT migrated, no terminal error. Where the write failed after
+    reading the trail and before `os.replace` (staging the tmp file), absence is
+    proven: `migration-audit-unavailable` (N1). A failure of the writer that
+    establishes nothing about the record is `migration-audit-state-unknown` (N2:
+    external round 5, R5-01)."""
+    p = _store_at(MINT_BASE)
+    stage = rm._stage_audit
+    monkeypatch.setattr(rm, "_stage_audit", lambda apath, data: (_ for _ in ()).throw(OSError("disk"))
+                        if any("attempted" in e for e in data.values()) else stage(apath, data))
+    r = rm.run_release_migration(p, host_attestation=ATT)
+    assert tuple(r)[:5] == ("migration-audit-unavailable", False, False,
+                            "unknown", None)
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == MINT_BASE
     p = _store_at(MINT_BASE)
     monkeypatch.setattr(rm, "_write_attempted",
                         lambda *a, **k: (_ for _ in ()).throw(OSError("disk")))
     r = rm.run_release_migration(p, host_attestation=ATT)
-    assert tuple(r)[:5] == ("migration-audit-unavailable", False, False,
+    assert tuple(r)[:5] == ("migration-audit-state-unknown", False, False,
                             "unknown", None)
     assert sqlite3.connect(p).execute(
         "PRAGMA user_version").fetchone()[0] == MINT_BASE
