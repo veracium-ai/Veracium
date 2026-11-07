@@ -475,13 +475,26 @@ def _load_audit(apath: str) -> dict:
     return data
 
 
+class _PublicationUnresolved(Exception):
+    """`os.replace` was CALLED and raised (external R4-01): the rename may have taken effect, so the record may be durable.
+    Everything before the call writes only the `.tmp` file; a failure there leaves the sidecar as it was."""
+
+
+class _AppendOnceRefused(RuntimeError):
+    """The sidecar already holds this operation's record of that kind. Raised before any write, but the record that refuses
+    it IS a durable record for the id, so it never proves "nothing was consumed" (research's stage-1 read, round 5)."""
+
+
 def _store_audit(apath: str, data: dict) -> None:
     tmp = apath + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, sort_keys=True, indent=1)
         f.flush()
         os.fsync(f.fileno())
-    os.replace(tmp, apath)
+    try:
+        os.replace(tmp, apath)
+    except Exception as exc:
+        raise _PublicationUnresolved(_safe_repr(exc)) from exc
 
 
 def _write_attempted(apath: str, operation_id: str, event) -> None:
@@ -490,8 +503,8 @@ def _write_attempted(apath: str, operation_id: str, event) -> None:
     data = _load_audit(apath)
     entry = data.setdefault(operation_id, {})
     if "attempted" in entry:
-        raise RuntimeError(f"append-once: operation {operation_id!r} already "
-                           f"has an attempted event")
+        raise _AppendOnceRefused(f"append-once: operation {operation_id!r} already "
+                                 f"has an attempted event")
     entry["attempted"] = {
         "event": event.event, "migration_id": event.migration_id,
         "path": event.path, "from_version": event.from_version,
@@ -524,8 +537,8 @@ def _write_terminal(apath: str, operation_id: str, facts: TerminalFacts) -> None
     data = _load_audit(apath)
     entry = data.setdefault(operation_id, {})
     if "terminal" in entry:
-        raise RuntimeError(f"append-once: operation {operation_id!r} already "
-                           f"has a terminal record")
+        raise _AppendOnceRefused(f"append-once: operation {operation_id!r} already "
+                                 f"has a terminal record")
     entry["terminal"] = dict(zip(_TERMINAL_FIELDS, facts))
     entry["terminal"]["occurred_at"] = canonical_timestamp(
         datetime.now(timezone.utc))
@@ -1060,8 +1073,26 @@ def _reason_intercept(exc: "sv.StoreVersionError") -> MigrationResult:
 # the delegated path (0018 §4e/§4f)
 
 class _AuditSinkWriteFailed(Exception):
-    """The attempted-record write failed INSIDE the kernel transaction — the
-    kernel rolls back; nothing is consumed (→ `migration-audit-unavailable`)."""
+    """The attempted-record write failed INSIDE the kernel transaction BEFORE `os.replace` was called — the sidecar is as it
+    was, proven by control flow, and the kernel rolls back; nothing is consumed (→ `migration-audit-unavailable`, N1)."""
+
+
+class _AuditSinkStateUnknown(Exception):
+    """The attempted-record write failed where its publication is not disproved (external R4-01): `os.replace` was called
+    and raised, or append-once found a record already under this id. The kernel still rolls back, but the authority MAY be
+    consumed (→ `migration-audit-state-unknown`, N2: query the operation id first)."""
+
+
+def _attempted_proven_absent(apath: str, operation_id: str) -> bool:
+    """After `os.replace` raised: True only when the sidecar READS successfully and holds no attempted record for THIS operation
+    id, so the rename did not publish one (research's narrowing of N2 to N1). An unreadable sidecar, or any attempted entry for
+    the id, proves nothing: False, and the outcome stays N2."""
+    try:
+        data = _load_audit(apath)
+    except BaseException:  # noqa: BLE001 — an unreadable trail establishes nothing
+        return False
+    entry = data.get(operation_id)
+    return entry is None or (isinstance(entry, dict) and "attempted" not in entry)
 
 
 def _make_sink(apath: str, operation_id: str):
@@ -1069,6 +1100,13 @@ def _make_sink(apath: str, operation_id: str):
         if getattr(event, "event", None) == "migration_attempted":
             try:
                 _write_attempted(apath, operation_id, event)
+            except _AppendOnceRefused as exc:
+                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc
+            except _PublicationUnresolved as exc:
+                if _attempted_proven_absent(apath, operation_id):
+                    raise _AuditSinkWriteFailed(f"{_safe_repr(exc)}; read back: no attempted record for "
+                                                f"{operation_id}") from exc
+                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc
             except Exception as exc:
                 raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc
         else:
@@ -1182,7 +1220,10 @@ def _kernel_call(canonical: str, apath: str, operation_id: str, b: int, t: int):
                 str(exc))
     except _AuditSinkWriteFailed as exc:
         return ("migration-audit-unavailable", None,
-                f"attempted-record write failed: {exc}")
+                f"attempted-record write failed before its publication: {exc}")
+    except _AuditSinkStateUnknown as exc:
+        return ("migration-audit-state-unknown", None,
+                f"attempted-record write failed where its publication is not disproved: {exc}")
     except sv.StoreVersionError as exc:
         state = ("unaccepted" if exc.reason in ("foreign-shape", "newer",
                                                 "invalid-version",
@@ -1264,9 +1305,12 @@ def _kernel_call(canonical: str, apath: str, operation_id: str, b: int, t: int):
 
 
 def _route_delegated(operation_id: str, kernel_outcome: str, apath: str,
-                     diagnostic: str) -> MigrationResult:
+                     diagnostic: str, minted) -> MigrationResult:
     """§4f's routing, total over every delegated return. Facts come from the
-    RECORD verbatim (the deference law) — never from the kernel label."""
+    RECORD verbatim (the deference law) — never from the kernel label. A record
+    binds only when its outcome AND both endpoints are the minted rung's
+    (external R4-02): checked before any field is projected away, by the one
+    predicate the package-escape route uses."""
     try:
         rb = read_terminal(operation_id, audit_path=apath)
     except BaseException as exc:  # noqa: BLE001 — read_terminal promises not to
@@ -1277,7 +1321,7 @@ def _route_delegated(operation_id: str, kernel_outcome: str, apath: str,
                                       kernel_outcome)
     if rb.kind == "record":
         facts = rb.facts
-        if facts.outcome == kernel_outcome:
+        if _readback_is_bound(facts, minted, kernel_outcome):
             return MigrationResult(
                 kernel_outcome, facts.store_changed,
                 facts.transaction_committed, facts.resulting_state,
@@ -1310,14 +1354,36 @@ def _delegate(canonical: str, authority: MigrationAuthority) -> MigrationResult:
         try:
             _write_terminal(apath, operation_id, facts)
         except Exception as exc:
-            err = MigrationAuditWriteError(operation_id, canonical, facts, audit_committed=False, cause=exc)
+            err = MigrationAuditWriteError(operation_id, canonical, facts,
+                                           audit_committed=_terminal_published(exc, operation_id, apath, facts), cause=exc)
             err.rung_context = context
             raise err from exc
     try:
-        return _route_delegated(operation_id, kernel_outcome, apath, diagnostic)
+        return _route_delegated(operation_id, kernel_outcome, apath, diagnostic, (b, t))
     except MigrationAuditReadError as exc:
         exc.rung_context = context
         raise
+
+
+def _terminal_published(exc, operation_id: str, apath: str, facts: "TerminalFacts"):
+    """Whether a FAILED terminal write published its record (external R4-01), never assumed: `False` when `os.replace` was
+    never called (the sidecar is as it was); at or after the call, one `read_terminal` decides — `True` for a valid record
+    equal to the facts written, `False` for a successful read with no terminal record for this id, `None` for anything else.
+    The escape is E1 in all three cases; only its disclosure differs."""
+    if not isinstance(exc, _PublicationUnresolved):
+        return False
+    try:
+        rb = read_terminal(operation_id, audit_path=apath)
+    except BaseException:  # noqa: BLE001 — read_terminal promises not to raise; if it does, nothing is established
+        return None
+    if type(rb) is not ReadbackResult:
+        return None
+    if rb.kind == "record" and type(rb.facts) is TerminalFacts and tuple(rb.facts) == tuple(facts) \
+            and all(type(x) is type(y) for x, y in zip(rb.facts, facts)):
+        return True
+    if rb.kind == "absent":
+        return False
+    return None
 
 
 def _package_escape_post_mint(exc, operation_id: str, apath: str, b: int, t: int) -> None:
@@ -1342,7 +1408,7 @@ def _package_escape_post_mint(exc, operation_id: str, apath: str, b: int, t: int
         exc.readback_route = "malformed"
     elif rb.kind == "absent":
         exc.readback_route = "missing"
-    elif rb.facts.outcome == "package-inconsistent":
+    elif _readback_is_bound(rb.facts, (b, t)):
         exc.readback_route = "recorded"
         exc.recorded_facts = rb.facts
     else:
@@ -1467,9 +1533,11 @@ def _record_row(outcome, facts, t):
     raise ValueError(f"facts of no class: {changed!r}, {committed!r}")
 
 
-def _readback_is_bound(readback_facts, minted) -> bool:
-    """0018 §4f(7) at a rung: a record of `package-inconsistent` at the minted endpoints, checked before any counting."""
-    return (readback_facts is not None and readback_facts.outcome == "package-inconsistent"
+def _readback_is_bound(readback_facts, minted, outcome="package-inconsistent") -> bool:
+    """0018 §4f(7) at a rung: a record of `outcome` at the minted endpoints, checked before any counting or projection. ONE
+    predicate for the package-escape route (R3-03, `package-inconsistent`) and the ordinary route (R4-02, the kernel's outcome),
+    so the two cannot drift."""
+    return (readback_facts is not None and readback_facts.outcome == outcome
             and (readback_facts.from_version, readback_facts.to_version) == tuple(minted))
 
 
@@ -1592,6 +1660,9 @@ def run_release_rung(path, *, host_attestation, expect_base=None) -> RungReport:
                     f"concurrent operation is racing this one and contention "
                     f"persisted three rounds — nothing was minted, nothing "
                     f"written; retry after the race settles"), seen)
+        except sv.PackageConsistencyError as exc:
+            exc.rung_context = None               # external R4-03: raised inside the mint, no authority returned: pre-mint,
+            raise                                 # no readback, and never an earlier rung's context
         except Exception as exc:                  # noqa: BLE001
             return preflight(MigrationResult("internal-error", None, None, "unknown", None,
                                              f"mint defect: {type(exc).__name__}: {_safe_repr(exc)}"), seen)

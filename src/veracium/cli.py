@@ -375,7 +375,16 @@ def _facts_of(r):
     return (r.store_changed, r.transaction_committed, r.resulting_state, r.resulting_version)
 
 
-def _migrate_last_lines(committed, decision, version, *, err=False) -> None:
+# E1's disclosure, by what the failed terminal write established (external R4-01): `audit_committed` is tri-state and the
+# sentence is never stronger than it. The escape and its store-side actions are the same in all three cases.
+_E1_PUBLICATION = {
+    False: "the terminal record was not published",
+    True: "the terminal record was published; its write reported a failure",
+    None: "the terminal record may not have been published",
+}
+
+
+def _migrate_last_lines(committed, decision, version, *, err=False, audit_committed=False) -> None:
     """0018 §4g's last lines: the rungs THIS walk committed, counted by facts and never by printed lines; the stopping row's
     action id and its prose; whether a rerun is safe; and the store's version, or `unknown`."""
     import sys
@@ -385,7 +394,7 @@ def _migrate_last_lines(committed, decision, version, *, err=False) -> None:
     print(f"rungs committed by this walk: {len(committed)} ({ids})", file=stream)
     for action in decision.actions:
         if action == "audit-record-not-published":
-            print("action: audit-record-not-published: the terminal record was not published", file=stream)
+            print(f"action: audit-record-not-published: {_E1_PUBLICATION[audit_committed]}", file=stream)
             continue
         rerun, prose = rm.RECOVERY_PROSE[action]
         print(f"action: {action}: {prose}", file=stream)
@@ -416,12 +425,13 @@ def _migrate_walk(path, attestation) -> int:
             if d.counted:
                 committed.append(op)
             print(f"MigrationAuditWriteError: {e}", file=sys.stderr)
-            print(f"rung v{frm} -> v{to} (operation {op}): its terminal record was not published", file=sys.stderr)
+            print(f"rung v{frm} -> v{to} (operation {op}): its {_E1_PUBLICATION[e.audit_committed][4:]}", file=sys.stderr)
             print(f"operation_id: {op}", file=sys.stderr)
             print(f"resulting_state: {e.resulting_state} (recorded)", file=sys.stderr)
             print(f"store_changed: {e.store_changed}  transaction_committed: {e.committed}  resulting_version: "
                   f"{e.resulting_version}  audit_committed: {e.audit_committed}", file=sys.stderr)
-            _migrate_last_lines(committed, d, _version_of(e.resulting_state, e.resulting_version), err=True)
+            _migrate_last_lines(committed, d, _version_of(e.resulting_state, e.resulting_version), err=True,
+                                audit_committed=e.audit_committed)
             return 3
         except rm.MigrationAuditReadError as e:
             op, frm, to = e.rung_context
@@ -453,6 +463,8 @@ def _migrate_walk(path, attestation) -> int:
             expect = rep.to_version
             continue
         _migrate_report(r)
+        if "query-id-first" in d.actions:            # external R4-01: the inquiry N2 prescribes needs the id it names
+            print(f"operation_id: {rep.operation_id}")
         version = _version_of(r.resulting_state, r.resulting_version)
         if d.row == "C2":
             version = f"v{r.resulting_version}, recorded: committed with {r.outcome}"

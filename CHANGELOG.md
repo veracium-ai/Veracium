@@ -10,6 +10,10 @@
   the one-transaction route, and the open refusal and `veracium doctor` now name `veracium migrate` for every base.
   **Limits:** the attestation is the host's assertion, unchanged, and a same-version, same-shape swap of the store is not
   seen; a walk does `n` transactions where the library call does one; each rung's clock value is its own.
+  A failed audit write now reports only what it established: when the attempted record's rename may have taken
+  effect, the walk says the operation MAY be consumed and prints the operation id to query before any rerun, instead
+  of offering a rerun; when the terminal record's write fails, the last lines say whether that record was published,
+  was not, or may not have been. A rung's audit record is accepted only at that rung's own versions.
 
 ## 0.30.0 — 2026-11-06
 

@@ -825,7 +825,7 @@ def test_readback_result_contract(tmp_path):
     rm.read_terminal = lambda op, *, audit_path: HostileRB("absent", None, ())
     try:
         with pytest.raises(rm.MigrationAuditReadError):
-            rm._route_delegated(_OP, "migrated", apath, "d")
+            rm._route_delegated(_OP, "migrated", apath, "d", (MINT_BASE, HEAD))
     finally:
         rm.read_terminal = orig
 
@@ -846,7 +846,7 @@ def test_delegated_routing_total(monkeypatch, tmp_path):
         if outcome in rm.TERMINAL_OUTCOMES:
             facts = _valid_facts(outcome)
             with_readback(rm.ReadbackResult("record", facts, ()))
-            r = rm._route_delegated(_OP, outcome, apath, "d")
+            r = rm._route_delegated(_OP, outcome, apath, "d", (MINT_BASE, HEAD))
             assert tuple(r)[:5] == (outcome, facts.store_changed,
                                     facts.transaction_committed,
                                     facts.resulting_state,
@@ -856,23 +856,33 @@ def test_delegated_routing_total(monkeypatch, tmp_path):
             other = "migrated" if outcome != "migrated" else "current"
             with_readback(rm.ReadbackResult("record", _valid_facts(other), ()))
             with pytest.raises(rm.MigrationAuditReadError) as ei:
-                rm._route_delegated(_OP, outcome, apath, "d")
+                rm._route_delegated(_OP, outcome, apath, "d", (MINT_BASE, HEAD))
             assert ei.value.failure == "mismatched"
+            # external R4-02: the SAME outcome at another lawful rung is mismatched too. Unaccepted and unknown facts carry no
+            # version that would expose a wrong rung, so the endpoints themselves are compared, before any field is dropped.
+            if facts.resulting_version is None:
+                elsewhere = facts._replace(from_version=1, to_version=2) if MINT_BASE != 1 \
+                    else facts._replace(from_version=13, to_version=14)
+                assert rm.TerminalFacts.problems(elsewhere) == [], elsewhere
+                with_readback(rm.ReadbackResult("record", elsewhere, ()))
+                with pytest.raises(rm.MigrationAuditReadError) as ei:
+                    rm._route_delegated(_OP, outcome, apath, "d", (MINT_BASE, HEAD))
+                assert ei.value.failure == "mismatched", outcome
         # record-absent × the four no-record outcomes → the fixed rows, NO error
         with_readback(rm.ReadbackResult("absent", None, ()))
         if outcome in rm._NO_RECORD_OUTCOMES:
-            r = rm._route_delegated(_OP, outcome, apath, "d")
+            r = rm._route_delegated(_OP, outcome, apath, "d", (MINT_BASE, HEAD))
             assert tuple(r)[:5] == (outcome, False, False, "unknown", None)
             if outcome == "migration-audit-state-unknown":
                 assert "MAY be consumed" in r.diagnostic     # retry-unsafe
         else:
             with pytest.raises(rm.MigrationAuditReadError) as ei:
-                rm._route_delegated(_OP, outcome, apath, "d")
+                rm._route_delegated(_OP, outcome, apath, "d", (MINT_BASE, HEAD))
             assert ei.value.failure == "missing"
         # malformed × ANY outcome → MigrationAuditReadError(malformed)
         with_readback(rm.ReadbackResult("malformed", None, ("boom",)))
         with pytest.raises(rm.MigrationAuditReadError) as ei:
-            rm._route_delegated(_OP, outcome, apath, "d")
+            rm._route_delegated(_OP, outcome, apath, "d", (MINT_BASE, HEAD))
         assert ei.value.failure == "malformed"
 
 

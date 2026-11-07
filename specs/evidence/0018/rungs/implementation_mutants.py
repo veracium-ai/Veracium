@@ -36,7 +36,8 @@ T5 = "tests/test_0018_rungs_t5.py"
 TC = "tests/test_migrate_cli.py"
 T2 = "tests/test_0018_rungs_t2.py"
 PA1 = "tests/test_0013_pa1_campaign_cells.py"
-DIGESTED = (MIG, RM, SV, CLI, GATE, T2, T3, T4, T5, TC, PA1, "specs/evidence/0018/rungs/digest_vectors.json",
+R4 = "tests/test_0018_r4_closures.py"
+DIGESTED = (MIG, RM, SV, CLI, GATE, T2, T3, T4, T5, TC, PA1, R4, "specs/evidence/0018/rungs/digest_vectors.json",
             "specs/evidence/0018/rungs/manifest.json", "specs/evidence/0018/rungs/fixtures.tar.xz",
             "specs/evidence/0018-adjacent-rungs/closure/recovery_v05.py",
             "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json",
@@ -54,6 +55,9 @@ CELL = lambda n: f"{TC}::{n}"                                                   
 EQUAL = lambda r: f"{T4}::test_the_classifier_equals_the_extracted_table_input_by_input[{r}]"        # noqa: E731
 HONEST = [CELL("test_a_store_at_head_makes_no_rung")]
 HONEST_T4 = [f"{T4}::test_the_classifier_takes_no_diagnostic"]
+CLOSE = lambda n: f"{R4}::{n}"                                                                       # noqa: E731
+_DISPATCH = '                elif entry.kind in ("read", "data", "check"):\n                    entry.step(conn, run)\n'
+_CLOCK_READ = "                    run.now = _clock()\n"
 
 _PLAN_ADD = "[ForwardEntry(0, target, \"add\", o) for o in SCHEMAS[target] if o.key not in have]"
 _GUARD = "[e for e in FORWARD_ENTRIES if e.lo <= base < e.v <= target]"
@@ -76,6 +80,56 @@ _CLOCK_FIRST = ('    return ([ForwardEntry(0, target, "clock", None)]\n         
 _CLOCK_AFTER = ('    return ([ForwardEntry(0, target, "add", o) for o in SCHEMAS[target] if o.key not in have]\n            + [ForwardEntry(0, target, "clock", None)]\n')
 
 MUTANTS = [
+    # ---- external round 4's closures: each row reverts one fix, killed by the cell that names its case ------------------------
+    ("I35-a-landed-attempted-rename-read-as-unwritten", "product", RM,
+     [("                if _attempted_proven_absent(apath, operation_id):\n", "                if True:\n")],
+     [CLOSE("test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"),
+      CLOSE("test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]")], HONEST, None,
+     "R4-01: a failed rename is N1 whether or not it published, as round 4 shipped"),
+    ("I35-append-once-read-as-unwritten", "product", RM,
+     [("            except _AppendOnceRefused as exc:\n                raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc\n",
+       "            except _AppendOnceRefused as exc:\n                raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc\n")],
+     [CLOSE("test_an_append_once_refusal_is_n2_never_nothing_consumed[1]")], HONEST, None,
+     "R4-01: the record that refuses append-once is read as nothing consumed"),
+    ("I35-a-published-terminal-record-reported-unpublished", "product", RM,
+     [("audit_committed=_terminal_published(exc, operation_id, apath, facts)", "audit_committed=False")],
+     [CLOSE("test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]")], HONEST, None,
+     "R4-01: the terminal carrier hard-codes audit_committed=False, as round 4 shipped"),
+    ("I35-an-unread-terminal-record-reported-unpublished", "product", RM,
+     [('    if rb.kind == "absent":\n        return False\n    return None\n', "    return False\n")],
+     [CLOSE("test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]")], HONEST, None,
+     "R4-01: a publication that cannot be read back is reported unpublished"),
+    ("I35-the-n2-id-not-printed", "product", CLI,
+     [('        if "query-id-first" in d.actions:            # external R4-01: the inquiry N2 prescribes needs the id it names\n'
+       '            print(f"operation_id: {rep.operation_id}")\n', "")],
+     [CLOSE("test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]")], HONEST, None,
+     "R4-01: N2 tells the operator to query an id it does not print"),
+    ("I35-every-e1-disclosure-says-unpublished", "product", CLI,
+     [('print(f"action: audit-record-not-published: {_E1_PUBLICATION[audit_committed]}", file=stream)',
+       'print(f"action: audit-record-not-published: {_E1_PUBLICATION[False]}", file=stream)')],
+     [CLOSE("test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]")], HONEST, None,
+     "R4-01: E1's action line says not published whatever the write established"),
+    ("I15-ordinary-readback-binds-the-outcome-only", "product", RM,
+     [("        if _readback_is_bound(facts, minted, kernel_outcome):\n", "        if facts.outcome == kernel_outcome:\n")],
+     [CLOSE("test_an_ordinary_record_binds_only_at_the_minted_rung[1-unaccepted-another-rung]"),
+      CLOSE("test_the_walk_refuses_a_record_from_another_rung[1]")], HONEST, None,
+     "R4-02: ordinary readback checks the outcome and drops the endpoints, as round 4 shipped"),
+    ("I19-a-mint-escape-becomes-internal-error", "product", RM,
+     [("        except sv.PackageConsistencyError as exc:\n"
+       "            exc.rung_context = None               # external R4-03: raised inside the mint, no authority returned: pre-mint,\n"
+       "            raise                                 # no readback, and never an earlier rung's context\n", "")],
+     [CLOSE("test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]"),
+      CLOSE("test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]")], HONEST, None,
+     "R4-03: the named escape raised inside the mint falls into the broad catch, as round 4 shipped"),
+    ("I36-a-check-dispatched-twice", "product", MIG,
+     [(_DISPATCH, _DISPATCH + '                    if entry.kind == "check":\n                        entry.step(conn, run)\n')],
+     [PLANNED, DIRECT], HONEST, None, "R4-04, the reviewer's mutant: a pure check runs twice under an unchanged plan"),
+    ("I36-a-check-never-dispatched", "product", MIG,
+     [(_DISPATCH, '                elif entry.kind in ("read", "data", "check"):\n                    if entry.kind != "check":\n'
+                  '                        entry.step(conn, run)\n')],
+     [PLANNED, DIRECT], HONEST, None, "R4-04: a pure check is yielded and never run"),
+    ("I36-the-clock-read-twice", "product", MIG, [(_CLOCK_READ, _CLOCK_READ + "                    _clock()\n")],
+     [DIRECT], HONEST, None, "R4-04 (research): a second clock read under an unchanged plan, breaking 0013 B1's one read"),
     # ---- I33: every rung lands at its target ----------------------------------------------------------------------------
     ("I33-the-additive-diff-ignores-the-target", "product", MIG, [(_PLAN_ADD, _PLAN_ADD.replace("SCHEMAS[target]", "SCHEMAS[SCHEMA_VERSION]"))],
      [WALK], HONEST, None, "a rung adds head's objects, not its target's"),
@@ -200,7 +254,7 @@ MUTANTS = [
      [CELL("test_a_committed_error_is_counted_once_and_stops_the_walk")], HONEST, None, "a committed error is treated as a success"),
     ("I34-re-create-the-attestation", "product", CLI, [("rm.run_release_rung(path, host_attestation=attestation, expect_base=expect)", 'rm.run_release_rung(path, host_attestation=rm.MigrationAttestation(quiesced=True, backup_ref=attestation.backup_ref), expect_base=expect)')],
      [CELL("test_one_attestation_object_is_admitted_at_every_call")], HONEST, None, "each rung gets a fresh attestation"),
-    ("I34-count-a-readback-before-it-is-bound", "product", RM, [('    return (readback_facts is not None and readback_facts.outcome == "package-inconsistent"\n            and (readback_facts.from_version, readback_facts.to_version) == tuple(minted))\n', "    return readback_facts is not None\n")],
+    ("I34-count-a-readback-before-it-is-bound", "product", RM, [('    return (readback_facts is not None and readback_facts.outcome == outcome\n            and (readback_facts.from_version, readback_facts.to_version) == tuple(minted))\n', "    return readback_facts is not None\n")],
      [f"{T4}::test_a_package_escape_counts_only_a_bound_readback[another rung]", f"{T4}::test_a_package_escape_counts_only_a_bound_readback[another outcome]"], HONEST_T4, None,
      "any record counts, as round 2's model accepted any readback of kind `record`"),
     # ---- I35: recovery is one classifier --------------------------------------------------------------------------------
@@ -225,7 +279,7 @@ CONTROLS.append(("CTRL-unrelated-TypeError", CLI, [("def _facts_of(r):\n", 'def 
 SUBJECT_P = _protocol.Subject(
     spec="0018", finding="adjacent-rungs-implementation", table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium.store.migration", "veracium.store.release_migration", "veracium.store.schema_version", "veracium.cli"),
-    import_specs=(), cells_files=(T2, T3, T4, T5, TC, PA1), kinds=("product", "gate"))
+    import_specs=(), cells_files=(T2, T3, T4, T5, TC, PA1, R4), kinds=("product", "gate"))
 
 definition_sha = _protocol.definition_sha
 canonical = _protocol.canonical

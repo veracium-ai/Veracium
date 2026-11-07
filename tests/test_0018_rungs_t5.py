@@ -11,6 +11,7 @@ import pathlib
 import re
 import shutil
 import sqlite3
+import sys
 import tarfile
 
 import pytest
@@ -158,11 +159,19 @@ def test_the_v3_observed_at_fill_is_rung_three_s_read(tmp_path, monkeypatch):
 
 # ---- I36 ---------------------------------------------------------------------------------------------------------------
 class _Trace:
-    """Unit 1: the entries dispatched, in order. Unit 2: each write, with the entry active when SQLite prepared it."""
+    """Unit 1: the entries dispatched, in order, AND what each one actually did (external R4-04: an entry is yielded by the plan
+    whether or not it runs, so the yield is enumeration, not invocation). Unit 2: each write, with the entry active when SQLite
+    prepared it.
+
+    `acts` is observed apart from the plan, each kind by its own act, in time order: a read, data or check entry by a Python call
+    event on its step's code object; a clock entry by a call of `_clock`; an add, alter or stamp entry by SQLite's trace of the
+    statement executed. `_same_acts` compares that with the plan, so a pure check dispatched twice or not at all, or a second clock
+    read, fails here even though it yields the same entries and writes nothing."""
 
     def __init__(self, monkeypatch):
         self.entries, self.writes, self.executed, self.active, self.inside = [], [], [], None, False
-        real_plan, real_apply = mig.plan, mig._apply_forward
+        self.acts, self.codes = [], frozenset()
+        real_plan, real_apply, real_clock = mig.plan, mig._apply_forward, mig._clock
 
         def dispatched(b, t):
             for e in real_plan(b, t):
@@ -174,19 +183,43 @@ class _Trace:
         def plan(b, t):                            # the mint's digest reads the plan too: only the dispatcher's read is a trace
             return dispatched(b, t) if self.inside else real_plan(b, t)
 
+        def ran(sql):                                # once per RUN, so it counts one
+            self.executed.append((self.active, sql))
+            self.acts.append(("sql", sql))
+
+        def called(frame, event, arg):               # a step's own call event, whoever dispatches it
+            if event == "call" and frame.f_code in self.codes:
+                self.acts.append(("call", frame.f_code))
+
+        def clock():
+            if self.inside:
+                self.acts.append(("clock",))
+            return real_clock()
+
         def apply_forward(conn, base, target=HEAD):
             conn.set_authorizer(self._authorize)     # once per PREPARE, so it classifies a statement
-            conn.set_trace_callback(lambda sql: self.executed.append((self.active, sql)))   # once per RUN, so it counts one
+            conn.set_trace_callback(ran)
+            self.codes = frozenset(e.step.__code__ for e in real_plan(base, target) if e.kind in _CALLED)
             self.inside = True
+            previous = sys.getprofile()
+            sys.setprofile(called)
             try:
                 return real_apply(conn, base, target)
             finally:
+                sys.setprofile(previous)
                 self.inside = False
                 conn.set_authorizer(None)
                 conn.set_trace_callback(None)
         monkeypatch.setattr(mig, "plan", plan)
         monkeypatch.setattr(mig, "_apply_forward", apply_forward)
+        monkeypatch.setattr(mig, "_clock", clock)
         self.real_plan = real_plan
+
+    def clear(self):
+        self.entries.clear()
+        self.writes.clear()
+        self.executed.clear()
+        self.acts.clear()
 
     def _authorize(self, code, a, b, db, trigger):
         if self.inside:
@@ -243,8 +276,41 @@ def _store_at(path, version):
     c.close()
 
 
+_CALLED = ("read", "data", "check")
+
+
+def _act_of(e):
+    """What entry `e` does when it runs, in the units `_Trace.acts` observes."""
+    if e.kind in _CALLED:
+        return ("call", e.step.__code__)
+    if e.kind == "clock":
+        return ("clock",)
+    if e.kind == "add":
+        return ("sql", e.step.ddl)
+    if e.kind == "alter":
+        return ("sql", e.step)
+    if e.kind == "stamp":
+        return ("sql", f"PRAGMA user_version = {e.step}")
+    raise AssertionError(f"an entry of kind {e.kind!r} has no act")
+
+
+def _acts_wanted(trace, b, t):
+    return [_act_of(e) for e in trace.real_plan(b, t)]
+
+
+def _acts_seen(trace, wanted):
+    """The observed acts, projected onto the plan's: every step call (`codes` holds only the plan's), every clock read, and every
+    statement whose text is one of the plan's add, alter or stamp statements. A check's or a data step's own SELECTs and UPDATEs are
+    not entry acts and are attributed by unit 2."""
+    statements = {a[1] for a in wanted if a[0] == "sql"}
+    return [a for a in trace.acts if a[0] != "sql" or a[1] in statements]
+
+
 def _same_plan(trace, b, t):
-    return [(e.kind, e.step) for e in trace.entries] == [(e.kind, e.step) for e in trace.real_plan(b, t)]
+    """Unit 1: the plan was enumerated in full and in order, AND each entry's act happened exactly once, in that order."""
+    wanted = _acts_wanted(trace, b, t)
+    return ([(e.kind, e.step) for e in trace.entries] == [(e.kind, e.step) for e in trace.real_plan(b, t)]
+            and _acts_seen(trace, wanted) == wanted)
 
 
 @pytest.mark.parametrize("name", FIXTURES[::7])
@@ -255,8 +321,7 @@ def test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s(stores,
     base = next(f["base"] for f in MANIFEST["fixtures"] if f["fixture"] == name)
     trace = _Trace(monkeypatch)
     for b in range(base, HEAD):
-        trace.entries.clear()
-        trace.writes.clear()
+        trace.clear()
         rep = rm.run_release_rung(str(p), host_attestation=ATTESTATION, expect_base=b)
         assert rep.result.outcome == "migrated", rep
         assert _same_plan(trace, b, b + 1), b
@@ -270,10 +335,8 @@ def test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp(tmp
     p = tmp_path / "s.db"
     _store_at(p, base)
     trace = _Trace(monkeypatch)
-    reads, clock = [], mig._clock
-    monkeypatch.setattr(mig, "_clock", lambda: (reads.append(1), clock())[1])
     assert str(mig.migrate_store(str(p))) == "migrated"
-    assert _same_plan(trace, base, HEAD) and len(reads) == 1          # a dispatch the plan does not hold reads the clock again
+    assert _same_plan(trace, base, HEAD) and trace.acts.count(("clock",)) == 1   # a dispatch the plan does not hold reads it again
     kinds = [e.kind for e in trace.entries]
     assert kinds.count("clock") == 1 and kinds.count("stamp") == 1 and _attribution_problems(trace) == []
 
@@ -308,6 +371,10 @@ def test_a_refused_operation_s_trace_is_a_prefix_ending_at_the_refusing_entry(tm
     want = [(e.kind, e.step) for e in trace.real_plan(13, 14)]
     got = [(e.kind, e.step) for e in trace.entries]
     assert got == want[:len(got)] and got[-1][0] == "check" and len(got) == len(want)
+    # the ACTS end at the refusing invocation: every act before it happened once and in order, and nothing ran after it
+    acts = _acts_wanted(trace, 13, 14)
+    refusing = next(i for i, e in enumerate(trace.real_plan(13, 14)) if e.step is mig._check_stamp)
+    assert _acts_seen(trace, acts) == acts[:refusing + 1]
     c = sqlite3.connect(p)
     assert c.execute("PRAGMA user_version").fetchone()[0] == 13
     c.close()
