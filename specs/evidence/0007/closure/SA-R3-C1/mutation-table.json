@@ -1,5 +1,5 @@
 {
- "body_sha256": "6a1762d6f0fbc62eb583b3b4d691d9162abf3f302dfc214c17acafe406c6f1fa",
+ "body_sha256": "3fdb02a2d89801d3c32f7f2ceef4b09814629e60ceda016ef74f0d2ae873c57b",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "df418c142691c3f101073ae4b0c5da7f0d4409d0",
+  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
   "control_definitions": {
    "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
   },
@@ -73,7 +73,11 @@
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
+   "specs/evidence/0013/sa10_mutants.py",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation_mutants.py"
   ]
  },
  "rows": [
@@ -105,7 +109,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.94s",
+   "pytest": "1 failed in 3.12s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
@@ -120,6 +124,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 21
+  "seconds": 23
  }
 }

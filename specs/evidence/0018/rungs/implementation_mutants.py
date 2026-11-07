@@ -3,7 +3,7 @@
 """0018 §4j.8's named mutants, against the implementation: every row demonstrated red by its invariant's cells.
 
 Every mutant §4j.8 names has a row here, or its row is in the place stated: I39's are in specs/evidence/0013/sa10_mutants.py, beside the gate
-they edit, and the head-bound mutants of the two v16 raises are equivalent on the last rung, so they have cells and no row.
+they edit, but for one whose cell is in T2, and the head-bound mutants of the two v16 raises are equivalent on the last rung, so they have cells and no row.
 
 Each row is a code edit run by the shared protocol (specs/evidence/mutation_protocol.py) on a copy of the tracked tree, killed by
 assertion (or DID NOT RAISE) in ITS named cells, with an HONEST probe that still passes under it. Beside them, per mutated file, a NO-OP
@@ -29,13 +29,14 @@ MIG = "src/veracium/store/migration.py"
 RM = "src/veracium/store/release_migration.py"
 SV = "src/veracium/store/schema_version.py"
 CLI = "src/veracium/cli.py"
+GATE = "specs/evidence/0013/sa10_gate.py"
 T3 = "tests/test_0018_rungs_t3.py"
 T4 = "tests/test_0018_rungs_t4.py"
 T5 = "tests/test_0018_rungs_t5.py"
 TC = "tests/test_migrate_cli.py"
 T2 = "tests/test_0018_rungs_t2.py"
 PA1 = "tests/test_0013_pa1_campaign_cells.py"
-DIGESTED = (MIG, RM, SV, CLI, T2, T3, T4, T5, TC, PA1, "specs/evidence/0018/rungs/digest_vectors.json",
+DIGESTED = (MIG, RM, SV, CLI, GATE, T2, T3, T4, T5, TC, PA1, "specs/evidence/0018/rungs/digest_vectors.json",
             "specs/evidence/0018/rungs/manifest.json", "specs/evidence/0018/rungs/fixtures.tar.xz",
             "specs/evidence/0018-adjacent-rungs/closure/recovery_v05.py",
             "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json",
@@ -164,6 +165,9 @@ MUTANTS = [
      [ROW("test_row_3_a_source_of_another_shape_refuses_as_stamped_shape_mismatch[13]")], HONEST, None, "nothing validates the migrated store, so row 3 has no refusal"),
     ("I38-a-repair-not-counted", "product", SV, [("                    repaired = _validated_current(conn, spath, found, target=target)\n", "                    repaired = _validated_current(conn, spath, found, target=target) and False\n")],
      [CELL("test_rows_3_to_6_through_the_real_walk[row 5-13]")], HONEST, None, "a committed repair reads as nothing, so the walk does not count it"),
+    ("I39-every-historical-constructor-admitted", "gate", GATE, [('    b1 = {o.ddl for o in head if o.key[0] in ("table", "index")}\n', '    b1 = {o.ddl for v in sv.SCHEMAS.values() for o in v if o.key[0] in ("table", "index")}\n')],
+     ["tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head"], HONEST, None,
+     "head equality is widened to every historical constructor, which round 1 ruled out. Here and not in SA10's table because its cell is in T2"),
     ("I13-the-preflight-writes-the-store", "product", RM, [("    status = sv.runtime_status()                 # measured once, here (0007 §4g.6 4a; 0013 §5f.3)\n", '    with sqlite3.connect(path) as written:\n        if written.execute("PRAGMA user_version").fetchone()[0] == 0:\n            written.execute("PRAGMA user_version = 1")\n    status = sv.runtime_status()                 # measured once, here (0007 §4g.6 4a; 0013 §5f.3)\n')],
      [ROW("test_before_delegation_an_unstamped_store_keeps_its_bytes_and_stamp")], HONEST, None, "resolving a legacy store stamps it, so a stopped rung has changed it"),
     ("I13-forged-evidence-carried-into-the-authority", "product", RM, [("            source_digest=sv.digest(objs, base),\n", "            source_digest=tuple.__getitem__(resolved, 2),\n")],
@@ -210,7 +214,7 @@ MUTANTS = [
      [EQUAL("13-14")], HONEST_T4, None, "U3 claims it knows which cause happened"),
 ]
 
-_NOOP = {MIG: "def _alters(lo, v, statements):\n", RM: "class RecoveryDecision(NamedTuple):\n", SV: "def legacy_base_versions(", CLI: "def _facts_of(r):\n"}
+_NOOP = {MIG: "def _alters(lo, v, statements):\n", RM: "class RecoveryDecision(NamedTuple):\n", SV: "def legacy_base_versions(", CLI: "def _facts_of(r):\n", GATE: "def text_classes(target=None):\n"}
 CONTROLS = [(f"NOOP-{pathlib.Path(rel).stem}", rel, [(a, "# no-op control: a comment, no behaviour\n" + a)],
              sorted({c for m in MUTANTS if m[2] == rel for c in m[4]}), f"a comment before {a.strip()!r}: bytes change, behaviour does not", "SURVIVED")
             for rel, a in _NOOP.items()]
@@ -221,7 +225,7 @@ CONTROLS.append(("CTRL-unrelated-TypeError", CLI, [("def _facts_of(r):\n", 'def 
 SUBJECT_P = _protocol.Subject(
     spec="0018", finding="adjacent-rungs-implementation", table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium.store.migration", "veracium.store.release_migration", "veracium.store.schema_version", "veracium.cli"),
-    import_specs=(), cells_files=(T2, T3, T4, T5, TC, PA1), kinds=("product",))
+    import_specs=(), cells_files=(T2, T3, T4, T5, TC, PA1), kinds=("product", "gate"))
 
 definition_sha = _protocol.definition_sha
 canonical = _protocol.canonical
