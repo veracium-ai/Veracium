@@ -1,5 +1,5 @@
 {
- "body_sha256": "77fc48dd8b89809fbe3d003e3e3a0cc1fbb32436d6454b2c7cdab6dc2da5a52c",
+ "body_sha256": "7b8343b4d2d425e6bd827d32178f0c7c8b9298761000b2007e2e0466dbc5128e",
  "controls": [
   {
    "anchor_counts": [
@@ -58,6 +58,7 @@
    "cells_passed": [
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]",
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]",
     "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
     "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]",
     "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]",
@@ -84,7 +85,7 @@
     "tests/test_0018_rungs_t4.py::test_the_classifier_equals_the_extracted_table_input_by_input[13-14]",
     "tests/test_0018_rungs_t4.py::test_the_classifier_equals_the_extracted_table_input_by_input[15-16]"
    ],
-   "definition_sha256": "97ce7e35c155b4fca63b9d6a60deac546e1ed9a989cb631e79c292d3102641ba",
+   "definition_sha256": "5c6461c382532d1faaf911b886893d059029cb32ceac6bf633ae28b45d9d8b94",
    "expected": "SURVIVED",
    "file": "src/veracium/store/release_migration.py",
    "good": true,
@@ -94,6 +95,7 @@
    "named_cells": [
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]",
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]",
     "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
     "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]",
     "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]",
@@ -259,6 +261,7 @@
     "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]",
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]",
     "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
     "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]",
     "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]",
@@ -318,22 +321,22 @@
   },
   "clean": {
    "first": {
-    "of": 59,
+    "of": 60,
     "ok": true,
-    "passed": 59
+    "passed": 60
    },
    "last": {
-    "of": 59,
+    "of": 60,
     "ok": true,
-    "passed": 59
+    "passed": 60
    }
   },
-  "commit": "9a502e59b6c7926d4695a28f7d0b452c651eb377",
+  "commit": "92767ce7fce2566e2c4172c425aad9c370440fbf",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "6d0369e0b2d072d9918138bb86bfdfbd6c8606414372f4564f8f6f55789320cb",
    "NOOP-cli": "1e1bcb7d4c9b7f4dd2216fe0f291713c5e8b182d806898072b2f828aa00fd2dc",
    "NOOP-migration": "a57b04e4a9a8c4f035d7727643ecd782a3fc040d7b16ecaa65fc4466102e65c7",
-   "NOOP-release_migration": "97ce7e35c155b4fca63b9d6a60deac546e1ed9a989cb631e79c292d3102641ba",
+   "NOOP-release_migration": "5c6461c382532d1faaf911b886893d059029cb32ceac6bf633ae28b45d9d8b94",
    "NOOP-sa10_gate": "08c0091d88c5bfdddedc9eb6194db9e18c3840e7e17abe4774a0fe9767fdb08d",
    "NOOP-schema_version": "c06d6a5ad81351af7061f4a23a07bcbb59d49508c54a894b102e7458a4cd45b2"
   },
@@ -360,8 +363,9 @@
    "I35-a-conditional-claims-a-cause": "8ffc057c75a101c498419899b5de8e899582b55e547305b2e3f636595aaccca3",
    "I35-a-landed-attempted-rename-read-as-unwritten": "7f9d42279184c0e2306cec473367215becb839cd57fba7f5c182af00ed064739",
    "I35-a-partial-rung": "4fb09fa386ff1de30af822034f957105532cdcffa4b6a71dddbf9cab39bb965d",
+   "I35-a-present-terminal-record-reported-unpublished": "1220e551d671b9f879022bbc30476de5b84e36f568e2d92fd360b70ea5c03000",
    "I35-a-published-terminal-record-reported-unpublished": "900b0b792b1f08998dfd1b24a4002d9c65593f7c4091ffe5737f0d70ab76d9b4",
-   "I35-an-unread-terminal-record-reported-unpublished": "b7394d76f019ecd2a471f70a82414d98f52b2776e3ec35166698db590743f6ad",
+   "I35-an-unread-terminal-record-reported-unpublished": "44e5b0e3e739f572a8a8747668e056b2e1c327d3f82e496086800bfd2d24530c",
    "I35-append-once-read-as-unwritten": "cf936d1ae7da0a6398502e8bd6aabb52115a47d17a486d29182c8035a5bb2611",
    "I35-audit-write-weaker": "e9bd44c1000e9647de4bb31928b876589e639c8b289c4564056373d41a5b0c2d",
    "I35-every-e1-disclosure-says-unpublished": "c37f1897a2c072d43970d2173dd17cdcdd245a559e5e055924118867546da3f7",
@@ -416,16 +420,16 @@
    "specs/evidence/0018-adjacent-rungs/closure/recovery_v05.py": "4e5d1297485d5606f91c5fe1b659fb3ce369a1e7aee8d850cf0bb3ecf7a16aa7",
    "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
    "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
-   "specs/evidence/0018/rungs/implementation_mutants.py": "326b1006e35f4c82e3e435e526303951812e1f67aff08188c1cd9ea1d3dd6be7",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "1f0a315b8ca81c31d647c050c8fe47cbd31440467ec93c9d075dd686c08fb3d0",
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/cli.py": "221567d374701a83d9a4bcc0fe8d9275306308df598796cd680a50fe36880b99",
    "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
-   "src/veracium/store/release_migration.py": "bc01362111f5416ad707f4514ca46bfbecc5201f2127815930f8ad2d2407b026",
+   "src/veracium/store/release_migration.py": "49c08bdf2424830e6f9dac780cef1169b4a0f6a1e6e80dd839f83aee53812494",
    "src/veracium/store/schema_version.py": "600a4e42a15990a91cff036c10587c076daf4bb4d60960bd8bd29ba55bf62e79",
    "tests/test_0013_pa1_campaign_cells.py": "0df0af6e7812e379fab5c64f8c72528f015a114baeee652bd83350f25ec961b5",
-   "tests/test_0018_r4_closures.py": "2350b82767b82a303bad037c73be445d278b432d60fb217bf3912b0a4d482554",
+   "tests/test_0018_r4_closures.py": "75d1bbf14525815b5dad0134e613b7b9ced8c6a080b44f9cb1f36a4f4fc3a6af",
    "tests/test_0018_rungs_t2.py": "950724e6caabde4cb23814f0ff18831e7dc0c945e047dd755e8be53acf4b0c8b",
    "tests/test_0018_rungs_t3.py": "c9377f5c8a33be533de14ad98238d5fbc003822f423a4561ea6ca5cc1dcac67b",
    "tests/test_0018_rungs_t4.py": "540bf298b098183fd6484c7c819988fec246e6b3da894c655fb10b581b58b2a3",
@@ -441,7 +445,11 @@
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "src/veracium/store/release_migration.py",
+   "tests/test_0018_r4_closures.py"
+  ]
  },
  "rows": [
   {
@@ -475,7 +483,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.80s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: a failed rename is N1 whether or not it published, as round 4 shipped"
@@ -508,7 +516,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: the record that refuses append-once is read as nothing consumed"
@@ -541,7 +549,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: the terminal carrier hard-codes audit_committed=False, as round 4 shipped"
@@ -557,7 +565,7 @@
    "cells_failed": [
     "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]"
    ],
-   "definition_sha256": "b7394d76f019ecd2a471f70a82414d98f52b2776e3ec35166698db590743f6ad",
+   "definition_sha256": "44e5b0e3e739f572a8a8747668e056b2e1c327d3f82e496086800bfd2d24530c",
    "file": "src/veracium/store/release_migration.py",
    "finding": "adjacent-rungs-implementation",
    "good": true,
@@ -574,10 +582,43 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: a publication that cannot be read back is reported unpublished"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]"
+   ],
+   "definition_sha256": "1220e551d671b9f879022bbc30476de5b84e36f568e2d92fd360b70ea5c03000",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "adjacent-rungs-implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-a-present-terminal-record-reported-unpublished",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.70s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01 (research's read of 9a502e59): append-once on a terminal record that exists is reported unpublished"
   },
   {
    "anchor_counts": [
@@ -607,7 +648,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: N2 tells the operator to query an id it does not print"
@@ -676,7 +717,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.81s",
+   "pytest": "2 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-02: ordinary readback checks the outcome and drops the endpoints, as round 4 shipped"
@@ -712,7 +753,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.84s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-03: the named escape raised inside the mint falls into the broad catch, as round 4 shipped"
@@ -748,7 +789,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.80s",
+   "pytest": "2 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-04, the reviewer's mutant: a pure check runs twice under an unchanged plan"
@@ -784,7 +825,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.82s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-04: a pure check is yielded and never run"
@@ -883,7 +924,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung runs every later step, because the guard forgot the target"
@@ -916,7 +957,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung stamps head"
@@ -949,7 +990,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the v6 refusal reports head"
@@ -982,7 +1023,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.49s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the v8 refusal reports head"
@@ -1015,7 +1056,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the v10 refusal reports head"
@@ -1048,7 +1089,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.49s",
+   "pytest": "1 failed in 0.51s",
    "reason": null,
    "reason_seen": null,
    "what": "the stamp is written and never read back"
@@ -1081,7 +1122,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "a check the v16 block repeats runs once fewer"
@@ -1114,7 +1155,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "two data steps of one rung run in the other order"
@@ -1147,7 +1188,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "two data steps of different rungs swap: the same direct route, a different order, and no rung's digest moves"
@@ -1213,7 +1254,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.49s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the one clock read moves after the additive diff"
@@ -1246,7 +1287,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "a write with no active entry"
@@ -1279,7 +1320,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "an entry the plan does not hold is dispatched"
@@ -1312,7 +1353,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.98s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "a `data` entry issues DDL: what the kind rule stops and SA10 alone would admit elsewhere"
@@ -1345,7 +1386,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the v6 byte check never fires"
@@ -1378,7 +1419,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "one statement of a frozen ALTERS tuple is dropped"
@@ -1412,7 +1453,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the expectation is checked after the mint is delegated"
@@ -1445,7 +1486,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.50s",
    "reason": null,
    "reason_seen": null,
    "what": "U5 offers a retry with the same build"
@@ -1478,7 +1519,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.44s",
+   "pytest": "1 failed in 0.45s",
    "reason": null,
    "reason_seen": null,
    "what": "unknown facts with a version offer a rerun"
@@ -1544,7 +1585,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.45s",
    "reason": null,
    "reason_seen": null,
    "what": "the prose promises that a rerun repairs a missing record"
@@ -1577,7 +1618,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "a check that lives in a helper never runs"
@@ -1610,7 +1651,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "a check's body is emptied"
@@ -1643,7 +1684,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.78s",
+   "pytest": "1 failed in 2.88s",
    "reason": null,
    "reason_seen": null,
    "what": "the direct route is rebuilt as the concatenation of adjacent plans"
@@ -1676,7 +1717,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.50s",
+   "pytest": "1 failed in 2.53s",
    "reason": null,
    "reason_seen": null,
    "what": "`migrate_to` defaults to found+1"
@@ -1742,7 +1783,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "no `new=` hook"
@@ -1775,7 +1816,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the path interpolated into the URI unencoded"
@@ -1808,7 +1849,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "an OperationalError mapped to `missing`"
@@ -1874,7 +1915,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the target reaches the runtime gate"
@@ -1940,7 +1981,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.45s",
    "reason": null,
    "reason_seen": null,
    "what": "an admitted input gets two action ids"
@@ -1976,7 +2017,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.14s",
+   "pytest": "2 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung commits before its last check, so a failure leaves it partial"
@@ -2009,7 +2050,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "row 5: a rung's drift is repaired against head, not `t`"
@@ -2042,7 +2083,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "a store at the rung's target is judged against head's accepted shapes: row 4 reads the difference, and row 6 refuses either way"
@@ -2111,7 +2152,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a store already at the target is not validated at all"
@@ -2177,7 +2218,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.06s",
+   "pytest": "1 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "a committed repair reads as nothing, so the walk does not count it"
@@ -2210,7 +2251,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.51s",
    "reason": null,
    "reason_seen": null,
    "what": "head equality is widened to every historical constructor, which round 1 ruled out. Here and not in SA10's table because its cell is in T2"
@@ -2243,7 +2284,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "resolving a legacy store stamps it, so a stopped rung has changed it"
@@ -2279,7 +2320,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the authority carries the resolution's digest, not the store's own observation"
@@ -2313,7 +2354,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.69s",
+   "pytest": "1 failed in 2.75s",
    "reason": null,
    "reason_seen": null,
    "what": "an ALTER moved under a neighbouring entry: a write lands where its kind does not admit it"
@@ -2346,7 +2387,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.38s",
+   "pytest": "1 failed in 2.54s",
    "reason": null,
    "reason_seen": null,
    "what": "every rung reuses the first clock read"
@@ -2379,7 +2420,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "M1: the transaction walks from a base the authority did not attest"
@@ -2412,7 +2453,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "M3: a store deleted in the window is re-created"
@@ -2445,7 +2486,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "M2 reported as a store that is not there. Building into the empty store is refused twice: a mutant that builds meets a second, loud refusal in `open_versioned`, a crash and no assertion, so this row kills what the refusal SAYS"
@@ -2478,7 +2519,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.17s",
+   "pytest": "1 failed in 1.20s",
    "reason": null,
    "reason_seen": null,
    "what": "the walk does not bind each rung to the last"
@@ -2511,7 +2552,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "a printed rung is counted, so an unchanged current is"
@@ -2577,7 +2618,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "an id enters the count twice"
@@ -2643,7 +2684,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 1.06s",
    "reason": null,
    "reason_seen": null,
    "what": "each rung gets a fresh attestation"
@@ -2712,7 +2753,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "unknown facts print the last known version"
@@ -2826,13 +2867,13 @@
  "summary": {
   "by_kind": {
    "gate": 1,
-   "product": 70
+   "product": 71
   },
   "controls": 6,
   "controls_good": 6,
-  "good": 71,
-  "killed": 71,
-  "rows": 71,
-  "seconds": 246
+  "good": 72,
+  "killed": 72,
+  "rows": 72,
+  "seconds": 255
  }
 }

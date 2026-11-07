@@ -1369,8 +1369,10 @@ def _terminal_published(exc, operation_id: str, apath: str, facts: "TerminalFact
     """Whether a FAILED terminal write published its record (external R4-01), never assumed: `False` when `os.replace` was
     never called (the sidecar is as it was); at or after the call, one `read_terminal` decides — `True` for a valid record
     equal to the facts written, `False` for a successful read with no terminal record for this id, `None` for anything else.
-    The escape is E1 in all three cases; only its disclosure differs."""
-    if not isinstance(exc, _PublicationUnresolved):
+    Append-once refuses BECAUSE this id already holds a terminal record (research's read of 9a502e59), so it is never `False`:
+    the same read gives `True` for a record equal to the facts, and `None` otherwise. The escape is E1 in every case; only
+    its disclosure differs."""
+    if not isinstance(exc, (_PublicationUnresolved, _AppendOnceRefused)):
         return False
     try:
         rb = read_terminal(operation_id, audit_path=apath)
@@ -1381,7 +1383,7 @@ def _terminal_published(exc, operation_id: str, apath: str, facts: "TerminalFact
     if rb.kind == "record" and type(rb.facts) is TerminalFacts and tuple(rb.facts) == tuple(facts) \
             and all(type(x) is type(y) for x, y in zip(rb.facts, facts)):
         return True
-    if rb.kind == "absent":
+    if rb.kind == "absent" and not isinstance(exc, _AppendOnceRefused):
         return False
     return None
 

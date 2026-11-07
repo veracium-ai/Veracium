@@ -179,6 +179,9 @@ _TERMINAL_CASES = {
     "rename-not-performed": (False, "the terminal record was not published", "absent"),
     "rename-took-effect": (True, "the terminal record was published; its write reported a failure", "record"),
     "rename-took-effect-unreadable": (None, "the terminal record may not have been published", None),
+    # append-once refuses because this id already holds a terminal record: never "not published"
+    "terminal-present-equal": (True, "the terminal record was published; its write reported a failure", "record"),
+    "terminal-present-other": (None, "the terminal record may not have been published", "record"),
 }
 
 
@@ -202,11 +205,18 @@ def test_a_failed_terminal_write_reports_what_it_established(tmp_path, monkeypat
     monkeypatch.setattr(rm, "_delegate", observe)
     if case == "fsync-before-rename":
         _fsync_fault(monkeypatch, nth=3)          # attempted, the committed marker, then the terminal record
+    elif case.startswith("terminal-present"):
+        # a terminal record for this id before the rung runs: the facts this rung will write, or another lawful cell
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+        ap = rm.audit_trail_path(p)
+        monkeypatch.setattr(rm, "mint_release_authority", _seed_terminal(rm.mint_release_authority, ap,
+                                                                           same if case.endswith("equal") else other))
     else:
         fired = _replace_fault(monkeypatch, p, which="terminal", rename=case.startswith("rename-took-effect"),
                                readable=not case.endswith("unreadable"))
     code, out, err = _walk(p, capsys)
-    if case != "fsync-before-rename":
+    if case != "fsync-before-rename" and not case.startswith("terminal-present"):
         assert fired == [True]
     assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want_committed, (case, err)
     assert code == 3 and f"(operation {ids[0]}): its {sentence[4:]}" in err and f"action: audit-record-not-published: {sentence}" in err
@@ -217,7 +227,16 @@ def test_a_failed_terminal_write_reports_what_it_established(tmp_path, monkeypat
         rb = rm.read_terminal(ids[0], audit_path=rm.audit_trail_path(p))
         assert rb.kind == readback
         if readback == "record":
-            assert tuple(rb.facts) == tuple(carried[0].facts)
+            assert (tuple(rb.facts) == tuple(carried[0].facts)) is (want_committed is True)
+
+
+def _seed_terminal(mint, ap, facts):
+    """Wrap the (already observed) mint: once the authority exists, write a terminal record for its id, as the real writer does."""
+    def seeded(*a, **k):
+        authority = mint(*a, **k)
+        rm._write_terminal(ap, authority.operation_id, facts)
+        return authority
+    return seeded
 
 
 # ---- R4-02: ordinary readback binds outcome AND endpoints ----------------------------------------------------------------
