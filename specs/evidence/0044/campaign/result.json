@@ -740,11 +740,11 @@
    ],
    "control_after": {
     "exit": 0,
-    "passed": 32
+    "passed": 40
    },
    "control_before": {
     "exit": 0,
-    "passed": 32
+    "passed": 40
    },
    "group": "0018 I19 (the CLI contract: the five exit-3 package routes)"
   },
@@ -1718,7 +1718,7 @@
    "group": "R-II r2 RII-01 (INV-R18: the wiki bound to the call's own challenge snapshot)"
   }
  ],
- "pin_digest": "56cd119b3d95ee9aad2df91697e091d6fdcacc8ccac67fec3d2f2ffb6f0288ad",
+ "pin_digest": "c5e4b28a9eec4db005ef28725176a1b3691ba29c4dc1c19894bbf068d346bc82",
  "rows": [
   {
    "anchor_count": 1,

@@ -373,7 +373,7 @@
  ],
  "campaign": {
   "defined": 546,
-  "pin_digest": "56cd119b3d95ee9aad2df91697e091d6fdcacc8ccac67fec3d2f2ffb6f0288ad",
+  "pin_digest": "c5e4b28a9eec4db005ef28725176a1b3691ba29c4dc1c19894bbf068d346bc82",
   "results": 546,
   "retired": [
    {
@@ -396,7 +396,7 @@
    "killed": 546,
    "mutants": 546
   },
-  "tree_digest": "56cd119b3d95ee9aad2df91697e091d6fdcacc8ccac67fec3d2f2ffb6f0288ad"
+  "tree_digest": "c5e4b28a9eec4db005ef28725176a1b3691ba29c4dc1c19894bbf068d346bc82"
  },
  "findings_unbound_kills": [],
  "gates": {
@@ -1854,6 +1854,7 @@
     "tests/test_migrate_cli.py::test_one_attestation_object_is_admitted_at_every_call": "in the file the row names",
     "tests/test_migrate_cli.py::test_package_escape_end_to_end_recorded_route": "in the file the row names",
     "tests/test_migrate_cli.py::test_package_escape_routes_exit_3": "in the file the row names",
+    "tests/test_migrate_cli.py::test_rows_3_to_6_through_the_real_walk": "in the file the row names",
     "tests/test_migrate_cli.py::test_state_unknown_says_query_the_id_before_any_rerun": "in the file the row names",
     "tests/test_migrate_cli.py::test_unknown_facts_print_unknown_never_the_previous_rungs_version": "in the file the row names"
    },
@@ -2317,6 +2318,7 @@
     "tests/test_migrate_cli.py::test_one_attestation_object_is_admitted_at_every_call": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_package_escape_end_to_end_recorded_route": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_package_escape_routes_exit_3": "bound to I19, which this row stands for",
+    "tests/test_migrate_cli.py::test_rows_3_to_6_through_the_real_walk": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_state_unknown_says_query_the_id_before_any_rerun": "bound to I19, which this row stands for",
     "tests/test_migrate_cli.py::test_unknown_facts_print_unknown_never_the_previous_rungs_version": "bound to I19, which this row stands for"
    },
