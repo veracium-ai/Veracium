@@ -153,6 +153,19 @@ jobs:
               sys.exit(1)
           PY
 
+  py314-required:
+    # main's branch protection requires a check named `pytest (py3.14)`, which the shards no longer report by that name. This
+    # job carries it: green only when every py3.14 shard AND the coverage check succeeded, so the protection setting is unchanged.
+    name: pytest (py3.14)
+    needs: [test, shard-check]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every py3.14 shard and the coverage check succeeded
+        run: |
+          echo "py3.14 shards: ${{ needs.test.result }}; shard-check: ${{ needs.shard-check.result }}"
+          [ "${{ needs.test.result }}" = success ] && [ "${{ needs.shard-check.result }}" = success ]
+
   build:
     name: build & twine check
     runs-on: ubuntu-latest
