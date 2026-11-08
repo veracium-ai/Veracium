@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ 7eb00c3ae5bbab710fe18c17e316c206ede352b9
+# generated 2026-09-12 against veracium @ e75382cd4a49741f613aaef80adeb229dfd26a8f
+# RE-PINNED 2026-11-08 (e75382cd: 0018 round 6's R5-01 and S2 closures moved src/veracium/store/release_migration.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-07 (7eb00c3a: E1's second clause added to cli.py's printed sentences; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-07 (96a8fa69: 0018 round 5's closures moved src/veracium/store/release_migration.py and cli.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-06 (cbb1cbe1: the 0018 adjacent rungs moved src/; both instruments re-run, and the body is byte-identical)
