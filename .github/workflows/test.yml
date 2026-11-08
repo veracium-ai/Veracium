@@ -54,12 +54,21 @@ jobs:
           PYTHONPATH: .github
           VERACIUM_CI_SHARD: ${{ matrix.shard }}/5
           VERACIUM_CI_SHARD_REPORT: ${{ runner.temp }}/shard-report.json
-        run: pytest -q -p ci_shard
+          VERACIUM_CI_JOB_NAME: pytest (py${{ matrix.python-version }}, ${{ matrix.shard }}/5)
+        # .github/ci_run.py runs the same `pytest -q -p ci_shard` and keeps the evidence a review stage reads instead of
+        # a local capture (owner, 2026-11-07): the manifest, junit, node list, raw output and pip freeze.
+        run: python .github/ci_run.py "$RUNNER_TEMP/ci-evidence" -- -q -p ci_shard
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: shard-report-py${{ matrix.python-version }}-${{ matrix.shard }}
           path: ${{ runner.temp }}/shard-report.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-evidence-py${{ matrix.python-version }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/ci-evidence
           if-no-files-found: error
         # The live LLM acceptance eval is opt-in (VERACIUM_EVAL=1) and needs a
         # provider + key, so it stays skipped here; the offline suite is the gate.
@@ -103,19 +112,56 @@ jobs:
           PYTHONPATH: .github
           VERACIUM_CI_SHARD: ${{ matrix.shard }}/5
           VERACIUM_CI_SHARD_REPORT: ${{ runner.temp }}/shard-report.json
-        run: pytest -q -p ci_shard
+          VERACIUM_CI_JOB_NAME: pytest (pydantic floor, ${{ matrix.shard }}/5)
+        run: python .github/ci_run.py "$RUNNER_TEMP/ci-evidence" -- -q -p ci_shard
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: shard-report-floor-${{ matrix.shard }}
           path: ${{ runner.temp }}/shard-report.json
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-evidence-floor-${{ matrix.shard }}
+          path: ${{ runner.temp }}/ci-evidence
+          if-no-files-found: error
+
+  collect:
+    # The full --collect-only list at the pin under [dev,mcp] (research's requirement 2), so a stage can prove from
+    # CI's own bytes that the py3.14 shards partition it. shard-check compares it with the shards' collected_sha256.
+    name: collect (py3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,mcp]"
+      - name: Collect the whole suite
+        env:
+          TMPDIR: ${{ runner.temp }}
+          PYTHONPATH: .github
+          VERACIUM_CI_JOB_NAME: collect (py3.14)
+        run: python .github/ci_run.py "$RUNNER_TEMP/ci-evidence" -- --collect-only -q -p ci_shard
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-evidence-collect-py3.14
+          path: ${{ runner.temp }}/ci-evidence
+          if-no-files-found: error
 
   shard-check:
     # Refuses unless, for each lane, all five shards collected the same suite and computed the same assignment, their
     # selections are disjoint, and their union is the whole collection: a share lost to a bad assignment cannot pass.
     name: shards cover the suite once
-    needs: [test, min-deps]
+    needs: [test, min-deps, collect]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -123,6 +169,10 @@ jobs:
         with:
           pattern: shard-report-*
           path: reports
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-evidence-collect-py3.14
+          path: collect
       - name: Check each lane's shards partition its collection
         run: |
           python3 - <<'PY'
@@ -148,6 +198,20 @@ jobs:
                   bad.append(f"{lane}: {len(set(sel))} selected of {rs[0]['collected']} collected")
               print(f"{lane}: {len(rs)} shards, {len(set(sel))} of {rs[0]['collected']} nodes, each once; "
                     + ", ".join(f"{r['shard']}:{len(r['selected'])}" for r in sorted(rs, key=lambda r: r["shard"])))
+          import hashlib, re
+          out = pathlib.Path("collect/pytest-output.txt").read_text(encoding="utf-8").splitlines()
+          block = out[:out.index("")] if "" in out else out      # the id list ends at the first blank line
+          ids = sorted(block)
+          if not ids or any("::" not in l for l in ids):
+              bad.append(f"collect: its first block is not a node-id list ({len(ids)} lines)")
+          tail = [l for l in out if re.match(r"^\d+ tests? collected", l)]
+          py = lanes.get("shard-report-py3.14", [{}])[0]
+          if not tail or int(tail[-1].split()[0]) != len(ids):
+              bad.append(f"collect: its summary {tail[-1:]} does not count its {len(ids)} listed ids")
+          same = hashlib.sha256("\n".join(ids).encode()).hexdigest() == py.get("collected_sha256")
+          if not same:
+              bad.append(f"collect: its {len(ids)} ids are not the py3.14 shards' collection ({py.get('collected')})")
+          print(f"collect: {len(ids)} node ids, {'equal' if same else 'NOT equal'} to the py3.14 shards' collection")
           if bad:
               print("REFUSED:", *bad, sep="\n  ")
               sys.exit(1)
@@ -157,14 +221,14 @@ jobs:
     # main's branch protection requires a check named `pytest (py3.14)`, which the shards no longer report by that name. This
     # job carries it: green only when every py3.14 shard AND the coverage check succeeded, so the protection setting is unchanged.
     name: pytest (py3.14)
-    needs: [test, shard-check]
+    needs: [test, shard-check, collect]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Every py3.14 shard and the coverage check succeeded
         run: |
-          echo "py3.14 shards: ${{ needs.test.result }}; shard-check: ${{ needs.shard-check.result }}"
-          [ "${{ needs.test.result }}" = success ] && [ "${{ needs.shard-check.result }}" = success ]
+          echo "py3.14 shards: ${{ needs.test.result }}; shard-check: ${{ needs.shard-check.result }}; collect: ${{ needs.collect.result }}"
+          [ "${{ needs.test.result }}" = success ] && [ "${{ needs.shard-check.result }}" = success ] && [ "${{ needs.collect.result }}" = success ]
 
   build:
     name: build & twine check
