@@ -1,0 +1,225 @@
+{
+ "body_sha256": "56cd6c26b8491fa7dfd9799658c09aff3b31ccd2b7a22e76937dde032e7b9c7c",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head"
+   ],
+   "definition_sha256": "76db3004598a1fbea61dbebd9863b07cb2f3112ea3181eb3a9caa30aca396c73",
+   "expected": "SURVIVED",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R1-02-sa10_gate",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def text_classes(target=None):': the bytes change, the behaviour does not"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "f06e9e769f4df581428ac3763df6fdd188a9e422a98c6b25aa38486688f1c150",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R1-02-migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _alters(lo, v, statements):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R1-02": [
+    "tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head",
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R1-02-migration": "f06e9e769f4df581428ac3763df6fdd188a9e422a98c6b25aa38486688f1c150",
+   "NOOP-0018-AR-R1-02-sa10_gate": "76db3004598a1fbea61dbebd9863b07cb2f3112ea3181eb3a9caa30aca396c73"
+  },
+  "definitions": {
+   "I33-the-stamp-written-as-head": "ad9ccf16b9bcb1e65dd097b88dfe4c214fcfb0ea0c56fbfae4a894a8f50a7cbc",
+   "I36-a-data-entry-issues-ddl": "53040dd8f99761a3f2cbaec67e296377522b7e276fff3cd6cb12f5f084c6eabc",
+   "I39-every-historical-constructor-admitted": "bcc79555962a6dc7815075555bfd3df014417df80a6c20c90b08a36fb39636ed"
+  },
+  "digests": {
+   "specs/evidence/0013/sa10_gate.py": "8a03d9f2f6f3a705bf6bcfa6e247141c6bb75dbe08de4b9d8edd2baf38ca746d",
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
+   "tests/test_0018_rungs_t2.py": "950724e6caabde4cb23814f0ff18831e7dc0c945e047dd755e8be53acf4b0c8b",
+   "tests/test_0018_rungs_t5.py": "5ecb07313fd6e6279fbe18e5addb6cbb0a97d41dd81ad8ff6a53d669e72a7ee0",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R1-02",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head"
+   ],
+   "definition_sha256": "bcc79555962a6dc7815075555bfd3df014417df80a6c20c90b08a36fb39636ed",
+   "file": "specs/evidence/0013/sa10_gate.py",
+   "finding": "0018-AR-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I39-every-historical-constructor-admitted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "gate",
+   "named_cells": [
+    "tests/test_0018_rungs_t2.py::test_sa10_s_text_classes_bind_the_target_and_not_the_head"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.54s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "head equality is widened to every historical constructor, which round 1 ruled out. Here and not in SA10's table because its cell is in T2"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "53040dd8f99761a3f2cbaec67e296377522b7e276fff3cd6cb12f5f084c6eabc",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-a-data-entry-issues-ddl",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.09s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a `data` entry issues DDL: what the kind rule stops and SA10 alone would admit elsewhere"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "ad9ccf16b9bcb1e65dd097b88dfe4c214fcfb0ea0c56fbfae4a894a8f50a7cbc",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R1-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I33-the-stamp-written-as-head",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a rung stamps head"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "gate": 1,
+   "product": 2
+  },
+  "controls": 2,
+  "controls_good": 2,
+  "good": 3,
+  "killed": 3,
+  "rows": 3,
+  "seconds": 32
+ }
+}

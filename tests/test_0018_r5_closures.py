@@ -8,6 +8,10 @@ else None). S2: absence is an lstat ENOENT, never os.path.exists's False, which 
 
 Every case runs the real walk or the real rung on a temporary store. Faults are runtime patches, or a real chmod where the process is not
 root (as root a chmod denies nothing, so the injected EACCES variant is the one that runs everywhere).
+
+FROZEN AT EXTERNAL ROUND 6 (2026-11-08, IMPLEMENTATION ACCEPTED; specs/0018 v9.1.1). This module is the publication-state matrix the
+acceptance names. The verdict's rule forward, verbatim: "Keep the publication-state matrix, raw invocation witness and source/test-bound backward captures with later changes to these seams." A change here, or to the writers and sinks it exercises, reopens
+review of the frozen surface: it is not an edit to a test.
 """
 from __future__ import annotations
 

@@ -159,7 +159,10 @@ def test_the_v3_observed_at_fill_is_rung_three_s_read(tmp_path, monkeypatch):
 
 # ---- I36 ---------------------------------------------------------------------------------------------------------------
 class _Trace:
-    """Unit 1: the entries dispatched, in order, AND what each one actually did (external R4-04: an entry is yielded by the plan
+    """FROZEN AT EXTERNAL ROUND 6 (2026-11-08, IMPLEMENTATION ACCEPTED; specs/0018 v9.1.1): this observer is the raw invocation
+    witness the acceptance names. The verdict's rule forward, verbatim: "Keep the publication-state matrix, raw invocation witness and source/test-bound backward captures with later changes to these seams." Weakening what it observes reopens review of I36.
+
+    Unit 1: the entries dispatched, in order, AND what each one actually did (external R4-04: an entry is yielded by the plan
     whether or not it runs, so the yield is enumeration, not invocation). Unit 2: each write, with the entry active when SQLite
     prepared it.
 

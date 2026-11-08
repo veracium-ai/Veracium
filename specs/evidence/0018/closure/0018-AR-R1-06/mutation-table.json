@@ -1,0 +1,202 @@
+{
+ "body_sha256": "beaa24c00e803cf718658dffd2891278bb6f16f5ab77deb0ba6e4a79db8b69d3",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
+    "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp",
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ],
+   "definition_sha256": "aaa658adef3d596d83d7142947a398d0388ff99e6be4904024643182cd154ba6",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R1-06-migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
+    "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp",
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _alters(lo, v, statements):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R1-06": [
+    "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step",
+    "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp",
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R1-06-migration": "aaa658adef3d596d83d7142947a398d0388ff99e6be4904024643182cd154ba6"
+  },
+  "definitions": {
+   "I36-helper-carried-check-dropped": "da4bbd375436626140b31aac6606c7f9e7d3558a6ba98c5a00e63fcb217deded",
+   "I36-nested-check-deleted": "6139623b330d942ebdfcb3abd404c9fa6677532f0ff386963e25689c18a5fdbc",
+   "I36-two-data-steps-swapped": "7cad5651d5780e412ece3ac90027ab021e61bb2d35fcdfdc39fa87edac494a91"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
+   "tests/test_0013_pa1_campaign_cells.py": "0df0af6e7812e379fab5c64f8c72528f015a114baeee652bd83350f25ec961b5",
+   "tests/test_0018_rungs_t3.py": "263d6f2fcec63305fd845165853494623ecb3742578718856cd353c2c13d05c2",
+   "tests/test_0018_rungs_t5.py": "5ecb07313fd6e6279fbe18e5addb6cbb0a97d41dd81ad8ff6a53d669e72a7ee0",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R1-06",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp"
+   ],
+   "definition_sha256": "da4bbd375436626140b31aac6606c7f9e7d3558a6ba98c5a00e63fcb217deded",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R1-06",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-helper-carried-check-dropped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t3.py::test_row_12_a_postcondition_failure_rolls_back_to_the_original_stamp"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.80s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a check that lives in a helper never runs"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step"
+   ],
+   "definition_sha256": "6139623b330d942ebdfcb3abd404c9fa6677532f0ff386963e25689c18a5fdbc",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R1-06",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-nested-check-deleted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0013_pa1_campaign_cells.py::test_cell_a_skipped_wiki_drop_refuses_at_its_step"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.78s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a check's body is emptied"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ],
+   "definition_sha256": "7cad5651d5780e412ece3ac90027ab021e61bb2d35fcdfdc39fa87edac494a91",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R1-06",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-two-data-steps-swapped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.55s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "two data steps of one rung run in the other order"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 3
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 3,
+  "killed": 3,
+  "rows": 3,
+  "seconds": 15
+ }
+}

@@ -1,0 +1,1981 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="48" skipped="0" tests="69" time="10.025" timestamp="2026-11-08T07:31:49.023589+00:00" hostname="ip-172-31-29-19"><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-existing-readable]" time="0.183" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-existing-transient]" time="0.134"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-ed7a6587-0bdc-4c3e-a7b9-d4d2cd872ef4'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb3290f0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb0f1450&gt;, b = 1
+record = 'existing', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-ed7a6587-0bdc-4c3e-a7b9-d4d2cd872ef4'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-existing-persistent]" time="0.136"><failure message="AssertionError: ('', &quot;MigrationAuditReadError: audit readback malformed for operation 'op-8ed38d7f-ea29-4f07-a4ee-90e90ad1980c' under ... the store may be at the rung's target regardless&#10;  rerun: not until the record is inspected&#10;  store version: unknown&#10;  &quot;)&#10;assert (1 == 1 and 'action: rerun: ' not in 'MigrationAu...n: unknown\n'&#10; +  where 1 = len(['op-8ed38d7f-ea29-4f07-a4ee-90e90ad1980c'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;[+10 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb135d90&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb0f3d90&gt;, b = 1
+record = 'existing', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('', "MigrationAuditReadError: audit readback malformed for operation 'op-8ed38d7f-ea29-4f07-a4ee-90e90ad1980c' under ... the store may be at the rung's target regardless
+E         rerun: not until the record is inspected
+E         store version: unknown
+E         ")
+E       assert (1 == 1 and 'action: rerun: ' not in 'MigrationAu...n: unknown\n'
+E        +  where 1 = len(['op-8ed38d7f-ea29-4f07-a4ee-90e90ad1980c'])
+E         
+E         'action: rerun: ' is contained here:
+E           n: unknown and 'migration-a...-unavailable' not in 'MigrationAu...n: unknown\n'
+E         
+E         'migration-audit-unavailable' is contained here:
+E            outcome 'migration-audit-unavailable'; resulting_state 'unknown' (derived-from-outcome — from the frozen outcome-to-states map, never read from the failed record); the audit is the record of the operation and its read failure is surfaced loudly
+E         ?           +++++++++++++++++++++++++++
+E           rung v1 -&gt; v2 (operation op-8ed38d7f-ea29-4f07-a4ee-90e90ad1980c): not counted, and the store may be at v2 regardless
+E           operation_id: op-8ed38d7f-ea29-4f07-a4ee-90e90ad1980c
+E           resulting_state: unknown (derived-from-outcome)...
+E         
+E         ...Full output truncated, use '-vv' to show)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-absent-transient]" time="0.138"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-63180b9f-c97e-42de-999a-1421f8ca546b'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb2b17b0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb110640&gt;, b = 1
+record = 'absent', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-63180b9f-c97e-42de-999a-1421f8ca546b'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[1-absent-persistent]" time="0.136"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-2659195c-6158-4369-9e9d-6b657aee33dd'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_4')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb2b38a0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb110b00&gt;, b = 1
+record = 'absent', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-2659195c-6158-4369-9e9d-6b657aee33dd'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[13-existing-readable]" time="0.141" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[13-existing-transient]" time="0.138"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-d6bd0cc5-f5bf-4a6a-9338-9ee98254ea7a'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_6')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb561f50&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb2b1ae0&gt;, b = 13
+record = 'existing', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-d6bd0cc5-f5bf-4a6a-9338-9ee98254ea7a'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[13-existing-persistent]" time="0.142"><failure message="AssertionError: ('', &quot;MigrationAuditReadError: audit readback malformed for operation 'op-0cdd1a4d-9e1d-48c2-9e98-8ce9b203d176' under ... the store may be at the rung's target regardless&#10;  rerun: not until the record is inspected&#10;  store version: unknown&#10;  &quot;)&#10;assert (1 == 1 and 'action: rerun: ' not in 'MigrationAu...n: unknown\n'&#10; +  where 1 = len(['op-0cdd1a4d-9e1d-48c2-9e98-8ce9b203d176'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;[+10 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_7')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb12a3f0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb2b17b0&gt;, b = 13
+record = 'existing', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('', "MigrationAuditReadError: audit readback malformed for operation 'op-0cdd1a4d-9e1d-48c2-9e98-8ce9b203d176' under ... the store may be at the rung's target regardless
+E         rerun: not until the record is inspected
+E         store version: unknown
+E         ")
+E       assert (1 == 1 and 'action: rerun: ' not in 'MigrationAu...n: unknown\n'
+E        +  where 1 = len(['op-0cdd1a4d-9e1d-48c2-9e98-8ce9b203d176'])
+E         
+E         'action: rerun: ' is contained here:
+E           n: unknown and 'migration-a...-unavailable' not in 'MigrationAu...n: unknown\n'
+E         
+E         'migration-audit-unavailable' is contained here:
+E            outcome 'migration-audit-unavailable'; resulting_state 'unknown' (derived-from-outcome — from the frozen outcome-to-states map, never read from the failed record); the audit is the record of the operation and its read failure is surfaced loudly
+E         ?           +++++++++++++++++++++++++++
+E           rung v13 -&gt; v14 (operation op-0cdd1a4d-9e1d-48c2-9e98-8ce9b203d176): not counted, and the store may be at v14 regardless
+E           operation_id: op-0cdd1a4d-9e1d-48c2-9e98-8ce9b203d176
+E           resulting_state: unknown (derived-from-outcome)...
+E         
+E         ...Full output truncated, use '-vv' to show)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[13-absent-transient]" time="0.138"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-408b57a1-5c92-44fc-82c8-c0f4ee026376'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_8')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb129a90&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb182650&gt;, b = 13
+record = 'absent', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-408b57a1-5c92-44fc-82c8-c0f4ee026376'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[13-absent-persistent]" time="0.138"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-4df130fe-7fda-4dc6-aed9-c6c7a0f89380'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_9')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb0e2430&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb183950&gt;, b = 13
+record = 'absent', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-4df130fe-7fda-4dc6-aed9-c6c7a0f89380'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[15-existing-readable]" time="0.147" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[15-existing-transient]" time="0.167"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-acceca4a-2531-41b0-8bf7-b45591533077'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_11')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb1a5d90&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb129400&gt;, b = 15
+record = 'existing', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-acceca4a-2531-41b0-8bf7-b45591533077'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[15-existing-persistent]" time="0.145"><failure message="AssertionError: ('', &quot;MigrationAuditReadError: audit readback malformed for operation 'op-df038aea-0ea2-4392-a9ba-c82a8e06462e' under ... the store may be at the rung's target regardless&#10;  rerun: not until the record is inspected&#10;  store version: unknown&#10;  &quot;)&#10;assert (1 == 1 and 'action: rerun: ' not in 'MigrationAu...n: unknown\n'&#10; +  where 1 = len(['op-df038aea-0ea2-4392-a9ba-c82a8e06462e'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;[+10 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_12')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb47eed0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb608130&gt;, b = 15
+record = 'existing', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('', "MigrationAuditReadError: audit readback malformed for operation 'op-df038aea-0ea2-4392-a9ba-c82a8e06462e' under ... the store may be at the rung's target regardless
+E         rerun: not until the record is inspected
+E         store version: unknown
+E         ")
+E       assert (1 == 1 and 'action: rerun: ' not in 'MigrationAu...n: unknown\n'
+E        +  where 1 = len(['op-df038aea-0ea2-4392-a9ba-c82a8e06462e'])
+E         
+E         'action: rerun: ' is contained here:
+E           n: unknown and 'migration-a...-unavailable' not in 'MigrationAu...n: unknown\n'
+E         
+E         'migration-audit-unavailable' is contained here:
+E            outcome 'migration-audit-unavailable'; resulting_state 'unknown' (derived-from-outcome — from the frozen outcome-to-states map, never read from the failed record); the audit is the record of the operation and its read failure is surfaced loudly
+E         ?           +++++++++++++++++++++++++++
+E           rung v15 -&gt; v16 (operation op-df038aea-0ea2-4392-a9ba-c82a8e06462e): not counted, and the store may be at v16 regardless
+E           operation_id: op-df038aea-0ea2-4392-a9ba-c82a8e06462e
+E           resulting_state: unknown (derived-from-outcome)...
+E         
+E         ...Full output truncated, use '-vv' to show)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[15-absent-transient]" time="0.149"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-78715ba7-9c65-482b-a8e8-5ace1c873c39'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_13')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb1534d0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb608c90&gt;, b = 15
+record = 'absent', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-78715ba7-9c65-482b-a8e8-5ace1c873c39'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2[15-absent-persistent]" time="0.149"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'&#10; +  where 1 = len(['op-eb08d1dd-4cde-4186-8dd9-1847ddfb10fd'])&#10;  &#10;  'action: rerun: ' is contained here:&#10;     0 (none)&#10;[+4 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_an_attempted_write_whose_14')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb1668e0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb5fc1f0&gt;, b = 15
+record = 'absent', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                              if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
+        """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
+        on a record that exists, and an initial load that fails once or every time, whether or not the record is there. The kernel rolls back.
+        Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
+        stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
+        id, no rerun, never N1."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+        ids = _minted(monkeypatch, after=seed if record == "existing" else None)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_attempted", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and "action: rerun: " not in out + err and "migration-audit-unavailable" not in out + err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'action: rerun: ' not in 'outcome: mi...n: unknown\n'
+E        +  where 1 = len(['op-eb08d1dd-4cde-4186-8dd9-1847ddfb10fd'])
+E         
+E         'action: rerun: ' is contained here:
+E            0 (none)
+E           action: rerun: rerun: the attempted record is proven not written and nothing was consumed
+E         ? ++++++++       +++++++
+E           rerun: yes
+E           store version: unknown)
+
+tests/test_0018_r5_closures.py:161: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[1-entry-build]" time="0.134" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[1-tmp-open]" time="0.138" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[1-fsync]" time="0.137" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[13-entry-build]" time="0.141" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[13-tmp-open]" time="0.141" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[13-fsync]" time="0.142" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[15-entry-build]" time="0.144" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[15-tmp-open]" time="0.145" /><testcase classname="tests.test_0018_r5_closures" name="test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1[15-fsync]" time="0.144" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-absent-persistent]" time="0.158"><failure message="AssertionError: ('absent', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', st... audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v2&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-b0a7e62a-0876-403d-b2dc-8e12c5c34e8a'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb3a8fa0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cae9d3d0&gt;, b = 1
+record = 'absent', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('absent', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', st... audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v2
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-b0a7e62a-0876-403d-b2dc-8e12c5c34e8a'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-absent-transient]" time="0.158" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-different-persistent]" time="0.165"><failure message="AssertionError: ('different', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated',... audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v2&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-46875fe4-bcee-4442-8c67-ff944f0476e5'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cafb8980&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb3f1950&gt;, b = 1
+record = 'different', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('different', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated',... audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v2
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-46875fe4-bcee-4442-8c67-ff944f0476e5'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-different-readable]" time="0.164" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-different-transient]" time="0.165"><failure message="AssertionError: ('different', 'transient', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ... audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v2&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-92975891-720f-4dbc-848c-7f56e573aacb'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t4')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cafb8d00&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb13d950&gt;, b = 1
+record = 'different', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('different', 'transient', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ... audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v2
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-92975891-720f-4dbc-848c-7f56e573aacb'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-matching-persistent]" time="0.162"><failure message="AssertionError: ('matching', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ... audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v2&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-00f94116-61a4-4734-be57-5ee5aab42d32'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t5')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cafbb000&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb294850&gt;, b = 1
+record = 'matching', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('matching', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ... audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v2
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-00f94116-61a4-4734-be57-5ee5aab42d32'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-matching-readable]" time="0.159" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[1-matching-transient]" time="0.162"><failure message="AssertionError: ('matching', 'transient', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', s... audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v2&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is True)&#10; +  where 1 = len(['op-acfabaf4-6e41-443a-abf3-240b263fd2d3'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t7')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cafbaf20&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb642550&gt;, b = 1
+record = 'matching', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('matching', 'transient', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', s... audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v2
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is True)
+E        +  where 1 = len(['op-acfabaf4-6e41-443a-abf3-240b263fd2d3'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-absent-persistent]" time="0.166"><failure message="AssertionError: ('absent', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', st...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v14&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-5c7ab234-6b03-4eb3-b14d-c94d7a3aea82'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t8')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cafb9630&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb1ae550&gt;, b = 13
+record = 'absent', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('absent', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', st...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v14
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-5c7ab234-6b03-4eb3-b14d-c94d7a3aea82'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-absent-transient]" time="0.168" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-different-persistent]" time="0.188"><failure message="AssertionError: ('different', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated',...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v14&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-88d10caf-03db-43fb-9d54-1558b1c0b6ea'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t10')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18a6d0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb022950&gt;, b = 13
+record = 'different', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('different', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated',...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v14
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-88d10caf-03db-43fb-9d54-1558b1c0b6ea'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-different-readable]" time="0.171" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-different-transient]" time="0.169"><failure message="AssertionError: ('different', 'transient', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v14&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-afe5a543-9d71-46f6-9cf3-b5a15a8ee441'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t12')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18b4d0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb00bbd0&gt;, b = 13
+record = 'different', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('different', 'transient', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v14
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-afe5a543-9d71-46f6-9cf3-b5a15a8ee441'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-matching-persistent]" time="0.190"><failure message="AssertionError: ('matching', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v14&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-6e2337fb-2180-4016-a2c4-4e085d0ae3d3'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t13')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18a350&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb13fdd0&gt;, b = 13
+record = 'matching', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('matching', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v14
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-6e2337fb-2180-4016-a2c4-4e085d0ae3d3'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-matching-readable]" time="0.171" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[13-matching-transient]" time="0.171"><failure message="AssertionError: ('matching', 'transient', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', s...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v14&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is True)&#10; +  where 1 = len(['op-9a0372e4-0d36-43d2-8d30-2bf990ce7995'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t15')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb189780&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb3cdfd0&gt;, b = 13
+record = 'matching', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('matching', 'transient', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', s...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v14
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is True)
+E        +  where 1 = len(['op-9a0372e4-0d36-43d2-8d30-2bf990ce7995'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-absent-persistent]" time="0.168"><failure message="AssertionError: ('absent', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', st...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v16&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-095dc08c-07d2-4329-884e-a9e78ce90963'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t16')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb189a90&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383caff7250&gt;, b = 15
+record = 'absent', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('absent', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', st...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v16
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-095dc08c-07d2-4329-884e-a9e78ce90963'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-absent-transient]" time="0.171" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-different-persistent]" time="0.173"><failure message="AssertionError: ('different', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated',...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v16&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-83e6ca6a-035a-4e97-86a9-17d33dff1f3c'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t18')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18ba80&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb641150&gt;, b = 15
+record = 'different', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('different', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated',...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v16
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-83e6ca6a-035a-4e97-86a9-17d33dff1f3c'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-different-readable]" time="0.177" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-different-transient]" time="0.177"><failure message="AssertionError: ('different', 'transient', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v16&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-331f608c-ede2-4f46-afe3-bb3c957f09fa'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t20')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb073070&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb03f3d0&gt;, b = 15
+record = 'different', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('different', 'transient', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v16
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-331f608c-ede2-4f46-afe3-bb3c957f09fa'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-matching-persistent]" time="0.175"><failure message="AssertionError: ('matching', 'persistent', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v16&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is None)&#10; +  where 1 = len(['op-f6d8f8c3-bce6-4a3b-a2b9-fd63ec9f6f75'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t21')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb072ac0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb060cd0&gt;, b = 15
+record = 'matching', load = 'persistent'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('matching', 'persistent', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', ...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v16
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is None)
+E        +  where 1 = len(['op-f6d8f8c3-bce6-4a3b-a2b9-fd63ec9f6f75'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-matching-readable]" time="0.176" /><testcase classname="tests.test_0018_r5_closures" name="test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven[15-matching-transient]" time="0.176"><failure message="AssertionError: ('matching', 'transient', &quot;MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', s...audit-record-not-published: the terminal record was not published; this tool does not repair it&#10;  store version: v16&#10;  &quot;)&#10;assert (1 == 1 and 1 == 1 and False is True)&#10; +  where 1 = len(['op-4ead1d99-0b33-4c23-9d1f-96b785019b8e'])&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_failed_terminal_write_t23')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb072890&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc3ed0&gt;, b = 15
+record = 'matching', load = 'transient'
+
+    @pytest.mark.parametrize("record, load", sorted(_TERMINAL))
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven(tmp_path, monkeypatch, capsys, b, record, load):
+        """Outside the proving window the terminal carrier is decided by one recovery read_terminal: True for a valid record equal to the
+        facts, False for a successful read with no record (never after append-once), None otherwise. E1 in every case, the committed rung
+        counted once, the same store-side action."""
+        want = _TERMINAL[(record, load)]
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+        other = rm.TerminalFacts("current", b, b + 1, False, False, "destination", b + 1)
+    
+        def seed(authority):
+            REAL_WRITE_TERMINAL(ap, authority.operation_id, same if record == "matching" else other)
+        ids = _minted(monkeypatch, after=seed if record != "absent" else None)
+        carried, delegate = [], rm._delegate
+    
+        def observe(*a, **k):
+            try:
+                return delegate(*a, **k)
+            except rm.MigrationAuditWriteError as e:
+                carried.append(e)
+                raise
+        monkeypatch.setattr(rm, "_delegate", observe)
+        if load != "readable":
+            state = _unreadable_load(monkeypatch, "_write_terminal", load)
+        code, out, err = _walk(p, capsys)
+        if load != "readable":
+            assert state["fired"] &gt;= 1
+&gt;       assert len(ids) == 1 and len(carried) == 1 and carried[0].audit_committed is want, (record, load, err)
+E       AssertionError: ('matching', 'transient', "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', s...audit-record-not-published: the terminal record was not published; this tool does not repair it
+E         store version: v16
+E         ")
+E       assert (1 == 1 and 1 == 1 and False is True)
+E        +  where 1 = len(['op-4ead1d99-0b33-4c23-9d1f-96b785019b8e'])
+E        +  and   1 = len([MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...; the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed")])
+E        +  and   False = MigrationAuditWriteError("audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_...); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed").audit_committed
+
+tests/test_0018_r5_closures.py:260: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false[1]" time="0.010"><failure message="AttributeError: module 'veracium.store.release_migration' has no attribute '_stage_audit'. Did you mean: '_store_audit'?">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_terminal_write_failing_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb070210&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc03d0&gt;, b = 1
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false(tmp_path, monkeypatch, capsys, b):
+        """The terminal sink's one False: the trail was read with no terminal record for this id, and staging the tmp file failed."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        ids = _minted(monkeypatch)
+&gt;       stage = rm._stage_audit
+                ^^^^^^^^^^^^^^^
+E       AttributeError: module 'veracium.store.release_migration' has no attribute '_stage_audit'. Did you mean: '_store_audit'?
+
+tests/test_0018_r5_closures.py:271: AttributeError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false[13]" time="0.012"><failure message="AttributeError: module 'veracium.store.release_migration' has no attribute '_stage_audit'. Did you mean: '_store_audit'?">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_terminal_write_failing_1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb073150&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc3150&gt;, b = 13
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false(tmp_path, monkeypatch, capsys, b):
+        """The terminal sink's one False: the trail was read with no terminal record for this id, and staging the tmp file failed."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        ids = _minted(monkeypatch)
+&gt;       stage = rm._stage_audit
+                ^^^^^^^^^^^^^^^
+E       AttributeError: module 'veracium.store.release_migration' has no attribute '_stage_audit'. Did you mean: '_store_audit'?
+
+tests/test_0018_r5_closures.py:271: AttributeError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false[15]" time="0.012"><failure message="AttributeError: module 'veracium.store.release_migration' has no attribute '_stage_audit'. Did you mean: '_store_audit'?">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_terminal_write_failing_2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb071be0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc1150&gt;, b = 15
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false(tmp_path, monkeypatch, capsys, b):
+        """The terminal sink's one False: the trail was read with no terminal record for this id, and staging the tmp file failed."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        ids = _minted(monkeypatch)
+&gt;       stage = rm._stage_audit
+                ^^^^^^^^^^^^^^^
+E       AttributeError: module 'veracium.store.release_migration' has no attribute '_stage_audit'. Did you mean: '_store_audit'?
+
+tests/test_0018_r5_closures.py:271: AttributeError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[1-attempted]" time="0.134"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;[+1 more line; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb0737e0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb3f2d50&gt;, b = 1
+sink = 'attempted'
+
+    @pytest.mark.parametrize("sink", ["attempted", "terminal"])
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_record_in_an_unsearchable_directory_is_never_read_as_absent(tmp_path, monkeypatch, capsys, b, sink):
+        """EACCES on the trail and its tmp file, as an unsearchable directory gives (os.path.exists False, os.stat PermissionError), with
+        this id's record present: N2 at the attempted sink, None at the terminal sink; never N1 or False."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+    
+        def seed(authority):
+            if sink == "attempted":
+                with open(ap, "w", encoding="utf-8") as f:
+                    json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            else:
+                REAL_WRITE_TERMINAL(ap, authority.operation_id, same)
+        ids = _minted(monkeypatch, after=seed)
+        writer = rm._write_attempted if sink == "attempted" else rm._write_terminal
+    
+        def denied(*a, **k):
+            with pytest.MonkeyPatch.context() as mp:
+                _eacces(mp, [ap, ap + ".tmp"])
+                assert os.path.exists(ap) is False                   # the condition the cell is about
+                return writer(*a, **k)
+        monkeypatch.setattr(rm, "_write_attempted" if sink == "attempted" else "_write_terminal", denied)
+        if sink == "terminal":                                     # the recovery read meets the same directory
+            read = rm.read_terminal
+    
+            def denied_read(*a, **k):
+                with pytest.MonkeyPatch.context() as mp:
+                    _eacces(mp, [ap, ap + ".tmp"])
+                    return read(*a, **k)
+            monkeypatch.setattr(rm, "read_terminal", denied_read)
+        code, out, err = _walk(p, capsys)
+        if sink == "attempted":                                    # only the writer's read is denied; the walk's readback reads: N2
+&gt;           assert code == 1 and "outcome: migration-audit-state-unknown" in out and f"operation_id: {ids[0]}" in out.splitlines(), (out, err)
+E           AssertionError: ('outcome: migration-audit-unavailable
+E             store_changed: False  transaction_committed: False
+E             resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E             rerun: yes
+E             store version: unknown
+E             ', '')
+E           assert (1 == 1 and 'outcome: migration-audit-state-unknown' in 'outcome: migration-audit-unavailable\nstore_changed: False  transaction_committed: False\nresulting_state: unknown  r...erun: rerun: the attempted record is proven not written and nothing was consumed\nrerun: yes\nstore version: unknown\n')
+
+tests/test_0018_r5_closures.py:315: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[1-terminal]" time="0.164"><failure message="AssertionError: MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_committed=False, operation 'op-8ab3b074-c2c3-4ce9-b198-bb9e13274006', store '/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab1/s.db', v2); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed&#10;[+11 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb071e80&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafbf6d0&gt;, b = 1
+sink = 'terminal'
+
+    @pytest.mark.parametrize("sink", ["attempted", "terminal"])
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_record_in_an_unsearchable_directory_is_never_read_as_absent(tmp_path, monkeypatch, capsys, b, sink):
+        """EACCES on the trail and its tmp file, as an unsearchable directory gives (os.path.exists False, os.stat PermissionError), with
+        this id's record present: N2 at the attempted sink, None at the terminal sink; never N1 or False."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+    
+        def seed(authority):
+            if sink == "attempted":
+                with open(ap, "w", encoding="utf-8") as f:
+                    json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            else:
+                REAL_WRITE_TERMINAL(ap, authority.operation_id, same)
+        ids = _minted(monkeypatch, after=seed)
+        writer = rm._write_attempted if sink == "attempted" else rm._write_terminal
+    
+        def denied(*a, **k):
+            with pytest.MonkeyPatch.context() as mp:
+                _eacces(mp, [ap, ap + ".tmp"])
+                assert os.path.exists(ap) is False                   # the condition the cell is about
+                return writer(*a, **k)
+        monkeypatch.setattr(rm, "_write_attempted" if sink == "attempted" else "_write_terminal", denied)
+        if sink == "terminal":                                     # the recovery read meets the same directory
+            read = rm.read_terminal
+    
+            def denied_read(*a, **k):
+                with pytest.MonkeyPatch.context() as mp:
+                    _eacces(mp, [ap, ap + ".tmp"])
+                    return read(*a, **k)
+            monkeypatch.setattr(rm, "read_terminal", denied_read)
+        code, out, err = _walk(p, capsys)
+        if sink == "attempted":                                    # only the writer's read is denied; the walk's readback reads: N2
+            assert code == 1 and "outcome: migration-audit-state-unknown" in out and f"operation_id: {ids[0]}" in out.splitlines(), (out, err)
+            assert "action: rerun: " not in out
+        else:
+&gt;           assert code == 3 and "audit_committed: None" in err and f"action: audit-record-not-published: {_SENTENCE[None]}" in err, err
+E           AssertionError: MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_committed=False, operation 'op-8ab3b074-c2c3-4ce9-b198-bb9e13274006', store '/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab1/s.db', v2); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed
+E             rung v1 -&gt; v2 (operation op-8ab3b074-c2c3-4ce9-b198-bb9e13274006): its terminal record was not published; this tool does not repair it
+E             operation_id: op-8ab3b074-c2c3-4ce9-b198-bb9e13274006
+E             resulting_state: destination (recorded)
+E             store_changed: True  transaction_committed: True  resulting_version: 2  audit_committed: False
+E             rungs committed by this walk: 1 (op-8ab3b074-c2c3-4ce9-b198-bb9e13274006)
+E             action: rerun-resumes-store: rerun resumes from the store as it stands
+E             rerun: yes
+E             action: audit-record-not-published: the terminal record was not published; this tool does not repair it
+E             store version: v2
+E             
+E           assert (3 == 3 and 'audit_committed: None' in "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit...: audit-record-not-published: the terminal record was not published; this tool does not repair it\nstore version: v2\n")
+
+tests/test_0018_r5_closures.py:318: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[13-attempted]" time="0.141"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;[+1 more line; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb072c80&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc1fd0&gt;, b = 13
+sink = 'attempted'
+
+    @pytest.mark.parametrize("sink", ["attempted", "terminal"])
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_record_in_an_unsearchable_directory_is_never_read_as_absent(tmp_path, monkeypatch, capsys, b, sink):
+        """EACCES on the trail and its tmp file, as an unsearchable directory gives (os.path.exists False, os.stat PermissionError), with
+        this id's record present: N2 at the attempted sink, None at the terminal sink; never N1 or False."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+    
+        def seed(authority):
+            if sink == "attempted":
+                with open(ap, "w", encoding="utf-8") as f:
+                    json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            else:
+                REAL_WRITE_TERMINAL(ap, authority.operation_id, same)
+        ids = _minted(monkeypatch, after=seed)
+        writer = rm._write_attempted if sink == "attempted" else rm._write_terminal
+    
+        def denied(*a, **k):
+            with pytest.MonkeyPatch.context() as mp:
+                _eacces(mp, [ap, ap + ".tmp"])
+                assert os.path.exists(ap) is False                   # the condition the cell is about
+                return writer(*a, **k)
+        monkeypatch.setattr(rm, "_write_attempted" if sink == "attempted" else "_write_terminal", denied)
+        if sink == "terminal":                                     # the recovery read meets the same directory
+            read = rm.read_terminal
+    
+            def denied_read(*a, **k):
+                with pytest.MonkeyPatch.context() as mp:
+                    _eacces(mp, [ap, ap + ".tmp"])
+                    return read(*a, **k)
+            monkeypatch.setattr(rm, "read_terminal", denied_read)
+        code, out, err = _walk(p, capsys)
+        if sink == "attempted":                                    # only the writer's read is denied; the walk's readback reads: N2
+&gt;           assert code == 1 and "outcome: migration-audit-state-unknown" in out and f"operation_id: {ids[0]}" in out.splitlines(), (out, err)
+E           AssertionError: ('outcome: migration-audit-unavailable
+E             store_changed: False  transaction_committed: False
+E             resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E             rerun: yes
+E             store version: unknown
+E             ', '')
+E           assert (1 == 1 and 'outcome: migration-audit-state-unknown' in 'outcome: migration-audit-unavailable\nstore_changed: False  transaction_committed: False\nresulting_state: unknown  r...erun: rerun: the attempted record is proven not written and nothing was consumed\nrerun: yes\nstore version: unknown\n')
+
+tests/test_0018_r5_closures.py:315: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[13-terminal]" time="0.167"><failure message="AssertionError: MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_committed=False, operation 'op-e40c4833-27b5-4c1b-9c0b-015374a0d9ec', store '/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab3/s.db', v14); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed&#10;[+11 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18ac10&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb1acad0&gt;, b = 13
+sink = 'terminal'
+
+    @pytest.mark.parametrize("sink", ["attempted", "terminal"])
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_record_in_an_unsearchable_directory_is_never_read_as_absent(tmp_path, monkeypatch, capsys, b, sink):
+        """EACCES on the trail and its tmp file, as an unsearchable directory gives (os.path.exists False, os.stat PermissionError), with
+        this id's record present: N2 at the attempted sink, None at the terminal sink; never N1 or False."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+    
+        def seed(authority):
+            if sink == "attempted":
+                with open(ap, "w", encoding="utf-8") as f:
+                    json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            else:
+                REAL_WRITE_TERMINAL(ap, authority.operation_id, same)
+        ids = _minted(monkeypatch, after=seed)
+        writer = rm._write_attempted if sink == "attempted" else rm._write_terminal
+    
+        def denied(*a, **k):
+            with pytest.MonkeyPatch.context() as mp:
+                _eacces(mp, [ap, ap + ".tmp"])
+                assert os.path.exists(ap) is False                   # the condition the cell is about
+                return writer(*a, **k)
+        monkeypatch.setattr(rm, "_write_attempted" if sink == "attempted" else "_write_terminal", denied)
+        if sink == "terminal":                                     # the recovery read meets the same directory
+            read = rm.read_terminal
+    
+            def denied_read(*a, **k):
+                with pytest.MonkeyPatch.context() as mp:
+                    _eacces(mp, [ap, ap + ".tmp"])
+                    return read(*a, **k)
+            monkeypatch.setattr(rm, "read_terminal", denied_read)
+        code, out, err = _walk(p, capsys)
+        if sink == "attempted":                                    # only the writer's read is denied; the walk's readback reads: N2
+            assert code == 1 and "outcome: migration-audit-state-unknown" in out and f"operation_id: {ids[0]}" in out.splitlines(), (out, err)
+            assert "action: rerun: " not in out
+        else:
+&gt;           assert code == 3 and "audit_committed: None" in err and f"action: audit-record-not-published: {_SENTENCE[None]}" in err, err
+E           AssertionError: MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_committed=False, operation 'op-e40c4833-27b5-4c1b-9c0b-015374a0d9ec', store '/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab3/s.db', v14); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed
+E             rung v13 -&gt; v14 (operation op-e40c4833-27b5-4c1b-9c0b-015374a0d9ec): its terminal record was not published; this tool does not repair it
+E             operation_id: op-e40c4833-27b5-4c1b-9c0b-015374a0d9ec
+E             resulting_state: destination (recorded)
+E             store_changed: True  transaction_committed: True  resulting_version: 14  audit_committed: False
+E             rungs committed by this walk: 1 (op-e40c4833-27b5-4c1b-9c0b-015374a0d9ec)
+E             action: rerun-resumes-store: rerun resumes from the store as it stands
+E             rerun: yes
+E             action: audit-record-not-published: the terminal record was not published; this tool does not repair it
+E             store version: v14
+E             
+E           assert (3 == 3 and 'audit_committed: None' in "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit... audit-record-not-published: the terminal record was not published; this tool does not repair it\nstore version: v14\n")
+
+tests/test_0018_r5_closures.py:318: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[15-attempted]" time="0.150"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;[+1 more line; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab4')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb188910&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb5d3050&gt;, b = 15
+sink = 'attempted'
+
+    @pytest.mark.parametrize("sink", ["attempted", "terminal"])
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_record_in_an_unsearchable_directory_is_never_read_as_absent(tmp_path, monkeypatch, capsys, b, sink):
+        """EACCES on the trail and its tmp file, as an unsearchable directory gives (os.path.exists False, os.stat PermissionError), with
+        this id's record present: N2 at the attempted sink, None at the terminal sink; never N1 or False."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+    
+        def seed(authority):
+            if sink == "attempted":
+                with open(ap, "w", encoding="utf-8") as f:
+                    json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            else:
+                REAL_WRITE_TERMINAL(ap, authority.operation_id, same)
+        ids = _minted(monkeypatch, after=seed)
+        writer = rm._write_attempted if sink == "attempted" else rm._write_terminal
+    
+        def denied(*a, **k):
+            with pytest.MonkeyPatch.context() as mp:
+                _eacces(mp, [ap, ap + ".tmp"])
+                assert os.path.exists(ap) is False                   # the condition the cell is about
+                return writer(*a, **k)
+        monkeypatch.setattr(rm, "_write_attempted" if sink == "attempted" else "_write_terminal", denied)
+        if sink == "terminal":                                     # the recovery read meets the same directory
+            read = rm.read_terminal
+    
+            def denied_read(*a, **k):
+                with pytest.MonkeyPatch.context() as mp:
+                    _eacces(mp, [ap, ap + ".tmp"])
+                    return read(*a, **k)
+            monkeypatch.setattr(rm, "read_terminal", denied_read)
+        code, out, err = _walk(p, capsys)
+        if sink == "attempted":                                    # only the writer's read is denied; the walk's readback reads: N2
+&gt;           assert code == 1 and "outcome: migration-audit-state-unknown" in out and f"operation_id: {ids[0]}" in out.splitlines(), (out, err)
+E           AssertionError: ('outcome: migration-audit-unavailable
+E             store_changed: False  transaction_committed: False
+E             resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E             rerun: yes
+E             store version: unknown
+E             ', '')
+E           assert (1 == 1 and 'outcome: migration-audit-state-unknown' in 'outcome: migration-audit-unavailable\nstore_changed: False  transaction_committed: False\nresulting_state: unknown  r...erun: rerun: the attempted record is proven not written and nothing was consumed\nrerun: yes\nstore version: unknown\n')
+
+tests/test_0018_r5_closures.py:315: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_record_in_an_unsearchable_directory_is_never_read_as_absent[15-terminal]" time="0.171"><failure message="AssertionError: MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_committed=False, operation 'op-7001c825-5080-43b3-8e02-d4d82051cb53', store '/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab5/s.db', v16); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed&#10;[+11 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab5')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb071780&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb00add0&gt;, b = 15
+sink = 'terminal'
+
+    @pytest.mark.parametrize("sink", ["attempted", "terminal"])
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_record_in_an_unsearchable_directory_is_never_read_as_absent(tmp_path, monkeypatch, capsys, b, sink):
+        """EACCES on the trail and its tmp file, as an unsearchable directory gives (os.path.exists False, os.stat PermissionError), with
+        this id's record present: N2 at the attempted sink, None at the terminal sink; never N1 or False."""
+        p = _store(tmp_path / "s.db", b)
+        ap = rm.audit_trail_path(p)
+        same = rm.TerminalFacts("migrated", b, b + 1, True, True, "destination", b + 1)
+    
+        def seed(authority):
+            if sink == "attempted":
+                with open(ap, "w", encoding="utf-8") as f:
+                    json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            else:
+                REAL_WRITE_TERMINAL(ap, authority.operation_id, same)
+        ids = _minted(monkeypatch, after=seed)
+        writer = rm._write_attempted if sink == "attempted" else rm._write_terminal
+    
+        def denied(*a, **k):
+            with pytest.MonkeyPatch.context() as mp:
+                _eacces(mp, [ap, ap + ".tmp"])
+                assert os.path.exists(ap) is False                   # the condition the cell is about
+                return writer(*a, **k)
+        monkeypatch.setattr(rm, "_write_attempted" if sink == "attempted" else "_write_terminal", denied)
+        if sink == "terminal":                                     # the recovery read meets the same directory
+            read = rm.read_terminal
+    
+            def denied_read(*a, **k):
+                with pytest.MonkeyPatch.context() as mp:
+                    _eacces(mp, [ap, ap + ".tmp"])
+                    return read(*a, **k)
+            monkeypatch.setattr(rm, "read_terminal", denied_read)
+        code, out, err = _walk(p, capsys)
+        if sink == "attempted":                                    # only the writer's read is denied; the walk's readback reads: N2
+            assert code == 1 and "outcome: migration-audit-state-unknown" in out and f"operation_id: {ids[0]}" in out.splitlines(), (out, err)
+            assert "action: rerun: " not in out
+        else:
+&gt;           assert code == 3 and "audit_committed: None" in err and f"action: audit-record-not-published: {_SENTENCE[None]}" in err, err
+E           AssertionError: MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit_committed=False, operation 'op-7001c825-5080-43b3-8e02-d4d82051cb53', store '/tmp/pytest-of-ubuntu/pytest-7104/test_a_record_in_an_unsearchab5/s.db', v16); the audit is the record of an irreversible operation and its failure is surfaced loudly, never as migration-failed
+E             rung v15 -&gt; v16 (operation op-7001c825-5080-43b3-8e02-d4d82051cb53): its terminal record was not published; this tool does not repair it
+E             operation_id: op-7001c825-5080-43b3-8e02-d4d82051cb53
+E             resulting_state: destination (recorded)
+E             store_changed: True  transaction_committed: True  resulting_version: 16  audit_committed: False
+E             rungs committed by this walk: 1 (op-7001c825-5080-43b3-8e02-d4d82051cb53)
+E             action: rerun-resumes-store: rerun resumes from the store as it stands
+E             rerun: yes
+E             action: audit-record-not-published: the terminal record was not published; this tool does not repair it
+E             store version: v16
+E             
+E           assert (3 == 3 and 'audit_committed: None' in "MigrationAuditWriteError: audit write failed after the operation ran (outcome 'migrated', store committed=True, audit... audit-record-not-published: the terminal record was not published; this tool does not repair it\nstore version: v16\n")
+
+tests/test_0018_r5_closures.py:318: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_trail_in_a_real_unsearchable_directory_is_unresolved[1]" time="0.137"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 3)">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_trail_in_a_real_unsearc0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb0fa580&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cae9f650&gt;, b = 1
+
+    @NOT_ROOT
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_trail_in_a_real_unsearchable_directory_is_unresolved(tmp_path, monkeypatch, capsys, b):
+        """The same with a real chmod 000 on a directory holding the trail (the trail moved beside the store's own directory)."""
+        p = _store(tmp_path / "s.db", b)
+        locked = tmp_path / "trail"
+        locked.mkdir()
+        ap = str(locked / "s.db.migration-audit.json")
+        monkeypatch.setattr(rm, "audit_trail_path", lambda canonical: ap)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            os.chmod(locked, 0)
+        ids = _minted(monkeypatch, after=seed)
+        try:
+            code, out, err = _walk(p, capsys)
+        finally:
+            os.chmod(locked, 0o700)
+&gt;       _assert_e2(code, out, err, ids[0])
+
+tests/test_0018_r5_closures.py:340: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+code = 1
+out = 'outcome: migration-audit-unavailable\nstore_changed: False  transaction_committed: False\nresulting_state: unknown  r...erun: rerun: the attempted record is proven not written and nothing was consumed\nrerun: yes\nstore version: unknown\n'
+err = '', op = 'op-c50a6b5e-eb8c-4e74-bc16-03607e315e15'
+
+    def _assert_e2(code, out, err, op):
+        """§4f's read-error row: the trail cannot be read back, so the walk stops with E2, the operation id, and no rerun."""
+&gt;       assert code == 3 and "MigrationAuditReadError" in err and "malformed" in err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 3)
+
+tests/test_0018_r5_closures.py:135: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_trail_in_a_real_unsearchable_directory_is_unresolved[13]" time="0.141"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 3)">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_trail_in_a_real_unsearc1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18a580&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb03ebd0&gt;, b = 13
+
+    @NOT_ROOT
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_trail_in_a_real_unsearchable_directory_is_unresolved(tmp_path, monkeypatch, capsys, b):
+        """The same with a real chmod 000 on a directory holding the trail (the trail moved beside the store's own directory)."""
+        p = _store(tmp_path / "s.db", b)
+        locked = tmp_path / "trail"
+        locked.mkdir()
+        ap = str(locked / "s.db.migration-audit.json")
+        monkeypatch.setattr(rm, "audit_trail_path", lambda canonical: ap)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            os.chmod(locked, 0)
+        ids = _minted(monkeypatch, after=seed)
+        try:
+            code, out, err = _walk(p, capsys)
+        finally:
+            os.chmod(locked, 0o700)
+&gt;       _assert_e2(code, out, err, ids[0])
+
+tests/test_0018_r5_closures.py:340: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+code = 1
+out = 'outcome: migration-audit-unavailable\nstore_changed: False  transaction_committed: False\nresulting_state: unknown  r...erun: rerun: the attempted record is proven not written and nothing was consumed\nrerun: yes\nstore version: unknown\n'
+err = '', op = 'op-10fa787b-353e-44bf-9d55-9b95d52856fc'
+
+    def _assert_e2(code, out, err, op):
+        """§4f's read-error row: the trail cannot be read back, so the walk stops with E2, the operation id, and no rerun."""
+&gt;       assert code == 3 and "MigrationAuditReadError" in err and "malformed" in err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 3)
+
+tests/test_0018_r5_closures.py:135: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_trail_in_a_real_unsearchable_directory_is_unresolved[15]" time="0.147"><failure message="AssertionError: ('outcome: migration-audit-unavailable&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed&#10;  rerun: yes&#10;  store version: unknown&#10;  ', '')&#10;assert (1 == 3)">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_trail_in_a_real_unsearc2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb070e50&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383caeb74d0&gt;, b = 15
+
+    @NOT_ROOT
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_trail_in_a_real_unsearchable_directory_is_unresolved(tmp_path, monkeypatch, capsys, b):
+        """The same with a real chmod 000 on a directory holding the trail (the trail moved beside the store's own directory)."""
+        p = _store(tmp_path / "s.db", b)
+        locked = tmp_path / "trail"
+        locked.mkdir()
+        ap = str(locked / "s.db.migration-audit.json")
+        monkeypatch.setattr(rm, "audit_trail_path", lambda canonical: ap)
+    
+        def seed(authority):
+            with open(ap, "w", encoding="utf-8") as f:
+                json.dump({authority.operation_id: {"attempted": {"event": "migration_attempted"}}}, f)
+            os.chmod(locked, 0)
+        ids = _minted(monkeypatch, after=seed)
+        try:
+            code, out, err = _walk(p, capsys)
+        finally:
+            os.chmod(locked, 0o700)
+&gt;       _assert_e2(code, out, err, ids[0])
+
+tests/test_0018_r5_closures.py:340: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+code = 1
+out = 'outcome: migration-audit-unavailable\nstore_changed: False  transaction_committed: False\nresulting_state: unknown  r...erun: rerun: the attempted record is proven not written and nothing was consumed\nrerun: yes\nstore version: unknown\n'
+err = '', op = 'op-1eed6316-1f5e-493d-8343-2daa8ee721ec'
+
+    def _assert_e2(code, out, err, op):
+        """§4f's read-error row: the trail cannot be read back, so the walk stops with E2, the operation id, and no rerun."""
+&gt;       assert code == 3 and "MigrationAuditReadError" in err and "malformed" in err, (out, err)
+E       AssertionError: ('outcome: migration-audit-unavailable
+E         store_changed: False  transaction_committed: False
+E         resulting_state: unknown  ... rerun: the attempted record is proven not written and nothing was consumed
+E         rerun: yes
+E         store version: unknown
+E         ', '')
+E       assert (1 == 3)
+
+tests/test_0018_r5_closures.py:135: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_preflight_never_reads_a_store_it_cannot_stat_as_missing[1]" time="0.011"><failure message="AssertionError: RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'&quot;), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None)&#10;assert 'migration-source-missing' != 'migration-source-missing'&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18a3c0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc3950&gt;, b = 1
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_preflight_never_reads_a_store_it_cannot_stat_as_missing(tmp_path, monkeypatch, capsys, b):
+        """At preflight, a store the process cannot stat is present: never migration-source-missing and U2's fix-the-path."""
+        p = _store(tmp_path / "s.db", b)
+        _eacces(monkeypatch, [p])
+        assert os.path.exists(p) is False
+        rep = rm.run_release_rung(p, host_attestation=ATTESTATION)
+&gt;       assert rep.result.outcome != "migration-source-missing", rep
+E       AssertionError: RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'"), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None)
+E       assert 'migration-source-missing' != 'migration-source-missing'
+E        +  where 'migration-source-missing' = MigrationResult(outcome='migration-source-missing', store_changed=False, transaction_committed=False, resulting_state=...sulting_version=None, diagnostic="nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s0/s.db'").outcome
+E        +    where MigrationResult(outcome='migration-source-missing', store_changed=False, transaction_committed=False, resulting_state=...sulting_version=None, diagnostic="nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s0/s.db'") = RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'"), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None).result
+
+tests/test_0018_r5_closures.py:352: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_preflight_never_reads_a_store_it_cannot_stat_as_missing[13]" time="0.012"><failure message="AssertionError: RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'&quot;), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None)&#10;assert 'migration-source-missing' != 'migration-source-missing'&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb18b460&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc3650&gt;, b = 13
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_preflight_never_reads_a_store_it_cannot_stat_as_missing(tmp_path, monkeypatch, capsys, b):
+        """At preflight, a store the process cannot stat is present: never migration-source-missing and U2's fix-the-path."""
+        p = _store(tmp_path / "s.db", b)
+        _eacces(monkeypatch, [p])
+        assert os.path.exists(p) is False
+        rep = rm.run_release_rung(p, host_attestation=ATTESTATION)
+&gt;       assert rep.result.outcome != "migration-source-missing", rep
+E       AssertionError: RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'"), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None)
+E       assert 'migration-source-missing' != 'migration-source-missing'
+E        +  where 'migration-source-missing' = MigrationResult(outcome='migration-source-missing', store_changed=False, transaction_committed=False, resulting_state=...sulting_version=None, diagnostic="nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s1/s.db'").outcome
+E        +    where MigrationResult(outcome='migration-source-missing', store_changed=False, transaction_committed=False, resulting_state=...sulting_version=None, diagnostic="nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s1/s.db'") = RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'"), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None).result
+
+tests/test_0018_r5_closures.py:352: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_preflight_never_reads_a_store_it_cannot_stat_as_missing[15]" time="0.012"><failure message="AssertionError: RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'&quot;), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None)&#10;assert 'migration-source-missing' != 'migration-source-missing'&#10;[+2 more lines; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb188210&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cafc1c50&gt;, b = 15
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_preflight_never_reads_a_store_it_cannot_stat_as_missing(tmp_path, monkeypatch, capsys, b):
+        """At preflight, a store the process cannot stat is present: never migration-source-missing and U2's fix-the-path."""
+        p = _store(tmp_path / "s.db", b)
+        _eacces(monkeypatch, [p])
+        assert os.path.exists(p) is False
+        rep = rm.run_release_rung(p, host_attestation=ATTESTATION)
+&gt;       assert rep.result.outcome != "migration-source-missing", rep
+E       AssertionError: RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'"), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None)
+E       assert 'migration-source-missing' != 'migration-source-missing'
+E        +  where 'migration-source-missing' = MigrationResult(outcome='migration-source-missing', store_changed=False, transaction_committed=False, resulting_state=...sulting_version=None, diagnostic="nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s2/s.db'").outcome
+E        +    where MigrationResult(outcome='migration-source-missing', store_changed=False, transaction_committed=False, resulting_state=...sulting_version=None, diagnostic="nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_preflight_never_reads_a_s2/s.db'") = RungReport(kind='preflight', result=MigrationResult(outcome='migration-source-missing', store_changed=False, transacti...'"), preflight_base=None, source_stamp=None, operation_id=None, from_version=None, to_version=None, expected_base=None).result
+
+tests/test_0018_r5_closures.py:352: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing[1]" time="0.010"><failure message="AssertionError: ('outcome: migration-source-missing&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: missing  res...t the path or restore the backup, then rerun&#10;  rerun: yes, once the path holds the store&#10;  store version: unknown&#10;  ', '')&#10;[+1 more line; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_store_in_a_real_unsearc0')
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb640d50&gt;, b = 1
+
+    @NOT_ROOT
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing(tmp_path, capsys, b):
+        """With a real chmod 000 on the store's directory, the walk says store-unopenable and fix-access (U6), never missing (U2)."""
+        d = tmp_path / "locked"
+        d.mkdir()
+        p = _store(d / "s.db", b)
+        os.chmod(d, 0)
+        try:
+            code, out, err = _walk(p, capsys)
+        finally:
+            os.chmod(d, 0o700)
+&gt;       assert code == 1 and "outcome: store-unopenable" in out and "action: fix-access-then-rerun: " in out, (out, err)
+E       AssertionError: ('outcome: migration-source-missing
+E         store_changed: False  transaction_committed: False
+E         resulting_state: missing  res...t the path or restore the backup, then rerun
+E         rerun: yes, once the path holds the store
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'outcome: store-unopenable' in 'outcome: migration-source-missing\nstore_changed: False  transaction_committed: False\nresulting_state: missing  resu...orrect the path or restore the backup, then rerun\nrerun: yes, once the path holds the store\nstore version: unknown\n')
+
+tests/test_0018_r5_closures.py:367: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing[13]" time="0.012"><failure message="AssertionError: ('outcome: migration-source-missing&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: missing  res...t the path or restore the backup, then rerun&#10;  rerun: yes, once the path holds the store&#10;  store version: unknown&#10;  ', '')&#10;[+1 more line; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_store_in_a_real_unsearc1')
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb642e50&gt;, b = 13
+
+    @NOT_ROOT
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing(tmp_path, capsys, b):
+        """With a real chmod 000 on the store's directory, the walk says store-unopenable and fix-access (U6), never missing (U2)."""
+        d = tmp_path / "locked"
+        d.mkdir()
+        p = _store(d / "s.db", b)
+        os.chmod(d, 0)
+        try:
+            code, out, err = _walk(p, capsys)
+        finally:
+            os.chmod(d, 0o700)
+&gt;       assert code == 1 and "outcome: store-unopenable" in out and "action: fix-access-then-rerun: " in out, (out, err)
+E       AssertionError: ('outcome: migration-source-missing
+E         store_changed: False  transaction_committed: False
+E         resulting_state: missing  res...t the path or restore the backup, then rerun
+E         rerun: yes, once the path holds the store
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'outcome: store-unopenable' in 'outcome: migration-source-missing\nstore_changed: False  transaction_committed: False\nresulting_state: missing  resu...orrect the path or restore the backup, then rerun\nrerun: yes, once the path holds the store\nstore version: unknown\n')
+
+tests/test_0018_r5_closures.py:367: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing[15]" time="0.013"><failure message="AssertionError: ('outcome: migration-source-missing&#10;  store_changed: False  transaction_committed: False&#10;  resulting_state: missing  res...t the path or restore the backup, then rerun&#10;  rerun: yes, once the path holds the store&#10;  store version: unknown&#10;  ', '')&#10;[+1 more line; full report in element text]">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_a_store_in_a_real_unsearc2')
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7383cb642750&gt;, b = 15
+
+    @NOT_ROOT
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing(tmp_path, capsys, b):
+        """With a real chmod 000 on the store's directory, the walk says store-unopenable and fix-access (U6), never missing (U2)."""
+        d = tmp_path / "locked"
+        d.mkdir()
+        p = _store(d / "s.db", b)
+        os.chmod(d, 0)
+        try:
+            code, out, err = _walk(p, capsys)
+        finally:
+            os.chmod(d, 0o700)
+&gt;       assert code == 1 and "outcome: store-unopenable" in out and "action: fix-access-then-rerun: " in out, (out, err)
+E       AssertionError: ('outcome: migration-source-missing
+E         store_changed: False  transaction_committed: False
+E         resulting_state: missing  res...t the path or restore the backup, then rerun
+E         rerun: yes, once the path holds the store
+E         store version: unknown
+E         ', '')
+E       assert (1 == 1 and 'outcome: store-unopenable' in 'outcome: migration-source-missing\nstore_changed: False  transaction_committed: False\nresulting_state: missing  resu...orrect the path or restore the backup, then rerun\nrerun: yes, once the path holds the store\nstore version: unknown\n')
+
+tests/test_0018_r5_closures.py:367: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing[1]" time="0.071"><failure message="AssertionError: MintError(&quot;source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db'&quot;)&#10;assert 'source-missing' != 'source-missing'&#10; +  where 'source-missing' = MintError(&quot;source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db'&quot;).reason">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb189b70&gt;, b = 1
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing(tmp_path, monkeypatch, b):
+        """At the mint, after a resolution, a store the process cannot stat is present: the mint's reason is never source-missing."""
+        p = _store(tmp_path / "s.db", b)
+        kind, resolved = rm._classify_or_intercept(p)
+        assert kind == "mint", (kind, resolved)
+        _eacces(monkeypatch, [p])
+        try:
+&gt;           authority = rm.mint_release_authority(resolved.canonical_path, ATTESTATION, resolved=resolved)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_0018_r5_closures.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db'
+attestation = MigrationAttestation(quiesced=True, backup_ref='r5-closures')
+resolved = PreflightResolution(canonical_path='/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db', resolved_base=1, source_fingerprint='b5a5147cb5a1b1f7d6f2502a933e867bb910680dd055c3ca43e2868c1edbe228')
+
+    def mint_release_authority(path, attestation, *,
+                               resolved) -&gt; MigrationAuthority:
+        """The production mint API (0018 §4c). Re-resolves the path ITSELF and
+        validates path + attestation against the REAL store on every attempt;
+        `resolved` is reason-labeling evidence ONLY (I18) — no check is skipped
+        or weakened because of it. At most callers' retry policy applies; this
+        function performs exactly one resolve-and-mint."""
+        ap = _attestation_problems(attestation)
+        if ap:
+            raise TypeError("invalid attestation: " + "; ".join(ap))
+        if type(resolved) is not PreflightResolution:
+            raise TypeError(f"resolved must be exactly a PreflightResolution, is "
+                            f"{type(resolved).__name__}")
+        rp = _resolution_scalar_problems(
+            tuple.__getitem__(resolved, 0), tuple.__getitem__(resolved, 1),
+            tuple.__getitem__(resolved, 2))
+        if rp:
+            raise TypeError("invalid resolution evidence: " + "; ".join(rp))
+        if type(path) is not str or _store_path_problems(os.path.realpath(path)):
+            raise TypeError(f"path {_safe_repr(path)} is not a usable store path")
+        canonical = os.path.realpath(path)
+        if not os.path.exists(canonical):
+&gt;           raise MintError("source-missing", f"nothing at {canonical!r}")
+E           veracium.store.release_migration.MintError: source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db'
+
+../prev/src/veracium/store/release_migration.py:926: MintError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383cb189b70&gt;, b = 1
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing(tmp_path, monkeypatch, b):
+        """At the mint, after a resolution, a store the process cannot stat is present: the mint's reason is never source-missing."""
+        p = _store(tmp_path / "s.db", b)
+        kind, resolved = rm._classify_or_intercept(p)
+        assert kind == "mint", (kind, resolved)
+        _eacces(monkeypatch, [p])
+        try:
+            authority = rm.mint_release_authority(resolved.canonical_path, ATTESTATION, resolved=resolved)
+        except rm.MintError as e:
+&gt;           assert e.reason != "source-missing", e
+E           AssertionError: MintError("source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db'")
+E           assert 'source-missing' != 'source-missing'
+E            +  where 'source-missing' = MintError("source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st0/s.db'").reason
+
+tests/test_0018_r5_closures.py:381: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing[13]" time="0.072"><failure message="AssertionError: MintError(&quot;source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db'&quot;)&#10;assert 'source-missing' != 'source-missing'&#10; +  where 'source-missing' = MintError(&quot;source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db'&quot;).reason">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383caf403d0&gt;, b = 13
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing(tmp_path, monkeypatch, b):
+        """At the mint, after a resolution, a store the process cannot stat is present: the mint's reason is never source-missing."""
+        p = _store(tmp_path / "s.db", b)
+        kind, resolved = rm._classify_or_intercept(p)
+        assert kind == "mint", (kind, resolved)
+        _eacces(monkeypatch, [p])
+        try:
+&gt;           authority = rm.mint_release_authority(resolved.canonical_path, ATTESTATION, resolved=resolved)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_0018_r5_closures.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db'
+attestation = MigrationAttestation(quiesced=True, backup_ref='r5-closures')
+resolved = PreflightResolution(canonical_path='/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db', resolved_base=13, source_fingerprint='cba62fbcb28a15661445132e419ef3ad63d39cd79354382ba41692dd066e4ea5')
+
+    def mint_release_authority(path, attestation, *,
+                               resolved) -&gt; MigrationAuthority:
+        """The production mint API (0018 §4c). Re-resolves the path ITSELF and
+        validates path + attestation against the REAL store on every attempt;
+        `resolved` is reason-labeling evidence ONLY (I18) — no check is skipped
+        or weakened because of it. At most callers' retry policy applies; this
+        function performs exactly one resolve-and-mint."""
+        ap = _attestation_problems(attestation)
+        if ap:
+            raise TypeError("invalid attestation: " + "; ".join(ap))
+        if type(resolved) is not PreflightResolution:
+            raise TypeError(f"resolved must be exactly a PreflightResolution, is "
+                            f"{type(resolved).__name__}")
+        rp = _resolution_scalar_problems(
+            tuple.__getitem__(resolved, 0), tuple.__getitem__(resolved, 1),
+            tuple.__getitem__(resolved, 2))
+        if rp:
+            raise TypeError("invalid resolution evidence: " + "; ".join(rp))
+        if type(path) is not str or _store_path_problems(os.path.realpath(path)):
+            raise TypeError(f"path {_safe_repr(path)} is not a usable store path")
+        canonical = os.path.realpath(path)
+        if not os.path.exists(canonical):
+&gt;           raise MintError("source-missing", f"nothing at {canonical!r}")
+E           veracium.store.release_migration.MintError: source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db'
+
+../prev/src/veracium/store/release_migration.py:926: MintError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383caf403d0&gt;, b = 13
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing(tmp_path, monkeypatch, b):
+        """At the mint, after a resolution, a store the process cannot stat is present: the mint's reason is never source-missing."""
+        p = _store(tmp_path / "s.db", b)
+        kind, resolved = rm._classify_or_intercept(p)
+        assert kind == "mint", (kind, resolved)
+        _eacces(monkeypatch, [p])
+        try:
+            authority = rm.mint_release_authority(resolved.canonical_path, ATTESTATION, resolved=resolved)
+        except rm.MintError as e:
+&gt;           assert e.reason != "source-missing", e
+E           AssertionError: MintError("source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db'")
+E           assert 'source-missing' != 'source-missing'
+E            +  where 'source-missing' = MintError("source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st1/s.db'").reason
+
+tests/test_0018_r5_closures.py:381: AssertionError</failure></testcase><testcase classname="tests.test_0018_r5_closures" name="test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing[15]" time="0.071"><failure message="AssertionError: MintError(&quot;source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db'&quot;)&#10;assert 'source-missing' != 'source-missing'&#10; +  where 'source-missing' = MintError(&quot;source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db'&quot;).reason">tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383caf003d0&gt;, b = 15
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing(tmp_path, monkeypatch, b):
+        """At the mint, after a resolution, a store the process cannot stat is present: the mint's reason is never source-missing."""
+        p = _store(tmp_path / "s.db", b)
+        kind, resolved = rm._classify_or_intercept(p)
+        assert kind == "mint", (kind, resolved)
+        _eacces(monkeypatch, [p])
+        try:
+&gt;           authority = rm.mint_release_authority(resolved.canonical_path, ATTESTATION, resolved=resolved)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_0018_r5_closures.py:379: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db'
+attestation = MigrationAttestation(quiesced=True, backup_ref='r5-closures')
+resolved = PreflightResolution(canonical_path='/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db', resolved_base=15, source_fingerprint='a59e39b84ac6be74f6913178305cc6d78bcd6f63a1f6172c313abe15629ae440')
+
+    def mint_release_authority(path, attestation, *,
+                               resolved) -&gt; MigrationAuthority:
+        """The production mint API (0018 §4c). Re-resolves the path ITSELF and
+        validates path + attestation against the REAL store on every attempt;
+        `resolved` is reason-labeling evidence ONLY (I18) — no check is skipped
+        or weakened because of it. At most callers' retry policy applies; this
+        function performs exactly one resolve-and-mint."""
+        ap = _attestation_problems(attestation)
+        if ap:
+            raise TypeError("invalid attestation: " + "; ".join(ap))
+        if type(resolved) is not PreflightResolution:
+            raise TypeError(f"resolved must be exactly a PreflightResolution, is "
+                            f"{type(resolved).__name__}")
+        rp = _resolution_scalar_problems(
+            tuple.__getitem__(resolved, 0), tuple.__getitem__(resolved, 1),
+            tuple.__getitem__(resolved, 2))
+        if rp:
+            raise TypeError("invalid resolution evidence: " + "; ".join(rp))
+        if type(path) is not str or _store_path_problems(os.path.realpath(path)):
+            raise TypeError(f"path {_safe_repr(path)} is not a usable store path")
+        canonical = os.path.realpath(path)
+        if not os.path.exists(canonical):
+&gt;           raise MintError("source-missing", f"nothing at {canonical!r}")
+E           veracium.store.release_migration.MintError: source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db'
+
+../prev/src/veracium/store/release_migration.py:926: MintError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7383caf003d0&gt;, b = 15
+
+    @pytest.mark.parametrize("b", RUNGS)
+    def test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing(tmp_path, monkeypatch, b):
+        """At the mint, after a resolution, a store the process cannot stat is present: the mint's reason is never source-missing."""
+        p = _store(tmp_path / "s.db", b)
+        kind, resolved = rm._classify_or_intercept(p)
+        assert kind == "mint", (kind, resolved)
+        _eacces(monkeypatch, [p])
+        try:
+            authority = rm.mint_release_authority(resolved.canonical_path, ATTESTATION, resolved=resolved)
+        except rm.MintError as e:
+&gt;           assert e.reason != "source-missing", e
+E           AssertionError: MintError("source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db'")
+E           assert 'source-missing' != 'source-missing'
+E            +  where 'source-missing' = MintError("source-missing: nothing at '/tmp/pytest-of-ubuntu/pytest-7104/test_the_mint_never_reads_a_st2/s.db'").reason
+
+tests/test_0018_r5_closures.py:381: AssertionError</failure></testcase></testsuite></testsuites>

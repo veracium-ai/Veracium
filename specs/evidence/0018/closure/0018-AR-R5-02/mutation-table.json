@@ -1,0 +1,336 @@
+{
+ "body_sha256": "0b4155ff507f8d51942f7f7a1eb75bf63ea33c3029f544023da0314469dfbd03",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]"
+   ],
+   "definition_sha256": "92fb3910e1b21c76015ffb6a29ffa97a4d37e424210c1d1c445881b9e2025a6e",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R5-02-migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _alters(lo, v, statements):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R5-02": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   },
+   "last": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R5-02-migration": "92fb3910e1b21c76015ffb6a29ffa97a4d37e424210c1d1c445881b9e2025a6e"
+  },
+  "definitions": {
+   "I36-a-dispatcher-read-helper": "7b4d413a6f255af3d7138261d142af415be3889c88c10f5fa84fe887632c1bdd",
+   "I36-a-thread-after-the-last-entry": "3def32e7afc153771590c887d7a995614bc24a00c31bb315e8f583f906901584",
+   "I36-a-thread-before-the-first-entry": "8f98018e9570d778c1bc1c1dfb49e54f835c1767fdf074604e4547a12404859a",
+   "I36-an-off-plan-entry-called": "94b9cb15eac646cf9e9e2f53f965cd32a7c4b91a3dd43cb82d0fba75ceef3c82",
+   "I36-an-off-plan-entry-in-a-low-level-thread": "d4f6f50229c99a50306718128c79b2a8643e88faccd4454ac10c2605a8e02b05",
+   "I36-an-off-plan-entry-in-a-thread": "8680b769f288326a0ab0173f4126d1d1087810f262a437d0853bb95cc50221ba",
+   "I36-an-off-plan-entry-nested": "f5034442f0d66686f052e487a7f8ce67301df813b0d0988ddc4133f112f351fe"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
+   "tests/test_0018_rungs_t5.py": "5ecb07313fd6e6279fbe18e5addb6cbb0a97d41dd81ad8ff6a53d669e72a7ee0",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R5-02",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "94b9cb15eac646cf9e9e2f53f965cd32a7c4b91a3dd43cb82d0fba75ceef3c82",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-an-off-plan-entry-called",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02, the reviewer's mutant: a declared read entry this rung's plan does not hold is called at dispatch"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "f5034442f0d66686f052e487a7f8ce67301df813b0d0988ddc4133f112f351fe",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-an-off-plan-entry-nested",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 2.63s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02 (research): the same off-plan entry, called from inside a planned check"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "8680b769f288326a0ab0173f4126d1d1087810f262a437d0853bb95cc50221ba",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-an-off-plan-entry-in-a-thread",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed, 1 warning in 2.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02 (research's read of e75382cd): the off-plan entry run in a thread that starts and ends inside the rung"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "d4f6f50229c99a50306718128c79b2a8643e88faccd4454ac10c2605a8e02b05",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-an-off-plan-entry-in-a-low-level-thread",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed, 1 warning in 2.58s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02 (research's read of 793dd08e): the same entry in a thread started by _thread.start_joinable_thread, the route threading itself takes on 3.13 and later, which no name patch reaches"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "8f98018e9570d778c1bc1c1dfb49e54f835c1767fdf074604e4547a12404859a",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-a-thread-before-the-first-entry",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02 (research): a no-op thread started at dispatch level before the rung's first entry: the arming window opens before it"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "3def32e7afc153771590c887d7a995614bc24a00c31bb315e8f583f906901584",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-a-thread-after-the-last-entry",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02 (research): a no-op thread started at dispatch level after the rung's last entry: the arming window closes after it"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]": "assertion",
+    "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]"
+   ],
+   "definition_sha256": "7b4d413a6f255af3d7138261d142af415be3889c88c10f5fa84fe887632c1bdd",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R5-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-a-dispatcher-read-helper",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_rung_executes_exactly_its_plan_and_every_write_is_its_entry_s[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_route_executes_its_own_plan_with_one_clock_and_one_stamp[1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R5-02 (research): a migration.py helper that is not a step reads at dispatch level, and writes nothing"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 7
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 7,
+  "killed": 7,
+  "rows": 7,
+  "seconds": 41
+ }
+}

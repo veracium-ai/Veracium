@@ -1,0 +1,200 @@
+{
+ "body_sha256": "f62014aa4365d52ef9703ba274cc9d094d93b9eab40ffea30f80719cb351898e",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector",
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_plans_keep_their_order"
+   ],
+   "definition_sha256": "4393ebe2e4ca5feeae726c6cffac4ee749743b6ca535305b2f23c01997f06405",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R2-02-migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector",
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_plans_keep_their_order"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _alters(lo, v, statements):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R2-02": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector",
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]",
+    "tests/test_0018_rungs_t5.py::test_the_direct_plans_keep_their_order"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R2-02-migration": "4393ebe2e4ca5feeae726c6cffac4ee749743b6ca535305b2f23c01997f06405"
+  },
+  "definitions": {
+   "I36-a-field-joined-by-a-separator": "ece23ccbf8c5d6a0c060ce15c528e538320aca3d85b1a3cade071877a068dd4e",
+   "I36-direct-as-adjacent-plans": "e3c436af102656d3d2f4dc320602eebc9339a79cdb1db12b1436da856e0265a1",
+   "I36-two-rungs-data-steps-swapped": "dd8390595b6553c45dc0b6a7d8356753c8cc97993ffc8e25570bd56a4bc2f312"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
+   "tests/test_0018_rungs_t5.py": "5ecb07313fd6e6279fbe18e5addb6cbb0a97d41dd81ad8ff6a53d669e72a7ee0",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R2-02",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "definition_sha256": "e3c436af102656d3d2f4dc320602eebc9339a79cdb1db12b1436da856e0265a1",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R2-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-direct-as-adjacent-plans",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_every_rung_from_every_base[v01-910e49325716-from-v0.4.8.db]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 3.28s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the direct route is rebuilt as the concatenation of adjacent plans"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_the_direct_plans_keep_their_order": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_the_direct_plans_keep_their_order"
+   ],
+   "definition_sha256": "dd8390595b6553c45dc0b6a7d8356753c8cc97993ffc8e25570bd56a4bc2f312",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R2-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-two-rungs-data-steps-swapped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_the_direct_plans_keep_their_order"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.54s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "two data steps of different rungs swap: the same direct route, a different order, and no rung's digest moves"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ],
+   "definition_sha256": "ece23ccbf8c5d6a0c060ce15c528e538320aca3d85b1a3cade071877a068dd4e",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R2-02",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I36-a-field-joined-by-a-separator",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_each_rung_s_digest_is_its_vector"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.59s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a field is encoded with a separator, not as its own segment"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 3
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 3,
+  "killed": 3,
+  "rows": 3,
+  "seconds": 25
+ }
+}

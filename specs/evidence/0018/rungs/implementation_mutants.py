@@ -12,6 +12,10 @@ beside the gate they edit.
 
     $PY specs/evidence/0018/rungs/implementation_mutants.py --check
     TMPDIR=/dev/shm $PY specs/evidence/0018/rungs/implementation_mutants.py --write
+
+FROZEN AT EXTERNAL ROUND 6 (2026-11-08, IMPLEMENTATION ACCEPTED on I13', I15', I19' and I33-I39; specs/0018 v9.1.1). These rows are
+the accepted implementation's mutation evidence, and specs/evidence/0018/closure_mutants.py reuses them by id. The verdict's rule
+forward, verbatim: "Keep the publication-state matrix, raw invocation witness and source/test-bound backward captures with later changes to these seams." Dropping or weakening a row reopens review: it is not an edit to a table.
 """
 from __future__ import annotations
 

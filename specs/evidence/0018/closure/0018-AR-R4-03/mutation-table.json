@@ -1,0 +1,132 @@
+{
+ "body_sha256": "d0d8c6f29f9fdd88f5bc84ad8cf9bf4fffbc5ea872ac03db879585387ff6714a",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
+    "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]"
+   ],
+   "definition_sha256": "b1f7713bab74f740b3ff54eb6d02bc2b23ecdba8a44c2399cca3e736ede4d018",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/release_migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R4-03-release_migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
+    "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'class RecoveryDecision(NamedTuple):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R4-03": [
+    "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
+    "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   },
+   "last": {
+    "of": 3,
+    "ok": true,
+    "passed": 3
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R4-03-release_migration": "b1f7713bab74f740b3ff54eb6d02bc2b23ecdba8a44c2399cca3e736ede4d018"
+  },
+  "definitions": {
+   "I19-a-mint-escape-becomes-internal-error": "d3776846336c0632911c0cf1dfd8e4dfec5422fdb95d5576013adb9794533208"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
+   "tests/test_0018_r4_closures.py": "94005e0f663087a1ac89ec572bfed9f2e288441176a5d71afbcbf64fa455c17a",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R4-03",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]": "assertion",
+    "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]",
+    "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]"
+   ],
+   "definition_sha256": "d3776846336c0632911c0cf1dfd8e4dfec5422fdb95d5576013adb9794533208",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R4-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I19-a-mint-escape-becomes-internal-error",
+   "import": "ok",
+   "kill_kind": "assertion+expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_package_inconsistency_inside_the_mint_is_the_pre_mint_escape[1]",
+    "tests/test_0018_r4_closures.py::test_a_mint_escape_after_a_committed_rung_reuses_no_earlier_id[1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.96s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-03: the named escape raised inside the mint falls into the broad catch, as round 4 shipped"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 1
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 1,
+  "killed": 1,
+  "rows": 1,
+  "seconds": 10
+ }
+}

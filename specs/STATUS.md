@@ -4,7 +4,7 @@
 
 # Spec status
 
-**44 specs · 42 accepted · 461 external review
+**44 specs · 42 accepted · 467 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -30,7 +30,7 @@ is the number that decides what can be built.
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
 | **0016** | SourceType deletion + the evidence_basis contract freeze | `accepted` | 2026-09-27 | 1 | 15 | 0 | 0 | 0 | — |
 | **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 10 | 0 | 0 | 0 | — |
-| **0018** | the release-migration orchestrator | `accepted` | 2026-11-08 | 1 | 4 | 0 | 0 | 0 | — |
+| **0018** | the release-migration orchestrator | `accepted` | 2026-11-08 | 1 | 10 | 0 | 0 | 0 | — |
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-10-14 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 2 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-11-02 | 1 | 14 | 2 | 0 | 0 | — |
@@ -61,8 +61,8 @@ is the number that decides what can be built.
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
-**Per-finding closure ledger — 629 findings across the
-16 tracked specs** (0001, 0007, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038, 0039, 0041, 0048, 0042, 0043), derived from
+**Per-finding closure ledger — 678 findings across the
+17 tracked specs** (0001, 0007, 0022, 0023, 0024, 0025, 0028, 0030, 0031, 0037, 0038, 0039, 0041, 0048, 0042, 0043, 0018), derived from
 `specs/closure_findings.py` and validated against `specs/reviews.py` by
 `specs/render_closure.py --check`. This total is rendered HERE ONLY (owner's
 ruling, 2026-09-08): each tracked spec's `## Review closure` block carries its

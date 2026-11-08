@@ -1,0 +1,10 @@
+0018 round 6, the backward control (external round 5's C5-02): this pin's round-5 closure tests, and their twin on a shared seam, run against round 5's pin's src/.
+tests: tests/test_0018_r5_closures.py at the pin 91838da576b567ce35c93ab6cee875230e093b12, git blob 94a6cbac9036a5018267d87361c6ff80efe28d6f
+twin:  tests/test_0018_r4_closures.py at the pin, git blob 2f8af63c4d43e7c47cd0aea5c7721a4dd55c0e69, its fsync-before-rename cells
+src:   src/ at round 5's pin 3acc8563c290ddcba233d0cd63f16ab8e4edef60, git tree 1e6d969d6f17003efecdeda63f75a73bd241afcd
+run:   from the pin's tree, PYTHONPATH=<round 5's src>, the capture's interpreter; the import origin asserted inside each run (bw_origin, at session start)
+result: 69 cells: 21 pass, 45 fail by assertion, 3 cannot run at round 5's src (they use `veracium.store.release_migration._stage_audit`, which round 6 added); their twin on a shared seam, `tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[*-fsync-before-rename]`, 3 of 3 pass at round 5's src
+by function and kind:
+BWPASS test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven ×9; test_an_attempted_write_failing_after_absence_is_proven_and_before_the_rename_is_n1 ×9; test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2 ×3
+BWASSERT test_a_failed_terminal_write_takes_the_recovery_read_unless_absence_is_proven ×15; test_a_record_in_an_unsearchable_directory_is_never_read_as_absent ×6; test_a_store_in_a_real_unsearchable_directory_is_unopenable_never_missing ×3; test_a_trail_in_a_real_unsearchable_directory_is_unresolved ×3; test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2 ×12; test_preflight_never_reads_a_store_it_cannot_stat_as_missing ×3; test_the_mint_never_reads_a_store_it_cannot_stat_as_source_missing ×3
+BWCANNOT test_a_terminal_write_failing_after_absence_is_proven_and_before_the_rename_is_false ×3 [veracium.store.release_migration._stage_audit]

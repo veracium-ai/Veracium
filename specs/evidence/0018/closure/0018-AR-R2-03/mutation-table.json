@@ -1,0 +1,200 @@
+{
+ "body_sha256": "87d5f63944e7ed66683e1587260a3b4c5625b7162ce1ad7db667d2af53a6e1fe",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]",
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]",
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V8_SQL-8]"
+   ],
+   "definition_sha256": "004519c7010ed8c4ab0d8545245de4318b34b6983ec047322ec20559566203dd",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R2-03-migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]",
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]",
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V8_SQL-8]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _alters(lo, v, statements):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R2-03": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]",
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]",
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V8_SQL-8]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R2-03-migration": "004519c7010ed8c4ab0d8545245de4318b34b6983ec047322ec20559566203dd"
+  },
+  "definitions": {
+   "I33-the-v10-refusal-reports-head": "8a86c656ca54f3e9693f840661f98592bb30fcb4069e9fca490886d626820e79",
+   "I33-the-v6-refusal-reports-head": "f2d6ca1e44908d9d113043b944fe34fa09569c1061afd50d6dd500e8a5a47eae",
+   "I33-the-v8-refusal-reports-head": "3b9875f3159336c42abd3a295b2866237f02540ed329096c28c7fa31ab6dc3b3"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
+   "tests/test_0018_rungs_t5.py": "5ecb07313fd6e6279fbe18e5addb6cbb0a97d41dd81ad8ff6a53d669e72a7ee0",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R2-03",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]"
+   ],
+   "definition_sha256": "f2d6ca1e44908d9d113043b944fe34fa09569c1061afd50d6dd500e8a5a47eae",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R2-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I33-the-v6-refusal-reports-head",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V6_SQL-6]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.56s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the v6 refusal reports head"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V8_SQL-8]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V8_SQL-8]"
+   ],
+   "definition_sha256": "3b9875f3159336c42abd3a295b2866237f02540ed329096c28c7fa31ab6dc3b3",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R2-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I33-the-v8-refusal-reports-head",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V8_SQL-8]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.57s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the v8 refusal reports head"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]"
+   ],
+   "definition_sha256": "8a86c656ca54f3e9693f840661f98592bb30fcb4069e9fca490886d626820e79",
+   "file": "src/veracium/store/migration.py",
+   "finding": "0018-AR-R2-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I33-the-v10-refusal-reports-head",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t5.py::test_a_mismatched_alter_output_reports_the_rung_s_target[ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL-10]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.56s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the v10 refusal reports head"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 3
+  },
+  "controls": 1,
+  "controls_good": 1,
+  "good": 3,
+  "killed": 3,
+  "rows": 3,
+  "seconds": 14
+ }
+}

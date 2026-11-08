@@ -1,0 +1,375 @@
+{
+ "body_sha256": "58f5f49251c39786ddec825b35fa5df4ef1052477bae8b5a4aaf965cb6863e5f",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "definition_sha256": "d5564764acea4d1f50f13bd10698900b6d477634e15ab69b8f2740fec7033576",
+   "expected": "SURVIVED",
+   "file": "src/veracium/cli.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R4-01-cli",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _facts_of(r):': the bytes change, the behaviour does not"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]",
+    "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "definition_sha256": "ea45787f8edff3fab5e61a2a562b99ab7200b5129f97d2f59888989ac9db25b2",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/release_migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R4-01-release_migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]",
+    "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'class RecoveryDecision(NamedTuple):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R4-01": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]",
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]",
+    "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 7,
+    "ok": true,
+    "passed": 7
+   },
+   "last": {
+    "of": 7,
+    "ok": true,
+    "passed": 7
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R4-01-cli": "d5564764acea4d1f50f13bd10698900b6d477634e15ab69b8f2740fec7033576",
+   "NOOP-0018-AR-R4-01-release_migration": "ea45787f8edff3fab5e61a2a562b99ab7200b5129f97d2f59888989ac9db25b2"
+  },
+  "definitions": {
+   "I35-a-landed-attempted-rename-read-as-unwritten": "7f9d42279184c0e2306cec473367215becb839cd57fba7f5c182af00ed064739",
+   "I35-a-present-terminal-record-reported-unpublished": "39699f6e80b4a1d18681c1f9155740cee593a7ec422e221dbbc2847da84b0bf1",
+   "I35-a-published-terminal-record-reported-unpublished": "900b0b792b1f08998dfd1b24a4002d9c65593f7c4091ffe5737f0d70ab76d9b4",
+   "I35-an-unread-terminal-record-reported-unpublished": "44e5b0e3e739f572a8a8747668e056b2e1c327d3f82e496086800bfd2d24530c",
+   "I35-append-once-read-as-unwritten": "5562083a4f24f0a1d36690096df87426be55049658c293e301867516457e54d9",
+   "I35-every-e1-disclosure-says-unpublished": "c37f1897a2c072d43970d2173dd17cdcdd245a559e5e055924118867546da3f7",
+   "I35-the-n2-id-not-printed": "a85145aaeaab7bd4fa2707cd0848a65b514c815d279be2a6ece8056526f8e434"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/cli.py": "1052336150a3b21afd450c40324bda8a5d07245ee44c58837957416307eab8d1",
+   "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
+   "tests/test_0018_r4_closures.py": "94005e0f663087a1ac89ec572bfed9f2e288441176a5d71afbcbf64fa455c17a",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R4-01",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]": "assertion",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "definition_sha256": "7f9d42279184c0e2306cec473367215becb839cd57fba7f5c182af00ed064739",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-a-landed-attempted-rename-read-as-unwritten",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]",
+    "tests/test_0018_r4_closures.py::test_an_attempted_publication_that_cannot_be_read_back_is_n2[1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.88s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01: a failed rename is N1 whether or not it published, as round 4 shipped"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]"
+   ],
+   "definition_sha256": "5562083a4f24f0a1d36690096df87426be55049658c293e301867516457e54d9",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-append-once-read-as-unwritten",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_an_append_once_refusal_is_n2_never_nothing_consumed[1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.73s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01: the record that refuses append-once is read as nothing consumed"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]"
+   ],
+   "definition_sha256": "900b0b792b1f08998dfd1b24a4002d9c65593f7c4091ffe5737f0d70ab76d9b4",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-a-published-terminal-record-reported-unpublished",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.83s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01: the terminal carrier hard-codes audit_committed=False, as round 4 shipped"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]"
+   ],
+   "definition_sha256": "44e5b0e3e739f572a8a8747668e056b2e1c327d3f82e496086800bfd2d24530c",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-an-unread-terminal-record-reported-unpublished",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect-unreadable]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01: a publication that cannot be read back is reported unpublished"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]"
+   ],
+   "definition_sha256": "39699f6e80b4a1d18681c1f9155740cee593a7ec422e221dbbc2847da84b0bf1",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-a-present-terminal-record-reported-unpublished",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-terminal-present-other]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.79s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01 (research's read of 9a502e59): append-once on a terminal record that exists is reported unpublished"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "definition_sha256": "a85145aaeaab7bd4fa2707cd0848a65b514c815d279be2a6ece8056526f8e434",
+   "file": "src/veracium/cli.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-the-n2-id-not-printed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_an_attempted_record_published_by_a_failed_rename_is_n2_and_its_id_is_printed[1]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01: N2 tells the operator to query an id it does not print"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]"
+   ],
+   "definition_sha256": "c37f1897a2c072d43970d2173dd17cdcdd245a559e5e055924118867546da3f7",
+   "file": "src/veracium/cli.py",
+   "finding": "0018-AR-R4-01",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I35-every-e1-disclosure-says-unpublished",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_r4_closures.py::test_a_failed_terminal_write_reports_what_it_established[1-rename-took-effect]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "R4-01: E1's action line says not published whatever the write established"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 7
+  },
+  "controls": 2,
+  "controls_good": 2,
+  "good": 7,
+  "killed": 7,
+  "rows": 7,
+  "seconds": 31
+ }
+}

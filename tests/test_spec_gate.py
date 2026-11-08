@@ -1742,7 +1742,11 @@ def test_the_count_of_closure_evidence_unrunnable_in_a_package_is_pinned():
     # the one row the acceptance carried OWED, now cites the three pytest nodes that capture
     # the baseline at its own invocation — evidence that RUNS in a package, which is the
     # direction this pin prefers.
-    UNRUNNABLE_IN_A_PACKAGE = 129
+    # MOVED 2026-11-08 at the 0018 adjacent rungs' implementation-acceptance fold: 129 -> 131, RECOMPUTED. The two are
+    # TEXT_ONLY's 0018-AR-R1-07 (closed by narrowing the spec's claim, so the fold is the only thing to point at) and
+    # 0018-AR-C5-02 (closed in the round-6 package's stage, outside the tree; its evidence opens the terminal copy). The
+    # other 47 new 0018 rows open the spec's own Review closure rows or run pytest nodes, and DO run in a package.
+    UNRUNNABLE_IN_A_PACKAGE = 131
     assert len(history) == UNRUNNABLE_IN_A_PACKAGE, (
         f"{len(history)} of {len(rows)} closure rows ({share:.1%}) cite `git show` and cannot "
         f"run in a packaged tree; the pin says {UNRUNNABLE_IN_A_PACKAGE}. A reviewer runs the "
@@ -3082,6 +3086,10 @@ def test_new_closure_evidence_is_behavioral():
         # (2026-08) closed in their own disposition sections (§11-§24) before P4 existed, so their rows OPEN
         # the section; the amendment's rounds 15-19 run pytest nodes, each killed by its closure mutants.
         ("0007", "external"): 14,
+        # 0018 (2026-11-08, TRACKED entry at the adjacent rungs' implementation-acceptance fold): its August rounds (external 1-4,
+        # internal 1) were folded as spec text before P4 existed, and their rows open the spec's own Review closure rows. The
+        # adjacent-rungs rounds (0018 rounds 5-10) run pytest nodes, each killed by its closure table, but for TEXT_ONLY's two.
+        ("0018", "external"): 4, ("0018", "internal"): 1,
     }
     # 0030 (2026-09-04, the joint arc's ledger written after acceptance):
     # its text-only closures are NOT prefix-shaped — design/prose findings
@@ -3218,6 +3226,10 @@ def test_new_closure_evidence_is_behavioral():
         '0043-R3-7': 'advisory: consolidating the superseded passages would help prevent old timeout w',
         '0043-R3-6': 'A6 residue: the final implementation must capture the baseline at its actual mod',
         '0043-R4-3': 'superseded normative wording still readable as live requirements: the old prompt',
+        # 0018's adjacent-rungs arc (2026-11-08): R1-07 was closed by narrowing the claim in the spec text, and C5-02 in the round-6
+        # package's stage, outside the tree; its record is the terminal copy under specs/evidence/0018/round-6/.
+        '0018-AR-R1-07': 'intermediate schema acceptance did not establish compatibility with older release readers',
+        '0018-AR-C5-02': 'the backward-control count was stale: measured before an assertion was added to the file it described',
     }
     offenders = []
     for row in closure_findings.CLOSURES:

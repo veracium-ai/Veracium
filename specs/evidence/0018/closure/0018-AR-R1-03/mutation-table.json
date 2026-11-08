@@ -1,0 +1,224 @@
+{
+ "body_sha256": "7163c509a03c6fbeb020e29ed8eaf1196b33062189fd7de4f1897ecf16d6dcc2",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint"
+   ],
+   "definition_sha256": "1c33a43cf31c55a416b59cd092ba32fda6c29bc9c95ecaaf65d782f5fbb36839",
+   "expected": "SURVIVED",
+   "file": "src/veracium/cli.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R1-03-cli",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'def _facts_of(r):': the bytes change, the behaviour does not"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used",
+    "tests/test_0018_rungs_t3.py::test_row_7a_a_store_below_the_source_refuses_and_nothing_is_written[last one behind]"
+   ],
+   "definition_sha256": "3853caf7dfe7f42cc23e279449450e5776b80f22ec3971f40f4b381aae801972",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/release_migration.py",
+   "good": true,
+   "id": "NOOP-0018-AR-R1-03-release_migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used",
+    "tests/test_0018_rungs_t3.py::test_row_7a_a_store_below_the_source_refuses_and_nothing_is_written[last one behind]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment before 'class RecoveryDecision(NamedTuple):': the bytes change, the behaviour does not"
+  }
+ ],
+ "header": {
+  "cells": {
+   "0018-AR-R1-03": [
+    "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used",
+    "tests/test_0018_rungs_t3.py::test_row_7a_a_store_below_the_source_refuses_and_nothing_is_written[last one behind]",
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   },
+   "last": {
+    "of": 4,
+    "ok": true,
+    "passed": 4
+   }
+  },
+  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "control_definitions": {
+   "NOOP-0018-AR-R1-03-cli": "1c33a43cf31c55a416b59cd092ba32fda6c29bc9c95ecaaf65d782f5fbb36839",
+   "NOOP-0018-AR-R1-03-release_migration": "3853caf7dfe7f42cc23e279449450e5776b80f22ec3971f40f4b381aae801972"
+  },
+  "definitions": {
+   "I34-a-loop-without-the-expectation": "f7bf0cad90c54afa955c19b5301b5d6d49e6252fa8670ca0c2e0ff10df7b9ef7",
+   "I34-checked-after-the-mint": "6f74cbc74e806a2b2c02d69924f0319030b722a1120f08f83977a572c633f3ba",
+   "I38-binding-on-migrate_to": "8b3fc299879a81e52c2ce9146c4f2988d347eae92c821321fda1b47c043ad1df"
+  },
+  "digests": {
+   "specs/evidence/0018-adjacent-rungs/closure/recovery-table-v051.json": "8337ec73eff19ef63bb0bbd2c78f01b5f1f74dbcceee16eea421cecc3e65180e",
+   "specs/evidence/0018/closure_mutants.py": "b323f68c6d993963db8a72b84a2da128890d4a7e80f28d8817f70138b572416a",
+   "specs/evidence/0018/rungs/digest_vectors.json": "a67e8acb47faf1633b182e9544e17539294cf9de9f5f6aad94db55a9fb679647",
+   "specs/evidence/0018/rungs/fixtures.tar.xz": "32322907df1ae3bb8c9ff4e58734523f7b11a9bb61fd172153a6278a9a4968d2",
+   "specs/evidence/0018/rungs/implementation_mutants.py": "e4bd3b640fde23117d5f5aefb3c3f21239f5ca1e84924a15db9250c593e9ccd6",
+   "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/cli.py": "1052336150a3b21afd450c40324bda8a5d07245ee44c58837957416307eab8d1",
+   "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
+   "tests/test_0018_rungs_t3.py": "263d6f2fcec63305fd845165853494623ecb3742578718856cd353c2c13d05c2",
+   "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
+  },
+  "finding": "0018-AR-R1-03",
+  "honest_nodes": [
+   "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0018",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/evidence/0018/rungs/implementation_mutants.py",
+   "tests/test_0018_r5_closures.py",
+   "tests/test_0018_rungs_t5.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used"
+   ],
+   "definition_sha256": "6f74cbc74e806a2b2c02d69924f0319030b722a1120f08f83977a572c633f3ba",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R1-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I34-checked-after-the-mint",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t3.py::test_a_mismatched_expectation_stops_before_any_authority_is_used"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the expectation is checked after the mint is delegated"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint"
+   ],
+   "definition_sha256": "f7bf0cad90c54afa955c19b5301b5d6d49e6252fa8670ca0c2e0ff10df7b9ef7",
+   "file": "src/veracium/cli.py",
+   "finding": "0018-AR-R1-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I34-a-loop-without-the-expectation",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_migrate_cli.py::test_a_store_moved_down_between_rungs_stops_before_a_second_mint"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.26s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the walk does not bind each rung to the last"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0018_rungs_t3.py::test_row_7a_a_store_below_the_source_refuses_and_nothing_is_written[last one behind]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0018_rungs_t3.py::test_row_7a_a_store_below_the_source_refuses_and_nothing_is_written[last one behind]"
+   ],
+   "definition_sha256": "8b3fc299879a81e52c2ce9146c4f2988d347eae92c821321fda1b47c043ad1df",
+   "file": "src/veracium/store/release_migration.py",
+   "finding": "0018-AR-R1-03",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
+   ],
+   "id": "I38-binding-on-migrate_to",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0018_rungs_t3.py::test_row_7a_a_store_below_the_source_refuses_and_nothing_is_written[last one behind]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.68s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the binding is put on `migrate_to`, so the last rung is unbound"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 3
+  },
+  "controls": 2,
+  "controls_good": 2,
+  "good": 3,
+  "killed": 3,
+  "rows": 3,
+  "seconds": 18
+ }
+}
