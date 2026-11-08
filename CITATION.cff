@@ -8,8 +8,8 @@ authors:
 repository-code: "https://github.com/veracium-ai/Veracium"
 url: "https://github.com/veracium-ai/Veracium"
 license: MIT
-version: 0.30.0
-date-released: 2026-11-06
+version: 0.31.0
+date-released: 2026-11-08
 keywords:
   - agent memory
   - LLM
