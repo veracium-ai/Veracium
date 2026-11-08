@@ -373,7 +373,7 @@
  ],
  "campaign": {
   "defined": 546,
-  "pin_digest": "236ea1e35bba61635bb3b6d9eba2a16706939ffb0f71e0290c6eb7bb18c70609",
+  "pin_digest": "71a0d3adbc1ceff1fe58e0a54bce1b0a5270d95cf0f4f7ffe086215a3f4e8035",
   "results": 546,
   "retired": [
    {
@@ -396,7 +396,7 @@
    "killed": 546,
    "mutants": 546
   },
-  "tree_digest": "236ea1e35bba61635bb3b6d9eba2a16706939ffb0f71e0290c6eb7bb18c70609"
+  "tree_digest": "71a0d3adbc1ceff1fe58e0a54bce1b0a5270d95cf0f4f7ffe086215a3f4e8035"
  },
  "findings_unbound_kills": [],
  "gates": {
