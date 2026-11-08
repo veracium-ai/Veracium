@@ -115,6 +115,11 @@ MUTANTS = [
     ("I36-an-off-plan-entry-nested", "product", MIG,
      [("def _check_stamp(conn, run):\n", "def _check_stamp(conn, run):\n    if run.base == 13 and run.target == 14:\n        _read_wiki_left(conn, run)\n")],
      [PLANNED], HONEST, None, "R5-02 (research): the same off-plan entry, called from inside a planned check"),
+    ("I36-an-off-plan-entry-in-a-thread", "product", MIG,
+     [(_OFF_PLAN, "            if base == 13 and target == 14:\n                import threading as _threading\n"
+                  "                _t = _threading.Thread(target=_read_wiki_left, args=(conn, run))\n                _t.start()\n"
+                  "                _t.join()\n" + _OFF_PLAN)],
+     [PLANNED], HONEST, None, "R5-02 (research's read of e75382cd): the off-plan entry run in a thread that starts and ends inside the rung"),
     ("I36-a-dispatcher-read-helper", "product", MIG,
      [(_OFF_PLAN, '            _rows(conn, "SELECT count(*) FROM sqlite_master")\n' + _OFF_PLAN)],
      [PLANNED, DIRECT], HONEST, None, "R5-02 (research): a migration.py helper that is not a step reads at dispatch level, and writes nothing"),

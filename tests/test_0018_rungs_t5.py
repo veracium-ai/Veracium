@@ -13,6 +13,7 @@ import shutil
 import sqlite3
 import sys
 import tarfile
+import _thread
 import threading
 
 import pytest
@@ -172,7 +173,9 @@ class _Trace:
     The universe is NOT this operation's plan (external round 5, R5-02): every step any plan can name is observed, at any depth, so a
     declared entry called where this rung's plan does not hold it is an act the comparison sees. Every other migration.py function the
     dispatcher calls itself is recorded as a `dispatch` act, except `_DISPATCHER_OWN`'s, and every statement outside an entry's extent is
-    recorded as `sql`; statements inside an entry stay that entry's (unit 2 attributes their writes). No thread may start during a rung."""
+    recorded as `sql`; statements inside an entry stay that entry's (unit 2 attributes their writes). No thread may START during a
+    rung: every start is recorded (`threading.Thread.start` and `_thread.start_new_thread`), not only threads that survive it, since
+    the observer profiles one thread (research's read of e75382cd: a thread that starts and ends inside the rung went unseen)."""
 
     def __init__(self, monkeypatch):
         self.entries, self.writes, self.executed, self.active, self.inside = [], [], [], None, False
@@ -218,15 +221,25 @@ class _Trace:
             # the universe, plus this plan's own steps as they stand (a cell may have replaced one, as the refusal cell does)
             self.codes = _STEP_CODES | frozenset(e.step.__code__ for e in real_plan(base, target) if e.kind in _CALLED)
             self.inside = True
-            before = set(threading.enumerate())
+            started, real_start, real_new = [], threading.Thread.start, _thread.start_new_thread
+
+            def start(thread, *a, **k):
+                started.append(thread.name)
+                return real_start(thread, *a, **k)
+
+            def start_new(function, *a, **k):
+                started.append(getattr(function, "__name__", repr(function)))
+                return real_new(function, *a, **k)
+            threading.Thread.start, _thread.start_new_thread = start, start_new
             previous = sys.getprofile()
             sys.setprofile(called)
             try:
                 return real_apply(conn, base, target)
             finally:
                 sys.setprofile(previous)
+                threading.Thread.start, _thread.start_new_thread = real_start, real_new
                 self.inside = False
-                self.threads.append(sorted(t.name for t in set(threading.enumerate()) - before))
+                self.threads.append(started)
                 conn.set_authorizer(None)
                 conn.set_trace_callback(None)
         monkeypatch.setattr(mig, "plan", plan)

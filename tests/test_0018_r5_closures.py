@@ -137,8 +137,8 @@ def _assert_e2(code, out, err, op):
 
 
 # ---- the attempted sink ---------------------------------------------------------------------------------------------------------
-@pytest.mark.parametrize("load", ["readable", "transient", "persistent"])
-@pytest.mark.parametrize("record", ["existing", "absent"])
+@pytest.mark.parametrize("record, load", [(r, l) for r in ("existing", "absent") for l in ("readable", "transient", "persistent")
+                                          if (r, l) != ("absent", "readable")])     # absent and readable is the ordinary write
 @pytest.mark.parametrize("b", RUNGS)
 def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_path, monkeypatch, capsys, b, record, load):
     """Every failure of the attempted writer outside the proving window is unresolved, the id printed and no rerun offered: append-once
@@ -146,8 +146,6 @@ def test_an_attempted_write_whose_load_or_append_once_proves_nothing_is_n2(tmp_p
     Where the walk's own terminal readback can read the trail (or finds none, a real ENOENT), the row is N2. Where a trail is there and
     stays unreadable, §4f routes the malformed readback to E2 (MigrationAuditReadError, inspect the trail), as for every outcome: the same
     id, no rerun, never N1."""
-    if record == "absent" and load == "readable":
-        pytest.skip("absent and readable is the ordinary write: the proven-window cells below fail it on purpose")
     p = _store(tmp_path / "s.db", b)
     ap = rm.audit_trail_path(p)
 
