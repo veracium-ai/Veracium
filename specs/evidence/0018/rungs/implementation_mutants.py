@@ -120,6 +120,17 @@ MUTANTS = [
                   "                _t = _threading.Thread(target=_read_wiki_left, args=(conn, run))\n                _t.start()\n"
                   "                _t.join()\n" + _OFF_PLAN)],
      [PLANNED], HONEST, None, "R5-02 (research's read of e75382cd): the off-plan entry run in a thread that starts and ends inside the rung"),
+    ("I36-an-off-plan-entry-in-a-low-level-thread", "product", MIG,
+     [(_OFF_PLAN, "            if base == 13 and target == 14:\n                import _thread as _low\n"
+                  "                _low.start_joinable_thread(lambda: _read_wiki_left(conn, run)).join()\n" + _OFF_PLAN)],
+     [PLANNED], HONEST, None, "R5-02 (research's read of 793dd08e): the same entry in a thread started by _thread.start_joinable_thread, "
+     "the route threading itself takes on 3.13 and later, which no name patch reaches"),
+    ("I36-a-thread-before-the-first-entry", "product", MIG,
+     [(_OFF_PLAN, '            __import__("threading").Thread(target=lambda: None).start()\n' + _OFF_PLAN)],
+     [PLANNED], HONEST, None, "R5-02 (research): a no-op thread started at dispatch level before the rung's first entry: the arming window opens before it"),
+    ("I36-a-thread-after-the-last-entry", "product", MIG,
+     [("        except _VersionFault as fault:\n", '            __import__("threading").Thread(target=lambda: None).start()\n        except _VersionFault as fault:\n')],
+     [PLANNED], HONEST, None, "R5-02 (research): a no-op thread started at dispatch level after the rung's last entry: the arming window closes after it"),
     ("I36-a-dispatcher-read-helper", "product", MIG,
      [(_OFF_PLAN, '            _rows(conn, "SELECT count(*) FROM sqlite_master")\n' + _OFF_PLAN)],
      [PLANNED, DIRECT], HONEST, None, "R5-02 (research): a migration.py helper that is not a step reads at dispatch level, and writes nothing"),

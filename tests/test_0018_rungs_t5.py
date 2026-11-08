@@ -13,8 +13,6 @@ import shutil
 import sqlite3
 import sys
 import tarfile
-import _thread
-import threading
 
 import pytest
 
@@ -174,8 +172,10 @@ class _Trace:
     declared entry called where this rung's plan does not hold it is an act the comparison sees. Every other migration.py function the
     dispatcher calls itself is recorded as a `dispatch` act, except `_DISPATCHER_OWN`'s, and every statement outside an entry's extent is
     recorded as `sql`; statements inside an entry stay that entry's (unit 2 attributes their writes). No thread may START during a
-    rung: every start is recorded (`threading.Thread.start` and `_thread.start_new_thread`), not only threads that survive it, since
-    the observer profiles one thread (research's read of e75382cd: a thread that starts and ends inside the rung went unseen)."""
+    rung: every start is recorded, not only threads that survive it, since the observer profiles one thread (research's read of
+    e75382cd: a thread that started and ended inside the rung went unseen). The record is CPython's own audit event for a thread start,
+    raised whatever name reached it (`threading.Thread`, `_thread.start_new_thread`, `_thread.start_joinable_thread`, or an alias
+    taken before any patch: research's read of 793dd08e), by one audit hook armed only inside a rung."""
 
     def __init__(self, monkeypatch):
         self.entries, self.writes, self.executed, self.active, self.inside = [], [], [], None, False
@@ -221,23 +221,15 @@ class _Trace:
             # the universe, plus this plan's own steps as they stand (a cell may have replaced one, as the refusal cell does)
             self.codes = _STEP_CODES | frozenset(e.step.__code__ for e in real_plan(base, target) if e.kind in _CALLED)
             self.inside = True
-            started, real_start, real_new = [], threading.Thread.start, _thread.start_new_thread
-
-            def start(thread, *a, **k):
-                started.append(thread.name)
-                return real_start(thread, *a, **k)
-
-            def start_new(function, *a, **k):
-                started.append(getattr(function, "__name__", repr(function)))
-                return real_new(function, *a, **k)
-            threading.Thread.start, _thread.start_new_thread = start, start_new
+            started = []
+            _THREAD_STARTS[0] = started              # arm the audit hook for this rung only
             previous = sys.getprofile()
             sys.setprofile(called)
             try:
                 return real_apply(conn, base, target)
             finally:
                 sys.setprofile(previous)
-                threading.Thread.start, _thread.start_new_thread = real_start, real_new
+                _THREAD_STARTS[0] = None
                 self.inside = False
                 self.threads.append(started)
                 conn.set_authorizer(None)
@@ -311,6 +303,19 @@ def _store_at(path, version):
 
 
 _CALLED = ("read", "data", "check")
+# Every thread start raises one of these audit events (measured on 3.14.7: Thread.start raises _thread.start_joinable_thread, the
+# low-level calls raise their own). An audit hook cannot be removed, so it is installed once and records only while armed.
+_THREAD_START_EVENTS = frozenset({"_thread.start_new_thread", "_thread.start_joinable_thread"})
+_THREAD_STARTS = [None]
+
+
+def _audit(event, args):
+    armed = _THREAD_STARTS[0]
+    if armed is not None and event in _THREAD_START_EVENTS:
+        armed.append(event)
+
+
+sys.addaudithook(_audit)
 _MIGRATION_FILE = mig.__file__
 # Every step any plan can name, across every pair a rung or the direct route can run: the universe the observer watches, not this
 # rung's plan (R5-02). Built from the real plan before any test patches it.
