@@ -1,5 +1,5 @@
 {
- "body_sha256": "09d444e5cad9f1c632f4b327a1fc2928094edccd1c9d77a4301a8162f181fa2a",
+ "body_sha256": "99754b32c19a24bdc91d8f7020815da51dc032e0df3712f4917df8f30e4a8f14",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 2
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
   },
@@ -70,11 +70,7 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json"
   ]
  },
  "rows": [
@@ -135,7 +131,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"

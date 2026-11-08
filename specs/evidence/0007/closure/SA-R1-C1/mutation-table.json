@@ -1,5 +1,5 @@
 {
- "body_sha256": "9cb075e2c849bbb43129130dab743a23f339611248c8b6de3f02d586fbeaa310",
+ "body_sha256": "dd1ba98ce2356b8d0c95756904343a77d0b1ac78d8283df0c23f45a393130068",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -66,11 +66,7 @@
   "tracked_changes": [
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json"
   ]
  },
  "rows": [

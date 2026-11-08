@@ -1,5 +1,5 @@
 {
- "body_sha256": "34ed6d609a564e5db53e415a49c0a0226d5e3320ffa0b3f7c4c8b3d8e56226ab",
+ "body_sha256": "f2af8c84fd6bb14f93e3b37be18106968c1ef6338dfb88e7c8882a4e78c755ff",
  "controls": [
   {
    "anchor_counts": [
@@ -55,7 +55,7 @@
     "passed": 6
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
   },
@@ -89,11 +89,7 @@
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -137,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.00s",
+   "pytest": "5 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: a same-key current record the production validator rejects is replaced, never refused"
@@ -170,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "per-record validation without the artifact-level check: a conflicting duplicate passes"

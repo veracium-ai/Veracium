@@ -1,5 +1,5 @@
 {
- "body_sha256": "737c472e8b7f6b12cd133ebf040a2f11a957f7ea3aaf864a386da5f6c085e11a",
+ "body_sha256": "8c7af58310349ac5e9e0d2620e822663519d4a6998b4bff0123de12468e51729",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -75,12 +75,7 @@
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
-  "tracked_changes": [
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
-  ]
+  "tracked_changes": []
  },
  "rows": [
   {
@@ -114,7 +109,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.12s",
+   "pytest": "2 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -147,7 +142,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -213,7 +208,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"

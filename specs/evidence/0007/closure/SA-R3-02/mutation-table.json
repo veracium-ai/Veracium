@@ -1,5 +1,5 @@
 {
- "body_sha256": "2902e2060688727ad0e73840a5e533eb7919a7113133934a35ed7f0f89b0d476",
+ "body_sha256": "892d15046c1d8d40f0c5b83a9fcad916319052dfd8168740c2ba93af686b70bf",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R3-02-attestation_job": "35783f075a00f832b18479d6ce4fbfbbd04b700c55c82b001805aea6040ffde9"
   },
@@ -81,11 +81,7 @@
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -120,7 +116,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 11.05s",
+   "pytest": "2 failed in 11.11s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded rule: the JUnit's modules compared with the rule's, its nodes never compared with the invocation's own collection"
@@ -156,7 +152,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.80s",
+   "pytest": "2 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite (the reviewer's deselect route)"
@@ -171,6 +167,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 66
+  "seconds": 67
  }
 }

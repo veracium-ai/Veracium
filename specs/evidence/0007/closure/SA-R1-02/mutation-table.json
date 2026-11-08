@@ -1,5 +1,5 @@
 {
- "body_sha256": "b436e25df170820b077aecfcbebc345850b2ece67a148030e695fe4f8cc3829c",
+ "body_sha256": "a0be1633994c0777d86008ab0d8d37e7e8f520cd7841b87f450300fa1ea75119",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 7
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
    "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
@@ -105,11 +105,7 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -141,7 +137,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.24s",
+   "pytest": "1 failed in 1.23s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -174,7 +170,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.19s",
+   "pytest": "1 failed in 1.23s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -207,7 +203,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -241,7 +237,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.70s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -257,6 +253,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 23
+  "seconds": 24
  }
 }

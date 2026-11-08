@@ -1,5 +1,5 @@
 {
- "body_sha256": "0556766deb8510fc0005bcae98d6cb26c52803fabf6c0d977676dfbd2ac53e21",
+ "body_sha256": "930948374470fbd4c1dc4faa7fc194d66c80059cdd49b6e15b37e91ce3fb126f",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "6584e2618596edf9ad2605ba8b8f65a3e1064606",
+  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -86,11 +86,7 @@
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0013/sa10_mutants.py",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation_mutants.py"
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json"
   ]
  },
  "rows": [
@@ -125,7 +121,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 8.47s",
+   "pytest": "2 failed in 8.48s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -158,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 7.96s",
+   "pytest": "1 failed in 8.14s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -191,7 +187,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 7.92s",
+   "pytest": "1 failed in 8.22s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -206,6 +202,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 146
+  "seconds": 149
  }
 }
