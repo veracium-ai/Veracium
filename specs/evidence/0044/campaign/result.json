@@ -13,7 +13,7 @@
     "passed": 11
    },
    "group": "T2 (0019 v7: the non-user refusal)",
-   "seconds": 11.6
+   "seconds": 13.2
   },
   {
    "cells": [
@@ -28,7 +28,7 @@
     "passed": 62
    },
    "group": "T4, IO-II-3: competing import, confirmation and redaction across connections",
-   "seconds": 57.5
+   "seconds": 54.2
   },
   {
    "cells": [
@@ -43,7 +43,7 @@
     "passed": 44
    },
    "group": "0051 (INV-S1, S5: the predicate and its version)",
-   "seconds": 5.8
+   "seconds": 5.7
   },
   {
    "cells": [
@@ -58,7 +58,7 @@
     "passed": 113
    },
    "group": "T10a (the edge: INV-R9, Q7, R19)",
-   "seconds": 91.2
+   "seconds": 85.7
   },
   {
    "cells": [
@@ -73,7 +73,7 @@
     "passed": 134
    },
    "group": "T10b (INV-R3: every assertion surface withholds)",
-   "seconds": 96.3
+   "seconds": 90.2
   },
   {
    "cells": [
@@ -88,7 +88,7 @@
     "passed": 134
    },
    "group": "T10b (F7, the owner's rulings (a)\u2013(i), Q9)",
-   "seconds": 126.2
+   "seconds": 121.8
   },
   {
    "cells": [
@@ -103,7 +103,7 @@
     "passed": 52
    },
    "group": "T11a (INV-A23: replay by comparison over the staged union)",
-   "seconds": 241.4
+   "seconds": 230.8
   },
   {
    "cells": [
@@ -118,7 +118,7 @@
     "passed": 70
    },
    "group": "T11b (the export, C11, D2, D12, G13)",
-   "seconds": 94.9
+   "seconds": 91.3
   },
   {
    "cells": [
@@ -133,7 +133,7 @@
     "passed": 70
    },
    "group": "T11b stage 2 (research S2-2 and S2-6(c))",
-   "seconds": 57.1
+   "seconds": 53.0
   },
   {
    "cells": [
@@ -148,7 +148,7 @@
     "passed": 4
    },
    "group": "T12 (the writer/lifetime matrix generator, P1)",
-   "seconds": 35.7
+   "seconds": 33.4
   },
   {
    "cells": [
@@ -178,7 +178,7 @@
     "passed": 1
    },
    "group": "0018 I17 (audit failures are loud end-to-end)",
-   "seconds": 3.8
+   "seconds": 3.6
   },
   {
    "cells": [
@@ -193,7 +193,7 @@
     "passed": 1
    },
    "group": "0018 I23 (ReadbackResult is a closed constructed carrier)",
-   "seconds": 2.8
+   "seconds": 2.7
   },
   {
    "cells": [
@@ -208,7 +208,7 @@
     "passed": 2
    },
    "group": "0041 INV-RR14 (a created record beside its notice must show the redaction, both modes)",
-   "seconds": 4.5
+   "seconds": 4.2
   },
   {
    "cells": [
@@ -223,7 +223,7 @@
     "passed": 51
    },
    "group": "T5-3 (0044 \u00a72: the wiki's cache identity binds arity)",
-   "seconds": 22.6
+   "seconds": 21.5
   },
   {
    "cells": [
@@ -240,7 +240,7 @@
     "passed": 55
    },
    "group": "T6-1 (0044 \u00a74f / \u00a74g: eligibility and the outcome rows)",
-   "seconds": 112.9
+   "seconds": 107.6
   },
   {
    "cells": [
@@ -257,7 +257,7 @@
     "passed": 1
    },
    "group": "T7-1 N4 (the header's effective_at)",
-   "seconds": 3.3
+   "seconds": 3.2
   },
   {
    "cells": [
@@ -274,7 +274,7 @@
     "passed": 1
    },
    "group": "T7-2 (the differential reaches the shared rules)",
-   "seconds": 47.5
+   "seconds": 45.1
   },
   {
    "cells": [
@@ -289,7 +289,7 @@
     "passed": 26
    },
    "group": "T9 (D6, INV-G2: the predicate and its wiring)",
-   "seconds": 16.6
+   "seconds": 15.7
   },
   {
    "cells": [
@@ -306,7 +306,7 @@
     "passed": 4
    },
    "group": "R-II r2 RII-02 (0051 INV-S1, S6: a counted h/q makes a weak name a speaker; binding cell deselected)",
-   "seconds": 5.5
+   "seconds": 5.3
   },
   {
    "cells": [
@@ -321,7 +321,7 @@
     "passed": 34
    },
    "group": "T3 (0008 v7/v8: the request registry, the act counter, schema v16)",
-   "seconds": 73.6
+   "seconds": 72.7
   },
   {
    "cells": [
@@ -336,7 +336,7 @@
     "passed": 26
    },
    "group": "T4, research's R6: the episode kind closure",
-   "seconds": 16.9
+   "seconds": 15.4
   },
   {
    "cells": [
@@ -353,7 +353,7 @@
     "passed": 43
    },
    "group": "0051 (INV-S3, S6: the frozen grammar, binding cell deselected)",
-   "seconds": 20.1
+   "seconds": 18.4
   },
   {
    "cells": [
@@ -368,7 +368,7 @@
     "passed": 113
    },
    "group": "T10a (INV-R13, R14, F2, F3: the challenge and its resolve)",
-   "seconds": 153.8
+   "seconds": 143.7
   },
   {
    "cells": [
@@ -383,7 +383,7 @@
     "passed": 134
    },
    "group": "T10b (INV-R3: every inspection carrier carries the unit; INV-G13)",
-   "seconds": 106.1
+   "seconds": 101.5
   },
   {
    "cells": [
@@ -398,7 +398,7 @@
     "passed": 134
    },
    "group": "T10b (\u00a74e collapse, Q10)",
-   "seconds": 45.7
+   "seconds": 43.6
   },
   {
    "cells": [
@@ -413,7 +413,7 @@
     "passed": 52
    },
    "group": "T11a (the whole-unit validation and the records, D14)",
-   "seconds": 212.5
+   "seconds": 202.5
   },
   {
    "cells": [
@@ -428,7 +428,7 @@
     "passed": 70
    },
    "group": "T11b (the act records, D13, D3\u2013D5, P2)",
-   "seconds": 96.7
+   "seconds": 93.6
   },
   {
    "cells": [
@@ -443,7 +443,7 @@
     "passed": 70
    },
    "group": "research T11b (M2, M3, M4)",
-   "seconds": 71.5
+   "seconds": 67.1
   },
   {
    "cells": [
@@ -458,7 +458,7 @@
     "passed": 3
    },
    "group": "T12 (the carrier delta generator, P1)",
-   "seconds": 11.0
+   "seconds": 10.1
   },
   {
    "cells": [
@@ -473,7 +473,7 @@
     "passed": 1
    },
    "group": "0008 C11 (the export carries confirmations with origin)",
-   "seconds": 3.3
+   "seconds": 2.8
   },
   {
    "cells": [
@@ -488,7 +488,7 @@
     "passed": 1
    },
    "group": "0018 I18 (the resolution evidence is reason-labeling only)",
-   "seconds": 3.2
+   "seconds": 2.9
   },
   {
    "cells": [
@@ -503,7 +503,7 @@
     "passed": 1
    },
    "group": "0018 I28 (the receipt is recoverable after commit with no delivery state)",
-   "seconds": 4.8
+   "seconds": 4.6
   },
   {
    "cells": [
@@ -518,7 +518,7 @@
     "passed": 51
    },
    "group": "T5-2 (0044 \u00a74b: the reclassification, and INV-A4 for every other default)",
-   "seconds": 34.3
+   "seconds": 32.0
   },
   {
    "cells": [
@@ -533,7 +533,7 @@
     "passed": 9
    },
    "group": "T5-1 (0044 \u00a72/\u00a72c/\u00a74a: the arity declaration)",
-   "seconds": 7.1
+   "seconds": 6.5
   },
   {
    "cells": [
@@ -550,7 +550,7 @@
     "passed": 3
    },
    "group": "T6-1 (0018 \u00a74e: doctor's phases, I30)",
-   "seconds": 11.8
+   "seconds": 11.1
   },
   {
    "cells": [
@@ -567,7 +567,7 @@
     "passed": 28
    },
    "group": "T7-2 (INV-A12: eligibility is the episode flag)",
-   "seconds": 115.0
+   "seconds": 109.9
   },
   {
    "cells": [
@@ -584,7 +584,7 @@
     "passed": 28
    },
    "group": "T7-2 stage 2 (research S3: the bump and the registry clock)",
-   "seconds": 56.5
+   "seconds": 54.6
   },
   {
    "cells": [
@@ -599,7 +599,7 @@
     "passed": 26
    },
    "group": "T9 (INV-G1, G9, G13: the write)",
-   "seconds": 30.1
+   "seconds": 29.2
   },
   {
    "cells": [
@@ -614,7 +614,7 @@
     "passed": 7
    },
    "group": "R-II r2 V1 (c, d: the held basetemp and the sqlite error names)",
-   "seconds": 8.1
+   "seconds": 7.9
   },
   {
    "cells": [
@@ -629,7 +629,7 @@
     "passed": 16
    },
    "group": "T3, research's stage-2 F1 (the C8 race fallback)",
-   "seconds": 9.7
+   "seconds": 11.0
   },
   {
    "cells": [
@@ -645,7 +645,7 @@
     "passed": 96
    },
    "group": "R-A read, B4/B5: IO-II-3 at T4's states, and RR4",
-   "seconds": 153.1
+   "seconds": 144.6
   },
   {
    "cells": [
@@ -660,7 +660,7 @@
     "passed": 44
    },
    "group": "0051 (INV-S2, S8: the product backstop)",
-   "seconds": 12.3
+   "seconds": 11.4
   },
   {
    "cells": [
@@ -675,7 +675,7 @@
     "passed": 113
    },
    "group": "T10a (INV-R15/Q1, R24, Q8: one id space)",
-   "seconds": 126.3
+   "seconds": 119.9
   },
   {
    "cells": [
@@ -691,7 +691,7 @@
     "passed": 163
    },
    "group": "T10b (INV-R12: the grid, restriction only)",
-   "seconds": 58.3
+   "seconds": 55.7
   },
   {
    "cells": [
@@ -706,7 +706,7 @@
     "passed": 134
    },
    "group": "T10b (research's T10a S2-3)",
-   "seconds": 33.9
+   "seconds": 33.0
   },
   {
    "cells": [
@@ -721,7 +721,7 @@
     "passed": 52
    },
    "group": "T11a (the owner's D3 ruling, Q9 narrowed, T1, T4, D6b, D9, D13)",
-   "seconds": 288.5
+   "seconds": 279.2
   },
   {
    "cells": [
@@ -736,7 +736,7 @@
     "passed": 70
    },
    "group": "T11b (the remap namespace, R-D6)",
-   "seconds": 56.1
+   "seconds": 53.2
   },
   {
    "cells": [
@@ -751,7 +751,7 @@
     "passed": 70
    },
    "group": "research T11b (R-M1, chronology)",
-   "seconds": 85.0
+   "seconds": 80.0
   },
   {
    "cells": [
@@ -768,7 +768,7 @@
     "passed": 2
    },
    "group": "T12 (the obligation map generator, M1/P1)",
-   "seconds": 236.1
+   "seconds": 228.0
   },
   {
    "cells": [
@@ -783,7 +783,7 @@
     "passed": 1
    },
    "group": "0018 I13 (the preflight matrix is TOTAL)",
-   "seconds": 4.8
+   "seconds": 4.5
   },
   {
    "cells": [
@@ -798,7 +798,7 @@
     "passed": 40
    },
    "group": "0018 I19 (the CLI contract: the five exit-3 package routes)",
-   "seconds": 29.4
+   "seconds": 28.0
   },
   {
    "cells": [
@@ -813,7 +813,7 @@
     "passed": 1
    },
    "group": "0044 INV-A18 (reinstated's reason is closed, 0029 v12)",
-   "seconds": 3.0
+   "seconds": 2.8
   },
   {
    "cells": [
@@ -828,7 +828,7 @@
     "passed": 51
    },
    "group": "T5-2 (0044 \u00a74f / 0018 \u00a74a: the v16 step \u2014 era, inventories, I24, F2)",
-   "seconds": 48.3
+   "seconds": 46.8
   },
   {
    "cells": [
@@ -845,7 +845,7 @@
     "passed": 55
    },
    "group": "T6-1 (0018 \u00a74c: the closed carrier, I29)",
-   "seconds": 86.7
+   "seconds": 82.6
   },
   {
    "cells": [
@@ -860,7 +860,7 @@
     "passed": 4
    },
    "group": "T6-1 (0029 v12: V-REINSTATE-WRITERS, research's F1)",
-   "seconds": 18.0
+   "seconds": 17.3
   },
   {
    "cells": [
@@ -877,7 +877,7 @@
     "passed": 28
    },
    "group": "T7-2 (INV-A13: per field, the registry first, one id space)",
-   "seconds": 191.7
+   "seconds": 182.8
   },
   {
    "cells": [
@@ -892,7 +892,7 @@
     "passed": 14
    },
    "group": "T8 (INV-O1, O2, O6: the key itself)",
-   "seconds": 19.1
+   "seconds": 17.9
   },
   {
    "cells": [
@@ -907,7 +907,7 @@
     "passed": 26
    },
    "group": "T9 (INV-G6, G7, G12: what the axis does not do)",
-   "seconds": 19.4
+   "seconds": 17.9
   },
   {
    "cells": [
@@ -924,7 +924,7 @@
     "passed": 243
    },
    "group": "R-II r2 RII-R2-01 (0004 W10-W13, 0047 INV-R18: the wiki bound across same-ID writes)",
-   "seconds": 605.2
+   "seconds": 569.6
   },
   {
    "cells": [
@@ -940,7 +940,7 @@
     "passed": 87
    },
    "group": "T4 (0041 \u00a711.6.6: the notice state machine), dev's own rules",
-   "seconds": 293.1
+   "seconds": 276.2
   },
   {
    "cells": [
@@ -955,7 +955,7 @@
     "passed": 20
    },
    "group": "RA-01 (0010 X21 at the treatment body: no caller treats a claimed episode)",
-   "seconds": 19.3
+   "seconds": 18.7
   },
   {
    "cells": [
@@ -970,7 +970,7 @@
     "passed": 44
    },
    "group": "0051 (INV-S2, S7: the write path and the counter)",
-   "seconds": 13.2
+   "seconds": 12.8
   },
   {
    "cells": [
@@ -985,7 +985,7 @@
     "passed": 113
    },
    "group": "T10a (INV-R17, Q12, Q13: absorption over an act)",
-   "seconds": 103.0
+   "seconds": 100.9
   },
   {
    "cells": [
@@ -1000,7 +1000,7 @@
     "passed": 134
    },
    "group": "T10b (INV-R6 and the display order; one snapshot)",
-   "seconds": 56.5
+   "seconds": 55.0
   },
   {
    "cells": [
@@ -1015,7 +1015,7 @@
     "passed": 134
    },
    "group": "T10b stage 2 (research d9a6e1e8: S2-1, S2-2, S2-3, S2-5)",
-   "seconds": 101.6
+   "seconds": 97.5
   },
   {
    "cells": [
@@ -1030,7 +1030,7 @@
     "passed": 1
    },
    "group": "T11a (D10: the redaction gate pinned at its own era)",
-   "seconds": 3.5
+   "seconds": 3.3
   },
   {
    "cells": [
@@ -1045,7 +1045,7 @@
     "passed": 70
    },
    "group": "T11b (rules 0\u20134 and coverage: R11, R16, R21, Q4\u2032, Q5, I1\u2013I7, RR3/RR6/RR8/RR9)",
-   "seconds": 261.0
+   "seconds": 246.7
   },
   {
    "cells": [
@@ -1060,7 +1060,7 @@
     "passed": 70
    },
    "group": "research T11b (rule 0, coverage, the primitive)",
-   "seconds": 69.7
+   "seconds": 66.2
   },
   {
    "cells": [
@@ -1105,7 +1105,7 @@
     "passed": 1
    },
    "group": "0018 I20 (the two new outcomes are returnable, never terminal)",
-   "seconds": 2.8
+   "seconds": 2.6
   },
   {
    "cells": [
@@ -1120,7 +1120,7 @@
     "passed": 1
    },
    "group": "0044 INV-A20 (user erasure removes outcomes, runs, inventory)",
-   "seconds": 4.8
+   "seconds": 4.5
   },
   {
    "cells": [
@@ -1136,7 +1136,7 @@
     "passed": 69
    },
    "group": "T5-2 (0044 \u00a74f-ii: the lifetime hook at the choke point; F1)",
-   "seconds": 106.1
+   "seconds": 102.6
   },
   {
    "cells": [
@@ -1153,7 +1153,7 @@
     "passed": 55
    },
    "group": "T6-1 (0018 \u00a74b.2 / 0044 \u00a74e: the plan, I25, A5, A15, A21)",
-   "seconds": 60.5
+   "seconds": 58.6
   },
   {
    "cells": [
@@ -1168,7 +1168,7 @@
     "passed": 24
    },
    "group": "T7-1 N1 (one path predicate, four entries)",
-   "seconds": 21.9
+   "seconds": 21.0
   },
   {
    "cells": [
@@ -1185,7 +1185,7 @@
     "passed": 28
    },
    "group": "T7-2 (INV-A17: no undo from testimony)",
-   "seconds": 41.8
+   "seconds": 39.7
   },
   {
    "cells": [
@@ -1200,7 +1200,7 @@
     "passed": 14
    },
    "group": "T8 (INV-O3, O5: the renderer)",
-   "seconds": 10.9
+   "seconds": 10.3
   },
   {
    "cells": [
@@ -1215,7 +1215,7 @@
     "passed": 26
    },
    "group": "T9 (INV-G10: the source-redacted guard)",
-   "seconds": 24.1
+   "seconds": 22.9
   },
   {
    "cells": [
@@ -1231,7 +1231,7 @@
     "passed": 227
    },
    "group": "R-II r3 RII-R3-01 (0004 v3.5 \u00a72c (i)-(iii), W11: the episode owner, the reservation and the redaction hold the id)",
-   "seconds": 214.5
+   "seconds": 203.5
   },
   {
    "cells": [
@@ -1246,7 +1246,7 @@
     "passed": 62
    },
    "group": "T4, research's stage-2 T4-1 and the seven gaps",
-   "seconds": 151.8
+   "seconds": 144.6
   },
   {
    "cells": [
@@ -1261,7 +1261,7 @@
     "passed": 20
    },
    "group": "RA-02 (0041 \u00a711.6.6 / INV-RR12: every notice-phase predicate reads the pre-treatment snapshot)",
-   "seconds": 29.2
+   "seconds": 27.5
   },
   {
    "cells": [
@@ -1276,7 +1276,7 @@
     "passed": 113
    },
    "group": "T10a (INV-R1, R2: a reply mutates nothing and is append-only)",
-   "seconds": 61.2
+   "seconds": 56.7
   },
   {
    "cells": [
@@ -1291,7 +1291,7 @@
     "passed": 113
    },
    "group": "T10a (INV-R5, R10, R22, F6: doctor, MCP, erasure, the audit line)",
-   "seconds": 131.9
+   "seconds": 129.2
   },
   {
    "cells": [
@@ -1306,7 +1306,7 @@
     "passed": 134
    },
    "group": "T10b (INV-R18: eviction and the fence)",
-   "seconds": 68.3
+   "seconds": 66.0
   },
   {
    "cells": [
@@ -1321,7 +1321,7 @@
     "passed": 52
    },
    "group": "T11a (the export, D2)",
-   "seconds": 105.6
+   "seconds": 102.8
   },
   {
    "cells": [
@@ -1336,7 +1336,7 @@
     "passed": 52
    },
    "group": "T11a stage 2 (research 023609ca: S2-1 ruled (c), S2-2, S2-3, S2-5; cells R2-R5, R8-R10)",
-   "seconds": 238.3
+   "seconds": 227.8
   },
   {
    "cells": [
@@ -1351,7 +1351,7 @@
     "passed": 70
    },
    "group": "T11b (chronology over H: Q10, R23, R-M1)",
-   "seconds": 200.6
+   "seconds": 191.1
   },
   {
    "cells": [
@@ -1366,7 +1366,7 @@
     "passed": 13
    },
    "group": "T12 (the carried fixes: T5 S2 N2/N3, T6 S2 F5; the side finding; the act noun)",
-   "seconds": 40.0
+   "seconds": 38.7
   },
   {
    "cells": [
@@ -1381,7 +1381,7 @@
     "passed": 1
    },
    "group": "0008 INV-I3 (a replay never exempts another new act from validation: chronology; research's T12 S2-M1, I3-b)",
-   "seconds": 3.8
+   "seconds": 3.6
   },
   {
    "cells": [
@@ -1396,7 +1396,7 @@
     "passed": 1
    },
    "group": "0018 I15 (MigrationResult carriers are table-only)",
-   "seconds": 2.8
+   "seconds": 2.6
   },
   {
    "cells": [
@@ -1411,7 +1411,7 @@
     "passed": 1
    },
    "group": "0018 I21 (the delegated routing is total)",
-   "seconds": 2.8
+   "seconds": 2.5
   },
   {
    "cells": [
@@ -1426,7 +1426,7 @@
     "passed": 6
    },
    "group": "0045 INV-G8 (0019's marker follows the FLAG on every grounding value)",
-   "seconds": 4.3
+   "seconds": 3.9
   },
   {
    "cells": [
@@ -1441,7 +1441,7 @@
     "passed": 51
    },
    "group": "T5-2 (0044 \u00a74d: retention; F3 one predicate; INV-A14)",
-   "seconds": 48.4
+   "seconds": 47.3
   },
   {
    "cells": [
@@ -1458,7 +1458,7 @@
     "passed": 55
    },
    "group": "T6-1 (0018 \u00a74b.1b: admission, I32)",
-   "seconds": 86.6
+   "seconds": 81.8
   },
   {
    "cells": [
@@ -1475,7 +1475,7 @@
     "passed": 5
    },
    "group": "T7-1 N2 (plan_only)",
-   "seconds": 4.1
+   "seconds": 3.9
   },
   {
    "cells": [
@@ -1492,7 +1492,7 @@
     "passed": 28
    },
    "group": "T7-2 (INV-Q7: the terminal for every verb)",
-   "seconds": 56.7
+   "seconds": 53.6
   },
   {
    "cells": [
@@ -1507,7 +1507,7 @@
     "passed": 14
    },
    "group": "T8 (INV-O4, O8, O9, O10: which members the key reads)",
-   "seconds": 30.8
+   "seconds": 29.8
   },
   {
    "cells": [
@@ -1522,7 +1522,7 @@
     "passed": 26
    },
    "group": "T9 (INV-G11, Q6, F3: absorption and the import window)",
-   "seconds": 16.6
+   "seconds": 16.1
   },
   {
    "cells": [
@@ -1539,7 +1539,7 @@
     "passed": 17
    },
    "group": "R-II r3 NEXT-ROUND (research N2 and the kind closure's reader: another user's id and attestation at the import)",
-   "seconds": 21.4
+   "seconds": 20.0
   },
   {
    "cells": [
@@ -1555,7 +1555,7 @@
     "passed": 74
    },
    "group": "T4, research's re-check: R29 and R11",
-   "seconds": 64.3
+   "seconds": 63.5
   },
   {
    "cells": [
@@ -1570,7 +1570,7 @@
     "passed": 7
    },
    "group": "RA-03 (0008 INV-Q2 on the public path: the registry before the target)",
-   "seconds": 4.0
+   "seconds": 4.1
   },
   {
    "cells": [
@@ -1585,7 +1585,7 @@
     "passed": 113
    },
    "group": "T10a (the request shape: INV-R7/RR1, R8, the actor, \u00a74b, F1)",
-   "seconds": 110.2
+   "seconds": 102.5
   },
   {
    "cells": [
@@ -1600,7 +1600,7 @@
     "passed": 113
    },
    "group": "T10a (0041 INV-RR2, RR5, IO-II-3: redaction)",
-   "seconds": 106.4
+   "seconds": 100.1
   },
   {
    "cells": [
@@ -1615,7 +1615,7 @@
     "passed": 134
    },
    "group": "T10b (INV-R20: current acts on as-of)",
-   "seconds": 34.1
+   "seconds": 33.1
   },
   {
    "cells": [
@@ -1630,7 +1630,7 @@
     "passed": 52
    },
    "group": "T11a (INV-A17: trust by the origin matrix)",
-   "seconds": 104.2
+   "seconds": 100.2
   },
   {
    "cells": [
@@ -1645,7 +1645,7 @@
     "passed": 52
    },
    "group": "T11a stage 2 (the D9 re-checks, R4/R5; the unit's edge-state rules, R8/R9)",
-   "seconds": 159.3
+   "seconds": 155.5
   },
   {
    "cells": [
@@ -1660,7 +1660,7 @@
     "passed": 70
    },
    "group": "T11b (the axis: D10, D11, M2, G9, G13; the refused-record rule; why)",
-   "seconds": 125.8
+   "seconds": 121.8
   },
   {
    "cells": [
@@ -1675,7 +1675,7 @@
     "passed": 31
    },
    "group": "T12 (the registry scenario on a migrated store: the shared body and the v16 backfill)",
-   "seconds": 106.2
+   "seconds": 99.6
   },
   {
    "cells": [
@@ -1691,7 +1691,7 @@
     "passed": 2
    },
    "group": "0008 INV-I3 (a replay never exempts another new act from validation: positions; research's T12 S2-M1, I3-c)",
-   "seconds": 4.0
+   "seconds": 3.8
   },
   {
    "cells": [
@@ -1706,7 +1706,7 @@
     "passed": 1
    },
    "group": "0018 I16 (the attestation contract is exact)",
-   "seconds": 2.8
+   "seconds": 2.7
   },
   {
    "cells": [
@@ -1721,7 +1721,7 @@
     "passed": 1
    },
    "group": "0018 I22 (the fingerprint has an independent oracle)",
-   "seconds": 2.8
+   "seconds": 2.7
   },
   {
    "cells": [
@@ -1736,7 +1736,7 @@
     "passed": 1
    },
    "group": "0008 INV-I7 (default mode: a treated copy of a held act is an exact replay)",
-   "seconds": 3.5
+   "seconds": 3.4
   },
   {
    "cells": [
@@ -1752,7 +1752,7 @@
     "passed": 79
    },
    "group": "T5-2 (I30 doctor; \u00a74g-ii erasure; R1 identity)",
-   "seconds": 59.5
+   "seconds": 55.9
   },
   {
    "cells": [
@@ -1769,7 +1769,7 @@
     "passed": 55
    },
    "group": "T6-1 (0018 \u00a74b.3: the per-user transaction, I26, I27, F3)",
-   "seconds": 63.9
+   "seconds": 60.3
   },
   {
    "cells": [
@@ -1786,7 +1786,7 @@
     "passed": 1
    },
    "group": "T7-1 N3 (doctor scope)",
-   "seconds": 4.2
+   "seconds": 4.1
   },
   {
    "cells": [
@@ -1803,7 +1803,7 @@
     "passed": 28
    },
    "group": "T7-2 (\u00a74k: doctor follows PROOF)",
-   "seconds": 84.8
+   "seconds": 82.1
   },
   {
    "cells": [
@@ -1818,7 +1818,7 @@
     "passed": 14
    },
    "group": "T8 (INV-O7: 0044 arity, the shared predicate)",
-   "seconds": 11.3
+   "seconds": 10.9
   },
   {
    "cells": [
@@ -1834,10 +1834,10 @@
     "passed": 233
    },
    "group": "R-II r2 RII-01 (INV-R18: the wiki bound to the call's own challenge snapshot)",
-   "seconds": 254.5
+   "seconds": 243.6
   }
  ],
- "pin_digest": "10e13827da73324160793085dd1da97999a8246bde256024bb14b3b92e22fcfd",
+ "pin_digest": "236ea1e35bba61635bb3b6d9eba2a16706939ffb0f71e0290c6eb7bb18c70609",
  "rows": [
   {
    "anchor_count": 1,
