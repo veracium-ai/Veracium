@@ -343,6 +343,9 @@ INVENTORY = [
                          "to open there (0007 CI run 1, 2026-10-27); a function of the build's system", "key"),
     ("tests/test_migrations_0013.py", "skipif", "geteuid",
      "host-conditional", "root euid defeats the read-only-store fixture", "job:runs"),
+    ("tests/test_0018_r5_closures.py", "skipif", "geteuid",
+     "host-conditional", "root euid: a chmod denies nothing, so the two real-chmod cells (an unsearchable trail directory and "
+                         "store directory) skip, and the EACCES-injected cells cover the same condition on any euid", "job:runs"),
     ("tests/test_schema_model.py", "skip", "no git checkout",
      "git-checkout", "check() returns 2 before reaching the assertion", "job:runs"),
     ("tests/test_0007_attestation_writer.py", "skip", "no git checkout",
@@ -622,6 +625,8 @@ EMITTED = {
     # runs reconcile() on it, so a missing alias fails on any host.
     ("tests/test_0044_v1_readonly_db.py", "geteuid"):
         ("root writes a read-only file",),
+    ("tests/test_0018_r5_closures.py", "geteuid"):
+        ("as root a chmod denies nothing",),
     ("tests/test_0013_pa1_campaign.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_0003_obligations_mutants.py", "not _is_checkout()"):

@@ -125,11 +125,11 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("schema.py", 1471): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
     ("store/migration.py", 825): "control-flow",   # carried: store/migration.py:preimage_fields:FILTER_RETURN:1
     # 0018 §4j (T3): the orchestrator stays outside the enforcement registry, as it is at every release: a rung's refusals take the module's default
-    ("store/release_migration.py", 901): "predicate-helper",   # carried: store/release_migration.py:_mintable_base:RETURN_NONE:1
-    ("store/release_migration.py", 1535): "argument-check",   # carried: store/release_migration.py:_record_row:RAISE:1
-    ("store/release_migration.py", 1542): "predicate-helper",   # carried: store/release_migration.py:_readback_is_bound:BOOL_RETURN:1
-    ("store/release_migration.py", 1585): "argument-check",   # carried: store/release_migration.py:classify_recovery:RAISE:1
-    ("store/release_migration.py", 1675): "control-flow",   # carried: store/release_migration.py:run_release_rung:RAISE:3
+    ("store/release_migration.py", 936): "predicate-helper",   # carried: store/release_migration.py:_mintable_base:RETURN_NONE:1
+    ("store/release_migration.py", 1571): "argument-check",   # carried: store/release_migration.py:_record_row:RAISE:1
+    ("store/release_migration.py", 1578): "predicate-helper",   # carried: store/release_migration.py:_readback_is_bound:BOOL_RETURN:1
+    ("store/release_migration.py", 1621): "argument-check",   # carried: store/release_migration.py:classify_recovery:RAISE:1
+    ("store/release_migration.py", 1711): "control-flow",   # carried: store/release_migration.py:run_release_rung:RAISE:3
     ("store/schema_version.py", 1989): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:2
     ("store/schema_version.py", 1991): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:3
     ("store/schema_version.py", 1993): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:4
