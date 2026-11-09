@@ -47,9 +47,20 @@ _EVENT_TIME = {
     ("edge_event", "state", ("$", "provenance", "observed_at")), ("edge_event", "state", ("$", "valid_from")),
     ("edges", "json", ("$", "provenance", "observed_at")), ("edges", "json", ("$", "valid_from")),
 }
+#: maintain (0053 v0.3 Q5): expiry flags and one consolidated pool. Its own ids (the operation, its owner, the ledger
+#: rows, the new episode) and clocks (the lease, the ledger time, the events' recorded_at), measured from twin runs
+_MAINTAIN_IDS = {
+    ("consolidation_ops", "operation_id", ()), ("consolidation_ops", "owner", ()),
+    ("contribution_ledger", "id", ()), ("contribution_ledger", "op_key", ()), ("contribution_ledger", "survivor_id", ()),
+    ("episodes", "id", ()), ("episodes", "json", ("$", "id")), ("episodes", "json", ("$", "operation_id")),
+    ("episodes", "json", ("$", "provenance", "evidence_ref")),
+}
+_MAINTAIN_CLOCKS = {("edge_event", "recorded_at", ()), ("consolidation_ops", "lease_expires_at", ()),
+                    ("contribution_ledger", "created_at", ())}
 DECLARED = {
     "dated": (frozenset(_IDS), frozenset({("edge_event", "recorded_at", ())})),
     "undated": (frozenset(_IDS), frozenset({("edge_event", "recorded_at", ())} | _EVENT_TIME)),
+    "maintain": (frozenset(_MAINTAIN_IDS), frozenset(_MAINTAIN_CLOCKS)),
 }
 
 
@@ -196,6 +207,62 @@ def anchors(o: Oracle) -> list[str]:
     return bad
 
 
+# --------------------------------------------------------------------------- I10: the oracle reuses no adapter code
+
+#: the oracle side of the suite: the modules that compute or judge what the adapters must equal
+ORACLE_MODULES = ("checks.py", "canon.py", "fixture.py", "planted.py")
+_ADAPTERS = "veracium.adapters"
+
+
+def _names_adapters(module) -> bool:
+    return module == _ADAPTERS or (module or "").startswith(_ADAPTERS + ".")
+
+
+def oracle_import_problems(paths=None) -> list[str]:
+    """0053 v0.3 I10 (§10 Q4): no oracle-side module imports `veracium.adapters`, in any form: `import
+    veracium.adapters[...]` (aliased or not), `from veracium.adapters[...] import ...`, `from veracium import adapters`, an
+    attribute read `veracium.adapters` on the package, or a string naming it handed to `importlib.import_module` or
+    `__import__`. Its anchor: every named module was parsed, holds statements, and the set holds at least one `veracium`
+    import (checks.py imports veracium.mcp_server), so a scan that parsed nothing cannot read as clean."""
+    import ast
+    paths = [os.path.join(HERE, m) for m in ORACLE_MODULES] if paths is None else list(paths)
+    bad, veracium_imports = [], 0
+    for path in paths:
+        name = os.path.basename(path)
+        try:
+            tree = ast.parse(open(path).read())
+        except (OSError, SyntaxError) as exc:
+            bad.append(f"{name}: not parsed ({exc})")
+            continue
+        if not tree.body:
+            bad.append(f"{name}: parsed to nothing")
+            continue
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                for a in n.names:
+                    veracium_imports += a.name.split(".")[0] == "veracium"
+                    if _names_adapters(a.name):
+                        bad.append(f"{name}:{n.lineno}: import {a.name}")
+            elif isinstance(n, ast.ImportFrom) and not n.level:
+                veracium_imports += (n.module or "").split(".")[0] == "veracium"
+                if _names_adapters(n.module) or (n.module == "veracium" and any(a.name == "adapters" for a in n.names)):
+                    bad.append(f"{name}:{n.lineno}: from {n.module} import {', '.join(a.name for a in n.names)}")
+            elif (isinstance(n, ast.Attribute) and n.attr == "adapters" and isinstance(n.value, ast.Name)
+                  and n.value.id == "veracium"):
+                bad.append(f"{name}:{n.lineno}: veracium.adapters read as an attribute")
+            elif isinstance(n, ast.Call):
+                f = n.func
+                fname = f.attr if isinstance(f, ast.Attribute) else f.id if isinstance(f, ast.Name) else None
+                if fname in ("import_module", "__import__"):
+                    for arg in n.args[:1]:
+                        if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and _names_adapters(arg.value):
+                            bad.append(f"{name}:{n.lineno}: {fname}({arg.value!r})")
+    if paths and not veracium_imports:
+        bad.append("ANCHOR: no `veracium` import found in any scanned module (checks.py imports veracium.mcp_server): "
+                   "the scan read nothing it could have refused")
+    return bad
+
+
 # --------------------------------------------------------------------------- the parameter census
 
 #: a served parameter whose every non-default value is a REFUSAL (its closed set has one member), with the K6 case that
@@ -206,7 +273,7 @@ _ABSENT = object()
 
 def parameter_census(o: Oracle) -> list[str]:
     """Research's stage 1, S1-1: every served parameter takes a non-default value in at least one compared case outside
-    K6, so a mutant that rewrites it has a case to be seen in (record_procedure's author had none, and a mutant
+    K6 whose reference does not refuse it (stage 2, N1), so a mutant that rewrites it has a case to be seen in (record_procedure's author had none, and a mutant
     forwarding it as "user" passed every family). A refusal-only parameter needs its K6 case instead."""
     bad = []
     for t in o.listing:
@@ -222,8 +289,11 @@ def parameter_census(o: Oracle) -> list[str]:
                                f"default alone; they are {sorted(_procedural_relations())}")
                 if case not in hits or o.refs[case].case["family"] != "K6" or not _refused(o.refs[case].outcome):
                     bad.append(f"{t['name']}.{p}: declared refusal-only, and {case} does not carry its refusal")
-            elif not [h for h in hits if o.refs[h].case["family"] != "K6"]:
-                bad.append(f"{t['name']}.{p}: no compared case outside K6 passes it a non-default value")
+            elif not [h for h in hits if o.refs[h].case["family"] != "K6" and not _refused(o.refs[h].outcome)]:
+                # research's stage 2, N1: a case whose reference REFUSES carries the value nowhere a rewrite could be
+                # seen (record_procedure's derived_from under `none` is attempted_elevation), so it does not count
+                bad.append(f"{t['name']}.{p}: no compared case outside K6 passes it a non-default value that the "
+                           f"reference does not refuse")
     for key in REFUSAL_ONLY:
         if key[0] not in {t["name"] for t in o.listing}:
             bad.append(f"REFUSAL_ONLY names {key}, which is not served")
@@ -370,9 +440,9 @@ def run_families(o: Oracle, factory, tag="drv") -> dict:
         if got[0] == "exception":
             res["K6"].append(f"{c['id']}: the call raised through the framework ({got[1][:160]})")
             continue
-        if fam == "K8" and c["tool"] == "remember":
-            # K8 compares the property it names: the other users' records are untouched, and the bound user gained
-            # the reference's rows. The write's own content is K5's
+        if fam == "K8" and c.get("clock_group"):
+            # a K8 case that WRITES (remember, maintain: it carries a clock group) compares the property K8 names: the
+            # other users' records are untouched, and the bound user gained the reference's rows. The content is K5's
             res["K8"].extend(f"{c['id']}: {m}" for m in
                              _identity_writes(ref.store, path, binding(o.doc, c["binding"])["user_id"]))
             continue

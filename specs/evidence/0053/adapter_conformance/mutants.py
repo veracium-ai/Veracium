@@ -103,6 +103,10 @@ MUTANTS = (
                        '(_mcp.remember_impl('),
         (S, _REM_CLOSE, _REM_CLOSE.replace("capability=self._capability)", "capability=self._capability))"))],
        "one operator counter left in remember's result"),
+    _m("maintain-result-trimmed", {"K5"}, BOTH,          # 0053 v0.3 Q5: maintain's case has a mutant of its own
+       [(S, "            return _mcp.maintain_impl(mem, user)",
+         '            return {k: v for k, v in _mcp.maintain_impl(mem, user).items() if k != "consolidation"}')],
+       "maintain's consolidation report dropped from its result"),
     _m("refusal-returned-as-success", {"K6"}, BOTH,
        [(S, _REM_OPEN, '            return (lambda r: {"ok": True} if r.get("ok") is False else r)(_mcp.remember_impl('),
         (S, _REM_CLOSE, _REM_CLOSE.replace("capability=self._capability)", "capability=self._capability))"))],
@@ -227,6 +231,13 @@ CANON_MUTANTS = (
     ("tie-read-as-difference",
      [("canon.py", "            if sa * sb < 0:", "            if sa != sb:")],
      "reading a tie as a difference"),
+    # v0.3 (Q6): research's two, each shown red by one of the new planted pairs
+    ("clocks-ordered-as-text",
+     [("canon.py", "    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)", "    return value")],
+     "ordering clocks as their raw text instead of as aware instants"),
+    ("clock-nulls-skipped",
+     [("canon.py", '"<clock>" if v is not None else None))', '"<clock>"))')],
+     "skipping a NULL at a clock place instead of comparing it as stored"),
 )
 
 

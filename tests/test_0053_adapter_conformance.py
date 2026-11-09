@@ -78,7 +78,51 @@ def test_the_parameter_census_names_an_unexercised_parameter(oracle):
     o.doc = dict(oracle.doc, cases=[c for c in oracle.doc["cases"]
                                     if not (c["tool"] == "record_procedure" and "author" in c["args"]
                                             and c["family"] != "K6")])
-    assert C.parameter_census(o) == ["record_procedure.author: no compared case outside K6 passes it a non-default value"]
+    assert C.parameter_census(o) == ["record_procedure.author: no compared case outside K6 passes it a non-default value "
+                                     "that the reference does not refuse"]
+
+
+def test_the_parameter_census_does_not_count_a_refused_case(oracle):
+    """Research's stage 2, N1: with the one WRITING derived_from case gone, record_procedure.derived_from is passed only
+    in a case the reference refuses (attempted_elevation under `none`), and the census names it."""
+    import copy
+    o = copy.copy(oracle)
+    o.doc = dict(oracle.doc, cases=[c for c in oracle.doc["cases"] if c["id"] != "K7-direct-writes-derived"])
+    assert C.parameter_census(o) == ["record_procedure.derived_from: no compared case outside K6 passes it a non-default "
+                                     "value that the reference does not refuse"]
+
+
+def test_a_read_that_writes_is_named_by_the_anchors(tmp_path, monkeypatch):
+    """Research's stage 2, N2: I12 shown red. recall_impl is planted to write (remember_impl first) and the anchors
+    name every recall case's reference store as written; the unplanted oracle's anchors are clean (the first cell)."""
+    real = C.M.recall_impl
+
+    def writing_recall(mem, user_id, *a, **kw):
+        C.M.remember_impl(mem, user_id, "USER: a planted write. #fx-W1", date="2026-07-09", source_id=F.CHAT)
+        return real(mem, user_id, *a, **kw)
+    monkeypatch.setattr(C.M, "recall_impl", writing_recall)
+    o = C.Oracle(str(tmp_path))
+    found = [x for x in C.anchors(o) if "the reference read wrote the store" in x]
+    recalls = [c["id"] for c in o.doc["cases"] if c["tool"] == "recall"]
+    assert sorted(x.split("VACUOUS: ")[1].split(":")[0] for x in found) == sorted(recalls), found
+
+
+@pytest.mark.parametrize("adapter", ["core", "langchain"])
+def test_a_raise_of_another_type_reaches_the_model_as_a_tool_error(oracle, monkeypatch, adapter):
+    """Research's stage 2, N3, the witness for S1-4: a library raise that is not a ValueError reaches the model as the
+    tool-error result with its message, on each row, as FastMCP reports it; it never escapes into the agent loop."""
+    lc = _langchain() if adapter == "langchain" else None
+
+    def planted(*a, **kw):
+        raise RuntimeError("a planted RuntimeError from the library")
+    monkeypatch.setattr(C.M, "answer_impl", planted)
+    mem = F.open_memory(oracle.fresh(f"raise-{adapter}"))
+    try:
+        drv = _factory(adapter, lc=lc)(mem, C.binding(oracle.doc, "none"))
+        got = drv.decode(drv.call("answer", {"query": "what is the user's diet?"}))
+    finally:
+        mem.close()
+    assert got == ("error", "a planted RuntimeError from the library"), got
 
 
 def test_the_registration_is_read_under_the_hosts_capability(oracle, caplog):
@@ -93,6 +137,31 @@ def test_the_registration_is_read_under_the_hosts_capability(oracle, caplog):
         mem.close()
     lines = [r.getMessage() for r in caplog.records if r.name == "veracium.mcp"]
     assert lines and all("'direct'" in m for m in lines) and not any("'none'" in m for m in lines), lines
+
+
+def test_the_oracle_imports_no_adapter_code():
+    """0053 v0.3 I10 (§10 Q4): the oracle side (checks, canon, fixture, planted) imports nothing from veracium.adapters,
+    so the oracle never reuses the code under test; the scan's anchor proves it parsed what it names."""
+    assert C.oracle_import_problems() == []
+
+
+@pytest.mark.parametrize("src,want", [
+    ("from veracium.adapters._surface import Binding\n", "from veracium.adapters._surface import Binding"),
+    ("import veracium.adapters._surface as x\n", "import veracium.adapters._surface"),
+    ("from veracium import adapters\n", "from veracium import adapters"),
+    ("import veracium\nveracium.adapters\n", "veracium.adapters read as an attribute"),
+    ("import veracium\nimport importlib\nimportlib.import_module('veracium.adapters.langchain')\n",
+     "import_module('veracium.adapters.langchain')"),
+    ("import veracium\n__import__('veracium.adapters')\n", "__import__('veracium.adapters')"),
+    ("", "parsed to nothing"),
+    ("import json\n", "ANCHOR: no `veracium` import"),
+])
+def test_the_import_scan_refuses_each_form(tmp_path, src, want):
+    """The I10 scan's negatives: each import form, an empty module, and a scan with no veracium import at all."""
+    f = tmp_path / "planted_oracle.py"
+    f.write_text(src)
+    found = C.oracle_import_problems([str(f)])
+    assert any(want in x for x in found), found
 
 
 def test_the_canonicaliser_judges_its_planted_pairs(tmp_path):

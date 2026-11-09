@@ -16,6 +16,7 @@ import re
 import shutil
 
 from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium.lifecycle import CONSOLIDATE_SYSTEM
 from veracium.schema import EvidenceContext
 from veracium.scope import Identity
 
@@ -69,6 +70,7 @@ SCRIPTS = {
 }
 _EMPTY = {"triples": [], "episode": "noted"}
 _MARKER = re.compile(r"#fx-[A-Za-z0-9]+")
+_LISTED = re.compile(r"^\[(\d{4}-\d{2}-\d{2})\]", re.M)
 
 _GROUNDED = re.compile(r"GROUNDED MEMORY \(verified[^\n]*\n(.*?)\n\nUNVERIFIED CLAIMS", re.S)
 _QUESTION = re.compile(r"^Question: (.*)$", re.M)
@@ -109,13 +111,20 @@ class ScriptedComplete:
             return json.dumps(SCRIPTS[hits[0]] if hits else _EMPTY)
         if role == "gate":
             return gate_text(prompt)
+        if role == "compile" and system == CONSOLIDATE_SYSTEM:
+            # maintain's consolidation (0053 v0.3 Q5): one record for the pool, dated by its earliest episode, so the
+            # reply is a function of the listing alone
+            dates = sorted(_LISTED.findall(prompt))
+            return json.dumps({"records": [{"date": dates[0], "summary": f"Consolidated {len(dates)} episodes."}]}
+                              if dates else {"records": []})
         return ""
 
 
 def config(path: str) -> MemoryConfig:
     # scope_groups={} is the CONFIGURED-EMPTY scope state (0020): a principal reads its own scope and the shared
     # floor; a call with no principal reads exactly as with the feature disabled
-    return MemoryConfig(db_path=path, wiki_recompile_after_writes=0, scope_groups={})
+    # consolidate_min_batch=4 (default 8): the chat source's cold pool holds five episodes, so maintain consolidates it
+    return MemoryConfig(db_path=path, wiki_recompile_after_writes=0, scope_groups={}, consolidate_min_batch=4)
 
 
 def open_memory(path: str, llm=None) -> Memory:

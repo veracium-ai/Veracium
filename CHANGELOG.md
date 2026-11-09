@@ -17,10 +17,13 @@
   - **The library is the oracle.** Every expected value is computed in the same run: the served MCP surface for schemas
     and descriptions, and the `*_impl` functions for values.
   - **The fixture and the checks:** one fixture store holds every trust class, under anchors that refuse a vacuous run,
-    and 55 cases cover checks K1–K8. A parameter census requires every served parameter to take a non-default value
-    in some compared case.
+    and 57 cases cover checks K1–K8, `maintain` included. A parameter census requires every served parameter to take a
+    non-default value, which the reference does not refuse, in some compared case. An import scan shows that the oracle
+    reuses no adapter code.
   - **Store comparison:** a canonical form, with the generated-id and clock lists measured from twin reference runs.
-  - **Mutant row:** 20 mutants are applied to the adapter under test, 16 to the framework-free core and all 20 to the
+    Clocks are compared as aware instants and tolerate ties. Seven planted pairs check the comparison itself, and five
+    mutants of it are each caught.
+  - **Mutant row:** 21 mutants are applied to the adapter under test, 17 to the framework-free core and all 21 to the
     LangChain adapter. Each kill counts only when exactly the checks its row names go red.
   - **CI:** the suite runs on every push in its own job, with `langchain-core` pinned at 1.7.6. That job is part of the
     required `pytest (py3.14)` check, so a red framework row blocks a merge. In the shard lanes the LangChain cells skip

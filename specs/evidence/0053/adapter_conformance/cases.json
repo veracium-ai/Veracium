@@ -48,6 +48,7 @@
     {"id": "K5-none-undated", "family": "K5", "binding": "none", "tool": "remember", "clock_group": "undated", "args": {"text": "USER: I was promoted to director. #fx-W3"}},
     {"id": "K5-direct-undated", "family": "K5", "binding": "direct", "tool": "remember", "clock_group": "undated", "args": {"text": "USER: I was promoted to director. #fx-W3"}},
 
+    {"id": "K5-maintain", "family": "K5", "binding": "none", "tool": "maintain", "clock_group": "maintain", "args": {}},
     {"id": "K6-author-system", "family": "K6", "binding": "none", "tool": "remember", "args": {"text": "USER: hi. #fx-W1", "date": "2026-07-01", "author": "system"}},
     {"id": "K6-author-not-a-string", "family": "K6", "binding": "none", "tool": "remember", "args": {"text": "USER: hi. #fx-W1", "date": "2026-07-01", "author": 123}},
     {"id": "K6-text-missing", "family": "K6", "binding": "none", "tool": "remember", "args": {"date": "2026-07-01"}},
@@ -74,6 +75,7 @@
     {"id": "K8-user-id-argument-answer", "family": "K8", "binding": "u2", "tool": "answer", "args": {"query": "@G", "user_id": "u1"}},
     {"id": "K8-u2-remember", "family": "K8", "binding": "u2", "tool": "remember", "clock_group": "dated", "args": {"text": "USER: my partner is Sam. #fx-W1", "date": "2026-07-01"}},
     {"id": "K8-user-id-argument-remember", "family": "K8", "binding": "u2", "tool": "remember", "clock_group": "dated", "args": {"text": "USER: my partner is Sam. #fx-W1", "date": "2026-07-01", "user_id": "u1"}},
+    {"id": "K8-u2-maintain", "family": "K8", "binding": "u2", "tool": "maintain", "clock_group": "maintain", "args": {}},
     {"id": "K8-principal-recall", "family": "K8", "binding": "principal-u2", "tool": "recall", "args": {"query": "@G"}},
     {"id": "K8-principal-answer", "family": "K8", "binding": "principal-u2", "tool": "answer", "args": {"query": "@G"}},
     {"id": "K8-principal-describe", "family": "K8", "binding": "principal-u2", "tool": "describe_procedures", "args": {}}
