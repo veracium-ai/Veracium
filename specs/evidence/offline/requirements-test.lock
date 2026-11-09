@@ -15,8 +15,10 @@
 #   * HASHES ARE MANDATORY on install (`--require-hashes`), so a substituted
 #     wheel is a hard failure, not a silent difference.
 #
-# The suite is meant to run as ONE process; if you split it, keep the groups named in
-# specs/evidence/offline/JOINT-TEST-GROUPS.md together (process-local gates).
+# run_offline.sh runs the suite in TWO PHASES by default (the owner, 2026-11-08), which is why pytest-xdist and execnet are
+# here: phase 1 under pytest-xdist, phase 2 the files that refuse a worker, in one process (two_phase.py names them and checks
+# the two phases ran the collected set exactly once). VERACIUM_OFFLINE_MODE=single runs it as ONE process. If you split it
+# any other way, keep the groups named in specs/evidence/offline/JOINT-TEST-GROUPS.md together (process-local gates).
 #
 # Offline install, from the package root, WITH A CPython 3.14 INTERPRETER (the floor; 0041 round 10 rebuilt this
 # set from the exact runtime the suite measures — CPython 3.14.7 — after the round-9 verdict found the cp312
@@ -29,6 +31,8 @@
 #
 annotated-types==0.8.0 \
     --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0
+execnet==2.1.2 \
+    --hash=sha256:67fba928dd5a544b783f6056f449e5e3931a5c378b128bc18501f7ea79e296ec
 iniconfig==2.3.0 \
     --hash=sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12
 packaging==26.3 \
@@ -45,6 +49,8 @@ pytest==9.1.1 \
     --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
 pytest-randomly==5.0.0 \
     --hash=sha256:8a0d4703115c0c25b38b6e129fc16b1947b9643ff26a41bc1d185d7e5a7689c1
+pytest-xdist==3.8.0 \
+    --hash=sha256:202ca578cfeb7370784a8c33d6d05bc6e13b4f25b5053c30a152269fd10f0b88
 typing-extensions==4.16.0 \
     --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
 typing-inspection==0.4.4 \

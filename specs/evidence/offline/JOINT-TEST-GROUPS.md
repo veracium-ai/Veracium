@@ -1,7 +1,11 @@
 # Joint test groups — the tests that must share ONE pytest process
 
-The suite is designed to run as one process (`python -m pytest -q`, CI and the
-offline launcher both do). A reviewer who splits it across processes — by
+The suite is designed to run as one process (`python -m pytest -q`). Where it is
+split, the groups below stay whole: CI's five shards assign a group to one shard
+(`.github/ci_shard.py`), and the offline launcher's default two phases run G1 in
+its own single-process phase 2 (`two_phase.py files` refuses unless its list equals
+G1's members below; `VERACIUM_OFFLINE_MODE=single` runs one process). A reviewer
+who splits it across processes some other way — by
 module, by directory, in parallel — can split a GROUP whose gate reads state
 the OTHER members record in that same process. Split, such a gate does not
 "fail on a defect"; it fails because the evidence it checks was produced in a

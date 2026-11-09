@@ -2851,6 +2851,9 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
     # this list grows.
     EXPLICIT_ARTIFACTS = [
         root / "specs" / "evidence" / "0011" / "subject_census.py",
+        # the offline launcher's two-phase split (2026-11-08): its check decides whether the release battery's suite line
+        # covers the whole collection, so it carries a matrix like any checker
+        root / "specs" / "evidence" / "offline" / "two_phase.py",
         # specs/0039: a measurement transcript generator, not a checker by
         # name — it produced findings in two external rounds, which is R6-1's
         # test for belonging here

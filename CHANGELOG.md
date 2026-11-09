@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- **Changed: the offline launcher runs the suite in two phases by default** (`specs/evidence/offline/run_offline.sh`; the
+  owner's ruling, 2026-11-08).
+  - **Phase 1** runs every file but the phase-2 files under pytest-xdist (`VERACIUM_OFFLINE_WORKERS`, default 8,
+    capped at the host's cores).
+  - **Phase 2** runs, in one process, the files that refuse an xdist worker, plus the seam-model drivers:
+    `JOINT-TEST-GROUPS.md`'s G1.
+  - **The check:** `specs/evidence/offline/two_phase.py` refuses unless the two phases ran exactly the collected node
+    ids, each once, with phase 2 holding exactly G1. Its line, the transcript's last, is the suite line in pytest's own
+    grammar, counted from the two junits.
+  - **Measured on this box:** 25m42s, 8839 passed and 60 skipped (every collected node), against 110m52s for the
+    one-process run at 0.31.0.
+  - **The cost:** modules in phase 1 share worker processes in an order the suite does not otherwise run.
+    `VERACIUM_OFFLINE_MODE=single` keeps the one-process run.
+  - **Two locked wheels are added,** pytest-xdist 3.8.0 and execnet 2.1.2.
+  - **Junit:** `--junitxml=X` now writes each phase's file beside X and the two merged at X.
+
 ## 0.31.0 — 2026-11-08
 
 **`veracium migrate` now upgrades a store written by any earlier release, one audited schema version at a time.** Its

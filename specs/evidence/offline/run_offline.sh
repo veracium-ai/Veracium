@@ -134,6 +134,68 @@ MSG
   exit 2
 fi
 
-echo "== running the suite =="
-VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src \
-    "$VENV/bin/python" -m pytest -q tests -p no:randomly -rs "$@"
+# TWO PHASES by default (the owner, 2026-11-08: the one-process run took 110m52s at 0.31.0). Phase 1 runs everything but the
+# phase-2 files under pytest-xdist; phase 2 runs those files in ONE process, so JOINT-TEST-GROUPS.md's G1 stays whole.
+# two_phase.py names the files and then refuses unless the two phases ran exactly the collected set, each node once.
+# VERACIUM_OFFLINE_MODE=single runs the suite as one process, as releases through 0.31.0 did.
+MODE="${VERACIUM_OFFLINE_MODE:-two-phase}"
+if [ "$MODE" = single ]; then
+  echo "== running the suite (one process) =="
+  VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src \
+      "$VENV/bin/python" -m pytest -q tests -p no:randomly -rs "$@"
+  exit $?
+fi
+[ "$MODE" = two-phase ] || { echo "VERACIUM_OFFLINE_MODE must be two-phase or single, not '$MODE'" >&2; exit 2; }
+
+# The caller's --junitxml and --basetemp are taken out of the arguments: each phase gets its own (a second session
+# would overwrite the first's junit and clear its basetemp), and the merged junit is written to the caller's path.
+JUNIT=""; BASETEMP=""; ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --junitxml=*) JUNIT="${1#--junitxml=}" ;;
+    --junitxml) shift; JUNIT="${1:-}" ;;
+    --basetemp=*) BASETEMP="${1#--basetemp=}" ;;
+    --basetemp) shift; BASETEMP="${1:-}" ;;
+    *) ARGS+=("$1") ;;
+  esac
+  shift
+done
+# A path or node id would be added to BOTH phases (pytest does not deduplicate it against `tests`), so two-phase mode refuses
+# one; selection options (-k, -m, -x, ...) and their values pass through, to the collection as well as to both phases.
+for a in "${ARGS[@]}"; do
+  case "$a" in
+    -*) ;;
+    *::*|tests|tests/*) echo "two-phase mode takes no path or node id ('$a'): use -k, or VERACIUM_OFFLINE_MODE=single" >&2; exit 2 ;;
+    *) [ -e "$a" ] && { echo "two-phase mode takes no path ('$a'): use -k, or VERACIUM_OFFLINE_MODE=single" >&2; exit 2; } ;;
+  esac
+done
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/veracium-offline-XXXXXX")"
+[ -n "$JUNIT" ] || JUNIT="$WORK/merged.xml"
+CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+W="${VERACIUM_OFFLINE_WORKERS:-8}"; [ "$W" -le "$CORES" ] 2>/dev/null || W="$CORES"
+mapfile -t P2 < <("$VENV/bin/python" "$HERE/two_phase.py" files tests)
+[ "${#P2[@]}" -gt 0 ] || { echo "two_phase.py found no phase-2 files: the split no longer matches the suite" >&2; exit 2; }
+IGN=(); for f in "${P2[@]}"; do IGN+=("--ignore=$f"); done
+BT1=(); BT2=(); [ -n "$BASETEMP" ] && BT1=("--basetemp=$BASETEMP/phase1") && BT2=("--basetemp=$BASETEMP/phase2")
+
+T0="$("$VENV/bin/python" -c 'import time; print(time.time())')"
+echo "== collecting the suite =="
+VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "$VENV/bin/python" -m pytest --collect-only -q tests -p no:randomly \
+    "${ARGS[@]}" > "$WORK/collect.txt" 2>&1
+CRC=$?
+[ "$CRC" = 0 ] || [ "$CRC" = 5 ] || { tail -20 "$WORK/collect.txt" >&2; echo "collection failed (exit $CRC)" >&2; exit 1; }
+echo "  $(tail -1 "$WORK/collect.txt")"
+set +e     # from here each phase's exit is read, not acted on: a red phase still gets the check and its report
+echo "== running the suite, phase 1 of 2: all but ${#P2[@]} file(s), $W workers =="
+VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "$VENV/bin/python" -m pytest -q tests -p no:randomly -rs -n "$W" \
+    "${IGN[@]}" "${BT1[@]}" --junitxml="$JUNIT.phase1.xml" "${ARGS[@]}" 2>&1 | tee "$WORK/phase1.txt"
+RC1=${PIPESTATUS[0]}
+echo "== running the suite, phase 2 of 2: ${P2[*]}, one process =="
+VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "$VENV/bin/python" -m pytest -q "${P2[@]}" -p no:randomly -rs \
+    "${BT2[@]}" --junitxml="$JUNIT.phase2.xml" "${ARGS[@]}" 2>&1 | tee "$WORK/phase2.txt"
+RC2=${PIPESTATUS[0]}
+WALL="$("$VENV/bin/python" -c 'import sys, time; print(f"{time.time() - float(sys.argv[1]):.2f}")' "$T0")"
+echo "== checking the two phases against the collection (phase 1 exit $RC1, phase 2 exit $RC2; outputs in $WORK) =="
+# the check's own line is the transcript's LAST line: the suite line, in pytest's grammar, counted from the two junits
+"$VENV/bin/python" "$HERE/two_phase.py" check "$WORK/collect.txt" "$JUNIT.phase1.xml" "$JUNIT.phase2.xml" \
+    --merge "$JUNIT" --lines "$WORK/phase1.txt" "$WORK/phase2.txt" --tests tests --rc "$RC1" "$RC2" --wall "$WALL"
