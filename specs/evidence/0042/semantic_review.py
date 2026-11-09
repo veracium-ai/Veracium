@@ -138,8 +138,8 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/schema_version.py", 1991): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:3
     ("store/schema_version.py", 1993): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:4
     ("store/schema_version.py", 2000): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:5
-    ("adapters/_surface.py", 40): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
-    ("adapters/_surface.py", 44): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
+    ("adapters/_surface.py", 41): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
+    ("adapters/_surface.py", 45): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",

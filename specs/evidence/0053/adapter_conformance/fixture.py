@@ -4,7 +4,8 @@ The scripted `Complete` answers extraction by a marker in the event text (`#fx-�
 reference and an adapter that run the same call in two fresh copies of the store get the same extraction. The gate's
 answer is a function of the gate's whole prompt (it carries the prompt's digest), so an adapter that changes the
 question, the user or the principal changes the answer. The fixture configures no recall policy, no telemetry sink
-and no audit sink (§2): a read leaves the store as it was, which `check_reads_do_not_write` measures.
+and no audit sink (§2): a read leaves the store as it was, which the anchors measure (`checks.anchors`: every read
+case's reference store equals the template under the canonical comparison).
 """
 from __future__ import annotations
 

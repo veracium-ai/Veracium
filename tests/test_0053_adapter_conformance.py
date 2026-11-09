@@ -64,6 +64,37 @@ def test_the_declared_lists_are_the_measured_ones(oracle):
     assert C.measured_lists(oracle) == []
 
 
+def test_every_served_parameter_is_exercised(oracle):
+    """Research's stage 1, S1-1: every served parameter takes a non-default value in a compared case outside K6 (or is
+    refusal-only, with its K6 case), so a mutant rewriting it has somewhere to be seen."""
+    assert C.parameter_census(oracle) == []
+
+
+def test_the_parameter_census_names_an_unexercised_parameter(oracle):
+    """The census's negative: drop the cases that pass record_procedure a non-default author, and it names that
+    parameter (the gap stage 1 found), and nothing else."""
+    import copy
+    o = copy.copy(oracle)
+    o.doc = dict(oracle.doc, cases=[c for c in oracle.doc["cases"]
+                                    if not (c["tool"] == "record_procedure" and "author" in c["args"]
+                                            and c["family"] != "K6")])
+    assert C.parameter_census(o) == ["record_procedure.author: no compared case outside K6 passes it a non-default value"]
+
+
+def test_the_registration_is_read_under_the_hosts_capability(oracle, caplog):
+    """Research's stage 1, S1-3: the server an adapter builds to read the served surface logs the capability the host
+    bound, never the default (0031 I3's operator line)."""
+    import logging
+    mem = F.open_memory(oracle.fresh("caplog"))
+    try:
+        with caplog.at_level(logging.INFO, logger="veracium.mcp"):
+            _surface.Binding(mem, user_id="u1", capability="direct")
+    finally:
+        mem.close()
+    lines = [r.getMessage() for r in caplog.records if r.name == "veracium.mcp"]
+    assert lines and all("'direct'" in m for m in lines) and not any("'none'" in m for m in lines), lines
+
+
 def test_the_canonicaliser_judges_its_planted_pairs(tmp_path):
     assert PL.misjudged(K, str(tmp_path)) == []
 

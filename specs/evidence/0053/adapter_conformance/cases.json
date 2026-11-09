@@ -55,6 +55,7 @@
     {"id": "K6-procedure-author-system", "family": "K6", "binding": "direct", "tool": "record_procedure", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "author": "system", "date": "2026-07-03"}},
     {"id": "K6-procedure-basis-unknown", "family": "K6", "binding": "direct", "tool": "record_procedure", "args": {"summary": "Inbox zero every Friday", "basis": "guessed", "date": "2026-07-03"}},
     {"id": "K6-budget-below-floor", "family": "K6", "binding": "none", "tool": "recall", "args": {"query": "@T", "token_budget": 100}},
+    {"id": "K6-procedure-relation-not-procedural", "family": "K6", "binding": "direct", "tool": "record_procedure", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "relation": "works_as", "date": "2026-07-03"}},
     {"id": "K6-describe-query-not-a-string", "family": "K6", "binding": "none", "tool": "describe_procedures", "args": {"query": 5}},
 
     {"id": "K7-none-refused", "family": "K7", "binding": "none", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "date": "2026-07-03"}},
@@ -62,6 +63,9 @@
     {"id": "K7-none-capability-argument", "family": "K7", "binding": "none", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "date": "2026-07-03", "capability": "direct"}},
     {"id": "K7-direct-writes", "family": "K7", "binding": "direct", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "date": "2026-07-03"}},
     {"id": "K7-direct-writes-derived", "family": "K7", "binding": "direct", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "observed", "derived_from": "third_party", "date": "2026-07-03"}},
+    {"id": "K7-direct-author-tp", "family": "K7", "binding": "direct", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "author": "third_party", "date": "2026-07-03"}},
+    {"id": "K7-direct-author-assistant", "family": "K7", "binding": "direct", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "observed", "author": "assistant", "date": "2026-07-03"}},
+    {"id": "K7-direct-note", "family": "K7", "binding": "direct", "tool": "record_procedure", "clock_group": "dated", "args": {"summary": "Inbox zero every Friday", "basis": "stated", "note": "step 1: archive; step 2: reply", "date": "2026-07-03"}},
     {"id": "K7-direct-undated", "family": "K7", "binding": "direct", "tool": "record_procedure", "clock_group": "undated", "args": {"summary": "Inbox zero every Friday", "basis": "stated"}},
 
     {"id": "K8-u2-recall", "family": "K8", "binding": "u2", "tool": "recall", "args": {"query": "@G"}},

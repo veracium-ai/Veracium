@@ -32,7 +32,7 @@ _ANS = '            return _mcp.answer_impl(mem, user, a["query"], principal=sel
 _REM_OPEN = '            return _mcp.remember_impl('
 _REM_CLOSE = '                                      capability=self._capability)\n        if name == "recall":'
 _LAST = '        raise ValueError(f"unknown tool {name!r}")   # unreachable while TOOLS and the branches agree\n'
-_SPECS = 'json.loads(json.dumps(t.parameters))) for t in _registered(mem))'
+_SPECS = 'json.loads(json.dumps(t.parameters))) for t in tools)'
 
 
 class DoesNotApply(AssertionError):
@@ -86,6 +86,10 @@ MUTANTS = (
        [(S, 'author=a["author"], event_type=a["event_type"],',
          'author=("user" if a["author"] == "third_party" else a["author"]), event_type=a["event_type"],')],
        "author forwarded as 'user' when the model passed 'third_party'"),
+    _m("procedure-third-party-as-user", {"K7"}, BOTH,       # research's stage 1, S1-1: remember's row, on record_procedure
+       [(S, 'a["summary"], a["basis"], author=a["author"],',
+         'a["summary"], a["basis"], author=("user" if a["author"] == "third_party" else a["author"]),')],
+       "record_procedure's author forwarded as 'user' when the model passed 'third_party'"),
     _m("derived-from-dropped", {"K5"}, BOTH,
        [(S, 'date=a["date"], derived_from=a["derived_from"], source_id=self._source_id,',
          'date=a["date"], derived_from=None, source_id=self._source_id,')],
@@ -105,7 +109,7 @@ MUTANTS = (
        "a serialized refusal returned as {'ok': true}"),
     _m("capability-from-argument", {"K1", "K7"}, BOTH,
        [(S, _SPECS, '_with_arg(t.name, "record_procedure", "capability", json.loads(json.dumps(t.parameters)))) '
-                    'for t in _registered(mem))'),
+                    'for t in tools)'),
         (S, '                                              capability=self._capability)',
          '                                              capability=args.get("capability", self._capability))'),
         (S, _LAST, _LAST + '\n\ndef _with_arg(tool, only, arg, p):\n    if only in (tool, "*"):\n'
@@ -114,7 +118,7 @@ MUTANTS = (
        "the capability read from a tool argument"),
     _m("user-id-parameter", {"K1", "K8"}, BOTH,
        [(S, _SPECS, '_with_arg(t.name, "*", "user_id", json.loads(json.dumps(t.parameters)))) '
-                    'for t in _registered(mem))'),
+                    'for t in tools)'),
         (S, "        mem, user = self._mem, self._user", '        mem, user = self._mem, args.get("user_id") or self._user'),
         (S, _LAST, _LAST + '\n\ndef _with_arg(tool, only, arg, p):\n    if only in (tool, "*"):\n'
                            '        p["properties"][arg] = {"anyOf": [{"type": "string"}, {"type": "null"}], '

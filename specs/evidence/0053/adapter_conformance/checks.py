@@ -110,7 +110,7 @@ class Oracle:
         meta = self._meta[tool]
         try:
             a = meta.arg_model.model_validate(meta.pre_parse_json(dict(args))).model_dump_one_level()
-        except ValueError as exc:
+        except Exception as exc:                 # as FastMCP: any error while answering is the served error result
             return ("error", str(exc))
         user, cap, sid, pr = b["user_id"], b.get("capability"), b.get("source_id"), b.get("principal")
         try:
@@ -131,7 +131,9 @@ class Oracle:
                 v = M.describe_procedures_impl(mem, user, a["query"], principal=pr)
             else:
                 raise AssertionError(f"the oracle has no call for {tool!r}")
-        except ValueError as exc:
+        except AssertionError:
+            raise
+        except Exception as exc:
             return ("error", str(exc))
         return ("ok", _json_form(v))
 
@@ -182,9 +184,59 @@ def anchors(o: Oracle) -> list[str]:
     need("cello" in text("K8-u2-recall") and "cello" not in text("K8-principal-recall"),
          "K8: the principal's scope hides nothing in recall")
     need(text("K8-principal-answer") != text("K8-u2-answer"), "K8: the principal changes nothing in answer")
+    # §2: the fixture configures no policy and no sinks, so a read leaves the store as it was (research's S1-5: the
+    # claim had no check). Every read case's reference store equals the template under the canonical comparison
+    reads = K.Canon(*DECLARED["dated"])
+    for c in o.doc["cases"]:
+        if c["tool"] in ("recall", "answer", "describe_procedures"):
+            d = reads.differences(o.template, o.refs[c["id"]].store)
+            need(not d, f"{c['id']}: the reference read wrote the store ({d[:1]})")
     need(NEVER_ASSERT not in text("K8-u2-recall"), "K8: the second user's store holds third-party content, so a "
          "never-assert mutant would reach K8's cases as well as K3's")
     return bad
+
+
+# --------------------------------------------------------------------------- the parameter census
+
+#: a served parameter whose every non-default value is a REFUSAL (its closed set has one member), with the K6 case that
+#: carries one: no compared case can pass it a valid non-default value
+REFUSAL_ONLY = {("record_procedure", "relation"): "K6-procedure-relation-not-procedural"}
+_ABSENT = object()
+
+
+def parameter_census(o: Oracle) -> list[str]:
+    """Research's stage 1, S1-1: every served parameter takes a non-default value in at least one compared case outside
+    K6, so a mutant that rewrites it has a case to be seen in (record_procedure's author had none, and a mutant
+    forwarding it as "user" passed every family). A refusal-only parameter needs its K6 case instead."""
+    bad = []
+    for t in o.listing:
+        for p, schema in t["parameters"].get("properties", {}).items():
+            default = schema.get("default", _ABSENT)
+            hits = [c["id"] for c in o.doc["cases"] if c["tool"] == t["name"] and p in c["args"]
+                    and (default is _ABSENT or c["args"][p] != default)]
+            key = (t["name"], p)
+            if key in REFUSAL_ONLY:
+                case = REFUSAL_ONLY[key]
+                if key == ("record_procedure", "relation") and _procedural_relations() != {default}:
+                    bad.append(f"record_procedure.relation is refusal-only only while the procedural relations are its "
+                               f"default alone; they are {sorted(_procedural_relations())}")
+                if case not in hits or o.refs[case].case["family"] != "K6" or not _refused(o.refs[case].outcome):
+                    bad.append(f"{t['name']}.{p}: declared refusal-only, and {case} does not carry its refusal")
+            elif not [h for h in hits if o.refs[h].case["family"] != "K6"]:
+                bad.append(f"{t['name']}.{p}: no compared case outside K6 passes it a non-default value")
+    for key in REFUSAL_ONLY:
+        if key[0] not in {t["name"] for t in o.listing}:
+            bad.append(f"REFUSAL_ONLY names {key}, which is not served")
+    return bad
+
+
+def _procedural_relations() -> set:
+    from veracium.schema import DEFAULT_RELATIONS
+    return {name for name, r in DEFAULT_RELATIONS.items() if r.relation_kind == "procedural"}
+
+
+def _refused(outcome) -> bool:
+    return outcome[0] == "error" or (isinstance(outcome[1], dict) and outcome[1].get("ok") is False)
 
 
 # --------------------------------------------------------------------------- measured lists (§3a)

@@ -30,10 +30,11 @@ class ToolSpec:
     parameters: dict
 
 
-def _registered(mem):
-    """The served tools as FastMCP registered them, in registration order. The schema does not depend on the
-    bindings, so the server is built with its defaults; it is never run."""
-    server = _mcp.build_server(mem)
+def _registered(mem, capability=None):
+    """The served tools as FastMCP registered them, in registration order. The server is built with the host's
+    capability, so its one operator log line (0031 I3) names the capability this adapter serves under; it is never
+    run, and the schema does not depend on the capability."""
+    server = _mcp.build_server(mem, capability=capability)
     try:
         tools = list(server._tool_manager.list_tools())
     except AttributeError as exc:
@@ -46,8 +47,12 @@ def _registered(mem):
     return tools
 
 
-def served_tools(mem) -> tuple[ToolSpec, ...]:
-    return tuple(ToolSpec(t.name, t.description, json.loads(json.dumps(t.parameters))) for t in _registered(mem))
+def _specs(tools) -> tuple[ToolSpec, ...]:
+    return tuple(ToolSpec(t.name, t.description, json.loads(json.dumps(t.parameters))) for t in tools)
+
+
+def served_tools(mem, capability=None) -> tuple[ToolSpec, ...]:
+    return _specs(_registered(mem, capability))
 
 
 class Binding:
@@ -63,7 +68,12 @@ class Binding:
         self._capability = _mcp._resolve_capability(capability)
         self._source_id = source_id
         self._principal = principal
-        self._models = {t.name: t.fn_metadata for t in _registered(mem)}
+        self._tools = _registered(mem, self._capability)
+        self._models = {t.name: t.fn_metadata for t in self._tools}
+
+    def tools(self) -> tuple[ToolSpec, ...]:
+        """The served tools this binding answers, read once at construction."""
+        return _specs(self._tools)
 
     def validate(self, name: str, args: dict) -> dict:
         """The served tool's own validation: FastMCP's JSON pre-parse, then its argument model. A malformed value

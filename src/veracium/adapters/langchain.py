@@ -11,15 +11,16 @@ conformance suite fails it by name.
 
 The user, the capability (0031 §4a), the source (0006 I1) and the principal (0020) are the HOST's, bound here and never
 a tool argument. A refusal comes back as the library's data (`{"ok": false, "refusal": …}`). A library raise (a value
-outside a closed set, a malformed argument) comes back as a tool-error result carrying the library's message verbatim
-(`handle_tool_error=True`), so the model reads the reason and the agent loop does not crash. Nothing is retried,
+outside a closed set, a malformed argument, any other exception raised while answering) comes back as a tool-error
+result carrying its message verbatim (`handle_tool_error=True`), as FastMCP reports a tool error on MCP, so the model
+reads the reason and the agent loop does not crash. Nothing is retried,
 reworded or answered by another model.
 """
 from __future__ import annotations
 
 from typing import Optional
 
-from ._surface import Binding, served_tools
+from ._surface import Binding
 
 __all__ = ["as_tools"]
 
@@ -40,7 +41,7 @@ def _tool(binding: Binding, spec, StructuredTool, ToolException):
     def run(**kwargs):
         try:
             return binding.call(name, kwargs)
-        except ValueError as exc:            # the library's caller errors, pydantic's ValidationError included
+        except Exception as exc:             # as FastMCP reports any tool error to the model, never only ValueError
             raise ToolException(str(exc)) from exc
 
     return StructuredTool(name=name, description=spec.description, args_schema=spec.parameters, func=run,
@@ -52,4 +53,4 @@ def as_tools(mem, *, user_id: str = "default", capability=None, source_id: Optio
     """The served tools over `mem` as LangChain `StructuredTool`s, in the server's registration order."""
     StructuredTool, ToolException = _framework()
     binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal)
-    return [_tool(binding, spec, StructuredTool, ToolException) for spec in served_tools(mem)]
+    return [_tool(binding, spec, StructuredTool, ToolException) for spec in binding.tools()]

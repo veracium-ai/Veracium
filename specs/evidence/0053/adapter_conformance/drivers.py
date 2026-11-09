@@ -23,8 +23,8 @@ class CoreDriver:
     name = "core"
 
     def __init__(self, surface, mem, binding: dict):
-        self._specs = surface.served_tools(mem)
         self._binding = surface.Binding(mem, **binding)
+        self._specs = self._binding.tools()
 
     def tools(self):
         return [{"name": s.name, "description": s.description, "parameters": s.parameters} for s in self._specs]
@@ -35,7 +35,7 @@ class CoreDriver:
     def call(self, name, args):
         try:
             return ("ok", self._binding.call(name, args))
-        except ValueError as exc:                     # the reference form of a library raise
+        except Exception as exc:                      # the reference form of a raise: FastMCP reports any tool error
             return ("error", str(exc))
 
     def decode(self, value):

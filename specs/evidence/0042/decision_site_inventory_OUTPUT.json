@@ -358,55 +358,55 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 40,
+   "line": 41,
    "module": "adapters/_surface.py",
    "qualname": "_registered"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 44,
+   "line": 45,
    "module": "adapters/_surface.py",
    "qualname": "_registered"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 59,
+   "line": 64,
    "module": "adapters/_surface.py",
    "qualname": "Binding.__init__"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 76,
+   "line": 86,
    "module": "adapters/_surface.py",
    "qualname": "Binding.call"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 97,
+   "line": 107,
    "module": "adapters/_surface.py",
    "qualname": "Binding.call"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 33,
+   "line": 34,
    "module": "adapters/langchain.py",
    "qualname": "_framework"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 44,
+   "line": 45,
    "module": "adapters/langchain.py",
    "qualname": "_tool.run"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 55,
+   "line": 56,
    "module": "adapters/langchain.py",
    "qualname": "as_tools"
   },

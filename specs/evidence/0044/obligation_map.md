@@ -1,6 +1,6 @@
 # The PRODUCT obligation map (GENERATED: `specs/evidence/0044/obligation_map.py`; do not edit)
 
-The consolidated campaign: 546 of 546 mutants KILLED, 1 retired with reasons (`campaign/defs.py`); pin digest `7b896b5a1e1870c6`.
+The consolidated campaign: 546 of 546 mutants KILLED, 1 retired with reasons (`campaign/defs.py`); pin digest `76b8776f1fda8f87`.
 
 ## The gate, per document (quoted)
 
