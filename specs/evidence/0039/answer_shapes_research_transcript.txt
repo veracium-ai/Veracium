@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 5b05c95e982e69fa14b62d0361869ebcfe12eb72
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 764b256cb33f18aba05fe2678f3dee81b52e31df
+# RE-PINNED 2026-11-09 (764b256c: specs/0053 added src/veracium/adapters/, three new modules, no existing file changed; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-08 (5b05c95e: the schema evidence records v0.31.0, one data row under src/; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-08 (e75382cd: 0018 round 6's R5-01 and S2 closures moved src/veracium/store/release_migration.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-07 (7eb00c3a: E1's second clause added to cli.py's printed sentences; both instruments re-run, and the body is byte-identical)
