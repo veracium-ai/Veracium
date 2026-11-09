@@ -4,11 +4,11 @@
 
 # Spec status
 
-**45 specs · 42 accepted · 467 external review
-rounds · 5 blocking questions open.**
+**45 specs · 43 accepted · 467 external review
+rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **42 of 45 are accepted**, which
+review is required to reach it. **43 of 45 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -57,7 +57,7 @@ is the number that decides what can be built.
 | **0047** | the subject's right of reply — the record stands, and the reply travels with it | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
 | **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-06 | 0 | 6 | 2 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
-| **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `draft` | 2026-11-09 | 0 | 0 | 7 | 🔴 5 | 0 | — |
+| **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-09 | 0 | 0 | 8 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
@@ -71,7 +71,7 @@ own count and rows, never the cross-spec total, so a spec joining the set or
 closing a finding rewrites no other spec's text.
 
 **Rounds recorded outside the ledger** — so a `0` in *ext* is not read as
-"never reviewed": **0027** — accepted at external round 9 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec; **0029** — its rounds are housed in **0030**'s ledger (one ledger for the joint review stream; each row names its target); **0032** — owner-accepted with no external round, per its own header (PROCESS §4a's second path); **0051** — accepted, and its own header records its external review as owed (no round of it is in `specs/reviews.py`).
+"never reviewed": **0027** — accepted at external round 9 per its own header; those rounds predate `specs/reviews.py` and are recorded in the spec; **0029** — its rounds are housed in **0030**'s ledger (one ledger for the joint review stream; each row names its target); **0032** — owner-accepted with no external round, per its own header (PROCESS §4a's second path); **0051** — accepted, and its own header records its external review as owed (no round of it is in `specs/reviews.py`); **0053** — no rounds in `specs/reviews.py` and no round named in its header (owner-accepted under PROCESS §4a's second path, or a gap).
 A `draft` spec under the hand-assembled seal shows `0` here until acceptance:
 that protocol writes its `specs/reviews.py` rows and one closure row per
 finding AT the acceptance fold (0037, 0038, 0039), and until then the spec's

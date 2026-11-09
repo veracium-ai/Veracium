@@ -50,7 +50,7 @@
 | 0047 | `0047-subject-reply.md` | `accepted` | the subject's right of reply — the record stands, and the reply travels with it |  |
 | 0048 | `0048-decay-never-raises-confidence.md` | `accepted` | maintenance never raises confidence — the decay bounds (0002's N4, carried) |  |
 | 0051 | `0051-speaker-turns-in-a-user-event.md` | `accepted` | speaker turns inside a user event — the assistant's first person is not the user's |  |
-| 0053 | `0053-adapter-conformance-suite.md` | `draft` | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it |  |
+| 0053 | `0053-adapter-conformance-suite.md` | `accepted` | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it |  |
 
 ## Reservations (claimed, not drafted)
 

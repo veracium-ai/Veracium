@@ -1,15 +1,15 @@
 # Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it
 
-Spec-Status: draft
+Spec-Status: accepted
 
 | | |
 |---|---|
 | **Author / session** | research (veracium-research, candidate v0.1 at `27484429`). Adopted by dev 2026-11-09 in the suite's first commit, byte for byte but this cell |
-| **Version** | **v0.4 — 2026-11-09: research's stage 2 on the fix commit, and the adoption commit's build.** Stage 2 on `12636180` (research `41b082cb`) is clean on the six stage-1 fixes and adds three items: the census counts only cases that do not refuse (N1); I12 is shown red by a planted write in a read (N2); the any-type raise path has a witness, a planted raise of another type (N3). Dev's adoption commit builds Q4 (the import scan, I10), Q5 (`maintain` under K5, with its own measured clock group) and Q6 (v0.3's three planted clock cases, with two canonicaliser mutants), and K8's identity-only comparison now covers every K8 case that writes, not one tool by name; v0.4 states them as dev described them. **They were uncommitted when this version was written;** research reads them on the adoption commit, and any difference becomes v0.5. Every passage v0.4 replaces is kept verbatim in the v0.3 appendix. Prior: v0.3, 2026-11-09 (research `00ef5950`): the owner's condition (draft v0.4 with harness's two clock additions). Before it, v0.2 (`d7fee05d`) and v0.1 (`27484429`, adopted in `764b256c`) |
+| **Version** | **ACCEPTED — 2026-11-09, on v0.4 as adopted at `4a13cade`: the owner's word, no external round (PROCESS §4a's second path).** The acceptance fold adds `## Review closure`, records the word in the External review and Decision cells, and closes §10 Q2 and Q4–Q7; the body above §10 is v0.4's, unchanged. **v0.4 — 2026-11-09: research's stage 2 on the fix commit, and the adoption commit's build.** Stage 2 on `12636180` (research `41b082cb`) is clean on the six stage-1 fixes and adds three items: the census counts only cases that do not refuse (N1); I12 is shown red by a planted write in a read (N2); the any-type raise path has a witness, a planted raise of another type (N3). Dev's adoption commit builds Q4 (the import scan, I10), Q5 (`maintain` under K5, with its own measured clock group) and Q6 (v0.3's three planted clock cases, with two canonicaliser mutants), and K8's identity-only comparison now covers every K8 case that writes, not one tool by name; v0.4 states them as dev described them. **They were uncommitted when this version was written;** research reads them on the adoption commit, and any difference becomes v0.5. Every passage v0.4 replaces is kept verbatim in the v0.3 appendix. Prior: v0.3, 2026-11-09 (research `00ef5950`): the owner's condition (draft v0.4 with harness's two clock additions). Before it, v0.2 (`d7fee05d`) and v0.1 (`27484429`, adopted in `764b256c`) |
 | **Status** | *narrative only — the canonical state is the `Spec-Status:` line at the top* |
 | **Internal reviewers** | research (author; stage 1 of the build, `51e036f5`) · dev (read drafts v0.2–v0.4; built v0.1 and read it against the build, D1–D9) · harness (read draft v0.2, three points; read draft v0.4's clock rule: "reads right", two additions, v0.3) |
-| **External review** | not required by path (lightweight). Acceptance still takes external review or the owner's explicit acceptance word (PROCESS §4a), §10 Q2 |
-| **Decision + date** | the owner, 2026-11-09 about 12:00 UTC, first-hand in the dev session (as dev relays it): draft v0.4 meets Phase 1a item 1's condition for lighter adapter review. Confirmed by the owner first-hand in the research session (2026-11-09 16:13 UTC): v0.4 is the condition, with harness's two additions folded into the spec (v0.3) |
+| **External review** | none: the owner ruled acceptance on his word (PROCESS §4a's second path), recorded in `## Review closure` |
+| **Decision + date** | the owner, 2026-11-09 about 12:00 UTC, first-hand in the dev session (as dev relays it): draft v0.4 meets Phase 1a item 1's condition for lighter adapter review. Confirmed by the owner first-hand in the research session (2026-11-09 16:13 UTC): v0.4 is the condition, with harness's two additions folded into the spec (v0.3). **ACCEPTED: the owner, first-hand in the dev session, 2026-11-09: "I accept 0053 after stage 2"**, given after research's stage 2 on `12636180` (research `41b082cb`, clean) and its read of the adoption commit `4a13cade` (research `12c465d3`, clean) |
 | **Path** | `lightweight` — the suite adds tests, a new optional-extra package (`veracium.adapters`), extras in `pyproject.toml` and one CI job, and touches no file on the guarded list. The list was re-derived for v0.2 from `specs/check_spec_reference.py` at commit 77a1ef59, where the file is unchanged since f8de3ddc, and the build's changes under `src/` (f8de3ddc to 77a1ef59) are the three new adapter modules alone. **If the build touches a guarded file, the path becomes full** |
 
 **Spec-Requires:** 0031 (the served MCP surface: §4b-iii's pinned schemas, §4d's named carriers, §6a's live
@@ -395,12 +395,45 @@ difference; one provenance column added to the declared id list.
 | # | question | who decides | by when | class |
 |---|---|---|---|---|
 | Q1 | harness's read of draft v0.3's clock rule (§4.3) | **CLOSED 2026-11-09:** harness, on draft v0.4: "reads right", with two additions, folded in v0.3 | — | — |
-| Q2 | the acceptance path: PROCESS §4a requires external review to reach `accepted`, or the owner's explicit acceptance word recorded in the Review-closure section | the owner | before acceptance | `blocking` |
+| Q2 | the acceptance path: PROCESS §4a requires external review to reach `accepted`, or the owner's explicit acceptance word recorded in the Review-closure section | **CLOSED 2026-11-09:** the owner's word, "I accept 0053 after stage 2" (`## Review closure`) | — | — |
 | Q3 | when the TypeScript client joins (its runner reads the same cases file) | dev | with the TS client | `deferred` |
-| Q4 | the import scan that makes I10 executable | dev, in the adoption commit (built, uncommitted when v0.4 was written; research reads it there) | before acceptance | `blocking` |
-| Q5 | `maintain`'s K5 case (D6), with its measured clock group | dev, in the adoption commit (built, uncommitted when v0.4 was written; research reads it there) | before acceptance | `blocking` |
-| Q6 | v0.3's three planted clock cases, with the canonicaliser mutants "clocks ordered as text" and "clock NULLs skipped" | dev, in the adoption commit (built, uncommitted when v0.4 was written; research reads it there) | before acceptance | `blocking` |
-| Q7 | stage 2's N1–N3: the census counting only unrefused cases, with its negative; a planted write in a read; a planted raise of another type on every row | dev, in the adoption commit | before acceptance | `blocking` |
+| Q4 | the import scan that makes I10 executable | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
+| Q5 | `maintain`'s K5 case (D6), with its measured clock group | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
+| Q6 | v0.3's three planted clock cases, with the canonicaliser mutants "clocks ordered as text" and "clock NULLs skipped" | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
+| Q7 | stage 2's N1–N3: the census counting only unrefused cases, with its negative; a planted write in a read; a planted raise of another type on every row | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
+| Q8 | research's L1 on `4a13cade`: I10's static scan passes `import veracium as v; v.adapters`, `getattr` and a computed `import_module` string (none is in the tree). The complement: a subprocess cell importing the oracle modules alone and asserting no `veracium.adapters` module in `sys.modules` | dev, in the next 0053 commit (Pydantic AI's) | with Pydantic AI | `deferred` |
+
+## Review closure
+
+**Owner-accepted: the owner's word, first-hand in the dev session, 2026-11-09: "I accept 0053 after stage 2". No external
+round (PROCESS §4a's second path).** The word was given on the condition that research's stage 2 had run; it had, on
+`12636180` (research `41b082cb`, clean on the six stage-1 fixes, three items added), and research's read of the adoption
+commit `4a13cade` (research `12c465d3`) is clean on all of them. The reviews were internal: research's stage 1 on
+`77a1ef59` (research `51e036f5`), stage 2, and the adoption read; harness read draft v0.2 and the clock rule. One row per
+finding, each closed by a commit and the test that fails if it reopens. Test nodes are in
+`tests/test_0053_adapter_conformance.py`; a mutant named below runs as
+`test_the_mutant_row_kills_exactly_its_families[<mutant>-<row>]`.
+
+| # | finding (source) | closed by |
+|---|---|---|
+| S1-1 | `record_procedure`'s author never compared with a non-default value; a mutant forwarding it as "user" passed every family (stage 1, BLOCKING; reproduced by both seats at `77a1ef59`) | `12636180`: four cases, the mutant `procedure-third-party-as-user` (both rows, K7), `test_every_served_parameter_is_exercised`, `test_the_parameter_census_names_an_unexercised_parameter` |
+| S1-2 | the adapter conformance job outside the required `pytest (py3.14)` aggregate (stage 1) | `12636180`: `.github/workflows/test.yml`, the aggregate's `needs` and condition; CI `42687896114` at `4a13cade` GREEN 16/16 |
+| S1-3 | every adapter build logged the default capability (stage 1) | `12636180`: the registration read under the host's capability; `test_the_registration_is_read_under_the_hosts_capability` |
+| S1-4 | the LangChain wrapper converted `ValueError` alone (stage 1) | `12636180` (any `Exception`, as FastMCP); witnessed at `4a13cade` by `test_a_raise_of_another_type_reaches_the_model_as_a_tool_error` (N3) |
+| S1-5 | the fixture's docstring named a check that did not exist (stage 1) | `12636180`: the anchors compare every read case's reference store with the template; shown red at `4a13cade` by `test_a_read_that_writes_is_named_by_the_anchors` (N2) |
+| S1-6 | K6's raise reference worded as the served error result (stage 1, research's own) | v0.2's wording (research `d7fee05d`), §4.3's K6 row as built |
+| N1 | the census counted a case whose reference refuses (stage 2) | `4a13cade`: `test_the_parameter_census_does_not_count_a_refused_case` |
+| N2 | I12 never shown red (stage 2) | `4a13cade`: `test_a_read_that_writes_is_named_by_the_anchors` |
+| N3 | S1-4 had no witness; its revert survived stage 2 (stage 2) | `4a13cade`: `test_a_raise_of_another_type_reaches_the_model_as_a_tool_error`, on both rows |
+| §10 Q4 | I10 had no executable check (§10) | `4a13cade`: `test_the_oracle_imports_no_adapter_code`, `test_the_import_scan_refuses_each_form` |
+| §10 Q5 | `maintain` compared nowhere (D6, §10) | `4a13cade`: case `K5-maintain`, the "maintain" clock group (`test_the_declared_lists_are_the_measured_ones`), the mutant `maintain-result-trimmed` (K5) |
+| §10 Q6 | v0.3's three planted clock cases (§10) | `4a13cade`: `test_the_canonicaliser_judges_its_planted_pairs`; `test_the_canonicaliser_catches_each_of_its_mutants` (`clocks-ordered-as-text`, `clock-nulls-skipped`) |
+| L1 | I10's static scan passes three indirect forms (the adoption read, NEXT-ROUND) | not a closure: §10 Q8, `deferred` to the next 0053 commit, a Dev-queue row in the ledger (coordination `2a09766`); none of the three forms is in the tree |
+
+**The suite as accepted** (`4a13cade`): 57 cases; 21 mutants, 17 on both rows, 38 runs, each turning red exactly the
+families its row names; 5 canonicaliser mutants; 7 planted pairs. The full suite green: 8976 collected, 8941 passed, 35
+skipped. The 0044 campaign 546/546. CI `42687896114` GREEN 16/16, the adapter conformance job inside the required
+aggregate.
 
 ## Appendix: prior text (v0.1, research `27484429`), as replaced
 
