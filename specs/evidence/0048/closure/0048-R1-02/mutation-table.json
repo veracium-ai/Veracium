@@ -1,5 +1,5 @@
 {
- "body_sha256": "9c0c820beaac50d6ef879af41b61b02cb7e611f125e0a4ea6733c8fa73305e05",
+ "body_sha256": "42e02b3259c3e2cf769abaecc4e3b47971f46e28828a218cb9205b0edb4275c5",
  "controls": [
   {
    "anchor_counts": [
@@ -72,7 +72,7 @@
     "passed": 4
    }
   },
-  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
+  "commit": "f8de3ddc8b70020d7058dbc564db2c0932ca75e9",
   "control_definitions": {
    "NOOP-0048-R1-02-lifecycle": "58af8cd46e0530858f5a9ff275a3988be0b37ebaa81ea4484cce7d54c504761f",
    "NOOP-0048-R1-02-sqlite": "94835607491707ed52493817d4c730fe5dd514975334291247515e3f3eee671f"
@@ -88,7 +88,7 @@
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
+   "tests/test_0048_decay_bounds.py": "16344c89c686ec0e9de7e7340274abb1856f65f9f461714f125c1dbc389ea458"
   },
   "finding": "0048-R1-02",
   "honest_nodes": [
@@ -100,26 +100,36 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   ".github/workflows/test.yml",
+   "CHANGELOG.md",
+   "pyproject.toml",
+   "specs/0053-adapter-conformance-suite.md",
+   "specs/ALLOCATION.md",
+   "specs/STATUS.md",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0053/adapter_conformance/__init__.py",
+   "specs/evidence/0053/adapter_conformance/canon.py",
+   "specs/evidence/0053/adapter_conformance/cases.json",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/evidence/0053/adapter_conformance/drivers.py",
+   "specs/evidence/0053/adapter_conformance/fixture.py",
+   "specs/evidence/0053/adapter_conformance/mutants.py",
+   "specs/evidence/0053/adapter_conformance/planted.py",
+   "specs/evidence/0053/adapter_conformance/rows.py",
+   "specs/skip_inventory.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/_surface.py",
+   "src/veracium/adapters/langchain.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0053_adapter_conformance.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -157,7 +167,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 2.71s",
+   "pytest": "3 failed in 2.30s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the shipped expire() body, deciding from its listing and writing the copy back"
@@ -191,7 +201,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.47s",
+   "pytest": "1 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"
@@ -206,6 +216,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 21
+  "seconds": 19
  }
 }

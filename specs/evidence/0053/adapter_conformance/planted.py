@@ -1,0 +1,51 @@
+"""specs/0053 §3a: the canonicaliser's planted pairs. Three pairs it must report DIFFERENT and one it must report EQUAL;
+each is a pair of small stores written here, so the canonicaliser is judged on stores whose answer is known."""
+from __future__ import annotations
+
+import os
+import sqlite3
+
+T1, T2 = "2026-07-01T10:00:00.000001+00:00", "2026-07-01T10:00:00.000002+00:00"
+IDS = {("a", "id", ()), ("b", "id", ()), ("b", "a_ref", ()), ("p", "id", ()), ("e", "id", ())}
+CLOCKS = {("e", "at", ())}
+
+
+def _store(path, a_rows=(), b_rows=(), p_rows=(), e_rows=()):
+    con = sqlite3.connect(path)
+    con.executescript("CREATE TABLE a (id TEXT); CREATE TABLE b (id TEXT, a_ref TEXT);"
+                      "CREATE TABLE p (id TEXT, author TEXT); CREATE TABLE e (id TEXT, at TEXT);")
+    con.executemany("INSERT INTO a VALUES (?)", [(r,) for r in a_rows])
+    con.executemany("INSERT INTO b VALUES (?, ?)", b_rows)
+    con.executemany("INSERT INTO p VALUES (?, ?)", p_rows)
+    con.executemany("INSERT INTO e VALUES (?, ?)", e_rows)
+    con.commit()
+    con.close()
+    return path
+
+
+#: (name, store A, store B, must the canonicaliser call them equal?)
+def pairs(d):
+    os.makedirs(d, exist_ok=True)
+    s = lambda n, **kw: _store(os.path.join(d, n + ".db"), **kw)
+    return [
+        ("cross-row-reference", s("ref-a", a_rows=("a-x1aaaaaa", "a-x2aaaaaa"), b_rows=[("b-z1aaaaaa", "a-x1aaaaaa")]),
+         s("ref-b", a_rows=("a-y1bbbbbb", "a-y2bbbbbb"), b_rows=[("b-w1bbbbbb", "a-y2bbbbbb")]), False),
+        ("clock-reversal", s("rev-a", e_rows=[("e-1aaaaaaa", T1), ("e-2aaaaaaa", T2)]),
+         s("rev-b", e_rows=[("e-1bbbbbbb", T2), ("e-2bbbbbbb", T1)]), False),
+        ("provenance-field", s("prov-a", p_rows=[("p-1aaaaaaa", "user")]),
+         s("prov-b", p_rows=[("p-1bbbbbbb", "third_party")]), False),
+        ("tie-only", s("tie-a", e_rows=[("e-1aaaaaaa", T1), ("e-2aaaaaaa", T1)]),
+         s("tie-b", e_rows=[("e-1bbbbbbb", T1), ("e-2bbbbbbb", T2)]), True),
+    ]
+
+
+def misjudged(canon_mod, d) -> list[str]:
+    c = canon_mod.Canon(IDS, CLOCKS)
+    bad = []
+    for name, a, b, equal in pairs(d):
+        diff = c.differences(a, b)
+        if equal and diff:
+            bad.append(f"{name}: reported different ({diff[0]}) and must be equal")
+        if not equal and not diff:
+            bad.append(f"{name}: reported equal and must be different")
+    return bad

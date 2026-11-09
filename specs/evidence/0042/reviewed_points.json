@@ -4155,6 +4155,33 @@
   "line": 173,
   "statement": "raise ValueError("
  },
+ "adapters/_surface.py:Binding.__init__:59:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "adapters/_surface.py:Binding.__init__:RAISE:1",
+  "line": 59,
+  "statement": "raise ValueError(f\"user_id must be a non-empty string, not {user_id!r}\")"
+ },
+ "adapters/_surface.py:Binding.call:76:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "adapters/_surface.py:Binding.call:RAISE:1",
+  "line": 76,
+  "statement": "raise ValueError(f\"unknown tool {name!r}\")"
+ },
+ "adapters/_surface.py:Binding.call:97:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "adapters/_surface.py:Binding.call:RAISE:2",
+  "line": 97,
+  "statement": "raise ValueError(f\"unknown tool {name!r}\")   # unreachable while TOOLS and the branches agree"
+ },
  "asof/resolve.py:normalise_T:221:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
@@ -5244,6 +5271,33 @@
   "line": 43,
   "statement": "raise ValueError(f\"no parseable JSON in: {text[:200]!r}\")"
  },
+ "adapters/langchain.py:_framework:33:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "adapters/langchain.py:_framework:RAISE:1",
+  "line": 33,
+  "statement": "raise ImportError('veracium.adapters.langchain needs langchain-core: pip install \"veracium[langchain]\"') from exc"
+ },
+ "adapters/langchain.py:_tool.run:44:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "adapters/langchain.py:_tool.run:RAISE:1",
+  "line": 44,
+  "statement": "raise ToolException(str(exc)) from exc"
+ },
+ "adapters/langchain.py:as_tools:55:FILTER_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "adapters/langchain.py:as_tools:FILTER_RETURN:1",
+  "line": 55,
+  "statement": "return [_tool(binding, spec, StructuredTool, ToolException) for spec in served_tools(mem)]"
+ },
  "agreement.py:_agent_after:267:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
@@ -6206,6 +6260,24 @@
   "key": "__init__.py:receipt_from_row:RAISE:2",
   "line": 312,
   "statement": "raise ValueError(f\"policy receipt row {row.get('recall_id')!r}: column {key} \""
+ },
+ "adapters/_surface.py:_registered:40:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "adapters/_surface.py:_registered:RAISE:1",
+  "line": 40,
+  "statement": "raise RuntimeError(\"the MCP server exposes no tool manager; this adapter reads the served surface from it \""
+ },
+ "adapters/_surface.py:_registered:44:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "adapters/_surface.py:_registered:RAISE:2",
+  "line": 44,
+  "statement": "raise RuntimeError(f\"the served tools are {names}, and this adapter binds {TOOLS}: an adapter that presents a \""
  },
  "agreement.py:_validate_lexicon:190:RAISE": {
   "decision": "not",

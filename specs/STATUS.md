@@ -4,11 +4,11 @@
 
 # Spec status
 
-**44 specs · 42 accepted · 467 external review
-rounds · 0 blocking questions open.**
+**45 specs · 42 accepted · 467 external review
+rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **42 of 44 are accepted**, which
+review is required to reach it. **42 of 45 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -57,6 +57,7 @@ is the number that decides what can be built.
 | **0047** | the subject's right of reply — the record stands, and the reply travels with it | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
 | **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-06 | 0 | 6 | 2 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
+| **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `draft` | 2026-11-09 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

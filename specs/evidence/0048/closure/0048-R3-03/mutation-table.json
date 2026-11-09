@@ -1,5 +1,5 @@
 {
- "body_sha256": "15f76271fcc6105326c933102a732b8e155386541f9fff0807afc72d3faee69c",
+ "body_sha256": "03c42174cb9fcaf57fbdef764e6d3d26edb8fca4b443bff64bfe0374d2f2a58d",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
+  "commit": "f8de3ddc8b70020d7058dbc564db2c0932ca75e9",
   "control_definitions": {
    "NOOP-0048-R3-03-config": "3dce0ba491331f401cb1ec2273a4d85c79b5370b37ea699dc1f3a9acda1fe758"
   },
@@ -65,7 +65,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/config.py": "a510123ae142da13952aa1ffabcf2d89099525ff87b2fcb8baf289964f0d96c9",
-   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
+   "tests/test_0048_decay_bounds.py": "16344c89c686ec0e9de7e7340274abb1856f65f9f461714f125c1dbc389ea458"
   },
   "finding": "0048-R3-03",
   "honest_nodes": [
@@ -76,24 +76,18 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   ".github/workflows/test.yml",
+   "CHANGELOG.md",
+   "pyproject.toml",
+   "specs/0053-adapter-conformance-suite.md",
+   "specs/ALLOCATION.md",
+   "specs/STATUS.md",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -101,7 +95,23 @@
    "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0053/adapter_conformance/__init__.py",
+   "specs/evidence/0053/adapter_conformance/canon.py",
+   "specs/evidence/0053/adapter_conformance/cases.json",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/evidence/0053/adapter_conformance/drivers.py",
+   "specs/evidence/0053/adapter_conformance/fixture.py",
+   "specs/evidence/0053/adapter_conformance/mutants.py",
+   "specs/evidence/0053/adapter_conformance/planted.py",
+   "specs/evidence/0053/adapter_conformance/rows.py",
+   "specs/skip_inventory.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/_surface.py",
+   "src/veracium/adapters/langchain.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0053_adapter_conformance.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -142,7 +152,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 3.26s",
+   "pytest": "4 failed in 2.39s",
    "reason": null,
    "reason_seen": null,
    "what": "the float conversion first again: 10**400 raises OverflowError, not the ValueError naming the field (R3-03)"
@@ -157,6 +167,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 15
+  "seconds": 11
  }
 }

@@ -883,6 +883,7 @@ SRC_IMPORTS = {
     "hashlib": {"sha256"},
     "importlib.metadata": {"PackageNotFoundError", "version"},
     "json": {"JSONDecodeError", "JSONDecoder", "dump", "dumps", "load", "loads"},
+    "langchain_core.tools": {"StructuredTool", "ToolException"},     # specs/0053: veracium.adapters.langchain, an optional extra
     "logging": {"Formatter", "INFO", "Logger", "getLogger"},
     "logging.handlers": {"RotatingFileHandler"},
     "math": {"inf", "isfinite", "sqrt"},
@@ -933,7 +934,7 @@ IMPORT_SITES = {("veracium/portability.py", "import_memory"):
 # a class's attribute that holds a module: the walk stops at a class, so each is named here and refused by name above
 CLASS_HELD_MODULES = {("pathlib", "Path", "parser")}
 # rows the runtime audit cannot import on every lane: a platform's module or an optional extra. The tables stay AST-only
-UNAUDITED_MODULES = {"anthropic", "fcntl", "mcp.server.fastmcp", "mcp.server.mcpserver", "msvcrt"}
+UNAUDITED_MODULES = {"anthropic", "fcntl", "langchain_core.tools", "mcp.server.fastmcp", "mcp.server.mcpserver", "msvcrt"}
 # the one own module src/ passes as a value: (module, function, name) -> that function's whole digest
 OWN_MODULE_VALUES = {("veracium/store/sqlite.py", "SqliteStore.upsert_embedding", "_semantic"):
                      "d0b51a22f785ffdcd824b47053465f2c18ba99850f7ec8eee235ea605a50ebe1"}

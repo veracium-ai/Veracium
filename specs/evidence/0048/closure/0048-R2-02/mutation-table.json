@@ -1,5 +1,5 @@
 {
- "body_sha256": "2f6a9bde5c3379ba18da842cee965b923fe44ca5dcb83c7c3338681258f6c366",
+ "body_sha256": "c7d320b08cd876343f91e5e052f81620a4ea48c4e73b2ae345373398db8a2c71",
  "controls": [
   {
    "anchor_counts": [
@@ -75,7 +75,7 @@
     "passed": 4
    }
   },
-  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
+  "commit": "f8de3ddc8b70020d7058dbc564db2c0932ca75e9",
   "control_definitions": {
    "NOOP-0048-R2-02-lifecycle": "d537339c6f57023de7cf99e557f2c6277c4e1a8b6cc66fdbb0ab8ffc4b3146cd",
    "NOOP-0048-R2-02-sqlite": "e0e2ad3d31112776b6940dddd4847a5d8e053541c14500987f45c5b118701b6d"
@@ -92,7 +92,7 @@
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0048_decay_bounds.py": "6ff5f1dc14da582acc326d3c7679244461347f9784fcf903c4ec41570736f807"
+   "tests/test_0048_decay_bounds.py": "16344c89c686ec0e9de7e7340274abb1856f65f9f461714f125c1dbc389ea458"
   },
   "finding": "0048-R2-02",
   "honest_nodes": [
@@ -104,29 +104,39 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   ".github/workflows/test.yml",
+   "CHANGELOG.md",
+   "pyproject.toml",
+   "specs/0053-adapter-conformance-suite.md",
+   "specs/ALLOCATION.md",
+   "specs/STATUS.md",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0053/adapter_conformance/__init__.py",
+   "specs/evidence/0053/adapter_conformance/canon.py",
+   "specs/evidence/0053/adapter_conformance/cases.json",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/evidence/0053/adapter_conformance/drivers.py",
+   "specs/evidence/0053/adapter_conformance/fixture.py",
+   "specs/evidence/0053/adapter_conformance/mutants.py",
+   "specs/evidence/0053/adapter_conformance/planted.py",
+   "specs/evidence/0053/adapter_conformance/rows.py",
+   "specs/skip_inventory.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/_surface.py",
+   "src/veracium/adapters/langchain.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0053_adapter_conformance.py",
+   "tests/test_spec_gate.py"
   ]
  },
  "rows": [
@@ -161,7 +171,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.85s",
+   "pytest": "2 failed in 1.37s",
    "reason": null,
    "reason_seen": null,
    "what": "a retained decay counted as `decayed` (R2-02)"
@@ -197,7 +207,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.65s",
+   "pytest": "2 failed in 1.41s",
    "reason": null,
    "reason_seen": null,
    "what": "below the floor, the decayed confidence stored before the retirement (R2-02)"
@@ -230,7 +240,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.32s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor comparison inclusive: a decay at the floor retires"
@@ -245,6 +255,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 26
+  "seconds": 19
  }
 }

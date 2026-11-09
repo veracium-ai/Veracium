@@ -358,6 +358,61 @@
   {
    "bare": false,
    "kind": "RAISE",
+   "line": 40,
+   "module": "adapters/_surface.py",
+   "qualname": "_registered"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 44,
+   "module": "adapters/_surface.py",
+   "qualname": "_registered"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 59,
+   "module": "adapters/_surface.py",
+   "qualname": "Binding.__init__"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 76,
+   "module": "adapters/_surface.py",
+   "qualname": "Binding.call"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 97,
+   "module": "adapters/_surface.py",
+   "qualname": "Binding.call"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 33,
+   "module": "adapters/langchain.py",
+   "qualname": "_framework"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 44,
+   "module": "adapters/langchain.py",
+   "qualname": "_tool.run"
+  },
+  {
+   "kind": "FILTER_RETURN",
+   "line": 55,
+   "module": "adapters/langchain.py",
+   "qualname": "as_tools"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
    "line": 190,
    "module": "agreement.py",
    "qualname": "_validate_lexicon"
@@ -7256,8 +7311,8 @@
  "summary": {
   "by_kind": {
    "BOOL_RETURN": 101,
-   "FILTER_RETURN": 63,
-   "RAISE": 700,
+   "FILTER_RETURN": 64,
+   "RAISE": 707,
    "RETURN_FALSE": 115,
    "RETURN_NONE": 113
   },
@@ -7268,8 +7323,8 @@
    "BOOL_RETURN",
    "FILTER_RETURN"
   ],
-  "modules_scanned": 66,
-  "modules_with_sites": 56,
+  "modules_scanned": 69,
+  "modules_with_sites": 58,
   "per_module": {
    "__init__.py": {
     "BOOL_RETURN": 0,
@@ -7282,6 +7337,20 @@
     "BOOL_RETURN": 0,
     "FILTER_RETURN": 0,
     "RAISE": 1,
+    "RETURN_FALSE": 0,
+    "RETURN_NONE": 0
+   },
+   "adapters/_surface.py": {
+    "BOOL_RETURN": 0,
+    "FILTER_RETURN": 0,
+    "RAISE": 5,
+    "RETURN_FALSE": 0,
+    "RETURN_NONE": 0
+   },
+   "adapters/langchain.py": {
+    "BOOL_RETURN": 0,
+    "FILTER_RETURN": 1,
+    "RAISE": 2,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 0
    },
@@ -7664,7 +7733,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1092,
+  "total": 1100,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

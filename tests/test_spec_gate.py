@@ -2854,6 +2854,11 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
         # the offline launcher's two-phase split (2026-11-08): its check decides whether the release battery's suite line
         # covers the whole collection, so it carries a matrix like any checker
         root / "specs" / "evidence" / "offline" / "two_phase.py",
+        # specs/0053, the adapter conformance suite: the canonical store comparison verdicts two stores, the checks verdict
+        # an adapter family by family, and the mutant row refuses a site that moved: checkers by what they do
+        root / "specs" / "evidence" / "0053" / "adapter_conformance" / "canon.py",
+        root / "specs" / "evidence" / "0053" / "adapter_conformance" / "checks.py",
+        root / "specs" / "evidence" / "0053" / "adapter_conformance" / "mutants.py",
         # specs/0039: a measurement transcript generator, not a checker by
         # name — it produced findings in two external rounds, which is R6-1's
         # test for belonging here

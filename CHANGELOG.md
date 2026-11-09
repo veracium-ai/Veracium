@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+- **Added: `veracium.adapters.langchain.as_tools()`, veracium's served tools as LangChain tools**
+  (`pip install "veracium[langchain]"`; specs/0053, draft).
+  - **The same six tools as the MCP server:** each tool's name, parameters and description are read from the server's
+    own registration, so the model-facing safety text arrives byte for byte.
+  - **Bound when the tools are built, never a tool argument:** the user, the capability, the source and the principal
+    all belong to the host.
+  - **Refusals and errors:** a refusal comes back as the library's data. A library raise comes back as LangChain's
+    tool-error result, with the library's message verbatim.
+  - **Install:** an optional extra, never a core dependency; it installs `mcp` too.
+- **Added: the adapter conformance suite** (specs/0053; `tests/test_0053_adapter_conformance.py`,
+  `specs/evidence/0053/adapter_conformance/`). It is the condition the owner set for lighter review of framework
+  adapters.
+  - **The library is the oracle.** Every expected value is computed in the same run: the served MCP surface for schemas
+    and descriptions, and the `*_impl` functions for values.
+  - **The fixture and the checks:** one fixture store holds every trust class, under anchors that refuse a vacuous run,
+    and 51 cases cover checks K1–K8.
+  - **Store comparison:** a canonical form, with the generated-id and clock lists measured from twin reference runs.
+  - **Mutant row:** 19 mutants are applied to the adapter under test, 15 to the framework-free core and all 19 to the
+    LangChain adapter. Each kill counts only when exactly the checks its row names go red.
+  - **CI:** the suite runs on every push in its own job, with `langchain-core` pinned at 1.7.6. In the shard lanes the
+    LangChain cells skip by name.
+
 - **Changed: the offline launcher runs the suite in two phases by default** (`specs/evidence/offline/run_offline.sh`; the
   owner's ruling, 2026-11-08).
   - **Phase 1** runs every file but the phase-2 files under pytest-xdist (`VERACIUM_OFFLINE_WORKERS`, default 8,

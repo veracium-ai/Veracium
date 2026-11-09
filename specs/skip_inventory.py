@@ -129,6 +129,15 @@ INVENTORY = [
                             "without the SDK (found by the pydantic-floor CI lane at "
                             "c877648, run 40934117705). Author line: all 4 PASS; an "
                             "mcp-absent environment sees 3 PASS + 1 SKIP"),
+    ("tests/test_0053_adapter_conformance.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — specs/0053's oracle reads the served MCP surface (its tool listing "
+                            "and each tool's argument model), so the WHOLE module skips without the SDK (a module-level "
+                            "importorskip; the pydantic-floor lane). Author line: all PASS with mcp installed"),
+    ("tests/test_0053_adapter_conformance.py", "importorskip", "langchain",
+     "optional-dependency", "the optional langchain extra — specs/0053's LangChain row (its conformance, its decoder and "
+                            "its mutant row) skips by name without langchain-core; the core's cells run. In the "
+                            "adapter-conformance CI job VERACIUM_ADAPTER_ROWS=langchain makes a missing framework a "
+                            "failure, never a skip. Author line: an extra-absent environment sees 21 SKIP"),
     ("tests/test_0006_require_source_id.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — 0006 I15's served-tool "
                             "schema check (the built server exposes no "

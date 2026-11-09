@@ -25,6 +25,8 @@ Issues = "https://github.com/veracium-ai/Veracium/issues"
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.40"]
 mcp = ["mcp>=1.0,<2"]   # the server imports FastMCP's 1.x surface; 2.x broke it (amendments round 1)
+# specs/0053: veracium.adapters.langchain. The adapters read the served MCP surface, so each framework extra carries mcp
+langchain = ["langchain-core>=1.0,<2", "mcp>=1.0,<2"]
 dev = ["pytest>=8", "pytest-randomly>=3"]
 
 [project.scripts]
