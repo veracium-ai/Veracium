@@ -34,9 +34,11 @@ _SUMMARY = re.compile(r"(\d+) (passed|failed|skipped|errors?|xfailed|xpassed|des
 def phase2_files(tests: pathlib.Path) -> list:
     """The files phase 2 runs, sorted: the mark's carriers and every seam-model driver."""
     out = set()
-    for p in sorted(tests.glob("*.py")):
+    # every test module by pytest's default python_files (test_*.py and *_test.py; pyproject sets no override),
+    # subdirectories included, as ci_shard (research's L5)
+    for p in sorted(x for x in tests.rglob("*.py") if x.name.startswith("test_") or x.name.endswith("_test.py")):
         if p.name.startswith("test_seam_model_") or SEAM_MARK in p.read_text(encoding="utf-8"):
-            out.add(f"{tests.name}/{p.name}")
+            out.add(p.relative_to(tests.parent).as_posix())
     return sorted(out)
 
 
@@ -45,6 +47,28 @@ def g1_members(doc_text: str) -> list:
     sect = doc_text.split("## G1", 1)[1].split("\n## ", 1)[0]
     row = next((line for line in sect.splitlines() if line.startswith("| members |")), "")
     return sorted(set(re.findall(r"`(tests/[^`]+\.py)`", row)))
+
+
+# pytest options that take their value as the NEXT argument; a value is never read as a path (research's L4)
+VALUED = {"-k", "-m", "-p", "-W", "-o", "-c", "-r", "-n", "--deselect", "--ignore", "--ignore-glob", "--maxfail", "--tb",
+          "--durations", "--durations-min", "--rootdir", "--confcutdir", "--override-ini", "--color", "--capture",
+          "--import-mode", "--log-level", "--log-file", "--log-file-level", "--log-format", "--log-date-format",
+          "--log-cli-level", "--junit-prefix", "--pythonwarnings", "--dist", "--maxprocesses", "--numprocesses", "--tx",
+          "--max-worker-restart"}
+
+
+def positionals(args: list) -> list:
+    """The arguments pytest would read as paths or node ids: every argument that is neither an option nor the value of an
+    option in VALUED. Two-phase mode refuses them, because each would be run by both phases."""
+    out, skip = [], False
+    for a in args:
+        if skip:
+            skip = False
+        elif a.startswith("-"):
+            skip = a in VALUED
+        else:
+            out.append(a)
+    return out
 
 
 def junit_key(nodeid: str) -> tuple:
@@ -58,12 +82,19 @@ def collected(collect_text: str) -> list:
     """The node ids of a `--collect-only -q` output: its first block, up to the first blank line, each an id."""
     lines = collect_text.splitlines()
     block = lines[:lines.index("")] if "" in lines else lines
+    if not block or block == [""]:
+        raise ValueError("the selection collected no tests, so nothing ran; an empty run is refused, never counted as a pass")
     bad = [line for line in block if "::" not in line]
-    if not block or bad:
+    if bad:
         raise ValueError(f"the collect output's first block is not a node-id list ({len(block)} lines, {len(bad)} without ::)")
-    tail = [line for line in lines if re.match(r"^\d+ tests? collected", line)]
-    if not tail or int(tail[-1].split()[0]) != len(block):
-        raise ValueError(f"the collect summary {tail[-1:]} does not count its {len(block)} listed ids")
+    # pytest prints "N tests collected" whole, and "N/M tests collected (K deselected)" under -k or -m (research's L1)
+    tail = [m for m in (re.match(r"^(\d+)(?:/(\d+))? tests? collected(?: \((\d+) deselected\))?", line) for line in lines) if m]
+    if not tail or int(tail[-1].group(1)) != len(block):
+        raise ValueError(f"the collect summary {[t.group(0) for t in tail[-1:]]} does not count its {len(block)} listed ids")
+    n, total, desel = (int(x) if x is not None else None for x in tail[-1].groups())
+    if (total is None) != (desel is None) or (total is not None and total - n != desel):
+        raise ValueError(f"the collect summary {tail[-1].group(0)!r} does not add up: {total} collected less {desel} "
+                         f"deselected is not the {n} listed")
     return block
 
 
@@ -97,14 +128,14 @@ def check(collect_text: str, p1: bytes, p2: bytes, lines=None, phase2=None, rcs=
     """(problems, totals). Every refusal is a problem string; totals are the suite's counts from the two junits. `phase2`, the
     phase-2 files, makes the split itself checked: phase 2 ran exactly those files' nodes and phase 1 none of them."""
     problems = []
+    (k1, n1), (k2, n2) = cases(p1), cases(p2)          # counted first: a refused run's line still says what ran (L2)
     try:
         ids = collected(collect_text)
     except ValueError as e:
-        return [str(e)], collections.Counter()
+        return [str(e)], n1 + n2
     want = collections.Counter(junit_key(n) for n in ids)
     if sum(want.values()) != len(set(want)):
         problems.append(f"{sum(want.values()) - len(set(want))} collected ids share a junit key: the comparison would merge them")
-    (k1, n1), (k2, n2) = cases(p1), cases(p2)
     ran = k1 + k2
     twice = sorted(k for k, n in ran.items() if n > 1)
     if twice:
@@ -164,11 +195,18 @@ def suite_line(t, wall=None) -> str:
 
 
 def _last_line(text: str) -> str:
-    lines = [line.strip(" =") for line in text.splitlines() if re.search(r"\b(passed|failed|no tests ran)\b", line)]
+    lines = [line.strip(" =") for line in text.splitlines() if re.search(r"\b(passed|failed|deselected|no tests ran)\b", line)]
     return lines[-1] if lines else "(no summary)"
 
 
 def main(argv) -> int:
+    if argv[:1] == ["positionals"]:
+        bad = positionals(argv[1:])
+        if bad:
+            print(f"two-phase mode takes no path or node id ({bad}): pass -k, or set VERACIUM_OFFLINE_MODE=single",
+                  file=sys.stderr)
+            return 2
+        return 0
     if len(argv) >= 2 and argv[0] == "files":
         tests = pathlib.Path(argv[1])
         mine = phase2_files(tests)

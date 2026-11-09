@@ -162,13 +162,7 @@ while [ $# -gt 0 ]; do
 done
 # A path or node id would be added to BOTH phases (pytest does not deduplicate it against `tests`), so two-phase mode refuses
 # one; selection options (-k, -m, -x, ...) and their values pass through, to the collection as well as to both phases.
-for a in "${ARGS[@]}"; do
-  case "$a" in
-    -*) ;;
-    *::*|tests|tests/*) echo "two-phase mode takes no path or node id ('$a'): use -k, or VERACIUM_OFFLINE_MODE=single" >&2; exit 2 ;;
-    *) [ -e "$a" ] && { echo "two-phase mode takes no path ('$a'): use -k, or VERACIUM_OFFLINE_MODE=single" >&2; exit 2; } ;;
-  esac
-done
+"$VENV/bin/python" "$HERE/two_phase.py" positionals "${ARGS[@]}" || exit 2
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/veracium-offline-XXXXXX")"
 [ -n "$JUNIT" ] || JUNIT="$WORK/merged.xml"
 CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
@@ -180,9 +174,9 @@ BT1=(); BT2=(); [ -n "$BASETEMP" ] && BT1=("--basetemp=$BASETEMP/phase1") && BT2
 
 T0="$("$VENV/bin/python" -c 'import time; print(time.time())')"
 echo "== collecting the suite =="
+CRC=0
 VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "$VENV/bin/python" -m pytest --collect-only -q tests -p no:randomly \
-    "${ARGS[@]}" > "$WORK/collect.txt" 2>&1
-CRC=$?
+    "${ARGS[@]}" > "$WORK/collect.txt" 2>&1 || CRC=$?        # read, not acted on by set -e (research's L3)
 [ "$CRC" = 0 ] || [ "$CRC" = 5 ] || { tail -20 "$WORK/collect.txt" >&2; echo "collection failed (exit $CRC)" >&2; exit 1; }
 echo "  $(tail -1 "$WORK/collect.txt")"
 set +e     # from here each phase's exit is read, not acted on: a red phase still gets the check and its report

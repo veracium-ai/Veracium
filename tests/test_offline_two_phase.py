@@ -169,3 +169,62 @@ def test_a_non_strict_xpass_reconciles_as_the_passed_testcase_junit_records():
     problems, _ = TP.check(_collect(), _junit(P1_IDS), _junit(P2_IDS), ["3 passed, 1 xpassed in 1s", "1 passed in 1s"], P2,
                            (0, 0))
     assert problems == [], problems
+
+
+def test_a_narrowed_collection_is_read_and_must_add_up():
+    """Research's L1: under -k or -m pytest prints "N/M tests collected (K deselected)"; N must be the listed ids and M - N must
+    be K. Before this, every narrowed run refused."""
+    ids = IDS[:2]
+    text = "\n".join(ids) + "\n\n2/9 tests collected (7 deselected) in 0.01s\n"
+    try:
+        got = TP.collected(text)
+    except ValueError as e:
+        raise AssertionError(f"a narrowed collection refused: {e}") from e
+    assert got == ids
+    for bad in ("3/9 tests collected (6 deselected)", "2/9 tests collected (6 deselected)", "2/9 tests collected"):
+        try:
+            TP.collected("\n".join(ids) + f"\n\n{bad} in 0.01s\n")
+        except ValueError:
+            continue
+        raise AssertionError(f"accepted {bad!r}")
+
+
+def test_a_refused_collection_still_counts_what_ran():
+    """Research's L2: the suite line is counted from the junits even when the collection refuses, so it never says "no tests
+    ran" over a run that ran."""
+    problems, t = TP.check("garbage\n", _junit(P1_IDS), _junit(P2_IDS), None, P2, (0, 0))
+    assert problems and t["passed"] == len(IDS)
+
+
+def test_a_marked_test_module_in_a_subdirectory_joins_phase_2(tmp_path):
+    """Research's L5: ci_shard applies the mark to every test module, subdirectories included; so does this rule."""
+    t = tmp_path / "tests"
+    (t / "sub").mkdir(parents=True)
+    (t / "sub" / "test_deep.py").write_text('import os\nassert os.environ.get("' + TP.SEAM_MARK + '\n')
+    (t / "sub" / "helper.py").write_text('import os\nassert os.environ.get("' + TP.SEAM_MARK + '\n')   # not a test module
+    (t / "sub" / "deep_test.py").write_text('import os\nassert os.environ.get("' + TP.SEAM_MARK + '\n')  # pytest's other form
+    assert TP.phase2_files(t) == ["tests/sub/deep_test.py", "tests/sub/test_deep.py"]
+
+
+def test_only_a_real_positional_is_refused_never_an_options_value():
+    """Research's L4: `-k specs` and `--deselect tests/x.py::t` carry values, not paths; a bare path or node id is refused."""
+    assert TP.positionals(["-k", "specs"]) == []
+    assert TP.positionals(["--deselect", "tests/x.py::t", "-m", "slow", "-x"]) == []
+    assert TP.positionals(["-k=specs", "--deselect=tests/x.py::t"]) == []
+    assert TP.positionals(["tests/x.py"]) == ["tests/x.py"]
+    assert TP.positionals(["-x", "tests/x.py::t"]) == ["tests/x.py::t"]
+
+
+def test_the_launcher_reads_a_failed_collection_instead_of_dying_on_it():
+    """Research's L3: under set -e a bare collection command that exits non-zero ends the script before its own branch runs."""
+    sh = (OFF / "run_offline.sh").read_text(encoding="utf-8")
+    assert '2>&1 || CRC=$?' in sh and 'CRC=0\n' in sh
+    assert '"$HERE/two_phase.py" positionals "${ARGS[@]}" || exit 2' in sh
+
+
+def test_an_empty_selection_is_refused_by_name_never_passed():
+    """A selection that collects nothing ran nothing: refused with that reason, and the suite line says "no tests ran"."""
+    problems, t = TP.check("\nno tests collected (8899 deselected) in 0.5s\n", _junit([]), _junit([]), None, P2, (5, 5))
+    assert problems and "collected no tests" in problems[0]
+    assert TP.suite_line(t) == "no tests ran"
+    assert TP._last_line("286 deselected in 0.40s") == "286 deselected in 0.40s"
