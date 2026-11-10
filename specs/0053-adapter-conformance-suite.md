@@ -5,7 +5,7 @@ Spec-Status: accepted
 | | |
 |---|---|
 | **Author / session** | research (veracium-research, candidate v0.1 at `27484429`). Adopted by dev 2026-11-09 in the suite's first commit, byte for byte but this cell |
-| **Version** | **ACCEPTED — 2026-11-09, on v0.4 as adopted at `4a13cade`: the owner's word, no external round (PROCESS §4a's second path).** The acceptance fold adds `## Review closure`, records the word in the External review and Decision cells, and closes §10 Q2 and Q4–Q7; the body above §10 is v0.4's, unchanged. **v0.4 — 2026-11-09: research's stage 2 on the fix commit, and the adoption commit's build.** Stage 2 on `12636180` (research `41b082cb`) is clean on the six stage-1 fixes and adds three items: the census counts only cases that do not refuse (N1); I12 is shown red by a planted write in a read (N2); the any-type raise path has a witness, a planted raise of another type (N3). Dev's adoption commit builds Q4 (the import scan, I10), Q5 (`maintain` under K5, with its own measured clock group) and Q6 (v0.3's three planted clock cases, with two canonicaliser mutants), and K8's identity-only comparison now covers every K8 case that writes, not one tool by name; v0.4 states them as dev described them. **They were uncommitted when this version was written;** research reads them on the adoption commit, and any difference becomes v0.5. Every passage v0.4 replaces is kept verbatim in the v0.3 appendix. Prior: v0.3, 2026-11-09 (research `00ef5950`): the owner's condition (draft v0.4 with harness's two clock additions). Before it, v0.2 (`d7fee05d`) and v0.1 (`27484429`, adopted in `764b256c`) |
+| **Version** | **v0.5 — 2026-11-10: the Pydantic AI row, as research measured it on dev `6bde677c` (research `260a19cd`, clean).** A change to the accepted text, ADOPTED on the owner's word, first-hand in the dev session, 2026-11-10: "Yes, adopt v0.5". It states four things and changes no check. K6's "never retried" binds a re-invocation, so a framework that offers the model another turn after a tool error retries nothing, and "never crashes the host's loop" holds within the framework's own retry budget. §8 states Pydantic AI's budget as measured, the provider renderings of the tool error, and parallel tool calls in one response. §4.5 and §6 add the Pydantic AI row and its two mutants. §10 Q8 is closed at `6bde677c`, and Q9 records its extension (research's PA-3 and PA-4). Every passage v0.5 replaces is kept verbatim in the v0.4 appendix. **Prior: ACCEPTED — 2026-11-09, on v0.4 as adopted at `4a13cade`: the owner's word, no external round (PROCESS §4a's second path)** (accepted text at `67424484`; its Version cell is quoted whole in the v0.4 appendix) |
 | **Status** | *narrative only — the canonical state is the `Spec-Status:` line at the top* |
 | **Internal reviewers** | research (author; stage 1 of the build, `51e036f5`) · dev (read drafts v0.2–v0.4; built v0.1 and read it against the build, D1–D9) · harness (read draft v0.2, three points; read draft v0.4's clock rule: "reads right", two additions, v0.3) |
 | **External review** | none: the owner ruled acceptance on his word (PROCESS §4a's second path), recorded in `## Review closure` |
@@ -153,7 +153,7 @@ hides something there, and no never-assert text reaches K8's read cases: a label
 | K3 | recall, describe_procedures | the context **text** equals `recall_impl`'s for every case G, Q, D, S, P, R, C and T, with and without `query` and `token_budget`; `describe_procedures`'s value equals `describe_procedures_impl`'s, with and without `query` (D6). K3 never compares a store digest (store digests are K5's alone). If the adapter offers a structured form, `grounded` and `unverified` arrive as separate fields and are never merged |
 | K4 | answer | the text equals `answer_impl`'s, for every case, abstention (A) and the procedural question (P) included. The adapter must not retry, fall back to its own model, reword, or answer from any other tool's output |
 | K5 | remember, maintain | for each `author` / `derived_from` / `date` input, the store after the adapter's call **matches the store after the reference call under the canonical comparison below**. Each call runs in its own fresh copy of the fixture store. That covers an attempted raise discarded, third-party quarantined at birth, and the deployment baseline. The returned dict has exactly `remember_impl`'s keys: no operator counter (`_OPERATOR_ONLY`, 0031 §4d). **`maintain`** writes (expiry flags, consolidated episodes), so it is a K5 case too: its store and its returned dict, with the scripted model answering its consolidation call and its clock leaves measured in a group of their own (D6). The scripted model answers consolidation with one record dated by the pool's earliest episode, and the fixture lowers the consolidation batch so one pool consolidates; twin reference runs give an identical result and one consolidation call each. Its clock group "maintain" is measured like the others. Cases `K5-maintain` and `K8-u2-maintain`; mutant "the maintain result trimmed" → K5. Built in the adoption commit (§10 Q5) |
-| K6 | refusals | each serialized refusal (`{"ok": false, "refusal": <name>, …}`: `attempted_elevation`, `SourceIdRequired`'s reason, the closed-set refusals of `record_procedure` and `describe_procedures`) reaches the model as that data, with the same name. It is never turned into a framework exception, an empty success or a retry. `basis_not_applicable` is not a case: the served schema has no `basis`, and the served validation ignores an argument the schema lacks, so only a host calling `remember_impl` directly reaches it (D3). **The raise path (B2, S1-4):** a library raise of any type (a closed-set value on `remember`, a below-floor `token_budget`, an argument the served argument model rejects) reaches the model as the framework's tool-error result, carrying the library's message verbatim. It never crashes the host's loop, never returns as a success and is never retried. The reference is the library's message, `str(exc)`; FastMCP's error result carries the same message under its own prefix (S1-6). **The witness (N3):** a raise of a type other than `ValueError`, planted in one `*_impl`, reaches the model as the tool error on every row, with its message |
+| K6 | refusals | each serialized refusal (`{"ok": false, "refusal": <name>, …}`: `attempted_elevation`, `SourceIdRequired`'s reason, the closed-set refusals of `record_procedure` and `describe_procedures`) reaches the model as that data, with the same name. It is never turned into a framework exception, an empty success or a retry. `basis_not_applicable` is not a case: the served schema has no `basis`, and the served validation ignores an argument the schema lacks, so only a host calling `remember_impl` directly reaches it (D3). **The raise path (B2, S1-4):** a library raise of any type (a closed-set value on `remember`, a below-floor `token_budget`, an argument the served argument model rejects) reaches the model as the framework's tool-error result, carrying the library's message verbatim. It never crashes the host's loop within the framework's own retry budget (§8), never returns as a success and is never retried: neither the adapter nor the framework calls the library again on its own. A framework that offers the model another turn after a tool error (Pydantic AI's `ModelRetry`) retries nothing; a second call is one the model makes (v0.5). The reference is the library's message, `str(exc)`; FastMCP's error result carries the same message under its own prefix (S1-6). **The witness (N3):** a raise of a type other than `ValueError`, planted in one `*_impl`, reaches the model as the tool error on every row, with its message |
 | K7 | the capability gate | under `none`, `record_procedure` refuses `attempted_elevation` and the store is unchanged (K5's canonical comparison); under `direct`, it writes as the reference does, for each `author`, `derived_from` and `note` input (S1-1) |
 | K8 | identity | the user and source are the host's, bound when the adapter is built. Two adapters over one store, for two users, never read or write each other's records; a model-passed `user_id` is ignored, as on MCP (D3). A host principal (0020) passed at construction reaches recall, answer and describe_procedures, and the default supplies none, as on MCP. **Every K8 case that writes (one with a clock group) compares identity only:** the other user's records are untouched, and the bound user gains the reference's row count. A write's content is K5's, so a K5 mutant does not also turn K8 red (D5). The rule is by whether the case writes, not by tool name: with `remember` alone named, the maintain mutant turned K8 red as well |
 
@@ -248,6 +248,11 @@ same values to its caller. The cases are shared as data (§4.5), not rewritten p
   The LangChain row records the OpenAI function form through `convert_to_openai_tool`: no cap in the conversion, every
   served description carried in full, measured offline. The provider's own documentation was not read, and the row
   says so (D9; §8).
+  The Pydantic AI row (v0.5, `6bde677c`) records `pydantic-ai-slim` 2.66.0; the tool definitions an `Agent` hands
+  any model (FunctionModel's `AgentInfo.function_tools`) as its provider path, with no cap in the conversion and
+  every served description carried in full, measured offline; and its decoder, which reads the tool-return part
+  the agent hands the model, where a `ModelRetry` is `{"error": <message>}`. It also records the retry budget as
+  the host's (§8). No provider model class was run, and the row says so.
 - **Framework order:** LangChain/LangGraph first (`langchain_core` converts a tool to the provider schema offline, so the
   serialization rule can be called there); Pydantic AI second (its offline test model exercises the tool path without a
   network); CrewAI after them. The Vercel AI SDK and Mastra are TypeScript, so they come with the TS client.
@@ -304,6 +309,8 @@ recorded as not applicable on that row, by name, never left out.
 | `record_procedure`'s `author` forwarded as `"user"` when the model passed `"third_party"` (S1-1) | K7 |
 | a serialized refusal returned as `{"ok": true}` (the core's row: remember's `source_id_required`) | K6 (D4) |
 | a serialized refusal raised through the framework (LangChain's row: `handle_tool_error=False`) | K6 (D4) |
+| a serialized refusal raised as the framework's tool error (Pydantic AI's row: `ModelRetry` on an `ok: false` result; v0.5) | K6, and K7, whose `none` cases are refusals |
+| the framework's tool-error channel dropped, so a library raise ends the run (Pydantic AI's row: no `ModelRetry`; v0.5) | K6 |
 | a library raise swallowed into a success | K6 (B2) |
 | the capability read from a tool argument | K1 and K7 |
 | a `user_id` parameter added | K1 (and K8 when it is honoured) |
@@ -375,8 +382,26 @@ difference; one provenance column added to the declared id list.
     K5 compares how an adapter carries `maintain`'s call and result, not the quality of a consolidation (D6).
   - **Whether a raise of a type other than `ValueError` is reachable through the served arguments.** The adapters
     carry one as a tool error, shown by a planted raise (S1-4, N3); no served input is known to produce one.
+  - **A framework's own retry budget (v0.5).** Pydantic AI ends a run with `UnexpectedModelBehavior` when one tool
+    raises more times than its `max_retries` without a success of its own in between. Calls to other tools in
+    between reset nothing, whether they raise or succeed, and at `max_retries=0` the first error ends the run
+    before the model sees it. The budget is the host's: `as_tools(max_retries=)` sets every tool's, and the
+    default is the agent's `retries`, 1. A serialized refusal is a success and spends none. The count does not
+    carry from one run to the next. Measured on 2.66.0 with the scripted model (research `260a19cd`,
+    reproducing dev's figures). So K6's "never crashes the host's loop" holds within that budget, and the
+    suite pins it by `test_the_pydantic_ai_retry_budget_is_the_hosts`.
+  - **How a provider renders the tool error.** The Pydantic AI row compares the form the offline model is handed,
+    `{"error": <message>}`. Read in 2.66.0's code but not run: Anthropic's model class sends the bare message
+    with `is_error`, Bedrock's sends `status='error'`, and Google's sends a dict holding the message. The
+    message is the library's, verbatim, in each (research `260a19cd`). These renderings are the framework's,
+    past the last point the adapter controls.
+  - **Several tool calls in one model response.** The suite's drivers make one call per run. Pydantic AI runs the
+    calls of one response concurrently, on threads. Six `remember` calls in one response, measured once, all
+    succeeded, with every table's row count equal to the same calls made one at a time. Row contents were not
+    compared (research `260a19cd`).
 - **Measurements cited:** the description lengths and code lines in §2c-ii, at `f8de3ddc`; S1-1's survivor, at
-  `77a1ef59` (research `51e036f5`, reproduced by dev); stage 2's N1 survivor, at `12636180` (research `41b082cb`).
+  `77a1ef59` (research `51e036f5`, reproduced by dev); stage 2's N1 survivor, at `12636180` (research `41b082cb`); the
+  Pydantic AI retry budget, the provider renderings and the parallel calls, at `6bde677c` (research `260a19cd`).
 
 ## 9. Brief for the external reviewer
 
@@ -401,7 +426,8 @@ difference; one provenance column added to the declared id list.
 | Q5 | `maintain`'s K5 case (D6), with its measured clock group | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
 | Q6 | v0.3's three planted clock cases, with the canonicaliser mutants "clocks ordered as text" and "clock NULLs skipped" | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
 | Q7 | stage 2's N1–N3: the census counting only unrefused cases, with its negative; a planted write in a read; a planted raise of another type on every row | **CLOSED at `4a13cade`** (research's read `12c465d3`: clean) | — | — |
-| Q8 | research's L1 on `4a13cade`: I10's static scan passes `import veracium as v; v.adapters`, `getattr` and a computed `import_module` string (none is in the tree). The complement: a subprocess cell importing the oracle modules alone and asserting no `veracium.adapters` module in `sys.modules` | dev, in the next 0053 commit (Pydantic AI's) | with Pydantic AI | `deferred` |
+| Q8 | research's L1 on `4a13cade`: I10's static scan passes `import veracium as v; v.adapters`, `getattr` and a computed `import_module` string (none is in the tree). The complement: a subprocess cell importing the oracle modules alone and asserting no `veracium.adapters` module in `sys.modules` | **CLOSED at `6bde677c`** (`checks.oracle_runtime_imports`, its anchor `veracium.mcp_server`, its planted computed-string negative; research's read `260a19cd`: clean) | — | — |
+| Q9 | research's PA-3 and PA-4 on `6bde677c`. Q8's wording reached only imports made when the oracle modules load: a computed import inside a function the oracle runs while computing references escapes both checks (planted, measured). The extension: the subprocess runs the oracle itself (`Oracle` on a temporary directory, all 57 references, 6.1 s) before reading `sys.modules`, with that planted import as its negative; and a cell shows the anchor red | dev, in the next 0053 commit (queued) | next 0053 commit | `deferred` |
 
 ## Review closure
 
@@ -636,3 +662,23 @@ Each passage below is v0.3's text exactly as v0.4 replaced it. Insertions replac
 **Q6** (v0.3):
 
 > | Q6 | the three planted cases v0.3 adds (§6: a NULL against a value, the same instants as different text, an unparseable clock). The built canonicaliser already behaves so at `77a1ef59` (research's probe); no case holds it | dev, in the adoption commit with Q4 and Q5 | before acceptance | `blocking` |
+
+## Appendix: prior text (v0.4 as accepted, dev `67424484`), as replaced
+
+Each passage below is the accepted text exactly as v0.5 replaced it. Insertions replaced nothing and are not listed.
+
+**Version** (v0.4 as accepted):
+
+> | **Version** | **ACCEPTED — 2026-11-09, on v0.4 as adopted at `4a13cade`: the owner's word, no external round (PROCESS §4a's second path).** The acceptance fold adds `## Review closure`, records the word in the External review and Decision cells, and closes §10 Q2 and Q4–Q7; the body above §10 is v0.4's, unchanged. **v0.4 — 2026-11-09: research's stage 2 on the fix commit, and the adoption commit's build.** Stage 2 on `12636180` (research `41b082cb`) is clean on the six stage-1 fixes and adds three items: the census counts only cases that do not refuse (N1); I12 is shown red by a planted write in a read (N2); the any-type raise path has a witness, a planted raise of another type (N3). Dev's adoption commit builds Q4 (the import scan, I10), Q5 (`maintain` under K5, with its own measured clock group) and Q6 (v0.3's three planted clock cases, with two canonicaliser mutants), and K8's identity-only comparison now covers every K8 case that writes, not one tool by name; v0.4 states them as dev described them. **They were uncommitted when this version was written;** research reads them on the adoption commit, and any difference becomes v0.5. Every passage v0.4 replaces is kept verbatim in the v0.3 appendix. Prior: v0.3, 2026-11-09 (research `00ef5950`): the owner's condition (draft v0.4 with harness's two clock additions). Before it, v0.2 (`d7fee05d`) and v0.1 (`27484429`, adopted in `764b256c`) |
+
+**K6** (v0.4 as accepted):
+
+> | K6 | refusals | each serialized refusal (`{"ok": false, "refusal": <name>, …}`: `attempted_elevation`, `SourceIdRequired`'s reason, the closed-set refusals of `record_procedure` and `describe_procedures`) reaches the model as that data, with the same name. It is never turned into a framework exception, an empty success or a retry. `basis_not_applicable` is not a case: the served schema has no `basis`, and the served validation ignores an argument the schema lacks, so only a host calling `remember_impl` directly reaches it (D3). **The raise path (B2, S1-4):** a library raise of any type (a closed-set value on `remember`, a below-floor `token_budget`, an argument the served argument model rejects) reaches the model as the framework's tool-error result, carrying the library's message verbatim. It never crashes the host's loop, never returns as a success and is never retried. The reference is the library's message, `str(exc)`; FastMCP's error result carries the same message under its own prefix (S1-6). **The witness (N3):** a raise of a type other than `ValueError`, planted in one `*_impl`, reaches the model as the tool error on every row, with its message |
+
+**8 measurements** (v0.4 as accepted):
+
+> `77a1ef59` (research `51e036f5`, reproduced by dev); stage 2's N1 survivor, at `12636180` (research `41b082cb`).
+
+**Q8** (v0.4 as accepted):
+
+> | Q8 | research's L1 on `4a13cade`: I10's static scan passes `import veracium as v; v.adapters`, `getattr` and a computed `import_module` string (none is in the tree). The complement: a subprocess cell importing the oracle modules alone and asserting no `veracium.adapters` module in `sys.modules` | dev, in the next 0053 commit (Pydantic AI's) | with Pydantic AI | `deferred` |
