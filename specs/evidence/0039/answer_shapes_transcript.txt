@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ e0f12138738abd52e9435e973caef3518d499492
+# generated 2026-09-12 against veracium @ cf4e565caf6e0ce75bbe613d949a1bc128abdc85
+# RE-PINNED 2026-11-10 (cf4e565c: research's PA-1..PA-4 changed src/veracium/adapters/pydantic_ai.py's module docstring only; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-10 (6bde677c: specs/0053 added src/veracium/adapters/pydantic_ai.py, one new module, no existing file changed; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-09 (12636180: research's stage-1 fixes changed src/veracium/adapters/_surface.py and langchain.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-09 (764b256c: specs/0053 added src/veracium/adapters/, three new modules, no existing file changed; both instruments re-run, and the body is byte-identical)
