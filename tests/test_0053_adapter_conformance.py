@@ -201,13 +201,17 @@ def _pai_run(fw, mem, calls, **kw):
 
 
 def test_the_pydantic_ai_retry_budget_is_the_hosts(oracle):
-    """Research's condition 2 on the Pydantic AI read, measured: one tool erroring twice in a row ends a run under the
-    framework's default budget (1), a success in between resets the count, and `as_tools(max_retries=N)` lets N
-    consecutive errors through and ends the run on the next. The budget is the host's; the limit is stated, not hidden."""
+    """Research's condition 2 on the Pydantic AI read, measured: one tool erroring twice ends a run under the
+    framework's default budget (1), only that tool's own success in between resets the count (research's b2 and c2 on
+    6bde677c, PA-1: another tool's call, raising or succeeding, resets nothing), `as_tools(max_retries=N)` lets N errors
+    through and ends the run on the next, and at max_retries=0 the first error ends the run before the model sees it.
+    The budget is the host's; the limit is stated, not hidden."""
     fw = _row("pydantic_ai")
     from pydantic_ai.exceptions import UnexpectedModelBehavior
     below_floor = ("recall", {"query": "what tools does the user use?", "token_budget": 100})
     ok = ("recall", {"query": "what is the user's diet?"})
+    other_raises = ("remember", {"text": "x", "date": "not-a-date"})
+    other_ok = ("remember", {"text": "USER: note on my work. #fx-W3", "date": "2026-07-03"})
     mem = F.open_memory(oracle.fresh("pai-retry"))
     try:
         seen, exc = _pai_run(fw, mem, [below_floor, below_floor])
@@ -218,6 +222,14 @@ def test_the_pydantic_ai_retry_budget_is_the_hosts(oracle):
         assert exc is None and [o for _n, o in seen] == ["retried"] * 3, (seen, exc)
         seen, exc = _pai_run(fw, mem, [below_floor] * 4, max_retries=3)
         assert isinstance(exc, UnexpectedModelBehavior), (seen, exc)
+        seen, exc = _pai_run(fw, mem, [below_floor, other_raises, below_floor])          # b2
+        assert isinstance(exc, UnexpectedModelBehavior) and seen == [("recall", "retried"), ("remember", "retried")], \
+            (seen, exc)
+        seen, exc = _pai_run(fw, mem, [below_floor, other_ok, below_floor])              # c2
+        assert isinstance(exc, UnexpectedModelBehavior) and seen == [("recall", "retried"), ("remember", "success")], \
+            (seen, exc)
+        seen, exc = _pai_run(fw, mem, [below_floor], max_retries=0)
+        assert isinstance(exc, UnexpectedModelBehavior) and seen == [], (seen, exc)
         with pytest.raises(ValueError):
             fw.as_tools(mem, user_id="u1", max_retries=-1)
     finally:
@@ -239,8 +251,9 @@ def test_a_pydantic_ai_refusal_is_data_and_spends_no_budget(oracle):
 
 def test_the_oracle_loads_no_adapter_module_at_run_time():
     """0053 §10 Q8 (research's L1): the static scan's complement. The oracle modules imported alone, in a fresh
-    interpreter, leave no veracium.adapters module in sys.modules, whatever form an import took; and they did load the
-    library (veracium.mcp_server), so a run that imported nothing cannot read as clean."""
+    interpreter, and then the oracle itself run (every reference computed; research's PA-3), leave no veracium.adapters
+    module in sys.modules, whatever form an import took; and they did load the library (veracium.mcp_server) and compute
+    a reference per case, so a run that imported or computed nothing cannot read as clean."""
     assert C.oracle_runtime_imports() == []
 
 
@@ -251,6 +264,38 @@ def test_the_run_time_import_check_names_an_indirect_import(tmp_path):
     planted.write_text('import importlib\nimportlib.import_module("veracium" + ".adapters._surface")\n')
     found = C.oracle_runtime_imports(extra=[str(planted)])
     assert found and all("veracium.adapters" in x for x in found), found
+
+
+_LAZY = ("import importlib\nimport adapter_conformance.checks as C\n_run = C.Oracle.run\n\n\n"
+         "def run(self, case, tag='ref'):\n    importlib.import_module('veracium' + '.adapters._surface')\n"
+         "    return _run(self, case, tag)\n\n\nC.Oracle.run = run\n")
+
+
+def test_the_run_time_check_names_an_import_made_while_references_are_computed(tmp_path):
+    """Research's PA-3 on 6bde677c: a planted oracle module whose adapter import is computed inside a function that runs
+    only while references are computed. The import-only run (the check before PA-3, kept as the control) misses it; the
+    run that builds the oracle names it."""
+    planted = tmp_path / "planted_oracle_lazy.py"
+    planted.write_text(_LAZY)
+    assert C.oracle_runtime_imports(extra=[str(planted)], run_oracle=False) == []
+    found = C.oracle_runtime_imports(extra=[str(planted)])
+    assert found and all("veracium.adapters" in x for x in found), found
+
+
+def test_the_run_time_checks_import_anchor_fires(monkeypatch):
+    """Research's PA-4: the import anchor shown red. With the oracle narrowed to canon.py, which loads no library
+    module, the run imported nothing it could have refused and says so."""
+    monkeypatch.setattr(C, "ORACLE_MODULES", ("canon.py",))
+    found = C.oracle_runtime_imports()
+    assert any(x.startswith("ANCHOR: the oracle modules did not load veracium.mcp_server") for x in found), found
+
+
+def test_the_run_time_checks_run_anchor_fires(tmp_path):
+    """The run anchor shown red: a planted module empties the case list, so the oracle run computes no reference."""
+    planted = tmp_path / "planted_oracle_no_cases.py"
+    planted.write_text('import adapter_conformance.checks as C\nC.load_cases = lambda: {"cases": []}\n')
+    found = C.oracle_runtime_imports(extra=[str(planted)])
+    assert any(x.startswith("ANCHOR: the oracle run computed 0 reference(s)") for x in found), found
 
 
 def test_the_canonicaliser_judges_its_planted_pairs(tmp_path):

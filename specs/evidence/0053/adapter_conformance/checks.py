@@ -263,11 +263,16 @@ def oracle_import_problems(paths=None) -> list[str]:
     return bad
 
 
-def oracle_runtime_imports(extra=()) -> list[str]:
+def oracle_runtime_imports(extra=(), run_oracle: bool = True) -> list[str]:
     """0053 §10 Q8 (research's L1), I10 at run time: import the oracle modules (and any `extra` file) alone, in a fresh
     interpreter, and name every veracium.adapters module left in sys.modules. The static scan reads import forms; this
-    reads what was loaded, so a computed string, an alias read or a transitive import is caught too. Its anchor: the
-    run must have loaded veracium.mcp_server, or it imported nothing it could have refused."""
+    reads what was loaded, so a computed string, an alias read or a transitive import is caught too.
+
+    Research's PA-3 on 6bde677c: an import inside a function that runs only while references are computed escapes an
+    import-only run. So the run then BUILDS THE ORACLE (every case's reference computed, about 6 s) and reads
+    sys.modules again; `run_oracle=False` is the import-only form, kept as the control that misses it. Two anchors, or
+    the run imported or computed nothing it could have refused: the import phase loaded veracium.mcp_server, and the
+    oracle run computed one reference per case, at least one."""
     import subprocess
     import sys
     code = ("import importlib.util, sys\n"
@@ -276,18 +281,34 @@ def oracle_runtime_imports(extra=()) -> list[str]:
             "for i, f in enumerate(sys.argv[1:]):\n"
             "    spec = importlib.util.spec_from_file_location(f'planted_{i}', f)\n"
             "    spec.loader.exec_module(importlib.util.module_from_spec(spec))\n"
-            "print('LOADED', ' '.join(sorted(m for m in sys.modules if m.split('.')[0] == 'veracium')))\n")
+            "print('LOADED', ' '.join(sorted(m for m in sys.modules if m.split('.')[0] == 'veracium')))\n"
+            f"if {bool(run_oracle)!r}:\n"
+            "    import tempfile\n"
+            "    import adapter_conformance.checks as _C\n"
+            "    with tempfile.TemporaryDirectory() as d:\n"
+            "        o = _C.Oracle(d)\n"
+            "        print('REFS', len(o.refs), len(o.doc['cases']))\n"
+            "    print('RAN', ' '.join(sorted(m for m in sys.modules if m.split('.')[0] == 'veracium')))\n")
     r = subprocess.run([sys.executable, "-c", code, *extra], capture_output=True, text=True, timeout=300)
     if r.returncode != 0:
         return [f"the import run failed (exit {r.returncode}): {r.stderr.strip()[-300:]}"]
-    line = next((ln for ln in r.stdout.splitlines() if ln.startswith("LOADED")), None)
-    if line is None:
+    lines = {ln.split(" ", 1)[0]: ln.split()[1:] for ln in r.stdout.splitlines() if ln.split(" ", 1)[0] in
+             ("LOADED", "REFS", "RAN")}
+    if "LOADED" not in lines:
         return ["the import run printed no LOADED line"]
-    loaded = line.split()[1:]
-    bad = [f"{m} is loaded by the oracle modules" for m in loaded if _names_adapters(m)]
+    if run_oracle and ("REFS" not in lines or "RAN" not in lines):
+        return ["the oracle run printed no REFS or RAN line"]
+    loaded = lines["LOADED"]
+    every = sorted(set(loaded) | set(lines.get("RAN", [])))
+    bad = [f"{m} is loaded by the oracle modules" for m in every if _names_adapters(m)]
     if "veracium.mcp_server" not in loaded:
         bad.append("ANCHOR: the oracle modules did not load veracium.mcp_server, so the run imported nothing it could "
                    "have refused")
+    if run_oracle:
+        nrefs, ncases = (int(x) for x in lines["REFS"])
+        if nrefs == 0 or nrefs != ncases:
+            bad.append(f"ANCHOR: the oracle run computed {nrefs} reference(s) for {ncases} case(s), so it ran nothing "
+                       "it could have refused")
     return bad
 
 

@@ -16,9 +16,11 @@
   - **The same six tools, the same text:** each is built with `Tool.from_schema` from the served schema and
     description, and the same host bindings as the LangChain adapter.
   - **Errors:** any error raised while answering reaches the model through Pydantic AI's tool-error channel
-    (`ModelRetry`), carrying its message verbatim; a refusal comes back as data. The retry budget is the host's: under
-    the framework's default, one tool erroring twice in a row ends the run (`UnexpectedModelBehavior`), and
-    `as_tools(max_retries=N)` sets every tool's budget. Measured on pydantic-ai-slim 2.66.0.
+    (`ModelRetry`), carrying its message verbatim, and the model reads it through its provider's tool-error channel; a
+    refusal comes back as data. The retry budget is the host's: under the framework's default, a tool's second error
+    without a success of its own in between ends the run (`UnexpectedModelBehavior`), a call to another tool resets
+    nothing, and `as_tools(max_retries=N)` sets every tool's budget (at 0, the first error ends the run before the model
+    sees it). Measured on pydantic-ai-slim 2.66.0.
   - **Conformance:** the Pydantic AI row passes K1–K8, its decoder is lossless, and its mutant row is the shared 17
     plus 5 of its own, measured through a real `Agent` with the framework's offline `FunctionModel`. CI pins
     `pydantic-ai-slim` at 2.66.0.
@@ -30,7 +32,8 @@
   - **The fixture and the checks:** one fixture store holds every trust class, under anchors that refuse a vacuous run,
     and 57 cases cover checks K1–K8, `maintain` included. A parameter census requires every served parameter to take a
     non-default value, which the reference does not refuse, in some compared case. An import scan shows that the oracle
-    reuses no adapter code.
+    reuses no adapter code, and a run-time check imports the oracle in a fresh interpreter, runs it, and names any
+    adapter module it loaded.
   - **Store comparison:** a canonical form, with the generated-id and clock lists measured from twin reference runs.
     Clocks are compared as aware instants and tolerate ties. Seven planted pairs check the comparison itself, and five
     mutants of it are each caught.

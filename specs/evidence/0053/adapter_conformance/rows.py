@@ -32,8 +32,10 @@ ROWS = {
                    "message); otherwise the tool's string, or the dict the framework serialised to JSON text. "
                    "Round-tripped over every reference value through the framework's own agent path (checks.check_decoder)",
         "retry_budget": "the host's: Pydantic AI ends a run with UnexpectedModelBehavior when one tool errors more "
-                        "times in a row than its max_retries (default: the agent's retries, 1); a success resets the "
-                        "count. as_tools(max_retries=) sets every tool's budget. Measured on 2.66.0, held by "
+                        "times than its max_retries (default: the agent's retries, 1) without a success of its own in "
+                        "between; a call to another tool, raising or not, resets nothing, and at max_retries=0 the "
+                        "first error ends the run before the model sees it (research's PA-1). as_tools(max_retries=) "
+                        "sets every tool's budget. Measured on 2.66.0, held by "
                         "test_the_pydantic_ai_retry_budget_is_the_hosts",
         "providers": [
             {"path": "the ToolDefinitions an Agent hands any model (FunctionModel's AgentInfo.function_tools)",

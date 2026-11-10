@@ -11,16 +11,16 @@ path that caps one below its length is a different surface, and the conformance 
 The user, the capability (0031 §4a), the source (0006 I1) and the principal (0020) are the HOST's, bound here and never
 a tool argument. A refusal comes back as the library's data (`{"ok": false, "refusal": …}`). Any error raised while
 answering comes back through Pydantic AI's tool-error channel, `ModelRetry`, carrying its message verbatim: the model
-reads `{"error": <message>}`, as FastMCP reports a tool error on MCP, and the error does not crash the agent loop
-(within the retry budget below). The adapter
+reads it through its provider's tool-error channel (`{"error": <message>}` where the provider has none, as FastMCP
+reports a tool error on MCP), and the error does not crash the agent loop (within the retry budget below). The adapter
 retries nothing, rewords nothing and answers nothing with another model; the framework then offers the model another
 turn, which is Pydantic AI's behaviour for every tool error, outside this adapter.
 
 The retry budget is the HOST's (measured on pydantic-ai-slim 2.66.0): Pydantic AI ends a run with
-`UnexpectedModelBehavior` when one tool errors more times in a row than its `max_retries` (the agent's `retries`,
-default 1, so a second consecutive error on one tool ends the run); a success in between resets the count. Pass
-`max_retries=` here to set every tool's budget, or set the agent's `retries`. A serialized refusal is a plain return
-value, never a retry, and never counts against the budget.
+`UnexpectedModelBehavior` when one tool errors more times than its `max_retries` without a success of its own in
+between (the agent's `retries`, default 1); a call to another tool, raising or not, resets nothing, and at
+`max_retries=0` the first error ends the run before the model sees it. Pass `max_retries=` here to set every tool's
+budget, or set the agent's `retries`. A serialized refusal is a plain return value, never a retry, and spends no budget.
 """
 from __future__ import annotations
 
