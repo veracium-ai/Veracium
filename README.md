@@ -33,7 +33,9 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
 - **Supersession, never erasure.** Single-valued facts (employer, location,
   deadline) keep one current value with the prior value retained as history —
   "what did X used to be?" stays answerable. Facts that can hold several values
-  at once (preferences, measurements, health states) accumulate instead. *(The category commercial memory
+  at once (preferences, measurements, health states) accumulate instead. A user can hold several deadlines:
+  each dated obligation is stored under its own name with an ISO date, and a rescheduled one shows once, marked
+  contested, until a correction (`correct()`) settles which date holds. *(The category commercial memory
   systems handle worst; Veracium's strongest.)*
 - **Representation is a security control.** Third-party claims (received email,
   external docs) are quarantined *structurally* — stored as `third_party_claim`
@@ -78,6 +80,20 @@ pip install -e ".[anthropic,dev]"
 
 Links: [docs](https://veracium-ai.github.io/Veracium/) · [veracium.ai](https://veracium.ai) · [PyPI](https://pypi.org/project/veracium/)
 
+### Upgrading an existing store
+
+`veracium migrate` upgrades a store written by any earlier release, one audited schema version at a time
+(since 0.31.0). Take a backup first and stop every other process using the store:
+
+```bash
+veracium migrate --db path/to/veracium.db --i-have-quiesced --backup <your-backup-ref>
+```
+
+Each step is its own audited operation, so a walk across several versions does several transactions;
+`migrate_store(path)` in the library stays the one-transaction route. If a walk stops part-way, its last lines say
+why and whether running `migrate` again is safe. A part-walked store is usable only by migrating it with 0.31.0 or a
+newer release, or by restoring the backup you took before the walk. `veracium doctor` names the route for your store.
+
 ## Use (library)
 
 ```python
@@ -112,11 +128,30 @@ drop-in provider (`from claude_cli_provider import ClaudeCLIComplete`), and
 at a local server with `OpenAIComplete(base_url=...)` and override `models` with
 whatever model name your server serves.
 
+### Revoking a source (library, `SqliteStore`)
+
+A host can revoke a source it no longer trusts, for one user, with one call (since 0.30.0). Every record that came
+from it is retired, or recomputed from the evidence that survives it; nothing is deleted, and `unrevoke_source` reverses
+it by the same computation:
+
+```python
+report = mem.revoke_source("alice", None, "billing-mailbox", "erroneous_capture", dry_run=True)
+# dry_run=True returns the identical completeness statement and writes nothing; drop it to apply.
+mem.revoke_source("alice", None, "billing-mailbox", "erroneous_capture")
+mem.source_revocations("alice")   # the standing revocations and their append-only history
+```
+
+`origin=None` means this store's own records; pass a foreign origin as it is stored on an imported record. `reason` is
+one of `subject_request`, `legal_obligation`, `erroneous_capture` or `policy`. These are library methods only: there is
+no CLI verb and no MCP tool, because a revocation is a trust decision and a surface a model can reach is one it can be
+talked into. They need `SqliteStore`; any other store raises `NotImplementedError`.
+
 ## Use (MCP)
 
-`veracium-mcp` exposes `remember` / `recall` / `answer` / `maintain` tools to any
-MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
-[docs/mcp.md](docs/mcp.md) for the config JSON and tool reference.
+`veracium-mcp` exposes `remember` / `recall` / `answer` / `maintain`, plus
+`record_procedure` and `describe_procedures`, to any MCP-compatible agent (Claude
+Desktop/Code, others) with no host-side Python. See [docs/mcp.md](docs/mcp.md)
+for the config JSON and tool reference.
 
 ## Documentation
 
@@ -144,9 +179,21 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 - **[docs/diagnostics.md](docs/diagnostics.md)** — opt-in error reporting: local-first error log, consented + redacted send.
 - **[ROADMAP.md](ROADMAP.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 
+## Recent changes
+
+- **0.31.0** — `veracium migrate` upgrades a store written by any earlier release, one audited schema version at a
+  time ([Upgrading an existing store](#upgrading-an-existing-store)).
+- **0.30.0** — a host on `SqliteStore` can revoke a source it no longer trusts
+  ([Revoking a source](#revoking-a-source-library-sqlitestore)), and maintenance can no longer raise a fact's
+  confidence. A host with its own `Store` must add `expiry_transition`, or `maintain()` raises `NotImplementedError`.
+- **0.29.0** — a user can hold more than one deadline. BREAKING for code that filters commitments by subject `user`
+  or parses the briefing's DATED COMMITMENTS text.
+
+The full record, with every upgrade note, is the [CHANGELOG](CHANGELOG.md).
+
 ## Status
 
-The validated layered design is implemented, tested (44 offline tests, plus
+The validated layered design is implemented, tested (about 9,000 offline tests, plus
 opt-in live tiers: the acceptance eval and a real-corpus robustness harness),
 and passes its own research-claim bar (5/5, 0 injection asserts). Roadmap
 v0.1–v0.7 complete, plus opt-in telemetry, a self-check, consented error
