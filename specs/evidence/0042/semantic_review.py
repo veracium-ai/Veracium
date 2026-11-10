@@ -71,6 +71,7 @@ DEFAULT = {
     # malformed input (a user id, a tool name); langchain.py's raises are an optional extra's import and the re-raise of
     # a library error as the framework's tool error, and its one list return builds the tools, filtering nothing
     "adapters/_surface.py": "argument-check", "adapters/langchain.py": "control-flow",
+    "adapters/pydantic_ai.py": "control-flow",   # the same two raises (the extra's import, the tool-error re-raise) and list return
     "store/near_misses.py": "internal-invariant",  # 0007 §4g.6 4b (I3): head_variant refuses a near-miss whose anchor moved; runtime_status() reads that escape as `refused`, so it is not an enforcement point of its own
 }
 OVERRIDE = {  # (module, line) -> reason class, where the module default is not the truth for that line
@@ -140,6 +141,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/schema_version.py", 2000): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:5
     ("adapters/_surface.py", 41): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
     ("adapters/_surface.py", 45): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
+    ("adapters/pydantic_ai.py", 62): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",

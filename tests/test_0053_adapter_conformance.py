@@ -28,24 +28,39 @@ from adapter_conformance import rows as R  # noqa: E402
 from veracium.adapters import _surface  # noqa: E402
 
 
-def _langchain():
-    if "langchain" in os.environ.get("VERACIUM_ADAPTER_ROWS", "").split(","):
-        import langchain_core  # noqa: F401  (the CI job that names the row: a missing framework FAILS, never skips)
-    pytest.importorskip("langchain_core", reason="specs/0053: the LangChain row needs the langchain extra")
+FRAMEWORK_ROWS = ("langchain", "pydantic_ai")
+_DRIVERS = {"langchain": D.LangChainDriver, "pydantic_ai": D.PydanticAIDriver}
+os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")       # Pydantic AI's observability banner, on stderr
+
+
+def _row(row):
+    """A framework row's adapter module. It skips by name without its extra, and FAILS instead in the CI job whose
+    VERACIUM_ADAPTER_ROWS names the row, so a skip cannot read as a pass there."""
+    import importlib
     import importlib.metadata
-    name, pinned = R.ROWS["langchain"]["framework"]
+    required = row in os.environ.get("VERACIUM_ADAPTER_ROWS", "").split(",")
+    if row == "langchain":
+        if required:
+            import langchain_core  # noqa: F401
+        pytest.importorskip("langchain_core", reason="specs/0053: the LangChain row needs the langchain extra")
+    elif row == "pydantic_ai":
+        if required:
+            import pydantic_ai  # noqa: F401
+        pytest.importorskip("pydantic_ai", reason="specs/0053: the Pydantic AI row needs the pydantic_ai extra")
+    else:
+        raise AssertionError(f"no framework row {row!r}")
+    name, pinned = R.ROWS[row]["framework"]
     got = importlib.metadata.version(name)
-    assert got == pinned, (f"the LangChain row is pinned to {name} {pinned} and {got} is installed: a framework "
-                           f"update can change serialisation, so the row moves with a re-run, never silently")
-    from veracium.adapters import langchain
-    return langchain
+    assert got == pinned, (f"the {row} row is pinned to {name} {pinned} and {got} is installed: a framework update can "
+                           f"change serialisation, so the row moves with a re-run, never silently")
+    return importlib.import_module(f"veracium.adapters.{row}")
 
 
-def _factory(adapter, surface=None, lc=None):
+def _factory(adapter, surface=None, fw=None):
     if adapter == "core":
         s = surface or _surface
         return lambda mem, b: D.CoreDriver(s, mem, b)
-    return lambda mem, b: D.LangChainDriver(lc, mem, b)
+    return lambda mem, b: _DRIVERS[adapter](fw, mem, b)
 
 
 @pytest.fixture(scope="module")
@@ -107,18 +122,18 @@ def test_a_read_that_writes_is_named_by_the_anchors(tmp_path, monkeypatch):
     assert sorted(x.split("VACUOUS: ")[1].split(":")[0] for x in found) == sorted(recalls), found
 
 
-@pytest.mark.parametrize("adapter", ["core", "langchain"])
+@pytest.mark.parametrize("adapter", ["core", *FRAMEWORK_ROWS])
 def test_a_raise_of_another_type_reaches_the_model_as_a_tool_error(oracle, monkeypatch, adapter):
     """Research's stage 2, N3, the witness for S1-4: a library raise that is not a ValueError reaches the model as the
     tool-error result with its message, on each row, as FastMCP reports it; it never escapes into the agent loop."""
-    lc = _langchain() if adapter == "langchain" else None
+    fw = _row(adapter) if adapter != "core" else None
 
     def planted(*a, **kw):
         raise RuntimeError("a planted RuntimeError from the library")
     monkeypatch.setattr(C.M, "answer_impl", planted)
     mem = F.open_memory(oracle.fresh(f"raise-{adapter}"))
     try:
-        drv = _factory(adapter, lc=lc)(mem, C.binding(oracle.doc, "none"))
+        drv = _factory(adapter, fw=fw)(mem, C.binding(oracle.doc, "none"))
         got = drv.decode(drv.call("answer", {"query": "what is the user's diet?"}))
     finally:
         mem.close()
@@ -164,6 +179,80 @@ def test_the_import_scan_refuses_each_form(tmp_path, src, want):
     assert any(want in x for x in found), found
 
 
+def _pai_run(fw, mem, calls, **kw):
+    """Drive a Pydantic AI agent through `calls` (tool name, args) with the offline FunctionModel; return the tool
+    outcomes the agent handed the model, and the exception that ended the run, if one did."""
+    from pydantic_ai import Agent
+    from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
+    from pydantic_ai.models.function import FunctionModel
+    calls, seen = list(calls), []
+
+    def script(messages, info):
+        seen.extend((p.tool_name, p.outcome) for p in messages[-1].parts if isinstance(p, ToolReturnPart))
+        if calls:
+            name, args = calls.pop(0)
+            return ModelResponse(parts=[ToolCallPart(name, args, tool_call_id=f"c{len(calls)}")])
+        return ModelResponse(parts=[TextPart("done")])
+    try:
+        Agent(FunctionModel(script), tools=fw.as_tools(mem, user_id="u1", source_id=F.CHAT, **kw)).run_sync("go")
+    except Exception as exc:
+        return seen, exc
+    return seen, None
+
+
+def test_the_pydantic_ai_retry_budget_is_the_hosts(oracle):
+    """Research's condition 2 on the Pydantic AI read, measured: one tool erroring twice in a row ends a run under the
+    framework's default budget (1), a success in between resets the count, and `as_tools(max_retries=N)` lets N
+    consecutive errors through and ends the run on the next. The budget is the host's; the limit is stated, not hidden."""
+    fw = _row("pydantic_ai")
+    from pydantic_ai.exceptions import UnexpectedModelBehavior
+    below_floor = ("recall", {"query": "what tools does the user use?", "token_budget": 100})
+    ok = ("recall", {"query": "what is the user's diet?"})
+    mem = F.open_memory(oracle.fresh("pai-retry"))
+    try:
+        seen, exc = _pai_run(fw, mem, [below_floor, below_floor])
+        assert isinstance(exc, UnexpectedModelBehavior) and seen == [("recall", "retried")], (seen, exc)
+        seen, exc = _pai_run(fw, mem, [below_floor, ok, below_floor])
+        assert exc is None and [o for _n, o in seen] == ["retried", "success", "retried"], (seen, exc)
+        seen, exc = _pai_run(fw, mem, [below_floor] * 3, max_retries=3)
+        assert exc is None and [o for _n, o in seen] == ["retried"] * 3, (seen, exc)
+        seen, exc = _pai_run(fw, mem, [below_floor] * 4, max_retries=3)
+        assert isinstance(exc, UnexpectedModelBehavior), (seen, exc)
+        with pytest.raises(ValueError):
+            fw.as_tools(mem, user_id="u1", max_retries=-1)
+    finally:
+        mem.close()
+
+
+def test_a_pydantic_ai_refusal_is_data_and_spends_no_budget(oracle):
+    """Research's condition 1: a serialized refusal comes back as a plain return value (outcome "success"), so the same
+    refusal twice in a row neither retries nor ends the run."""
+    fw = _row("pydantic_ai")
+    refused = ("record_procedure", {"summary": "Inbox zero every Friday", "basis": "stated"})   # `none`: refused
+    mem = F.open_memory(oracle.fresh("pai-refusal"))
+    try:
+        seen, exc = _pai_run(fw, mem, [refused, refused])
+    finally:
+        mem.close()
+    assert exc is None and seen == [("record_procedure", "success")] * 2, (seen, exc)
+
+
+def test_the_oracle_loads_no_adapter_module_at_run_time():
+    """0053 §10 Q8 (research's L1): the static scan's complement. The oracle modules imported alone, in a fresh
+    interpreter, leave no veracium.adapters module in sys.modules, whatever form an import took; and they did load the
+    library (veracium.mcp_server), so a run that imported nothing cannot read as clean."""
+    assert C.oracle_runtime_imports() == []
+
+
+def test_the_run_time_import_check_names_an_indirect_import(tmp_path):
+    """Its negative: a planted oracle module that reaches the adapters by a COMPUTED string, a form the static scan does
+    not read, is named."""
+    planted = tmp_path / "planted_oracle_indirect.py"
+    planted.write_text('import importlib\nimportlib.import_module("veracium" + ".adapters._surface")\n')
+    found = C.oracle_runtime_imports(extra=[str(planted)])
+    assert found and all("veracium.adapters" in x for x in found), found
+
+
 def test_the_canonicaliser_judges_its_planted_pairs(tmp_path):
     assert PL.misjudged(K, str(tmp_path)) == []
 
@@ -190,14 +279,16 @@ def test_the_core_conforms(oracle):
     assert C.run_families(oracle, _factory("core"), "core") == {f: [] for f in C.FAMILIES}
 
 
-def test_the_langchain_adapter_conforms(oracle):
-    lc = _langchain()
-    assert C.run_families(oracle, _factory("langchain", lc=lc), "langchain") == {f: [] for f in C.FAMILIES}
+@pytest.mark.parametrize("row", FRAMEWORK_ROWS)
+def test_each_framework_row_conforms(oracle, row):
+    fw = _row(row)
+    assert C.run_families(oracle, _factory(row, fw=fw), row) == {f: [] for f in C.FAMILIES}
 
 
-def test_the_langchain_decoder_is_lossless(oracle):
-    _langchain()
-    assert C.check_decoder(oracle, D.LangChainDriver) == []
+@pytest.mark.parametrize("row", FRAMEWORK_ROWS)
+def test_each_framework_rows_decoder_is_lossless(oracle, row):
+    _row(row)
+    assert C.check_decoder(oracle, _DRIVERS[row]) == []
 
 
 _ROW = [(m, a) for m in MU.MUTANTS for a in m.adapters]
@@ -206,10 +297,10 @@ _ROW = [(m, a) for m in MU.MUTANTS for a in m.adapters]
 @pytest.mark.parametrize("mutant,adapter", _ROW, ids=[f"{m.id}-{a}" for m, a in _ROW])
 def test_the_mutant_row_kills_exactly_its_families(oracle, tmp_path, mutant, adapter):
     """mutants.py applied to the adapter under test; checks.py's families must go red EXACTLY as the row names."""
-    if adapter == "langchain":
-        _langchain()
-    surface, lc = MU.materialise(mutant, str(tmp_path), with_langchain=adapter == "langchain")
-    res = C.run_families(oracle, _factory(adapter, surface, lc), f"{mutant.id}-{adapter}")
+    if adapter != "core":
+        _row(adapter)
+    surface, fw = MU.materialise(mutant, str(tmp_path), framework=None if adapter == "core" else adapter)
+    res = C.run_families(oracle, _factory(adapter, surface, fw), f"{mutant.id}-{adapter}")
     red = MU.red_families(res)
     assert red == mutant.expect, (f"{mutant.id} on {adapter}: red {sorted(red)}, the row names {sorted(mutant.expect)}"
                                   f"; failures: { {f: v[:2] for f, v in res.items() if v} }")
@@ -232,7 +323,7 @@ def test_the_surface_refuses_a_registration_it_cannot_answer(tmp_path, oracle):
     never dropped or answered by nothing."""
     dst = str(tmp_path / "pkg")
     MU.apply_edits(MU.ADAPTERS, dst, [(MU.S, '"describe_procedures")\n', '"describe_procedures", "forget")\n')])
-    surface, _ = MU.load_package(dst, with_langchain=False)
+    surface, _ = MU.load_package(dst)
     mem = F.open_memory(oracle.fresh("registration"))
     try:
         with pytest.raises(RuntimeError, match="is refused"):
@@ -263,7 +354,7 @@ def test_the_scripted_model_refuses_an_ambiguous_or_unknown_marker():
 def test_each_adapter_row_runs_its_mutants():
     """§5: every adapter has a row, every mutant names only adapters with rows, and every row runs at least one mutant
     per family K1-K8 (a family with no mutant on an adapter would be a check never shown red there)."""
-    assert set(R.ROWS) == {"core", "langchain"}
+    assert set(R.ROWS) == {"core", *FRAMEWORK_ROWS}
     for adapter in R.ROWS:
         names = set()
         for m in MU.MUTANTS:

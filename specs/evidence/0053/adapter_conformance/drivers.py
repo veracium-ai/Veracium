@@ -101,3 +101,100 @@ class LangChainDriver:
         t = StructuredTool(name="probe", description="probe", args_schema={"type": "object", "properties": {}},
                            func=f, handle_tool_error=True)
         return t.invoke({"type": "tool_call", "name": "probe", "args": {}, "id": "call-0053"})
+
+
+class PydanticAIDriver:
+    """`veracium.adapters.pydantic_ai`, driven through a real `Agent` with Pydantic AI's offline `FunctionModel`: the
+    scripted model makes one tool call and the driver keeps the tool-return part the framework then hands the model."""
+    name = "pydantic_ai"
+    CALL_ID = "call-0053"
+
+    def __init__(self, pydantic_ai_module, mem, binding: dict):
+        self._tools = {t.name: t for t in pydantic_ai_module.as_tools(mem, **binding)}
+        self._order = list(self._tools)
+
+    def tools(self):
+        return [{"name": n, "description": self._tools[n].description,
+                 "parameters": self._tools[n].function_schema.json_schema} for n in self._order]
+
+    def _run(self, script, tools=None):
+        from pydantic_ai import Agent
+        from pydantic_ai.models.function import FunctionModel
+        Agent(FunctionModel(script), tools=list((tools or self._tools).values())).run_sync("conformance")
+
+    def converted(self):
+        """The tool definitions the agent hands a model (FunctionModel's AgentInfo), the framework's own conversion."""
+        from pydantic_ai.messages import ModelResponse, TextPart
+        seen = {}
+
+        def script(messages, info):
+            seen["defs"] = list(info.function_tools)
+            return ModelResponse(parts=[TextPart("done")])
+        self._run(script)
+        return [{"name": d.name, "description": d.description or "", "parameters": d.parameters_json_schema}
+                for d in seen["defs"]]
+
+    def call(self, name, args):
+        if name not in self._tools:
+            return ("missing-tool", name)
+        from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
+        seen = {}
+
+        def script(messages, info):
+            if len(messages) == 1:
+                return ModelResponse(parts=[ToolCallPart(name, dict(args), tool_call_id=self.CALL_ID)])
+            seen["part"] = next(p for p in messages[-1].parts if getattr(p, "tool_call_id", None) == self.CALL_ID)
+            return ModelResponse(parts=[TextPart("done")])
+        self._run(script)
+        return seen["part"]
+
+    def decode(self, value):
+        """The tool-return part -> the reference form, read from the TEXT the model is handed: an `outcome` of
+        "retried" (ModelRetry, Pydantic AI's tool-error channel) is `{"error": <message>}`; otherwise the tool's string,
+        or the dict the framework serialised to JSON text."""
+        from pydantic_ai.messages import ToolReturnPart
+        if isinstance(value, tuple):
+            return value
+        if not isinstance(value, ToolReturnPart):
+            return ("not-a-tool-return", repr(value)[:200])
+        text = value.model_response_str()
+        if value.outcome == "retried":
+            try:
+                parsed = json.loads(text, object_pairs_hook=_strict_pairs)
+            except ValueError:
+                return ("error-unparsed", text)
+            if isinstance(parsed, dict) and set(parsed) == {"error"}:
+                return ("error", parsed["error"])
+            return ("error-unparsed", text)
+        if text[:1] == "{":
+            try:
+                parsed = json.loads(text, object_pairs_hook=_strict_pairs)
+            except ValueError:
+                return ("ok", text)
+            if isinstance(parsed, dict):
+                return ("ok", parsed)
+        return ("ok", text)
+
+    @classmethod
+    def encode(cls, outcome):
+        """The part the framework hands the model for a reference outcome, through its own tool path."""
+        from pydantic_ai import ModelRetry, Tool
+        from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
+        kind, v = outcome
+
+        def f():
+            if kind == "error":
+                raise ModelRetry(v)
+            return v
+        tool = Tool.from_schema(f, name="probe", description="probe", json_schema={"type": "object", "properties": {}})
+        seen = {}
+
+        def script(messages, info):
+            if len(messages) == 1:
+                return ModelResponse(parts=[ToolCallPart("probe", {}, tool_call_id=cls.CALL_ID)])
+            seen["part"] = next(p for p in messages[-1].parts if getattr(p, "tool_call_id", None) == cls.CALL_ID)
+            return ModelResponse(parts=[TextPart("done")])
+        from pydantic_ai import Agent
+        from pydantic_ai.models.function import FunctionModel
+        Agent(FunctionModel(script), tools=[tool]).run_sync("conformance")
+        return seen["part"]

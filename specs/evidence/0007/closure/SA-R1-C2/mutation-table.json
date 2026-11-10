@@ -1,5 +1,5 @@
 {
- "body_sha256": "df135ff07bf5732c22d80dc671b535c226667412046dc778e22353bcaf60c0d3",
+ "body_sha256": "098ffafb384f7d21f781366b264c890981ad267392388cf4953c16e7ea0b0286",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "f8de3ddc8b70020d7058dbc564db2c0932ca75e9",
+  "commit": "674244842fe548b8f5bfa764aa483bd08e59b842",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -64,7 +64,7 @@
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "specs/skip_inventory.py": "b28f2d4f09793dc59218e0754d2874d74f787291c970b858151285f338d2cb87",
+   "specs/skip_inventory.py": "236237a75b0e7b96e07e84727ba09157c0551aa03713b5add3235c2b0cf70743",
    "tests/test_spec_gate.py": "dd8206145c6484a621432e0c01dcffe29a4a5b37088ae917556fed0c70660058"
   },
   "finding": "SA-R1-C2",
@@ -78,16 +78,35 @@
   "tracked_changes": [
    ".github/workflows/test.yml",
    "CHANGELOG.md",
+   "README.md",
    "pyproject.toml",
-   "specs/ALLOCATION.md",
-   "specs/STATUS.md",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/evidence/0053/adapter_conformance/drivers.py",
+   "specs/evidence/0053/adapter_conformance/mutants.py",
+   "specs/evidence/0053/adapter_conformance/rows.py",
    "specs/skip_inventory.py",
+   "src/veracium/adapters/pydantic_ai.py",
    "tests/test_0048_decay_bounds.py",
-   "tests/test_spec_gate.py"
+   "tests/test_0053_adapter_conformance.py"
   ]
  },
  "rows": [
@@ -126,7 +145,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.83s",
+   "pytest": "2 failed in 2.87s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -162,7 +181,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.90s",
+   "pytest": "2 failed in 2.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -177,6 +196,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 93
+  "seconds": 91
  }
 }

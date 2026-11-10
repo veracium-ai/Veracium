@@ -4182,6 +4182,15 @@
   "line": 86,
   "statement": "raise ValueError(f\"unknown tool {name!r}\")"
  },
+ "adapters/pydantic_ai.py:as_tools:62:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "adapters/pydantic_ai.py:as_tools:RAISE:1",
+  "line": 62,
+  "statement": "raise ValueError(f\"max_retries must be a non-negative int or None, not {max_retries!r}\")"
+ },
  "asof/resolve.py:normalise_T:221:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
@@ -5297,6 +5306,33 @@
   "key": "adapters/langchain.py:as_tools:FILTER_RETURN:1",
   "line": 56,
   "statement": "return [_tool(binding, spec, StructuredTool, ToolException) for spec in binding.tools()]"
+ },
+ "adapters/pydantic_ai.py:_framework:40:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "adapters/pydantic_ai.py:_framework:RAISE:1",
+  "line": 40,
+  "statement": "raise ImportError('veracium.adapters.pydantic_ai needs pydantic-ai: pip install \"veracium[pydantic_ai]\"') from exc"
+ },
+ "adapters/pydantic_ai.py:_tool.run:51:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "adapters/pydantic_ai.py:_tool.run:RAISE:1",
+  "line": 51,
+  "statement": "raise ModelRetry(str(exc)) from exc"
+ },
+ "adapters/pydantic_ai.py:as_tools:69:FILTER_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "adapters/pydantic_ai.py:as_tools:FILTER_RETURN:1",
+  "line": 69,
+  "statement": "return tools"
  },
  "agreement.py:_agent_after:267:RETURN_NONE": {
   "decision": "not",

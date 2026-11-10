@@ -1,5 +1,5 @@
 {
- "body_sha256": "e022a4b115e0a715b7e6830fb16e1e00c3bb0b7109d8c2c7b03bafb6d97e5726",
+ "body_sha256": "481b0d831694e56f233f042999d734bf647413665d943600d2b29736faf70399",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 5
    }
   },
-  "commit": "f8de3ddc8b70020d7058dbc564db2c0932ca75e9",
+  "commit": "674244842fe548b8f5bfa764aa483bd08e59b842",
   "control_definitions": {
    "NOOP-0048-R4-01-sqlite": "70dfd3b5e6fee200758b3e0359060f958944425f59737cbaf8d763a45a2708e7"
   },
@@ -63,7 +63,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0048_decay_bounds.py": "16344c89c686ec0e9de7e7340274abb1856f65f9f461714f125c1dbc389ea458"
+   "tests/test_0048_decay_bounds.py": "28b93e54f23eda6d0b2a3907a7e2debd83b91e2e9a8ba8bc96511577157b1cff"
   },
   "finding": "0048-R4-01",
   "honest_nodes": [
@@ -78,9 +78,6 @@
    ".github/workflows/test.yml",
    "CHANGELOG.md",
    "pyproject.toml",
-   "specs/0053-adapter-conformance-suite.md",
-   "specs/ALLOCATION.md",
-   "specs/STATUS.md",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
@@ -95,23 +92,13 @@
    "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json",
-   "specs/evidence/0053/adapter_conformance/__init__.py",
-   "specs/evidence/0053/adapter_conformance/canon.py",
-   "specs/evidence/0053/adapter_conformance/cases.json",
    "specs/evidence/0053/adapter_conformance/checks.py",
    "specs/evidence/0053/adapter_conformance/drivers.py",
-   "specs/evidence/0053/adapter_conformance/fixture.py",
    "specs/evidence/0053/adapter_conformance/mutants.py",
-   "specs/evidence/0053/adapter_conformance/planted.py",
    "specs/evidence/0053/adapter_conformance/rows.py",
    "specs/skip_inventory.py",
-   "src/veracium/adapters/__init__.py",
-   "src/veracium/adapters/_surface.py",
-   "src/veracium/adapters/langchain.py",
    "tests/test_0048_decay_bounds.py",
-   "tests/test_0053_adapter_conformance.py",
-   "tests/test_spec_gate.py"
+   "tests/test_0053_adapter_conformance.py"
   ]
  },
  "rows": [
@@ -146,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.32s",
+   "pytest": "2 failed in 7.30s",
    "reason": null,
    "reason_seen": null,
    "what": "the write method no longer refuses a call whose before/after lengths misplace the captured json (R4-01 (a)'s second layer; the static gate also refuses the changed body)"
@@ -182,7 +169,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.33s",
+   "pytest": "2 failed in 7.44s",
    "reason": null,
    "reason_seen": null,
    "what": "the frozen layout names the wrong json position for the INSERT: it no longer equals the layout SQLite gives by execution (R4-01 (a))"
@@ -197,6 +184,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 46
+  "seconds": 47
  }
 }

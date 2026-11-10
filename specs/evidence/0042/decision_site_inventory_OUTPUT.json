@@ -413,6 +413,33 @@
   {
    "bare": false,
    "kind": "RAISE",
+   "line": 40,
+   "module": "adapters/pydantic_ai.py",
+   "qualname": "_framework"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 51,
+   "module": "adapters/pydantic_ai.py",
+   "qualname": "_tool.run"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 62,
+   "module": "adapters/pydantic_ai.py",
+   "qualname": "as_tools"
+  },
+  {
+   "kind": "FILTER_RETURN",
+   "line": 69,
+   "module": "adapters/pydantic_ai.py",
+   "qualname": "as_tools"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
    "line": 190,
    "module": "agreement.py",
    "qualname": "_validate_lexicon"
@@ -7311,8 +7338,8 @@
  "summary": {
   "by_kind": {
    "BOOL_RETURN": 101,
-   "FILTER_RETURN": 64,
-   "RAISE": 707,
+   "FILTER_RETURN": 65,
+   "RAISE": 710,
    "RETURN_FALSE": 115,
    "RETURN_NONE": 113
   },
@@ -7323,8 +7350,8 @@
    "BOOL_RETURN",
    "FILTER_RETURN"
   ],
-  "modules_scanned": 69,
-  "modules_with_sites": 58,
+  "modules_scanned": 70,
+  "modules_with_sites": 59,
   "per_module": {
    "__init__.py": {
     "BOOL_RETURN": 0,
@@ -7351,6 +7378,13 @@
     "BOOL_RETURN": 0,
     "FILTER_RETURN": 1,
     "RAISE": 2,
+    "RETURN_FALSE": 0,
+    "RETURN_NONE": 0
+   },
+   "adapters/pydantic_ai.py": {
+    "BOOL_RETURN": 0,
+    "FILTER_RETURN": 1,
+    "RAISE": 3,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 0
    },
@@ -7733,7 +7767,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1100,
+  "total": 1104,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

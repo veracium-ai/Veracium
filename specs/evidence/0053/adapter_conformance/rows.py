@@ -24,4 +24,23 @@ ROWS = {
                        "(K2, view 'converted'); the provider's own request-time limit was not read (§6)"},
         ],
     },
+    "pydantic_ai": {
+        "module": "veracium.adapters.pydantic_ai",
+        "framework": ("pydantic-ai-slim", "2.66.0"),
+        "decoder": "the ToolReturnPart the agent hands the model, read from its text (model_response_str): an outcome of "
+                   "'retried' (ModelRetry, the framework's tool-error channel) is {\"error\": message} -> ('error', "
+                   "message); otherwise the tool's string, or the dict the framework serialised to JSON text. "
+                   "Round-tripped over every reference value through the framework's own agent path (checks.check_decoder)",
+        "retry_budget": "the host's: Pydantic AI ends a run with UnexpectedModelBehavior when one tool errors more "
+                        "times in a row than its max_retries (default: the agent's retries, 1); a success resets the "
+                        "count. as_tools(max_retries=) sets every tool's budget. Measured on 2.66.0, held by "
+                        "test_the_pydantic_ai_retry_budget_is_the_hosts",
+        "providers": [
+            {"path": "the ToolDefinitions an Agent hands any model (FunctionModel's AgentInfo.function_tools)",
+             "limit": "no cap in the conversion",
+             "source": "measured offline through the framework's own agent: every served description carried in full "
+                       "(K2, view 'converted'); each provider model class maps these at request time, past what the "
+                       "offline path shows, and no provider's documentation was read (§6)"},
+        ],
+    },
 }

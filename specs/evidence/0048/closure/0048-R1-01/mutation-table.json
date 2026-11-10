@@ -1,5 +1,5 @@
 {
- "body_sha256": "eb051f17e2c9b7f0840279e6e5dcbf2146fe808b64401a459a5dbb5de4659c99",
+ "body_sha256": "f2383f207f761cf0717879a41faf5911e882fa58ec97c75c77e6f4fcc33853bc",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "f8de3ddc8b70020d7058dbc564db2c0932ca75e9",
+  "commit": "674244842fe548b8f5bfa764aa483bd08e59b842",
   "control_definitions": {
    "NOOP-0048-R1-01-lifecycle": "6e91be8bea7312abb276ab369c6a729330d4723354d885ad796ffc857912de46"
   },
@@ -66,7 +66,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
-   "tests/test_0048_decay_bounds.py": "16344c89c686ec0e9de7e7340274abb1856f65f9f461714f125c1dbc389ea458"
+   "tests/test_0048_decay_bounds.py": "28b93e54f23eda6d0b2a3907a7e2debd83b91e2e9a8ba8bc96511577157b1cff"
   },
   "finding": "0048-R1-01",
   "honest_nodes": [
@@ -81,33 +81,19 @@
    ".github/workflows/test.yml",
    "CHANGELOG.md",
    "pyproject.toml",
-   "specs/0053-adapter-conformance-suite.md",
-   "specs/ALLOCATION.md",
-   "specs/STATUS.md",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json",
-   "specs/evidence/0053/adapter_conformance/__init__.py",
-   "specs/evidence/0053/adapter_conformance/canon.py",
-   "specs/evidence/0053/adapter_conformance/cases.json",
    "specs/evidence/0053/adapter_conformance/checks.py",
    "specs/evidence/0053/adapter_conformance/drivers.py",
-   "specs/evidence/0053/adapter_conformance/fixture.py",
    "specs/evidence/0053/adapter_conformance/mutants.py",
-   "specs/evidence/0053/adapter_conformance/planted.py",
    "specs/evidence/0053/adapter_conformance/rows.py",
    "specs/skip_inventory.py",
-   "src/veracium/adapters/__init__.py",
-   "src/veracium/adapters/_surface.py",
-   "src/veracium/adapters/langchain.py",
    "tests/test_0048_decay_bounds.py",
-   "tests/test_0053_adapter_conformance.py",
-   "tests/test_spec_gate.py"
+   "tests/test_0053_adapter_conformance.py"
   ]
  },
  "rows": [
@@ -142,7 +128,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.44s",
+   "pytest": "2 failed in 1.42s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -178,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.43s",
+   "pytest": "2 failed in 1.42s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"

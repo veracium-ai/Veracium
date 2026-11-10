@@ -137,7 +137,12 @@ INVENTORY = [
      "optional-dependency", "the optional langchain extra — specs/0053's LangChain row (its conformance, its decoder and "
                             "its mutant row) skips by name without langchain-core; the core's cells run. In the "
                             "adapter-conformance CI job VERACIUM_ADAPTER_ROWS=langchain makes a missing framework a "
-                            "failure, never a skip. Author line: an extra-absent environment sees 21 SKIP"),
+                            "failure, never a skip. Author line: an extra-absent environment sees 24 SKIP"),
+    ("tests/test_0053_adapter_conformance.py", "importorskip", "pydantic_ai",
+     "optional-dependency", "the optional pydantic_ai extra — specs/0053's Pydantic AI row (its conformance, its decoder "
+                            "and its mutant row) skips by name without pydantic-ai; the core's cells run. In the "
+                            "adapter-conformance CI job VERACIUM_ADAPTER_ROWS names the row, so a missing framework is a "
+                            "failure, never a skip. Author line: an extra-absent environment sees 27 SKIP"),
     ("tests/test_0006_require_source_id.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — 0006 I15's served-tool "
                             "schema check (the built server exposes no "

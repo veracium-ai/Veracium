@@ -11,6 +11,17 @@
   - **Refusals and errors:** a refusal comes back as the library's data. Any error raised while answering comes back
     as LangChain's tool-error result, with its message verbatim, as FastMCP reports a tool error on MCP.
   - **Install:** an optional extra, never a core dependency; it installs `mcp` too.
+- **Added: `veracium.adapters.pydantic_ai.as_tools()`, veracium's served tools as Pydantic AI tools**
+  (`pip install "veracium[pydantic_ai]"`; specs/0053, accepted).
+  - **The same six tools, the same text:** each is built with `Tool.from_schema` from the served schema and
+    description, and the same host bindings as the LangChain adapter.
+  - **Errors:** any error raised while answering reaches the model through Pydantic AI's tool-error channel
+    (`ModelRetry`), carrying its message verbatim; a refusal comes back as data. The retry budget is the host's: under
+    the framework's default, one tool erroring twice in a row ends the run (`UnexpectedModelBehavior`), and
+    `as_tools(max_retries=N)` sets every tool's budget. Measured on pydantic-ai-slim 2.66.0.
+  - **Conformance:** the Pydantic AI row passes K1–K8, its decoder is lossless, and its mutant row is the shared 17
+    plus 5 of its own, measured through a real `Agent` with the framework's offline `FunctionModel`. CI pins
+    `pydantic-ai-slim` at 2.66.0.
 - **Added: the adapter conformance suite** (specs/0053; `tests/test_0053_adapter_conformance.py`,
   `specs/evidence/0053/adapter_conformance/`). It is the condition the owner set for lighter review of framework
   adapters.
@@ -23,11 +34,12 @@
   - **Store comparison:** a canonical form, with the generated-id and clock lists measured from twin reference runs.
     Clocks are compared as aware instants and tolerate ties. Seven planted pairs check the comparison itself, and five
     mutants of it are each caught.
-  - **Mutant row:** 21 mutants are applied to the adapter under test, 17 to the framework-free core and all 21 to the
-    LangChain adapter. Each kill counts only when exactly the checks its row names go red.
-  - **CI:** the suite runs on every push in its own job, with `langchain-core` pinned at 1.7.6. That job is part of the
-    required `pytest (py3.14)` check, so a red framework row blocks a merge. In the shard lanes the LangChain cells skip
-    by name.
+  - **Mutant row:** 26 mutants are applied to the adapter under test. 17 hit the shared core and run on every row (the
+    core, LangChain, Pydantic AI); LangChain adds 4 of its own seams and Pydantic AI 5; 60 runs in all. Each kill counts only when
+    exactly the checks its row names go red.
+  - **CI:** the suite runs on every push in its own job, with `langchain-core` pinned at 1.7.6 and `pydantic-ai-slim` at
+    2.66.0. That job is part of the required `pytest (py3.14)` check, so a red framework row blocks a merge. In the
+    shard lanes the framework rows skip by name.
 
 - **Changed: the offline launcher runs the suite in two phases by default** (`specs/evidence/offline/run_offline.sh`; the
   owner's ruling, 2026-11-08).
