@@ -227,7 +227,14 @@ refused renders ONCE, `deadline: <subject> — CONTESTED: <A> or <B> (unconfirme
 which is current)`, over the dates in the window; a contested date outside it
 never appears, and the one left alone is marked `(contested — …)` with no other
 content (specs/0012 §4c-v). The marker is text only: `Recall.contested` stays
-empty in this mode.
+empty in this mode. **No public call settles a contested commitment today:**
+`correct()` on either date raises `CorrectionRefused` (a user's correction is a
+bare self-assertion over a prior whose subject is the obligation, not the user:
+specs/0011 §4b), and `confirm()` leaves both dates current. Each further
+restatement adds refusal rows. A contest WITHIN one episode over a user fact
+("I moved to Denver (previously lived in Boston)" leaving Boston current beside
+Denver) is different: `correct()` of each stale edge settles it, and a later
+episode naming only the new value retires nothing.
 
 Entity matching is **token-exact, not fuzzy**: the query's tokens are matched
 against subject/object tokens, so `"covetrus"` does not match a subject token
@@ -653,12 +660,23 @@ and never changed (a same-id rewrite of any of them raises `ValueError`):
   (`context=EvidenceContext.direct()`) can be attested; every other event is
   `"not_attested"`. Separately (specs/0051), in such an event a fact whose
   value appears only in a turn labelled for an assistant is stored `use_only`
-  (not asserted) and counted in `remember()`'s `speaker_restricted`. Not
-  covered: unlabelled transcripts, an episode's wording, sample dialogue inside
-  an assistant's reply, and formats the label grammar does not recognise
-  (role-play personas, API role brackets). The other direction: in a single
-  exchange where the user is named once, after the assistant ("Claude: …" then
-  "Sam: …"), the user's line is restricted too.
+  (not asserted) and counted in `remember()`'s `speaker_restricted`. "Appears
+  only" is specs/0051 §4b's test: EVERY non-`user` side of the triple (the object
+  when the subject is `user`, the subject when the object is `user`, both
+  otherwise) occurs in an assistant turn and in no user text; a `deadline` whose
+  subject is `user` or an obligation is judged on its date alone, restricted
+  when the assistant's text grounds the date and the user's does not. It is not
+  a detector for every triple an assistant said. Not covered: unlabelled
+  transcripts, an episode's wording, sample dialogue inside an assistant's
+  reply, and formats the label grammar does not recognise (role-play personas,
+  API role brackets). **Other people are not separated:** the grammar recognises
+  assistant turns only, so in a group chat, a forwarded thread or any transcript
+  with a second human ("Mom:", "Agent Lin:"), that person's lines are read as the
+  user's text, and a value only they stated can be stored and asserted as the
+  user's (specs/0051 §8, limit 9). Split such input by speaker at the host, or
+  pass only the user's own turns. The other direction: in a single exchange
+  where the user is named once, after the assistant ("Claude: …" then "Sam: …"),
+  the user's line is restricted too.
 - **`src`** — the id of the episode the event wrote, or `None` when the
   extractor returned no episode text.
 - **`attv`** — what produced `att`: `"ATTEST-6@ccabb664"` (the predicate's

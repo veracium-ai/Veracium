@@ -3,7 +3,9 @@
 Probe 3: under `none` every event is third-party, so the grounded part of a recall is empty while an UNVERIFIED section
 follows. The block opened "(no memory yet for this user)" (the library) or, through the compiler, "No grounded facts …
 Document is empty pending user information" (model prose over an input of `(none)` / `(none)`), and both drivers then
-told the user their memory was empty. The header is now deterministic and true: no VERIFIED facts yet.
+told the user their memory was empty. The header is now deterministic and true of the VIEW: no VERIFIED facts in
+this view (SR1-03, shipped-changes round 1: "no verified facts yet" was false when a query's selection left a stored
+assertable fact out).
 
 Probe 2: nothing the model read said that the user's own words in the conversation outrank a stored memory; recall's
 MCP description now says so.
@@ -41,7 +43,7 @@ def _mem(d, llm, *, wiki=True):
     return Memory(llm=llm, config=MemoryConfig(**cfg))
 
 
-NO_VERIFIED = "(no verified facts yet)"
+NO_VERIFIED = "(no verified facts in this view)"
 
 
 def test_only_unverified_memory_is_not_headed_as_no_memory_on_either_path():
@@ -94,3 +96,90 @@ def test_the_recall_tool_says_the_users_words_outrank_a_memory():
         tools = {t.name: t for t in server._tool_manager.list_tools()}
         desc = tools["recall"].description
         assert "own words" in desc and "outrank" in desc, desc
+
+
+class _ReviewerScripted:
+    def __init__(self, s):
+        self.s = list(s)
+
+    def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+        if role != "distill":
+            return ""
+        ts, ep = self.s.pop(0)
+        return json.dumps({"triples": [{"subject": s, "relation": r, "object": o, "volatility": "durable"}
+                                       for s, r, o in ts], "episode": ep, "instructions": []})
+
+
+def test_sr1_03_the_reviewers_regression(tmp_path):
+    """SR1-03 (shipped-changes round 1), the reviewer's regression with its assertions verbatim: a stored assertable
+    fact (Berlin) outside the query's lexical selection and outside a one-episode recent slice. The view holds no
+    verified fact; the store does. The header says only what the view holds."""
+    from veracium import EvidenceContext
+    scripts = [([("person:alice", "located_at", "Berlin")], "Alice lives in Berlin."),
+               ([("user", "works_on", "unicorn project")], "An external document describes the unicorn project.")]
+    m = Memory(llm=_ReviewerScripted(scripts), config=MemoryConfig(db_path=str(tmp_path / "empty.db"),
+               require_source_id=False, wiki_recompile_after_writes=0, max_recent_episodes=1))
+    m.remember("u", "Alice lives in Berlin.", date="2026-10-01", context=EvidenceContext.direct())
+    m.remember("u", "The user works on the unicorn project.", date="2026-10-02", author=EvidenceAuthor.THIRD_PARTY)
+    assert any(e.assertable and e.object == "Berlin" for e in m.store.edges("u", include_quarantined=True))
+    r = m.recall("u", "unicorn project", semantic=False)
+    assert "Berlin" not in r.context and r.unverified
+    assert "(no verified facts yet)" not in r.context, "a query-local empty view claimed that no verified facts exist yet"
+    assert "in this view" in r.grounded
+    m.close()
+
+
+def _scoped_view(d, *, with_hidden_data):
+    """A scope policy of one team (agent-1). With data, the store's only record is an assertable USER fact from
+    agent-2, outside agent-1's scope; without, the store is empty. agent-1 is the principal."""
+    from veracium.schema import Disclosure, Edge, Provenance
+    from veracium.scope import Identity
+    a1 = Identity(None, "agent-1")
+    m = Memory(llm=lambda *a, **k: "", config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0,
+                                                           scope_groups={"team-a": [a1]}, require_source_id=False))
+    if with_hidden_data:
+        m.store.add_edge(Edge(id="e-other", user_id="u", subject="dentist appointment", relation="deadline",
+                              object="2026-12-01", ungrounded=False, provenance=Provenance(
+                                  author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev-other",
+                                  disclosure=Disclosure.MENTIONABLE, source_id="agent-2")))
+        assert any(e.assertable for e in m.store.edges("u", active_only=False, include_quarantined=True))
+    return m, a1
+
+
+def test_sr1_03_a_principals_empty_view_never_says_no_memory_and_never_varies_with_the_store():
+    """SR1-03's sibling (research's stage 1, marked A): "(no memory yet for this user)" is a claim about the STORE.
+    Under a principal whose scope hides every record it was false, and it must not differ from what the same principal
+    reads over an EMPTY store (0020: that difference is the cross-scope signal). Both view-worded lines, the pair
+    byte-identical, wiki off and on."""
+    for wiki in (0, 1):
+        got = []
+        for hidden in (True, False):
+            with tempfile.TemporaryDirectory() as d:
+                m, a1 = _scoped_view(d, with_hidden_data=hidden)
+                if wiki:
+                    m.config.wiki_recompile_after_writes = 1
+                got.append(m.recall("u", "dentist appointment", principal=a1, semantic=False).context)
+                m.close()
+        assert got[0] == got[1] == "(no memory in this view)", (wiki, got)
+        assert not any("no memory yet" in c or "no verified facts yet" in c for c in got), got
+
+
+def test_an_unscoped_user_whose_only_record_is_redacted_reads_the_view_wording():
+    """The condition's other half: without a principal, "(no memory yet for this user)" needs a user with NO record at
+    all (test_a_user_with_nothing_stored holds that case). A user whose only episode was redacted at their request
+    (0041) still holds a record, the redaction's tombstone, and their view is empty: the view wording, not "yet"."""
+    from veracium import EvidenceContext
+
+    class Hello:
+        def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+            if role == "distill":
+                return json.dumps({"triples": [], "episode": "The user said hello.", "instructions": []})
+            return ""
+    with tempfile.TemporaryDirectory() as d:
+        m = Memory(llm=Hello(), config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db",
+                                                    wiki_recompile_after_writes=0))
+        m.remember("u", "Hello.", date="2026-10-01", context=EvidenceContext.direct())
+        m.store.redact("u", episode_id=m.store.episodes("u")[0].id, reason="subject_request")
+        assert m.store.episodes("u", limit=1) and not m.store.edges("u", active_only=False, include_quarantined=True)
+        assert m.recall("u", "anything", semantic=False).context == "(no memory in this view)"
+        m.close()

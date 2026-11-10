@@ -41,7 +41,14 @@ _ENVELOPE = "\x00policy:"      # cache-envelope marker: the digest precedes the 
 # The body when there is NO grounded input (research's adoption probe 3, 2026-10-29): fixed by code, never model prose.
 # Asked to compile `(none)`/`(none)`, a compiler wrote "Document is empty pending user information" above an
 # UNVERIFIED section, and drivers then told the user their memory was empty. recall's own placeholder uses it too.
-EMPTY_GROUNDED_BODY = "(no verified facts yet)"
+# SR1-03 (shipped-changes round 1): it states what THIS VIEW holds, never what the store holds. "(no verified facts
+# yet)" was false when a query's selection left a stored assertable fact out; no hidden population is queried to
+# make it globally true (that would disclose what the view withholds).
+EMPTY_GROUNDED_BODY = "(no verified facts in this view)"
+# Its sibling, the view holding nothing (SR1-03's class): measured, a principal whose scope hides every record, or a
+# user whose only record was redacted. "(no memory yet for this user)" is said only where the caller can establish it
+# safely: no principal, and no record at all (`as_of` has its own line; a withheld record leaves its own).
+EMPTY_VIEW_BODY = "(no memory in this view)"
 
 COMPILE_SYSTEM = (
     "You are the memory curator for an AI assistant. You compile a compact, "

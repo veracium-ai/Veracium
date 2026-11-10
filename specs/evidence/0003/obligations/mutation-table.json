@@ -1,5 +1,5 @@
 {
- "body_sha256": "f6bcff26fb6d078fa60f7b78cbc1446c065489bc7a030f60020cd5453d5acd97",
+ "body_sha256": "e6e567abc7f4f21fa6870d26beb4b0670b2826ef4b6e4435bc4d478a1da7575d",
  "controls": [
   {
    "anchor_counts": [
@@ -89,9 +89,12 @@
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
     "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
     "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
-    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
+    "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
    ],
-   "definition_sha256": "b9a48e584ab12da1203d274927e4d215953c115fb6e3df6d3c373f6085c58fbf",
+   "definition_sha256": "cbe26d09d21b481db7cf48436dd3e32bbfed43ff933d13b61bfa4c529516878f",
    "expected": "SURVIVED",
    "file": "src/veracium/proactive.py",
    "good": true,
@@ -119,7 +122,10 @@
     "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
     "tests/test_0003_obligations.py::test_ob4_two_dated_values_with_no_refusal_row_render_as_two_plain_commitments",
     "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
-    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
+    "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/proactive.py: its mutants' cells must all pass"
@@ -360,29 +366,32 @@
     "tests/test_0003_obligations.py::test_ob5_the_doctor_counts_the_subject_user_chain_exactly_and_writes_nothing",
     "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor",
     "tests/test_0003_obligations.py::test_ob8_a_fenced_third_party_challenger_leaves_one_plain_line",
-    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted"
+    "tests/test_0003_obligations.py::test_ob9_a_challenged_member_is_withheld_before_the_group_is_counted",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
+    "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
    ]
   },
   "clean": {
    "first": {
-    "of": 57,
+    "of": 60,
     "ok": true,
-    "passed": 57
+    "passed": 60
    },
    "last": {
-    "of": 57,
+    "of": 60,
     "ok": true,
-    "passed": 57
+    "passed": 60
    }
   },
-  "commit": "b68c3f2e14783b04c867ce8c26d7a9de9f151cfc",
+  "commit": "5f466399ea0101ecf3762b40cb0905420545095a",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
    "NOOP-__init__": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
    "NOOP-doctor": "ca69b4ab7aed219543de99f8c18135def799fca683cfdc05b80a2f6bc42e5058",
    "NOOP-graph": "4bf98c64479db258f52a368b1d23819d9cd4da7d940ec1b790574a29d141313a",
    "NOOP-ingest": "fc9bac9661db8565cb32dc6b2fe24f9191fccac9641c9909a04b62c57423a0de",
-   "NOOP-proactive": "b9a48e584ab12da1203d274927e4d215953c115fb6e3df6d3c373f6085c58fbf",
+   "NOOP-proactive": "cbe26d09d21b481db7cf48436dd3e32bbfed43ff933d13b61bfa4c529516878f",
    "NOOP-prompts": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6",
    "NOOP-schema": "1711618aea900e51c28f872a7b205e39293c660e9a6a38e6c635b01b15a31130",
    "NOOP-speaker_backstop": "d2755f18b194e753532ff07893429aa1da7d46cdf8351fc16c91d753dd26d6ab"
@@ -390,7 +399,7 @@
   "definitions": {
    "B1-caller-drops-the-date": "cb834ccb3bd53dafa7516a2a9e017eae95a82c3569deb9e19bd947642b8d6957",
    "B1-caller-drops-the-relation": "148edfd0ee146a33e067230124a793b3deb4e066551f820e2e8007175e8e56ae",
-   "B1-slots-are-dates-only": "049df3f9212a6edda52db8d4299302a781c85c3a1eef98b7e300f2a1ddd3ebc8",
+   "B1-slots-are-dates-only": "e10c013216a0859d521a5cd346b095b2845ac72a3455794323642429e4d80ad8",
    "B1-subject-user-form-excluded": "08c50322f4fc40f5bb6fd702dd0757f3c0c63d559f49a0d3f219c596e9440d02",
    "B1-token-rule-kept": "d0050f2e56a4d6de1764eff262f4d940f646b3b2e70093996c037d78925e050f",
    "B1-user-condition-alone": "552b169a9a38908eacf0bad2d0b776aa55c272a46c2247b1c90aff8d0fe04d4b",
@@ -400,8 +409,7 @@
    "I10d-every-commitment-marked": "02b6b07c0d9e538d070fbaa8ddf810db3cba22e56ce9a727b8106792f8dda6a4",
    "I10d-lone-member-unmarked": "9678bbe0efc485ebd98d73bcf788d837fd5bbd6b141fe2a976bf5f8249f22130",
    "I10d-out-of-window-member-named": "80e570f81c2244ca54b5aba07df473d237b34a1b0a85a2d722eb3c072903d4d7",
-   "N1-K-counts-members": "e25307d85c116fc79ec00365d900f25df60c25fc65419365f78b5a91c0217230",
-   "N1-farthest-slots-kept": "8427c3dd4aded3cbbf6409299450fdff402a7b75241d43ec4b511535a3b2507f",
+   "N1-farthest-slots-kept": "1d6885338f721589ee88170f3ab64dc447dbbd2f939e29fc0ced4075b8065644",
    "N1-first-item-tail-clamp": "fd7109eeb333f024d7abf144bd5b59b1752851f8d85687ffa85c77dc1e655926",
    "N2-grouped-members-composed": "75e77ca47e93ccbf363f41ae98350f25381734ede73b23b525c18c274f69ba8b",
    "NEW1-mark-outside-the-cap": "d5a8dbcdbf8218123085a76c19df0c2682193d362265e3c357185dc40c1b9423",
@@ -419,24 +427,26 @@
    "PRED-every-relation": "494137122c5325c2ccd2247d229fbf317b67e8aa178037aec62eacde9c93a444",
    "R3-group-order-latest": "09cdb5887606bba6c262dae0d7e468b7f618c88edd2c78f4421cfe1366e7cf68",
    "R4-group-tie-reversed": "cbba79f50975020aa990705528767a31ecc8aa54e81afcbc780bca2abd5af65e",
-   "R5-group-clamp-uncounted": "038f097321ef9cb5d3f7253d87c4a7a3bcd49e3d6c5bf5fc9b939dccaa7b5e4f",
+   "R5-group-clamp-uncounted": "453b7defd3187a2d324c1cbfc0972603dac6381087bb3c1e782015fb323ba7f1",
    "S1-4-subject-dropped": "e713b30a98e36494d0e311bf535d40a2f71a98c97e18bbc95505d6ab4b8acab4",
    "S1-4a-subject-clamp-uncounted": "a6a9a0ae58fbd7ea9d589d9c5ecc2e92c27a30e3bcdff5d80c69001d3ee58895",
-   "S1-4b-withheld-subject-rendered": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077"
+   "S1-4b-withheld-subject-rendered": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077",
+   "SR1-01-collision-shown-twice": "9b870100529fda2cf568ed11d0b7248558e8762c7935c29a39de19f58ff3d641",
+   "SR1-01-dedup-after-clamp": "79ccbff28e20b57ab41f13709a038f482e339e9e6668b951c330b1b0d37ac410"
   },
   "digests": {
-   "specs/evidence/0003/obligations_mutants.py": "24df240c8b2d238ef8e21e63ab4335b28cd11c0b22f05beab016beb17ddcec7b",
+   "specs/evidence/0003/obligations_mutants.py": "76db7d2bfc78e5a1fd853a65175cf221e131cc66b04c1e86a4adf5cf5c67672e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "dcd42a75af7f600cf701fd8e25b33918be2aa785d7af1abb3bac3e491f1b3949",
+   "src/veracium/__init__.py": "a377157d9de1c48f2760561dd2df50246320f54b8bdd1f5279f47736dcb13990",
    "src/veracium/doctor.py": "6b8935b2316a7897220659479475a6a708eabd302fb0deccab0e8e3c08e6ceae",
    "src/veracium/graph.py": "2a328b107920979cf28cae4cdfc255915798157cd35035d88f63638f88a1c358",
    "src/veracium/ingest.py": "85a8d7e57a0cc25fc419e22c4e2d2d01d6c12aa9a956639edbf11ff5f651a05e",
-   "src/veracium/proactive.py": "687cb305f02bf800e56574779c6c624c684e6a03505bc36f2f1c4650b3d60132",
+   "src/veracium/proactive.py": "b87c2bb128b2a1ed912005514e53337477cb620ce6c68777d46da14a2decdcec",
    "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
    "src/veracium/schema.py": "e45299d399a9d50b0903c04ae2e16a2d36671a383476d2f8d1cc665d3440e6fa",
    "src/veracium/speaker_backstop.py": "63e802da9f0e1761a9d40719d6fc681ecf7b4e47c5ac9263d972d16d524b392c",
-   "tests/test_0003_obligations.py": "48e3bb2f4ff7a4b358667f3a31fed30778be16deab88052f881cd9dcf709711b"
+   "tests/test_0003_obligations.py": "3be8dd76f79eb64612aab2b4bcec416311e491a58364e9a8c56f92f86208a6e9"
   },
   "finding": "obligations",
   "honest_nodes": [
@@ -455,7 +465,6 @@
    "tests/test_0003_obligations.py::test_b2_an_entity_edge_still_needs_a_token_match[entity]",
    "tests/test_0003_obligations.py::test_is_obligation_over_its_domain[named]",
    "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
-   "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing",
    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once",
    "tests/test_0003_obligations.py::test_ob6_the_obligation_rule_reaches_the_extractor"
   ],
@@ -464,37 +473,22 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json"
+   "CHANGELOG.md",
+   "README.md",
+   "docs/api.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "src/veracium/proactive.py",
+   "tests/test_0003_obligations.py",
+   "tests/test_0022_erasure.py",
+   "tests/test_empty_grounded_header.py"
   ]
  },
  "rows": [
@@ -529,7 +523,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.90s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's one-episode case is still caught by 0003 \u00a74c-iv's within-episode net, so it is not named)"
@@ -571,7 +565,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.18s",
+   "pytest": "4 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "today's per-edge rendering: the briefing path builds no contested groups"
@@ -607,7 +601,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.94s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member rendered plain as well as in the group line"
@@ -673,7 +667,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the contested line built over the store's edges, before 0047's withholding"
@@ -706,7 +700,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "an out-of-window member named in the contested line: new reach (0012 I10d)"
@@ -742,7 +736,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.92s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a lone tier member whose partner sits outside the tier renders as settled"
@@ -778,7 +772,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.91s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the mark on a lone member whose partner is withheld or fenced (content of a challenged or fenced member's existence volunteered)"
@@ -796,7 +790,7 @@
     "tests/test_0003_obligations.py::test_b1_a_contested_deadline_keeps_its_time_and_place",
     "tests/test_0003_obligations.py::test_b1_a_contested_line_keeps_each_members_object"
    ],
-   "definition_sha256": "049df3f9212a6edda52db8d4299302a781c85c3a1eef98b7e300f2a1ddd3ebc8",
+   "definition_sha256": "e10c013216a0859d521a5cd346b095b2845ac72a3455794323642429e4d80ad8",
    "file": "src/veracium/proactive.py",
    "finding": "obligations",
    "good": true,
@@ -814,7 +808,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.91s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested line names only each member's date, dropping its object (research's stage-2 B1)"
@@ -847,7 +841,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "the plain line drops a non-user subject (the obligation's name)"
@@ -880,7 +874,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.87s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "an oversized subject clamped without the I10a signal"
@@ -916,7 +910,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.88s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld commitment's subject rendered (0047 withholding skipped)"
@@ -949,7 +943,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.27s",
+   "pytest": "1 failed in 1.06s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded first-item path: a group line tail-clamped at the remaining budget, cutting a date and its framing (N1)"
@@ -965,7 +959,7 @@
    "cells_failed": [
     "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
    ],
-   "definition_sha256": "8427c3dd4aded3cbbf6409299450fdff402a7b75241d43ec4b511535a3b2507f",
+   "definition_sha256": "1d6885338f721589ee88170f3ab64dc447dbbd2f939e29fc0ced4075b8065644",
    "file": "src/veracium/proactive.py",
    "finding": "obligations",
    "good": true,
@@ -982,7 +976,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.08s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"
@@ -992,33 +986,78 @@
     1
    ],
    "cell_kinds": {
-    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members": "assertion"
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members": "assertion",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision": "assertion",
+    "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression": "assertion",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more": "assertion"
    },
    "cells_errored": [],
    "cells_failed": [
-    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members"
+    "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
+    "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
    ],
-   "definition_sha256": "e25307d85c116fc79ec00365d900f25df60c25fc65419365f78b5a91c0217230",
+   "definition_sha256": "79ccbff28e20b57ab41f13709a038f482e339e9e6668b951c330b1b0d37ac410",
    "file": "src/veracium/proactive.py",
    "finding": "obligations",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0003_obligations.py::test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing"
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
    ],
-   "id": "N1-K-counts-members",
+   "id": "SR1-01-dedup-after-clamp",
    "import": "ok",
    "kill_kind": "assertion",
    "kind": "product",
    "named_cells": [
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
+    "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
     "tests/test_0003_obligations.py::test_n1_k_counts_the_distinct_values_not_shown_not_the_members"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "4 failed in 1.14s",
    "reason": null,
    "reason_seen": null,
-   "what": "K counts the members not shown, not the distinct values (research's stage 1)"
+   "what": "distinct values decided AFTER the clamp, so two different values that shorten alike are one and K loses one (SR1-01)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision": "assertion",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
+   ],
+   "definition_sha256": "9b870100529fda2cf568ed11d0b7248558e8762c7935c29a39de19f58ff3d641",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "SR1-01-collision-shown-twice",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more",
+    "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.81s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a value whose clamped display repeats a shown one is shown again (\"X or X\"), not folded into K (research's stage 1, Q1)"
   },
   {
    "anchor_counts": [
@@ -1052,7 +1091,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.88s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded plain line: the object capped at item_cap\u221248 on top of the subject's own cap, the line unchecked (research's stage-1 NEW 1)"
@@ -1086,7 +1125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the lone member's mark appended after the line is held to the cap (NEW 1)"
@@ -1122,7 +1161,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.90s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded count: each grouped member's discarded line still registers its clamps (N2, R-impl4-4)"
@@ -1155,7 +1194,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a group sorts at its LATEST due date (research's stage-2 R3)"
@@ -1188,7 +1227,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.79s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"
@@ -1206,7 +1245,7 @@
     "tests/test_0003_obligations.py::test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap",
     "tests/test_0003_obligations.py::test_n2_a_clamped_group_is_one_clamped_item"
    ],
-   "definition_sha256": "038f097321ef9cb5d3f7253d87c4a7a3bcd49e3d6c5bf5fc9b939dccaa7b5e4f",
+   "definition_sha256": "453b7defd3187a2d324c1cbfc0972603dac6381087bb3c1e782015fb323ba7f1",
    "file": "src/veracium/proactive.py",
    "finding": "obligations",
    "good": true,
@@ -1224,7 +1263,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.04s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped or elided group line without the I10a signal (research's stage-2 R5)"
@@ -1257,7 +1296,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.13s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes a non-user subject's chain"
@@ -1290,7 +1329,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.13s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes another relation's chain (located_at)"
@@ -1324,7 +1363,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the extraction rule in a constant the extractor is never sent"
@@ -1374,7 +1413,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 1.47s",
+   "pytest": "6 failed in 1.33s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation is judged by 0051's every-side token rule (the pre-fix backstop: B1)"
@@ -1417,7 +1456,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.20s",
+   "pytest": "4 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "the user side is grounded over the WHOLE event, so the assistant's words ground it"
@@ -1454,7 +1493,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.08s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a date no side grounds is restricted (the non-user condition dropped)"
@@ -1490,7 +1529,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.20s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "only the named form is judged by its date; subject `user` keeps tokens"
@@ -1529,7 +1568,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.05s",
+   "pytest": "3 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "ingest calls the backstop without the relation"
@@ -1568,7 +1607,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.16s",
+   "pytest": "3 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "ingest calls the backstop without the session date"
@@ -1608,7 +1647,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.24s",
+   "pytest": "3 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation must match a query word to enter (B2, the pre-fix rule)"
@@ -1647,7 +1686,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.22s",
+   "pytest": "3 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation is scored as an entity edge"
@@ -1686,7 +1725,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.79s",
+   "pytest": "3 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "any relation with a named subject is an obligation"
@@ -1735,7 +1774,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 1.24s",
+   "pytest": "6 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "another party's deadline (person:alice) is read as the user's obligation (research 8b0de7d2)"
@@ -1780,7 +1819,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.84s",
+   "pytest": "5 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "\"User\" is read as an obligation, not as the user (0011 E1 disagrees)"
@@ -1788,13 +1827,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 35
+   "product": 36
   },
   "controls": 9,
   "controls_good": 9,
-  "good": 35,
-  "killed": 35,
-  "rows": 35,
-  "seconds": 160
+  "good": 36,
+  "killed": 36,
+  "rows": 36,
+  "seconds": 148
  }
 }

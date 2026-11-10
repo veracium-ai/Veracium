@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+- **Fixed: a contested commitment's "or K more" no longer loses a value when two different dates' texts shorten
+  alike** (shipped-changes round 1, SR1-01; in every release since 0.29.0). The briefing line shortened each value
+  before counting distinct values, so two different long values sharing a prefix became one, and `K` missed one:
+  the line read as if there were one value fewer. Distinct values are now decided on the stored values themselves; a
+  value whose shortened text repeats one already shown is not shown again and is counted in `K`.
+- **Changed: an empty recall says the VIEW is empty, never that the store is** (SR1-03; the wording since 0.28.0, and
+  the second line since 0.1.0).
+  - "(no verified facts yet)" now reads **"(no verified facts in this view)"**, in recall and in the compiled wiki
+    alike. It was false when a query's selection left a stored, assertable fact out.
+  - "(no memory yet for this user)" is said only when there is no principal and the user holds no record at all.
+    Otherwise an empty view reads **"(no memory in this view)"**. A scoped principal who could see none of the user's
+    records used to read "no memory yet" whatever the store held; the line it reads now never depends on what the
+    store holds outside its scope.
+  - **Who should take this:** hosts whose models act on recall's text (a model told "no memory yet" can tell the user
+    it knows nothing), and hosts with scope policies.
+- **Corrected: 0.29.0's notes said `correct()` settles a contested commitment. It does not.** `correct()` on either
+  date raises `CorrectionRefused` (a user's correction is a bare self-assertion over a prior whose subject is the
+  obligation, not the user: specs/0011 §4b), and `confirm()` leaves both dates current. No public call settles a
+  rescheduled commitment today; both dates stay, and the briefing shows the one contested line. Found while fixing
+  SR1-01, by running the call; the README, `docs/api.md` and specs/0003 now say so. A remedy is a design question,
+  queued. A contest within one episode over a user fact is different: `correct()` of each stale edge settles it.
+- **Docs: speaker labels do not separate other people.** `docs/api.md` now says beside the attestation guidance that
+  the label grammar recognises assistant turns only, so a second human's lines in a group chat or forwarded thread
+  are read as the user's text (specs/0051 §8, limit 9), and states 0051 §4b's every-non-user-side test exactly
+  (shipped-changes round 1, N2).
+
 - **Added: `veracium.adapters.langchain.as_tools()`, veracium's served tools as LangChain tools**
   (`pip install "veracium[langchain]"`; specs/0053, draft).
   - **The same six tools as the MCP server:** each tool's name, parameters and description are read from the server's

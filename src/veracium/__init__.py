@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from . import compile as _compile
-from .compile import EMPTY_GROUNDED_BODY
+from .compile import EMPTY_GROUNDED_BODY, EMPTY_VIEW_BODY
 from . import gate as _gate
 from . import lifecycle as _lifecycle
 from .config import MemoryConfig
@@ -1258,9 +1258,20 @@ class Memory:
             grounded_parts.append("## RELEVANT DETAIL\n" + detail_grounded)
         if withheld_report:
             grounded_parts.append(withheld_report)
-        # an empty grounded part above unverified claims is "no VERIFIED facts", never "no memory" (adoption probe 3)
-        grounded = "\n\n".join(grounded_parts).strip() or (EMPTY_GROUNDED_BODY if unverified
-                                                            else "(no memory yet for this user)")
+        # an empty grounded part above unverified claims is "no VERIFIED facts" in this view, never "no memory"
+        # (adoption probe 3), and never a claim about the store (SR1-03)
+        grounded = "\n\n".join(grounded_parts).strip()
+        if not grounded:
+            # SR1-03's sibling (research's stage 1, marked A): "no memory yet" is a claim about the STORE, so it is
+            # made only where the caller may see the whole user (no principal) and the user holds no record at all;
+            # under a principal the line never varies with what the store holds (0020: that difference is the signal)
+            if unverified:
+                grounded = EMPTY_GROUNDED_BODY
+            elif principal is None and not self.store.episodes(user_id, limit=1) and not self.store.edges(
+                    user_id, active_only=False, include_quarantined=True):
+                grounded = "(no memory yet for this user)"
+            else:
+                grounded = EMPTY_VIEW_BODY
 
         context = grounded
         if unverified:

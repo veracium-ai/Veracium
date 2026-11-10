@@ -85,29 +85,45 @@ def test_a_recreated_user_id_starts_with_no_standing_revocation(tmp_path):
 # would read true with the erasure in place. This check names the erasure route instead of missing it.
 
 SRC = pathlib.Path(__file__).resolve().parents[1] / "src" / "veracium"
-_LITERAL = re.compile(r"DELETE\s+FROM\s+source_revocations\b", re.I)
+# N1 (shipped-changes round 1): the name may be quoted ("…", `…`, […]) or schema-qualified (main./temp.), and a DELETE may
+# sit at module level, outside every function; the first form of this check read function bodies for the bare name only.
+_LITERAL = re.compile(r"DELETE\s+FROM\s+(?:(?:main|temp)\s*\.\s*)?[\"`\[]?source_revocations[\"`\]]?(?!\w)", re.I)
 _INTERPOLATED = re.compile(r"DELETE\s+FROM\s+\{\w+\}", re.I)
 
 
 def ledger_delete_routes(files, erase_tables):
-    """`files`: {path: source text}. Returns the problems: a literal DELETE of the ledger anywhere; an interpolated
-    DELETE outside `forget_user`; a `forget_user` whose interpolated DELETE is not its loop over `_ERASE_TABLES`; the
-    ledger absent from `erase_tables`; no erasure route at all."""
+    """`files`: {path: source text}. Returns the problems: a literal DELETE of the ledger anywhere in a file's text, in
+    a function or at module level; an interpolated DELETE outside `forget_user`; a `forget_user` whose interpolated
+    DELETE is not its loop over `_ERASE_TABLES`; the ledger absent from `erase_tables`; no erasure route at all.
+
+    THE GRAMMAR IT READS (N1: what "anywhere" means, stated): the text of every .py file under src/veracium, searched
+    for `DELETE FROM <name>` where <name> is source_revocations, bare, quoted with "", `` or [], or prefixed main./temp.,
+    in any case and spacing; and for `DELETE FROM {<identifier>}` (an f-string or .format interpolation). It does NOT
+    read SQL assembled from pieces (`"DELETE FROM " + t`), a table name held in another variable and passed through
+    `%` or concatenation, SQL in non-.py files, or a trigger body created at run time. It is a source census over
+    those spellings, not an analysis of every SQL a process could run."""
     problems, routes = [], []
     for path, text in files.items():
-        for node in ast.walk(ast.parse(text)):
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            body = ast.get_source_segment(text, node) or ""
-            if _LITERAL.search(body):
-                problems.append(f"{path}:{node.lineno} `{node.name}` DELETEs source_revocations by name")
-            if _INTERPOLATED.search(body):
-                if node.name != "forget_user":
-                    problems.append(f"{path}:{node.lineno} `{node.name}` has an interpolated DELETE outside forget_user")
-                elif "for table in _ERASE_TABLES" not in body:
-                    problems.append(f"{path}:{node.lineno} forget_user's interpolated DELETE is not its _ERASE_TABLES loop")
-                else:
-                    routes.append((path, node.name))
+        funcs = [n for n in ast.walk(ast.parse(text)) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+
+        def owner(line):
+            inside = [f for f in funcs if f.lineno <= line <= f.end_lineno]
+            return min(inside, key=lambda f: f.end_lineno - f.lineno) if inside else None
+
+        for m in _LITERAL.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            f = owner(line)
+            problems.append(f"{path}:{line} `{f.name if f else '<module>'}` DELETEs source_revocations by name")
+        for m in _INTERPOLATED.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            f = owner(line)
+            if f is None or f.name != "forget_user":
+                problems.append(f"{path}:{line} `{f.name if f else '<module>'}` has an interpolated DELETE outside "
+                                f"forget_user")
+            elif "for table in _ERASE_TABLES" not in (ast.get_source_segment(text, f) or ""):
+                problems.append(f"{path}:{line} forget_user's interpolated DELETE is not its _ERASE_TABLES loop")
+            else:
+                routes.append((path, f.name))
     if "source_revocations" not in erase_tables:
         problems.append("source_revocations is not in _ERASE_TABLES")
     if not routes:
@@ -130,6 +146,23 @@ def test_the_delete_route_check_refuses_each_planted_defect():
     rogue = {**base, "y.py": "def sweep(c, t):\n    c.execute(f'DELETE FROM {t} WHERE 1')\n"}
     assert any("`sweep` has an interpolated DELETE outside forget_user" in p
                for p in ledger_delete_routes(rogue, _ERASE_TABLES))
+    # N1's controls (the reviewer's two spellings, erasure-probe.json, and their siblings): each was read as clean
+    for name, src in {
+        "quoted": "def purge(c):\n    c.execute('DELETE FROM \"source_revocations\" WHERE user_id=?')\n",
+        "backtick": "def purge(c):\n    c.execute('DELETE FROM `source_revocations` WHERE 1')\n",
+        "bracket": "def purge(c):\n    c.execute('DELETE FROM [source_revocations] WHERE 1')\n",
+        "schema": "def purge(c):\n    c.execute('delete from main . source_revocations where 1')\n",
+    }.items():
+        assert any("`purge` DELETEs source_revocations by name" in p
+                   for p in ledger_delete_routes({**base, "q.py": src}, _ERASE_TABLES)), name
+    module = {**base, "m.py": "connection.execute('DELETE FROM source_revocations WHERE user_id=?', ('u',))\n"}
+    assert any("m.py:1 `<module>` DELETEs source_revocations by name" in p
+               for p in ledger_delete_routes(module, _ERASE_TABLES))
+    module_f = {**base, "n.py": "for t in TABLES:\n    connection.execute(f'DELETE FROM {t}')\n"}
+    assert any("n.py:2 `<module>` has an interpolated DELETE outside forget_user" in p
+               for p in ledger_delete_routes(module_f, _ERASE_TABLES))
+    near = {**base, "r.py": "def keep(c):\n    c.execute('DELETE FROM source_revocations_archive WHERE 1')\n"}
+    assert ledger_delete_routes(near, _ERASE_TABLES) == [], "a different table whose name starts the same is not it"
     without = tuple(t for t in _ERASE_TABLES if t != "source_revocations")
     assert ledger_delete_routes(base, without) == ["source_revocations is not in _ERASE_TABLES"]
     assert ledger_delete_routes({}, _ERASE_TABLES) == ["no erasure route found: the check is measuring nothing"]

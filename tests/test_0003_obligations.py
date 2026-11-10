@@ -266,12 +266,105 @@ def test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap():
 
 
 def test_n1_k_counts_the_distinct_values_not_shown_not_the_members():
-    """Two members whose objects clamp to one slot are one value: K counts what the line does not show."""
+    """K counts the distinct VALUES the line does not show. Two members whose different objects clamp to one display
+    string are TWO values (SR1-01, shipped-changes round 1: this cell used to call them one, which is the defect the
+    reviewer reproduced), so one shown slot leaves two more."""
     o1, o2, o3 = f"{D1} " + "a" * 3000 + "1", f"{D1} " + "a" * 3000 + "2", f"{D2} " + "c" * 400
     with tempfile.TemporaryDirectory() as d:
         m, _ = _mem(d, *[[("lease renewal", "deadline", o)] for o in (o1, o2, o3)])
         line = next(ln for ln in m.recall(U).context.splitlines() if "CONTESTED" in ln)
+        assert _cap(m, line) and line.endswith(" or 2 more" + TAIL), line
+
+
+def test_n1_k_counts_values_when_one_episode_repeats_a_value():
+    """K counts distinct VALUES, not members, and a group CAN hold one value twice: a prior A and one episode naming
+    [B, A] keep both A edges current (0003 §4c-iv), so the group is three members over two values. One shown slot
+    leaves ONE more, not two. (The forged input for N1-K-counts-members, ported onto SR1-01: the commitment tier
+    collapses the repeated value before the line is composed, so that mutant is equivalent by construction, stated
+    in specs/evidence/0003/obligations_mutants.py; this cell stays as the regression.)"""
+    # ~300 tokens each: ONE value fits the 512-token line, two do not, so the elided form is composed (the one-slot
+    # fallback, taken when not even one fits, counts K on its own)
+    a, b = f"{D1} " + "a" * 1200, f"{D2} " + "b" * 1200
+    with tempfile.TemporaryDirectory() as d:
+        m, _ = _mem(d, [("lease renewal", "deadline", a)], [("lease renewal", "deadline", b), ("lease renewal", "deadline", a)])
+        gs, _ = m._build_contested(U, [], None)
+        assert len(gs) == 1 and len(gs[0].exposed) == 3 and len({e.object for e in gs[0].exposed}) == 2, gs
+        line = next(ln for ln in m.recall(U).context.splitlines() if "CONTESTED" in ln)
         assert _cap(m, line) and line.endswith(" or 1 more" + TAIL), line
+
+
+def _mem_cap(d, cap, *objects):
+    """A contested lease renewal over `objects`, with item_cap_tokens=`cap` (64, the floor, lets two clamped
+    displays share one line, so a display collision is visible)."""
+    llm = Scripted(*[[("lease renewal", "deadline", o)] for o in objects])
+    m = Memory(llm=llm, config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db", wiki_recompile_after_writes=0,
+                                            item_cap_tokens=cap))
+    for i, o in enumerate(objects):
+        m.remember(U, _say([("lease renewal", "deadline", o)]), date=DAY(-10 + i), context=EvidenceContext.direct())
+    return m
+
+
+def test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more():
+    """SR1-01 (shipped-changes round 1): distinctness is decided on the original objects, before the clamp. Two
+    different values whose clamped displays are identical are two values; the second display, repeating the first,
+    is not shown again and is counted in K (research's stage 1, Q1). Before the fix the line showed one slot and no
+    "or 1 more"; without the fold it would read "X or X"."""
+    from veracium.budgets import clamp_item
+    a, b = f"{D1} " + "a" * 300 + "1", f"{D1} " + "a" * 300 + "2"
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem_cap(d, 64, a, b)
+        r = m.recall(U)
+        line = next(ln for ln in r.context.splitlines() if "CONTESTED" in ln)
+        assert line == f"deadline: lease renewal — CONTESTED: {clamp_item(a, 16)} or 1 more" + TAIL, line
+        assert clamp_item(a, 16) == clamp_item(b, 16) and _clamped(r.context) == 1, r.context
+        assert {e.object for e in r.edges if e.relation == "deadline"} == {a, b}
+
+
+def test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision():
+    """The matrix's third cell: two values collide in display, a third does not. The plain value is shown, in
+    nearest-due order after the first, and the colliding one is the one more."""
+    from veracium.budgets import clamp_item
+    a, b, c = f"{D1} " + "a" * 300 + "1", f"{D1} " + "a" * 300 + "2", f"{D2} plain"
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem_cap(d, 64, a, b, c)
+        r = m.recall(U)
+        line = next(ln for ln in r.context.splitlines() if "CONTESTED" in ln)
+        assert line == f"deadline: lease renewal — CONTESTED: {clamp_item(a, 16)}, {c} or 1 more" + TAIL, line
+        assert _clamped(r.context) == 1, r.context
+
+
+class _ReviewerScripted:
+    def __init__(self, s):
+        self.s = list(s)
+
+    def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+        if role != "distill":
+            return ""
+        ts, ep = self.s.pop(0)
+        return json.dumps({"triples": [{"subject": s, "relation": r, "object": o, "volatility": "durable"}
+                                       for s, r, o in ts], "episode": ep, "instructions": []})
+
+
+def test_sr1_01_the_reviewers_regression(tmp_path):
+    """The reviewer's own regression for SR1-01 (shipped-changes round 1, repro/test_review_regressions.py), its
+    assertions verbatim: two distinct 2,400-character values sharing their prefix, at the reviewer's fixed clock."""
+    from veracium.budgets import est_tokens
+    prefix = "appointment details " * 120
+    values = [prefix + " ALPHA LOCATION 2026-11-12", prefix + " OMEGA LOCATION 2026-11-14"]
+    m = Memory(llm=_ReviewerScripted([([("clinic appointment", "deadline", o)], "A clinic appointment.") for o in values]),
+               config=MemoryConfig(db_path=str(tmp_path / "count.db"), require_source_id=False,
+                                   wiki_recompile_after_writes=0))
+    for i, o in enumerate(values):
+        m.remember("u", "USER: My clinic appointment is " + o, date=f"2026-11-0{i + 1}", context=EvidenceContext.direct())
+    gs, _ = m._build_contested("u", [], None)
+    assert len(gs) == 1 and len(gs[0].exposed) == 2
+    ctx, edges, _, _ = proactive.assemble(m.store, "u", m.config, now=datetime(2026, 11, 10, tzinfo=timezone.utc),
+                                          token_budget=1200, est=est_tokens,
+                                          contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in gs])
+    assert len({e.object for e in edges}) == 2
+    assert " or 1 more (unconfirmed which is current)" in ctx, \
+        "two distinct values became one clamped slot without the required omitted-value count"
+    m.close()
 
 
 def test_new1_a_plain_commitment_line_is_held_to_the_item_cap():

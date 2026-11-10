@@ -35,7 +35,8 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
   "what did X used to be?" stays answerable. Facts that can hold several values
   at once (preferences, measurements, health states) accumulate instead. A user can hold several deadlines:
   each dated obligation is stored under its own name with an ISO date, and a rescheduled one shows once, marked
-  contested, until a correction (`correct()`) settles which date holds. *(The category commercial memory
+  contested, with both dates kept. No public call settles which date holds yet: `correct()` refuses to retire a
+  date whose subject is the obligation, not the user (specs/0011 §4b), and `confirm()` leaves both. *(The category commercial memory
   systems handle worst; Veracium's strongest.)*
 - **Representation is a security control.** Third-party claims (received email,
   external docs) are quarantined *structurally* — stored as `third_party_claim`

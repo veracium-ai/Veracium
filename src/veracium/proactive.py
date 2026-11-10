@@ -248,11 +248,22 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         # least one slot, clamped if it must be; a unit whose framed form cannot hold one slot returns None (dropped
         # and counted, never cut). Each slot is the member's clamped OBJECT (B1), in nearest-due order, distinct
         # values once. ONE clamped item when anything is clamped or elided.
+        # SR1-01 (shipped-changes round 1): distinctness is decided on the ORIGINAL objects, before any clamp; two
+        # values that clamp to one display string were one slot, so K lost a value. A later value whose clamped
+        # display repeats a shown one is not shown again and is counted in K (research's stage 1, Q1).
         subject, relation, ms = _unit_parts[unit.id]
         label = _clamp(subject, max(16, _cap // 8))
         order = sorted(ms, key=lambda m: (min(_dates_in(m.object + " " + m.note)), m.object, m.id))
-        slots = list(dict.fromkeys(_obj(m) for m in order))
+        values = list(dict.fromkeys(m.object for m in order))
         head, tail = f"{relation}: {label} — CONTESTED: ", " (unconfirmed which is current)"
+
+        def _shown(n):
+            out = []
+            for v in values[:n]:
+                s = _clamp(v, max(16, _cap - 48))
+                if s not in out:
+                    out.append(s)
+            return out
 
         def _body(shown, k):
             if k:
@@ -260,16 +271,17 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             return shown[0] if len(shown) == 1 else ", ".join(shown[:-1]) + " or " + shown[-1]
 
         line = None
-        for n in range(len(slots), 0, -1):         # the nearest n slots, n falling: the farthest go first
-            cand = head + _body(slots[:n], len(slots) - n) + tail
+        for n in range(len(values), 0, -1):        # the nearest n values, n falling: the farthest go first
+            shown = _shown(n)
+            cand = head + _body(shown, len(values) - len(shown)) + tail
             if _est0(cand) <= line_cap:
-                line, k, first = cand, len(slots) - n, slots[0]
+                line, k, first = cand, len(values) - len(shown), shown[0]
                 break
         if line is None:                           # one slot, clamped to what the framing leaves
-            k = len(slots) - 1
+            k = len(values) - 1
             content = line_cap - _est0(head + _body([""], k) + tail)
             while content >= 16:
-                first = _clamp(order[0].object, content)
+                first = _clamp(values[0], content)
                 cand = head + _body([first], k) + tail
                 if _est0(cand) <= line_cap:
                     line = cand
@@ -277,7 +289,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 content -= _est0(cand) - line_cap
             if line is None:
                 return None
-        if label != subject or k or first != slots[0] or any(_obj(m) != m.object for m in ms):
+        if label != subject or k or first != values[0] or any(_obj(m) != m.object for m in ms):
             _clamped_ids.add(("contested", unit.id))      # ONE item, however many of its parts were clamped
         return line
 

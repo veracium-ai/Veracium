@@ -76,17 +76,17 @@ DEFAULT = {
 }
 OVERRIDE = {  # (module, line) -> reason class, where the module default is not the truth for that line
     ("__init__.py", 403): "control-flow", ("__init__.py", 484): "control-flow", ("__init__.py", 621): "control-flow",
-    ("__init__.py", 948): "control-flow", ("__init__.py", 1592): "control-flow", ("__init__.py", 1733): "control-flow",
-    ("__init__.py", 1755): "control-flow", ("__init__.py", 1804): "control-flow", ("__init__.py", 1811): "control-flow",
-    ("__init__.py", 1822): "control-flow", ("__init__.py", 1829): "control-flow", ("__init__.py", 1858): "control-flow",
-    ("__init__.py", 1884): "control-flow", ("__init__.py", 2268): "internal-invariant", ("__init__.py", 2421): "control-flow",
+    ("__init__.py", 948): "control-flow", ("__init__.py", 1603): "control-flow", ("__init__.py", 1744): "control-flow",
+    ("__init__.py", 1766): "control-flow", ("__init__.py", 1815): "control-flow", ("__init__.py", 1822): "control-flow",
+    ("__init__.py", 1833): "control-flow", ("__init__.py", 1840): "control-flow", ("__init__.py", 1869): "control-flow",
+    ("__init__.py", 1895): "control-flow", ("__init__.py", 2279): "internal-invariant", ("__init__.py", 2432): "control-flow",
     ("__init__.py", 305): "internal-invariant", ("__init__.py", 312): "internal-invariant",
     ("__init__.py", 1032): "internal-invariant", ("__init__.py", 1036): "internal-invariant", ("__init__.py", 1040): "internal-invariant",
     ("__init__.py", 1047): "internal-invariant", ("__init__.py", 1049): "internal-invariant",
     ("agreement.py", 219): "predicate-helper", ("agreement.py", 267): "control-flow", ("agreement.py", 487): "control-flow",
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 117): "internal-invariant", ("asof/resolve.py", 122): "internal-invariant",
     ("asof/resolve.py", 181): "control-flow", ("asof/resolve.py", 206): "predicate-helper",
-    ("compile.py", 208): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
+    ("compile.py", 215): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
     ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 60): "predicate-helper", ("graph.py", 75): "predicate-helper", ("graph.py", 241): "internal-invariant",
     ("graph.py", 922): "argument-check", ("grounding.py", 154): "control-flow",
@@ -118,18 +118,20 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
     ("mcp_server.py", 578): "cli-usage", ("mcp_server.py", 584): "cli-usage", ("mcp_server.py", 588): "cli-usage", ("mcp_server.py", 600): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
-    ("__init__.py", 2340): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
-    ("__init__.py", 2350): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
-    ("compile.py", 412): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
+    ("__init__.py", 2351): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
+    ("__init__.py", 2361): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
+    ("adapters/_surface.py", 41): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
+    ("adapters/_surface.py", 45): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
+    ("adapters/pydantic_ai.py", 62): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
+    ("compile.py", 419): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
     ("lifecycle.py", 63): "internal-invariant",   # specs/0048 §4D, the owner's "Refuse, name it": a store without the transition refuses (the Store base's refusing-default class)
     ("proactive.py", 242): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
-    ("proactive.py", 279): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
+    ("proactive.py", 291): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
     ("schema.py", 625): "predicate-helper",   # 0.29.0 B1+B2: schema.py:is_obligation:BOOL_RETURN:1 (consumed by the backstop and _lexical_scored)
     ("schema.py", 679): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
     ("schema.py", 706): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1
     ("schema.py", 1471): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
     ("store/migration.py", 825): "control-flow",   # carried: store/migration.py:preimage_fields:FILTER_RETURN:1
-    # 0018 §4j (T3): the orchestrator stays outside the enforcement registry, as it is at every release: a rung's refusals take the module's default
     ("store/release_migration.py", 936): "predicate-helper",   # carried: store/release_migration.py:_mintable_base:RETURN_NONE:1
     ("store/release_migration.py", 1571): "argument-check",   # carried: store/release_migration.py:_record_row:RAISE:1
     ("store/release_migration.py", 1578): "predicate-helper",   # carried: store/release_migration.py:_readback_is_bound:BOOL_RETURN:1
@@ -139,9 +141,6 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/schema_version.py", 1991): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:3
     ("store/schema_version.py", 1993): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:4
     ("store/schema_version.py", 2000): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:5
-    ("adapters/_surface.py", 41): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
-    ("adapters/_surface.py", 45): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
-    ("adapters/pydantic_ai.py", 62): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
@@ -194,9 +193,9 @@ e("asof/resolve.py", 272, "asof.resolve.future-T", "0028", "§2c-i", "refuse")
 e("asof/resolve.py", 245, "asof.resolve.held-at", "0028", "§2c-i", "withhold")
 e("authority.py", 76, "authority.permitted", "0003", "§4a", "refuse")
 e("authority.py", 89, "authority.self-assertion", "0003", "§4a", "withhold")
-e("compile.py", 422, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
-e("compile.py", 142, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
-e("compile.py", 194, "compile.grounded-inputs", "0004", "§4", "withhold")
+e("compile.py", 429, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
+e("compile.py", 149, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
+e("compile.py", 201, "compile.grounded-inputs", "0004", "§4", "withhold")
 e("diagnostics.py", 276, "diagnostics.send.not-consented", "0015", "§4", "withhold")
 e("gate.py", 54, "gate.exclude-procedural", "0037", "V-EXTRACTOR-QUOTE-GATED", "withhold")
 e("gate.py", 178, "gate.partition-parts", "0001", "§4", "withhold")
@@ -227,18 +226,18 @@ e("ingest.py", 378, "ingest.instructions-not-a-list", "0039", "§2a", "downgrade
 e("ingest.py", 306, "ingest.source-id-required", "0006", "§4 rule 9", "refuse")
 e("mcp_server.py", 113, "mcp.closed-set.author", "0011", "§4d", "refuse")
 e("mcp_server.py", 122, "mcp.closed-set.trust-field", "0011", "§4d", "refuse")
-e("__init__.py", 1986, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
-e("__init__.py", 2219, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
-e("__init__.py", 2239, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
-e("__init__.py", 2285, "memory.correct.refused", "0011", "§4b", "refuse")
-e("__init__.py", 1923, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
-e("__init__.py", 1904, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
-e("__init__.py", 1895, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
+e("__init__.py", 1997, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
+e("__init__.py", 2230, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
+e("__init__.py", 2250, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
+e("__init__.py", 2296, "memory.correct.refused", "0011", "§4b", "refuse")
+e("__init__.py", 1934, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
+e("__init__.py", 1915, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
+e("__init__.py", 1906, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
 e("__init__.py", 932, "memory.recall.as-of-on-proactive", "0028", "§2c", "refuse")
 e("__init__.py", 1057, "memory.recall.policy-with-as-of", "0027", "v13 §4c", "refuse")
-e("__init__.py", 2095, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
-e("__init__.py", 2098, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
-e("__init__.py", 2101, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2106, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
+e("__init__.py", 2109, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2112, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
 e("__init__.py", 408, "memory.scope.local-origin-missing", "0006", "I9", "refuse")
 e("portability.py", 494, "portability.export.non-quiescent", "0010", "X-quiesce", "refuse")
 e("portability.py", 1810, "portability.import.act-preflight", "0008", "§6e–§6f", "refuse")

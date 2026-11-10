@@ -15,6 +15,13 @@ Two of §6's named mutants are not code edits here, stated rather than dropped:
 - INV-OB5's "a check that writes" is equivalent BY CONSTRUCTION: `doctor.diagnose` opens a snapshot copy in a
   temporary directory (`_open_snapshot`), so a write in any check lands in the copy; the cell's byte-identical
   assertion holds for that reason, and the counting mutants below are its killable half.
+- N1-K-counts-members (K counted over the members, not the distinct values) is equivalent BY CONSTRUCTION since
+  SR1-01 (shipped-changes round 1): `_contested_line` now takes its values from the members' original objects, and the
+  commitment tier it reads already holds one member per object (collapse before the tier). The forged input, a prior A
+  and one episode naming [B, A], is a group of 3 ids that reaches the tier as 2 members over 2 values (probed by
+  instrumenting a scratch copy, 2026-11-10), so len(ms) == len(values) for every reachable unit. Before SR1-01 it was
+  killable because the slots were CLAMPED strings that could collapse below the member count; its successor is
+  SR1-01-dedup-after-clamp, and test_n1_k_counts_values_when_one_episode_repeats_a_value stays as the regression.
 - INV-OB8 holds at TWO layers: the carrier passes only `_build_contested`'s EXPOSED ids (no query selection, so a
   fenced challenger is linkage), and `assemble` admits only assertable members. A one-file mutant of either layer
   survives by construction, and the protocol edits one file per mutant, so its kill is the DOUBLE mutant, run by
@@ -69,6 +76,9 @@ B1_DEADLINE = C("test_b1_a_contested_deadline_keeps_its_time_and_place")
 N1_FLOOR = C("test_n1_a_long_group_at_the_floor_budget_keeps_its_nearest_dates_and_its_framing")
 N1_OVERSIZED = C("test_n1_a_group_of_oversized_objects_is_held_to_the_item_cap")
 N1_K = C("test_n1_k_counts_the_distinct_values_not_shown_not_the_members")
+SR1_FOLD = C("test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more")
+SR1_MIX = C("test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision")
+SR1_REVIEWER = C("test_sr1_01_the_reviewers_regression")
 NEW1 = C("test_new1_a_plain_commitment_line_is_held_to_the_item_cap")
 NEW1_MARK = C("test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark")
 N2 = C("test_n2_a_clamped_group_is_one_clamped_item")
@@ -129,8 +139,8 @@ MUTANTS = [
      [OB9, OB8], [OB3], None, "the mark on a lone member whose partner is withheld or fenced (content of a "
                                "challenged or fenced member's existence volunteered)"),
     ("B1-slots-are-dates-only", "product", X,
-     [("        slots = list(dict.fromkeys(_obj(m) for m in order))\n",
-       "        slots = list(dict.fromkeys(str(min(_dates_in(m.object + \" \" + m.note))) for m in order))\n")],
+     [("        values = list(dict.fromkeys(m.object for m in order))\n",
+       "        values = list(dict.fromkeys(str(min(_dates_in(m.object + \" \" + m.note))) for m in order))\n")],
      [B1_OBJ, B1_DEADLINE], [OB3], None, "a contested line names only each member's date, dropping its object "
                                         "(research's stage-2 B1)"),
     ("S1-4-subject-dropped", "product", X,
@@ -149,13 +159,19 @@ MUTANTS = [
      [N1_FLOOR], [N1_OVERSIZED], None, "the superseded first-item path: a group line tail-clamped at the remaining "
                                        "budget, cutting a date and its framing (N1)"),
     ("N1-farthest-slots-kept", "product", X,
-     [("            cand = head + _body(slots[:n], len(slots) - n) + tail\n",
-       "            cand = head + _body(slots[len(slots) - n:], len(slots) - n) + tail\n")],
+     [("            for v in values[:n]:\n",
+       "            for v in values[len(values) - n:]:\n")],
      [N1_FLOOR], [OB3], None, "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"),
-    ("N1-K-counts-members", "product", X,
-     [("            cand = head + _body(slots[:n], len(slots) - n) + tail\n",
-       "            cand = head + _body(slots[:n], len(ms) - n) + tail\n")],
-     [N1_K], [N1_FLOOR], None, "K counts the members not shown, not the distinct values (research's stage 1)"),
+    # ---- shipped-changes round 1, SR1-01 (the superseded implementation is the mutant; research's stage 1, Q1) -------
+    ("SR1-01-dedup-after-clamp", "product", X,
+     [("        values = list(dict.fromkeys(m.object for m in order))\n",
+       "        values = list(dict.fromkeys(_obj(m) for m in order))\n")],
+     [SR1_FOLD, SR1_MIX, SR1_REVIEWER, N1_K], [OB3], None, "distinct values decided AFTER the clamp, so two different "
+                                                            "values that shorten alike are one and K loses one (SR1-01)"),
+    ("SR1-01-collision-shown-twice", "product", X,
+     [("                if s not in out:\n                    out.append(s)\n", "                out.append(s)\n")],
+     [SR1_FOLD, SR1_MIX], [OB3], None, "a value whose clamped display repeats a shown one is shown again (\"X or X\"), "
+                                      "not folded into K (research's stage 1, Q1)"),
     ("NEW1-object-cap-ignores-the-line", "product", X,
      [("        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
        "        content = max(16, _cap - 48)\n"),
@@ -183,7 +199,7 @@ MUTANTS = [
        "                    max(m.provenance.observed_at.timestamp() for m in e.edges)")],
      [N3_TIE], [OB3], None, "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"),
     ("R5-group-clamp-uncounted", "product", X,
-     [("        if label != subject or k or first != slots[0] or any(_obj(m) != m.object for m in ms):\n"
+     [("        if label != subject or k or first != values[0] or any(_obj(m) != m.object for m in ms):\n"
        "            _clamped_ids.add((\"contested\", unit.id))",
        "        if False:\n            pass")],
      [N2, N1_OVERSIZED], [OB3], None, "a clamped or elided group line without the I10a signal (research's stage-2 R5)"),
