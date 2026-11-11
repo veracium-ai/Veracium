@@ -228,3 +228,58 @@ def test_an_empty_selection_is_refused_by_name_never_passed():
     assert problems and "collected no tests" in problems[0]
     assert TP.suite_line(t) == "no tests ran"
     assert TP._last_line("286 deselected in 0.40s") == "286 deselected in 0.40s"
+
+
+def _with_module_skip(junit_bytes, name, child="skipped"):
+    """A junit as pytest writes a module skipped at collection: ONE testcase, an empty classname, the dotted module path as
+    its name, and a single child (<skipped> for a skip; another tag forges a nameless entry that is not one)."""
+    root = ET.fromstring(junit_bytes)
+    s = root.find("testsuite")
+    tc = ET.SubElement(s, "testcase", classname="", name=name)
+    ET.SubElement(tc, child, message="could not import 'mcp': No module named 'mcp'")
+    s.set("tests", str(int(s.get("tests")) + 1))
+    if child == "skipped":
+        s.set("skipped", str(int(s.get("skipped")) + 1))
+    return ET.tostring(root)
+
+
+MODS = ["tests/test_a.py", "tests/sub/test_b.py", "tests/test_seam_model_z.py", "tests/test_c.py"]
+
+
+def test_a_module_skipped_at_collection_is_accounted_for_not_uncollected():
+    """Found at the shipped-changes round-2 pin: on a host without `mcp`, 0053's adapter suite skips whole at import; its one
+    junit entry (empty classname, the module as its name) was refused as a node that ran uncollected, failing a green run."""
+    p1 = _with_module_skip(_junit(P1_IDS), "tests.test_c")
+    problems, n = TP.check(_collect(), p1, _junit(P2_IDS), phase2=P2, modules=MODS)
+    assert problems == [] and n["skipped"] == 1, (problems, n)
+
+
+def test_a_module_skip_naming_no_test_module_of_the_run_stays_uncollected():
+    """Research's cross-check (a): the entry must name one of the run's own test modules. One naming a module the tree does
+    not hold stays a node that ran uncollected."""
+    p1 = _with_module_skip(_junit(P1_IDS), "tests.test_absent")
+    problems, _n = TP.check(_collect(), p1, _junit(P2_IDS), phase2=P2, modules=MODS)
+    assert any("ran that were not collected" in p for p in problems), problems
+
+
+def test_with_no_module_set_a_module_skip_is_not_accounted_for():
+    """Fail closed: a caller that gives no module set accounts for no module skip."""
+    p1 = _with_module_skip(_junit(P1_IDS), "tests.test_c")
+    problems, _n = TP.check(_collect(), p1, _junit(P2_IDS), phase2=P2)
+    assert any("ran that were not collected" in p for p in problems), problems
+
+
+def test_a_skipped_module_whose_nodes_were_collected_is_refused():
+    """The accounting holds only when NONE of the module's nodes was collected: a module both collected and reported as
+    skipped whole is a contradiction, refused by name."""
+    p1 = _with_module_skip(_junit(P1_IDS), "tests.test_a")
+    problems, _n = TP.check(_collect(), p1, _junit(P2_IDS), phase2=P2, modules=MODS)
+    assert any("tests/test_a.py is reported skipped at collection" in p for p in problems), problems
+
+
+def test_a_nameless_entry_that_is_not_a_skip_is_still_uncollected():
+    """Only pytest's skip form is accounted for: a nameless entry carrying an <error> (a collection error) stays a node
+    that ran uncollected, and its error is counted."""
+    p1 = _with_module_skip(_junit(P1_IDS), "tests.test_c", child="error")
+    problems, _n = TP.check(_collect(), p1, _junit(P2_IDS), phase2=P2, modules=MODS)
+    assert any("ran that were not collected" in p for p in problems), problems

@@ -85,6 +85,10 @@
     `VERACIUM_OFFLINE_MODE=single` keeps the one-process run.
   - **Two locked wheels are added,** pytest-xdist 3.8.0 and execnet 2.1.2.
   - **Junit:** `--junitxml=X` now writes each phase's file beside X and the two merged at X.
+  - **A module skipped at import no longer fails the check.** On a host without the `mcp` extra, the 0053 adapter
+    suite skips whole at collection; pytest's junit records that as one nameless entry, which the check read as a test
+    that ran uncollected, so a green run exited 1. Such an entry is now accounted for when none of that module's tests
+    was collected; anything else nameless is still refused. Found while staging the shipped-changes round-2 package.
 
 ## 0.31.0 — 2026-11-08
 

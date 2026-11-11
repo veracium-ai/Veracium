@@ -31,14 +31,20 @@ SEAM_MARK = 'PYTEST_XDIST_WORKER") is None'
 _SUMMARY = re.compile(r"(\d+) (passed|failed|skipped|errors?|xfailed|xpassed|deselected)")
 
 
+def test_modules(tests: pathlib.Path) -> list:
+    """Every test module, sorted, as `tests/...py`: pytest's default python_files (test_*.py and *_test.py; pyproject sets
+    no override), subdirectories included, as ci_shard (research's L5). One enumeration for phase 2 and module skips."""
+    return sorted(x.relative_to(tests.parent).as_posix() for x in tests.rglob("*.py")
+                  if x.name.startswith("test_") or x.name.endswith("_test.py"))
+
+
 def phase2_files(tests: pathlib.Path) -> list:
     """The files phase 2 runs, sorted: the mark's carriers and every seam-model driver."""
     out = set()
-    # every test module by pytest's default python_files (test_*.py and *_test.py; pyproject sets no override),
-    # subdirectories included, as ci_shard (research's L5)
-    for p in sorted(x for x in tests.rglob("*.py") if x.name.startswith("test_") or x.name.endswith("_test.py")):
+    for rel in test_modules(tests):
+        p = tests.parent / rel
         if p.name.startswith("test_seam_model_") or SEAM_MARK in p.read_text(encoding="utf-8"):
-            out.add(p.relative_to(tests.parent).as_posix())
+            out.add(rel)
     return sorted(out)
 
 
@@ -109,6 +115,21 @@ def cases(xml_bytes: bytes) -> tuple:
     return keys, kinds
 
 
+def module_skips(xml_bytes: bytes) -> list:
+    """The modules skipped at COLLECTION (a module-level `importorskip` or `skip`): pytest's junit writes each as ONE testcase
+    with an EMPTY classname, the module's dotted path as its name, and a <skipped> child only; `--collect-only` lists none
+    of its nodes. Found at the shipped-changes round-2 pin: on a host without the `mcp` extra, 0053's adapter suite skips
+    whole, and the comparison read that one entry as a node that ran uncollected, refusing a green run.
+
+    `check` accounts for such an entry only when its module is one of the run's own test modules (`test_modules`) and none
+    of that module's nodes was collected; with no module set given it accounts for none (fail closed). A second
+    cross-check, the module skips equal to those the collection itself reports, needs `-rs` on the collection command:
+    `--collect-only -q` alone prints no skip (pytest 9.2.0), and `-rs` prints one "SKIPPED [1] tests/<file>.py:<line>"
+    line per module skipped at collection."""
+    return [tc.get("name") for tc in ET.fromstring(xml_bytes).iter("testcase")
+            if not tc.get("classname") and [c.tag for c in tc] == ["skipped"]]
+
+
 def summary_counts(output: str) -> dict:
     lines = [line for line in output.splitlines() if re.search(r"\b(passed|failed|error|errors|no tests ran)\b", line)]
     got = {k: int(n) for n, k in _SUMMARY.findall(lines[-1] if lines else "")}
@@ -124,7 +145,7 @@ def _module(classname: str) -> str:
     return "/".join(keep) + ".py"
 
 
-def check(collect_text: str, p1: bytes, p2: bytes, lines=None, phase2=None, rcs=None) -> tuple:
+def check(collect_text: str, p1: bytes, p2: bytes, lines=None, phase2=None, rcs=None, modules=None) -> tuple:
     """(problems, totals). Every refusal is a problem string; totals are the suite's counts from the two junits. `phase2`, the
     phase-2 files, makes the split itself checked: phase 2 ran exactly those files' nodes and phase 1 none of them."""
     problems = []
@@ -141,6 +162,15 @@ def check(collect_text: str, p1: bytes, p2: bytes, lines=None, phase2=None, rcs=
     if twice:
         problems.append(f"{len(twice)} node(s) ran more than once (in both phases, or twice in one): {twice[:3]}")
     missing, extra = want - ran, ran - want
+    # a module skipped at collection is accounted for, not "uncollected", only when none of its nodes was collected
+    have = {n.split("::")[0] for n in ids}
+    for name in module_skips(p1) + module_skips(p2):
+        path = name.replace(".", "/") + ".py"
+        if path in have:
+            problems.append(f"{path} is reported skipped at collection, yet {sum(1 for n in ids if n.split('::')[0] == path)} "
+                            f"of its node(s) were collected")
+        elif modules is not None and path in set(modules):
+            extra.pop(("", name), None)
     if missing:
         problems.append(f"{sum(missing.values())} collected node(s) ran in neither phase: {sorted(missing)[:3]}")
     if extra:
@@ -230,7 +260,8 @@ def main(argv) -> int:
         rcs = (int(rest[rest.index("--rc") + 1]), int(rest[rest.index("--rc") + 2])) if "--rc" in rest else None
         wall = float(rest[rest.index("--wall") + 1]) if "--wall" in rest else None
         p1, p2 = a.read_bytes(), b.read_bytes()
-        problems, t = check(collect_path.read_text(encoding="utf-8"), p1, p2, texts, p2files, rcs)
+        mods = test_modules(pathlib.Path(rest[rest.index("--tests") + 1])) if "--tests" in rest else None
+        problems, t = check(collect_path.read_text(encoding="utf-8"), p1, p2, texts, p2files, rcs, mods)
         if out is not None:
             out.write_bytes(merge(p1, p2))
         for p in problems:
