@@ -333,6 +333,45 @@ def test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_count
         assert _clamped(r.context) == 1, r.context
 
 
+_LONG_SUBJECT = "lease renewal " + "x" * 400     # its label is clamped at item_cap//8, so no n-slot line fits
+
+
+def _one_slot_line(d, *objects):
+    llm = Scripted(*[[(_LONG_SUBJECT, "deadline", o)] for o in objects])
+    m = Memory(llm=llm, config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
+    for i, o in enumerate(objects):
+        m.remember(U, _say([(_LONG_SUBJECT, "deadline", o)]), date=DAY(-10 + i), context=EvidenceContext.direct())
+    r = m.recall(U)
+    return m, r, next(ln for ln in r.context.splitlines() if "CONTESTED" in ln)
+
+
+def test_r2s_2_the_one_slot_path_shows_the_nearest_value_and_counts_the_other():
+    """R2S-2 (research's stage 2 on 974a6122, P1): the one-slot fallback, taken when no n-slot line fits, shows the
+    NEAREST value clamped to what the framing leaves and counts the other in K."""
+    from veracium.budgets import clamp_item
+    a, b = f"{D1} " + "a" * 3000, f"{D2} " + "b" * 3000
+    with tempfile.TemporaryDirectory() as d:
+        m, r, line = _one_slot_line(d, a, b)
+        head = f"deadline: {clamp_item(_LONG_SUBJECT, 64)} — CONTESTED: "
+        assert line.startswith(head + f"{D1} a") and line.endswith(" or 1 more" + TAIL), line[:120]
+        assert len(line) - len(head) - len(" or 1 more" + TAIL) < len(clamp_item(a, 512 - 48)), "not the one-slot path"
+        assert _cap(m, line) and _clamped(r.context) == 1, r.context
+        m.close()
+
+
+def test_r2s_2_sr1_01_on_the_one_slot_path():
+    """R2S-2 (research's P2): SR1-01 on the other path. Two different values whose composition-width displays are
+    identical are still two values: the one-slot line counts the second."""
+    from veracium.budgets import clamp_item
+    a, b = f"{D1} " + "a" * 3000 + "1", f"{D1} " + "a" * 3000 + "2"
+    assert clamp_item(a, 512 - 48) == clamp_item(b, 512 - 48)
+    with tempfile.TemporaryDirectory() as d:
+        m, r, line = _one_slot_line(d, a, b)
+        assert {e.object for e in r.edges if e.relation == "deadline"} == {a, b}
+        assert line.endswith(" or 1 more" + TAIL), line[-80:]
+        m.close()
+
+
 class _ReviewerScripted:
     def __init__(self, s):
         self.s = list(s)

@@ -1267,8 +1267,8 @@ class Memory:
             # under a principal the line never varies with what the store holds (0020: that difference is the signal)
             if unverified:
                 grounded = EMPTY_GROUNDED_BODY
-            elif principal is None and not self.store.episodes(user_id, limit=1) and not self.store.edges(
-                    user_id, active_only=False, include_quarantined=True):
+            elif principal is None and not self.store.episodes(user_id, limit=1, include_retired=True) and not \
+                    self.store.edges(user_id, active_only=False, include_quarantined=True):    # R2S-1: retired too
                 grounded = "(no memory yet for this user)"
             else:
                 grounded = EMPTY_VIEW_BODY

@@ -22,6 +22,10 @@ Two of §6's named mutants are not code edits here, stated rather than dropped:
   instrumenting a scratch copy, 2026-11-10), so len(ms) == len(values) for every reachable unit. Before SR1-01 it was
   killable because the slots were CLAMPED strings that could collapse below the member count; its successor is
   SR1-01-dedup-after-clamp, and test_n1_k_counts_values_when_one_episode_repeats_a_value stays as the regression.
+  Research's stage 2 on 974a6122 measured the tier at (2, 2) on five forms (3 ids over 2 values, 4 over 2, a
+  system-authored restatement, a second source), and two neighbours follow from it: the clamped-item signal without
+  `first != values[0]` (A5) and the n-slot `first` taken unclamped (A7) differ only when a shown value was clamped,
+  which the member check `_obj(m) != m.object` already signals.
 - INV-OB8 holds at TWO layers: the carrier passes only `_build_contested`'s EXPOSED ids (no query selection, so a
   fenced challenger is linkage), and `assemble` admits only assertable members. A one-file mutant of either layer
   survives by construction, and the protocol edits one file per mutant, so its kill is the DOUBLE mutant, run by
@@ -79,6 +83,8 @@ N1_K = C("test_n1_k_counts_the_distinct_values_not_shown_not_the_members")
 SR1_FOLD = C("test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more")
 SR1_MIX = C("test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision")
 SR1_REVIEWER = C("test_sr1_01_the_reviewers_regression")
+R2S2_NEAREST = C("test_r2s_2_the_one_slot_path_shows_the_nearest_value_and_counts_the_other")
+R2S2_SR1 = C("test_r2s_2_sr1_01_on_the_one_slot_path")
 NEW1 = C("test_new1_a_plain_commitment_line_is_held_to_the_item_cap")
 NEW1_MARK = C("test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark")
 N2 = C("test_n2_a_clamped_group_is_one_clamped_item")
@@ -172,6 +178,26 @@ MUTANTS = [
      [("                if s not in out:\n                    out.append(s)\n", "                out.append(s)\n")],
      [SR1_FOLD, SR1_MIX], [OB3], None, "a value whose clamped display repeats a shown one is shown again (\"X or X\"), "
                                       "not folded into K (research's stage 1, Q1)"),
+    # ---- research's stage 2 on 974a6122 (R2S-2): the one-slot fallback, and two siblings of the n-slot form ----------
+    ("R2S-2-one-slot-k-counts-displays", "product", X,
+     [("            k = len(values) - 1\n", "            k = len(_shown(len(values))) - 1\n")],
+     [R2S2_SR1], [OB3], None, "the one-slot fallback counts K over clamped displays: SR1-01 on the other path (A4)"),
+    ("R2S-2-one-slot-shows-farthest", "product", X,
+     [("                first = _clamp(values[0], content)\n", "                first = _clamp(values[-1], content)\n")],
+     [R2S2_NEAREST], [OB3], None, "the one-slot fallback shows the FARTHEST value, not the nearest (A8)"),
+    ("R2S-2-one-slot-k-zero", "product", X,
+     [("            k = len(values) - 1\n", "            k = 0\n")],
+     [R2S2_NEAREST, R2S2_SR1], [OB3], None, "the one-slot fallback names no other value (A10)"),
+    ("R2S-2-k-counts-slots", "product", X,
+     [("            cand = head + _body(shown, len(values) - len(shown)) + tail\n",
+       "            cand = head + _body(shown, len(values) - n) + tail\n"),
+      ("                line, k, first = cand, len(values) - len(shown), shown[0]\n",
+       "                line, k, first = cand, len(values) - n, shown[0]\n")],
+     [SR1_FOLD, SR1_MIX], [OB3], None, "K counts the values not reached, not those not shown: a folded collision is "
+                                      "counted nowhere (A3)"),
+    ("R2S-2-display-width", "product", X,
+     [("                s = _clamp(v, max(16, _cap - 48))\n", "                s = _clamp(v, max(16, _cap - 40))\n")],
+     [SR1_FOLD, SR1_MIX], [OB3], None, "the display clamped wider than an object's composition width (A6)"),
     ("NEW1-object-cap-ignores-the-line", "product", X,
      [("        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
        "        content = max(16, _cap - 48)\n"),

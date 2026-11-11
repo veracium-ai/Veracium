@@ -85,23 +85,34 @@ def test_a_recreated_user_id_starts_with_no_standing_revocation(tmp_path):
 # would read true with the erasure in place. This check names the erasure route instead of missing it.
 
 SRC = pathlib.Path(__file__).resolve().parents[1] / "src" / "veracium"
-# N1 (shipped-changes round 1): the name may be quoted ("…", `…`, […]) or schema-qualified (main./temp.), and a DELETE may
-# sit at module level, outside every function; the first form of this check read function bodies for the bare name only.
-_LITERAL = re.compile(r"DELETE\s+FROM\s+(?:(?:main|temp)\s*\.\s*)?[\"`\[]?source_revocations[\"`\]]?(?!\w)", re.I)
-_INTERPOLATED = re.compile(r"DELETE\s+FROM\s+\{\w+\}", re.I)
+# N1 (shipped-changes round 1), widened by research's stage 2 on 974a6122 (R2S-4, every spelling measured on SQLite): the
+# name bare or quoted ("", '', ``, [], and a \" escape inside a Python string), optionally schema-qualified (main./temp.,
+# the schema quoted too), with whitespace or SQL comments between the keywords; DROP TABLE as well as DELETE FROM; and an
+# interpolation of ANY expression (`{}`, `{0}`, `{t}`, `{self.t}`, `{ts[0]}`, `{t!s}`).
+_SEP = r"(?:\s|/\*.*?\*/|--[^\n]*(?:\n|$))+"
+_GAP = r"(?:\s|/\*.*?\*/)*"
+_OPEN, _CLOSE = r"(?:\\?[\"'`]|\[)?", r"(?:\\?[\"'`]|\])?"
+_NAME = rf"(?:{_OPEN}(?:main|temp){_CLOSE}{_GAP}\.{_GAP})?{_OPEN}source_revocations{_CLOSE}(?![\w])"
+_LITERAL = re.compile(rf"DELETE{_SEP}FROM{_SEP}{_NAME}", re.I | re.S)
+_DROP = re.compile(rf"DROP{_SEP}TABLE(?:{_SEP}IF{_SEP}EXISTS)?{_SEP}{_NAME}", re.I | re.S)
+_INTERPOLATED = re.compile(rf"DELETE{_SEP}FROM{_SEP}\{{[^{{}}]*\}}", re.I | re.S)
 
 
 def ledger_delete_routes(files, erase_tables):
-    """`files`: {path: source text}. Returns the problems: a literal DELETE of the ledger anywhere in a file's text, in
-    a function or at module level; an interpolated DELETE outside `forget_user`; a `forget_user` whose interpolated
-    DELETE is not its loop over `_ERASE_TABLES`; the ledger absent from `erase_tables`; no erasure route at all.
+    """`files`: {path: source text}. Returns the problems: a literal DELETE or DROP of the ledger anywhere in a file's
+    text, in a function or at module level; an interpolated DELETE outside `forget_user`; a `forget_user` whose
+    interpolated DELETE is not its loop over `_ERASE_TABLES`; the ledger absent from `erase_tables`; no erasure route.
 
-    THE GRAMMAR IT READS (N1: what "anywhere" means, stated): the text of every .py file under src/veracium, searched
-    for `DELETE FROM <name>` where <name> is source_revocations, bare, quoted with "", `` or [], or prefixed main./temp.,
-    in any case and spacing; and for `DELETE FROM {<identifier>}` (an f-string or .format interpolation). It does NOT
-    read SQL assembled from pieces (`"DELETE FROM " + t`), a table name held in another variable and passed through
-    `%` or concatenation, SQL in non-.py files, or a trigger body created at run time. It is a source census over
-    those spellings, not an analysis of every SQL a process could run."""
+    THE GRAMMAR IT READS (N1, widened at R2S-4: what "anywhere" means, stated): the text of every .py file under
+    src/veracium, searched in any case for `DELETE FROM <name>` and `DROP TABLE [IF EXISTS] <name>`, the words separated
+    by whitespace or SQL comments (/* */, --), where <name> is source_revocations bare or quoted with "", '', `` or []
+    (a \" escape inside a Python string included), optionally prefixed main. or temp., that schema quoted the same way;
+    and for `DELETE FROM {<any expression>}` (an f-string or .format field, empty included). It does NOT read: SQL
+    assembled from pieces (`"DELETE FROM " + t`, `" ".join(...)`), a table name passed through `%` formatting, a DELETE
+    whose name is a bound variable SQLite cannot take (it refuses parameters for names), SQL in non-.py files or read
+    from disk, `executescript` of text built elsewhere, a trigger body created at run time, or a statement SQLite
+    reaches through a view, an ATTACHed database or a rename. It is a source census over those spellings, not an
+    analysis of every SQL a process could run."""
     problems, routes = [], []
     for path, text in files.items():
         funcs = [n for n in ast.walk(ast.parse(text)) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
@@ -114,6 +125,10 @@ def ledger_delete_routes(files, erase_tables):
             line = text.count("\n", 0, m.start()) + 1
             f = owner(line)
             problems.append(f"{path}:{line} `{f.name if f else '<module>'}` DELETEs source_revocations by name")
+        for m in _DROP.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            f = owner(line)
+            problems.append(f"{path}:{line} `{f.name if f else '<module>'}` DROPs source_revocations by name")
         for m in _INTERPOLATED.finditer(text):
             line = text.count("\n", 0, m.start()) + 1
             f = owner(line)
@@ -161,6 +176,25 @@ def test_the_delete_route_check_refuses_each_planted_defect():
     module_f = {**base, "n.py": "for t in TABLES:\n    connection.execute(f'DELETE FROM {t}')\n"}
     assert any("n.py:2 `<module>` has an interpolated DELETE outside forget_user" in p
                for p in ledger_delete_routes(module_f, _ERASE_TABLES))
+    # R2S-4 (research's stage 2, each measured on SQLite as deleting the rows or dropping the table): each is named
+    for name, src in {
+        "escaped double quote": 'def purge(c):\n    c.execute("DELETE FROM \\"source_revocations\\"")\n',
+        "single-quoted identifier": "def purge(c):\n    c.execute(\"DELETE FROM 'source_revocations'\")\n",
+        "quoted schema": "def purge(c):\n    c.execute('DELETE FROM \"main\".\"source_revocations\"')\n",
+        "comment between the keywords": "def purge(c):\n    c.execute('DELETE /* x */ FROM source_revocations')\n",
+    }.items():
+        assert any("`purge` DELETEs source_revocations by name" in p
+                   for p in ledger_delete_routes({**base, "q.py": src}, _ERASE_TABLES)), name
+    drop = {**base, "d.py": "def purge(c):\n    c.execute('DROP TABLE IF EXISTS source_revocations')\n"}
+    assert any("`purge` DROPs source_revocations by name" in p for p in ledger_delete_routes(drop, _ERASE_TABLES))
+    for name, src in {
+        ".format with {}": "def sweep(c, t):\n    c.execute('DELETE FROM {} WHERE 1'.format(t))\n",
+        "f-string attribute": "def sweep(self, c):\n    c.execute(f'DELETE FROM {self.table} WHERE 1')\n",
+        "f-string subscript": "def sweep(c, ts):\n    c.execute(f'DELETE FROM {ts[0]} WHERE 1')\n",
+        "f-string conversion": "def sweep(c, t):\n    c.execute(f'DELETE FROM {t!s} WHERE 1')\n",
+    }.items():
+        assert any("`sweep` has an interpolated DELETE outside forget_user" in p
+                   for p in ledger_delete_routes({**base, "s.py": src}, _ERASE_TABLES)), name
     near = {**base, "r.py": "def keep(c):\n    c.execute('DELETE FROM source_revocations_archive WHERE 1')\n"}
     assert ledger_delete_routes(near, _ERASE_TABLES) == [], "a different table whose name starts the same is not it"
     without = tuple(t for t in _ERASE_TABLES if t != "source_revocations")

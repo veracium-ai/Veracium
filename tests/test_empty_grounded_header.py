@@ -183,3 +183,68 @@ def test_an_unscoped_user_whose_only_record_is_redacted_reads_the_view_wording()
         assert m.store.episodes("u", limit=1) and not m.store.edges("u", active_only=False, include_quarantined=True)
         assert m.recall("u", "anything", semantic=False).context == "(no memory in this view)"
         m.close()
+
+
+def _revoked_user(d, triples):
+    """A user whose only event came from source "s1", then revoked (0022): its episode is retired (hidden from an
+    ordinary read) and any edge it wrote stays stored, inactive. Research's stage 2 on 974a6122, P3 and P4."""
+    from veracium import EvidenceContext
+
+    class One:
+        def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+            if role == "distill":
+                return json.dumps({"triples": [{"subject": s, "relation": r, "object": o, "volatility": "durable"}
+                                               for s, r, o in triples], "episode": "The user said something.",
+                                   "instructions": []})
+            return ""
+    m = Memory(llm=One(), config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
+    m.remember("u", "USER: " + " ".join(f"I {r} {o}." for _s, r, o in triples) if triples else "USER: Hello.",
+               date="2026-10-01", source_id="s1", context=EvidenceContext.direct())
+    m.revoke_source("u", None, "s1", "erroneous_capture")
+    return m
+
+
+def test_r2s_1_a_revoked_user_whose_episode_held_no_fact_reads_the_view_wording():
+    """R2S-1 (research's stage 2 on 974a6122, P4): the store holds one RETIRED episode and no edge. The emptiness check
+    read episodes() with its default, which hides retired episodes, so this user read "(no memory yet for this user)"
+    although un-revoking the source brings the episode back: the store held it throughout. A retired record counts."""
+    with tempfile.TemporaryDirectory() as d:
+        m = _revoked_user(d, [])
+        assert not m.store.episodes("u") and m.store.episodes("u", include_retired=True)
+        assert not m.store.edges("u", active_only=False, include_quarantined=True)
+        assert m.recall("u", "anything", semantic=False).context == "(no memory in this view)"
+        m.unrevoke_source("u", None, "s1", "revoked_in_error")
+        assert m.store.episodes("u"), "the episode was in the store throughout"
+        m.close()
+
+
+def test_a_revoked_user_with_a_fact_reads_the_view_wording():
+    """Research's P3: a revoked user whose event wrote a fact. The episode is retired and the edge stored INACTIVE; with
+    R2S-1 the retired episode is already a record, so this cell holds the case end to end, and the edge half on its own
+    is held by test_r2s_3_a_user_whose_only_record_is_an_inactive_edge_reads_the_view_wording."""
+    with tempfile.TemporaryDirectory() as d:
+        m = _revoked_user(d, [("user", "lives_in", "Lisbon")])
+        edges = m.store.edges("u", active_only=False, include_quarantined=True)
+        assert edges and not any(e.active for e in edges)
+        assert m.recall("u", "anything", semantic=False).context == "(no memory in this view)"
+        m.close()
+
+
+def test_r2s_3_a_user_whose_only_record_is_an_inactive_edge_reads_the_view_wording():
+    """R2S-3, the edge half on its own: after R2S-1 a retired episode already counts, so a revoked user's inactive edge
+    is no longer what decides. Here the store holds ONE edge, inactive, and no episode at all (written at the store, as
+    the scoped cell writes its hidden record): only an edge check over inactive edges sees a record."""
+    from datetime import datetime, timezone
+
+    from veracium.schema import Disclosure, Edge, Provenance
+    with tempfile.TemporaryDirectory() as d:
+        m = Memory(llm=lambda *a, **k: "", config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0,
+                                                               require_source_id=False))
+        m.store.add_edge(Edge(id="e-old", user_id="u", subject="user", relation="lives_in", object="Lisbon",
+                              ungrounded=False, invalidated_at=datetime(2026, 11, 1, tzinfo=timezone.utc),
+                              provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev-old",
+                                                    disclosure=Disclosure.MENTIONABLE)))
+        assert not m.store.episodes("u", include_retired=True)
+        assert [e.active for e in m.store.edges("u", active_only=False, include_quarantined=True)] == [False]
+        assert m.recall("u", "anything", semantic=False).context == "(no memory in this view)"
+        m.close()

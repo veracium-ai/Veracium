@@ -46,8 +46,8 @@ _ENVELOPE = "\x00policy:"      # cache-envelope marker: the digest precedes the 
 # make it globally true (that would disclose what the view withholds).
 EMPTY_GROUNDED_BODY = "(no verified facts in this view)"
 # Its sibling, the view holding nothing (SR1-03's class): measured, a principal whose scope hides every record, or a
-# user whose only record was redacted. "(no memory yet for this user)" is said only where the caller can establish it
-# safely: no principal, and no record at all (`as_of` has its own line; a withheld record leaves its own).
+# user whose only record was redacted or retired by a source revocation. "(no memory yet for this user)" needs no
+# principal and no record at all, retired included (`as_of` has its own line; a withheld record leaves its own).
 EMPTY_VIEW_BODY = "(no memory in this view)"
 
 COMPILE_SYSTEM = (
