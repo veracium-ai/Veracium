@@ -36,7 +36,13 @@ from .registry import declared_arity
 # identity now binds the §4c input→cache-effect MATRIX (accepted 0003's registry binding
 # PRESERVED, plus the compiler-relevant 0012 inputs; render-time knobs deliberately
 # excluded — binding them would force spurious recompiles).
-_CONTENTION_POLICY_VERSION = "0012-v1"
+# SR2-01 (shipped-changes round 2): BUMPED to 0012-v2. The code-owned empty-input body changed twice without a bump
+# (2f3899be, first in v0.28.0: a model-written body became the fixed literal; round 1's SR1-03: its wording), so a wiki
+# cached under 0.27.x or 0.31.0 kept serving its old body above a verified fact. The bump re-keys every cached wiki
+# once (one recompile per cached user view on its next read; model-free when the view holds no grounded input).
+# tests/test_sr2_01_wiki_upgrade.py pins this version to the body and the branch that selects it: change either
+# without bumping and that gate refuses by name.
+_CONTENTION_POLICY_VERSION = "0012-v2"
 _ENVELOPE = "\x00policy:"      # cache-envelope marker: the digest precedes the wiki body
 # The body when there is NO grounded input (research's adoption probe 3, 2026-10-29): fixed by code, never model prose.
 # Asked to compile `(none)`/`(none)`, a compiler wrote "Document is empty pending user information" above an
@@ -208,11 +214,25 @@ def needs_recompile(store, user_id: str, recompile_after: int,
     if cached is None:
         return True
     stored_text, version_at_compile = cached
-    digest, _ = _split_envelope(stored_text)
+    digest, body = _split_envelope(stored_text)
     if digest != _policy_digest(relations, wiki_input_budget=wiki_input_budget,
                                 variant_cap=variant_cap, item_cap=item_cap):
         return True                                # identity-stale → recompile (I10k)
-    return store.store_version(user_id) - version_at_compile >= recompile_after
+    behind = store.store_version(user_id) - version_at_compile
+    # SR2-01 (found in its fix): the threshold lets a MODEL SUMMARY lag a few writes. The code-owned empty body is a
+    # statement that the view held no verified fact, and any write since can falsify it, so ANY advance makes it
+    # stale. Its recompile is model-free while the input stays empty; one compile once it is not. Reads only the
+    # cached row and the version: no population is queried.
+    if behind > 0 and _is_code_owned_empty(body):
+        return True
+    return behind >= recompile_after
+
+
+def _is_code_owned_empty(body: str) -> bool:
+    """The cached body is exactly what compile_wiki writes for an empty input, built by the writer's own construction
+    (research's stage 1: generated, so the clause and the writer cannot drift). A model body that happened to equal it
+    costs one extra recompile, nothing else."""
+    return body == _budgets.append_compile_marker(_budgets.sanitize_llm_body(EMPTY_GROUNDED_BODY), 0, 0)
 
 
 def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relation],

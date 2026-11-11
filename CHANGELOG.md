@@ -17,12 +17,27 @@
     store holds outside its scope.
   - **Who should take this:** hosts whose models act on recall's text (a model told "no memory yet" can tell the user
     it knows nothing), and hosts with scope policies.
+- **Fixed: a compiled wiki cached by an earlier release no longer keeps serving its old empty-memory line** (the
+  round-2 review's SR2-01, with the case found while fixing it).
+  - **The upgrade case:** a wiki compiled when the user had no verified fact was kept across the upgrade, so "(no
+    verified facts yet)" (0.28.0 to 0.31.0), or a model's own "empty" summary (0.27.x and earlier), was served above a
+    fact the user had stated since. The cache's policy version is bumped (`0012-v1` to `0012-v2`).
+  - **The fresh-store case:** the empty line cached at one recall stayed until `wiki_recompile_after_writes` further
+    writes, above a fact remembered in between. A cached empty line is now stale after any write.
+  - **The cost, once:** every cached wiki is recompiled on its user's next recall after the upgrade. That is one compile
+    call per user whose view holds a verified fact. A view with none recompiles without calling the model.
+  - **Who should take this:** every host with the wiki layer on (the default, `wiki_recompile_after_writes=8`). A host
+    with it off (`0`) is unaffected.
 - **Corrected: 0.29.0's notes said `correct()` settles a contested commitment. It does not.** `correct()` on either
   date raises `CorrectionRefused` (a user's correction is a bare self-assertion over a prior whose subject is the
-  obligation, not the user: specs/0011 §4b), and `confirm()` leaves both dates current. No public call settles a
-  rescheduled commitment today; both dates stay, and the briefing shows the one contested line. Found while fixing
-  SR1-01, by running the call; the README, `docs/api.md` and specs/0003 now say so. A remedy is a design question,
-  queued. A contest within one episode over a user fact is different: `correct()` of each stale edge settles it.
+  obligation, not the user: specs/0011 §4b), and `confirm()` retires neither date. The user's resolution is
+  `dispute()` of each stale date: the edge leaves every assertable surface with reason `disputed`, is kept as history,
+  and the dispute is recorded as an episode; the remaining date then reads as an ordinary commitment. It is a
+  host-wired user action, not exposed over MCP, and it neither reschedules nor replaces atomically. `redact()` and
+  `revoke_source()` also remove a date from current views, as content removal and source distrust, not as a
+  resolution. Found while fixing SR1-01, by running the call (and, for `dispute()`, by the round-2 review: SR2-02);
+  the README, `docs/api.md` and specs/0003 say so. An intentional reschedule operation is a design question, queued.
+  A contest within one episode over a user fact is different: `correct()` of each stale edge settles it.
 - **Docs: speaker labels do not separate other people.** `docs/api.md` now says beside the attestation guidance that
   the label grammar recognises assistant turns only, so a second human's lines in a group chat or forwarded thread
   are read as the user's text (specs/0051 §8, limit 9), and states 0051 §4b's every-non-user-side test exactly

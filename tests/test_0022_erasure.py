@@ -107,7 +107,9 @@ def ledger_delete_routes(files, erase_tables):
     src/veracium, searched in any case for `DELETE FROM <name>` and `DROP TABLE [IF EXISTS] <name>`, the words separated
     by whitespace or SQL comments (/* */, --), where <name> is source_revocations bare or quoted with "", '', `` or []
     (a \" escape inside a Python string included), optionally prefixed main. or temp., that schema quoted the same way;
-    and for `DELETE FROM {<any expression>}` (an f-string or .format field, empty included). It does NOT read: SQL
+    and for `DELETE FROM {<a field with no braces inside>}` (an f-string or .format field, empty included). It does NOT
+    read: a field whose expression itself holds braces (`{ {'t': 'source_revocations'}['t'] }`, a nested dict or set,
+    or an f-string's format spec with a nested field: the round-2 review's N1, a stated limit with its cell), SQL
     assembled from pieces (`"DELETE FROM " + t`, `" ".join(...)`), a table name passed through `%` formatting, a DELETE
     whose name is a bound variable SQLite cannot take (it refuses parameters for names), SQL in non-.py files or read
     from disk, `executescript` of text built elsewhere, a trigger body created at run time, or a statement SQLite
@@ -149,6 +151,24 @@ def ledger_delete_routes(files, erase_tables):
 def test_the_ledgers_only_delete_route_is_forget_users_erase_loop():
     files = {str(p.relative_to(SRC)): p.read_text() for p in sorted(SRC.rglob("*.py"))}
     assert ledger_delete_routes(files, _ERASE_TABLES) == []
+
+
+def test_the_census_does_not_read_a_braced_interpolation_field_a_stated_limit():
+    """N1 (shipped-changes round 2, nonblocking): the interpolated-DELETE grammar is a field with NO braces inside.
+    The reviewer's executable f-string, whose field holds a nested dict, deletes the ledger's rows in SQLite and the
+    census reports nothing. Asserted both ways, so the docstring's limit stays true: if the grammar is ever widened to
+    read it, this cell fails and the docstring must move with it."""
+    import sqlite3
+    src = "def sweep(c):\n    c.execute(f\"DELETE FROM { {'t': 'source_revocations'}['t'] }\")\n"
+    ns = {}
+    exec(src, ns)
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE source_revocations(x)")
+    conn.execute("INSERT INTO source_revocations VALUES (1)")
+    ns["sweep"](conn)
+    assert conn.execute("SELECT count(*) FROM source_revocations").fetchone()[0] == 0   # it really deletes
+    base = {"store/sqlite.py": (SRC / "store" / "sqlite.py").read_text()}
+    assert ledger_delete_routes({**base, "nested.py": src}, _ERASE_TABLES) == []          # and the census is silent
 
 
 def test_the_delete_route_check_refuses_each_planted_defect():

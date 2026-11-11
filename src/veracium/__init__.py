@@ -1919,7 +1919,7 @@ class Memory:
         """The user challenges a remembered fact. Non-destructive: the edge is
         invalidated (reason 'disputed') — out of every assertable surface
         immediately, retained as queryable history — and the dispute itself is
-        recorded as a system episode carrying the actor and reason. If the fact
+        recorded as the user's own episode (kind interaction) with the actor and reason. If the fact
         was actually right, it re-enters the normal way: new evidence via
         `remember()`. Not exposed over MCP (an agent-callable suppress verb is
         a prompt-injection target); hosts wire it to a real user action."""

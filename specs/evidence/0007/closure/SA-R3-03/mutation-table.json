@@ -1,5 +1,5 @@
 {
- "body_sha256": "0d4867c01e89a90c2d6d5672c84fa2a0e7cf3c48a8538733cfc111a32efc88fa",
+ "body_sha256": "3a5af48dff0516d4783c2322cf00501941c54b1c6f8f6cd7bddd40e2a4e1e316",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
+  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
   "control_definitions": {
    "NOOP-SA-R3-03-attestation_job": "27bc90854719db9fb5d69d3f5ab57c252be7f1f89e379c97499a92a68b263f24"
   },
@@ -69,13 +69,34 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
+   "README.md",
+   "docs/api.md",
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "tests/test_0003_obligations.py",
+   "tests/test_0022_erasure.py"
   ]
  },
  "rows": [
@@ -110,7 +131,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 8.62s",
+   "pytest": "2 failed in 9.28s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: run_suite's return discarded, so a pytest that exited 1 after an all-pass JUnit is evidence"
@@ -125,6 +146,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 38
+  "seconds": 43
  }
 }

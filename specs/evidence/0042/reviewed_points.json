@@ -239,34 +239,34 @@
   "line": 89,
   "statement": "return _SITE_SELF_ASSERTION.fire("
  },
- "compile.py:_bind_withholds:429:BOOL_RETURN": {
+ "compile.py:_bind_withholds:449:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0047 §4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit) (withhold) through site compile.bind.unbound",
   "reviewer": "dev",
   "site": "compile.bind.unbound",
   "class": "enforcement",
   "key": "compile.py:_bind_withholds:BOOL_RETURN:1",
-  "line": 429,
+  "line": 449,
   "statement": "return _SITE_BIND_UNBOUND.fire(why is not None, \"withhold-body\")"
  },
- "compile.py:_drew_a_challenged_fact:149:BOOL_RETURN": {
+ "compile.py:_drew_a_challenged_fact:155:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0047 §4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since) (withhold) through site compile.fence.disputed",
   "reviewer": "dev",
   "site": "compile.fence.disputed",
   "class": "enforcement",
   "key": "compile.py:_drew_a_challenged_fact:BOOL_RETURN:1",
-  "line": 149,
+  "line": 155,
   "statement": "return _SITE_FENCE_DISPUTED.fire(sum(1 for e in edges if now.withheld(e)) > 0, \"withhold-body\")"
  },
- "compile.py:_grounded_inputs:201:FILTER_RETURN": {
+ "compile.py:_grounded_inputs:207:FILTER_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0004 §4 (withhold) through site compile.grounded-inputs",
   "reviewer": "dev",
   "site": "compile.grounded-inputs",
   "class": "enforcement",
   "key": "compile.py:_grounded_inputs:FILTER_RETURN:1",
-  "line": 201,
+  "line": 207,
   "statement": "return _SITE_GROUNDED_INPUTS.fire((edges, episodes), \"withhold\", declined=withheld > 0)"
  },
  "diagnostics.py:Reporter.send:276:RETURN_FALSE": {
@@ -5361,13 +5361,13 @@
   "line": 181,
   "statement": "return None"
  },
- "compile.py:ensure_wiki:362:RETURN_NONE": {
+ "compile.py:ensure_wiki:382:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "compile.py:ensure_wiki:RETURN_NONE:1",
-  "line": 362,
+  "line": 382,
   "statement": "return None"
  },
  "diagnostics.py:Reporter._confirm:255:RETURN_FALSE": {
@@ -9798,23 +9798,32 @@
   "line": 35,
   "statement": "return isinstance(value, str) and _ATTV.fullmatch(value) is not None"
  },
- "compile.py:_unbound_by:419:RETURN_NONE": {
+ "compile.py:_is_code_owned_empty:235:BOOL_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:needs_recompile",
+  "reviewer": "dev",
+  "class": "predicate-helper",
+  "key": "compile.py:_is_code_owned_empty:BOOL_RETURN:1",
+  "line": 235,
+  "statement": "return body == _budgets.append_compile_marker(_budgets.sanitize_llm_body(EMPTY_GROUNDED_BODY), 0, 0)"
+ },
+ "compile.py:_unbound_by:439:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:bound_wiki",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:_unbound_by:RETURN_NONE:1",
-  "line": 419,
+  "line": 439,
   "statement": "return None"
  },
- "compile.py:needs_recompile:215:BOOL_RETURN": {
+ "compile.py:needs_recompile:228:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:ensure_wiki",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:needs_recompile:BOOL_RETURN:1",
-  "line": 215,
-  "statement": "return store.store_version(user_id) - version_at_compile >= recompile_after"
+  "line": 228,
+  "statement": "return behind >= recompile_after"
  },
  "contention.py:is_live_refusal:37:RETURN_FALSE": {
   "decision": "not",

@@ -279,9 +279,9 @@ def test_n1_k_counts_the_distinct_values_not_shown_not_the_members():
 def test_n1_k_counts_values_when_one_episode_repeats_a_value():
     """K counts distinct VALUES, not members, and a group CAN hold one value twice: a prior A and one episode naming
     [B, A] keep both A edges current (0003 §4c-iv), so the group is three members over two values. One shown slot
-    leaves ONE more, not two. (The forged input for N1-K-counts-members, ported onto SR1-01: the commitment tier
-    collapses the repeated value before the line is composed, so that mutant is equivalent by construction, stated
-    in specs/evidence/0003/obligations_mutants.py; this cell stays as the regression.)"""
+    leaves ONE more, not two. Here the commitment tier collapses the repeated value before the line is composed (two
+    members over two values), so this cell does NOT reach N1-K-counts-members; a repeated value whose two edges carry
+    DISTINCT NOTES does (SR2-03, shipped-changes round 2: the cells below), and that mutant is a row again."""
     # ~300 tokens each: ONE value fits the 512-token line, two do not, so the elided form is composed (the one-slot
     # fallback, taken when not even one fits, counts K on its own)
     a, b = f"{D1} " + "a" * 1200, f"{D2} " + "b" * 1200
@@ -292,6 +292,81 @@ def test_n1_k_counts_values_when_one_episode_repeats_a_value():
         line = next(ln for ln in m.recall(U).context.splitlines() if "CONTESTED" in ln)
         assert _cap(m, line) and line.endswith(" or 1 more" + TAIL), line
 
+
+class _NoteScripted:
+    """SR2-03 (shipped-changes round 2): the reviewer's scripted extractor (repro/probe_round2.py), carrying each
+    triple's NOTE. A repeated value with a different note is a different carrier: `collapse_for_render` keeps both,
+    and the commitment tier admits every dated member."""
+    def __init__(self, script):
+        self.s = list(script)
+
+    def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+        if role != "distill":
+            return ""
+        return json.dumps({"triples": [{"subject": "dentist appointment", "relation": "deadline", "object": o,
+                                        "note": n, "volatility": "durable"} for o, n in self.s.pop(0)],
+                           "episode": "The user stated a dated commitment.", "instructions": []})
+
+
+def _distinct_note_line(tmp_path, a, b):
+    """The reviewer's case: A (note 'initial appointment'); then B (note 'new appointment') and A again (note 'restated
+    appointment'). All three edges stay active and grounded and ALL THREE reach the contested tier: three members, two
+    distinct values. Returns the contested line at the reviewer's fixed clock."""
+    from veracium.budgets import est_tokens
+    m = Memory(llm=_NoteScripted([[(a, "initial appointment")], [(b, "new appointment"), (a, "restated appointment")]]),
+               config=MemoryConfig(db_path=str(tmp_path / "k.db"), require_source_id=False,
+                                   wiki_recompile_after_writes=0))
+    m.remember(U, f"My dentist appointment is {a}.", date="2026-11-01", context=EvidenceContext.direct())
+    m.remember(U, f"My dentist appointment is {b} or {a}.", date="2026-11-02", context=EvidenceContext.direct())
+    gs, _ = m._build_contested(U, [], None)
+    ctx, edges, _, _ = proactive.assemble(m.store, U, m.config, now=datetime(2026, 11, 11, tzinfo=timezone.utc),
+                                          token_budget=1200, est=est_tokens,
+                                          contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in gs])
+    m.close()
+    assert len(edges) == 3 and len({e.object for e in edges}) == 2, \
+        f"the case must put three members over two values in the tier, or it does not reach the member count: {edges}"
+    return next(ln for ln in ctx.splitlines() if "CONTESTED" in ln)
+
+
+def test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path(tmp_path):
+    """SR2-03 (shipped-changes round 2), the reviewer's distinct-note case verbatim: values of ~300 tokens, so the
+    one-slot fallback composes the line. K counts DISTINCT VALUES (two), not members (three): one more, not two.
+    Kills N1-K-counts-members, which the round-2 package had declared equivalent."""
+    line = _distinct_note_line(tmp_path, "2026-11-12 " + "a" * 1200, "2026-11-14 " + "b" * 1200)
+    assert line.endswith(" or 1 more" + TAIL), line[-120:]
+
+
+def test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path(tmp_path):
+    """SR2-03 on the ordinary path (research's stage-1 measurement on 0d06c4b3): short values, both shown. Two distinct
+    values with nothing left over name no "or K more"; K over the three members would read "…, … or 1 more"."""
+    line = _distinct_note_line(tmp_path, "2026-11-12", "2026-11-14")
+    assert line.endswith("CONTESTED: 2026-11-12 or 2026-11-14" + TAIL), line
+
+
+
+def test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped(tmp_path):
+    """Research's stage-1 measurement for round 3 (A5, a neighbour SR2-03's declaration had called equivalent): the
+    distinct-note pattern with B's date BEYOND the briefing window puts A twice in the tier, two members over ONE value,
+    so K is 0. At a 256-token budget the one-slot fallback clamps that value to what the framing leaves (a cut the
+    member check `_obj(m) != m.object` cannot see, the value being under the object width). Only `first != values[0]`
+    signals it, so the budget report must count one clamped item."""
+    from veracium.budgets import est_tokens
+    a, b = "2026-11-12 " + "a" * 900, "2027-06-01 " + "b" * 900
+    m = Memory(llm=_NoteScripted([[(a, "initial")], [(b, "new"), (a, "restated")]]),
+               config=MemoryConfig(db_path=str(tmp_path / "a5.db"), require_source_id=False,
+                                   wiki_recompile_after_writes=0))
+    m.remember(U, f"My dentist appointment is {a}.", date="2026-11-01", context=EvidenceContext.direct())
+    m.remember(U, f"My dentist appointment is {b} or {a}.", date="2026-11-02", context=EvidenceContext.direct())
+    gs, _ = m._build_contested(U, [], None)
+    ctx, edges, _, _ = proactive.assemble(m.store, U, m.config, now=datetime(2026, 11, 11, tzinfo=timezone.utc),
+                                          token_budget=256, est=est_tokens,
+                                          contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in gs])
+    m.close()
+    line = next(ln for ln in ctx.splitlines() if "CONTESTED" in ln)
+    # reach: one value over two members, nothing left to count, and the shown value is cut on the one-slot path
+    assert len(edges) == 2 and {e.object for e in edges} == {a}, edges
+    assert " more" not in line and a not in line and line.endswith(TAIL), line[-120:]
+    assert ctx.splitlines()[-1].endswith(" / 1 clamped]"), ctx.splitlines()[-1]
 
 def _mem_cap(d, cap, *objects):
     """A contested lease renewal over `objects`, with item_cap_tokens=`cap` (64, the floor, lets two clamped

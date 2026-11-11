@@ -1,5 +1,5 @@
 {
- "body_sha256": "dd1ba98ce2356b8d0c95756904343a77d0b1ac78d8283df0c23f45a393130068",
+ "body_sha256": "8b97f0c3f717b484f5642ab4456ed8da99105d82af76039b5441e8b844d459f7",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
+  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -64,9 +64,29 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
+   "README.md",
+   "docs/api.md",
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "tests/test_0003_obligations.py",
+   "tests/test_0022_erasure.py"
   ]
  },
  "rows": [

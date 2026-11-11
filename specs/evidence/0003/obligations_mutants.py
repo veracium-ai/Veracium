@@ -15,17 +15,22 @@ Two of §6's named mutants are not code edits here, stated rather than dropped:
 - INV-OB5's "a check that writes" is equivalent BY CONSTRUCTION: `doctor.diagnose` opens a snapshot copy in a
   temporary directory (`_open_snapshot`), so a write in any check lands in the copy; the cell's byte-identical
   assertion holds for that reason, and the counting mutants below are its killable half.
-- N1-K-counts-members (K counted over the members, not the distinct values) is equivalent BY CONSTRUCTION since
-  SR1-01 (shipped-changes round 1): `_contested_line` now takes its values from the members' original objects, and the
-  commitment tier it reads already holds one member per object (collapse before the tier). The forged input, a prior A
-  and one episode naming [B, A], is a group of 3 ids that reaches the tier as 2 members over 2 values (probed by
-  instrumenting a scratch copy, 2026-11-10), so len(ms) == len(values) for every reachable unit. Before SR1-01 it was
-  killable because the slots were CLAMPED strings that could collapse below the member count; its successor is
-  SR1-01-dedup-after-clamp, and test_n1_k_counts_values_when_one_episode_repeats_a_value stays as the regression.
-  Research's stage 2 on 974a6122 measured the tier at (2, 2) on five forms (3 ids over 2 values, 4 over 2, a
-  system-authored restatement, a second source), and two neighbours follow from it: the clamped-item signal without
-  `first != values[0]` (A5) and the n-slot `first` taken unclamped (A7) differ only when a shown value was clamped,
-  which the member check `_obj(m) != m.object` already signals.
+- N1-K-counts-members (K counted over the members, not the distinct values) is a ROW (SR2-03, shipped-changes round
+  2). The round-2 package declared it equivalent by construction, on the premise that the commitment tier holds one
+  member per object; that premise is FALSE. A repeated value whose edges carry DISTINCT NOTES survives
+  `collapse_for_render` (it keeps carrier distinctions), and the tier admits every dated member: the reviewer's case
+  (A 'initial', then B 'new' and A 'restated') reaches the tier as three members over two values. The forged inputs
+  behind the declaration (a prior A and one episode naming [B, A]; research's five stage-2 forms) never varied the note.
+  Both distinct-note cells kill it by assertion, the one-slot path ("or 2 more") and the ordinary path ("…, … or 1
+  more"). test_n1_k_counts_values_when_one_episode_repeats_a_value stays, as a regression that does not reach it.
+  Two neighbours were stated equivalent beside it; the reason given ("follow from it") is WITHDRAWN, and each was
+  re-measured with a reach check (research's stage 1 for round 3, research 1d543e05):
+  - the clamped-item signal without `first != values[0]` (A5) is a ROW: the distinct-note pattern with B beyond the
+    window puts one value over two members in the tier (K 0), and the one-slot fallback cuts that value, under the
+    object width, so only `first != values[0]` reports the clamp (SR2-03-A5-clamp-signal-drops-first);
+  - the n-slot `first` taken unclamped (A7) is EQUIVALENT by an identity: on that path `first` is clamped at
+    max(16, _cap - 48), `_obj`'s own width, so `first != values[0]` holds exactly when `_obj(m) != m.object` fires for
+    that member. The mutant that breaks the identity, R2S-2-display-width (A6), is a killed row: its control.
 - INV-OB8 holds at TWO layers: the carrier passes only `_build_contested`'s EXPOSED ids (no query selection, so a
   fenced challenger is linkage), and `assemble` admits only assertable members. A one-file mutant of either layer
   survives by construction, and the protocol edits one file per mutant, so its kill is the DOUBLE mutant, run by
@@ -85,6 +90,9 @@ SR1_MIX = C("test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_
 SR1_REVIEWER = C("test_sr1_01_the_reviewers_regression")
 R2S2_NEAREST = C("test_r2s_2_the_one_slot_path_shows_the_nearest_value_and_counts_the_other")
 R2S2_SR1 = C("test_r2s_2_sr1_01_on_the_one_slot_path")
+SR2_03_SLOT = C("test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path")
+SR2_03_ORD = C("test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path")
+SR2_03_A5 = C("test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped")
 NEW1 = C("test_new1_a_plain_commitment_line_is_held_to_the_item_cap")
 NEW1_MARK = C("test_new1_a_marked_lone_member_is_held_to_the_item_cap_with_its_mark")
 N2 = C("test_n2_a_clamped_group_is_one_clamped_item")
@@ -198,6 +206,22 @@ MUTANTS = [
     ("R2S-2-display-width", "product", X,
      [("                s = _clamp(v, max(16, _cap - 48))\n", "                s = _clamp(v, max(16, _cap - 40))\n")],
      [SR1_FOLD, SR1_MIX], [OB3], None, "the display clamped wider than an object's composition width (A6)"),
+    # ---- shipped-changes round 2, SR2-03: the member count, declared equivalent in round 2, reached by distinct notes --
+    ("N1-K-counts-members", "product", X,
+     [("            cand = head + _body(shown, len(values) - len(shown)) + tail\n",
+       "            cand = head + _body(shown, len(ms) - len(shown)) + tail\n"),
+      ("                line, k, first = cand, len(values) - len(shown), shown[0]\n",
+       "                line, k, first = cand, len(ms) - len(shown), shown[0]\n"),
+      ("            k = len(values) - 1\n", "            k = len(ms) - 1\n")],
+     [SR2_03_SLOT, SR2_03_ORD], [OB3], None, "K counted over the MEMBERS, not the distinct values: a repeated value "
+                                            "with a distinct note is counted twice, on both paths (SR2-03, the "
+                                            "reviewer's three-site mutant)"),
+    ("SR2-03-A5-clamp-signal-drops-first", "product", X,
+     [("        if label != subject or k or first != values[0] or any(_obj(m) != m.object for m in ms):\n",
+       "        if label != subject or k or any(_obj(m) != m.object for m in ms):\n")],
+     [SR2_03_A5], [OB3], None, "a one-value unit cut on the one-slot path is not counted clamped: the value is under "
+                               "the object width, so only first != values[0] signals the cut (A5, research's reach "
+                               "measurement for round 3)"),
     ("NEW1-object-cap-ignores-the-line", "product", X,
      [("        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
        "        content = max(16, _cap - 48)\n"),

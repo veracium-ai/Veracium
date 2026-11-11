@@ -1,0 +1,24 @@
+{
+  "v0.27.1": {
+    "body": "Document is empty pending user information\n[[veracium-wiki-compile:v1]] +0 facts / +0 episodes not compiled",
+    "body_first_line": "Document is empty pending user information",
+    "commit": "a187209f0c87489c2f8386a5985d288be11779d4",
+    "compile_calls_at_write": 1,
+    "policy_digest": "db45cc67acf9f302",
+    "tag": "v0.27.1",
+    "user_id": "u",
+    "user_version": 16,
+    "version_at_compile": 2
+  },
+  "v0.31.0": {
+    "body": "(no verified facts yet)\n[[veracium-wiki-compile:v1]] +0 facts / +0 episodes not compiled",
+    "body_first_line": "(no verified facts yet)",
+    "commit": "1edb01efac688c6e951f923919dcf3b631de59a7",
+    "compile_calls_at_write": 0,
+    "policy_digest": "db45cc67acf9f302",
+    "tag": "v0.31.0",
+    "user_id": "u",
+    "user_version": 16,
+    "version_at_compile": 2
+  }
+}

@@ -1,5 +1,5 @@
 {
- "body_sha256": "a0be1633994c0777d86008ab0d8d37e7e8f520cd7841b87f450300fa1ea75119",
+ "body_sha256": "fb09d11d90e454a0aeec350da3e06763c33462795be57f5c377d7952d2cead16",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 7
    }
   },
-  "commit": "76435b9890bbfa15700bd63aaf93ec7b9272c7bc",
+  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
   "control_definitions": {
    "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
    "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
@@ -105,7 +105,27 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json"
+   "CHANGELOG.md",
+   "README.md",
+   "docs/api.md",
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "tests/test_0003_obligations.py",
+   "tests/test_0022_erasure.py"
   ]
  },
  "rows": [
@@ -137,7 +157,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.23s",
+   "pytest": "1 failed in 1.28s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -170,7 +190,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.23s",
+   "pytest": "1 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -203,7 +223,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.16s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -237,7 +257,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -253,6 +273,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 24
+  "seconds": 26
  }
 }

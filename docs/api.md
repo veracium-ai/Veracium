@@ -227,11 +227,20 @@ refused renders ONCE, `deadline: <subject> — CONTESTED: <A> or <B> (unconfirme
 which is current)`, over the dates in the window; a contested date outside it
 never appears, and the one left alone is marked `(contested — …)` with no other
 content (specs/0012 §4c-v). The marker is text only: `Recall.contested` stays
-empty in this mode. **No public call settles a contested commitment today:**
-`correct()` on either date raises `CorrectionRefused` (a user's correction is a
-bare self-assertion over a prior whose subject is the obligation, not the user:
-specs/0011 §4b), and `confirm()` leaves both dates current. Each further
-restatement adds refusal rows. A contest WITHIN one episode over a user fact
+empty in this mode. **Resolving a contested commitment:** `correct()` applies
+no reschedule to either date (it raises `CorrectionRefused`: a user's correction
+is a bare self-assertion over a prior whose subject is the obligation, not the
+user, specs/0011 §4b), and `confirm()` retires neither date. The user's
+resolution is `dispute()` of each stale date: the edge is invalidated with
+reason `disputed` (out of every assertable surface, kept as queryable history)
+and the dispute is recorded as an episode authored as the user's (kind
+`interaction`) naming the actor and reason, so the contention ends and the
+remaining date reads as an ordinary commitment. It
+is a user action the host wires; it is not exposed over MCP, it does not
+reschedule, and it is not an atomic replacement. `redact()` of a date, or
+`revoke_source()` of the source that stated it, also removes it from current
+views, but those are content removal and source distrust, not a resolution.
+Each further restatement adds refusal rows. A contest WITHIN one episode over a user fact
 ("I moved to Denver (previously lived in Boston)" leaving Boston current beside
 Denver) is different: `correct()` of each stale edge settles it, and a later
 episode naming only the new value retires nothing.

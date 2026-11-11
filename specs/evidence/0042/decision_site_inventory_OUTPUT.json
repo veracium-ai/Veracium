@@ -917,37 +917,43 @@
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 149,
+   "line": 155,
    "module": "compile.py",
    "qualname": "_drew_a_challenged_fact"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 201,
+   "line": 207,
    "module": "compile.py",
    "qualname": "_grounded_inputs"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 215,
+   "line": 228,
    "module": "compile.py",
    "qualname": "needs_recompile"
   },
   {
+   "kind": "BOOL_RETURN",
+   "line": 235,
+   "module": "compile.py",
+   "qualname": "_is_code_owned_empty"
+  },
+  {
    "kind": "RETURN_NONE",
-   "line": 362,
+   "line": 382,
    "module": "compile.py",
    "qualname": "ensure_wiki"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 419,
+   "line": 439,
    "module": "compile.py",
    "qualname": "_unbound_by"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 429,
+   "line": 449,
    "module": "compile.py",
    "qualname": "_bind_withholds"
   },
@@ -7337,7 +7343,7 @@
  ],
  "summary": {
   "by_kind": {
-   "BOOL_RETURN": 101,
+   "BOOL_RETURN": 102,
    "FILTER_RETURN": 65,
    "RAISE": 710,
    "RETURN_FALSE": 115,
@@ -7480,7 +7486,7 @@
     "RETURN_NONE": 0
    },
    "compile.py": {
-    "BOOL_RETURN": 3,
+    "BOOL_RETURN": 4,
     "FILTER_RETURN": 1,
     "RAISE": 0,
     "RETURN_FALSE": 0,
@@ -7767,7 +7773,7 @@
     "RETURN_NONE": 6
    }
   },
-  "total": 1104,
+  "total": 1105,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

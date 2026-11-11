@@ -1,5 +1,5 @@
 {
- "body_sha256": "e81f3c99264a1558502eadf05a5a8ab5487705815db770b52d6def9a02f82bd2",
+ "body_sha256": "1886784151388b9357d4e4fdb9ec48b7cc28699b72c3555be2a040c22206ddbb",
  "controls": [
   {
    "anchor_counts": [
@@ -94,9 +94,12 @@
     "tests/test_0003_obligations.py::test_r2s_2_the_one_slot_path_shows_the_nearest_value_and_counts_the_other",
     "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
     "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
-    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more",
+    "tests/test_0003_obligations.py::test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path"
    ],
-   "definition_sha256": "5591031245d719fda2407d7fbbde8f2fcb0a8e3bc8bc20bf4f641ec47cc46ab1",
+   "definition_sha256": "29ff997c72c61017ca9940937ed1a03a1b808a167f1f904abb6c054c0c54ca36",
    "expected": "SURVIVED",
    "file": "src/veracium/proactive.py",
    "good": true,
@@ -129,7 +132,10 @@
     "tests/test_0003_obligations.py::test_r2s_2_the_one_slot_path_shows_the_nearest_value_and_counts_the_other",
     "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
     "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
-    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more",
+    "tests/test_0003_obligations.py::test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/proactive.py: its mutants' cells must all pass"
@@ -375,29 +381,32 @@
     "tests/test_0003_obligations.py::test_r2s_2_the_one_slot_path_shows_the_nearest_value_and_counts_the_other",
     "tests/test_0003_obligations.py::test_sr1_01_a_collision_beside_a_plain_value_keeps_the_plain_value_and_counts_the_collision",
     "tests/test_0003_obligations.py::test_sr1_01_the_reviewers_regression",
-    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more"
+    "tests/test_0003_obligations.py::test_sr1_01_two_distinct_values_that_clamp_alike_are_one_shown_and_one_more",
+    "tests/test_0003_obligations.py::test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path"
    ]
   },
   "clean": {
    "first": {
-    "of": 62,
+    "of": 65,
     "ok": true,
-    "passed": 62
+    "passed": 65
    },
    "last": {
-    "of": 62,
+    "of": 65,
     "ok": true,
-    "passed": 62
+    "passed": 65
    }
   },
-  "commit": "974a61227a951af0d65aa8f78f9b7c3562d7a6ea",
+  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
    "NOOP-__init__": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
    "NOOP-doctor": "ca69b4ab7aed219543de99f8c18135def799fca683cfdc05b80a2f6bc42e5058",
    "NOOP-graph": "4bf98c64479db258f52a368b1d23819d9cd4da7d940ec1b790574a29d141313a",
    "NOOP-ingest": "fc9bac9661db8565cb32dc6b2fe24f9191fccac9641c9909a04b62c57423a0de",
-   "NOOP-proactive": "5591031245d719fda2407d7fbbde8f2fcb0a8e3bc8bc20bf4f641ec47cc46ab1",
+   "NOOP-proactive": "29ff997c72c61017ca9940937ed1a03a1b808a167f1f904abb6c054c0c54ca36",
    "NOOP-prompts": "9ef322e84fa47fe80d3f3a38d1504444a1a1d086a501b403fb5fbb638d1c3ee6",
    "NOOP-schema": "1711618aea900e51c28f872a7b205e39293c660e9a6a38e6c635b01b15a31130",
    "NOOP-speaker_backstop": "d2755f18b194e753532ff07893429aa1da7d46cdf8351fc16c91d753dd26d6ab"
@@ -415,6 +424,7 @@
    "I10d-every-commitment-marked": "02b6b07c0d9e538d070fbaa8ddf810db3cba22e56ce9a727b8106792f8dda6a4",
    "I10d-lone-member-unmarked": "9678bbe0efc485ebd98d73bcf788d837fd5bbd6b141fe2a976bf5f8249f22130",
    "I10d-out-of-window-member-named": "80e570f81c2244ca54b5aba07df473d237b34a1b0a85a2d722eb3c072903d4d7",
+   "N1-K-counts-members": "5b0d42c06da07f07afd1714651308f9ae976b6c570c85d3e32c7a360ff36a5f1",
    "N1-farthest-slots-kept": "1d6885338f721589ee88170f3ab64dc447dbbd2f939e29fc0ced4075b8065644",
    "N1-first-item-tail-clamp": "fd7109eeb333f024d7abf144bd5b59b1752851f8d85687ffa85c77dc1e655926",
    "N2-grouped-members-composed": "75e77ca47e93ccbf363f41ae98350f25381734ede73b23b525c18c274f69ba8b",
@@ -443,13 +453,14 @@
    "S1-4a-subject-clamp-uncounted": "a6a9a0ae58fbd7ea9d589d9c5ecc2e92c27a30e3bcdff5d80c69001d3ee58895",
    "S1-4b-withheld-subject-rendered": "6071b58c884f483927f41522695fd4149d4695cee7d08e2838a453ffe09e6077",
    "SR1-01-collision-shown-twice": "9b870100529fda2cf568ed11d0b7248558e8762c7935c29a39de19f58ff3d641",
-   "SR1-01-dedup-after-clamp": "79ccbff28e20b57ab41f13709a038f482e339e9e6668b951c330b1b0d37ac410"
+   "SR1-01-dedup-after-clamp": "79ccbff28e20b57ab41f13709a038f482e339e9e6668b951c330b1b0d37ac410",
+   "SR2-03-A5-clamp-signal-drops-first": "49928eb4770c537dc842541a86dd9401869131957f44e21e1e7ff9abd47b453d"
   },
   "digests": {
-   "specs/evidence/0003/obligations_mutants.py": "80f00d473dcd5ed93b3aa300866ab52f5ddab398ed122e611596b512797bd8e8",
+   "specs/evidence/0003/obligations_mutants.py": "1d8b42f09e15b4bfa4fde95254068ca3f8da5f131bb631c833a566e9c87a4268",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "754be1d2af72a74a81c8c722acb7522a64c7f24d62ed13bc41f4dcafb3ad15d2",
+   "src/veracium/__init__.py": "8391a3dbefc48c58e79538d5ee394c40b57abb2d689a2cee535ce345532ed852",
    "src/veracium/doctor.py": "6b8935b2316a7897220659479475a6a708eabd302fb0deccab0e8e3c08e6ceae",
    "src/veracium/graph.py": "2a328b107920979cf28cae4cdfc255915798157cd35035d88f63638f88a1c358",
    "src/veracium/ingest.py": "85a8d7e57a0cc25fc419e22c4e2d2d01d6c12aa9a956639edbf11ff5f651a05e",
@@ -457,7 +468,7 @@
    "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
    "src/veracium/schema.py": "e45299d399a9d50b0903c04ae2e16a2d36671a383476d2f8d1cc665d3440e6fa",
    "src/veracium/speaker_backstop.py": "63e802da9f0e1761a9d40719d6fc681ecf7b4e47c5ac9263d972d16d524b392c",
-   "tests/test_0003_obligations.py": "4d36ccd5cddbc961331c95d54b929beff157f37dbe3d5d3987b464fdea79952c"
+   "tests/test_0003_obligations.py": "638fb3e7e14d8ed98a367acbff322a8af25d806dffe3b5caf3531644d17b1b53"
   },
   "finding": "obligations",
   "honest_nodes": [
@@ -484,12 +495,23 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
+   "README.md",
+   "docs/api.md",
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
    "src/veracium/__init__.py",
    "src/veracium/compile.py",
    "tests/test_0003_obligations.py",
-   "tests/test_0022_erasure.py",
-   "tests/test_empty_grounded_header.py"
+   "tests/test_0022_erasure.py"
   ]
  },
  "rows": [
@@ -524,7 +546,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's one-episode case is still caught by 0003 \u00a74c-iv's within-episode net, so it is not named)"
@@ -566,7 +588,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.96s",
+   "pytest": "4 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "today's per-edge rendering: the briefing path builds no contested groups"
@@ -602,7 +624,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member rendered plain as well as in the group line"
@@ -635,7 +657,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "a second predicate: any two active values of one key are a contest"
@@ -668,7 +690,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the contested line built over the store's edges, before 0047's withholding"
@@ -701,7 +723,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "an out-of-window member named in the contested line: new reach (0012 I10d)"
@@ -773,7 +795,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.75s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the mark on a lone member whose partner is withheld or fenced (content of a challenged or fenced member's existence volunteered)"
@@ -875,7 +897,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "an oversized subject clamped without the I10a signal"
@@ -911,7 +933,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld commitment's subject rendered (0047 withholding skipped)"
@@ -944,7 +966,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded first-item path: a group line tail-clamped at the remaining budget, cutting a date and its framing (N1)"
@@ -977,7 +999,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.94s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"
@@ -1019,7 +1041,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.14s",
+   "pytest": "4 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "distinct values decided AFTER the clamp, so two different values that shorten alike are one and K loses one (SR1-01)"
@@ -1088,7 +1110,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the one-slot fallback counts K over clamped displays: SR1-01 on the other path (A4)"
@@ -1121,7 +1143,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the one-slot fallback shows the FARTHEST value, not the nearest (A8)"
@@ -1157,7 +1179,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the one-slot fallback names no other value (A10)"
@@ -1230,10 +1252,81 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "the display clamped wider than an object's composition width (A6)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path": "assertion",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path"
+   ],
+   "definition_sha256": "5b0d42c06da07f07afd1714651308f9ae976b6c570c85d3e32c7a360ff36a5f1",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "N1-K-counts-members",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_one_slot_path",
+    "tests/test_0003_obligations.py::test_sr2_03_a_repeated_value_with_a_distinct_note_is_one_value_on_the_ordinary_path"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.79s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "K counted over the MEMBERS, not the distinct values: a repeated value with a distinct note is counted twice, on both paths (SR2-03, the reviewer's three-site mutant)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0003_obligations.py::test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0003_obligations.py::test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped"
+   ],
+   "definition_sha256": "49928eb4770c537dc842541a86dd9401869131957f44e21e1e7ff9abd47b453d",
+   "file": "src/veracium/proactive.py",
+   "finding": "obligations",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0003_obligations.py::test_ob3_the_briefing_renders_a_contested_commitment_once"
+   ],
+   "id": "SR2-03-A5-clamp-signal-drops-first",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0003_obligations.py::test_sr2_03_a_one_value_unit_clamped_on_the_one_slot_path_is_reported_clamped"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.69s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a one-value unit cut on the one-slot path is not counted clamped: the value is under the object width, so only first != values[0] signals the cut (A5, research's reach measurement for round 3)"
   },
   {
    "anchor_counts": [
@@ -1267,7 +1360,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.78s",
+   "pytest": "2 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded plain line: the object capped at item_cap\u221248 on top of the subject's own cap, the line unchecked (research's stage-1 NEW 1)"
@@ -1301,7 +1394,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.70s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the lone member's mark appended after the line is held to the cap (NEW 1)"
@@ -1337,7 +1430,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded count: each grouped member's discarded line still registers its clamps (N2, R-impl4-4)"
@@ -1370,7 +1463,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "a group sorts at its LATEST due date (research's stage-2 R3)"
@@ -1403,7 +1496,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"
@@ -1439,7 +1532,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped or elided group line without the I10a signal (research's stage-2 R5)"
@@ -1472,7 +1565,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.79s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes a non-user subject's chain"
@@ -1505,7 +1598,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes another relation's chain (located_at)"
@@ -1589,7 +1682,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 1.14s",
+   "pytest": "6 failed in 1.18s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation is judged by 0051's every-side token rule (the pre-fix backstop: B1)"
@@ -1632,7 +1725,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.93s",
+   "pytest": "4 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "the user side is grounded over the WHOLE event, so the assistant's words ground it"
@@ -1669,7 +1762,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a date no side grounds is restricted (the non-user condition dropped)"
@@ -1705,7 +1798,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.78s",
+   "pytest": "2 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "only the named form is judged by its date; subject `user` keeps tokens"
@@ -1744,7 +1837,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.85s",
+   "pytest": "3 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "ingest calls the backstop without the relation"
@@ -1783,7 +1876,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.83s",
+   "pytest": "3 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "ingest calls the backstop without the session date"
@@ -1823,7 +1916,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.90s",
+   "pytest": "3 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation must match a query word to enter (B2, the pre-fix rule)"
@@ -1862,7 +1955,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.92s",
+   "pytest": "3 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation is scored as an entity edge"
@@ -1901,7 +1994,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.63s",
+   "pytest": "3 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "any relation with a named subject is an obligation"
@@ -1950,7 +2043,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.84s",
+   "pytest": "6 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "another party's deadline (person:alice) is read as the user's obligation (research 8b0de7d2)"
@@ -1995,7 +2088,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.71s",
+   "pytest": "5 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "\"User\" is read as an obligation, not as the user (0011 E1 disagrees)"
@@ -2003,13 +2096,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 41
+   "product": 43
   },
   "controls": 9,
   "controls_good": 9,
-  "good": 41,
-  "killed": 41,
-  "rows": 41,
-  "seconds": 139
+  "good": 43,
+  "killed": 43,
+  "rows": 43,
+  "seconds": 148
  }
 }
