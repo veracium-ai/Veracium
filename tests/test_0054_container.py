@@ -121,3 +121,30 @@ def test_the_secret_scan_allowlist_is_well_formed():
     data = json.loads((C / "secret_scan_allowlist.json").read_text())
     for e in data["allowed"]:
         assert set(e) == {"path", "sha256"} and re.fullmatch(r"[0-9a-f]{64}", e["sha256"]), e
+
+
+def _top_level_block(text: str, key: str) -> list:
+    """The keys directly under a top-level `key:` of a workflow file (two-space indent), read from the text."""
+    lines = text.splitlines()
+    start = lines.index(f"{key}:")
+    out = []
+    for line in lines[start + 1:]:
+        if line and not line.startswith(" "):
+            break
+        if line.startswith("  ") and not line.startswith("   ") and line.strip().endswith(":"):
+            out.append(line.strip()[:-1])
+    return out
+
+
+def test_only_the_hand_run_release_workflow_can_push_an_image():
+    """0054 §4a: an image is pushed only on the owner's release word. The per-push workflow has no packages
+    permission and no push; the release workflow runs on workflow_dispatch alone and refuses a re-pushed version."""
+    wf = ROOT / ".github" / "workflows"
+    text = (wf / "container.yml").read_text()
+    assert "packages:" not in text and "docker push" not in text and "docker login" not in text
+    assert set(_top_level_block(text, "on")) == {"push", "pull_request", "workflow_dispatch"}
+    rtext = (wf / "container-release.yml").read_text()
+    assert _top_level_block(rtext, "on") == ["workflow_dispatch"], _top_level_block(rtext, "on")
+    assert "already exists; a fix is a new version" in rtext            # §4a.3, never re-pushed
+    assert rtext.index("check_image.py check") < rtext.index("docker push")   # gated before pushed
+    assert 'test "$gated" = "$pulled"' in rtext                        # the pushed image is the gated one

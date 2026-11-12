@@ -1,0 +1,99 @@
+name: container-release
+
+# specs/0054 §4a: the release step that publishes the image, run by hand ONLY, on the owner's release word, after
+# PyPI's consumer-side check has passed. Never on a push. Each architecture is built natively on its own runner from
+# the wheel PyPI serves (its sha256 must equal the release's built wheel, given as an input), gated by I1–I8 on that
+# exact build, and pushed; the pushed image's ID must equal the gated one. The two are then joined under
+# :<version> and :latest. A version tag is never re-pushed (§4a.3): the job refuses if it already exists.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "the released version, e.g. 0.32.0"
+        required: true
+      wheel_sha256:
+        description: "sha256 of the release's built wheel (the PyPI-served file must equal it)"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/veracium-ai/veracium
+
+jobs:
+  arch:
+    name: build, gate and push (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      # the dispatching ref (main) supplies container/; the veracium installed is the PyPI wheel alone (I1)
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install the handshake client
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[mcp]"
+      - name: The version tag must not exist yet (never re-pushed)
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          if docker manifest inspect "$IMAGE:${{ inputs.version }}" > /dev/null 2>&1; then
+            echo "REFUSED: $IMAGE:${{ inputs.version }} already exists; a fix is a new version (0054 §4a.3)"; exit 1
+          fi
+      - name: The wheel PyPI serves, equal to the release's built wheel (I1)
+        run: |
+          mkdir -p "$RUNNER_TEMP/pypi"
+          pip download --no-deps --no-cache-dir --only-binary :all: "veracium==${{ inputs.version }}" -d "$RUNNER_TEMP/pypi"
+          got="$(sha256sum "$RUNNER_TEMP"/pypi/veracium-*.whl | cut -c1-64)"
+          test "$got" = "${{ inputs.wheel_sha256 }}" || { echo "REFUSED: PyPI's wheel is $got, not ${{ inputs.wheel_sha256 }}"; exit 1; }
+      - name: Build once
+        run: python container/check_image.py build --wheel "$RUNNER_TEMP"/pypi/veracium-*.whl --tag veracium-release
+      - name: Gate that build (I1–I8)
+        run: python container/check_image.py check --image veracium-release --version "${{ inputs.version }}"
+      - name: Push the gated image, and confirm the pushed ID is the gated one
+        id: push
+        run: |
+          gated="$(docker image inspect --format '{{.Id}}' veracium-release)"
+          docker tag veracium-release "$IMAGE:${{ inputs.version }}-${{ matrix.arch }}"
+          docker push "$IMAGE:${{ inputs.version }}-${{ matrix.arch }}"
+          docker image rm "$IMAGE:${{ inputs.version }}-${{ matrix.arch }}" veracium-release
+          docker pull "$IMAGE:${{ inputs.version }}-${{ matrix.arch }}"
+          pulled="$(docker image inspect --format '{{.Id}}' "$IMAGE:${{ inputs.version }}-${{ matrix.arch }}")"
+          test "$gated" = "$pulled" || { echo "REFUSED: pushed $pulled, gated $gated"; exit 1; }
+          digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE:${{ inputs.version }}-${{ matrix.arch }}")"
+          echo "gated and pushed: $gated -> $digest"
+          mkdir -p "$RUNNER_TEMP/digest" && echo "$digest" > "$RUNNER_TEMP/digest/${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digest/${{ matrix.arch }}
+          if-no-files-found: error
+
+  join:
+    name: join under :${{ inputs.version }} and :latest
+    needs: arch
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+      - name: The multi-platform tags, from the two gated digests
+        run: |
+          amd64="$(cat "$RUNNER_TEMP/digests/amd64")"; arm64="$(cat "$RUNNER_TEMP/digests/arm64")"
+          test -n "$amd64" && test -n "$arm64"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker buildx imagetools create -t "$IMAGE:${{ inputs.version }}" -t "$IMAGE:latest" "$amd64" "$arm64"
+          docker buildx imagetools inspect "$IMAGE:${{ inputs.version }}"

@@ -45,5 +45,8 @@ ENV VERACIUM_DB_PATH=/data/veracium.db \
 RUN python -c "import sys; from veracium.store.schema_version import runtime_status as r; s = r(); print('runtime status:', s.status); sys.exit(0 if s.status == 'attested' else 1)" \
  || { veracium doctor; exit 1; }
 
+LABEL org.opencontainers.image.source="https://github.com/veracium-ai/Veracium" \
+      org.opencontainers.image.description="Veracium: provenance-aware memory for AI agents, as an MCP stdio server (specs/0054)" \
+      org.opencontainers.image.licenses="MIT"
 VOLUME ["/data"]
 ENTRYPOINT ["veracium-mcp"]
