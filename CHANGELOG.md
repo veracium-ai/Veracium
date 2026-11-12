@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.32.0 — 2026-11-12
+
+**veracium's served tools for LangChain and Pydantic AI, and the corrections accepted by the shipped-changes review.**
+`veracium.adapters` serves the same six tools as the MCP server, held to the adapter conformance suite (specs/0053). The
+fixes and corrections below were accepted by the shipped-changes implementation review (round 3, 2026-11-12). Store
+schema stays 16 and the export format stays 14: a 0.31.0 store opens as it is. **Who should upgrade:** every host with
+the wiki layer on (a cached empty-memory line could be served above a fact the user stated since), and hosts whose
+models act on recall's text.
 
 - **Fixed: a contested commitment's "or K more" no longer loses a value when two different dates' texts shorten
   alike** (shipped-changes round 1, SR1-01; in every release since 0.29.0). The briefing line shortened each value
@@ -52,7 +59,7 @@
   (shipped-changes round 1, N2).
 
 - **Added: `veracium.adapters.langchain.as_tools()`, veracium's served tools as LangChain tools**
-  (`pip install "veracium[langchain]"`; specs/0053, draft).
+  (`pip install "veracium[langchain]"`; specs/0053, accepted).
   - **The same six tools as the MCP server:** each tool's name, parameters and description are read from the server's
     own registration, so the model-facing safety text arrives byte for byte.
   - **Bound when the tools are built, never a tool argument:** the user, the capability, the source and the principal
