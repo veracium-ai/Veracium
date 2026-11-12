@@ -21,6 +21,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -107,22 +108,41 @@ def _handshake(img, vol, errpath=None):
         return f"handshake failed: {type(e).__name__}: {str(e)[:160]}"
 
 
-def _exported_tree(img, dest: pathlib.Path) -> list[str]:
-    cid = sh("docker", "create", img, check=True).stdout.strip()
-    try:
-        tar = subprocess.run(["docker", "export", cid], capture_output=True, check=True).stdout
-    finally:
-        sh("docker", "rm", cid)
-    subprocess.run(["tar", "-x", "-C", str(dest)], input=tar, capture_output=True)
-    return subprocess.run(["tar", "-t"], input=tar, capture_output=True, check=True).stdout.decode().split("\n")
+def _pinned_base() -> str:
+    return DOCKERFILE.read_text().split("ARG BASE=", 1)[1].split("\n", 1)[0].strip()
 
 
-def _base_paths(img) -> set:
-    """The base image's own paths, so I8a judges only what the image adds (a Debian base ships /usr/share/doc/*/tests)."""
-    base = json.loads(sh("docker", "image", "inspect", img, check=True).stdout)[0]
-    parent = DOCKERFILE.read_text().split("ARG BASE=", 1)[1].split("\n", 1)[0].strip()
-    with tempfile.TemporaryDirectory() as d:
-        return set(_exported_tree(parent, pathlib.Path(d))) if base else set()
+def _diff_ids(ref: str) -> list:
+    return json.loads(sh("docker", "image", "inspect", ref, check=True).stdout)[0]["RootFS"]["Layers"]
+
+
+def _base_clause(img: str) -> tuple:
+    """I2's base clause (0054 v0.6): the image's RootFS.Layers begin with exactly the pinned base's, for this platform."""
+    base = _pinned_base()
+    if sh("docker", "image", "inspect", base).returncode:
+        sh("docker", "pull", "-q", base, check=True)
+    mine, theirs = _diff_ids(img), _diff_ids(base)
+    return mine[:len(theirs)] == theirs, len(theirs), len(mine)
+
+
+def _added_layers(img: str, nbase: int):
+    """Every layer the image adds over the pinned base, as (index, tarfile.TarFile), read from `docker save`; each
+    layer's bytes must hash to its RootFS diff_id, so the tars read are the image's own."""
+    import io
+    import tarfile
+    mine = _diff_ids(img)
+    saved = subprocess.run(["docker", "save", img], capture_output=True, check=True).stdout
+    outer = tarfile.open(fileobj=io.BytesIO(saved))
+    paths = json.loads(outer.extractfile("manifest.json").read())[0]["Layers"]
+    if len(paths) != len(mine):
+        raise SystemExit(f"REFUSED: docker save lists {len(paths)} layers, docker inspect {len(mine)}")
+    out = []
+    for i, path in enumerate(paths[nbase:], start=nbase):
+        raw = outer.extractfile(path).read()
+        if "sha256:" + hashlib.sha256(raw).hexdigest() != mine[i]:
+            raise SystemExit(f"REFUSED: layer {i}'s bytes do not hash to its diff_id {mine[i][:19]}")
+        out.append((i, tarfile.open(fileobj=io.BytesIO(raw))))
+    return out
 
 
 def check(img: str, version: str, only=None, key_env=None) -> list:
@@ -148,7 +168,9 @@ def check(img: str, version: str, only=None, key_env=None) -> list:
             st = r.stdout.strip() or r.stderr.strip()[-160:]
             line = next((l.strip() for l in _run(img, "doctor", entry="veracium").stdout.splitlines() if "runtime" in l),
                         "(no runtime line)")
-            record("I2", st == "attested", f"runtime_status {st!r}; doctor: {line}")
+            base_ok, nb, nm = _base_clause(img)
+            record("I2", st == "attested" and base_ok, f"runtime_status {st!r}; the pinned base's {nb} layers "
+                                                      f"{'begin' if base_ok else 'DO NOT begin'} the image's {nm}; doctor: {line}")
         if want("I3"):
             bad = [e for e in (cfg.get("Env") or []) if e.split("=", 1)[0] in TRUST_VARS]
             record("I3", not bad, f"Config.Env trust-bearing: {bad or 'none'}")
@@ -190,45 +212,48 @@ def check(img: str, version: str, only=None, key_env=None) -> list:
                              f"{'refused' if isinstance(refused, str) else 'OPENED'}, in its own words: {named}; "
                              f"bytes unchanged: {before == after}; stderr: {tail}")
         if want("I8"):
-            with tempfile.TemporaryDirectory(prefix="veracium-i8-") as d:
-                root = pathlib.Path(d)
-                files = _exported_tree(img, root)
-                base = _base_paths(img)
-                added = [f for f in files if f and f not in base]
-                # Paths listed in the RECORD of a distribution other than veracium; veracium's own are never exempt.
-                listing = _run(img, "-c", "import importlib.metadata as m\nfor d in m.distributions():\n"
-                                          "    for f in d.files or []:\n"
-                                          "        print(d.metadata['Name'], str(d.locate_file(f)).lstrip('/'), sep='\\t')",
-                               entry="python").stdout.split("\n")
-                owned = {l.split("\t", 1)[1] for l in listing
-                         if "\t" in l and l.split("\t", 1)[0].lower() != "veracium"}
-                owned_dirs = {str(pathlib.PurePosixPath(o).parent) for o in owned}
-                owned_dirs |= {str(q) for o in owned_dirs for q in pathlib.PurePosixPath(o).parents}
+            # every layer the image adds over the pinned base, member by member, whatever the mode (0054 v0.6): a file
+            # written in one layer and removed in a later one is still in the image, and in its own layer here.
+            key = os.environ.get(key_env, "").encode() if key_env else b""
+            if key_env and not key:
+                record("I8", False, f"--key-env {key_env}: the variable is empty, so the exact-key scan cannot run")
+                return results
+            base_ok, nbase, _nm = _base_clause(img)
+            if not base_ok:
+                record("I8", False, "the image does not begin with the pinned base's layers, so 'added' is undefined")
+                return results
+            # paths listed in the RECORD of a distribution other than veracium; veracium's own are never exempt
+            listing = _run(img, "-c", "import importlib.metadata as m\nfor d in m.distributions():\n"
+                                      "    for f in d.files or []:\n"
+                                      "        print(d.metadata['Name'], str(d.locate_file(f)).lstrip('/'), sep='\\t')",
+                           entry="python").stdout.split("\n")
+            owned = {l.split("\t", 1)[1] for l in listing if "\t" in l and l.split("\t", 1)[0].lower() != "veracium"}
+            owned_dirs = {str(q) for o in owned for q in pathlib.PurePosixPath(o).parents}
 
-                def _owned(f):
-                    f = f.rstrip("/")
-                    return f in owned or f in owned_dirs or f.endswith(".pyc") and "__pycache__" in f and \
-                        str(pathlib.PurePosixPath(f).parent.parent) in owned_dirs
-                def _parts(f):
-                    return set(pathlib.PurePosixPath(f.rstrip("/")).parts)
-                hits = [f for f in added if _parts(f) & set(NEVER)
-                        or (_parts(f) & set(UNLESS_OTHERS_OWN) and not _owned(f))]
-                pats = ["-e", KEY_SHAPE]
-                key = os.environ.get(key_env, "") if key_env else ""
-                if key_env and not key:
-                    record("I8", False, f"--key-env {key_env}: the variable is empty, so the exact-key scan cannot run")
-                    return results
-                scan = subprocess.run(["grep", "-rIlaE", *pats, str(root)], capture_output=True, text=True)
-                keyfiles = [l[len(str(root)) + 1:] for l in scan.stdout.split("\n") if l.strip()]
-                if key:
-                    exact = subprocess.run(["grep", "-rIlaF", "-e", key, str(root)], capture_output=True, text=True)
-                    keyfiles += [l[len(str(root)) + 1:] for l in exact.stdout.split("\n") if l.strip()]
-                allow = {(e["path"], e["sha256"]) for e in json.loads(ALLOWLIST.read_text())["allowed"]}
-                unexplained = sorted({f for f in keyfiles
-                                      if (f, hashlib.sha256((root / f).read_bytes()).hexdigest()) not in allow})
-                record("I8", not hits and not unexplained,
-                       f"{len(added)} paths added over the base; repository paths: {hits[:5] or 'none'}; "
-                       f"key-shaped{' or exact-key' if key else ''} matches: {unexplained[:5] or 'none'}")
+            def _owned(f):
+                return f in owned or f in owned_dirs or (f.endswith(".pyc") and "__pycache__" in f
+                                                         and str(pathlib.PurePosixPath(f).parent.parent) in owned_dirs)
+            shape = re.compile(KEY_SHAPE.encode())
+            allow = {(e["path"], e["sha256"]) for e in json.loads(ALLOWLIST.read_text())["allowed"]}
+            hits, keys, members, layers = [], [], 0, 0
+            for i, tf in _added_layers(img, nbase):
+                layers += 1
+                for m in tf.getmembers():
+                    members += 1
+                    name = m.name.lstrip("./").rstrip("/")
+                    pp = pathlib.PurePosixPath(name)
+                    target = str(pp.parent / pp.name[len(".wh."):]) if pp.name.startswith(".wh.") else name
+                    parts = set(pathlib.PurePosixPath(target).parts)
+                    if parts & set(NEVER) or (parts & set(UNLESS_OTHERS_OWN) and not _owned(target)):
+                        hits.append(f"layer {i}: {name}")
+                    if m.isfile():
+                        data = tf.extractfile(m).read()
+                        if (shape.search(data) or (key and key in data)) and \
+                                (name, hashlib.sha256(data).hexdigest()) not in allow:
+                            keys.append(f"layer {i}: {name} (mode {m.mode:o})")
+            record("I8", not hits and not keys,
+                   f"{members} members in {layers} added layers; repository paths: {hits[:5] or 'none'}; "
+                   f"key-shaped{' or exact-key' if key else ''} matches: {keys[:5] or 'none'}")
     finally:
         for v in vols:
             sh("docker", "volume", "rm", "-f", v)
@@ -262,6 +287,23 @@ def _wheel_with(raw: bytes, rel: str, data: bytes) -> bytes:
 
 
 _SITE = "/usr/local/lib/python3.14/site-packages"
+_FLATBASE = "veracium-0054-flatbase:red"
+
+
+def _make_flatbase() -> None:
+    """I2's RED case (0054 v0.6): the pinned base's own filesystem re-imported as ONE layer. Its SQLite is the same
+    attested build, so the status passes; only the base clause can refuse it."""
+    base = _pinned_base()
+    if sh("docker", "image", "inspect", base).returncode:
+        sh("docker", "pull", "-q", base, check=True)
+    cid = sh("docker", "create", base, check=True).stdout.strip()
+    try:
+        tar = subprocess.run(["docker", "export", cid], capture_output=True, check=True).stdout
+    finally:
+        sh("docker", "rm", cid)
+    env = json.loads(sh("docker", "image", "inspect", base, check=True).stdout)[0]["Config"]["Env"]
+    changes = [x for e in env for x in ("--change", f"ENV {e.split('=', 1)[0]}={e.split('=', 1)[1]}")]
+    subprocess.run(["docker", "import", *changes, "-", _FLATBASE], input=tar, capture_output=True, check=True)
 _USERADD = "&& useradd --system --uid 10001 --home-dir /home/veracium --no-create-home --shell /usr/sbin/nologin veracium"
 _FAKE_KEY = ("sk-ant-" + "api03-" + "PLANTED0054REDCASE" * 2).encode()   # FAKE and key-shaped; never a real key
 
@@ -289,6 +331,15 @@ RED = [
     ("I8-unowned-tests-in-site-packages", "I8",
      [("USER 10001\n", f"RUN mkdir -p {_SITE}/tests && echo 'x = 1' > {_SITE}/tests/planted.py\nUSER 10001\n")], {},
      ("check", "I8")),
+    ("I8-written-then-removed", "I8", [("ENTRYPOINT [", "RUN echo 'ANTHROPIC_API_KEY=" + _FAKE_KEY.decode()
+                                        + "' > /home/veracium/.env\nRUN rm /home/veracium/.env\nENTRYPOINT [")], {},
+     ("check", "I8")),
+    ("I8-mode-000", "I8", [("ENTRYPOINT [", "RUN echo 'ANTHROPIC_API_KEY=" + _FAKE_KEY.decode()
+                            + "' > /home/veracium/.k && chmod 000 /home/veracium/.k\nENTRYPOINT [")], {}, ("check", "I8")),
+    ("I8-repository-copied-then-removed", "I8", [("ENTRYPOINT [", "COPY --chown=10001 repo /src\nRUN rm -rf /src/*\nENTRYPOINT [")],
+     {"extra": {"repo/COORDINATION.md": b"planted\n", "repo/specs/x.md": b"planted\n"}}, ("check", "I8")),
+    ("I2-flattened-base", "I2", [("ARG BASE=python@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f",
+                                  "ARG BASE=" + _FLATBASE)], {"prep": "flatbase"}, ("check", "I2")),
     ("I8-planted-key", "I8", [("ENTRYPOINT [", "RUN echo 'ANTHROPIC_API_KEY=" + _FAKE_KEY.decode()
                                + "' > /home/veracium/.env\nENTRYPOINT [")], {}, ("check", "I8")),
 ]
@@ -309,6 +360,8 @@ def red(wheel: pathlib.Path) -> int:
         wb = sha_of = None
         if kw.get("mutate_wheel"):
             raw = wheel.read_bytes(); wb = raw[:-1] + bytes([raw[-1] ^ 1])
+        if kw.get("prep") == "flatbase":
+            _make_flatbase()
         if kw.get("wheel_adds"):     # I1 is bypassed on purpose (its sha256 is the rebuilt wheel's): this tests I8 alone
             wb = sha_of = _wheel_with(wheel.read_bytes(), *kw["wheel_adds"])
         r = build(wheel, tag, _edit(text, edits), extra=kw.get("extra"), wheel_bytes=wb, sha_of=sha_of)
@@ -327,7 +380,7 @@ def red(wheel: pathlib.Path) -> int:
             sh("docker", "image", "rm", "-f", tag)
         if not ok:
             bad.append(name)
-    sh("docker", "image", "rm", "-f", green)
+    sh("docker", "image", "rm", "-f", green, _FLATBASE)
     print(f"RED matrix: {len(RED) - len(bad)} of {len(RED)} refused as §6 names" + (f"; MISSED: {bad}" if bad else ""))
     return 1 if bad else 0
 
