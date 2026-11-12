@@ -1,5 +1,5 @@
 {
- "body_sha256": "87edcdcc8b699668c219357fb94f4d1189e41b60f26dab2ca9fed3fe335fc3f2",
+ "body_sha256": "6bda7a3f9181ea164e7c34af29d2a97ab5c32ce8e5eba62ae264b493b8538261",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "commit": "d49a32660ca3ffebf0bc84e6da3147e41f2a7a4a",
   "control_definitions": {
    "NOOP-0018-AR-R5-01-release_migration": "e7c5f6477157e3dbe390daa106505986c8393f3065b0844488e3912097f8a716"
   },
@@ -84,9 +84,41 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0018/rungs/implementation_mutants.py",
-   "tests/test_0018_r5_closures.py",
-   "tests/test_0018_rungs_t5.py"
+   "CHANGELOG.md",
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
+   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/sr2-01/mutation-table.json",
+   "specs/evidence/sr2-01/wiki_cache_mutants.py",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/budgets.py",
+   "src/veracium/cli.py",
+   "src/veracium/compile.py",
+   "tests/test_sr2_01_wiki_upgrade.py"
   ]
  },
  "rows": [
@@ -118,7 +150,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-01: every failure of the attempted writer is N1 unless it is a recognized type, as round 5 shipped"
@@ -151,7 +183,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-01: the writer's initial load counts as proof of absence when it fails"
@@ -184,7 +216,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-01: a terminal write that fails outside the proving window is False without a recovery read, as round 5 shipped"
@@ -220,7 +252,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.75s",
+   "pytest": "2 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "S2 (research): absence is os.path.exists's False, which a stat error also returns, as every release did"
@@ -235,6 +267,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 20
+  "seconds": 16
  }
 }

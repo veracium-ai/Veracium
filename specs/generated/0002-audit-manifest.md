@@ -28,9 +28,9 @@
 | `src/veracium/__init__.py:2274` | `Memory.correct()` | `apply_supersession_plan` | `ba370b6342c2` | `clean` | write-time | `active`, `invalidation_reason=corrected`, `supersedes`, `author_of_evidence` USER | act | clean — **M7-correct CLOSED (specs/0011 §4e, E5)**: the correction reaches storage only through the atomic plan with a CorrectionAuthorisation verified in-transaction; §4b subject entitlement applies | `test_correct_requires_bound_authorisation` |
 | `src/veracium/__init__.py:2283` | `Memory.correct()` | `add_episode` | `9fce4dabcb6f` | `clean` | write-time | episode provenance | act | clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision | `test_correct_requires_bound_authorisation` |
 | `src/veracium/__init__.py:2311` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
-| `src/veracium/cli.py:337` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
-| `src/veracium/compile.py:333` | `compile_wiki()` | `set_wiki` | `4365735ba43d` | `clean` | maintain-time | none directly — **caches a trust decision** (carries the compiler-policy digest envelope, `0003` §4c-ii; the trust-reducing-invalidation drop shipped with the 0004 W-series, 0.13.0) | none | ✅ the cached wiki no longer outlives a revoked trust decision: a trust-reducing invalidation drops it (WIKI_RETAINING_REASONS names the benign keepers) — [M8-wiki] resolved | `test_dispute_drops_the_wiki` + `test_third_party_supersession_drops_the_wiki` + `test_decay_does_not_drop_the_wiki` (the W1–W4 family) |
-| `src/veracium/compile.py:494` | `bound_wiki()` | `discard_wiki` | `291cbd6abaed` | `clean` | maintain-time | none directly — **removes a cached trust decision** the call has just withheld (the row this call's own compile published); a newer row is never touched (one conditional statement) | none | ✅ a body that failed its bind cannot re-enter through the cached branch on the retry (RII-R2-01; the write-side eviction at `schema.assertion_view` is the closure, this is its backstop) | `test_d2_a_rejected_compile_is_not_served_back_from_its_own_row` (red without the discard when the write-side eviction is disabled) |
+| `src/veracium/cli.py:339` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
+| `src/veracium/compile.py:353` | `compile_wiki()` | `set_wiki` | `4365735ba43d` | `clean` | maintain-time | none directly — **caches a trust decision** (carries the compiler-policy digest envelope, `0003` §4c-ii; the trust-reducing-invalidation drop shipped with the 0004 W-series, 0.13.0) | none | ✅ the cached wiki no longer outlives a revoked trust decision: a trust-reducing invalidation drops it (WIKI_RETAINING_REASONS names the benign keepers) — [M8-wiki] resolved | `test_dispute_drops_the_wiki` + `test_third_party_supersession_drops_the_wiki` + `test_decay_does_not_drop_the_wiki` (the W1–W4 family) |
+| `src/veracium/compile.py:514` | `bound_wiki()` | `discard_wiki` | `291cbd6abaed` | `clean` | maintain-time | none directly — **removes a cached trust decision** the call has just withheld (the row this call's own compile published); a newer row is never touched (one conditional statement) | none | ✅ a body that failed its bind cannot re-enter through the cached branch on the retry (RII-R2-01; the write-side eviction at `schema.assertion_view` is the closure, this is its backstop) | `test_d2_a_rejected_compile_is_not_served_back_from_its_own_row` (red without the discard when the write-side eviction is disabled) |
 | `src/veracium/graph.py:230` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
 | `src/veracium/ingest.py:394` | `ingest_event()` | `add_episode` | `836c8cca9da2` | `clean` | write-time | episode provenance (unparseable placeholder; disclosure set at birth) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
 | `src/veracium/ingest.py:707` | `ingest_event()` | `add_episode` | `070f62e813fd` | `clean` | write-time | episode provenance (disclosure set at birth); its id is the edges' `src` (specs/0045 §2) | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
@@ -130,21 +130,21 @@ c5d9e9e2da39
   context: -
 
 269b73112fab
-  file:    src/veracium/cli.py:337
+  file:    src/veracium/cli.py:339
   scope:   _forget()
   mutator: forget_user
   call:    store.forget_user(args.user)
   context: try
 
 4365735ba43d
-  file:    src/veracium/compile.py:333
+  file:    src/veracium/compile.py:353
   scope:   compile_wiki()
   mutator: set_wiki
   call:    store.set_wiki(user_id, f'{_ENVELOPE}{digest}\n{wiki}', version_at_begin)
   context: -
 
 291cbd6abaed
-  file:    src/veracium/compile.py:494
+  file:    src/veracium/compile.py:514
   scope:   bound_wiki()
   mutator: discard_wiki
   call:    store.discard_wiki(user_id, *box['published'])

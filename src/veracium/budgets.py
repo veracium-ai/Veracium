@@ -206,6 +206,9 @@ def parse_compile_marker(body: Optional[str]) -> dict:
 
 # --- the provider-free stale-cache notice (0012 I10l) ------------------------------- #
 STALE_WIKI_NOTICE = "[wiki omitted: cache is stale; recompilation requires an LLM provider]"
+# specs/0003 §4c-ii (v18.5; research's stage 2 on the round-3 fix, N2): a cached code-owned EMPTY body made stale by a
+# write alone (its digest current). Its recompile may call no model, so the notice does not say one is required.
+STALE_EMPTY_WIKI_NOTICE = "[wiki omitted: cache is stale]"
 # specs/0041 round 10: the closed, content-free body served when a compile's inputs were redacted DURING the compile
 # and its one recompile could not publish either — never the body drawn from the redacted record
 REDACTED_DURING_COMPILE_NOTICE = "[wiki omitted: a record it drew on was redacted during the compile; the next read recompiles]"

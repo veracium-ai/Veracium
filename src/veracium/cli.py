@@ -234,8 +234,10 @@ def _memory_verbs(args) -> int:
             mem.close()
 
     # store-only verbs: serve the cached wiki if one was ever compiled (the
-    # huge threshold makes it never-stale), disable the layer otherwise —
-    # either way the stub provider can never fire
+    # huge threshold keeps a model body from going stale by count; a stale
+    # identity, or a cached empty body after any write, is served a notice
+    # without the body), disable the layer otherwise — either way the stub
+    # provider can never fire
     from .store.sqlite import SqliteStore
     store = SqliteStore(args.db)
     has_wiki = store.get_wiki(args.user) is not None

@@ -28,9 +28,10 @@ SELF = "specs/evidence/sr2-01/wiki_cache_mutants.py"
 K = "src/veracium/compile.py"
 T = "tests/test_sr2_01_wiki_upgrade.py"
 SUBJECT = "sr2-01-wiki-cache"
+B = "src/veracium/budgets.py"
 FIXTURES = ("specs/evidence/sr2-01/legacy-empty-wiki-v0.31.0.sqlite", "specs/evidence/sr2-01/legacy-empty-wiki-v0.27.1.sqlite",
             "specs/evidence/sr2-01/legacy-empty-wiki.json")
-DIGESTED = (K, T, *FIXTURES, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
+DIGESTED = (K, B, T, *FIXTURES, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
 
 C = lambda name: f"{T}::{name}"                                                       # noqa: E731
 P = lambda name: [C(f"{name}[v0.31.0]"), C(f"{name}[v0.27.1]")]                        # noqa: E731
@@ -40,6 +41,10 @@ NO_LLM = P("test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_no
 FRESH = C("test_sr2_01_a_fresh_cached_empty_body_is_stale_after_any_write")
 GATE = C("test_sr2_01_the_policy_version_is_paired_with_the_empty_body_and_its_branch")
 HONEST = C("test_sr2_01_a_model_written_body_below_the_threshold_is_still_served")
+N2_THIRD = C("test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim")
+N2_GROUNDED = C("test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice")
+N2_IDENTITY = C("test_n2_an_identity_stale_empty_body_keeps_0012s_notice")
+N2_CLI = C("test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write")
 
 # (id, kind, file, [(anchor, replacement)], named cells, honest nodes, reason or None, what)
 MUTANTS = [
@@ -60,6 +65,22 @@ MUTANTS = [
      [*BETWEEN, FRESH], [HONEST], None,
      "a cached code-owned empty body waits for the write threshold, so it is served above a verified fact (found in "
      "the fix)"),
+    # ---- research's stage 2 on the round-3 fix, N2: the provider-free notice for a cached empty body ---------------
+    ("N2-the-empty-row-gets-0012s-notice", "product", K,
+     [("            return _budgets.STALE_EMPTY_WIKI_NOTICE\n", "            return _budgets.STALE_WIKI_NOTICE\n")],
+     [N2_THIRD, N2_GROUNDED, N2_CLI], [HONEST], None,
+     "a cached empty body stale by a write alone is served the notice that says a model is needed, where its "
+     "recompile may call none (N2)"),
+    ("N2-every-stale-row-gets-the-empty-notice", "product", K,
+     [("    return _budgets.STALE_WIKI_NOTICE\n\n\ndef ", "    return _budgets.STALE_EMPTY_WIKI_NOTICE\n\n\ndef ")],
+     [*NO_LLM, N2_IDENTITY], [HONEST], None,
+     "the selection widened to every stale row: a legacy or identity-stale row loses 0012's notice (N2)"),
+    ("N2-identity-stale-empty-row-gets-the-empty-notice", "product", K,
+     [("        if digest == _policy_digest(relations, **kw) and _is_code_owned_empty(body):\n",
+       "        if _is_code_owned_empty(body):\n")],
+     [N2_IDENTITY], [HONEST], None,
+     "the row's digest not checked: a code-owned empty body stale by IDENTITY gets the write-stale notice (N2, "
+     "0003 v18.5's 'an identity-stale row keeps 0012's notice')"),
 ]
 
 

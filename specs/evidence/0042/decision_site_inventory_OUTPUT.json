@@ -911,7 +911,7 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 681,
+   "line": 683,
    "module": "cli.py",
    "qualname": "<module>"
   },
@@ -935,25 +935,25 @@
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 235,
+   "line": 241,
    "module": "compile.py",
    "qualname": "_is_code_owned_empty"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 382,
+   "line": 402,
    "module": "compile.py",
    "qualname": "ensure_wiki"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 439,
+   "line": 459,
    "module": "compile.py",
    "qualname": "_unbound_by"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 449,
+   "line": 469,
    "module": "compile.py",
    "qualname": "_bind_withholds"
   },

@@ -194,3 +194,60 @@ def test_sr2_01_the_policy_version_is_paired_with_the_empty_body_and_its_branch(
     assert _same(test, want["condition"]) and _same(body, want["selected"]), (
         f"the empty-input selection changed under policy {version} ({ast.unparse(test)!r} -> {ast.unparse(body)!r}): "
         f"bump _CONTENTION_POLICY_VERSION and re-record (2f3899be changed the branch, not only the words)")
+
+
+# ---- N2 (research's stage 2 on the round-3 fix): the provider-free reader of a cached empty body after a write ------
+# specs/0003 §4c-ii v18.5: a notice without the body, never the stale body and never a model. A code-owned empty row
+# stale by a write alone (digest current) gets "[wiki omitted: cache is stale]", since its recompile may call no model;
+# every other stale row, identity-stale included, keeps 0012's notice. Selected by the cached row alone.
+
+def _cached_empty(tmp_path, name="n2.db"):
+    m = _mem(tmp_path / name, Stub())
+    m.remember("u", "The user lives in Berlin.", date="2026-11-01", author=EvidenceAuthor.THIRD_PARTY)
+    assert m.recall("u", "where does the user live", semantic=False).context.startswith(_compile.EMPTY_GROUNDED_BODY)
+    return m
+
+
+def _provider_free(m):
+    return _compile.ensure_wiki(m.store, _no_llm, "u", 10**9, m.config.relations)
+
+
+def test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim(tmp_path):
+    m = _cached_empty(tmp_path)
+    m.remember("u", "The user lives in Paris.", date="2026-11-02", author=EvidenceAuthor.THIRD_PARTY)
+    body = _provider_free(m)
+    m.close()
+    assert body == _budgets.STALE_EMPTY_WIKI_NOTICE, body
+
+
+def test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice(tmp_path):
+    m = _cached_empty(tmp_path)
+    _berlin(m)
+    body = _provider_free(m)
+    m.close()
+    assert body == _budgets.STALE_EMPTY_WIKI_NOTICE, body
+
+
+def test_n2_an_identity_stale_empty_body_keeps_0012s_notice(tmp_path):
+    """The same code-owned empty body under a policy digest that no longer matches (a changed binding knob): stale by
+    IDENTITY, so 0012's notice, as for any identity-stale row."""
+    m = _cached_empty(tmp_path)
+    body = _compile.ensure_wiki(m.store, _no_llm, "u", 10**9, m.config.relations, item_cap=128)
+    m.close()
+    assert body == _budgets.STALE_WIKI_NOTICE, body
+
+
+def test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write(tmp_path):
+    """End to end through cli.py's store-only verb (its threshold is 10**9): the notice line, no body, no model."""
+    import contextlib
+    import io
+    from veracium.cli import main
+    m = _cached_empty(tmp_path, "cli.db")
+    m.remember("u", "The user lives in Paris.", date="2026-11-02", author=EvidenceAuthor.THIRD_PARTY)
+    m.close()
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = main(["recall", "where does the user live", "--db", str(tmp_path / "cli.db"), "--user", "u"])
+    text = out.getvalue()
+    assert rc == 0 and _budgets.STALE_EMPTY_WIKI_NOTICE in text, text[:400]
+    assert _budgets.STALE_WIKI_NOTICE not in text and _compile.EMPTY_GROUNDED_BODY not in text, text[:400]

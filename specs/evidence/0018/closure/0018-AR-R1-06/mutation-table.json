@@ -1,5 +1,5 @@
 {
- "body_sha256": "beaa24c00e803cf718658dffd2891278bb6f16f5ab77deb0ba6e4a79db8b69d3",
+ "body_sha256": "f79a27e4432c9872cb329ec41f7158074b8bab9405daa2a1971b4a928fe54994",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "1ef247a60b1f47be21112a302ea3b0fb70a719af",
+  "commit": "d49a32660ca3ffebf0bc84e6da3147e41f2a7a4a",
   "control_definitions": {
    "NOOP-0018-AR-R1-06-migration": "aaa658adef3d596d83d7142947a398d0388ff99e6be4904024643182cd154ba6"
   },
@@ -82,9 +82,28 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0018/rungs/implementation_mutants.py",
-   "tests/test_0018_r5_closures.py",
-   "tests/test_0018_rungs_t5.py"
+   "CHANGELOG.md",
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/sr2-01/mutation-table.json",
+   "specs/evidence/sr2-01/wiki_cache_mutants.py",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/budgets.py",
+   "src/veracium/cli.py",
+   "src/veracium/compile.py",
+   "tests/test_sr2_01_wiki_upgrade.py"
   ]
  },
  "rows": [
@@ -116,7 +135,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a check that lives in a helper never runs"
@@ -149,7 +168,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "a check's body is emptied"
@@ -182,7 +201,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "two data steps of one rung run in the other order"
@@ -197,6 +216,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 15
+  "seconds": 14
  }
 }

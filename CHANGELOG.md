@@ -24,8 +24,12 @@
     fact the user had stated since. The cache's policy version is bumped (`0012-v1` to `0012-v2`).
   - **The fresh-store case:** the empty line cached at one recall stayed until `wiki_recompile_after_writes` further
     writes, above a fact remembered in between. A cached empty line is now stale after any write.
+  - **The CLI's store-only `recall`** (no model provider) shows `[wiki omitted: cache is stale]` in place of a cached
+    empty line once anything has been written since. A cache written under an earlier policy keeps the longer notice
+    (specs/0012's provider-free rule).
   - **The cost, once:** every cached wiki is recompiled on its user's next recall after the upgrade. That is one compile
-    call per user whose view holds a verified fact. A view with none recompiles without calling the model.
+    call per user whose view holds any grounded input (a verified fact, or an episode of the user's own); a view with
+    neither recompiles without calling the model.
   - **Who should take this:** every host with the wiki layer on (the default, `wiki_recompile_after_writes=8`). A host
     with it off (`0`) is unaffected.
 - **Corrected: 0.29.0's notes said `correct()` settles a contested commitment. It does not.** `correct()` on either

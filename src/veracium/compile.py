@@ -228,11 +228,31 @@ def needs_recompile(store, user_id: str, recompile_after: int,
     return behind >= recompile_after
 
 
+def _empty_input_body() -> str:
+    """What compile_wiki writes for an empty input: EMPTY_GROUNDED_BODY, sanitized, then its zero-drop marker, built by
+    the writer's own construction (research's stage 1: generated, so the staleness clause cannot drift from it)."""
+    return _budgets.append_compile_marker(_budgets.sanitize_llm_body(EMPTY_GROUNDED_BODY), 0, 0)
+
+
 def _is_code_owned_empty(body: str) -> bool:
-    """The cached body is exactly what compile_wiki writes for an empty input, built by the writer's own construction
-    (research's stage 1: generated, so the clause and the writer cannot drift). A model body that happened to equal it
-    costs one extra recompile, nothing else."""
-    return body == _budgets.append_compile_marker(_budgets.sanitize_llm_body(EMPTY_GROUNDED_BODY), 0, 0)
+    """The cached body is exactly what compile_wiki writes for an empty input. A model reply that equals it is treated
+    the same: stale on every write, so it recompiles on the first read after each write for as long as the model keeps
+    returning it (research's stage 2, N3), never served above a fact written since."""
+    return body == _empty_input_body()
+
+
+def _provider_free_notice(store, user_id: str, relations: dict[str, Relation], **kw) -> str:
+    """specs/0012 I10l and specs/0003 §4c-ii (v18.5; research's stage 2, N2): a provider-free reader of a stale cache is
+    served a notice without the body, never the stale body and never a model. Selected by the CACHED ROW alone (no
+    population is read): a code-owned empty body whose digest is current, stale by a write alone, gets the notice that
+    does not claim a model is needed (its recompile may call none); every other stale row, identity-stale included,
+    keeps 0012's notice."""
+    cached = store.get_wiki(user_id)
+    if cached is not None:
+        digest, body = _split_envelope(cached[0])
+        if digest == _policy_digest(relations, **kw) and _is_code_owned_empty(body):
+            return _budgets.STALE_EMPTY_WIKI_NOTICE
+    return _budgets.STALE_WIKI_NOTICE
 
 
 def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relation],
@@ -386,7 +406,7 @@ def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
               item_cap=item_cap)
     if needs_recompile(store, user_id, recompile_after, relations, **kw):
         if getattr(llm, "_veracium_no_llm", False):       # I10l: provider-free reader
-            return _budgets.STALE_WIKI_NOTICE
+            return _provider_free_notice(store, user_id, relations, **kw)
         return compile_wiki(store, llm, user_id, relations, _bind=_bind, **kw)
     row = store.get_wiki(user_id)
     if row is None:                    # evicted between the staleness check and this read: stale, as above
@@ -399,8 +419,8 @@ def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
 
 
 # the code-owned bodies ensure_wiki can return in place of a compiled one: each asserts no fact
-_WIKI_NOTICES = frozenset({_budgets.STALE_WIKI_NOTICE, _budgets.REDACTED_DURING_COMPILE_NOTICE,
-                           _budgets.DISPUTED_DURING_COMPILE_NOTICE})
+_WIKI_NOTICES = frozenset({_budgets.STALE_WIKI_NOTICE, _budgets.STALE_EMPTY_WIKI_NOTICE,
+                           _budgets.REDACTED_DURING_COMPILE_NOTICE, _budgets.DISPUTED_DURING_COMPILE_NOTICE})
 
 
 def _unbound_by(store, user_id: str, snap, edges, episodes):

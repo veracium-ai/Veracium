@@ -1,5 +1,5 @@
 {
- "body_sha256": "64217f894ce228673a5e897dda6417b6c01085579b77c052713113a815569a95",
+ "body_sha256": "3cb3f42c52fd028d3304a5a69361d594575ea944a7838d3ec01e2f5cd0124596",
  "controls": [
   {
    "anchor_counts": [
@@ -9,6 +9,10 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_fresh_cached_empty_body_is_stale_after_any_write",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.27.1]",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.31.0]",
@@ -18,7 +22,7 @@
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_the_reviewers_sequence_does_not_serve_the_legacy_body[v0.27.1]",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_the_reviewers_sequence_does_not_serve_the_legacy_body[v0.31.0]"
    ],
-   "definition_sha256": "334909bdb1b325d0b5dae80a8ee8e4650a49fc7dc512662389f2cb6df22a405a",
+   "definition_sha256": "fb3e48665c90b3a8bb1e53e357d50617ad17133cbb59962db22e625ee6f47b9b",
    "expected": "SURVIVED",
    "file": "src/veracium/compile.py",
    "good": true,
@@ -26,6 +30,10 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_fresh_cached_empty_body_is_stale_after_any_write",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.27.1]",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.31.0]",
@@ -67,6 +75,10 @@
  "header": {
   "cells": {
    "sr2-01-wiki-cache": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_fresh_cached_empty_body_is_stale_after_any_write",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.27.1]",
     "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.31.0]",
@@ -79,22 +91,25 @@
   },
   "clean": {
    "first": {
-    "of": 9,
+    "of": 13,
     "ok": true,
-    "passed": 9
+    "passed": 13
    },
    "last": {
-    "of": 9,
+    "of": 13,
     "ok": true,
-    "passed": 9
+    "passed": 13
    }
   },
-  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
+  "commit": "d49a32660ca3ffebf0bc84e6da3147e41f2a7a4a",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "72e057da2d2e00a3d3d91bc34423cbb3d3bf69a592f91855a153a88a814e84c8",
-   "NOOP-compile": "334909bdb1b325d0b5dae80a8ee8e4650a49fc7dc512662389f2cb6df22a405a"
+   "NOOP-compile": "fb3e48665c90b3a8bb1e53e357d50617ad17133cbb59962db22e625ee6f47b9b"
   },
   "definitions": {
+   "N2-every-stale-row-gets-the-empty-notice": "8fe46baada8fa7a88f86ed552798b65385c4990a609b2a3f7d7d28fc768e6783",
+   "N2-identity-stale-empty-row-gets-the-empty-notice": "39c694e6d4b375e5e32601b9ddaa91a2dbcc1780546cf01cc96ff3518e15e562",
+   "N2-the-empty-row-gets-0012s-notice": "ee8ca23a0bb53a207bca8b86ca0080e70d949e9d91c5e7c62f3f5ea87e946884",
    "SR2-01-body-changed-without-a-bump": "f77f51650904f922c7da52b5dc00c6df4f8bf7732dcfedc34334833503980545",
    "SR2-01-branch-changed-without-a-bump": "3c7fa77a805abe78ff53b77495773734d979a3940a494f95f68991a678266c21",
    "SR2-01-empty-body-keeps-the-threshold": "99441a09a9c8411a4daa81b7fbf500159c4457969ba52b448fe42cd5b47156a0",
@@ -106,9 +121,10 @@
    "specs/evidence/sr2-01/legacy-empty-wiki-v0.27.1.sqlite": "eda6803a45e1009ec869b4956028824bdb8c3877b0fd2d65d9e03184a4cbde2e",
    "specs/evidence/sr2-01/legacy-empty-wiki-v0.31.0.sqlite": "8647465a4bd4346f59365fde65dee807c29b84134046f8c5269be452f73a5da3",
    "specs/evidence/sr2-01/legacy-empty-wiki.json": "a1500afbc1da19abb803fc706d4767b28bbac5a7bfc76eaad50b37ebf02245ef",
-   "specs/evidence/sr2-01/wiki_cache_mutants.py": "f3a81bb79b503e4f03fdbf3a8b71873a5edb76470aafc4fe01d57851344950bf",
-   "src/veracium/compile.py": "8a492f5c2037a5b55e38bbd7db236cbe5de70a357ceb976dc6ad0ed4b91ae5e9",
-   "tests/test_sr2_01_wiki_upgrade.py": "d3d3c31cdb9202201aa35661c24376d1b4d9f3ced5086abee8f40cfdd2c31f11"
+   "specs/evidence/sr2-01/wiki_cache_mutants.py": "083fae918c24e84b0b9c779c69bc67c618b8cafadd29964386f0a6058959c632",
+   "src/veracium/budgets.py": "885fd8c691da3a1009b4ec7409081f44ffcac08960c0425ddc67be95dfe16722",
+   "src/veracium/compile.py": "a4389f3943f1d057f81bd91809f252cf1eb0ecebcdb92282167e7bfa1f6c8c34",
+   "tests/test_sr2_01_wiki_upgrade.py": "0af25c937d483b276629ebcdf5b24ac0d5c0c4c70fd5e0cbedcea3ddeca3c39d"
   },
   "finding": "sr2-01-wiki-cache",
   "honest_nodes": [
@@ -120,12 +136,11 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "README.md",
-   "docs/api.md",
-   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/sr2-01/wiki_cache_mutants.py",
+   "src/veracium/budgets.py",
+   "src/veracium/cli.py",
    "src/veracium/compile.py",
-   "tests/test_0003_obligations.py",
-   "tests/test_0022_erasure.py"
+   "tests/test_sr2_01_wiki_upgrade.py"
   ]
  },
  "rows": [
@@ -175,7 +190,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 0.95s",
+   "pytest": "7 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "the policy version not bumped: a wiki cached by released code keeps its old digest and its old body (SR2-01)"
@@ -208,7 +223,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "the code-owned empty body re-worded under the same policy version (round 1's SR1-03 change, repeated)"
@@ -280,21 +295,132 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.70s",
+   "pytest": "3 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "a cached code-owned empty body waits for the write threshold, so it is served above a verified fact (found in the fix)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice": "assertion",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim": "assertion",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write"
+   ],
+   "definition_sha256": "ee8ca23a0bb53a207bca8b86ca0080e70d949e9d91c5e7c62f3f5ea87e946884",
+   "file": "src/veracium/compile.py",
+   "finding": "sr2-01-wiki-cache",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_model_written_body_below_the_threshold_is_still_served"
+   ],
+   "id": "N2-the-empty-row-gets-0012s-notice",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_third_party_write_gets_the_notice_without_the_model_claim",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_a_cached_empty_body_after_a_grounded_write_gets_the_same_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_the_store_only_cli_recall_prints_the_notice_after_a_write"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.82s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a cached empty body stale by a write alone is served the notice that says a model is needed, where its recompile may call none (N2)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice": "assertion",
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.27.1]": "assertion",
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.31.0]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice",
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.27.1]",
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.31.0]"
+   ],
+   "definition_sha256": "8fe46baada8fa7a88f86ed552798b65385c4990a609b2a3f7d7d28fc768e6783",
+   "file": "src/veracium/compile.py",
+   "finding": "sr2-01-wiki-cache",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_model_written_body_below_the_threshold_is_still_served"
+   ],
+   "id": "N2-every-stale-row-gets-the-empty-notice",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.31.0]",
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_provider_free_reader_of_a_legacy_row_gets_the_stale_notice[v0.27.1]",
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.69s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the selection widened to every stale row: a legacy or identity-stale row loses 0012's notice (N2)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice"
+   ],
+   "definition_sha256": "39c694e6d4b375e5e32601b9ddaa91a2dbcc1780546cf01cc96ff3518e15e562",
+   "file": "src/veracium/compile.py",
+   "finding": "sr2-01-wiki-cache",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_model_written_body_below_the_threshold_is_still_served"
+   ],
+   "id": "N2-identity-stale-empty-row-gets-the-empty-notice",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_sr2_01_wiki_upgrade.py::test_n2_an_identity_stale_empty_body_keeps_0012s_notice"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.56s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the row's digest not checked: a code-owned empty body stale by IDENTITY gets the write-stale notice (N2, 0003 v18.5's 'an identity-stale row keeps 0012's notice')"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 4
+   "product": 7
   },
   "controls": 2,
   "controls_good": 2,
-  "good": 4,
-  "killed": 4,
-  "rows": 4,
-  "seconds": 17
+  "good": 7,
+  "killed": 7,
+  "rows": 7,
+  "seconds": 26
  }
 }
