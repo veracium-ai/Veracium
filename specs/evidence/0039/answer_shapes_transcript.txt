@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ 9753fdb3920e5ab7749c0ba383f5a0a4fe00739c
+# generated 2026-09-12 against veracium @ 333954f8a1c55e5a6a41b8f5f26a0130ea43ed8a
+# RE-PINNED 2026-11-12 (333954f8: shipped-changes round 3, research's stage 2 N2 and N3: the write-stale empty notice in budgets.py and compile.py, a docstring, and a comment in cli.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-11 (9753fdb3: shipped-changes round 3, SR2-01's cache policy version and empty-body staleness in compile.py and a docstring in __init__.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-11 (be4ce293: research's R2S-1, recall's emptiness check counts a retired episode, and a comment, each at the same line count; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-10 (7d657eeb: shipped-changes round 2 changed recall's empty-view line, the shared constants and the contested line's distinct values; both instruments re-run, and the body is byte-identical)
