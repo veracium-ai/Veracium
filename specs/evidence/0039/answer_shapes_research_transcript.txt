@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 333954f8a1c55e5a6a41b8f5f26a0130ea43ed8a
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 7484a214a193fc0914a027447bc5e1a2ef645a0f
+# RE-PINNED 2026-11-12 (7484a214: shipped-changes round 3 accepted, the acceptance fold for 0.31.1: _is_code_owned_empty's docstring in compile.py qualified to the sequential case (C3-01); both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-12 (333954f8: shipped-changes round 3, research's stage 2 N2 and N3: the write-stale empty notice in budgets.py and compile.py, a docstring, and a comment in cli.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-11 (9753fdb3: shipped-changes round 3, SR2-01's cache policy version and empty-body staleness in compile.py and a docstring in __init__.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-11 (be4ce293: research's R2S-1, recall's emptiness check counts a retired episode, and a comment, each at the same line count; both instruments re-run, and the body is byte-identical)
