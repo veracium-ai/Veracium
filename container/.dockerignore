@@ -1,0 +1,5 @@
+# The build context is container/: only the Dockerfile, the lock and the wheel go in (0054 I8).
+*
+!Dockerfile
+!requirements.lock
+!*.whl
