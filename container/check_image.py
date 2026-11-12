@@ -240,7 +240,8 @@ def check(img: str, version: str, only=None, key_env=None) -> list:
                 layers += 1
                 for m in tf.getmembers():
                     members += 1
-                    name = m.name.lstrip("./").rstrip("/")
+                    # the literal "./" prefix only: lstrip("./") would strip the dot of a root `.git` (R4)
+                    name = (m.name[2:] if m.name.startswith("./") else m.name).lstrip("/").rstrip("/")
                     pp = pathlib.PurePosixPath(name)
                     target = str(pp.parent / pp.name[len(".wh."):]) if pp.name.startswith(".wh.") else name
                     parts = set(pathlib.PurePosixPath(target).parts)
@@ -340,6 +341,11 @@ RED = [
      {"extra": {"repo/COORDINATION.md": b"planted\n", "repo/specs/x.md": b"planted\n"}}, ("check", "I8")),
     ("I2-flattened-base", "I2", [("ARG BASE=python@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f",
                                   "ARG BASE=" + _FLATBASE)], {"prep": "flatbase"}, ("check", "I2")),
+    ("I8-repository-at-the-root", "I8", [("ENTRYPOINT [", "COPY repo/ /\nENTRYPOINT [")],
+     {"extra": {"repo/.git/HEAD": b"ref: refs/heads/main\n", "repo/.claude/settings.json": b"{}\n"}}, ("check", "I8")),
+    ("I8-root-git-written-then-removed", "I8",
+     [("USER 10001\n", "RUN mkdir -p /.git && echo planted > /.git/HEAD\nRUN rm -rf /.git\nUSER 10001\n")], {},
+     ("check", "I8")),
     ("I8-planted-key", "I8", [("ENTRYPOINT [", "RUN echo 'ANTHROPIC_API_KEY=" + _FAKE_KEY.decode()
                                + "' > /home/veracium/.env\nENTRYPOINT [")], {}, ("check", "I8")),
 ]
