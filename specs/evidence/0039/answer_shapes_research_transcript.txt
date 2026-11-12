@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 7484a214a193fc0914a027447bc5e1a2ef645a0f
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 685e59bf72edd30c98ad632538da5f4375ae2c8f
+# RE-PINNED 2026-11-12 (685e59bf: the schema evidence records v0.32.0 at the tag's commit, one row of src/veracium/store/evidence/legacy_stores.json; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-12 (7484a214: shipped-changes round 3 accepted, the acceptance fold for 0.31.1: _is_code_owned_empty's docstring in compile.py qualified to the sequential case (C3-01); both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-12 (333954f8: shipped-changes round 3, research's stage 2 N2 and N3: the write-stale empty notice in budgets.py and compile.py, a docstring, and a comment in cli.py; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-11 (9753fdb3: shipped-changes round 3, SR2-01's cache policy version and empty-body staleness in compile.py and a docstring in __init__.py; both instruments re-run, and the body is byte-identical)
