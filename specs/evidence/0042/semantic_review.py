@@ -123,8 +123,8 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("adapters/_surface.py", 41): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
     ("adapters/_surface.py", 45): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
     ("adapters/pydantic_ai.py", 62): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
-    ("compile.py", 241): "predicate-helper",   # SR2-01: the cached code-owned empty body test, consumed by needs_recompile
-    ("compile.py", 459): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
+    ("compile.py", 243): "predicate-helper",   # SR2-01: the cached code-owned empty body test, consumed by needs_recompile
+    ("compile.py", 461): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
     ("lifecycle.py", 63): "internal-invariant",   # specs/0048 §4D, the owner's "Refuse, name it": a store without the transition refuses (the Store base's refusing-default class)
     ("proactive.py", 242): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
     ("proactive.py", 291): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
@@ -194,7 +194,7 @@ e("asof/resolve.py", 272, "asof.resolve.future-T", "0028", "§2c-i", "refuse")
 e("asof/resolve.py", 245, "asof.resolve.held-at", "0028", "§2c-i", "withhold")
 e("authority.py", 76, "authority.permitted", "0003", "§4a", "refuse")
 e("authority.py", 89, "authority.self-assertion", "0003", "§4a", "withhold")
-e("compile.py", 469, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
+e("compile.py", 471, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
 e("compile.py", 155, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
 e("compile.py", 207, "compile.grounded-inputs", "0004", "§4", "withhold")
 e("diagnostics.py", 276, "diagnostics.send.not-consented", "0015", "§4", "withhold")

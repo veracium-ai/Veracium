@@ -237,7 +237,9 @@ def _empty_input_body() -> str:
 def _is_code_owned_empty(body: str) -> bool:
     """The cached body is exactly what compile_wiki writes for an empty input. A model reply that equals it is treated
     the same: stale on every write, so it recompiles on the first read after each write for as long as the model keeps
-    returning it (research's stage 2, N3), never served above a fact written since."""
+    returning it (research's stage 2, N3). A read that starts after a write never serves it above that write's fact. A
+    write another connection commits DURING one recall is not covered: that one response can still carry the empty body
+    above the fact, and the next read is correct (shipped-changes round 3, C3-01, a queued follow-up)."""
     return body == _empty_input_body()
 
 

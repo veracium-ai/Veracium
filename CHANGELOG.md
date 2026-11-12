@@ -32,6 +32,10 @@
     neither recompiles without calling the model.
   - **Who should take this:** every host with the wiki layer on (the default, `wiki_recompile_after_writes=8`). A host
     with it off (`0`) is unaffected.
+  - **A limit this release does not fix** (the round-3 review's C3-01): a write that another connection commits while
+    a recall is assembling its response can leave the empty line above that write's fact in that one response. The
+    next recall is correct. A recall that starts after the write is unaffected. This window existed before this
+    release, which does not widen it. A fix is queued.
 - **Corrected: 0.29.0's notes said `correct()` settles a contested commitment. It does not.** `correct()` on either
   date raises `CorrectionRefused` (a user's correction is a bare self-assertion over a prior whose subject is the
   obligation, not the user: specs/0011 §4b), and `confirm()` retires neither date. The user's resolution is
