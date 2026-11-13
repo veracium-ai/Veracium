@@ -1,5 +1,5 @@
 {
- "body_sha256": "6c359aaecb43797e271429083c7dc25eeeb93d2c7334effbbf78a76b357ba197",
+ "body_sha256": "f15582c327870d266b5e175533efa2192f38fcd802994690b3749816baf223a4",
  "controls": [
   {
    "anchor_counts": [
@@ -120,9 +120,10 @@
    "cells_failed": [],
    "cells_passed": [
     "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key",
-    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[absent]",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[installed]"
    ],
-   "definition_sha256": "4533ba83092b4789865ab482461b3108a19a63eea2903dc55643518fbca16d18",
+   "definition_sha256": "6e79f6a03f4f0723e15d4c40a1ac21c71ac2323e759cc153f19d3047fe520036",
    "expected": "SURVIVED",
    "file": "src/veracium/mcp_server.py",
    "good": true,
@@ -131,7 +132,8 @@
    "kill_kind": null,
    "named_cells": [
     "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key",
-    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[absent]",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[installed]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/mcp_server.py: its mutants' cells must all pass"
@@ -189,7 +191,8 @@
   "cells": {
    "c3-01-empty-body-bind": [
     "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key",
-    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[absent]",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[installed]",
     "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write",
     "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model",
     "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
@@ -205,23 +208,23 @@
   },
   "clean": {
    "first": {
-    "of": 15,
+    "of": 16,
     "ok": true,
-    "passed": 15
+    "passed": 16
    },
    "last": {
-    "of": 15,
+    "of": 16,
     "ok": true,
-    "passed": 15
+    "passed": 16
    }
   },
-  "commit": "35610a8afc03b3c58d4abb500798a1f61b08a50d",
+  "commit": "b4a53a2b334a72b7a3e4cdc29557fa68b7470041",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
    "NOOP-compile": "40791913a527a53ff94c5b3c7dd1dfd6e93c363e373c5e50ffe92e77e9a2829f",
    "NOOP-data_migration": "5cd21acd50423e116be79af017527c1112274d6b44410f77f54be55aa43c04b1",
-   "NOOP-mcp_server": "4533ba83092b4789865ab482461b3108a19a63eea2903dc55643518fbca16d18",
+   "NOOP-mcp_server": "6e79f6a03f4f0723e15d4c40a1ac21c71ac2323e759cc153f19d3047fe520036",
    "NOOP-revocation": "b511d9a24ef487467baf072655a9b215d90bbfa5d27b54f68e6750e2afbb3c05",
    "NOOP-sqlite": "8e3499d77e26e64b584544682389caeb50579494f356cfefc4cb7cae7592e955"
   },
@@ -235,12 +238,12 @@
    "C3-01-no-bind-read": "6a89952b36c50b8ba1ee5b78d572e5b98cbaae097d18629088aa2c1be91388ab",
    "C3-01-restoration-without-a-bump": "5b9c5bb4ad1613b605b0ac03f482cd9bf8368864b7729409e15fb09938c3aba5",
    "C3-01-revocation-bump-after-its-commit": "a3c00be866d12421bd206ce4c17f42fef29abced1b439363432a09aadf3c6466",
-   "N1-the-version-left-unset": "603b934759d0d7a439ea2d6a0db11b5463aafb1ebf78cd7cbe6e2932752b2ba6",
+   "N1-the-version-left-unset": "b69dd12261749bcb690ddce616206fde757a9eb308193b7a18d7e8c60d2c3032",
    "N4-the-key-hint-restored": "96a4ee012c26d63983cd3fc871ca3f6fd609899317c287a49bb23193b818138c"
   },
   "digests": {
    "specs/evidence/c3-01/census_trace_plugin.py": "ecaf56b23bf6694430aa36247ab048b9b93b8978544ea14b75736203ac1e819b",
-   "specs/evidence/c3-01/empty_body_mutants.py": "165ce3b50a5ada1b804a74615d169ac2763c7ec3925feade5cfc512f503f99c9",
+   "specs/evidence/c3-01/empty_body_mutants.py": "9f4eb1fa109b9d8bf30323fe6ec1838b8e959fac18317e5b4a466ab953d88162",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "f45fc0c1378474928e13eb627fca931e94703a1e0a1a6efa5c0937dc03813b73",
@@ -249,7 +252,7 @@
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
    "src/veracium/store/revocation.py": "14aebf929c07e968c987b85c05c565d1b582de2e548b41dfe3d4de1147317c8d",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0031_server_reports_itself.py": "4a5574b9fb17a446e5e89a724545313ed6b6374296633429616e1fc8fc9f40e6",
+   "tests/test_0031_server_reports_itself.py": "5ff827b81d01cf38d6759892b4c311aea19be03a45ae63ebce8dbb9c27a786da",
    "tests/test_c3_01_empty_body_bind.py": "0acce2706cf907fff716ffe52e03113813217a09f5e6d286dd4779f90ead0d58",
    "tests/test_c3_01_writers_census.py": "cbf5bb6bd2b3de1a4b4e0f95a4f56f87529cb90e908cba552aa329760f08ea73"
   },
@@ -265,11 +268,7 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/c3-01/empty_body_mutants.py",
-   "specs/evidence/c3-01/mutation-table.json",
-   "specs/evidence/sr2-01/mutation-table.json",
-   "src/veracium/compile.py",
-   "tests/test_0031_server_reports_itself.py",
-   "tests/test_c3_01_writers_census.py"
+   "tests/test_0031_server_reports_itself.py"
   ]
  },
  "rows": [
@@ -313,7 +312,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.50s",
+   "pytest": "5 failed in 1.68s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -350,7 +349,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.86s",
+   "pytest": "2 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -383,7 +382,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -416,7 +415,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -455,7 +454,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.24s",
+   "pytest": "3 failed in 1.32s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty body always omitted: the no-write response is no longer v18.6's"
@@ -489,7 +488,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
@@ -523,7 +522,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 84.24s (0:01:24)",
+   "pytest": "1 failed in 94.32s (0:01:34)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
@@ -556,7 +555,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 91.27s (0:01:31)",
+   "pytest": "1 failed in 92.85s (0:01:32)",
    "reason": null,
    "reason_seen": null,
    "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
@@ -589,7 +588,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.28s",
+   "pytest": "1 failed in 3.42s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -599,13 +598,15 @@
     1
    ],
    "cell_kinds": {
-    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake": "assertion"
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[absent]": "assertion",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[installed]": "assertion"
    },
    "cells_errored": [],
    "cells_failed": [
-    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[absent]",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[installed]"
    ],
-   "definition_sha256": "603b934759d0d7a439ea2d6a0db11b5463aafb1ebf78cd7cbe6e2932752b2ba6",
+   "definition_sha256": "b69dd12261749bcb690ddce616206fde757a9eb308193b7a18d7e8c60d2c3032",
    "file": "src/veracium/mcp_server.py",
    "finding": "c3-01-empty-body-bind",
    "good": true,
@@ -618,11 +619,12 @@
    "kill_kind": "assertion",
    "kind": "product",
    "named_cells": [
-    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[installed]",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake[absent]"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "2 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -655,7 +657,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.92s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -670,6 +672,6 @@
   "good": 11,
   "killed": 11,
   "rows": 11,
-  "seconds": 613
+  "seconds": 624
  }
 }

@@ -50,7 +50,9 @@ OTHER_USER = C("test_another_users_write_leaves_the_body_served")
 PRINCIPAL = C("test_a_principal_bearing_recall_is_unchanged")
 STATIC = f"{W}::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named"
 DYNAMIC = f"{W}::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
-SERVERINFO = f"{S}::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+# both metadata states, named: the cell runs with veracium's distribution metadata and again without it (a source tree
+# on PYTHONPATH; shipped-changes round 4, research's dry-run-3 leg), and the version left unset fails each
+SERVERINFO = [f"{S}::test_serverinfo_is_veracium_and_its_version_by_the_handshake[{m}]" for m in ("installed", "absent")]
 START_FAILURE = f"{S}::test_a_start_failure_states_its_own_cause_and_names_no_provider_key"
 HELP = f"{S}::test_help_still_lists_the_provider_key"
 
@@ -119,7 +121,7 @@ MUTANTS = [
      "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"),
     ("N1-the-version-left-unset", "product", M,
      [("    _set_server_version(server)            # specs/0031 §4a-ii (v22.1, N1)\n", "")],
-     [SERVERINFO], [HELP], None,
+     SERVERINFO, [HELP], None,
      "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"),
     ("N4-the-key-hint-restored", "product", M,
      [('raise SystemExit(f"veracium-mcp: failed to start: {e}\\n(see veracium-mcp --help)") from e',

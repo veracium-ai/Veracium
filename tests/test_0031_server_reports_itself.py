@@ -4,8 +4,8 @@ V-SERVERINFO: the `initialize` result's serverInfo is veracium's own, read from 
 attribute), so it fails if the way the version is set stops working. V-START-FAILURE: a start failure states its own
 cause, with its remedy, and names no provider key.
 """
+import importlib.metadata as md
 import sqlite3
-from importlib.metadata import version
 
 import pytest
 
@@ -17,6 +17,32 @@ from veracium import mcp_server
 def _needs_the_mcp_sdk():
     """Each cell needs the optional MCP SDK; skipped per cell, never the module at collection."""
     pytest.importorskip("mcp")
+
+
+def _own():
+    """What serverInfo.version must be, derived here from §4a-ii's rule and not from the product's helper: the
+    installed veracium's version, or the source-tree marker where there is no distribution metadata. Looked up at call
+    time, so the metadata="absent" cells' patch applies. (Shipped-changes round 4, research's dry-run-3 leg: the cells
+    called version("veracium") unconditionally and raised in a source tree run with PYTHONPATH=src.)"""
+    try:
+        return md.version("veracium")
+    except md.PackageNotFoundError:
+        return mcp_server.SOURCE_TREE_VERSION
+
+
+@pytest.fixture(params=["installed", "absent"])
+def metadata(request, monkeypatch):
+    """Each handshake cell runs with veracium's distribution metadata as the run has it, and again with it absent (a
+    source tree on PYTHONPATH), so neither configuration depends on how the suite was installed."""
+    if request.param == "absent":
+        real = md.version
+
+        def version(name):
+            if name == "veracium":
+                raise md.PackageNotFoundError(name)
+            return real(name)
+        monkeypatch.setattr(md, "version", version)
+    return request.param
 
 
 def _handshake_server_info(server):
@@ -33,20 +59,22 @@ def _handshake_server_info(server):
     return anyio.run(go)
 
 
-def test_serverinfo_is_veracium_and_its_version_by_the_handshake(tmp_path):
+def test_serverinfo_is_veracium_and_its_version_by_the_handshake(tmp_path, metadata):
     m = Memory(llm=lambda *a, **k: "", config=MemoryConfig(db_path=str(tmp_path / "v.db")))
     info = _handshake_server_info(mcp_server.build_server(m))
     assert info.name == "veracium"
-    assert info.version == version("veracium") and info.version != version("mcp"), (info.version, version("mcp"))
+    assert info.version == _own() and info.version != md.version("mcp"), (metadata, info.version, md.version("mcp"))
+    if metadata == "absent":
+        assert info.version == mcp_server.SOURCE_TREE_VERSION, info.version
     m.close()
 
 
-def test_with_the_version_left_unset_the_handshake_reports_the_sdks_own(tmp_path, monkeypatch):
+def test_with_the_version_left_unset_the_handshake_reports_the_sdks_own(tmp_path, monkeypatch, metadata):
     """V-SERVERINFO's RED, as a control the check must tell apart: the SDK's fallback is its own package version."""
     monkeypatch.setattr(mcp_server, "_set_server_version", lambda server: None)
     m = Memory(llm=lambda *a, **k: "", config=MemoryConfig(db_path=str(tmp_path / "v.db")))
     info = _handshake_server_info(mcp_server.build_server(m))
-    assert info.version == version("mcp") != version("veracium")
+    assert info.version == md.version("mcp") != _own(), (metadata, info.version)
     m.close()
 
 
