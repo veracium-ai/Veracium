@@ -104,7 +104,8 @@ INVENTORY = [
     ("tests/test_0031_server_reports_itself.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — specs/0031 §4a-ii's V-SERVERINFO handshake and V-START-FAILURE run "
                             "the served server, so each cell skips without the SDK (an autouse fixture, never a "
-                            "module-level skip; the pydantic-floor lane). Author line: all PASS with mcp installed"),
+                            "module-level skip; the pydantic-floor lane). Author line: all PASS with mcp installed",
+     "job:runs"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "

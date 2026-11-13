@@ -342,6 +342,7 @@ other-object	src/veracium/config.py	__setattr__	def __setattr__(self, name, valu
 other-object	src/veracium/config.py	__setattr__	object.__setattr__(self, name, value)
 other-object	src/veracium/lifecycle.py	getattr	impl = getattr(store, "expiry_transition", None)
 other-object	src/veracium/lifecycle.py	getattr	if impl is None or getattr(impl, "__func__", None) is Store.expiry_transition:
+other-object	src/veracium/mcp_server.py	getattr	target = getattr(server, "_mcp_server", None) or server
 edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	row = self._conn.execute("SELECT json, active FROM edges WHERE id=? AND user_id=?",
 validated-write	src/veracium/store/sqlite.py	confidence	decayed = e.provenance.confidence * decay_factor
 validated-write	src/veracium/store/sqlite.py	str:confidence	e.provenance = Provenance.model_validate({**e.provenance.model_dump(), "confidence": decayed})

@@ -1684,6 +1684,21 @@ DECLINES.update({
     "compile.bind.unbound": TwoPhase(lambda mp: compile_mod._budgets.REDACTED_DURING_COMPILE_NOTICE,
                                      lambda why: compile_mod._bind_withholds(why)),
 })
+
+
+class _MovedCounter:
+    """A store whose user's counter has advanced past the empty body's basis (4 -> 5): a write during the call."""
+
+    def store_version(self, user_id):
+        return 5
+
+
+# specs/0003 §4c-ii v18.7 (C3-01): the bind read omits the code-owned empty body when the counter moved since its basis
+DECLINES.update({
+    "compile.bind.empty-body": TwoPhase(lambda mp: _MovedCounter(),
+                                        lambda store: compile_mod.empty_body_unbound(
+                                            store, U, compile_mod._empty_input_body(), 4)),
+})
 SITES.update({sid: census._REGISTRY[sid] for sid in census.registry()})
 
 
