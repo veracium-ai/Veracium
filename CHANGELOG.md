@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+- **Fixed: a recall no longer serves "(no verified facts in this view)" above a fact written during that recall**
+  (the round-3 review's C3-01, disclosed in 0.32.0 as a limit; specs/0003 §4c-ii). The empty line carries the store
+  version at which it was established; recall re-reads the user's version just before rendering, and if any write for
+  the user committed in between, the line is left out of that one response: no retry, no model call. A model-written
+  summary is unaffected. On the review's three interleavings and a fourth, each response now leaves the line out and
+  shows the fact; with no write during the call, the response is unchanged.
+  - **A limit still stated:** erasing a user resets that user's write counter, so an erasure followed by exactly as
+    many writes as before, all inside one recall, can still pass the check. A store-wide counter that survives erasure
+    is queued for the next store-schema change.
+- **Fixed: revoking a source (and lifting a revocation), and the data migration's restoration of retired values, now
+  advance the user's write counter in the same transaction as their changes.** Before, a revocation advanced it in a
+  second transaction just after its changes committed, and a restoration did not advance it at all, so a reader could
+  see the changed records under the old counter. Found by C3-01's census of every writer of the tables a recall reads.
+- **Changed: the MCP server reports veracium's own version in `serverInfo.version`.** It reported the MCP SDK's
+  ("1.30.0" at 0.32.0). A source tree with no installed package metadata reports `source-tree`.
+- **Changed: a `veracium-mcp` start failure states its own cause.** It no longer appends "(Is ANTHROPIC_API_KEY set?)"
+  to every failure: startup reads no key. A store newer than the build, for example, is refused with the build it needs.
+- **Added: the container image `ghcr.io/veracium-ai/veracium:<version>`** (specs/0054), first published for 0.32.0:
+  the MCP server over stdio, from the release's own wheel, on Python 3.14 and an attested SQLite build, for linux/amd64
+  and linux/arm64. See the README's container section for the client configuration and what each setting stores.
+
 ## 0.32.0 — 2026-11-12
 
 **veracium's served tools for LangChain and Pydantic AI, and the corrections accepted by the shipped-changes review.**
