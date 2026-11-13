@@ -70,7 +70,38 @@ pip install "veracium[anthropic]"   # core + the reference LLM provider
 > attested yet. A build that fails is refused (`unsupported-sqlite`, naming the first failing check), for a new store
 > and an existing one alike. `veracium doctor` reports your build's status and lists the attested builds, with or
 > without a store. Ubuntu 24.04's own system Python is 3.12, below the floor: `pip` there installs 0.26.1, the last
-> release that supports it.
+> release that supports it. Without Python 3.14, use the container image (next section).
+
+### The container image (no Python 3.14 needed)
+
+`ghcr.io/veracium-ai/veracium:<version>` (from 0.32.0) runs the MCP server over stdio from that release's own wheel, on
+Python 3.14 and an attested SQLite build, for linux/amd64 and linux/arm64 (specs/0054). The store lives on a volume at
+`/data`. The image sets no trust value of its own: the host supplies them at run time. An MCP client configuration:
+
+```json
+{"mcpServers": {"veracium": {
+  "command": "docker",
+  "args": ["run", "-i", "--rm", "-v", "veracium-data:/data",
+           "-e", "ANTHROPIC_API_KEY", "-e", "VERACIUM_MCP_SOURCE_ID",
+           "ghcr.io/veracium-ai/veracium:0.32.0"],
+  "env": {"ANTHROPIC_API_KEY": "<key>", "VERACIUM_MCP_SOURCE_ID": "<your source id>"}}}}
+```
+
+The `env` block is required: an MCP client starts the server with a minimal environment, and `-e NAME` forwards only
+what is there. What each configuration stores:
+
+| configuration | `remember` | what `recall` shows |
+|---|---|---|
+| neither variable | refused: `source_id_required` | nothing stored |
+| `VERACIUM_MCP_SOURCE_ID` only, as above | stored as a **third-party** claim | under "UNVERIFIED THIRD-PARTY CLAIMS", never asserted as fact |
+| `VERACIUM_MCP_CAPABILITY=direct`, where you stand behind it | the user's own statements are the user's | verified facts |
+
+`direct` is the deployment's own attestation that every call comes from the authenticated user, for example a
+single-user desktop where you are that user (see `veracium-mcp --help`). Name a version tag, never `:latest`: a newer
+image whose store schema is higher refuses to open the volume's store and names the `veracium migrate` command to run
+first. `/data` holds the store and its SQLite sidecars, plus `config/` and `state/` (the telemetry and diagnostics
+choices, off by default, and the local diagnostics log). On Docker Desktop for macOS or Windows, use a named volume, not
+a bind mount.
 
 Extras: `[mcp]` adds the MCP server, `[dev]` adds pytest. The core alone depends
 only on `pydantic`. To work from source instead:
