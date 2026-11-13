@@ -326,6 +326,11 @@ GETATTR_ALLOWANCES = {
     ("ingest.py", "context", "basis"):
         (1, "EvidenceContext (type-checked by _resolve_context first)",
          "None-checked; a present basis REFUSES the declarative event"),
+    # specs/0031 §4a-ii (v22.1, N1): serverInfo.version is set on the SDK's low-level server, which FastMCP keeps on a
+    # private attribute; an SDK line without it is handled by setting the version on the server itself
+    ("mcp_server.py", "server", "_mcp_server"):
+        (1, "the MCP SDK's server object (FastMCP wraps a low-level Server; another SDK line may not)",
+         "None falls back to the server itself; its `version` is set to veracium's (0031 §4a-ii, N1)"),
     ("mcp_server.py", "exc", "reason"):
         (2, "library TypeError/ValueError (ProcedureTypeError/ProcedureValueError carry it)",
          "\"malformed\"-defaulted; serialized as the tool refusal name"),
@@ -772,14 +777,17 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: 2026-11-12, research's stage 2 on the round-3 fix (N2): the provider-free notice chosen by the cached row
 #: (`store.get_wiki` and the two notices in `_provider_free_notice`; the new notice in `_WIKI_NOTICES`; ensure_wiki's
 #: own notice read gone): moved dotted/dataflow 8,963 -> 8,966, the rest unchanged; total 9,514 -> 9,517.
+#: 2026-11-13, C3-01 and 0031 v22.1 (0003 v18.7–v18.9): the empty body's basis and bind read, revocation's and the
+#: restoration's bumps in their transactions, and serverInfo.version (the new getattr inventoried above): moved
+#: dotted/dataflow 8,966 -> 8,975 and getattr/dataflow 37 -> 38, the rest unchanged; total 9,517 -> 9,527.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 8966,
+    "dotted/dataflow": 8975,
     "dotted/module-machinery": 23,
     "dotted/module-plain": 435,
     "dotted/module-protected": 56,
-    "getattr/dataflow": 37,
+    "getattr/dataflow": 38,
 }
-SRC_ATTRIBUTE_TOTAL = 9517
+SRC_ATTRIBUTE_TOTAL = 9527
 SRC_DATA_DUNDERS_IN_DATAFLOW = 163   # 0018 T3: +2, `super().__new__` in RungReport and `type(exc).__name__` in the rung's refusal text (each a class or the object's own constructor, never content). T2: +1, `type(migrate_to).__name__`. T1: +1, `super().__init__` in `_VersionFault`. 2026-11-04, 0048 round 5 (R4-02): +1 — `type(value).__name__` in config._shown's refusal text for a value whose repr fails (a CLASS name, never content). Before: 2026-11-02, the specs/0048 implementation: +3 — `object.__setattr__` in MemoryConfig.__setattr__, `type(self).__name__` in Store.expiry_transition's refusal, `type(store).__name__` in expire()'s. Before: 2026-11-02, specs/0022 §4g's host API: +2 — `type(self.store).__name__` in Memory.source_revocations' and _source_revocation's NotImplementedError refusals. Before: 2026-10-31, research's n2 on eea0e76: +1 — `type(exc).__name__` in doctor._attested_builds' named listing escape. Before: 2026-10-26, 0007 I4 (A): -6 — the `type(...).__name__` in the retired legacy record validators (_structure_problems ×4, artifact_problems ×2). Before: 2026-10-26, 0007 I3(b): +1 — `type(r).__name__` in attestation_artifact_problems' malformed-revision message (a non-mapping record). Before: 2026-10-26, 0007 I3+I4 production, stage 2 on ce6117f: +2 — `type(exc).__name__` in the per-record validator escape (attestation_artifact_problems) and `type(status).__name__` in migration_runtime's refusal of an unmeasured status. Before: 2026-10-26, 0007 I3+I4 production: +2 — `type(exc).__name__` in runtime_status's fail-closed reason, `type(records).__name__` and `type(r).__name__` in the attestation validators (+3), and one `type(ex).__name__` gone with doctor's old runtime check (-1). Before: 2026-10-26, 0007 I1–I7's first commit: -2 — the two `type(...).__name__` in the deleted dead first copy of schema_version.artifact_problems (the live copy keeps its own two). Before: 2026-10-23, R-II round 2's RII-R2-01: +1 — `m.__name__` in schema._check_assertion_view_partition's refusal (the model it names). Before: 2026-10-20, 0044 T11b: +2 — `type(self).__name__` in the Store base's refusing `act_rows` and `act_state` defaults (store/base.py). Before: 2026-10-20, 0044 T11a: +3 — `type(self).__name__` in the Store base's refusing `arity_plan_state`, `migration_outcomes` and `migration_outcomes_by_uid` defaults (store/base.py), the T10a/T10b defaults' shape. Before: 2026-10-19, 0044 T10b: +1 — `type(self).__name__` in the Store base's refusing `challenge_snapshot` default (store/base.py), the T10a defaults' shape
 #   2026-10-19, 0044 T10a: +5 — in store/base.py, `super().__init__` in ReplyRefused (a refusal's message, from a closed reason and ids) and `type(self).__name__` in the Store base's four refusing reply defaults (add_reply, replies_for, active_challenges, acted_edge_ids)  # 2026-10-16, 0044 T7-2: +2 — in store/base.py, `super().__init__` in UndoRefused (a refusal's message, from a closed reason and ids) and `type(self).__name__` in the Store base's refusing `undo_restoration` default  # 2026-10-16, 0044 T6-1: +4 — in store/data_migration.py, `super().__new__` in DataMigrationResult's validating constructor, `super().__init__` in _Refusal, `type(registry).__name__` (the refused registry's CLASS name) and `type(x).__name__` (a failing user's exception CLASS name, never its message)  # 2026-10-15, 0044 T5-2: +1 — `type(self).__name__` in the Store base's refusing `refusal_inventory_ids` default  # 2026-10-14, 0008 v7: +1 — `super().__init__` in store/base.py's RequestRedacted (an exception's message, from ids and a verb)  # 2026-09-14 v14.1: +1 — `object.__setattr__` on the frozen PolicyLane (a list of tags taken as a tuple); +2 — the two `type(x).__name__` reads in the v22 type guards (procedural_gate.norm_ws, ingest_event)  # 2026-09-14, 0027 v14: +4 — `type(self).__name__` in the Store base's three refusing defaults, `type(d).__name__` in receipt_from_row  # 2026-09-19, 0042 census tranche 1: +1 — `type(decision).__name__` in census._label_of (a trace label is a CLASS NAME, never content)
 #   2026-09-19 provider refusal: +1 — `super().__init__` in `EmptyCompletion` (llm/anthropic.py); the census counts it as a data dunder in dataflow

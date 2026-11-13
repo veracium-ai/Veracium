@@ -101,6 +101,10 @@ INVENTORY = [
                          "implementation obligation per 0015 R9-4/R10-3)"),
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the death-release half of the same POSIX pair"),
+    ("tests/test_0031_server_reports_itself.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — specs/0031 §4a-ii's V-SERVERINFO handshake and V-START-FAILURE run "
+                            "the served server, so each cell skips without the SDK (an autouse fixture, never a "
+                            "module-level skip; the pydantic-floor lane). Author line: all PASS with mcp installed"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "
@@ -293,6 +297,10 @@ INVENTORY = [
      "git-checkout", "specs/0003 §4c-v (0003/obligations' mutation table, the within-episode harness's shape): the "
      "no-op control's run snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) "
      "has none, so the cell cannot run there — CI is a checkout, where it always runs"),
+    ("tests/test_c3_01_empty_body_mutants.py", "skipif", "not _is_checkout()",
+     "git-checkout", "specs/0003 §4c-ii v18.7 (C3-01's mutation table, the 0003/obligations shape): the no-op control's "
+     "run snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has none, so the "
+     "cell cannot run there — CI is a checkout, where it always runs"),
     ("tests/test_sr2_01_wiki_cache_mutants.py", "skipif", "not _is_checkout()",
      "git-checkout", "specs/0003 §4c-ii (SR2-01's mutation table, the 0003/obligations shape): the no-op control's run "
      "snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has none, so the cell "
@@ -650,6 +658,8 @@ EMITTED = {
     ("tests/test_0003_obligations_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_0003_within_episode_mutants.py", "not _is_checkout()"):
+        ("a git-less copy has none",),
+    ("tests/test_c3_01_empty_body_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_sr2_01_wiki_cache_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),

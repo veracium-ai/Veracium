@@ -459,8 +459,14 @@ def _withheld(store, user, rows) -> set:
 
 
 def _restore_user(store, user, plan_id, relations, op_id) -> None:
-    """Steps 2–4 of 0044 §4f for one user, inside its transaction, over its considered rows (`convert_rows`)."""
-    convert_rows(store, user, plan_id, _considered(store, user, plan_id, relations), op_id)
+    """Steps 2–4 of 0044 §4f for one user, inside its transaction, over its considered rows (`convert_rows`).
+
+    specs/0003 §4c-ii v18.7 (I6d's census): a restoration changes records a recall renders, and this operation runs
+    on a live store, so the user's write counter advances in the same transaction (convert_rows' other caller, the
+    converting import, advances it in its own)."""
+    restored, _withheld = convert_rows(store, user, plan_id, _considered(store, user, plan_id, relations), op_id)
+    if restored:
+        store._bump(user)
 
 
 def convert_rows(store, user, plan_id, rows, op_id) -> tuple:

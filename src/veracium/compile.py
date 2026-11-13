@@ -145,6 +145,7 @@ def _live_refusal_contention_edge_ids(store, user_id: str,
 _SITE_GROUNDED_INPUTS = declare_site("compile.grounded-inputs")   # specs/0042 (declined= is explicit)
 _SITE_FENCE_DISPUTED = declare_site("compile.fence.disputed", declines=True)   # specs/0047 INV-R18
 _SITE_BIND_UNBOUND = declare_site("compile.bind.unbound", declines=True)   # specs/0047 INV-R18, R-II round 2's RII-01
+_SITE_EMPTY_BODY_BIND = declare_site("compile.bind.empty-body", declines=True)   # specs/0003 §4c-ii v18.7 (C3-01)
 
 
 def _drew_a_challenged_fact(store, user_id: str, edges) -> bool:
@@ -271,6 +272,8 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     # specs/0041 §4e (tranche 5): the version is read BEFORE the inputs and the publish is conditional on
     # it — a store that moves during the slow compile (a redaction, any write) is never published over
     version_at_begin = store.store_version(user_id)
+    if _bind is not None:              # specs/0003 §4c-ii v18.7 (C3-01): the basis of a code-owned empty body
+        _bind["basis"] = version_at_begin
     edges, episodes = _grounded_inputs(store, user_id, relations)
     if _bind is not None:              # specs/0047 §4d (R-II RII-01): the records this body drew on, for bound_wiki
         _bind["drew"], _bind["drew_episodes"] = edges, episodes
@@ -417,6 +420,7 @@ def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
         return compile_wiki(store, llm, user_id, relations, _bind=_bind, **kw)
     if _bind is not None:
         _bind["row"] = row             # specs/0047 §4d (R-II RII-01): the row this body was served from, for bound_wiki
+        _bind["basis"] = row[1]        # specs/0003 §4c-ii v18.7 (C3-01): found fresh, so it equals store_version here
     return _split_envelope(row[0])[1]
 
 
@@ -471,8 +475,25 @@ def _bind_withholds(why) -> bool:
         return _SITE_BIND_UNBOUND.fire(why is not None, "withhold-body")
 
 
+def empty_body_unbound(store, user_id: str, body: Optional[str], basis: Optional[int]) -> bool:
+    """specs/0003 §4c-ii v18.7 (C3-01): the bind read. True leaves the code-owned empty body out of this response.
+
+    `body` is what bound_wiki returned; `basis` is the user's store_version at which its emptiness was established
+    (the cached row's own version, or the compile's version_at_begin, published or not). Called once, after the
+    recall's last store read whose result can reach a response that carries the body, and before rendering: if the
+    user's store_version still equals the basis, no write for the user committed in between, so every record the
+    response renders was read where the view held no verified fact, and the body is served. Otherwise it is left out
+    of this one response: no retry, no model call. Only the code-owned empty body (a model reply equal to it
+    included) is bound; a model summary keeps 0012's lag and is never passed here as unbound. A missing basis for an
+    empty body omits it (conservative; it asserts nothing either way)."""
+    if body is None or not _is_code_owned_empty(body):
+        return False
+    with _SITE_EMPTY_BODY_BIND.consult():
+        return _SITE_EMPTY_BODY_BIND.fire(basis is None or store.store_version(user_id) != basis, "omit-body")
+
+
 def bound_wiki(store, llm: Complete, user_id: str, recompile_after: int,
-               relations: Optional[dict[str, Relation]] = None, **kw):
+               relations: Optional[dict[str, Relation]] = None, _out: Optional[dict] = None, **kw):
     """specs/0047 §4d, INV-R18 (R-II RII-01): the wiki body a recall serves AND the call's one challenge snapshot,
     returned as `(body, snapshot)` and bound to one state, so the body never asserts a fact the same call reports as
     challenged, nor one redacted, erased or revokingly invalidated before the call served it. ensure_wiki produces the body before any
@@ -507,6 +528,8 @@ def bound_wiki(store, llm: Complete, user_id: str, recompile_after: int,
         else:                          # the row moved: its cause is not recorded with a cached body
             why = _budgets.DISPUTED_DURING_COMPILE_NOTICE
         if not _bind_withholds(why):
+            if _out is not None:       # specs/0003 §4c-ii v18.7 (C3-01): the basis of the body served, for the bind read
+                _out["basis"] = box.get("basis")
             return body, snap
         if box.get("published") is not None:
             # RII-R2-01 (D2, defence in depth): a compiled body that failed its bind takes its own published row with

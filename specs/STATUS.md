@@ -15,7 +15,7 @@ is the number that decides what can be built.
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-09-17 | 1 | 18 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-11-02 | 2 | 8 | 2 | 0 | 10 | 9/10 |
-| **0003** | supersession authority | `accepted` | 2026-11-12 | 1 | 12 | 0 | 0 | 0 | — |
+| **0003** | supersession authority | `accepted` | 2026-11-13 | 1 | 12 | 1 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-10-24 | 1 | 3 | 2 | 0 | 1 | 1/1 |
 | **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-09-14 | 1 | 5 | 1 | 0 | 0 | — |
@@ -43,7 +43,7 @@ is the number that decides what can be built.
 | **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-19 | 0 | 7 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-10-14 | 1 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-10-14 | 0 | 18 | 0 | 0 | 0 | — |
-| **0031** | the agent-facing trust surface | `accepted` | 2026-11-06 | 0 | 16 | 0 | 0 | 0 | — |
+| **0031** | the agent-facing trust surface | `accepted` | 2026-11-13 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 | **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-15 | 0 | 5 | 3 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-14 | 0 | 4 | 0 | 0 | 0 | — |

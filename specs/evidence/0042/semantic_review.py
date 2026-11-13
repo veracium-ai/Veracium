@@ -76,17 +76,17 @@ DEFAULT = {
 }
 OVERRIDE = {  # (module, line) -> reason class, where the module default is not the truth for that line
     ("__init__.py", 403): "control-flow", ("__init__.py", 484): "control-flow", ("__init__.py", 621): "control-flow",
-    ("__init__.py", 948): "control-flow", ("__init__.py", 1603): "control-flow", ("__init__.py", 1744): "control-flow",
-    ("__init__.py", 1766): "control-flow", ("__init__.py", 1815): "control-flow", ("__init__.py", 1822): "control-flow",
-    ("__init__.py", 1833): "control-flow", ("__init__.py", 1840): "control-flow", ("__init__.py", 1869): "control-flow",
-    ("__init__.py", 1895): "control-flow", ("__init__.py", 2279): "internal-invariant", ("__init__.py", 2432): "control-flow",
+    ("__init__.py", 948): "control-flow", ("__init__.py", 1609): "control-flow", ("__init__.py", 1750): "control-flow",
+    ("__init__.py", 1772): "control-flow", ("__init__.py", 1821): "control-flow", ("__init__.py", 1828): "control-flow",
+    ("__init__.py", 1839): "control-flow", ("__init__.py", 1846): "control-flow", ("__init__.py", 1875): "control-flow",
+    ("__init__.py", 1901): "control-flow", ("__init__.py", 2285): "internal-invariant", ("__init__.py", 2438): "control-flow",
     ("__init__.py", 305): "internal-invariant", ("__init__.py", 312): "internal-invariant",
     ("__init__.py", 1032): "internal-invariant", ("__init__.py", 1036): "internal-invariant", ("__init__.py", 1040): "internal-invariant",
     ("__init__.py", 1047): "internal-invariant", ("__init__.py", 1049): "internal-invariant",
     ("agreement.py", 219): "predicate-helper", ("agreement.py", 267): "control-flow", ("agreement.py", 487): "control-flow",
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 117): "internal-invariant", ("asof/resolve.py", 122): "internal-invariant",
     ("asof/resolve.py", 181): "control-flow", ("asof/resolve.py", 206): "predicate-helper",
-    ("compile.py", 228): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
+    ("compile.py", 229): "predicate-helper", ("diagnostics.py", 216): "predicate-helper", ("diagnostics.py", 249): "predicate-helper",
     ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 60): "predicate-helper", ("graph.py", 75): "predicate-helper", ("graph.py", 241): "internal-invariant",
     ("graph.py", 922): "argument-check", ("grounding.py", 154): "control-flow",
@@ -116,15 +116,15 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
     ("store/schema_version.py", 1987): "argument-check", ("store/schema_version.py", 2179): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
-    ("mcp_server.py", 578): "cli-usage", ("mcp_server.py", 584): "cli-usage", ("mcp_server.py", 588): "cli-usage", ("mcp_server.py", 600): "cli-usage",
+    ("mcp_server.py", 602): "cli-usage", ("mcp_server.py", 608): "cli-usage", ("mcp_server.py", 614): "cli-usage", ("mcp_server.py", 625): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
-    ("__init__.py", 2351): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
-    ("__init__.py", 2361): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
+    ("__init__.py", 2357): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
+    ("__init__.py", 2367): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
     ("adapters/_surface.py", 41): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
     ("adapters/_surface.py", 45): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
     ("adapters/pydantic_ai.py", 62): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
-    ("compile.py", 243): "predicate-helper",   # SR2-01: the cached code-owned empty body test, consumed by needs_recompile
-    ("compile.py", 461): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
+    ("compile.py", 244): "predicate-helper",   # SR2-01: the cached code-owned empty body test, consumed by needs_recompile
+    ("compile.py", 465): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
     ("lifecycle.py", 63): "internal-invariant",   # specs/0048 §4D, the owner's "Refuse, name it": a store without the transition refuses (the Store base's refusing-default class)
     ("proactive.py", 242): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
     ("proactive.py", 291): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
@@ -194,9 +194,10 @@ e("asof/resolve.py", 272, "asof.resolve.future-T", "0028", "§2c-i", "refuse")
 e("asof/resolve.py", 245, "asof.resolve.held-at", "0028", "§2c-i", "withhold")
 e("authority.py", 76, "authority.permitted", "0003", "§4a", "refuse")
 e("authority.py", 89, "authority.self-assertion", "0003", "§4a", "withhold")
-e("compile.py", 471, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
-e("compile.py", 155, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
-e("compile.py", 207, "compile.grounded-inputs", "0004", "§4", "withhold")
+e("compile.py", 492, "compile.bind.empty-body", "0003", "§4c-ii v18.7 (C3-01: the code-owned empty body is served only when no write for the user committed since its basis)", "withhold")
+e("compile.py", 475, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
+e("compile.py", 156, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
+e("compile.py", 208, "compile.grounded-inputs", "0004", "§4", "withhold")
 e("diagnostics.py", 276, "diagnostics.send.not-consented", "0015", "§4", "withhold")
 e("gate.py", 54, "gate.exclude-procedural", "0037", "V-EXTRACTOR-QUOTE-GATED", "withhold")
 e("gate.py", 178, "gate.partition-parts", "0001", "§4", "withhold")
@@ -227,18 +228,18 @@ e("ingest.py", 378, "ingest.instructions-not-a-list", "0039", "§2a", "downgrade
 e("ingest.py", 306, "ingest.source-id-required", "0006", "§4 rule 9", "refuse")
 e("mcp_server.py", 113, "mcp.closed-set.author", "0011", "§4d", "refuse")
 e("mcp_server.py", 122, "mcp.closed-set.trust-field", "0011", "§4d", "refuse")
-e("__init__.py", 1997, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
-e("__init__.py", 2230, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
-e("__init__.py", 2250, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
-e("__init__.py", 2296, "memory.correct.refused", "0011", "§4b", "refuse")
-e("__init__.py", 1934, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
-e("__init__.py", 1915, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
-e("__init__.py", 1906, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
+e("__init__.py", 2003, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
+e("__init__.py", 2236, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
+e("__init__.py", 2256, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
+e("__init__.py", 2302, "memory.correct.refused", "0011", "§4b", "refuse")
+e("__init__.py", 1940, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
+e("__init__.py", 1921, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
+e("__init__.py", 1912, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
 e("__init__.py", 932, "memory.recall.as-of-on-proactive", "0028", "§2c", "refuse")
 e("__init__.py", 1057, "memory.recall.policy-with-as-of", "0027", "v13 §4c", "refuse")
-e("__init__.py", 2106, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
-e("__init__.py", 2109, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
-e("__init__.py", 2112, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2112, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
+e("__init__.py", 2115, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2118, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
 e("__init__.py", 408, "memory.scope.local-origin-missing", "0006", "I9", "refuse")
 e("portability.py", 494, "portability.export.non-quiescent", "0010", "X-quiesce", "refuse")
 e("portability.py", 1810, "portability.import.act-preflight", "0008", "§6e–§6f", "refuse")
@@ -431,7 +432,7 @@ e("store/sqlite.py", 1916, "store.correction.authorisation", "0011", "§4b", "re
 e("store/sqlite.py", 1920, "store.correction.authorisation", "0011", "§4b", "refuse")
 e("store/data_migration.py", 409, "store.data-migration.inventory-integrity", "0044", "§4f / 0018 §4i D1", "refuse")
 e("store/data_migration.py", 313, "store.data-migration.op-id-conflict", "0018", "§4i I32", "refuse")
-e("store/data_migration.py", 505, "store.data-migration.read-refused", "0018", "§4i §4d", "refuse")
+e("store/data_migration.py", 511, "store.data-migration.read-refused", "0018", "§4i §4d", "refuse")
 e("store/data_migration.py", 450, "store.data-migration.redacted-not-considered", "0044", "§4f.1 INV-A7", "withhold")
 e("store/data_migration.py", 333, "store.data-migration.registry-changed", "0018", "§4i I25", "refuse")
 e("store/data_migration.py", 458, "store.data-migration.withheld-revoked", "0044", "§4f.2 INV-A11", "withhold")
@@ -546,15 +547,15 @@ e("store/sqlite.py", 1991, "store.supersession.plan", "0014/0019", "§4b", "refu
 e("store/sqlite.py", 1996, "store.supersession.plan", "0014/0019", "§4b", "refuse")
 e("store/sqlite.py", 427, "store.txn.locked", "0013", "§5b", "refuse")
 e("store/sqlite.py", 452, "store.txn.locked-retry", "0013", "§5b", "refuse")
-e("store/data_migration.py", 578, "store.undo.ambiguous-outcome", "0044", "§4i (research's T7 annotation: no undo lookup chooses between two)", "refuse")
-e("store/data_migration.py", 634, "store.undo.correlation", "0008", "C9 (the C8 fallback)", "refuse")
-e("store/data_migration.py", 611, "store.undo.edge-unavailable", "0044", "§4i.2", "refuse")
-e("store/data_migration.py", 588, "store.undo.no-outcome", "0044", "§4i.2 INV-A12", "refuse")
-e("store/data_migration.py", 605, "store.undo.not-applicable", "0044", "§4i.2 INV-A12", "refuse")
-e("store/data_migration.py", 593, "store.undo.not-restored", "0044", "§4i.2 INV-A12", "refuse")
-e("store/data_migration.py", 649, "store.undo.request-digest", "0008", "C9", "refuse")
-e("store/data_migration.py", 656, "store.undo.result-missing", "0008", "§6c (v7: replay reconstructs from result_ref; a dangling ref is an integrity conflict)", "refuse")
-e("store/data_migration.py", 600, "store.undo.testimony", "0044", "§4i.2 R2-05 INV-A17", "refuse")
+e("store/data_migration.py", 584, "store.undo.ambiguous-outcome", "0044", "§4i (research's T7 annotation: no undo lookup chooses between two)", "refuse")
+e("store/data_migration.py", 640, "store.undo.correlation", "0008", "C9 (the C8 fallback)", "refuse")
+e("store/data_migration.py", 617, "store.undo.edge-unavailable", "0044", "§4i.2", "refuse")
+e("store/data_migration.py", 594, "store.undo.no-outcome", "0044", "§4i.2 INV-A12", "refuse")
+e("store/data_migration.py", 611, "store.undo.not-applicable", "0044", "§4i.2 INV-A12", "refuse")
+e("store/data_migration.py", 599, "store.undo.not-restored", "0044", "§4i.2 INV-A12", "refuse")
+e("store/data_migration.py", 655, "store.undo.request-digest", "0008", "C9", "refuse")
+e("store/data_migration.py", 662, "store.undo.result-missing", "0008", "§6c (v7: replay reconstructs from result_ref; a dangling ref is an integrity conflict)", "refuse")
+e("store/data_migration.py", 606, "store.undo.testimony", "0044", "§4i.2 R2-05 INV-A17", "refuse")
 e("store/sqlite.py", 778, "store.upsert.attested-redaction", "0041", "§4b-ii INV-11", "refuse")
 e("store/sqlite.py", 810, "store.upsert.immutable", "0008/0019/0037/0045", "§6d/V-IMMUTABLE/INV-G13", "refuse")
 e("store/sqlite.py", 816, "store.upsert.immutable", "0008/0019/0037/0045", "§6d/V-IMMUTABLE/INV-G13", "refuse")

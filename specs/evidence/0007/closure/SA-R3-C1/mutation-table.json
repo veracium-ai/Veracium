@@ -1,5 +1,5 @@
 {
- "body_sha256": "c9f05a02c3482765862938d75086fb8a89dc0f11787783cb5b29b7cb47c3ee9a",
+ "body_sha256": "4253de8244fd8fba19bd1f621652eba104c53fcb00293fecc7954f55a08e5d2f",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
+  "commit": "47069a01492270586fe3a47e0cca21bba0af7e05",
   "control_definitions": {
    "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
   },
@@ -65,13 +65,10 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
-   "README.md",
-   "docs/api.md",
    "specs/0003-supersession-authority.md",
+   "specs/0031-agent-facing-trust-surface.md",
    "specs/STATUS.md",
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/obligations_mutants.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -84,17 +81,17 @@
    "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0044/campaign/result.json",
-   "specs/evidence/0044/obligation_map.json",
-   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/sr2-01/mutation-table.json",
    "specs/generated/0002-audit-manifest.md",
    "specs/skip_inventory.py",
    "src/veracium/__init__.py",
    "src/veracium/compile.py",
-   "tests/test_0003_obligations.py",
-   "tests/test_0022_erasure.py"
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/data_migration.py",
+   "src/veracium/store/revocation.py"
   ]
  },
  "rows": [
@@ -126,7 +123,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 4.68s",
+   "pytest": "1 failed in 3.07s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
@@ -141,6 +138,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 33
+  "seconds": 22
  }
 }

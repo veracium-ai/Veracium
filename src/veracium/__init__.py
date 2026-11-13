@@ -1073,13 +1073,14 @@ class Memory:
         # specs/0047 §4d (R-II RII-01): the wiki body and the call's ONE challenge snapshot come from one state —
         # bound_wiki reads the snapshot after the body and serves no body that asserts a fact the snapshot
         # withholds. A principal-bearing call has no wiki and reads the snapshot alone.
+        wiki_basis: dict = {}             # specs/0003 §4c-ii v18.7 (C3-01): the served body's basis
         if view is not None:
             wiki, snap = None, None
         else:
             wiki, snap = _compile.bound_wiki(
                 self.store, op_llm, user_id,
                 self.config.wiki_recompile_after_writes,
-                self.config.relations,
+                self.config.relations, _out=wiki_basis,
                 wiki_input_budget=self.config.wiki_input_budget_tokens,
                 variant_cap=self.config.wiki_variant_cap,
                 item_cap=self.config.item_cap_tokens)
@@ -1239,6 +1240,11 @@ class Memory:
         # the block's loss rides into the report as ONE object (I10b, 2026-09-19): the
         # report is emitted on the block's own flag, so `truncated` and the visible
         # line can never disagree about the contested class
+        # specs/0003 §4c-ii v18.7 (C3-01): the bind read, after the last store read whose result can reach a response
+        # that carries the body (the selection, the redaction sets, the episodes, the contested build) and before
+        # rendering. A write for the user since the empty body's basis leaves it out of this one response.
+        if _compile.empty_body_unbound(self.store, user_id, wiki, wiki_basis.get("basis")):
+            wiki = None
         wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
             wiki, detail_edges, episodes, max(0, token_budget - spent), query,
             contested_loss=c_loss)

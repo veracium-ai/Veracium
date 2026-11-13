@@ -365,6 +365,29 @@ def build_memory() -> Memory:
                   diagnostics=diagnostics.load_reporter())
 
 
+# specs/0031 §4a-ii (v22.1, N1): what `serverInfo.version` carries in a tree with no distribution metadata. It names
+# no release, and is never the MCP SDK's version; pyproject.toml stays the version's single source.
+SOURCE_TREE_VERSION = "source-tree"
+
+
+def _veracium_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return version("veracium")
+    except PackageNotFoundError:
+        return SOURCE_TREE_VERSION
+
+
+def _set_server_version(server) -> None:
+    """specs/0031 §4a-ii (v22.1, N1): the `initialize` result's `serverInfo.version` is veracium's. The SDK's FastMCP
+    takes no version argument, and its low-level Server falls back to the `mcp` package's own version when none is set,
+    so the version is set on the low-level server (or on the server itself, where an SDK line exposes it there).
+    V-SERVERINFO checks the handshake's own result, so a change in where the SDK keeps it fails there, not here."""
+    v = _veracium_version()
+    target = getattr(server, "_mcp_server", None) or server
+    target.version = v
+
+
 def _server_cls():
     """SDK 2.0 renamed FastMCP to MCPServer (same decorator API); support both."""
     try:
@@ -393,6 +416,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
     cap = _resolve_capability(capability)
     server = _server_cls()("veracium",
                            instructions="Provenance-aware memory for AI agents.")
+    _set_server_version(server)            # specs/0031 §4a-ii (v22.1, N1)
     # The effective capability, to OPERATORS only (specs/0031 punch-list I3):
     # stderr-bound logging, never a tool surface.
     _log.info("veracium-mcp: host capability %r (declared once at construction; "
@@ -585,8 +609,9 @@ def main(argv=None) -> None:
     try:
         mem = build_memory()
     except Exception as e:
-        raise SystemExit(f"veracium-mcp: failed to start: {e}\n"
-                         "(Is ANTHROPIC_API_KEY set? Run veracium-mcp --help.)") from e
+        # specs/0031 §4a-ii (v22.1, N4): the failure's own text, which for a store refusal carries its remedy. Startup
+        # reads no provider key, so no start failure is the key's: no key hint.
+        raise SystemExit(f"veracium-mcp: failed to start: {e}\n(see veracium-mcp --help)") from e
     # The environment is read ONCE, here, and passed in (specs/0031 §4a; the
     # punch-list's A6 precedence rule). `os.environ.get` yields None when the
     # variable is UNSET (absence → none) and "" when it is set empty (supplied

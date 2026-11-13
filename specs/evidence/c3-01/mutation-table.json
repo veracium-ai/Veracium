@@ -1,0 +1,619 @@
+{
+ "body_sha256": "5eb3f27286ab641d49789512d200bdec99804d70ae941c71cba3ea76920dded5",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write",
+    "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[cached-body-before-snapshot]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]",
+    "tests/test_c3_01_empty_body_bind.py::test_another_users_write_leaves_the_body_served",
+    "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response",
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+   ],
+   "definition_sha256": "40791913a527a53ff94c5b3c7dd1dfd6e93c363e373c5e50ffe92e77e9a2829f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/compile.py",
+   "good": true,
+   "id": "NOOP-compile",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write",
+    "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[cached-body-before-snapshot]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]",
+    "tests/test_c3_01_empty_body_bind.py::test_another_users_write_leaves_the_body_served",
+    "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response",
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/compile.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]"
+   ],
+   "definition_sha256": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
+   "expected": "SURVIVED",
+   "file": "src/veracium/__init__.py",
+   "good": true,
+   "id": "NOOP-__init__",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/__init__.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "definition_sha256": "b511d9a24ef487467baf072655a9b215d90bbfa5d27b54f68e6750e2afbb3c05",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/revocation.py",
+   "good": true,
+   "id": "NOOP-revocation",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/store/revocation.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_c3_01_writers_census.py::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named"
+   ],
+   "definition_sha256": "5cd21acd50423e116be79af017527c1112274d6b44410f77f54be55aa43c04b1",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/data_migration.py",
+   "good": true,
+   "id": "NOOP-data_migration",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_c3_01_writers_census.py::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/store/data_migration.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+   ],
+   "definition_sha256": "4533ba83092b4789865ab482461b3108a19a63eea2903dc55643518fbca16d18",
+   "expected": "SURVIVED",
+   "file": "src/veracium/mcp_server.py",
+   "good": true,
+   "id": "NOOP-mcp_server",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/mcp_server.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]": "other: TypeError"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]"
+   ],
+   "cells_passed": [],
+   "definition_sha256": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
+   "expected": "UNCLASSIFIED",
+   "file": "src/veracium/compile.py",
+   "good": true,
+   "id": "CTRL-unrelated-TypeError",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]"
+   ],
+   "outcome": "UNCLASSIFIED",
+   "what": "an UNRELATED TypeError in needs_recompile: every cell fails for no reason a row names"
+  }
+ ],
+ "header": {
+  "cells": {
+   "c3-01-empty-body-bind": [
+    "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key",
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake",
+    "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write",
+    "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[cached-body-before-snapshot]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]",
+    "tests/test_c3_01_empty_body_bind.py::test_another_users_write_leaves_the_body_served",
+    "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response",
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6",
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it",
+    "tests/test_c3_01_writers_census.py::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 15,
+    "ok": true,
+    "passed": 15
+   },
+   "last": {
+    "of": 15,
+    "ok": true,
+    "passed": 15
+   }
+  },
+  "commit": "47069a01492270586fe3a47e0cca21bba0af7e05",
+  "control_definitions": {
+   "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
+   "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
+   "NOOP-compile": "40791913a527a53ff94c5b3c7dd1dfd6e93c363e373c5e50ffe92e77e9a2829f",
+   "NOOP-data_migration": "5cd21acd50423e116be79af017527c1112274d6b44410f77f54be55aa43c04b1",
+   "NOOP-mcp_server": "4533ba83092b4789865ab482461b3108a19a63eea2903dc55643518fbca16d18",
+   "NOOP-revocation": "b511d9a24ef487467baf072655a9b215d90bbfa5d27b54f68e6750e2afbb3c05"
+  },
+  "definitions": {
+   "C3-01-always-omit": "a20bd67fcebeeba731507013707699d60ab99fb3712c078e07462a2ec0d478da",
+   "C3-01-basis-after-the-inputs": "ca8daa01cfac1bd75e29a0fa04d5470e9980951c2164d09dd507271570dbbfa0",
+   "C3-01-bind-at-bound-wikis-return": "9b7f4c8d31a3af0c2b381e28156470e40835c400304a4e4a1a01b8323c81e294",
+   "C3-01-bind-before-the-episode-read": "42235dfbe24252008540870b1ce78210d81fa1bab6282bcf48de19fd5b11080c",
+   "C3-01-bind-on-every-body": "11f330d8001ec8a92d79839c2c037ba02ac4fa93c54424f8d23339d6c21f3d2f",
+   "C3-01-no-bind-read": "6a89952b36c50b8ba1ee5b78d572e5b98cbaae097d18629088aa2c1be91388ab",
+   "C3-01-restoration-without-a-bump": "5b9c5bb4ad1613b605b0ac03f482cd9bf8368864b7729409e15fb09938c3aba5",
+   "C3-01-revocation-bump-after-its-commit": "a3c00be866d12421bd206ce4c17f42fef29abced1b439363432a09aadf3c6466",
+   "N1-the-version-left-unset": "603b934759d0d7a439ea2d6a0db11b5463aafb1ebf78cd7cbe6e2932752b2ba6",
+   "N4-the-key-hint-restored": "96a4ee012c26d63983cd3fc871ca3f6fd609899317c287a49bb23193b818138c"
+  },
+  "digests": {
+   "specs/evidence/c3-01/empty_body_mutants.py": "7866783c0b854ae0cec771dfc99c229f4e6b2ef3a3dea8f796844d3a8b6c71cc",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/__init__.py": "f45fc0c1378474928e13eb627fca931e94703a1e0a1a6efa5c0937dc03813b73",
+   "src/veracium/compile.py": "5cf4d731aa8646173938ccd969b556560f6706340ba248308be0500218813592",
+   "src/veracium/mcp_server.py": "677d6bcc36de02fd9a7045af6c480869a1ec50a4770bd9d269ad7f2deaacceb7",
+   "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
+   "src/veracium/store/revocation.py": "14aebf929c07e968c987b85c05c565d1b582de2e548b41dfe3d4de1147317c8d",
+   "tests/test_0031_server_reports_itself.py": "c0cab37ef7119b1d32a72f8729e04b54c6a2d2b6e687bcaea3b8eafcabf8ef94",
+   "tests/test_c3_01_empty_body_bind.py": "0acce2706cf907fff716ffe52e03113813217a09f5e6d286dd4779f90ead0d58",
+   "tests/test_c3_01_writers_census.py": "3f7a84d67fe7aadb0c492646396e26357374ea15653ae4f3d10cdd5f0af1a3b8"
+  },
+  "finding": "c3-01-empty-body-bind",
+  "honest_nodes": [
+   "tests/test_0031_server_reports_itself.py::test_help_still_lists_the_provider_key",
+   "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged",
+   "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+  ],
+  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0003",
+  "sqlite": "3.45.1",
+  "tracked_changes": [
+   "specs/0003-supersession-authority.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/STATUS.md",
+   "specs/evidence/0042/declaration.py",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/data_migration.py",
+   "src/veracium/store/revocation.py"
+  ]
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[cached-body-before-snapshot]": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[cached-body-before-snapshot]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]"
+   ],
+   "definition_sha256": "6a89952b36c50b8ba1ee5b78d572e5b98cbaae097d18629088aa2c1be91388ab",
+   "file": "src/veracium/compile.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged"
+   ],
+   "id": "C3-01-no-bind-read",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[cached-body-before-snapshot]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_provider_free_reader_leaves_the_body_out_and_calls_no_model"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.52s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]"
+   ],
+   "definition_sha256": "9b7f4c8d31a3af0c2b381e28156470e40835c400304a4e4a1a01b8323c81e294",
+   "file": "src/veracium/__init__.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged"
+   ],
+   "id": "C3-01-bind-at-bound-wikis-return",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]",
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.85s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write"
+   ],
+   "definition_sha256": "11f330d8001ec8a92d79839c2c037ba02ac4fa93c54424f8d23339d6c21f3d2f",
+   "file": "src/veracium/compile.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged"
+   ],
+   "id": "C3-01-bind-on-every-body",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_model_summary_is_served_across_a_concurrent_write"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.73s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]"
+   ],
+   "definition_sha256": "ca8daa01cfac1bd75e29a0fa04d5470e9980951c2164d09dd507271570dbbfa0",
+   "file": "src/veracium/compile.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged"
+   ],
+   "id": "C3-01-basis-after-the-inputs",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[compile-inputs-before-publication]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.65s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_another_users_write_leaves_the_body_served": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response": "assertion",
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_another_users_write_leaves_the_body_served",
+    "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response",
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+   ],
+   "definition_sha256": "a20bd67fcebeeba731507013707699d60ab99fb3712c078e07462a2ec0d478da",
+   "file": "src/veracium/compile.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged"
+   ],
+   "id": "C3-01-always-omit",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6",
+    "tests/test_c3_01_empty_body_bind.py::test_another_users_write_leaves_the_body_served",
+    "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.26s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the empty body always omitted: the no-write response is no longer v18.6's"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]"
+   ],
+   "definition_sha256": "42235dfbe24252008540870b1ce78210d81fa1bab6282bcf48de19fd5b11080c",
+   "file": "src/veracium/__init__.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged"
+   ],
+   "id": "C3-01-bind-before-the-episode-read",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-selection-before-episodes]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "definition_sha256": "a3c00be866d12421bd206ce4c17f42fef29abced1b439363432a09aadf3c6466",
+   "file": "src/veracium/store/revocation.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+   ],
+   "id": "C3-01-revocation-bump-after-its-commit",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.65s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_writers_census.py::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_writers_census.py::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named"
+   ],
+   "definition_sha256": "5b9c5bb4ad1613b605b0ac03f482cd9bf8368864b7729409e15fb09938c3aba5",
+   "file": "src/veracium/store/data_migration.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+   ],
+   "id": "C3-01-restoration-without-a-bump",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_writers_census.py::test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 3.20s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+   ],
+   "definition_sha256": "603b934759d0d7a439ea2d6a0db11b5463aafb1ebf78cd7cbe6e2932752b2ba6",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_server_reports_itself.py::test_help_still_lists_the_provider_key"
+   ],
+   "id": "N1-the-version-left-unset",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_server_reports_itself.py::test_serverinfo_is_veracium_and_its_version_by_the_handshake"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.82s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key"
+   ],
+   "definition_sha256": "96a4ee012c26d63983cd3fc871ca3f6fd609899317c287a49bb23193b818138c",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_server_reports_itself.py::test_help_still_lists_the_provider_key"
+   ],
+   "id": "N4-the-key-hint-restored",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_server_reports_itself.py::test_a_start_failure_states_its_own_cause_and_names_no_provider_key"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.90s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 10
+  },
+  "controls": 6,
+  "controls_good": 6,
+  "good": 10,
+  "killed": 10,
+  "rows": 10,
+  "seconds": 59
+ }
+}

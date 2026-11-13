@@ -100,6 +100,9 @@ NON_ROWS = {
     ("0003", r"I\d+[a-z]?"): ("0003's own §6 (accepted before the programme); its programme rows are the amendment's "
                               "INV-O", None),
     ("0003", r"Q2a"): ("0003's recorded-trigger row (a watch item, not an invariant)", None),
+    ("0003", r"Q[78]"): ("0003 §10's v18.7–v18.9 questions: Q7 the C3-01 repair's review path (the owner's), Q8 the "
+                         "store-wide write-counter floor queued to the next schema change (dev's); questions, not "
+                         "programme rows", None),
     ("0008", r"C(?:[1-79]|10|12|2a)"): (
         "0008's own checks (the original confirm contract): the amendment folded into C8 and C11 only, and those two "
         "are rows", ("0008-staleness-clearing", "§6d's SQLite line and two retention rows, C8 and C11, the v6 invariants")),

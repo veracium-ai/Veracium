@@ -1,5 +1,5 @@
 {
- "body_sha256": "19de5b6a3901b4552802c1c80ba3ec6a5bf505f6cc2926a83538ddab66911d86",
+ "body_sha256": "d4325522dac4dd9ef64a9359b616923dea8d4d4372aea4985de4c79868f90224",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "0d06c4b3d7bdd209cdd82e2a1d078e11f6f95d77",
+  "commit": "47069a01492270586fe3a47e0cca21bba0af7e05",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -77,13 +77,10 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
-   "README.md",
-   "docs/api.md",
    "specs/0003-supersession-authority.md",
+   "specs/0031-agent-facing-trust-surface.md",
    "specs/STATUS.md",
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/obligations_mutants.py",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -97,17 +94,17 @@
    "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0044/campaign/result.json",
-   "specs/evidence/0044/obligation_map.json",
-   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/sr2-01/mutation-table.json",
    "specs/generated/0002-audit-manifest.md",
    "specs/skip_inventory.py",
    "src/veracium/__init__.py",
    "src/veracium/compile.py",
-   "tests/test_0003_obligations.py",
-   "tests/test_0022_erasure.py"
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/data_migration.py",
+   "src/veracium/store/revocation.py"
   ]
  },
  "rows": [
@@ -142,7 +139,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 12.54s",
+   "pytest": "2 failed in 8.41s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -175,7 +172,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 8.97s",
+   "pytest": "1 failed in 8.07s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -208,7 +205,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 9.15s",
+   "pytest": "1 failed in 8.00s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -223,6 +220,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 174
+  "seconds": 147
  }
 }

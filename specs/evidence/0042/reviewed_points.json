@@ -239,34 +239,44 @@
   "line": 89,
   "statement": "return _SITE_SELF_ASSERTION.fire("
  },
- "compile.py:_bind_withholds:471:BOOL_RETURN": {
+ "compile.py:empty_body_unbound:492:BOOL_RETURN": {
+  "decision": "enforcement",
+  "reason": "enforces 0003 §4c-ii v18.7 (C3-01: the code-owned empty body is served only when no write for the user committed since its basis) (withhold) through site compile.bind.empty-body",
+  "reviewer": "dev",
+  "site": "compile.bind.empty-body",
+  "class": "enforcement",
+  "key": "compile.py:empty_body_unbound:BOOL_RETURN:1",
+  "line": 492,
+  "statement": "return _SITE_EMPTY_BODY_BIND.fire(basis is None or store.store_version(user_id) != basis, \"omit-body\")"
+ },
+ "compile.py:_bind_withholds:475:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0047 §4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit) (withhold) through site compile.bind.unbound",
   "reviewer": "dev",
   "site": "compile.bind.unbound",
   "class": "enforcement",
   "key": "compile.py:_bind_withholds:BOOL_RETURN:1",
-  "line": 471,
+  "line": 475,
   "statement": "return _SITE_BIND_UNBOUND.fire(why is not None, \"withhold-body\")"
  },
- "compile.py:_drew_a_challenged_fact:155:BOOL_RETURN": {
+ "compile.py:_drew_a_challenged_fact:156:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0047 §4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since) (withhold) through site compile.fence.disputed",
   "reviewer": "dev",
   "site": "compile.fence.disputed",
   "class": "enforcement",
   "key": "compile.py:_drew_a_challenged_fact:BOOL_RETURN:1",
-  "line": 155,
+  "line": 156,
   "statement": "return _SITE_FENCE_DISPUTED.fire(sum(1 for e in edges if now.withheld(e)) > 0, \"withhold-body\")"
  },
- "compile.py:_grounded_inputs:207:FILTER_RETURN": {
+ "compile.py:_grounded_inputs:208:FILTER_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0004 §4 (withhold) through site compile.grounded-inputs",
   "reviewer": "dev",
   "site": "compile.grounded-inputs",
   "class": "enforcement",
   "key": "compile.py:_grounded_inputs:FILTER_RETURN:1",
-  "line": 207,
+  "line": 208,
   "statement": "return _SITE_GROUNDED_INPUTS.fire((edges, episodes), \"withhold\", declined=withheld > 0)"
  },
  "diagnostics.py:Reporter.send:276:RETURN_FALSE": {
@@ -569,74 +579,74 @@
   "line": 122,
   "statement": "raise _SITE_CLOSED_SET_TRUST.fire(ValueError("
  },
- "__init__.py:Memory.confirm:1997:RAISE": {
+ "__init__.py:Memory.confirm:2003:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §6c INV-Q2 (refuse) through site memory.confirm.unknown-target",
   "reviewer": "dev",
   "site": "memory.confirm.unknown-target",
   "class": "enforcement",
   "key": "__init__.py:Memory.confirm:RAISE:1",
-  "line": 1997,
+  "line": 2003,
   "statement": "raise _SITE_CONFIRM_UNKNOWN_TARGET.fire(ValueError(f\"no edge {edge_id!r} for user {user_id!r}\")) from e"
  },
- "__init__.py:Memory.correct:2230:RAISE": {
+ "__init__.py:Memory.correct:2236:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0011 §4b (refuse) through site memory.correct.inactive-edge",
   "reviewer": "dev",
   "site": "memory.correct.inactive-edge",
   "class": "enforcement",
   "key": "__init__.py:Memory.correct:RAISE:1",
-  "line": 2230,
+  "line": 2236,
   "statement": "raise _SITE_CORRECT_INACTIVE.fire(ValueError(f\"edge {edge_id!r} is not active (already \""
  },
- "__init__.py:Memory.correct:2250:RAISE": {
+ "__init__.py:Memory.correct:2256:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0037 §4a-iii (refuse) through site memory.correct.procedural",
   "reviewer": "dev",
   "site": "memory.correct.procedural",
   "class": "enforcement",
   "key": "__init__.py:Memory.correct:RAISE:2",
-  "line": 2250,
+  "line": 2256,
   "statement": "raise _SITE_CORRECT_PROCEDURAL.fire(ProcedureValueError("
  },
- "__init__.py:Memory.correct:2296:RAISE": {
+ "__init__.py:Memory.correct:2302:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0011 §4b (refuse) through site memory.correct.refused",
   "reviewer": "dev",
   "site": "memory.correct.refused",
   "class": "enforcement",
   "key": "__init__.py:Memory.correct:RAISE:4",
-  "line": 2296,
+  "line": 2302,
   "statement": "raise _SITE_CORRECT_REFUSED.fire(graph.CorrectionRefused(edge_id, authority.RULE_VERSION))"
  },
- "__init__.py:Memory.dispute:1934:RAISE": {
+ "__init__.py:Memory.dispute:1940:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0003 §4b (refuse) through site memory.dispute.inactive-edge",
   "reviewer": "dev",
   "site": "memory.dispute.inactive-edge",
   "class": "enforcement",
   "key": "__init__.py:Memory.dispute:RAISE:1",
-  "line": 1934,
+  "line": 1940,
   "statement": "raise _SITE_DISPUTE_INACTIVE.fire(ValueError(f\"edge {edge_id!r} is not active (already \""
  },
- "__init__.py:Memory._find_edge:1915:RAISE": {
+ "__init__.py:Memory._find_edge:1921:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0041 INV-5 (refuse) through site memory.edge.unknown-target",
   "reviewer": "dev",
   "site": "memory.edge.unknown-target",
   "class": "enforcement",
   "key": "__init__.py:Memory._find_edge:RAISE:1",
-  "line": 1915,
+  "line": 1921,
   "statement": "raise _SITE_EDGE_UNKNOWN_TARGET.fire(ValueError(f\"no edge {edge_id!r} for user {user_id!r}\"))"
  },
- "__init__.py:Memory._refuse_attested:1906:RAISE": {
+ "__init__.py:Memory._refuse_attested:1912:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0041 §4b-ii INV-11 (derived episodes) (refuse) through site memory.feedback.attested-target",
   "reviewer": "dev",
   "site": "memory.feedback.attested-target",
   "class": "enforcement",
   "key": "__init__.py:Memory._refuse_attested:RAISE:1",
-  "line": 1906,
+  "line": 1912,
   "statement": "raise _SITE_FEEDBACK_ATTESTED.fire(ValueError("
  },
  "__init__.py:Memory.recall:932:RAISE": {
@@ -659,34 +669,34 @@
   "line": 1057,
   "statement": "raise _SITE_POLICY_WITH_ASOF.fire(ValueError(\"recall(policy=...) is not combinable with as_of= (specs/0027 v13 §4c: the as-of path carries no receipt)\"))"
  },
- "__init__.py:Memory.record_outcome:2106:RAISE": {
+ "__init__.py:Memory.record_outcome:2112:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §4 (refuse) through site memory.record-outcome.actor-vocabulary",
   "reviewer": "dev",
   "site": "memory.record-outcome.actor-vocabulary",
   "class": "enforcement",
   "key": "__init__.py:Memory.record_outcome:RAISE:1",
-  "line": 2106,
+  "line": 2112,
   "statement": "raise _SITE_OUTCOME_ACTOR.fire(ValueError(f\"actor must be 'user' or 'system', not {actor!r}\"))"
  },
- "__init__.py:Memory.record_outcome:2109:RAISE": {
+ "__init__.py:Memory.record_outcome:2115:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §4 (refuse) through site memory.record-outcome.human-judgment",
   "reviewer": "dev",
   "site": "memory.record-outcome.human-judgment",
   "class": "enforcement",
   "key": "__init__.py:Memory.record_outcome:RAISE:2",
-  "line": 2109,
+  "line": 2115,
   "statement": "raise _SITE_OUTCOME_HUMAN.fire(ValueError(f\"{outcome.value} is a human judgment (actor='user')\"))"
  },
- "__init__.py:Memory.record_outcome:2112:RAISE": {
+ "__init__.py:Memory.record_outcome:2118:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §4 (refuse) through site memory.record-outcome.system-judgment",
   "reviewer": "dev",
   "site": "memory.record-outcome.system-judgment",
   "class": "enforcement",
   "key": "__init__.py:Memory.record_outcome:RAISE:3",
-  "line": 2112,
+  "line": 2118,
   "statement": "raise _SITE_OUTCOME_SYSTEM.fire(ValueError(f\"{outcome.value} is a system judgment (actor='system')\"))"
  },
  "__init__.py:Memory._build_scope_policy:408:RAISE": {
@@ -2609,14 +2619,14 @@
   "line": 313,
   "statement": "raise _SITE_OP_ID_CONFLICT.fire(_Refusal("
  },
- "store/data_migration.py:_read_only:505:RAISE": {
+ "store/data_migration.py:_read_only:511:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0018 §4i §4d (refuse) through site store.data-migration.read-refused",
   "reviewer": "dev",
   "site": "store.data-migration.read-refused",
   "class": "enforcement",
   "key": "store/data_migration.py:_read_only:RAISE:2",
-  "line": 505,
+  "line": 511,
   "statement": "raise _SITE_READ_REFUSED.fire(ValueError("
  },
  "store/data_migration.py:_redacted:450:BOOL_RETURN": {
@@ -3759,94 +3769,94 @@
   "line": 452,
   "statement": "raise _SITE_TXN_LOCKED_RETRY.fire(sqlite3.OperationalError("
  },
- "store/data_migration.py:undo_restoration:578:RAISE": {
+ "store/data_migration.py:undo_restoration:584:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0044 §4i (research's T7 annotation: no undo lookup chooses between two) (refuse) through site store.undo.ambiguous-outcome",
   "reviewer": "dev",
   "site": "store.undo.ambiguous-outcome",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:1",
-  "line": 578,
+  "line": 584,
   "statement": "raise _SITE_UNDO_AMBIGUOUS.fire(UndoRefused("
  },
- "store/data_migration.py:undo_restoration:634:RAISE": {
+ "store/data_migration.py:undo_restoration:640:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 C9 (the C8 fallback) (refuse) through site store.undo.correlation",
   "reviewer": "dev",
   "site": "store.undo.correlation",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:8",
-  "line": 634,
+  "line": 640,
   "statement": "raise _SITE_UNDO_CORRELATION.fire(ValueError("
  },
- "store/data_migration.py:undo_restoration:611:RAISE": {
+ "store/data_migration.py:undo_restoration:617:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0044 §4i.2 (refuse) through site store.undo.edge-unavailable",
   "reviewer": "dev",
   "site": "store.undo.edge-unavailable",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:6",
-  "line": 611,
+  "line": 617,
   "statement": "raise _SITE_UNDO_EDGE_UNAVAILABLE.fire(UndoRefused("
  },
- "store/data_migration.py:undo_restoration:588:RAISE": {
+ "store/data_migration.py:undo_restoration:594:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0044 §4i.2 INV-A12 (refuse) through site store.undo.no-outcome",
   "reviewer": "dev",
   "site": "store.undo.no-outcome",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:2",
-  "line": 588,
+  "line": 594,
   "statement": "raise _SITE_UNDO_NO_OUTCOME.fire(UndoRefused("
  },
- "store/data_migration.py:undo_restoration:605:RAISE": {
+ "store/data_migration.py:undo_restoration:611:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0044 §4i.2 INV-A12 (refuse) through site store.undo.not-applicable",
   "reviewer": "dev",
   "site": "store.undo.not-applicable",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:5",
-  "line": 605,
+  "line": 611,
   "statement": "raise _SITE_UNDO_NOT_APPLICABLE.fire(UndoRefused("
  },
- "store/data_migration.py:undo_restoration:593:RAISE": {
+ "store/data_migration.py:undo_restoration:599:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0044 §4i.2 INV-A12 (refuse) through site store.undo.not-restored",
   "reviewer": "dev",
   "site": "store.undo.not-restored",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:3",
-  "line": 593,
+  "line": 599,
   "statement": "raise _SITE_UNDO_NOT_RESTORED.fire(UndoRefused("
  },
- "store/data_migration.py:_registry_decision:649:RAISE": {
+ "store/data_migration.py:_registry_decision:655:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 C9 (refuse) through site store.undo.request-digest",
   "reviewer": "dev",
   "site": "store.undo.request-digest",
   "class": "enforcement",
   "key": "store/data_migration.py:_registry_decision:RAISE:1",
-  "line": 649,
+  "line": 655,
   "statement": "raise _SITE_UNDO_REQUEST_DIGEST.fire(ValueError("
  },
- "store/data_migration.py:_registry_decision:656:RAISE": {
+ "store/data_migration.py:_registry_decision:662:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §6c (v7: replay reconstructs from result_ref; a dangling ref is an integrity conflict) (refuse) through site store.undo.result-missing",
   "reviewer": "dev",
   "site": "store.undo.result-missing",
   "class": "enforcement",
   "key": "store/data_migration.py:_registry_decision:RAISE:2",
-  "line": 656,
+  "line": 662,
   "statement": "raise _SITE_UNDO_RESULT_MISSING.fire(ValueError("
  },
- "store/data_migration.py:undo_restoration:600:RAISE": {
+ "store/data_migration.py:undo_restoration:606:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0044 §4i.2 R2-05 INV-A17 (refuse) through site store.undo.testimony",
   "reviewer": "dev",
   "site": "store.undo.testimony",
   "class": "enforcement",
   "key": "store/data_migration.py:undo_restoration:RAISE:4",
-  "line": 600,
+  "line": 606,
   "statement": "raise _SITE_UNDO_TESTIMONY.fire(UndoRefused("
  },
  "store/sqlite.py:SqliteStore._upsert_edge_row:778:RAISE": {
@@ -4038,22 +4048,22 @@
   "line": 1054,
   "statement": "raise TypeError(\"policy must be a veracium.PolicyLane\")"
  },
- "__init__.py:Memory._source_revocation:2364:RAISE": {
+ "__init__.py:Memory._source_revocation:2370:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory._source_revocation:RAISE:2",
-  "line": 2364,
+  "line": 2370,
   "statement": "raise TypeError(f\"dry_run must be a bool, got {dry_run!r}\")"
  },
- "__init__.py:Memory._source_revocation:2367:RAISE": {
+ "__init__.py:Memory._source_revocation:2373:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory._source_revocation:RAISE:3",
-  "line": 2367,
+  "line": 2373,
   "statement": "raise ValueError(\"source_id is required: a record with no source_id has no source identity and is not \""
  },
  "__init__.py:Memory.describe_procedures:827:RAISE": {
@@ -5109,40 +5119,40 @@
   "line": 83,
   "statement": "raise SystemExit(\"internal: this veracium verb should never invoke the LLM \""
  },
- "mcp_server.py:main:578:RAISE": {
+ "mcp_server.py:main:602:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:1",
-  "line": 578,
+  "line": 602,
   "statement": "raise SystemExit(f\"veracium-mcp: unknown argument {args[0]!r} (see --help). \""
  },
- "mcp_server.py:main:584:RAISE": {
+ "mcp_server.py:main:608:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:2",
-  "line": 584,
+  "line": 608,
   "statement": "raise SystemExit(\"The MCP server needs the SDK: pip install veracium[mcp]\") from e"
  },
- "mcp_server.py:main:588:RAISE": {
+ "mcp_server.py:main:614:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:3",
-  "line": 588,
-  "statement": "raise SystemExit(f\"veracium-mcp: failed to start: {e}\\n\""
+  "line": 614,
+  "statement": "raise SystemExit(f\"veracium-mcp: failed to start: {e}\\n(see veracium-mcp --help)\") from e"
  },
- "mcp_server.py:main:600:RAISE": {
+ "mcp_server.py:main:625:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:4",
-  "line": 600,
+  "line": 625,
   "statement": "raise SystemExit("
  },
  "__init__.py:Memory._build_scope_policy:403:RETURN_NONE": {
@@ -5154,13 +5164,13 @@
   "line": 403,
   "statement": "return None"
  },
- "__init__.py:Memory._fit_to_budget._claim_lines:1603:FILTER_RETURN": {
+ "__init__.py:Memory._fit_to_budget._claim_lines:1609:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory._fit_to_budget._claim_lines:FILTER_RETURN:1",
-  "line": 1603,
+  "line": 1609,
   "statement": "return [ln for ln in"
  },
  "__init__.py:Memory._usage_operation:484:RETURN_NONE": {
@@ -5172,67 +5182,67 @@
   "line": 484,
   "statement": "return"
  },
- "__init__.py:Memory.answer:1744:RAISE": {
+ "__init__.py:Memory.answer:1750:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.answer:RAISE:1",
-  "line": 1744,
+  "line": 1750,
   "statement": "raise"
  },
- "__init__.py:Memory.diagnostics_preview:1840:RETURN_NONE": {
+ "__init__.py:Memory.diagnostics_preview:1846:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.diagnostics_preview:RETURN_NONE:1",
-  "line": 1840,
+  "line": 1846,
   "statement": "return None"
  },
- "__init__.py:Memory.edges_since:1895:FILTER_RETURN": {
+ "__init__.py:Memory.edges_since:1901:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.edges_since:FILTER_RETURN:1",
-  "line": 1895,
+  "line": 1901,
   "statement": "return [e for e in self.store.edges(user_id, active_only=False,"
  },
- "__init__.py:Memory.flush_telemetry:1815:RETURN_FALSE": {
+ "__init__.py:Memory.flush_telemetry:1821:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.flush_telemetry:RETURN_FALSE:1",
-  "line": 1815,
+  "line": 1821,
   "statement": "return False"
  },
- "__init__.py:Memory.introspect:1869:RAISE": {
+ "__init__.py:Memory.introspect:1875:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.introspect:RAISE:1",
-  "line": 1869,
+  "line": 1875,
   "statement": "raise"
  },
- "__init__.py:Memory.maintain:1766:RAISE": {
+ "__init__.py:Memory.maintain:1772:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.maintain:RAISE:1",
-  "line": 1766,
+  "line": 1772,
   "statement": "raise"
  },
- "__init__.py:Memory.policy_receipts:2432:FILTER_RETURN": {
+ "__init__.py:Memory.policy_receipts:2438:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.policy_receipts:FILTER_RETURN:1",
-  "line": 2432,
+  "line": 2438,
   "statement": "return [receipt_from_row(r) for r in self.store.policy_receipts(user_id, limit=limit)]"
  },
  "__init__.py:Memory.recall:948:RAISE": {
@@ -5253,22 +5263,22 @@
   "line": 621,
   "statement": "raise"
  },
- "__init__.py:Memory.report_error:1833:RETURN_FALSE": {
+ "__init__.py:Memory.report_error:1839:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.report_error:RETURN_FALSE:1",
-  "line": 1833,
+  "line": 1839,
   "statement": "return False"
  },
- "__init__.py:Memory.telemetry_preview:1822:RETURN_NONE": {
+ "__init__.py:Memory.telemetry_preview:1828:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.telemetry_preview:RETURN_NONE:1",
-  "line": 1822,
+  "line": 1828,
   "statement": "return None"
  },
  "_json.py:extract_json:43:RAISE": {
@@ -5361,13 +5371,22 @@
   "line": 181,
   "statement": "return None"
  },
- "compile.py:ensure_wiki:404:RETURN_NONE": {
+ "compile.py:empty_body_unbound:490:RETURN_FALSE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "compile.py:empty_body_unbound:RETURN_FALSE:1",
+  "line": 490,
+  "statement": "return False"
+ },
+ "compile.py:ensure_wiki:407:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "compile.py:ensure_wiki:RETURN_NONE:1",
-  "line": 404,
+  "line": 407,
   "statement": "return None"
  },
  "diagnostics.py:Reporter._confirm:255:RETURN_FALSE": {
@@ -6252,31 +6271,31 @@
   "line": 1049,
   "statement": "raise ValueError(\"group_heading_allowance_tokens < 16 (I10e, surface build)\")"
  },
- "__init__.py:Memory._source_revocation:2361:RAISE": {
+ "__init__.py:Memory._source_revocation:2367:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "__init__.py:Memory._source_revocation:RAISE:1",
-  "line": 2361,
+  "line": 2367,
   "statement": "raise NotImplementedError(f\"{type(self.store).__name__} does not support source revocation \""
  },
- "__init__.py:Memory.correct:2279:RAISE": {
+ "__init__.py:Memory.correct:2285:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "__init__.py:Memory.correct:RAISE:3",
-  "line": 2279,
+  "line": 2285,
   "statement": "raise RuntimeError("
  },
- "__init__.py:Memory.source_revocations:2351:RAISE": {
+ "__init__.py:Memory.source_revocations:2357:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "__init__.py:Memory.source_revocations:RAISE:1",
-  "line": 2351,
+  "line": 2357,
   "statement": "raise NotImplementedError(f\"{type(self.store).__name__} does not support source revocation \""
  },
  "__init__.py:receipt_from_row:305:RAISE": {
@@ -7512,22 +7531,22 @@
   "line": 399,
   "statement": "return False                            # erased since the universe read (F3): no run row after erasure"
  },
- "store/data_migration.py:_read_only:500:RAISE": {
+ "store/data_migration.py:_read_only:506:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/data_migration.py:_read_only:RAISE:1",
-  "line": 500,
+  "line": 506,
   "statement": "raise ValueError(f\"path {_rm._safe_repr(path)} is not a usable store path\")"
  },
- "store/data_migration.py:_registry_decision:645:RETURN_NONE": {
+ "store/data_migration.py:_registry_decision:651:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/data_migration.py:_registry_decision:RETURN_NONE:1",
-  "line": 645,
+  "line": 651,
   "statement": "return None"
  },
  "store/data_migration.py:_users_ok:112:BOOL_RETURN": {
@@ -7557,13 +7576,13 @@
   "line": 284,
   "statement": "raise ValueError(f\"registry must be the host's relation registry (a mapping of name to Relation), not \""
  },
- "store/data_migration.py:undo_restoration:621:RAISE": {
+ "store/data_migration.py:undo_restoration:627:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/data_migration.py:undo_restoration:RAISE:7",
-  "line": 621,
+  "line": 627,
   "statement": "raise RuntimeError(f\"undo of {edge_id!r}: the outcome row's `applicable` was not cleared by the retirement \""
  },
  "store/migration.py:_alters:704:FILTER_RETURN": {
@@ -9798,31 +9817,31 @@
   "line": 35,
   "statement": "return isinstance(value, str) and _ATTV.fullmatch(value) is not None"
  },
- "compile.py:_is_code_owned_empty:243:BOOL_RETURN": {
+ "compile.py:_is_code_owned_empty:244:BOOL_RETURN": {
   "decision": "not",
-  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:_provider_free_notice, compile.py:needs_recompile",
+  "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by compile.py:empty_body_unbound [site compile.bind.empty-body]; and by compile.py:_provider_free_notice, compile.py:needs_recompile (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:_is_code_owned_empty:BOOL_RETURN:1",
-  "line": 243,
+  "line": 244,
   "statement": "return body == _empty_input_body()"
  },
- "compile.py:_unbound_by:461:RETURN_NONE": {
+ "compile.py:_unbound_by:465:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:bound_wiki",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:_unbound_by:RETURN_NONE:1",
-  "line": 461,
+  "line": 465,
   "statement": "return None"
  },
- "compile.py:needs_recompile:228:BOOL_RETURN": {
+ "compile.py:needs_recompile:229:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:ensure_wiki",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:needs_recompile:BOOL_RETURN:1",
-  "line": 228,
+  "line": 229,
   "statement": "return behind >= recompile_after"
  },
  "contention.py:is_live_refusal:37:RETURN_FALSE": {

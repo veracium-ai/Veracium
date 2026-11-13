@@ -369,6 +369,10 @@ def revoke_source(store, user_id: str, target_digest: str, action: str,
             st = _sw.sweep(project_store(store, user_id), target_digest,
                            proposed=proposed)
             statement.update(st)
+            # specs/0003 §4c-ii v18.7 (I6d's census): the user's write counter advances in THIS transaction, with
+            # the effects it counts, so no reader sees a revoked or restored record under the old counter. It
+            # commits or rolls back with them. (Before, the bump followed revocation_operation's COMMIT.)
+            store._bump(user_id)
             return st["effects"]
 
         # specs/0029 §4a: the effects write `edges` through the store's sole
@@ -380,6 +384,5 @@ def revoke_source(store, user_id: str, target_digest: str, action: str,
                 store._conn, user_id, target_digest, action, reason, at,
                 plan=plan,
                 apply_effect=lambda _conn, e: _apply_statement_effect(store, at, e))
-        store._bump(user_id)
         store._conn.commit()
         return statement
