@@ -35,7 +35,8 @@ T = "tests/test_c3_01_empty_body_bind.py"
 W = "tests/test_c3_01_writers_census.py"
 S = "tests/test_0031_server_reports_itself.py"
 SUBJECT = "c3-01-empty-body-bind"
-DIGESTED = (K, I, V, D, M, T, W, S, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
+DIGESTED = (K, I, V, D, M, "src/veracium/store/sqlite.py", T, W, S, "specs/evidence/c3-01/census_trace_plugin.py",
+            "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
 
 C = lambda name: f"{T}::{name}"                                                       # noqa: E731
 R = lambda p: C(f"test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[{p}]")   # noqa: E731
@@ -103,6 +104,15 @@ MUTANTS = [
      [DYNAMIC], [NO_WRITE], None,
      "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the "
      "old counter"),
+    ("C3-01-delete-episode-bump-after-its-commit", "product", "src/veracium/store/sqlite.py",
+     [("                self._drop_contributions_for_survivor(row[0], \"episode\", episode_id)\n"
+       "                self._bump(row[0])\n            self._conn.commit()\n",
+       "                self._drop_contributions_for_survivor(row[0], \"episode\", episode_id)\n"
+       "            self._conn.commit()\n            if row:\n                self._bump(row[0])\n"
+       "                self._conn.commit()\n")],
+     [DYNAMIC], [NO_WRITE], None,
+     "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump "
+     "site, so a bump moved out of its transaction anywhere fails"),
     ("C3-01-restoration-without-a-bump", "product", D,
      [("    if restored:\n        store._bump(user)\n", "")],
      [STATIC], [NO_WRITE], None,
@@ -135,6 +145,7 @@ CONTROLS = [
     _noop(V, "def _apply_statement_effect(", _cells_of(V)),
     _noop(D, "def convert_rows(", _cells_of(D)),
     _noop(M, "def _server_cls():", _cells_of(M)),
+    _noop("src/veracium/store/sqlite.py", "    def delete_episode(", _cells_of("src/veracium/store/sqlite.py")),
     ("CTRL-unrelated-TypeError", K,
      [("    behind = store.store_version(user_id) - version_at_compile\n",
        '    raise TypeError("an unrelated execution failure (classifier negative control)")\n'

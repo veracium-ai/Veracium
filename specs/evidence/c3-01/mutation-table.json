@@ -1,5 +1,5 @@
 {
- "body_sha256": "5eb3f27286ab641d49789512d200bdec99804d70ae941c71cba3ea76920dded5",
+ "body_sha256": "6c359aaecb43797e271429083c7dc25eeeb93d2c7334effbbf78a76b357ba197",
  "controls": [
   {
    "anchor_counts": [
@@ -140,6 +140,29 @@
    "anchor_counts": [
     1
    ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "definition_sha256": "8e3499d77e26e64b584544682389caeb50579494f356cfefc4cb7cae7592e955",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/sqlite.py",
+   "good": true,
+   "id": "NOOP-sqlite",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
    "cell_kinds": {
     "tests/test_c3_01_empty_body_bind.py::test_a_write_during_the_recall_leaves_the_empty_body_out_of_that_response[after-bound-wiki-before-detail]": "other: TypeError"
    },
@@ -192,14 +215,15 @@
     "passed": 15
    }
   },
-  "commit": "47069a01492270586fe3a47e0cca21bba0af7e05",
+  "commit": "35610a8afc03b3c58d4abb500798a1f61b08a50d",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
    "NOOP-compile": "40791913a527a53ff94c5b3c7dd1dfd6e93c363e373c5e50ffe92e77e9a2829f",
    "NOOP-data_migration": "5cd21acd50423e116be79af017527c1112274d6b44410f77f54be55aa43c04b1",
    "NOOP-mcp_server": "4533ba83092b4789865ab482461b3108a19a63eea2903dc55643518fbca16d18",
-   "NOOP-revocation": "b511d9a24ef487467baf072655a9b215d90bbfa5d27b54f68e6750e2afbb3c05"
+   "NOOP-revocation": "b511d9a24ef487467baf072655a9b215d90bbfa5d27b54f68e6750e2afbb3c05",
+   "NOOP-sqlite": "8e3499d77e26e64b584544682389caeb50579494f356cfefc4cb7cae7592e955"
   },
   "definitions": {
    "C3-01-always-omit": "a20bd67fcebeeba731507013707699d60ab99fb3712c078e07462a2ec0d478da",
@@ -207,6 +231,7 @@
    "C3-01-bind-at-bound-wikis-return": "9b7f4c8d31a3af0c2b381e28156470e40835c400304a4e4a1a01b8323c81e294",
    "C3-01-bind-before-the-episode-read": "42235dfbe24252008540870b1ce78210d81fa1bab6282bcf48de19fd5b11080c",
    "C3-01-bind-on-every-body": "11f330d8001ec8a92d79839c2c037ba02ac4fa93c54424f8d23339d6c21f3d2f",
+   "C3-01-delete-episode-bump-after-its-commit": "432279b0f5d4eab2ca21d1dcb7830cce0e5791ad6143fe44e26ce3dfbe03dfb0",
    "C3-01-no-bind-read": "6a89952b36c50b8ba1ee5b78d572e5b98cbaae097d18629088aa2c1be91388ab",
    "C3-01-restoration-without-a-bump": "5b9c5bb4ad1613b605b0ac03f482cd9bf8368864b7729409e15fb09938c3aba5",
    "C3-01-revocation-bump-after-its-commit": "a3c00be866d12421bd206ce4c17f42fef29abced1b439363432a09aadf3c6466",
@@ -214,17 +239,19 @@
    "N4-the-key-hint-restored": "96a4ee012c26d63983cd3fc871ca3f6fd609899317c287a49bb23193b818138c"
   },
   "digests": {
-   "specs/evidence/c3-01/empty_body_mutants.py": "7866783c0b854ae0cec771dfc99c229f4e6b2ef3a3dea8f796844d3a8b6c71cc",
+   "specs/evidence/c3-01/census_trace_plugin.py": "ecaf56b23bf6694430aa36247ab048b9b93b8978544ea14b75736203ac1e819b",
+   "specs/evidence/c3-01/empty_body_mutants.py": "165ce3b50a5ada1b804a74615d169ac2763c7ec3925feade5cfc512f503f99c9",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "f45fc0c1378474928e13eb627fca931e94703a1e0a1a6efa5c0937dc03813b73",
-   "src/veracium/compile.py": "5cf4d731aa8646173938ccd969b556560f6706340ba248308be0500218813592",
+   "src/veracium/compile.py": "e188f78dfe93087540ed5f75907aa3fa7ed64dc9fb80384c3496a4fc066bb9cf",
    "src/veracium/mcp_server.py": "677d6bcc36de02fd9a7045af6c480869a1ec50a4770bd9d269ad7f2deaacceb7",
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
    "src/veracium/store/revocation.py": "14aebf929c07e968c987b85c05c565d1b582de2e548b41dfe3d4de1147317c8d",
-   "tests/test_0031_server_reports_itself.py": "c0cab37ef7119b1d32a72f8729e04b54c6a2d2b6e687bcaea3b8eafcabf8ef94",
+   "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
+   "tests/test_0031_server_reports_itself.py": "4a5574b9fb17a446e5e89a724545313ed6b6374296633429616e1fc8fc9f40e6",
    "tests/test_c3_01_empty_body_bind.py": "0acce2706cf907fff716ffe52e03113813217a09f5e6d286dd4779f90ead0d58",
-   "tests/test_c3_01_writers_census.py": "3f7a84d67fe7aadb0c492646396e26357374ea15653ae4f3d10cdd5f0af1a3b8"
+   "tests/test_c3_01_writers_census.py": "cbf5bb6bd2b3de1a4b4e0f95a4f56f87529cb90e908cba552aa329760f08ea73"
   },
   "finding": "c3-01-empty-body-bind",
   "honest_nodes": [
@@ -237,16 +264,12 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0003-supersession-authority.md",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/STATUS.md",
-   "specs/evidence/0042/declaration.py",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
+   "specs/evidence/c3-01/empty_body_mutants.py",
+   "specs/evidence/c3-01/mutation-table.json",
+   "specs/evidence/sr2-01/mutation-table.json",
    "src/veracium/compile.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/store/data_migration.py",
-   "src/veracium/store/revocation.py"
+   "tests/test_0031_server_reports_itself.py",
+   "tests/test_c3_01_writers_census.py"
   ]
  },
  "rows": [
@@ -290,7 +313,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.52s",
+   "pytest": "5 failed in 1.50s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -327,7 +350,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.85s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -360,7 +383,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -393,7 +416,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -432,7 +455,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.26s",
+   "pytest": "3 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty body always omitted: the no-write response is no longer v18.6's"
@@ -466,7 +489,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
@@ -500,10 +523,43 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 84.24s (0:01:24)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "definition_sha256": "432279b0f5d4eab2ca21d1dcb7830cce0e5791ad6143fe44e26ce3dfbe03dfb0",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "c3-01-empty-body-bind",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
+   ],
+   "id": "C3-01-delete-episode-bump-after-its-commit",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_c3_01_writers_census.py::test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 91.27s (0:01:31)",
+   "reason": null,
+   "reason_seen": null,
+   "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
   },
   {
    "anchor_counts": [
@@ -533,7 +589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.20s",
+   "pytest": "1 failed in 3.28s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -566,7 +622,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -599,7 +655,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.90s",
+   "pytest": "1 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -607,13 +663,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 10
+   "product": 11
   },
-  "controls": 6,
-  "controls_good": 6,
-  "good": 10,
-  "killed": 10,
-  "rows": 10,
-  "seconds": 59
+  "controls": 7,
+  "controls_good": 7,
+  "good": 11,
+  "killed": 11,
+  "rows": 11,
+  "seconds": 613
  }
 }

@@ -7,7 +7,6 @@ cause, with its remedy, and names no provider key.
 import sqlite3
 from importlib.metadata import version
 
-import anyio
 import pytest
 
 from veracium import Memory, MemoryConfig
@@ -21,6 +20,9 @@ def _needs_the_mcp_sdk():
 
 
 def _handshake_server_info(server):
+    # anyio arrives with the MCP SDK, an optional extra: imported here, never at module level (the pydantic-floor lane
+    # installs neither, and a module-level import fails its collection before the per-cell skip can run)
+    import anyio
     from mcp.shared.memory import create_connected_server_and_client_session
 
     async def go():

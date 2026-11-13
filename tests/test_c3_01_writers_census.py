@@ -127,65 +127,71 @@ def test_every_writer_of_a_table_a_recall_reads_advances_the_counter_or_is_named
     assert not stale, f"named writers that no longer write a recall table (drop them): {stale}"
 
 
-def _segments(sql: list) -> list:
-    """The trace split into transactions: (statements, ended by) for each BEGIN … COMMIT/ROLLBACK; a write outside
-    any BEGIN is its own one-statement transaction (autocommit)."""
-    out, cur = [], None
-    for st in sql:
-        head = st.lstrip().upper()
-        if head.startswith("BEGIN"):
-            cur = []
-        elif head.startswith(("COMMIT", "END")) and cur is not None:
-            out.append((cur, "COMMIT")); cur = None
-        elif head.startswith("ROLLBACK") and cur is not None:
-            out.append((cur, "ROLLBACK")); cur = None
-        elif cur is not None:
-            cur.append(st)
-        elif head.startswith(("INSERT", "UPDATE", "DELETE", "REPLACE")):
-            out.append(([st], "AUTOCOMMIT"))
-    return out
+# The modules the dynamic census runs: existing tests that already build the state each writer needs. Chosen by MEASURED
+# reach (research's stage 2 on 35610a8a, B1: one hand-built scenario reached 6 of the 15 bump sites); the reach assertion
+# below refuses if a bump site goes unreached, so a module dropped or a writer added fails by name.
+CENSUS_MODULES = ("tests/test_lifecycle.py", "tests/test_0047_t10a_reply.py", "tests/test_0009_import_migration.py",
+                  "tests/test_0010_consolidation_primitives.py", "tests/test_0044_t6_operation.py",
+                  "tests/test_0044_t7_undo.py", "tests/test_0014_ledger.py", "tests/test_0022_revocation_operation.py")
+# a writer that may change a recall table without the counter in its transaction, by function (cf. NAMED above)
+NAMED_WRITERS = {
+    "store/sqlite.py:_write_op", "store/sqlite.py:_claim_inputs", "store/sqlite.py:_abandon",
+    "store/sqlite.py:write_consolidation_output_if_current", "store/sqlite.py:delete_claimed_inputs_if_current",
+}   # consolidation: its outputs are visible only at its counted cutover (transition_consolidation_if_current bumps)
+
+
+def _bump_sites() -> set:
+    """Every call of the STORE's `_bump` in src/veracium, as 'module:innermost enclosing function' (a nested `plan`
+    included): a call inside the store package, or on a receiver named `store` anywhere. (census.py's own `_bump` is the
+    decision-site census's counter, another method.)"""
+    sites = set()
+    for f in sorted(SRC.rglob("*.py")):
+        rel = str(f.relative_to(SRC))
+
+        def walk(node, fn):
+            for ch in ast.iter_child_nodes(node):
+                name = ch.name if isinstance(ch, (ast.FunctionDef, ast.AsyncFunctionDef)) else fn
+                if isinstance(ch, ast.Call) and isinstance(ch.func, ast.Attribute) and ch.func.attr == "_bump" \
+                        and fn is not None and (rel.startswith("store/") or (isinstance(ch.func.value, ast.Name)
+                                                                             and ch.func.value.id == "store")):
+                    sites.add(f"{rel}:{fn}")
+                walk(ch, name)
+        walk(ast.parse(f.read_text()), None)
+    return sites
 
 
 def test_every_committed_transaction_that_changes_a_record_advances_the_counter_in_it(tmp_path):
-    """The census's other half, by execution: the static census accepts a function that bumps, but the premise is
-    'in the SAME transaction'. Each public writer runs under a trace; every committed transaction that writes a table
-    a recall reads must write write_counter too. (Found while building this: revocation's bump followed its COMMIT.)
-    Erasure is the named exception: it deletes the counter (the stated limit, v18.8)."""
-    from veracium import redaction
+    """The census's other half, by execution and with measured reach. Every SqliteStore connection of the census
+    modules is traced (specs/evidence/c3-01/census_trace_plugin.py), each statement attributed to the src function
+    that issued it: every committed transaction in which a src writer changes a table a recall reads writes
+    write_counter in that same transaction, or every such writer is named; erasure (it deletes the counter) is the
+    stated limit. Writes no src function issued are the tests' own planted fixtures, not product writers. And every
+    `_bump` call site in src was reached, so a writer whose bump moved out of its transaction is SEEN."""
+    import os
+    import subprocess
+    import sys
     records = _traced_tables(tmp_path) - NOT_RECORDS
-    m = Memory(llm=_Stub(), config=MemoryConfig(db_path=str(tmp_path / "w.db"), require_source_id=False))
-    sql = []
-    m.store._conn.set_trace_callback(sql.append)
-    m.remember("u", "I live in Berlin.", date="2026-11-12", context=EvidenceContext.direct())
-    m.remember("u", "The user lives in Berlin.", date="2026-11-12", author=veracium.EvidenceAuthor.THIRD_PARTY,
-               source_id="s1")
-    edges = m.store.edges("u")
-    m.confirm("u", edges[0].id)
-    m.dispute("u", edges[-1].id, reason="no longer current")
-    m.remember("u", "I work at Acme.", date="2026-11-13", context=EvidenceContext.direct())
-    m.redact("u", edge_id=m.store.edges("u")[-1].id, reason=sorted(redaction.ORIGINATING_REASONS)[0])
-    m.remember("u", "The user likes tea.", date="2026-11-13", author=veracium.EvidenceAuthor.THIRD_PARTY,
-               source_id="s2")
-    m.revoke_source("u", None, "s2", sorted(redaction.SOURCE_REVOCATION_REASONS)[0])
-    m.unrevoke_source("u", None, "s2", sorted(redaction.SOURCE_LIFT_REASONS)[0])
-    m.maintain("u")
-    m.forget("u")
-    m.store._conn.set_trace_callback(None)
-    m.close()
-    pat = re.compile(r'\b(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO)\s+"?([A-Za-z_][A-Za-z0-9_]*)', re.I)
-    bad, erasures, counted = [], 0, 0
-    for stmts, end in _segments(sql):
-        if end == "ROLLBACK":
+    out = tmp_path / "census.json"
+    env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(ROOT / "specs" / "evidence" / "c3-01"),
+                                                      os.environ.get("PYTHONPATH", "")]),
+               C301_CENSUS_OUT=str(out), PYTHONDONTWRITEBYTECODE="1")
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:randomly", "-p", "no:cacheprovider",
+                        "-p", "no:xdist", "-p", "census_trace_plugin", *CENSUS_MODULES], cwd=str(ROOT), env=env,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-2000:]
+    d = json.loads(out.read_text())
+    bad, counted, erasures = [], 0, 0
+    for t in d["transactions"]:
+        rec = [(tb, w) for tb, w in t["writes"] if tb in records and w]      # src writers of a recall table
+        if not rec:
             continue
-        written = {t for st in stmts for t in pat.findall(st)}
-        if not written & records:
-            continue
-        if any(re.search(r"DELETE\s+FROM\s+write_counter", st, re.I) for st in stmts):
-            erasures += 1                                  # forget_user: the named limit
-            continue
-        if "write_counter" in written:
+        if t["deletes_counter"]:
+            erasures += 1
+        elif any(tb == "write_counter" for tb, _w in t["writes"]):
             counted += 1
-        else:
-            bad.append((end, sorted(written & records), [st[:90] for st in stmts if pat.search(st)][:4]))
-    assert counted >= 8 and erasures == 1, (counted, erasures)          # the scenario reached its writers
-    assert not bad, f"a committed transaction changed a record a recall reads without advancing the counter: {bad}"
+        elif not all(w in NAMED_WRITERS for _tb, w in rec):
+            bad.append((t["end"], sorted({w for _tb, w in rec if w not in NAMED_WRITERS}), sorted({tb for tb, _ in rec})))
+    assert counted > 100, counted                                             # the census reached its writers
+    assert not bad, f"a committed transaction changed a recall table without advancing the counter in it: {bad[:5]}"
+    unreached = _bump_sites() - set(d["reached"])
+    assert not unreached, f"bump call sites no census module reached (add a module that drives them): {sorted(unreached)}"
