@@ -83,7 +83,7 @@ Python 3.14 and an attested SQLite build, for linux/amd64 and linux/arm64 (specs
   "command": "docker",
   "args": ["run", "-i", "--rm", "-v", "veracium-data:/data",
            "-e", "ANTHROPIC_API_KEY", "-e", "VERACIUM_MCP_SOURCE_ID",
-           "ghcr.io/veracium-ai/veracium:0.32.0"],
+           "ghcr.io/veracium-ai/veracium:0.32.1"],
   "env": {"ANTHROPIC_API_KEY": "<key>", "VERACIUM_MCP_SOURCE_ID": "<your source id>"}}}}
 ```
 
