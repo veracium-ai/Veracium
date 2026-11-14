@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.32.1 — 2026-11-14
+
+**A recall no longer states that the view is empty above a fact written during it, and the MCP server reports its own
+version.** The fixes and changes below were accepted by the shipped-changes implementation review (round 4,
+2026-11-14), which found no blocker to this release. Store schema stays 16 and the export format stays 14: a 0.32.0
+store opens as it is. **Who should upgrade:** hosts with the wiki layer on whose users' memory can be written while it
+is being read (a second process, an ingest, another agent); hosts that revoke sources, or run the data migration, while
+readers are active; and MCP clients that read `serverInfo.version`.
 
 - **Fixed: a recall no longer serves "(no verified facts in this view)" above a fact written during that recall**
   (the round-3 review's C3-01, disclosed in 0.32.0 as a limit; specs/0003 §4c-ii). The empty line carries the store
