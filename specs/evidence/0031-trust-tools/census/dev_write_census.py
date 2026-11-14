@@ -1,6 +1,6 @@
 """Dev's independent write census for the 0031 trust verbs at the pinned source: every SQL write each verb executes,
 traced on a real store, plus the provenance (source_id, call_path) of every row the verb adds to edges or episodes, and
-the keys of what the verb returns. Run from the repo root with the repo's venv: PYTHONPATH=src python write_census.py"""
+the keys of what the verb returns. Run from the repo root with the repo's venv: PYTHONPATH=src python dev_write_census.py"""
 import json, os, re, sqlite3, tempfile, collections
 from veracium import Memory, MemoryConfig, EvidenceContext
 
