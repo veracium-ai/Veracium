@@ -239,24 +239,24 @@
   "line": 89,
   "statement": "return _SITE_SELF_ASSERTION.fire("
  },
- "compile.py:empty_body_unbound:492:BOOL_RETURN": {
+ "compile.py:empty_body_unbound:495:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0003 §4c-ii v18.7 (C3-01: the code-owned empty body is served only when no write for the user committed since its basis) (withhold) through site compile.bind.empty-body",
   "reviewer": "dev",
   "site": "compile.bind.empty-body",
   "class": "enforcement",
   "key": "compile.py:empty_body_unbound:BOOL_RETURN:1",
-  "line": 492,
+  "line": 495,
   "statement": "return _SITE_EMPTY_BODY_BIND.fire(basis is None or store.store_version(user_id) != basis, \"omit-body\")"
  },
- "compile.py:_bind_withholds:475:BOOL_RETURN": {
+ "compile.py:_bind_withholds:476:BOOL_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0047 §4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit) (withhold) through site compile.bind.unbound",
   "reviewer": "dev",
   "site": "compile.bind.unbound",
   "class": "enforcement",
   "key": "compile.py:_bind_withholds:BOOL_RETURN:1",
-  "line": 475,
+  "line": 476,
   "statement": "return _SITE_BIND_UNBOUND.fire(why is not None, \"withhold-body\")"
  },
  "compile.py:_drew_a_challenged_fact:156:BOOL_RETURN": {
@@ -5371,22 +5371,22 @@
   "line": 181,
   "statement": "return None"
  },
- "compile.py:empty_body_unbound:490:RETURN_FALSE": {
+ "compile.py:empty_body_unbound:493:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "compile.py:empty_body_unbound:RETURN_FALSE:1",
-  "line": 490,
+  "line": 493,
   "statement": "return False"
  },
- "compile.py:ensure_wiki:407:RETURN_NONE": {
+ "compile.py:ensure_wiki:408:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "compile.py:ensure_wiki:RETURN_NONE:1",
-  "line": 407,
+  "line": 408,
   "statement": "return None"
  },
  "diagnostics.py:Reporter._confirm:255:RETURN_FALSE": {
@@ -9817,22 +9817,22 @@
   "line": 35,
   "statement": "return isinstance(value, str) and _ATTV.fullmatch(value) is not None"
  },
- "compile.py:_is_code_owned_empty:244:BOOL_RETURN": {
+ "compile.py:_is_code_owned_empty:245:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by compile.py:empty_body_unbound [site compile.bind.empty-body]; and by compile.py:_provider_free_notice, compile.py:needs_recompile (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:_is_code_owned_empty:BOOL_RETURN:1",
-  "line": 244,
+  "line": 245,
   "statement": "return body == _empty_input_body()"
  },
- "compile.py:_unbound_by:465:RETURN_NONE": {
+ "compile.py:_unbound_by:466:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by compile.py:bound_wiki",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "compile.py:_unbound_by:RETURN_NONE:1",
-  "line": 465,
+  "line": 466,
   "statement": "return None"
  },
  "compile.py:needs_recompile:229:BOOL_RETURN": {

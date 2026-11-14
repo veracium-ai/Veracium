@@ -935,37 +935,37 @@
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 244,
+   "line": 245,
    "module": "compile.py",
    "qualname": "_is_code_owned_empty"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 407,
+   "line": 408,
    "module": "compile.py",
    "qualname": "ensure_wiki"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 465,
+   "line": 466,
    "module": "compile.py",
    "qualname": "_unbound_by"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 475,
+   "line": 476,
    "module": "compile.py",
    "qualname": "_bind_withholds"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 490,
+   "line": 493,
    "module": "compile.py",
    "qualname": "empty_body_unbound"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 492,
+   "line": 495,
    "module": "compile.py",
    "qualname": "empty_body_unbound"
   },
