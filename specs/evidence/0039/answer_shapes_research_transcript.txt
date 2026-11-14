@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 92c76c4781f73a2f0107a8c189dd81965226597f
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 544dacb104bff15b9b7c85b9d21e4d760219ccf8
+# RE-PINNED 2026-11-14 (544dacb1: the schema evidence records v0.32.1, one row of src/veracium/store/evidence/legacy_stores.json; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-14 (92c76c47: shipped-changes round 4's text notes, 0003 v18.11 (SR4-N1) and the two bind helpers' docstrings in compile.py (SR4-N2), no code; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-13 (a8d56a0f: C3-01's census reach (research's stage-2 B1) and _is_code_owned_empty's docstring (N1); both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-13 (9d0f6a93: C3-01, the empty body bound to the response by store_version, 0003 v18.9, with 0031 v22.1's N1/N4; both instruments re-run, and the body is byte-identical)
