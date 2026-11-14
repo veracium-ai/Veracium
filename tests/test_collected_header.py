@@ -21,6 +21,7 @@ import json
 import pathlib
 import sys
 import time
+import uuid
 
 import pytest
 
@@ -85,8 +86,11 @@ def _record(tmp: pathlib.Path) -> dict:
     a template placed where build_record requires one: inside the tree it
     must ship from."""
     cap = _captures(tmp)
-    tpl = ROOT / "specs" / "package" / ".test_cplus_template.txt"
-    mtpl = ROOT / "specs" / "package" / ".test_cplus_manifest.txt"
+    # one name per call: seven cells share this helper, and under xdist two of them on different workers deleted each
+    # other's fixed-name template mid-read (FileNotFoundError; 3-4 of 22 failed on every `-n 8` run of this module)
+    tag = uuid.uuid4().hex
+    tpl = ROOT / "specs" / "package" / f".test_cplus_template-{tag}.txt"
+    mtpl = ROOT / "specs" / "package" / f".test_cplus_manifest-{tag}.txt"
     tpl.write_text(TEMPLATE)
     mtpl.write_text(MANIFEST_TEMPLATE)
     try:
