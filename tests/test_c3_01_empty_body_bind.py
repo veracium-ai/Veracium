@@ -131,7 +131,7 @@ def _run(tmp_path, monkeypatch, placement, *, seed="third_party", reader="llm", 
         monkeypatch.setattr(m.store, "episodes", eps)
     elif placement == "after-the-bind-read":
         monkeypatch.setattr(C, "empty_body_unbound", unbound)
-    if not bind:                                       # v18.6's behaviour: the superseded rule, as the oracle
+    if not bind:                                       # the bind switched off (v18.11 I6d: not v18.6's code)
         monkeypatch.setattr(C, "empty_body_unbound", lambda *a, **k: False)
     this = m.recall("u", Q, semantic=False)
     monkeypatch.undo()
@@ -164,7 +164,9 @@ def test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response(tmp_pa
 
 
 def test_with_no_write_the_response_is_byte_identical_to_v18_6(tmp_path, monkeypatch):
-    """The superseded rule (no bind) is the oracle: with no write during the call, the two responses are equal."""
+    """With no write during the call, the response equals the same recall's with the bind switched off, each on its own
+    store seeded the same way. This compares the bind on and off, not this code with v18.6's: equality with v18.6
+    rests on §4c-ii's statement that v18.7 adds only the bind (0003 v18.11 I6d; round 4's SR4-N1)."""
     a = _run(tmp_path, monkeypatch, "none")
     b = _run(tmp_path, monkeypatch, "none", bind=False)
     assert not a["fired"] and a["this"].context == b["this"].context and _body(a["this"].grounded)
@@ -187,7 +189,8 @@ def test_another_users_write_leaves_the_body_served(tmp_path, monkeypatch):
 
 
 def test_a_principal_bearing_recall_is_unchanged(tmp_path, monkeypatch):
-    """A principal-bearing recall has no wiki (0020), so the bind never applies: its response equals v18.6's."""
+    """A principal-bearing recall, with no write placed, gives the same response with the bind on and off, each on its
+    own store seeded the same way: it has no wiki (0020), so the bind never applies (0003 v18.11 I6d; SR4-N1)."""
     from veracium.scope import Identity
     out = []
     for bind in (True, False):

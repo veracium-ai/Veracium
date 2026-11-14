@@ -1,5 +1,5 @@
 {
- "body_sha256": "3d69c5d164501b057ecc0e232b6a06ce2e0087601135b0f6c27c675224214950",
+ "body_sha256": "bfeea8bc0963fbd37e8ea09a0c33044329e16cf4fe7681f86ac292c9c8ab5356",
  "controls": [
   {
    "anchor_counts": [
@@ -101,7 +101,7 @@
     "passed": 13
    }
   },
-  "commit": "35610a8afc03b3c58d4abb500798a1f61b08a50d",
+  "commit": "920b8fa8384a7ff7f144e27f246f2d38341cf674",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "72e057da2d2e00a3d3d91bc34423cbb3d3bf69a592f91855a153a88a814e84c8",
    "NOOP-compile": "fb3e48665c90b3a8bb1e53e357d50617ad17133cbb59962db22e625ee6f47b9b"
@@ -123,23 +123,25 @@
    "specs/evidence/sr2-01/legacy-empty-wiki.json": "a1500afbc1da19abb803fc706d4767b28bbac5a7bfc76eaad50b37ebf02245ef",
    "specs/evidence/sr2-01/wiki_cache_mutants.py": "083fae918c24e84b0b9c779c69bc67c618b8cafadd29964386f0a6058959c632",
    "src/veracium/budgets.py": "885fd8c691da3a1009b4ec7409081f44ffcac08960c0425ddc67be95dfe16722",
-   "src/veracium/compile.py": "e188f78dfe93087540ed5f75907aa3fa7ed64dc9fb80384c3496a4fc066bb9cf",
+   "src/veracium/compile.py": "4e410634231d7bf59ccf06c1a3f88402230f9e4ef4a0ef439d7e669ee092006d",
    "tests/test_sr2_01_wiki_upgrade.py": "0af25c937d483b276629ebcdf5b24ac0d5c0c4c70fd5e0cbedcea3ddeca3c39d"
   },
   "finding": "sr2-01-wiki-cache",
   "honest_nodes": [
    "tests/test_sr2_01_wiki_upgrade.py::test_sr2_01_a_model_written_body_below_the_threshold_is_still_served"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "specs/0003-supersession-authority.md",
+   "specs/STATUS.md",
    "specs/evidence/c3-01/empty_body_mutants.py",
    "specs/evidence/c3-01/mutation-table.json",
+   "specs/generated/0002-audit-manifest.md",
    "src/veracium/compile.py",
-   "tests/test_0031_server_reports_itself.py",
-   "tests/test_c3_01_writers_census.py"
+   "tests/test_c3_01_empty_body_bind.py"
   ]
  },
  "rows": [
@@ -189,7 +191,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 0.97s",
+   "pytest": "7 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "the policy version not bumped: a wiki cached by released code keeps its old digest and its old body (SR2-01)"
@@ -222,7 +224,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.43s",
    "reason": null,
    "reason_seen": null,
    "what": "the code-owned empty body re-worded under the same policy version (round 1's SR1-03 change, repeated)"
@@ -255,7 +257,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.42s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty-input selection changed under the same policy version (2f3899be's shape: the branch, not the words)"
@@ -294,7 +296,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.72s",
+   "pytest": "3 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "a cached code-owned empty body waits for the write threshold, so it is served above a verified fact (found in the fix)"
@@ -333,7 +335,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.76s",
+   "pytest": "3 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "a cached empty body stale by a write alone is served the notice that says a model is needed, where its recompile may call none (N2)"
@@ -420,6 +422,6 @@
   "good": 7,
   "killed": 7,
   "rows": 7,
-  "seconds": 25
+  "seconds": 23
  }
 }

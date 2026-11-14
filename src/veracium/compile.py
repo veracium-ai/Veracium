@@ -239,8 +239,9 @@ def _is_code_owned_empty(body: str) -> bool:
     """The cached body is exactly what compile_wiki writes for an empty input. A model reply that equals it is treated
     the same: stale on every write, so it recompiles on the first read after each write for as long as the model keeps
     returning it (research's stage 2, N3). A read that starts after a write never serves it above that write's fact; a
-    write committed DURING one recall leaves it out of that response (empty_body_unbound, 0003 §4c-ii v18.9, C3-01),
-    except across an erasure, the stated limit (v18.8: forget_user resets the counter; the floor is queued, §10 Q8)."""
+    version change that one recall's final bind read observes leaves it out of that response, and a write after that
+    read does not (empty_body_unbound, 0003 §4c-ii, C3-01; SR4-N2), except across an erasure, the stated limit (v18.8:
+    forget_user resets the counter; the floor is queued, §10 Q8)."""
     return body == _empty_input_body()
 
 
@@ -481,8 +482,10 @@ def empty_body_unbound(store, user_id: str, body: Optional[str], basis: Optional
     `body` is what bound_wiki returned; `basis` is the user's store_version at which its emptiness was established
     (the cached row's own version, or the compile's version_at_begin, published or not). Called once, after the
     recall's last store read whose result can reach a response that carries the body, and before rendering: if the
-    user's store_version still equals the basis, no write for the user committed in between, so every record the
-    response renders was read where the view held no verified fact, and the body is served. Otherwise it is left out
+    user's store_version still equals the basis, then, while the counter is monotonic, no write for the user committed
+    in between, so every record the response renders was read where the view held no verified fact, and the body is
+    served. An erasure resets the counter (v18.8), so equal versions across one prove nothing (the stated limit, C4-L1;
+    SR4-N2). Otherwise it is left out
     of this one response: no retry, no model call. Only the code-owned empty body (a model reply equal to it
     included) is bound; a model summary keeps 0012's lag and is never passed here as unbound. A missing basis for an
     empty body omits it (conservative; it asserts nothing either way)."""

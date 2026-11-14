@@ -91,7 +91,7 @@ MUTANTS = [
      [('        return _SITE_EMPTY_BODY_BIND.fire(basis is None or store.store_version(user_id) != basis, "omit-body")\n',
        '        return _SITE_EMPTY_BODY_BIND.fire(True, "omit-body")\n')],
      [NO_WRITE, OTHER_USER, BOUNDARY], [PRINCIPAL], None,
-     "the empty body always omitted: the no-write response is no longer v18.6's"),
+     "the empty body always omitted: the no-write response no longer equals the bind-off one (v18.11 I6d)"),
     ("C3-01-bind-before-the-episode-read", "product", I,
      [(_BIND_BLOCK, ""),
       ("        episodes = [e for e in self.store.episodes(user_id)\n",

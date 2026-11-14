@@ -1,5 +1,5 @@
 {
- "body_sha256": "f15582c327870d266b5e175533efa2192f38fcd802994690b3749816baf223a4",
+ "body_sha256": "320c97a3e393a05908ba26c1ff740e99cd103dff62092850436925e0069c2758",
  "controls": [
   {
    "anchor_counts": [
@@ -218,7 +218,7 @@
     "passed": 16
    }
   },
-  "commit": "b4a53a2b334a72b7a3e4cdc29557fa68b7470041",
+  "commit": "920b8fa8384a7ff7f144e27f246f2d38341cf674",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
@@ -229,7 +229,7 @@
    "NOOP-sqlite": "8e3499d77e26e64b584544682389caeb50579494f356cfefc4cb7cae7592e955"
   },
   "definitions": {
-   "C3-01-always-omit": "a20bd67fcebeeba731507013707699d60ab99fb3712c078e07462a2ec0d478da",
+   "C3-01-always-omit": "7343bcf8485f6534f91fda25e1ddc8a4a89422d0761987314e7a65f6ae51433e",
    "C3-01-basis-after-the-inputs": "ca8daa01cfac1bd75e29a0fa04d5470e9980951c2164d09dd507271570dbbfa0",
    "C3-01-bind-at-bound-wikis-return": "9b7f4c8d31a3af0c2b381e28156470e40835c400304a4e4a1a01b8323c81e294",
    "C3-01-bind-before-the-episode-read": "42235dfbe24252008540870b1ce78210d81fa1bab6282bcf48de19fd5b11080c",
@@ -243,17 +243,17 @@
   },
   "digests": {
    "specs/evidence/c3-01/census_trace_plugin.py": "ecaf56b23bf6694430aa36247ab048b9b93b8978544ea14b75736203ac1e819b",
-   "specs/evidence/c3-01/empty_body_mutants.py": "9f4eb1fa109b9d8bf30323fe6ec1838b8e959fac18317e5b4a466ab953d88162",
+   "specs/evidence/c3-01/empty_body_mutants.py": "6b9ce7f02c5f9e8842ea405c979e1b4183c7d5e37687f6f16a96500818b4d724",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "f45fc0c1378474928e13eb627fca931e94703a1e0a1a6efa5c0937dc03813b73",
-   "src/veracium/compile.py": "e188f78dfe93087540ed5f75907aa3fa7ed64dc9fb80384c3496a4fc066bb9cf",
+   "src/veracium/compile.py": "4e410634231d7bf59ccf06c1a3f88402230f9e4ef4a0ef439d7e669ee092006d",
    "src/veracium/mcp_server.py": "677d6bcc36de02fd9a7045af6c480869a1ec50a4770bd9d269ad7f2deaacceb7",
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
    "src/veracium/store/revocation.py": "14aebf929c07e968c987b85c05c565d1b582de2e548b41dfe3d4de1147317c8d",
    "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
    "tests/test_0031_server_reports_itself.py": "5ff827b81d01cf38d6759892b4c311aea19be03a45ae63ebce8dbb9c27a786da",
-   "tests/test_c3_01_empty_body_bind.py": "0acce2706cf907fff716ffe52e03113813217a09f5e6d286dd4779f90ead0d58",
+   "tests/test_c3_01_empty_body_bind.py": "a6befb0770902488995da33414599d633dc97cfba28dc5fe8873ebb4d3de4c2f",
    "tests/test_c3_01_writers_census.py": "cbf5bb6bd2b3de1a4b4e0f95a4f56f87529cb90e908cba552aa329760f08ea73"
   },
   "finding": "c3-01-empty-body-bind",
@@ -262,13 +262,16 @@
    "tests/test_c3_01_empty_body_bind.py::test_a_principal_bearing_recall_is_unchanged",
    "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "specs/0003-supersession-authority.md",
    "specs/evidence/c3-01/empty_body_mutants.py",
-   "tests/test_0031_server_reports_itself.py"
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/compile.py",
+   "tests/test_c3_01_empty_body_bind.py"
   ]
  },
  "rows": [
@@ -312,7 +315,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.68s",
+   "pytest": "5 failed in 1.63s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -349,7 +352,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.87s",
+   "pytest": "2 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -382,7 +385,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -415,7 +418,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -435,7 +438,7 @@
     "tests/test_c3_01_empty_body_bind.py::test_the_boundary_a_write_after_the_bind_read_is_not_in_that_response",
     "tests/test_c3_01_empty_body_bind.py::test_with_no_write_the_response_is_byte_identical_to_v18_6"
    ],
-   "definition_sha256": "a20bd67fcebeeba731507013707699d60ab99fb3712c078e07462a2ec0d478da",
+   "definition_sha256": "7343bcf8485f6534f91fda25e1ddc8a4a89422d0761987314e7a65f6ae51433e",
    "file": "src/veracium/compile.py",
    "finding": "c3-01-empty-body-bind",
    "good": true,
@@ -454,10 +457,10 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.32s",
+   "pytest": "3 failed in 1.75s",
    "reason": null,
    "reason_seen": null,
-   "what": "the empty body always omitted: the no-write response is no longer v18.6's"
+   "what": "the empty body always omitted: the no-write response no longer equals the bind-off one (v18.11 I6d)"
   },
   {
    "anchor_counts": [
@@ -488,7 +491,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
@@ -522,7 +525,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 94.32s (0:01:34)",
+   "pytest": "1 failed in 112.35s (0:01:52)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
@@ -555,7 +558,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 92.85s (0:01:32)",
+   "pytest": "1 failed in 104.50s (0:01:44)",
    "reason": null,
    "reason_seen": null,
    "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
@@ -588,7 +591,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.42s",
+   "pytest": "1 failed in 3.34s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -624,7 +627,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.94s",
+   "pytest": "2 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -657,7 +660,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -672,6 +675,6 @@
   "good": 11,
   "killed": 11,
   "rows": 11,
-  "seconds": 624
+  "seconds": 682
  }
 }
