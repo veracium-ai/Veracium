@@ -2,8 +2,12 @@
 
 import json
 import tempfile
+from datetime import datetime, timezone
+
+import pytest
 
 from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium.store.sqlite import SqliteStore
 
 
 class Fake:
@@ -60,4 +64,33 @@ def test_edges_since_filters_on_observed_at():
         assert len(both) == 2
         # includes non-assertable material: these third-party edges are use_only
         assert all(not e.assertable for e in both)
+        mem.close()
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "specs 0049 (research's candidate): edges_since filters on provenance.observed_at, which ingest sets from the "
+    "EVENT's date, so a fact learned today about an older event is missed. Remove this marker with the fix: "
+    "strict, so the fix turns this test red until the marker goes."))
+def test_edges_since_means_learned_not_occurred():
+    """`edges_since` returns the edges Veracium LEARNED after `since` (its docstring, docs/api.md, docs/recipes.md), not
+    the ones whose event happened after it. Event time and learned time are pulled apart: two events dated in 2025 and
+    2024 are remembered on a controlled store clock on 2026-07-01 and 2026-07-10. The superseded test above cannot tell
+    the two meanings apart, because its event dates and remember dates coincide (0049 §1)."""
+    with tempfile.TemporaryDirectory() as d:
+        now = {"t": datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)}
+        store = SqliteStore(f"{d}/t.db", clock=lambda: now["t"])
+        mem = Memory(llm=Fake(), store=store,
+                     config=MemoryConfig(require_source_id=False, db_path=f"{d}/t.db",  # 0006 v8: opted out, as above
+                                         wiki_recompile_after_writes=0))
+        mem.remember("vendor:acme", "invoice", date="2025-03-01",            # learned 2026-07-01, happened 2025
+                     author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+        now["t"] = datetime(2026, 7, 10, 12, 0, tzinfo=timezone.utc)
+        mem.remember("vendor:acme", "wire", date="2024-11-15",               # learned 2026-07-10, happened 2024
+                     author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+
+        recent = mem.edges_since("vendor:acme", "2026-07-05")
+        assert [e.object for e in recent] == ["wire transfer"], [e.object for e in recent]
+        assert mem.edges_since("vendor:acme", "2026-07-11") == []
+        assert len(mem.edges_since("vendor:acme", "2026-06-01")) == 2
+        assert mem.edges_since("vendor:acme", "2026-01-01") != []    # an event-time filter would also return both here
         mem.close()
