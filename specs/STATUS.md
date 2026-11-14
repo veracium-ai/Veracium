@@ -20,7 +20,7 @@ is the number that decides what can be built.
 | **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-09-14 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-11-06 | 0 | 19 | 1 | 0 | 0 | — |
-| **0008** | what may clear `needs_confirmation` | `accepted` | 2026-10-29 | 0 | 4 | 0 | 0 | 1 | 1/1 |
+| **0008** | what may clear `needs_confirmation` | `accepted` | 2026-11-14 | 0 | 4 | 0 | 0 | 1 | 1/1 |
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-10-24 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
 | **0011** | subject-scoped entitlement | `accepted` | 2026-09-08 | 2 | 19 | 0 | 0 | 1 | 1/1 |
@@ -43,12 +43,12 @@ is the number that decides what can be built.
 | **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-19 | 0 | 7 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-10-14 | 1 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-10-14 | 0 | 18 | 0 | 0 | 0 | — |
-| **0031** | the agent-facing trust surface | `accepted` | 2026-11-13 | 0 | 16 | 0 | 0 | 0 | — |
+| **0031** | the agent-facing trust surface | `accepted` | 2026-11-14 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 | **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-15 | 0 | 5 | 3 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-14 | 0 | 4 | 0 | 0 | 0 | — |
 | **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-11 | 0 | 9 | 0 | 0 | 0 | — |
-| **0041** | targeted redaction — stored content removed, the record that it existed retained | `accepted` | 2026-10-29 | 1 | 14 | 0 | 0 | 0 | — |
+| **0041** | targeted redaction — stored content removed, the record that it existed retained | `accepted` | 2026-11-14 | 1 | 14 | 0 | 0 | 0 | — |
 | **0042** | exercised guarantees — measuring whether what we specify is what runs | `accepted` | 2026-10-02 | 0 | 23 | 0 | 0 | 0 | — |
 | **0043** | the refusal harness — measuring whether the gate declines when it should | `accepted` | 2026-10-10 | 0 | 9 | 0 | 0 | 0 | — |
 | **0044** | relation arity — a functional relation is ONE SLOT PER SUBJECT, and three of ours should not be | `accepted` | 2026-10-24 | 0 | 4 | 2 | 0 | 0 | — |
@@ -57,7 +57,7 @@ is the number that decides what can be built.
 | **0047** | the subject's right of reply — the record stands, and the reply travels with it | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
 | **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-06 | 0 | 6 | 2 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
-| **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-10 | 0 | 0 | 9 | 0 | 0 | — |
+| **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-14 | 0 | 0 | 9 | 0 | 0 | — |
 | **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-12 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per

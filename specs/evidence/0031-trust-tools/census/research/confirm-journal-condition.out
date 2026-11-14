@@ -1,0 +1,2 @@
+conf09_nosrc                       confidence 0.9 src None: edge_event inserts during confirm = 0
+conf05_nosrc                       confidence 0.5 src None: edge_event inserts during confirm = 1

@@ -1,0 +1,57 @@
+=== correct: happy
+  outcome: returned corrected,replacement
+  writes: {'DELETE wiki': 2, 'INSERT edge_event': 2, 'INSERT edges': 1, 'INSERT episodes': 1, 'INSERT supersession_operations': 1, 'INSERT write_counter': 2, 'UPDATE edges': 1, 'UPDATE migration_outcome': 1}
+=== correct: OTHER subject (person:alice) -> CorrectionRefused
+  outcome: raised CorrectionRefused: correction of edge 'e-alice' refused under supersession-authority-v2: a bare self-assertio
+  writes: {'DELETE wiki': 1, 'INSERT supersession_operations': 1, 'INSERT supersession_refusals': 1, 'INSERT write_counter': 1}
+=== correct: unknown id
+  outcome: raised ValueError: no edge 'e-nope' for user 'u'
+  writes: NONE
+=== correct: a redacted (attested) target
+  outcome: raised ValueError: refused: edge 'e-3f72cd3e202c' is redacted — correct quotes the record it acts on, and a r
+  writes: NONE
+=== dispute: happy
+  outcome: returned disputed,relation
+  writes: {'DELETE wiki': 2, 'INSERT edge_event': 1, 'INSERT episodes': 1, 'INSERT write_counter': 2, 'UPDATE edges': 1, 'UPDATE migration_outcome': 1}
+=== dispute: unknown id
+  outcome: raised ValueError: no edge 'e-nope' for user 'u'
+  writes: NONE
+=== dispute: a redacted (attested) target
+  outcome: raised ValueError: refused: edge 'e-fbe1f1422769' is redacted — dispute quotes the record it acts on, and a r
+  writes: NONE
+=== confirm: happy (observed_at earlier than the confirmation)
+  outcome: returned confirmed,confirmed_at,correlation_id,replayed,valid_from
+  writes: {'INSERT confirmations': 1, 'INSERT edge_event': 1, 'INSERT episodes': 1, 'INSERT request_registry': 1, 'INSERT write_counter': 1, 'UPDATE act_counter': 1, 'UPDATE edges': 1}
+=== confirm: a third-party (use_only, not assertable) target, ingested the real way
+  outcome: raised ValueError: edge 'e-304a2d78a424' is not assertable (quarantined/use_only/inactive) — a user affirming
+  writes: NONE
+=== confirm: unknown id
+  outcome: raised ValueError: no edge 'e-nope' for user 'u'
+  writes: NONE
+=== redact: edge, first
+  outcome: returned RedactionReceipt
+  writes: {'DELETE edge_embedding': 1, 'DELETE wiki': 2, 'INSERT edge_event': 1, 'INSERT redactions': 1, 'INSERT write_counter': 1, 'UPDATE confirmations': 1, 'UPDATE contribution_ledger': 1, 'UPDATE edge_event': 1, 'UPDATE edges': 1, 'UPDATE migration_outcome': 1, 'UPDATE replies': 2, 'UPDATE request_registry': 1, 'UPDATE source_revocations': 1, 'UPDATE supersession_refusals': 1}
+=== redact: edge, REPEAT
+  outcome: returned RedactionReceipt
+  writes: NONE
+=== redact: unknown id
+  outcome: raised ValueError: redact: no edge 'e-nope' for user 'u' (specs/0041 INV-5)
+  writes: NONE
+=== redact: bad reason
+  outcome: raised ValueError: redaction reason 'not-a-reason' is not one of ('subject_request', 'operator_policy', 'erro
+  writes: NONE
+=== forget: a user with data
+  outcome: returned confirmations,edges,episodes,replies
+  writes: {'DELETE arity_inventory': 1, 'DELETE confirmations': 1, 'DELETE consolidation_ops': 1, 'DELETE contribution_ledger': 1, 'DELETE edge_embedding': 1, 'DELETE edge_event': 1, 'DELETE edges': 1, 'DELETE episode_event': 1, 'DELETE episodes': 1, 'DELETE migration_outcome': 1, 'DELETE migration_run': 1, 'DELETE policy_receipt': 1, 'DELETE redactions': 1, 'DELETE refusal_inventory': 1, 'DELETE replies': 1, 'DELETE request_registry': 1, 'DELETE source_revocations': 1, 'DELETE supersession_operations': 1, 'DELETE supersession_refusals': 1, 'DELETE wiki': 1, 'DELETE write_counter': 1}
+=== forget: an EMPTY user
+  outcome: returned confirmations,edges,episodes,replies
+  writes: {'DELETE arity_inventory': 1, 'DELETE confirmations': 1, 'DELETE consolidation_ops': 1, 'DELETE contribution_ledger': 1, 'DELETE edge_embedding': 1, 'DELETE edge_event': 1, 'DELETE edges': 1, 'DELETE episode_event': 1, 'DELETE episodes': 1, 'DELETE migration_outcome': 1, 'DELETE migration_run': 1, 'DELETE policy_receipt': 1, 'DELETE redactions': 1, 'DELETE refusal_inventory': 1, 'DELETE replies': 1, 'DELETE request_registry': 1, 'DELETE source_revocations': 1, 'DELETE supersession_operations': 1, 'DELETE supersession_refusals': 1, 'DELETE wiki': 1, 'DELETE write_counter': 1}
+=== recall_impl: an EMPTY user, query 'empty' (round 2's witness)
+  outcome: returned ctx
+  writes: {'INSERT wiki': 1}
+=== recall_impl: a user with a fact, query
+  outcome: returned ctx
+  writes: {'INSERT wiki': 1}
+=== recall_impl: a user with a fact, no query (proactive)
+  outcome: returned ctx
+  writes: NONE

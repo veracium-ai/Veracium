@@ -1,0 +1,31 @@
+=== correct
+  writes: {('DELETE', 'wiki'): 2, ('INSERT', 'edge_event'): 2, ('INSERT', 'edges'): 1, ('INSERT', 'episodes'): 1, ('INSERT', 'supersession_operations'): 1, ('INSERT', 'write_counter'): 2, ('UPDATE', 'edges'): 1, ('UPDATE', 'migration_outcome'): 1}
+  added: edges:e-cc8df610af9d {'author': 'user', 'source_id': None, 'call_path': None, 'summary': 'Paris'}
+  added: episodes:ep-9cd0782578ce {'author': 'user', 'source_id': None, 'call_path': None, 'summary': "(user) corrected 'located_at: Berlin' to 'Paris'"}
+  returns: ['corrected', 'replacement']
+=== dispute
+  writes: {('DELETE', 'wiki'): 2, ('INSERT', 'edge_event'): 1, ('INSERT', 'episodes'): 1, ('INSERT', 'write_counter'): 2, ('UPDATE', 'edges'): 1, ('UPDATE', 'migration_outcome'): 1}
+  added: episodes:ep-38c3d81a8fb7 {'author': 'user', 'source_id': None, 'call_path': None, 'summary': "(user) disputed the remembered fact 'located_at: Berlin' — n"}
+  returns: ['disputed', 'relation']
+=== confirm
+  writes: {('INSERT', 'confirmations'): 1, ('INSERT', 'edge_event'): 1, ('INSERT', 'episodes'): 1, ('INSERT', 'request_registry'): 1, ('INSERT', 'write_counter'): 1, ('UPDATE', 'act_counter'): 1, ('UPDATE', 'edges'): 1}
+  added: episodes:ep-c-7c71def82c57 {'author': 'user', 'source_id': None, 'call_path': None, 'summary': "(user) confirmed 'located_at: Berlin' still holds"}
+  returns: ['confirmed', 'confirmed_at', 'correlation_id', 'replayed', 'valid_from']
+=== redact edge
+  writes: {('DELETE', 'edge_embedding'): 1, ('DELETE', 'wiki'): 2, ('INSERT', 'edge_event'): 1, ('INSERT', 'redactions'): 1, ('INSERT', 'write_counter'): 1, ('UPDATE', 'confirmations'): 1, ('UPDATE', 'contribution_ledger'): 1, ('UPDATE', 'edge_event'): 1, ('UPDATE', 'edges'): 1, ('UPDATE', 'migration_outcome'): 1, ('UPDATE', 'replies'): 2, ('UPDATE', 'request_registry'): 1, ('UPDATE', 'source_revocations'): 1, ('UPDATE', 'supersession_refusals'): 1}
+  returns: ['applied_at', 'applied_event_ref', 'applied_store_version_after', 'applied_store_version_before', 'event_ref', 'fields_cleared', 'marker_version', 'reason', 'receipt_domains', 'receipts_complete', 'reconstructed', 'recorded_at', 'redacted_kind', 'repeated', 'store_version_after', 'store_version_before', 'surviving_derived', 'target_id', 'user_id']
+=== redact episode
+  writes: {('DELETE', 'wiki'): 1, ('INSERT', 'episode_event'): 1, ('INSERT', 'redactions'): 1, ('INSERT', 'write_counter'): 1, ('UPDATE', 'contribution_ledger'): 1, ('UPDATE', 'episodes'): 1, ('UPDATE', 'source_revocations'): 1}
+  returns: ['applied_at', 'applied_event_ref', 'applied_store_version_after', 'applied_store_version_before', 'event_ref', 'fields_cleared', 'marker_version', 'reason', 'receipt_domains', 'receipts_complete', 'reconstructed', 'recorded_at', 'redacted_kind', 'repeated', 'store_version_after', 'store_version_before', 'surviving_derived', 'target_id', 'user_id']
+=== forget
+  writes: {('DELETE', 'arity_inventory'): 1, ('DELETE', 'confirmations'): 1, ('DELETE', 'consolidation_ops'): 1, ('DELETE', 'contribution_ledger'): 1, ('DELETE', 'edge_embedding'): 1, ('DELETE', 'edge_event'): 1, ('DELETE', 'edges'): 1, ('DELETE', 'episode_event'): 1, ('DELETE', 'episodes'): 1, ('DELETE', 'migration_outcome'): 1, ('DELETE', 'migration_run'): 1, ('DELETE', 'policy_receipt'): 1, ('DELETE', 'redactions'): 1, ('DELETE', 'refusal_inventory'): 1, ('DELETE', 'replies'): 1, ('DELETE', 'request_registry'): 1, ('DELETE', 'source_revocations'): 1, ('DELETE', 'supersession_operations'): 1, ('DELETE', 'supersession_refusals'): 1, ('DELETE', 'wiki'): 1, ('DELETE', 'write_counter'): 1}
+  returns: ['confirmations', 'edges', 'episodes', 'replies']
+=== outside the store (read from src/veracium/__init__.py at 78a20f4a: Memory's own calls, not seen by an SQL trace)
+  correct: self._record("feedback", {"disputed": 0, "confirmed": 0, "corrected": 1}, user_id)
+  dispute: self._record("feedback", {"disputed": 1, "confirmed": 0}, user_id)
+  confirm: self._record("feedback", {"disputed": 0, "confirmed": 1}, user_id)
+  redact:  self._record("redact", {"kind": ..., "fields": len(fields_cleared)}, user_id)
+  forget:  the usage accumulator popped; self._record("forget", {"edges": ..., "episodes": ...}, user_id)
+=== method: one store connection (SqliteStore._conn; the only sqlite3.Connection attribute) traced with
+  set_trace_callback during each call only; the other sqlite3.connect sites are migration/schema tooling the verbs do not
+  run. Seed: two direct user facts remembered with source_id="src-a"; each verb on a fresh store.

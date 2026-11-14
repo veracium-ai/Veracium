@@ -1,10 +1,11 @@
 # Feature spec: the agent-facing trust surface
 
 Spec-Status: accepted
+Folds: 0031/trust-tools-direct
 
 | | |
 |---|---|
-| **Version** | **v22.1 — 2026-11-13, ADOPTED on the owner's word, first-hand in the dev session: "Adopt v18.7 and v22.1 (Recommended)" (research `ca15f189`, sha256 `3185cbb8…`, byte copy but this lead): what the server reports about itself (§4a-ii): `serverInfo.version` is veracium's, and a start failure carries its own remedy, never a key hint it did not earn.** Respun 2026-11-13 on dev's stage-1 read: V-SERVERINFO checks the handshake, never an SDK attribute, with the version unset as its RED; V-START-FAILURE's RED is the schema refusal. Two items 0054 found in the image and kept out of its own path, since `src/veracium/mcp_server.py` is guarded (0054 §10 N1 and N4); the owner, first-hand to dev: they ship with the C3-01 fix in the next release. No trust class, capability, tool schema or classifier changes; the frozen invariant surface is untouched. Two invariants are added to §6 and one claim to §8. For the owner: the review path (0003 v18.7's §10 Q7 asks it for both). **Prior:** **v22** — **ACCEPTED (the round-16 verdict, on the reseal; the arc's terminal cell): "Final disposition: 0031 v21 is accepted." Sixteen rounds.** **THE FROZEN INVARIANT SURFACE — the reviewer's words verbatim, the contract's terminal statement:** *"both attribute-access syntaxes use the same classifier; protected and machinery-bearing modules remain governed by conservative rules; ordinary imported modules form a separate permitted category; receivers whose runtime type cannot be established are explicitly outside the completeness claim; non-literal attribute names remain conservatively refused; all source accesses belong to exactly one measured class; the measured partition is bound mechanically to the specification."* Round-15 credited closed in ALL SEVEN points, including *"the declared-uncertainty table remains as a hygiene inventory, not as a security classification mechanism"* and *"the project-wide partition is checked by exact equality rather than a loose threshold."* The narrowing judged in their words: *"The narrowed claim is honest. A single-file static census cannot reliably determine the runtime type of every receiver. Measuring and naming the excluded surface is preferable to implying broader coverage."* The discarded first seal *"adequately documented and does not affect the reviewed package"*; the partition *"4,906 accesses, exactly accounted for."* **THE GOVERNING RULE FORWARD, verbatim:** *"Further discoveries inside the expressly excluded object-dataflow category should be treated as implementation considerations unless they invalidate the stated boundary. Changes to the five-class partition or the completeness scope would reopen design review."* ACCEPTED PACKAGE IDENTITY: `1aabb39e517ceef15f0bbaa8f0617aab2ae321098d8ec6c3619ffe5f955eebd3` @ `c0affa03fd1d5371256816fd688d0c7a428b0fbe`, CI 33826218063 (suite 2,558/9; 0031 matrix 178; corpus 38; the verdict's own verification block matching the seal receipts line for line). **THE ARC, SIXTEEN ROUNDS:** a connection-acquisition census that began by matching a module's NAME ended as ONE CLASSIFIER over every attribute access in both syntaxes plus an honest, MEASURED boundary around what single-file static analysis cannot see. Sixteen rungs, each an evasion the reviewer found converted into a positive-surface rule with both-directions probes; attack point #3 taken three consecutive rounds and answered the third time by NARROWING rather than closure — the round-9 honest-limit precondition satisfied by the claim shrinking to the truth, on the verdict's own invitation; FIVE crossed-probes convergences, the seats red-teaming the same angles blind and reaching identical verdicts; the seats catching each other's carriers throughout, the arc's LAST catch being research refusing the first round-16 seal against its own fold's defects — the process's instruments turned on their own authors to the end. The ladder's lesson, stated once: the NAME came off the receiver (round 13), then off the ATTRIBUTE (round 14), then the SYNTAX came off the RULE (round 15) — what remains is provenance, consumption, and a boundary that tells the truth. | **v21** — the round-15 external fold (RETURN, ONE finding — THE FIFTEENTH RUNG, attack point #3 taken for the THIRD consecutive round; round-14 credited closed in ALL SEVEN points, the consumption invariant "reasonable for its listed entries"). **"The dotted-access boundary is syntactic rather than enforceable"** — both forms perform receiver-dependent attribute resolution; Python enforces no distinction; the declared-uncertainty framing "reflects authoring style, not a property the census can establish" and was "especially inconsistent with the Round 14 finding." **Rounds 13–14 took the name off the RECEIVER and off the ATTRIBUTE; round 15 takes the SYNTAX off the RULE — what remains is ONE classifier and an honest boundary around what static analysis of one file cannot see.** Dev MEASURED FIRST: 4,885 dotted accesses in src (top roots self/e/r/edge/ep/cfg/store) — a per-site dotted table would be hygiene theatre — so the closure is the verdict's options (b)+(d) TOGETHER: ONE shared classifier (`_classify_attribute`) deciding BOTH forms over FIVE classes (refused / module-protected / module-machinery / module-plain / DATAFLOW); the round-14 declared-uncertainty sentence WITHDRAWN in place and replaced; the ONE mechanically-checked asymmetry (a getattr name can be non-literal, inexpressible as dots — refuses, round 13) asserted by a permanent test to be the ONLY one; the dunder rule unified as FRAME_ATTRS MEMBERSHIP never shape — dev's first cut refused every dunder by shape and the src sweep exposed 96 dotted data-dunders (`__name__` ×69), so FRAME_ATTRS gains exactly the three LOOKUP dunders (`__getattribute__`, `__getattr__`, `__import__`); GETATTR_ALLOWANCES RETAINED AS INVENTORY not classification — untabled literal getattr no longer a census refusal (that refusal WAS the syntactic asymmetry; its dotted twin never refused) but fails the hygiene sweep with "inventory it"; the completeness claim NARROWED in the verdict's words — object dataflow outside the census for BOTH forms, never claiming dotted syntax proves a known type, the excluded surface MEASURED FROM THE SEALED CLASSIFIER (dotted dataflow 4,583 with the 96 data-dunders inside it — the first-seal figure 4,487 was the pre-membership-rule measurement, caught stale by research's count re-run from the sealed bytes; dotted module-plain 248; machinery 19; protected 35; getattr dataflow 21 = the inventory's exact total; ZERO refused in either form; every access in exactly one class) — **the round-9 honest-limit precondition satisfied by NARROWING rather than closure, the door the verdict itself opened.** Paired tests over ten (receiver, attr) pairs through both forms across all five classes incl. a hostile Call receiver and a rebound module; live plant (`getattr(host, "connection")` + `host.connection`) census-CLEAN by the one rule and CAUGHT by the hygiene sweep — the gate doing exactly its job; sha-verified restore. 177 DDL cells from 165. Fifteen rungs; the invitation stands. | **v20** — the round-14 external fold (RETURN, ONE finding — THE FOURTEENTH RUNG, attack point #3 taken exactly AGAIN; round-13 credited closed in all six points). **"A literal attribute name does not establish a safe receiver"** — the name is proven, not what the receiver returns; the reviewer's differential executed (same literal name: data on a plain receiver, a FACILITY on one with `__getattr__`). **Round 13 took the name off the RECEIVER; round 14 takes it off the ATTRIBUTE — what remains is provenance and consumption, TABLED: the positive surface reaching the last place a name still did the work.** Dev enumerated the surface first (21 literal-getattr sites, ALL duck-typing probes with defaults — the declared-uncertainty form, which IS the reviewer's point), built `GETATTR_ALLOWANCES` with the consumption invariant and the both-directions sweep. **Research's red-team found the table's guard gap LIVE — the seats crossing a FIFTH time:** `llm = sys` by plain assignment walked a tabled receiver name into the machinery (the registry via one construction; the table's own allowance via the other) — sys alone survived Assign, name-keyed rules with a name-set stopping at import forms. **Closed with BOTH seats' shapes, defence in depth:** research's round-11 bare-name extension (escaping analysis IS the registry escaping analysis) killing both at the assignment line; dev's module-valued-receiver rule catching `llm = json` too, where an unprotected module falsifies the row's CATEGORY claim. Verified two-seat from the closed census, clean probes intact. Granularity ruled per (file, receiver, attr, count); the dotted-access boundary stated and consistent with the completeness claim (the round-9 precondition holds). 165 DDL cells from 153. Fourteen rungs; the invitation stands. | **v19** — the round-13 external fold (RETURN, ONE finding — THE THIRTEENTH RUNG, attack point #3 taken exactly; round-12 credited closed in ALL EIGHT points; the scope boundary "remains sufficiently clear"). **"The `self` exemption assumes a runtime type that Python does not guarantee"** — self is an ordinary parameter name, an unbound method invoked with a module receiver reaches the loader through the blessed call, and a name-based exemption "relies on a calling convention rather than a checked property." **THE EXEMPTION IS DELETED, NOT REPLACED** — the strongest of the reviewer's four options, available because the sole legitimate src site rewrote to the literal idiom its own function already used two lines above (one product line, zero behaviour change, 0018 orchestrator 29/29 unchanged): refuse non-literal getattr regardless of receiver, nothing left to carve out. `cls` adjudicated SEPARATELY as required and refused for the same reason; dev's own sibling probe closed `vars(x)` before it was asked. **The rung's lesson, now sorting the whole exemption table: the round-12 by-what-they-cannot-be reasons came in two kinds — DOCUMENTED-SEMANTICS reasons and ONE naming-convention reason — and only the convention was ever a claim about a runtime the census cannot see.** The reviewer's principle is contract prose: exemptions by enforceable receiver property, never by conventional name. **The sibling audit — BOTH SEATS IN PARALLEL AGAIN, same four verdicts, complementary sharpenings (the fourth crossed-probes convergence):** each surviving peer probed with an EXECUTABLE construction the way the reviewer probed self: `__mro__` egress dies at refused attributes in every direction tried; `dir()` yields name-strings whose only use path refuses; `__traceback__`'s namespace egress is tb_frame ALONE (enumerated, not assumed) and chains die there; and `__closure__` SURVIVES WITH ITS REASON UPGRADED — a cell demonstrably CAN hold a module, so "cells hold arbitrary objects" was weak as stated; the real reason is that a cell is a DATAFLOW CARRIER, not an AMBIENT FACILITY — it reaches only what an enclosing scope already named, discovery having happened upstream under its own rules, which is the adjudicated static-claim boundary. The census's subject, stated once: ambient-facility discovery, never object dataflow. 153 DDL cells from 145 (the four siblings pinned with their executed halves); the verdict's truncated Verification block transcribed as received and noted in the banking header. Thirteen rungs; the invitation stands. | **v18** — the round-12 external fold (RETURN, ONE finding — THE TWELFTH RUNG; round-11 credited closed in full, **and the three scope qualifiers RULED "necessary and adequately disclosed" — attack point #3 resolved in our favour under the reviewer's own honest-limit precondition**). **"Namespace mappings are absent from the access-form inventory": the current namespace exposes `__builtins__`, so the route reached the capability unclassified — the room the doors open into is itself a door.** Rung 11 counted the doors to the module; rung 12 found the inventory's subject was never modules — it was DISCOVERY, and the table is renamed `CAPABILITY_DISCOVERY_FORMS` per the verdict's own reframing. Dev enumerated the class SIXTEEN evaders deep (frames, tracebacks, `__globals__`, `__main__`, loaders, `__subclasses__`, the string-annotation forms), surveyed src for the WHOLE class first, and shaped two exemptions from what src legitimately does (`tb_frame`-not-`__traceback__`; `self`/`cls` by what they cannot be). Thirteen forms — the two closure rules landed as their OWN rows (captured-primitive, subsuming round-11's uncalled-import_module rule — one rule, one carrier; accessor-constructors) — the mechanical gate BOTH directions over all thirteen; machinery sixteen wide; 145 DDL cells from 99. **THE CROSSED-PROBES CONVERGENCE, worth the record: dev flagged four residual angles for research's pass, then probed them immediately rather than leaving their own claim open; research's independent pass ran the same angles in parallel — both seats found the SAME two live evasions (`attrgetter('__globals__')` — getattr by string, outside every table; `partial(getattr, sys)` — the primitive curried past its checks) and independently proposed the SAME closure shapes.** Closed as: accessor-constructors take the getattr name rules under any alias; **a discovery primitive referenced without being called refuses as a CAPTURED capability — a refused name does not become permitted by becoming a value** (the captured-capability lesson's third appearance); `__mro__`/`dir()` ruled inert by-what-they-cannot-do with clean probes. Research re-verified the closure with its exact live probes: both refuse, all clean probes stay clean, the bare-captured-getattr generalization included. Three dev edit slips died pre-carrier — the same class twice: scripted inserts anchored at INTERIOR lines of blocks swallowed the deeper-indented lines that followed (each dying at the first probe), plus the guard refusing a stale anchor; the recorded lesson: anchor scripted inserts at block BOUNDARIES, never interior lines. Twelve rungs; the invitation stands. | **v17** — the round-11 external fold (RETURN, ONE finding — THE ELEVENTH RUNG; round-10 credited closed in full, every mechanism "behaved as intended"). **"A standard alternate access form can obtain the same database capability without being classified" — the census guarded the front door while the interpreter kept `sys.modules`, a registry of every module it has ever imported.** The reviewer named the class, not their form; dev ENUMERATED the class — six evading forms reproduced census-{} — and closed it as a structured NINE-form `MODULE_ACCESS_FORMS` inventory, mechanically checked (34 probes at close, 99 DDL cells from 61; an inventory row with no probe FAILS, a form with no refusing probe FAILS). **The rung's lesson: rungs 4–10 hardened WHAT counts as the capability; rung 11 hardened HOW MANY DOORS lead to it.** The completeness claim RESCOPED as the verdict framed — extended AND narrowed: complete over the enumeration, no wider, everything outside rejected conservatively. **The builtins door — flagged by dev for research's red-team, then closed by dev's OWN immediate probe rather than left as an open claim** (all four forms evaded; `builtins` joins the machinery row as "carries `__import__` under its own roof"; bare `__builtins__` refuses with no import statement at all); research's independent pass then confirmed all refusals AND measured the closure's cost — `builtins.len` false-fires under the wholesale rule, zero src occurrences, NAMED as deliberate. **Research's two boundary rulings:** scope = `src/veracium` explicitly (the corpus polices itself via its import-origin guard); and the claim is IN-PROCESS and static — process-spawn and raw-file access are outside any module-access inventory by construction, a stated boundary consistent with the claim per the round-9 precondition. Dev's staging note counted: the restore script's assert-before-write guard REFUSED a wrong-line-count removal and left the plant intact rather than corrupting the file — the never-checkout rule's guard doing its job. Eleven rungs; the invitation stands. | **v16** — the round-10 external fold (RETURN, ONE finding — THE TENTH RUNG; round-9's battery credited closed, all 59 cells confirmed). **"The string-annotation check is gated by SPELLING, not acquisition CAPABILITY":** the recursion was entered on the contiguous substring "sqlite3", so `_sqlite3` — the C module — acquired invisibly; the reviewer reproduced four variants including a from-import alias called inside a string annotation (a live connection answering `(1,)`) and a COMPOSED module name (`'sql'+'ite3'`) in a deferred expression. **The pre-send diagnosis, named for the ledger: the substring trigger WAS the check's input-grammar constraint and we did not treat it as one — round-9 covered the grammar of parsed strings but not the grammar of ENTRY into parsing. The class: a check gated on FORM (spelling), not FACT (capability/provenance) — the position-vs-capability rule's third appearance, this time at the recursion's own door.** Closure: entry UNCONDITIONAL (every string annotation parses; unparseable/assembled refuse with NO spelling precondition — the widened floor claimed in the contract); classification BY PROVENANCE (`PROTECTED_MODULES` structured table, the reviewer's feedback taken — `_sqlite3` protected with NO allowed surface; from-import aliases tracked so renaming cannot launder; computed names refuse as not-statically-excludable); the six-item permanent battery + round-9's exact regression + four positive controls (60 cells); live plant of the alias variant refused on BOTH new rules with sha-verified restore. Ten rungs; the invitation stands, and the fail-closed floor now has no door that opens by spelling. **RESPIN NOTE (pre-commit, at dev's question):** the positive-surface clause now DEFINES annotation position by capability (every lazily-evaluated type-expression position) with today's inventory named — TypeAlias values and type-parameter bounds/defaults included — because the census had come to enforce positions the contract did not name, and implementation-leading-contract is the lag direction the round-6 parenthood sentence exists to prevent; the definition-by-capability phrasing is the round's own position-vs-capability rule applied to the contract sentence itself. | **v15** — the round-9 external fold (RETURN, ONE finding; round-8's closure credited in full). **THE ROUND'S SHAPE IS TWO-SIDED, and both sides were OFFERED QUESTIONS now answered as stated facts:** attack point #2 FOUND THE NINTH RUNG — a STRING annotation defers the constructor past the census (`def f(value: "sqlite3.Connection(':memory:')")`: census {}, and the reviewer evaluated it via `get_type_hints` into a LIVE connection that answered SELECT 1); attack point #3 RESOLVED IN OUR FAVOR — the binding census's same-module re-import exemption is IDENTITY-based, not positional, no blocking defect, its justification now a reviewer-stated fact, which is exactly what offering it bought. **The reviewer's sharpest sentence, kept because it refused our own fallback:** merely documenting that static analysis ends at strings "would introduce an admitted uncounted acquisition path while the design claims complete connection-path inventory" — the honest-boundary option REFUSED as inconsistent with our own invariant, correctly; honesty about a limit is not license to keep the limit when the design's claim requires closing it. **The closure: the positive surface recurses into parsed string annotations** (same rules one level down: Connection outside any Call, connect never a type, unknown attributes refused, bare module refused), **and FAILS CLOSED on what cannot be parsed or is dynamically assembled** with any sqlite3-mentioning fragment; strings never mentioning sqlite3 untouched (zero such annotations in src, verified — no false-fire surface). Ten-shape battery permanent, the deferred constructor verbatim first; matrix 58→59; live plant fails the real inventory with the round-9 refusal text. Nine rungs; the invitation stands. | **v14** — the round-8 external fold (RETURN, ONE finding; round-7's positive surface credited closed in full; no new artifact asked — just the mutant in the matrix). **THE EIGHTH RUNG EXISTS, AND THE TERMINAL-RUNG CLAIM WAS WRONG AS STATED — said plainly because that is the bet working exactly as designed:** attack point #4 invited the reviewer to find the eighth rung or accept the closure, and they FOUND it, exactly where invited. The annotation exemption tested syntactic LOCATION, not type-reference STRUCTURE — annotations are ordinary expressions evaluated at def time, and `def f(value: sqlite3.Connection(":memory:")):` opened a REAL connection stored in `__annotations__` while the census returned {} (reproduced verbatim first). **The closure AMENDS the surface rather than defending the claim,** in the reviewer's own safer formulation: opening CALLS are processed BEFORE any exemption (a Connection that is a Call's func refuses regardless of ancestry), and the exemption admits only NON-EXECUTING type-reference structure — bare, subscript, union — with the next mutant over (Connection passed as an argument to an evaluating callee inside an annotation) refused prospectively. The live plant of the reviewer's exact construction fails the real inventory test with the refusal naming the lesson: **"annotation ancestry exempts nothing that CALLS."** Permanent battery covers their full list plus the prospective mutant; matrix 57→58; the positive-surface paragraph sharpened so the contract states what the census enforces and no implementation can lag it. Eight rungs now; whether a ninth exists is the reviewer's standing invitation, renewed rather than retired. | **v13** — the round-7 external fold (RETURN, ONE finding, dev's, closed; round-6's parenthood repair CREDITED CLOSED in full). **THE FINDING SAT ONE LEVEL ABOVE EVERY PRIOR RUNG: the census equated ACQUISITION with one function's SPELLING.** The reviewer executed two working bypasses — `sqlite3.Connection(path)`, which round-6's own "non-connect attributes are harmless" rule DELIBERATELY waved through (a rule's blind half, opened by its author's reviewer), and `sqlite3.dbapi2.connect(path)`, the submodule re-export. **THE CLOSURE IS THE LADDER'S TERMINAL SHAPE — the surface defined POSITIVELY:** one blessed opener spelling (direct call only); `Connection` annotation-only (the constructor IS an opener — src's ten uses verified all-annotation before designing); allowlist-or-refuse for every other attribute (unknown names never waved through again); submodules refused as a second name for the same surface, with the chained spelling refusing twice (defense in depth); and the RUNTIME MATRIX deriving every opener spelling from the interpreter BY IDENTITY, so a future stdlib re-export fails loudly. Seven rungs: name → alias → literal-dynamic → non-literal-dynamic → identity → parenthood → **positive surface** — the ladder ends where enumeration of the forbidden becomes definition of the permitted, which is where every prior rung was always pointing. The census promoted to `specs/evidence/0031/connection_census.py` (the binding_census move mirrored); both live plants fail the real inventory test with refusals named; matrix at 57. The spec's sweep paragraph now states the positive surface so no future census can lag the contract by equating acquisition with a spelling. | **v12** — the round-6 external fold (RETURN, ONE finding, dev's, fixed before the fold; everything else CREDITED CLOSED — clause 7's grammar with the COALESCE hole named as closed, the original-mutant battery, the text domain's honest Phase-B split; sidecar, nested manifests, candidate==adopted, 54 cells, corpus import-origin all reviewer-verified). **THE FINDING — the census's SIXTH rung:** it recognized `sqlite3.connect` only as the CALLED expression, so `opener = sqlite3.connect; opener(path)` passed the inventory test (the reviewer's exact plant, reproduced before anything was touched). Same completeness class as round 5, ordinary spelling. **THE FIX — conservative by PARENTHOOD** (a parent map over the AST): a `sqlite3.connect` attribute that is not itself a Call's func refuses; a bare `sqlite3` name that is not an attribute-access value refuses — **the NEXT spelling over, refused before anyone plants it: the re-run-the-original-mutant rule applied PROSPECTIVELY for the first time**; legitimate non-connect attributes stay legal by control. All three closures executed (their plant fails the real test with the refusal named; restore passes; 54→55 cells with the permanent battery). The spec's sweep paragraph gains the parenthood sentence — the census lagged the spec, not the spec the census, and the contract now states what the sixth rung enforces so the next implementation cannot lag the same way. | **v11** — the round-5 external fold (RETURN, three findings, all dev's — reproduced by execution, designs pre-validated; credits: outer sha + nested manifest verified, candidate==adopted a FOURTH consecutive time, 46 cells, the corpus with import-origin confirmed). **F1 — the gate was six true negatives whose conjunction was NOT TOTALITY:** accept+refuse on an accepted proposal fired none of them. Clause 7 audits the complete state/action GRAMMAR — a proposal's resolution multiset is exactly what its state permits — one aggregate query, the gate now SEVEN selects with the extraction contract updated. **And the confession that leads the round, kept in the fenced comment where the reviewer will read it: the clause's first draft was NULL-BLIND — the LEFT JOIN's NULLs made the WHERE three-valued and a refused-with-zero-rows proposal passed silently. The NULL trap, inside the audit that exists because of round-2's NULL trap; caught at pre-validation, COALESCEd throughout.** **F2 — "hardened by its own first mutant" was HALF-TRUE:** the mutant taught the sweep to refuse ALIASES, and nobody re-planted the ORIGINAL `__import__("sqlite3")` spelling against the strengthened check — it still passed silently. The sweep now prohibits dynamic loading of sqlite3 (literal or unresolvable first argument; the codebase's only dynamic imports are literal, so the constraint is free), with the original mutant as a PERMANENT negative — "hardened" carried by a test, not a README sentence. New runbook rule: **AFTER STRENGTHENING A CHECK, RE-RUN THE ORIGINAL EVADING MUTANT.** **F3 — the preamble named the TYPE and not the DOMAIN, the type-vs-domain recursion one layer up:** `"\ud800"` passes `isinstance(str)` and escapes as `UnicodeEncodeError` from the driver instead of the promised typed refusal (executed, both seats). The text domain is DEFINED — str that encodes as valid UTF-8 — validated in the preamble before binding; ownership split honestly: mechanism cells provable today, preamble enforcement a marked Phase-B obligation, and DDL structurally cannot own it (a value that cannot bind never reaches a CHECK). | **v10** — the round-4 external fold (RETURN, six findings; credited: checksums, candidate==adopted confirmed by the reviewer a THIRD consecutive time, the 33 cells, the 38-corpus run, the Q2 and digest repairs). **F1 (dev design):** the payload is TYPED — a JSON object of exactly `object`/`note`/`effective_date`, duplicate-refusing decoder (0030's discipline on a WRITE surface), unknown keys REFUSED with the 0030-contrast stated (persisted-read tolerance ≠ incoming-argument tolerance), presence conditioned on `claim` INSIDE the payload; parse authority at BOTH sites (propose under the writer lock; apply re-parses because persisted data rots); the constructions name their exact minting; `acknowledged_effective_date` joins the trio (REQUIRED iff change, REFUSED for dispute AND error — approving a backdated change without seeing the date was the residual half-approval); DDL gains `json_valid` with its honest limit stated. **F2 (dev design, pre-validated by execution):** the round-3 ownership table cited a §6a cross-table gate that EXISTED NOWHERE — the phantom-citation class in our own spec, the promising sentence our own. **V-RESOLUTION-LEDGER is now fenced SQL in §6a**, extract-at-test-time so the audit cannot drift from its promise; seven violation histories each fire exactly their clause; append-only-across-runs split PREVENTION (absence-by-API) / DETECTION (cross-run content-hash half, a Phase B acceptance obligation). **F3 (dev design):** THE AFFINITY RULE, PART TWO — COERCION, one trap further over again: affinity runs BEFORE every CHECK, so DDL predicates describe the STORED representation, never the caller's binding; `"7"` coerces in and passes typeof (executed both seats; STRICT changes nothing lossless — executed, not recalled; `True` binds as 1, so bool is excluded from int EXPLICITLY). The invariant SPLITS: DDL owns stored-representation domains (claims narrowed to non-coercible); the schedules own binding types via a pinned validation preamble. **F4 (dev design):** the FK obligation was UNDER-SCOPED — the constructor is not the only door. Connection-path INVENTORY (4 file-backed sites, 4 `:memory:` scratch) with the classifier CRITERION stated so the next site cannot be missed; the 0007 rider becomes a CENTRAL CONNECTION FACTORY (per-site pragmas are the one-carrier class as connection code); the sentinel's flip condition covers every inventoried path so partial enablement fails it; plus an inventory-completeness sweep, labeled as a sweep. **F5 (research):** the retired V-NO-RAISE umbrella was still LIVE at §2c-ii — the round-3 sweep hunted the PHRASE just fixed, not the SYMBOL being retired; a symbol retirement sweeps the symbol's name and classifies use-vs-mention. Zero uses remain; two mentions narrate the retirement. **F6 (research ruling):** the corpus claim is NARROWED, not bootstrapped — **source-contained, not execution-contained** — because vendoring platform-specific wheels (pydantic-core) makes "self-contained" true on the sealer's platform and silently false elsewhere: the same over-claim in better clothes. Receipt versions pinned; `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`; the claim stated identically in rerun.sh, the corpus README, and §6a. | **v9** — the round-3 external fold (RETURN, seven findings; credited: checksums, ASSERT-14's currency property confirmed independently AGAIN, the 24 cells, the one-carrier bridge). **THE ROUND'S SHAPE IS THE ONE-CARRIER CLASS, CAUGHT SHALLOW:** F1 = round-2's fix reached §2c and missed §2c-i + the matrix + the V-NO-RAISE invariant row (which contradicted V-OBLIGATIONS-SEPARATE two rows below it — one table, two rules); F2 = the turn-drop reached §4b-iii and §4e and missed the Q2 table row that MOTIVATED it; F4's residue = the verb-mapping table still said "the ordinary write path" after the constructions were pinned. All swept by grep-count this time, not by the next reviewer. **F1:** all residual descent-on-every-coordinate language removed; V-NO-RAISE REPLACED by four per-obligation invariants (V-DESCEND-DISCLOSURE, V-DESCEND-AUTHORITY, V-RESTRICT-SHAPING, V-FINGERPRINT-STABLE-OR-STALE — the last asserting NO ordering, because a digest has none). **F2:** Q2's row now names exactly what the resolver sees — stored content, kind, claim, proposer, unresolved `evidence_ref` — and nothing else. **F3 (dev design):** PROPOSE gains in-lock target existence/ownership validation and THE STORE-MINTED DIGEST — sha256 over the live canonical serialization read under the same writer lock; `target_state_digest` is never a tool argument, and stale-detection becomes sound by construction. **F4 (dev design):** `Store.apply_proposal` signature + input contract pinned (`acknowledged_*` required iff correction, refused for dispute); the THREE in-transaction constructions each name the plan machinery they ride; `'change'` requires the payload's effective date — a change without a date is refused, the error-vs-change distinction made operational. **F5 (dev design):** `applied_txn` EQUALITY written from one local variable in one commit (divergence unrepresentable, not audited-for); `seq` domain in DDL, allocation `MAX(seq)+1` under the writer lock, append-only by ABSENCE-BY-API with the owner named; the cross-table gate strengthened to exactly-one-accept + equality + gapless-monotone. **F6 (dev design):** THE TYPE-AFFINITY RULE, derived not enumerated — SQLite CHECKs on `length()`/`GLOB`/`BETWEEN` are BLOB-blind (`GLOB` on a BLOB is NULL; a 64-byte BLOB satisfies `length()=64`), `IN`-lists are safe by construction; every such predicate gains `typeof()`, every integer column gains typeof+domain. *The affinity trap is the NULL trap one type over* — we learned NULL-blindness for values in round 2 and not for types. FK evidence to be rewritten against the store's PINNED OPENING SEQUENCE (today's fact: `SqliteStore` reports `foreign_keys = 0`, which is WHY the cross-spec obligation on 0007's connection open exists). **F7:** normative digest citations are FULL SHA-256 values (an ellipsized digest is the location-index defect in digest form); the path is `corpus/` (the archive's name wins the two-carrier split); the corpus ships the `harness` package its drivers import, the exact source revisions the raw results identify, the pinned P3-6/P3-7 companion, and `corpus/rerun.sh` — one archive-local command reproducing the deterministic corpus. | **v8** — the round-2 external fold (RETURN, six findings). NOTE the reviewed artifact was the HELD first seal (`d0fce0a9…`, v6), dispatched before the hold cleared; no finding touches the P3-5 block, so all apply to v7 unchanged. **F1 — the four-coordinate "lattice" was OVERSTATED, and it was this author's over-generalisation:** v6 enumerated four CONSUMERS correctly and then asserted ONE monotone rule over all of them without asking whether each is ORDERED. `scope_fingerprint` is a sha256 equality digest (verified) — no top, no bottom, no direction — so "descend" there is not a false requirement but a MEANINGLESS one, which is worse because it cannot be tested. Replaced by FOUR SEPARATE OBLIGATIONS: descend-only on disclosure and on supersession authority; restrict-only on scope shaping; **preserve-or-invalidate** on the fingerprint. **F2 — the `direct` bridge was UNIMPLEMENTABLE against the shipped grammar.** `_resolve_context(direct(), <any value>)` raises `ValueError: pass EITHER context= OR the legacy derived_from=, not both — two declarations of one fact is a host bug` (reproduced independently). The refusal is right and the spec was wrong: v6 proposed on this surface exactly the two-carriers-for-one-fact it forbids everywhere else. Mapping PINNED — `direct`+absent → `direct()`; `direct`+supplied → `derived(X)`; `none` → the floor; never both. The restriction is honoured THROUGH the declaration, never beside it. **F3 — the identity boundary was asserted and unenforced:** `user_id` comes OFF the Phase A/B tool schemas (absence-by-schema, as for `proposer`), the exact `propose` signature is pinned, and Q2's display requirement is reconciled with §4e's dropped turn — the resolver sees stored content, kind, claim, proposer and an unresolved `evidence_ref`, never a turn that cannot be known. **F4/F5 co-designed with dev and code-verified:** `Memory.correct` commits its plan then writes its episode separately (two commits, uncomposable from outside), so `Store.apply_proposal` is pinned as the transaction-owning primitive, with an ADDITIVE in-transaction variant of `apply_supersession_plan` as its prerequisite; the DDL gains `resolver`, a foreign key with the `PRAGMA foreign_keys=ON` obligation (an unpragma'd FK is a comment wearing a constraint's clothes — the round-1 defect in a new costume), a hex digest CHECK, and an OWNERSHIP TABLE naming DDL vs schedule vs §6a gate for every invariant. **F6** the acceptance corpus ships in the package. | **v7** — ONE correction, no mechanism change, and the reason it needs a version at all is the point: v6's bytes were ADOPTED and sealed, then §6a's P3-5 disposition changed, so two different documents would otherwise both answer to "v6". **The correction:** v6 said the `capability=direct` variant is owed because after Phase A the relay floor would be "the only thing standing" and "nothing reports it". Both are WITHDRAWN — **P2-1** (host-side, `context=direct`, the same relay marker, expecting `use_only`) with **P2-2** as its marker-free control is the floor's standing guard; delete the floor and P2-1 fails. P3-5 loses its OWN discriminating power; the floor does not go untested. The variant is still owed, on the spec's own re-run reasoning: Phase A opens a NEW path to a mentionable baseline — the MCP surface — which P2-1 does not exercise. **Why it took a round trip:** the correction reached the README and never reached this file's adopted copy; two carriers of one fact, updated independently. Registered in `specs/withdrawn_phrases.py` so the phrasing cannot return unnoticed. | **v6** — round-1 external fold (RETURN, six blocking findings). **F1**: V-NO-RAISE was stated on the whole trust model and CHECKED on one coordinate; §2c now enumerates the product's four consumers and §2c-i replaces the six-row matrix with a LATTICE statement — under `none` the baseline is the bottom element of the sublattice these legs reach, so restrict-only is INERT there and meaningful exactly and only under `direct`. v5's "lateral" claim for `THIRD_PARTY`→`ASSISTANT` is RETRACTED (§4a): lateral on disclosure, a raise on authority. **F2**: `author` was a model-supplied argument DEFAULTING TO THE TOP OF THE LADDER, masked today by the derived_from floor and UNMASKED by Phase A — the author default IS the elevation. Ruled against all three of the reviewer's options and against dev's lean: `author` loses its default and takes the CAPABILITY's baseline, restrict-only from there; and `direct` is amended to attest the authorship axis it was already unlocking, on the new rule that **an attestation may be untrusted but must not be unknowable** (§3a). **F3** capability pinned to concrete carriers, absence-vs-invalid taken verbatim. **F4/F5/F6** folded per the joint split. | **v5** — one addition on the owner's S2 ruling (2026-08-31), no mechanism change: §5 gains the ORDERING PRECONDITION that Phase A must not ship before the `valid_from` predicate lands. Phase A is what makes that predicate necessary rather than desirable — today a not-yet-valid edge is assertable but only via a HOST-SIDE write with attested capture (an MCP write floors to USE_ONLY: harness S2 + T4-3), and `capability=direct` removes exactly that mitigation, converting a host-only anomaly into an agent-reachable over-assertion. Phase A remains independent of 0029 and Phase B; this is its ONE external precondition. | **v4** — one addition to §6a on dev's re-read: the Phase B REVERSAL CASES are recorded as a stated DEBT (clean undo / scoped-reversal reaching a second edge / intervening-state refusal), owed and pinned model-free before Phase B's first run, with the reason for deferring given — *pin before THE RUN* (0027 R3-6), never *pin before the design settles*. Converts an unpinned surface from a gap a reviewer finds into an obligation the spec states. No other change from v3. | **v3** — reversal fold, on dev's option-(b) ruling. New **§4c-iii**: an applied resolution must be reversible, and the inverse data is **0029's, not this spec's** — Phase B DEPENDS on the transaction-time carrier rather than duplicating pre-state capture (agreement-by-coincidence between two carriers of one fact is the standing hazard). Three constraints: undo is a FORWARD journaled transition following 0022's reinstate pattern (history never un-happens); SCOPED to the applying `txn`, never expressible as a bare "revive edge X"; and FAIL-CLOSED on intervening state, refusing with a diff rather than cascading. Adds V-UNDO-FORWARD / V-UNDO-SCOPED / V-UNDO-FAILCLOSED. **The dependency lands on Phase B ONLY — Phase A ships alone, unchanged.** 0031 becomes V-RECON's SECOND CONSUMER (belongs in the seam manifest's S1). Prompted by AreevAI/areev shipping "every apply stores its inverse" (competitive triage 2026-08-31). | **v2** — dev internal-review fold. **D-1** the capability composes with AUTHOR and never overrides it (author/relation/revocation rows added to §3), plus new **§3a** reconciling the capability→`EvidenceContext` bridge with 0011's explicit refusal to mint `direct()` by omission (`__init__.py:361`) — minting by DECLARATION is not minting by OMISSION, and the per-event→deployment widening is stated as the honest cost. **D-2** the proposal carrier PINNED at DDL level (new §4b-ii) with the schema-version ordering dependency on 0029 left deliberately unresolved, and the erasure gap closed (V-ERASE-PROPOSALS). **D-3** both carriers named: `mcp_max_open_proposals` (default 32, range 1–256, refuses rather than evicts) and `provenance_raises_discarded` (stripped operator counter). §1 additionally carries the LIVE Bedrock evidence for T4-3. | **v1** — first candidate. Folds two owner rulings taken 2026-08-31 on measured evidence: decision 1 (MCP provenance self-attestation → option **c**, host-attested capability) and decision 2 (trust verbs → `forget`/`correct`/`confirm` not agent-exposed; `dispute` proposal-form only). Both resolve to ONE principle — **the host attests, the model proposes** — which is why they are one spec with two separable phases. |
+| **Version** | **v23 — 2026-11-14: THE TRUST-TOOLS FOLD (amendment `0031/trust-tools-direct`, v0.14.1, research `8d10d779`, sha256 `423c6f87…`), on the owner's word, first-hand in the dev session: "Fold it into 0031 (Recommended)".** Its design was NOT ACCEPTED at external round 1 and ACCEPTED WITH AMENDMENTS at round 2 (2026-11-14), with the four amendments folded in its v0.14. Implementation and release acceptance are outstanding (§4f.10). Under `direct`, the four trust verbs become agent tools, with an id lookup, a per-fact forget and a two-step whole-user erase, over MCP and through the framework adapters. Folded as §4f, labelled by the amendment's own section numbers. Pointers are added at §1's table, the Spec-Requires list, §2c-ii, §3, §4b's proposability table, §4b-iii, §6's V-RESOLVE-HOST row and §8. Not folded: the amendment's open questions (its rulings are quoted in §4f.1) and its version history. The history appendix, the obligation matrix and the two seats' write censuses are in `specs/evidence/0031-trust-tools/`. Declared deltas from the amendment's bytes: its two research-tree paths are replaced by those tree paths, and §4f.1's heading stands in for its header. Its Amends: list names 0020, which is realized here: 0020's own text is unchanged. **Prior:** **v22.1 — 2026-11-13, ADOPTED on the owner's word, first-hand in the dev session: "Adopt v18.7 and v22.1 (Recommended)" (research `ca15f189`, sha256 `3185cbb8…`, byte copy but this lead): what the server reports about itself (§4a-ii): `serverInfo.version` is veracium's, and a start failure carries its own remedy, never a key hint it did not earn.** Respun 2026-11-13 on dev's stage-1 read: V-SERVERINFO checks the handshake, never an SDK attribute, with the version unset as its RED; V-START-FAILURE's RED is the schema refusal. Two items 0054 found in the image and kept out of its own path, since `src/veracium/mcp_server.py` is guarded (0054 §10 N1 and N4); the owner, first-hand to dev: they ship with the C3-01 fix in the next release. No trust class, capability, tool schema or classifier changes; the frozen invariant surface is untouched. Two invariants are added to §6 and one claim to §8. For the owner: the review path (0003 v18.7's §10 Q7 asks it for both). **Prior:** **v22** — **ACCEPTED (the round-16 verdict, on the reseal; the arc's terminal cell): "Final disposition: 0031 v21 is accepted." Sixteen rounds.** **THE FROZEN INVARIANT SURFACE — the reviewer's words verbatim, the contract's terminal statement:** *"both attribute-access syntaxes use the same classifier; protected and machinery-bearing modules remain governed by conservative rules; ordinary imported modules form a separate permitted category; receivers whose runtime type cannot be established are explicitly outside the completeness claim; non-literal attribute names remain conservatively refused; all source accesses belong to exactly one measured class; the measured partition is bound mechanically to the specification."* Round-15 credited closed in ALL SEVEN points, including *"the declared-uncertainty table remains as a hygiene inventory, not as a security classification mechanism"* and *"the project-wide partition is checked by exact equality rather than a loose threshold."* The narrowing judged in their words: *"The narrowed claim is honest. A single-file static census cannot reliably determine the runtime type of every receiver. Measuring and naming the excluded surface is preferable to implying broader coverage."* The discarded first seal *"adequately documented and does not affect the reviewed package"*; the partition *"4,906 accesses, exactly accounted for."* **THE GOVERNING RULE FORWARD, verbatim:** *"Further discoveries inside the expressly excluded object-dataflow category should be treated as implementation considerations unless they invalidate the stated boundary. Changes to the five-class partition or the completeness scope would reopen design review."* ACCEPTED PACKAGE IDENTITY: `1aabb39e517ceef15f0bbaa8f0617aab2ae321098d8ec6c3619ffe5f955eebd3` @ `c0affa03fd1d5371256816fd688d0c7a428b0fbe`, CI 33826218063 (suite 2,558/9; 0031 matrix 178; corpus 38; the verdict's own verification block matching the seal receipts line for line). **THE ARC, SIXTEEN ROUNDS:** a connection-acquisition census that began by matching a module's NAME ended as ONE CLASSIFIER over every attribute access in both syntaxes plus an honest, MEASURED boundary around what single-file static analysis cannot see. Sixteen rungs, each an evasion the reviewer found converted into a positive-surface rule with both-directions probes; attack point #3 taken three consecutive rounds and answered the third time by NARROWING rather than closure — the round-9 honest-limit precondition satisfied by the claim shrinking to the truth, on the verdict's own invitation; FIVE crossed-probes convergences, the seats red-teaming the same angles blind and reaching identical verdicts; the seats catching each other's carriers throughout, the arc's LAST catch being research refusing the first round-16 seal against its own fold's defects — the process's instruments turned on their own authors to the end. The ladder's lesson, stated once: the NAME came off the receiver (round 13), then off the ATTRIBUTE (round 14), then the SYNTAX came off the RULE (round 15) — what remains is provenance, consumption, and a boundary that tells the truth. | **v21** — the round-15 external fold (RETURN, ONE finding — THE FIFTEENTH RUNG, attack point #3 taken for the THIRD consecutive round; round-14 credited closed in ALL SEVEN points, the consumption invariant "reasonable for its listed entries"). **"The dotted-access boundary is syntactic rather than enforceable"** — both forms perform receiver-dependent attribute resolution; Python enforces no distinction; the declared-uncertainty framing "reflects authoring style, not a property the census can establish" and was "especially inconsistent with the Round 14 finding." **Rounds 13–14 took the name off the RECEIVER and off the ATTRIBUTE; round 15 takes the SYNTAX off the RULE — what remains is ONE classifier and an honest boundary around what static analysis of one file cannot see.** Dev MEASURED FIRST: 4,885 dotted accesses in src (top roots self/e/r/edge/ep/cfg/store) — a per-site dotted table would be hygiene theatre — so the closure is the verdict's options (b)+(d) TOGETHER: ONE shared classifier (`_classify_attribute`) deciding BOTH forms over FIVE classes (refused / module-protected / module-machinery / module-plain / DATAFLOW); the round-14 declared-uncertainty sentence WITHDRAWN in place and replaced; the ONE mechanically-checked asymmetry (a getattr name can be non-literal, inexpressible as dots — refuses, round 13) asserted by a permanent test to be the ONLY one; the dunder rule unified as FRAME_ATTRS MEMBERSHIP never shape — dev's first cut refused every dunder by shape and the src sweep exposed 96 dotted data-dunders (`__name__` ×69), so FRAME_ATTRS gains exactly the three LOOKUP dunders (`__getattribute__`, `__getattr__`, `__import__`); GETATTR_ALLOWANCES RETAINED AS INVENTORY not classification — untabled literal getattr no longer a census refusal (that refusal WAS the syntactic asymmetry; its dotted twin never refused) but fails the hygiene sweep with "inventory it"; the completeness claim NARROWED in the verdict's words — object dataflow outside the census for BOTH forms, never claiming dotted syntax proves a known type, the excluded surface MEASURED FROM THE SEALED CLASSIFIER (dotted dataflow 4,583 with the 96 data-dunders inside it — the first-seal figure 4,487 was the pre-membership-rule measurement, caught stale by research's count re-run from the sealed bytes; dotted module-plain 248; machinery 19; protected 35; getattr dataflow 21 = the inventory's exact total; ZERO refused in either form; every access in exactly one class) — **the round-9 honest-limit precondition satisfied by NARROWING rather than closure, the door the verdict itself opened.** Paired tests over ten (receiver, attr) pairs through both forms across all five classes incl. a hostile Call receiver and a rebound module; live plant (`getattr(host, "connection")` + `host.connection`) census-CLEAN by the one rule and CAUGHT by the hygiene sweep — the gate doing exactly its job; sha-verified restore. 177 DDL cells from 165. Fifteen rungs; the invitation stands. | **v20** — the round-14 external fold (RETURN, ONE finding — THE FOURTEENTH RUNG, attack point #3 taken exactly AGAIN; round-13 credited closed in all six points). **"A literal attribute name does not establish a safe receiver"** — the name is proven, not what the receiver returns; the reviewer's differential executed (same literal name: data on a plain receiver, a FACILITY on one with `__getattr__`). **Round 13 took the name off the RECEIVER; round 14 takes it off the ATTRIBUTE — what remains is provenance and consumption, TABLED: the positive surface reaching the last place a name still did the work.** Dev enumerated the surface first (21 literal-getattr sites, ALL duck-typing probes with defaults — the declared-uncertainty form, which IS the reviewer's point), built `GETATTR_ALLOWANCES` with the consumption invariant and the both-directions sweep. **Research's red-team found the table's guard gap LIVE — the seats crossing a FIFTH time:** `llm = sys` by plain assignment walked a tabled receiver name into the machinery (the registry via one construction; the table's own allowance via the other) — sys alone survived Assign, name-keyed rules with a name-set stopping at import forms. **Closed with BOTH seats' shapes, defence in depth:** research's round-11 bare-name extension (escaping analysis IS the registry escaping analysis) killing both at the assignment line; dev's module-valued-receiver rule catching `llm = json` too, where an unprotected module falsifies the row's CATEGORY claim. Verified two-seat from the closed census, clean probes intact. Granularity ruled per (file, receiver, attr, count); the dotted-access boundary stated and consistent with the completeness claim (the round-9 precondition holds). 165 DDL cells from 153. Fourteen rungs; the invitation stands. | **v19** — the round-13 external fold (RETURN, ONE finding — THE THIRTEENTH RUNG, attack point #3 taken exactly; round-12 credited closed in ALL EIGHT points; the scope boundary "remains sufficiently clear"). **"The `self` exemption assumes a runtime type that Python does not guarantee"** — self is an ordinary parameter name, an unbound method invoked with a module receiver reaches the loader through the blessed call, and a name-based exemption "relies on a calling convention rather than a checked property." **THE EXEMPTION IS DELETED, NOT REPLACED** — the strongest of the reviewer's four options, available because the sole legitimate src site rewrote to the literal idiom its own function already used two lines above (one product line, zero behaviour change, 0018 orchestrator 29/29 unchanged): refuse non-literal getattr regardless of receiver, nothing left to carve out. `cls` adjudicated SEPARATELY as required and refused for the same reason; dev's own sibling probe closed `vars(x)` before it was asked. **The rung's lesson, now sorting the whole exemption table: the round-12 by-what-they-cannot-be reasons came in two kinds — DOCUMENTED-SEMANTICS reasons and ONE naming-convention reason — and only the convention was ever a claim about a runtime the census cannot see.** The reviewer's principle is contract prose: exemptions by enforceable receiver property, never by conventional name. **The sibling audit — BOTH SEATS IN PARALLEL AGAIN, same four verdicts, complementary sharpenings (the fourth crossed-probes convergence):** each surviving peer probed with an EXECUTABLE construction the way the reviewer probed self: `__mro__` egress dies at refused attributes in every direction tried; `dir()` yields name-strings whose only use path refuses; `__traceback__`'s namespace egress is tb_frame ALONE (enumerated, not assumed) and chains die there; and `__closure__` SURVIVES WITH ITS REASON UPGRADED — a cell demonstrably CAN hold a module, so "cells hold arbitrary objects" was weak as stated; the real reason is that a cell is a DATAFLOW CARRIER, not an AMBIENT FACILITY — it reaches only what an enclosing scope already named, discovery having happened upstream under its own rules, which is the adjudicated static-claim boundary. The census's subject, stated once: ambient-facility discovery, never object dataflow. 153 DDL cells from 145 (the four siblings pinned with their executed halves); the verdict's truncated Verification block transcribed as received and noted in the banking header. Thirteen rungs; the invitation stands. | **v18** — the round-12 external fold (RETURN, ONE finding — THE TWELFTH RUNG; round-11 credited closed in full, **and the three scope qualifiers RULED "necessary and adequately disclosed" — attack point #3 resolved in our favour under the reviewer's own honest-limit precondition**). **"Namespace mappings are absent from the access-form inventory": the current namespace exposes `__builtins__`, so the route reached the capability unclassified — the room the doors open into is itself a door.** Rung 11 counted the doors to the module; rung 12 found the inventory's subject was never modules — it was DISCOVERY, and the table is renamed `CAPABILITY_DISCOVERY_FORMS` per the verdict's own reframing. Dev enumerated the class SIXTEEN evaders deep (frames, tracebacks, `__globals__`, `__main__`, loaders, `__subclasses__`, the string-annotation forms), surveyed src for the WHOLE class first, and shaped two exemptions from what src legitimately does (`tb_frame`-not-`__traceback__`; `self`/`cls` by what they cannot be). Thirteen forms — the two closure rules landed as their OWN rows (captured-primitive, subsuming round-11's uncalled-import_module rule — one rule, one carrier; accessor-constructors) — the mechanical gate BOTH directions over all thirteen; machinery sixteen wide; 145 DDL cells from 99. **THE CROSSED-PROBES CONVERGENCE, worth the record: dev flagged four residual angles for research's pass, then probed them immediately rather than leaving their own claim open; research's independent pass ran the same angles in parallel — both seats found the SAME two live evasions (`attrgetter('__globals__')` — getattr by string, outside every table; `partial(getattr, sys)` — the primitive curried past its checks) and independently proposed the SAME closure shapes.** Closed as: accessor-constructors take the getattr name rules under any alias; **a discovery primitive referenced without being called refuses as a CAPTURED capability — a refused name does not become permitted by becoming a value** (the captured-capability lesson's third appearance); `__mro__`/`dir()` ruled inert by-what-they-cannot-do with clean probes. Research re-verified the closure with its exact live probes: both refuse, all clean probes stay clean, the bare-captured-getattr generalization included. Three dev edit slips died pre-carrier — the same class twice: scripted inserts anchored at INTERIOR lines of blocks swallowed the deeper-indented lines that followed (each dying at the first probe), plus the guard refusing a stale anchor; the recorded lesson: anchor scripted inserts at block BOUNDARIES, never interior lines. Twelve rungs; the invitation stands. | **v17** — the round-11 external fold (RETURN, ONE finding — THE ELEVENTH RUNG; round-10 credited closed in full, every mechanism "behaved as intended"). **"A standard alternate access form can obtain the same database capability without being classified" — the census guarded the front door while the interpreter kept `sys.modules`, a registry of every module it has ever imported.** The reviewer named the class, not their form; dev ENUMERATED the class — six evading forms reproduced census-{} — and closed it as a structured NINE-form `MODULE_ACCESS_FORMS` inventory, mechanically checked (34 probes at close, 99 DDL cells from 61; an inventory row with no probe FAILS, a form with no refusing probe FAILS). **The rung's lesson: rungs 4–10 hardened WHAT counts as the capability; rung 11 hardened HOW MANY DOORS lead to it.** The completeness claim RESCOPED as the verdict framed — extended AND narrowed: complete over the enumeration, no wider, everything outside rejected conservatively. **The builtins door — flagged by dev for research's red-team, then closed by dev's OWN immediate probe rather than left as an open claim** (all four forms evaded; `builtins` joins the machinery row as "carries `__import__` under its own roof"; bare `__builtins__` refuses with no import statement at all); research's independent pass then confirmed all refusals AND measured the closure's cost — `builtins.len` false-fires under the wholesale rule, zero src occurrences, NAMED as deliberate. **Research's two boundary rulings:** scope = `src/veracium` explicitly (the corpus polices itself via its import-origin guard); and the claim is IN-PROCESS and static — process-spawn and raw-file access are outside any module-access inventory by construction, a stated boundary consistent with the claim per the round-9 precondition. Dev's staging note counted: the restore script's assert-before-write guard REFUSED a wrong-line-count removal and left the plant intact rather than corrupting the file — the never-checkout rule's guard doing its job. Eleven rungs; the invitation stands. | **v16** — the round-10 external fold (RETURN, ONE finding — THE TENTH RUNG; round-9's battery credited closed, all 59 cells confirmed). **"The string-annotation check is gated by SPELLING, not acquisition CAPABILITY":** the recursion was entered on the contiguous substring "sqlite3", so `_sqlite3` — the C module — acquired invisibly; the reviewer reproduced four variants including a from-import alias called inside a string annotation (a live connection answering `(1,)`) and a COMPOSED module name (`'sql'+'ite3'`) in a deferred expression. **The pre-send diagnosis, named for the ledger: the substring trigger WAS the check's input-grammar constraint and we did not treat it as one — round-9 covered the grammar of parsed strings but not the grammar of ENTRY into parsing. The class: a check gated on FORM (spelling), not FACT (capability/provenance) — the position-vs-capability rule's third appearance, this time at the recursion's own door.** Closure: entry UNCONDITIONAL (every string annotation parses; unparseable/assembled refuse with NO spelling precondition — the widened floor claimed in the contract); classification BY PROVENANCE (`PROTECTED_MODULES` structured table, the reviewer's feedback taken — `_sqlite3` protected with NO allowed surface; from-import aliases tracked so renaming cannot launder; computed names refuse as not-statically-excludable); the six-item permanent battery + round-9's exact regression + four positive controls (60 cells); live plant of the alias variant refused on BOTH new rules with sha-verified restore. Ten rungs; the invitation stands, and the fail-closed floor now has no door that opens by spelling. **RESPIN NOTE (pre-commit, at dev's question):** the positive-surface clause now DEFINES annotation position by capability (every lazily-evaluated type-expression position) with today's inventory named — TypeAlias values and type-parameter bounds/defaults included — because the census had come to enforce positions the contract did not name, and implementation-leading-contract is the lag direction the round-6 parenthood sentence exists to prevent; the definition-by-capability phrasing is the round's own position-vs-capability rule applied to the contract sentence itself. | **v15** — the round-9 external fold (RETURN, ONE finding; round-8's closure credited in full). **THE ROUND'S SHAPE IS TWO-SIDED, and both sides were OFFERED QUESTIONS now answered as stated facts:** attack point #2 FOUND THE NINTH RUNG — a STRING annotation defers the constructor past the census (`def f(value: "sqlite3.Connection(':memory:')")`: census {}, and the reviewer evaluated it via `get_type_hints` into a LIVE connection that answered SELECT 1); attack point #3 RESOLVED IN OUR FAVOR — the binding census's same-module re-import exemption is IDENTITY-based, not positional, no blocking defect, its justification now a reviewer-stated fact, which is exactly what offering it bought. **The reviewer's sharpest sentence, kept because it refused our own fallback:** merely documenting that static analysis ends at strings "would introduce an admitted uncounted acquisition path while the design claims complete connection-path inventory" — the honest-boundary option REFUSED as inconsistent with our own invariant, correctly; honesty about a limit is not license to keep the limit when the design's claim requires closing it. **The closure: the positive surface recurses into parsed string annotations** (same rules one level down: Connection outside any Call, connect never a type, unknown attributes refused, bare module refused), **and FAILS CLOSED on what cannot be parsed or is dynamically assembled** with any sqlite3-mentioning fragment; strings never mentioning sqlite3 untouched (zero such annotations in src, verified — no false-fire surface). Ten-shape battery permanent, the deferred constructor verbatim first; matrix 58→59; live plant fails the real inventory with the round-9 refusal text. Nine rungs; the invitation stands. | **v14** — the round-8 external fold (RETURN, ONE finding; round-7's positive surface credited closed in full; no new artifact asked — just the mutant in the matrix). **THE EIGHTH RUNG EXISTS, AND THE TERMINAL-RUNG CLAIM WAS WRONG AS STATED — said plainly because that is the bet working exactly as designed:** attack point #4 invited the reviewer to find the eighth rung or accept the closure, and they FOUND it, exactly where invited. The annotation exemption tested syntactic LOCATION, not type-reference STRUCTURE — annotations are ordinary expressions evaluated at def time, and `def f(value: sqlite3.Connection(":memory:")):` opened a REAL connection stored in `__annotations__` while the census returned {} (reproduced verbatim first). **The closure AMENDS the surface rather than defending the claim,** in the reviewer's own safer formulation: opening CALLS are processed BEFORE any exemption (a Connection that is a Call's func refuses regardless of ancestry), and the exemption admits only NON-EXECUTING type-reference structure — bare, subscript, union — with the next mutant over (Connection passed as an argument to an evaluating callee inside an annotation) refused prospectively. The live plant of the reviewer's exact construction fails the real inventory test with the refusal naming the lesson: **"annotation ancestry exempts nothing that CALLS."** Permanent battery covers their full list plus the prospective mutant; matrix 57→58; the positive-surface paragraph sharpened so the contract states what the census enforces and no implementation can lag it. Eight rungs now; whether a ninth exists is the reviewer's standing invitation, renewed rather than retired. | **v13** — the round-7 external fold (RETURN, ONE finding, dev's, closed; round-6's parenthood repair CREDITED CLOSED in full). **THE FINDING SAT ONE LEVEL ABOVE EVERY PRIOR RUNG: the census equated ACQUISITION with one function's SPELLING.** The reviewer executed two working bypasses — `sqlite3.Connection(path)`, which round-6's own "non-connect attributes are harmless" rule DELIBERATELY waved through (a rule's blind half, opened by its author's reviewer), and `sqlite3.dbapi2.connect(path)`, the submodule re-export. **THE CLOSURE IS THE LADDER'S TERMINAL SHAPE — the surface defined POSITIVELY:** one blessed opener spelling (direct call only); `Connection` annotation-only (the constructor IS an opener — src's ten uses verified all-annotation before designing); allowlist-or-refuse for every other attribute (unknown names never waved through again); submodules refused as a second name for the same surface, with the chained spelling refusing twice (defense in depth); and the RUNTIME MATRIX deriving every opener spelling from the interpreter BY IDENTITY, so a future stdlib re-export fails loudly. Seven rungs: name → alias → literal-dynamic → non-literal-dynamic → identity → parenthood → **positive surface** — the ladder ends where enumeration of the forbidden becomes definition of the permitted, which is where every prior rung was always pointing. The census promoted to `specs/evidence/0031/connection_census.py` (the binding_census move mirrored); both live plants fail the real inventory test with refusals named; matrix at 57. The spec's sweep paragraph now states the positive surface so no future census can lag the contract by equating acquisition with a spelling. | **v12** — the round-6 external fold (RETURN, ONE finding, dev's, fixed before the fold; everything else CREDITED CLOSED — clause 7's grammar with the COALESCE hole named as closed, the original-mutant battery, the text domain's honest Phase-B split; sidecar, nested manifests, candidate==adopted, 54 cells, corpus import-origin all reviewer-verified). **THE FINDING — the census's SIXTH rung:** it recognized `sqlite3.connect` only as the CALLED expression, so `opener = sqlite3.connect; opener(path)` passed the inventory test (the reviewer's exact plant, reproduced before anything was touched). Same completeness class as round 5, ordinary spelling. **THE FIX — conservative by PARENTHOOD** (a parent map over the AST): a `sqlite3.connect` attribute that is not itself a Call's func refuses; a bare `sqlite3` name that is not an attribute-access value refuses — **the NEXT spelling over, refused before anyone plants it: the re-run-the-original-mutant rule applied PROSPECTIVELY for the first time**; legitimate non-connect attributes stay legal by control. All three closures executed (their plant fails the real test with the refusal named; restore passes; 54→55 cells with the permanent battery). The spec's sweep paragraph gains the parenthood sentence — the census lagged the spec, not the spec the census, and the contract now states what the sixth rung enforces so the next implementation cannot lag the same way. | **v11** — the round-5 external fold (RETURN, three findings, all dev's — reproduced by execution, designs pre-validated; credits: outer sha + nested manifest verified, candidate==adopted a FOURTH consecutive time, 46 cells, the corpus with import-origin confirmed). **F1 — the gate was six true negatives whose conjunction was NOT TOTALITY:** accept+refuse on an accepted proposal fired none of them. Clause 7 audits the complete state/action GRAMMAR — a proposal's resolution multiset is exactly what its state permits — one aggregate query, the gate now SEVEN selects with the extraction contract updated. **And the confession that leads the round, kept in the fenced comment where the reviewer will read it: the clause's first draft was NULL-BLIND — the LEFT JOIN's NULLs made the WHERE three-valued and a refused-with-zero-rows proposal passed silently. The NULL trap, inside the audit that exists because of round-2's NULL trap; caught at pre-validation, COALESCEd throughout.** **F2 — "hardened by its own first mutant" was HALF-TRUE:** the mutant taught the sweep to refuse ALIASES, and nobody re-planted the ORIGINAL `__import__("sqlite3")` spelling against the strengthened check — it still passed silently. The sweep now prohibits dynamic loading of sqlite3 (literal or unresolvable first argument; the codebase's only dynamic imports are literal, so the constraint is free), with the original mutant as a PERMANENT negative — "hardened" carried by a test, not a README sentence. New runbook rule: **AFTER STRENGTHENING A CHECK, RE-RUN THE ORIGINAL EVADING MUTANT.** **F3 — the preamble named the TYPE and not the DOMAIN, the type-vs-domain recursion one layer up:** `"\ud800"` passes `isinstance(str)` and escapes as `UnicodeEncodeError` from the driver instead of the promised typed refusal (executed, both seats). The text domain is DEFINED — str that encodes as valid UTF-8 — validated in the preamble before binding; ownership split honestly: mechanism cells provable today, preamble enforcement a marked Phase-B obligation, and DDL structurally cannot own it (a value that cannot bind never reaches a CHECK). | **v10** — the round-4 external fold (RETURN, six findings; credited: checksums, candidate==adopted confirmed by the reviewer a THIRD consecutive time, the 33 cells, the 38-corpus run, the Q2 and digest repairs). **F1 (dev design):** the payload is TYPED — a JSON object of exactly `object`/`note`/`effective_date`, duplicate-refusing decoder (0030's discipline on a WRITE surface), unknown keys REFUSED with the 0030-contrast stated (persisted-read tolerance ≠ incoming-argument tolerance), presence conditioned on `claim` INSIDE the payload; parse authority at BOTH sites (propose under the writer lock; apply re-parses because persisted data rots); the constructions name their exact minting; `acknowledged_effective_date` joins the trio (REQUIRED iff change, REFUSED for dispute AND error — approving a backdated change without seeing the date was the residual half-approval); DDL gains `json_valid` with its honest limit stated. **F2 (dev design, pre-validated by execution):** the round-3 ownership table cited a §6a cross-table gate that EXISTED NOWHERE — the phantom-citation class in our own spec, the promising sentence our own. **V-RESOLUTION-LEDGER is now fenced SQL in §6a**, extract-at-test-time so the audit cannot drift from its promise; seven violation histories each fire exactly their clause; append-only-across-runs split PREVENTION (absence-by-API) / DETECTION (cross-run content-hash half, a Phase B acceptance obligation). **F3 (dev design):** THE AFFINITY RULE, PART TWO — COERCION, one trap further over again: affinity runs BEFORE every CHECK, so DDL predicates describe the STORED representation, never the caller's binding; `"7"` coerces in and passes typeof (executed both seats; STRICT changes nothing lossless — executed, not recalled; `True` binds as 1, so bool is excluded from int EXPLICITLY). The invariant SPLITS: DDL owns stored-representation domains (claims narrowed to non-coercible); the schedules own binding types via a pinned validation preamble. **F4 (dev design):** the FK obligation was UNDER-SCOPED — the constructor is not the only door. Connection-path INVENTORY (4 file-backed sites, 4 `:memory:` scratch) with the classifier CRITERION stated so the next site cannot be missed; the 0007 rider becomes a CENTRAL CONNECTION FACTORY (per-site pragmas are the one-carrier class as connection code); the sentinel's flip condition covers every inventoried path so partial enablement fails it; plus an inventory-completeness sweep, labeled as a sweep. **F5 (research):** the retired V-NO-RAISE umbrella was still LIVE at §2c-ii — the round-3 sweep hunted the PHRASE just fixed, not the SYMBOL being retired; a symbol retirement sweeps the symbol's name and classifies use-vs-mention. Zero uses remain; two mentions narrate the retirement. **F6 (research ruling):** the corpus claim is NARROWED, not bootstrapped — **source-contained, not execution-contained** — because vendoring platform-specific wheels (pydantic-core) makes "self-contained" true on the sealer's platform and silently false elsewhere: the same over-claim in better clothes. Receipt versions pinned; `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`; the claim stated identically in rerun.sh, the corpus README, and §6a. | **v9** — the round-3 external fold (RETURN, seven findings; credited: checksums, ASSERT-14's currency property confirmed independently AGAIN, the 24 cells, the one-carrier bridge). **THE ROUND'S SHAPE IS THE ONE-CARRIER CLASS, CAUGHT SHALLOW:** F1 = round-2's fix reached §2c and missed §2c-i + the matrix + the V-NO-RAISE invariant row (which contradicted V-OBLIGATIONS-SEPARATE two rows below it — one table, two rules); F2 = the turn-drop reached §4b-iii and §4e and missed the Q2 table row that MOTIVATED it; F4's residue = the verb-mapping table still said "the ordinary write path" after the constructions were pinned. All swept by grep-count this time, not by the next reviewer. **F1:** all residual descent-on-every-coordinate language removed; V-NO-RAISE REPLACED by four per-obligation invariants (V-DESCEND-DISCLOSURE, V-DESCEND-AUTHORITY, V-RESTRICT-SHAPING, V-FINGERPRINT-STABLE-OR-STALE — the last asserting NO ordering, because a digest has none). **F2:** Q2's row now names exactly what the resolver sees — stored content, kind, claim, proposer, unresolved `evidence_ref` — and nothing else. **F3 (dev design):** PROPOSE gains in-lock target existence/ownership validation and THE STORE-MINTED DIGEST — sha256 over the live canonical serialization read under the same writer lock; `target_state_digest` is never a tool argument, and stale-detection becomes sound by construction. **F4 (dev design):** `Store.apply_proposal` signature + input contract pinned (`acknowledged_*` required iff correction, refused for dispute); the THREE in-transaction constructions each name the plan machinery they ride; `'change'` requires the payload's effective date — a change without a date is refused, the error-vs-change distinction made operational. **F5 (dev design):** `applied_txn` EQUALITY written from one local variable in one commit (divergence unrepresentable, not audited-for); `seq` domain in DDL, allocation `MAX(seq)+1` under the writer lock, append-only by ABSENCE-BY-API with the owner named; the cross-table gate strengthened to exactly-one-accept + equality + gapless-monotone. **F6 (dev design):** THE TYPE-AFFINITY RULE, derived not enumerated — SQLite CHECKs on `length()`/`GLOB`/`BETWEEN` are BLOB-blind (`GLOB` on a BLOB is NULL; a 64-byte BLOB satisfies `length()=64`), `IN`-lists are safe by construction; every such predicate gains `typeof()`, every integer column gains typeof+domain. *The affinity trap is the NULL trap one type over* — we learned NULL-blindness for values in round 2 and not for types. FK evidence to be rewritten against the store's PINNED OPENING SEQUENCE (today's fact: `SqliteStore` reports `foreign_keys = 0`, which is WHY the cross-spec obligation on 0007's connection open exists). **F7:** normative digest citations are FULL SHA-256 values (an ellipsized digest is the location-index defect in digest form); the path is `corpus/` (the archive's name wins the two-carrier split); the corpus ships the `harness` package its drivers import, the exact source revisions the raw results identify, the pinned P3-6/P3-7 companion, and `corpus/rerun.sh` — one archive-local command reproducing the deterministic corpus. | **v8** — the round-2 external fold (RETURN, six findings). NOTE the reviewed artifact was the HELD first seal (`d0fce0a9…`, v6), dispatched before the hold cleared; no finding touches the P3-5 block, so all apply to v7 unchanged. **F1 — the four-coordinate "lattice" was OVERSTATED, and it was this author's over-generalisation:** v6 enumerated four CONSUMERS correctly and then asserted ONE monotone rule over all of them without asking whether each is ORDERED. `scope_fingerprint` is a sha256 equality digest (verified) — no top, no bottom, no direction — so "descend" there is not a false requirement but a MEANINGLESS one, which is worse because it cannot be tested. Replaced by FOUR SEPARATE OBLIGATIONS: descend-only on disclosure and on supersession authority; restrict-only on scope shaping; **preserve-or-invalidate** on the fingerprint. **F2 — the `direct` bridge was UNIMPLEMENTABLE against the shipped grammar.** `_resolve_context(direct(), <any value>)` raises `ValueError: pass EITHER context= OR the legacy derived_from=, not both — two declarations of one fact is a host bug` (reproduced independently). The refusal is right and the spec was wrong: v6 proposed on this surface exactly the two-carriers-for-one-fact it forbids everywhere else. Mapping PINNED — `direct`+absent → `direct()`; `direct`+supplied → `derived(X)`; `none` → the floor; never both. The restriction is honoured THROUGH the declaration, never beside it. **F3 — the identity boundary was asserted and unenforced:** `user_id` comes OFF the Phase A/B tool schemas (absence-by-schema, as for `proposer`), the exact `propose` signature is pinned, and Q2's display requirement is reconciled with §4e's dropped turn — the resolver sees stored content, kind, claim, proposer and an unresolved `evidence_ref`, never a turn that cannot be known. **F4/F5 co-designed with dev and code-verified:** `Memory.correct` commits its plan then writes its episode separately (two commits, uncomposable from outside), so `Store.apply_proposal` is pinned as the transaction-owning primitive, with an ADDITIVE in-transaction variant of `apply_supersession_plan` as its prerequisite; the DDL gains `resolver`, a foreign key with the `PRAGMA foreign_keys=ON` obligation (an unpragma'd FK is a comment wearing a constraint's clothes — the round-1 defect in a new costume), a hex digest CHECK, and an OWNERSHIP TABLE naming DDL vs schedule vs §6a gate for every invariant. **F6** the acceptance corpus ships in the package. | **v7** — ONE correction, no mechanism change, and the reason it needs a version at all is the point: v6's bytes were ADOPTED and sealed, then §6a's P3-5 disposition changed, so two different documents would otherwise both answer to "v6". **The correction:** v6 said the `capability=direct` variant is owed because after Phase A the relay floor would be "the only thing standing" and "nothing reports it". Both are WITHDRAWN — **P2-1** (host-side, `context=direct`, the same relay marker, expecting `use_only`) with **P2-2** as its marker-free control is the floor's standing guard; delete the floor and P2-1 fails. P3-5 loses its OWN discriminating power; the floor does not go untested. The variant is still owed, on the spec's own re-run reasoning: Phase A opens a NEW path to a mentionable baseline — the MCP surface — which P2-1 does not exercise. **Why it took a round trip:** the correction reached the README and never reached this file's adopted copy; two carriers of one fact, updated independently. Registered in `specs/withdrawn_phrases.py` so the phrasing cannot return unnoticed. | **v6** — round-1 external fold (RETURN, six blocking findings). **F1**: V-NO-RAISE was stated on the whole trust model and CHECKED on one coordinate; §2c now enumerates the product's four consumers and §2c-i replaces the six-row matrix with a LATTICE statement — under `none` the baseline is the bottom element of the sublattice these legs reach, so restrict-only is INERT there and meaningful exactly and only under `direct`. v5's "lateral" claim for `THIRD_PARTY`→`ASSISTANT` is RETRACTED (§4a): lateral on disclosure, a raise on authority. **F2**: `author` was a model-supplied argument DEFAULTING TO THE TOP OF THE LADDER, masked today by the derived_from floor and UNMASKED by Phase A — the author default IS the elevation. Ruled against all three of the reviewer's options and against dev's lean: `author` loses its default and takes the CAPABILITY's baseline, restrict-only from there; and `direct` is amended to attest the authorship axis it was already unlocking, on the new rule that **an attestation may be untrusted but must not be unknowable** (§3a). **F3** capability pinned to concrete carriers, absence-vs-invalid taken verbatim. **F4/F5/F6** folded per the joint split. | **v5** — one addition on the owner's S2 ruling (2026-08-31), no mechanism change: §5 gains the ORDERING PRECONDITION that Phase A must not ship before the `valid_from` predicate lands. Phase A is what makes that predicate necessary rather than desirable — today a not-yet-valid edge is assertable but only via a HOST-SIDE write with attested capture (an MCP write floors to USE_ONLY: harness S2 + T4-3), and `capability=direct` removes exactly that mitigation, converting a host-only anomaly into an agent-reachable over-assertion. Phase A remains independent of 0029 and Phase B; this is its ONE external precondition. | **v4** — one addition to §6a on dev's re-read: the Phase B REVERSAL CASES are recorded as a stated DEBT (clean undo / scoped-reversal reaching a second edge / intervening-state refusal), owed and pinned model-free before Phase B's first run, with the reason for deferring given — *pin before THE RUN* (0027 R3-6), never *pin before the design settles*. Converts an unpinned surface from a gap a reviewer finds into an obligation the spec states. No other change from v3. | **v3** — reversal fold, on dev's option-(b) ruling. New **§4c-iii**: an applied resolution must be reversible, and the inverse data is **0029's, not this spec's** — Phase B DEPENDS on the transaction-time carrier rather than duplicating pre-state capture (agreement-by-coincidence between two carriers of one fact is the standing hazard). Three constraints: undo is a FORWARD journaled transition following 0022's reinstate pattern (history never un-happens); SCOPED to the applying `txn`, never expressible as a bare "revive edge X"; and FAIL-CLOSED on intervening state, refusing with a diff rather than cascading. Adds V-UNDO-FORWARD / V-UNDO-SCOPED / V-UNDO-FAILCLOSED. **The dependency lands on Phase B ONLY — Phase A ships alone, unchanged.** 0031 becomes V-RECON's SECOND CONSUMER (belongs in the seam manifest's S1). Prompted by AreevAI/areev shipping "every apply stores its inverse" (competitive triage 2026-08-31). | **v2** — dev internal-review fold. **D-1** the capability composes with AUTHOR and never overrides it (author/relation/revocation rows added to §3), plus new **§3a** reconciling the capability→`EvidenceContext` bridge with 0011's explicit refusal to mint `direct()` by omission (`__init__.py:361`) — minting by DECLARATION is not minting by OMISSION, and the per-event→deployment widening is stated as the honest cost. **D-2** the proposal carrier PINNED at DDL level (new §4b-ii) with the schema-version ordering dependency on 0029 left deliberately unresolved, and the erasure gap closed (V-ERASE-PROPOSALS). **D-3** both carriers named: `mcp_max_open_proposals` (default 32, range 1–256, refuses rather than evicts) and `provenance_raises_discarded` (stripped operator counter). §1 additionally carries the LIVE Bedrock evidence for T4-3. | **v1** — first candidate. Folds two owner rulings taken 2026-08-31 on measured evidence: decision 1 (MCP provenance self-attestation → option **c**, host-attested capability) and decision 2 (trust verbs → `forget`/`correct`/`confirm` not agent-exposed; `dispute` proposal-form only). Both resolve to ONE principle — **the host attests, the model proposes** — which is why they are one spec with two separable phases. |
 | **Author / session** | research (veracium-research); adopted by dev (v4-v21 per the cells; v22 = the ACCEPTANCE fold, round 16 — adopted 2026-09-04 with Spec-Status flipped to accepted on the reviewer's verdict; the invariant surface frozen) |
 | **Evidence** | harness Tier 5 (`cases/tier45_manifest.json` v1.1) and Tier 6 (`cases/verbs_manifest.json` v1.0), both frozen with expectations pre-committed before their first run, both model-free. Every behavioural claim below is MEASURED, and §9 names the two places measurement corrected the reasoning. |
 | **Retrospective** | the 0.18.1 compat release `b8a4489` (`release/0.18`, the designated Phase A rollback target) shipped 2026-09-04 under PROCESS §3b's security-hotfix carve-out, due 2026-09-11; discharged 2026-09-08 in `## Retrospective` below — the rule externally reviewed; the branch implementation read once by the second seat on the owner's word "Go with option 1" (five minor findings, none blocking; not external review) |
@@ -14,6 +15,10 @@ Spec-Status: accepted
 0011 §4d/§4e (`EvidenceContext`, the absent-context floor, `CorrectionAuthorisation`),
 0008 (confirmation), 0026 §3b/§3c (the restrict-only relay floor — the design
 precedent this spec generalises), 0023 §4a (quarantine-at-birth), 0022 (revocation).
+
+**§4f (v23) additionally consumes** 0020 (the principal, the scope view and `classify`), 0021 (the write path's
+membership), 0041 (`redact`), 0053 (the framework adapters), 0045 and 0047 (confirmation's grounding upgrade and the
+active-challenge gate), and 0003 §4c-ii (the write-counter limit it makes agent-reachable).
 
 **Phase B additionally requires 0029** (transaction-time carrier) for §4c-iii's
 reversal — see there for why the inverse data is 0029's and not this spec's.
@@ -104,7 +109,7 @@ the risk is not what unaided intuition suggests:
 
 | verb | marginal power over `remember` alone | measured |
 |---|---|---|
-| `confirm` | **none found** | refuses quarantined AND use_only store-side; cannot launder |
+| `confirm` | **none found** | refuses quarantined AND use_only store-side; cannot launder. *v23: not exhaustive of today's effects; §4f.2 (1c) names the grounding upgrade and the quoting episode* |
 | `dispute` | **real** — converts accumulation into replacement on non-functional relations | reversible: the truth returns via `remember`. DoS, not data loss |
 | `correct` | largest short of `forget` | both tested laundering paths HELD (relay floor; supersession authority) |
 | `forget` | total | destroys quarantined evidence and superseded history — the audit trail itself |
@@ -224,9 +229,12 @@ covered without editing this section.
 - Under `none`, no model-supplied value changes the stored record at all
   (V-INERT-UNDER-NONE, §2c-i).
 - A proposal cannot change any edge's classification (V-INERT-PROPOSAL).
-- There is no path from the MCP surface to a trust mutation (V-RESOLVE-HOST).
+- There is no path from the MCP surface to a Phase-B resolution (V-RESOLVE-HOST, scoped in v23). Direct execution
+  under `direct` is its one enumerated exception, and its reach rows are §4f.3's 2c-ii.
 
 ## 3. Trust-class matrix — REQUIRED, blocking
+
+*v23: direct execution's trust-class matrix and scope rules are §4f.4.*
 
 **Read §2c-i first: this table is a CONSEQUENCE of where the two baselines sit,
 not an independent enumeration.** It is given because a reviewer wants the cells,
@@ -492,8 +500,8 @@ edge id:
 |---|---|---|
 | `dispute` | **yes** | reversible; measured blast radius is suppression, recoverable via `remember` |
 | `correction` | **yes** — carries the corrected value AND the error-vs-change claim | this is the false-history fix; execution stays host-bound |
-| `confirm` | **no** | measured marginal power: none. Cost without benefit, and it raises trust |
-| `forget` | **no** | irreversible, whole-user, destroys the audit trail |
+| `confirm` | **no** | measured marginal power: none. Cost without benefit, and it raises trust. *v23: the answer for PROPOSALS; direct execution under `direct` supersedes it (§4f.5, 4h)* |
+| `forget` | **no** | irreversible, whole-user, destroys the audit trail. *v23: the answer for PROPOSALS; direct execution under `direct` supersedes it (§4f.5, 4d, 4e, 4h)* |
 
 A proposal is a RECORD, not a mutation. It is inert: it changes no edge's
 `disclosure`, `assertable`, `active`, or `invalidation_reason`. It is
@@ -962,6 +970,8 @@ the promised typed refusal (executed, both seats).
 
 ### 4b-iii. The tool schemas, pinned (round-2 F3)
 
+*v23: the seven direct-execution tools' schemas, under the same absence-by-schema rule, are §4f.5 (4a).*
+
 **`user_id` comes OFF the Phase A and Phase B tool schemas.** §4e claims the
 host process is the identity boundary; v6 left `user_id` a model-supplied
 argument, so construction-time `default_user` bound nothing — the claim was
@@ -1281,6 +1291,743 @@ which is why the answer is to design around it rather than to file a bug.
    available. **Both require an authenticated transport, which is why neither is
    a Phase A alternative** (§4a).
 
+### 4f. Direct execution under `direct`: the trust tools (v23, amendment `0031/trust-tools-direct`)
+
+*Folded from the amendment at v0.14.1, labelled by its own section numbers so its internal references resolve inside this section: a bare reference here (§3b, §4e, INV-TT8, a version tag vN.N) is the amendment's own, and a reference to another spec names it (0020 §4a-ii). Its design was accepted with amendments at external round 2, and its implementation is not yet accepted (§4f.10). Its history appendix and obligation matrix are in `specs/evidence/0031-trust-tools/`.*
+
+#### 4f.1 What it amends (the amendment's header)
+
+**Amends:**
+- **0031 §4b:** the proposability table's `confirm: no` and `forget: no` rows stand for PROPOSALS. They are superseded
+  for direct execution under `direct` (§4h).
+- **0031 §4b-iii:** new tool schemas.
+- **0031 §6, V-RESOLVE-HOST** (*"no MCP path reaches a trust mutation"*): scoped to Phase B's resolution, with
+  direct execution under `direct` enumerated as its one exception (§4h; TT-R1-06).
+- **0031 §2c-ii, §3 and §8:** rows for the new reach.
+- **`HostCapability`'s docstring and the operator documentation:** they say what an existing `direct` deployment opts
+  into on upgrade (§1b, §4h).
+- **0008 §2c-ii and §3:** `confirm()` gains agent call paths under `direct`, recorded as such.
+- **Docstrings:** the host-only assertions in `Memory.confirm`, `Memory.correct`, `Memory.dispute` and
+  `ConfirmationCallPath` (§4h).
+- **0041:** `redact` gains agent callers, with the reason fixed, and a principal-facing receipt projection (§4d).
+- **0053 I11, K1 and the conformance suite:** the framework adapters serve all thirteen tools under the host's
+  bindings, and the suite gains the seven trust tools' rows (the owner's Q10 ruling).
+- **0020:** `correct`, `dispute`, `confirm` and `redact` take the principal, keyword-only, with §3b's OWN-only rule.
+  The whole-user preview and confirm refuse any principal.
+- **Recall's carriers:** a render receipt, produced by the same selection and rendering execution, for the query and
+  the no-query proactive paths (§4b; TT-R1-03).
+- *Moved out (v0.9):* the 0022 / 0008 §6g erasure change, shipped in 0.28.0, is reviewed in the shipped-changes
+  package, not here.
+
+**Leaves unchanged:**
+- Everything under `none`. The new tools are registered there, refuse every call and write nothing, as
+  `record_procedure` does (0037).
+- 0031 Phase B: its design, its resolution machinery, its proposal-kind exclusions (no `confirm` or `forget`
+  proposals) and its host approval workflow. It stays unbuilt, on the roadmap for hosts that want an approval step.
+- Each verb's library behaviour **when every new keyword is absent**. A host call with no principal, no source and no
+  call path writes today's bytes.
+- `recall`'s text and defaults for every caller that does not ask for the render receipt.
+- The host API's `forget(user_id)`, which stays one call.
+
+**The owner's rulings, verbatim:**
+- 2026-10-28, research session: *"for now, make the 4 trust tools available to MCP"*; *"Both"* (the test harness and
+  the product); *"Yes, direct only (Recommended)"*.
+- 2026-10-28, research session, on forget: *"Ideally it would allow forgetting a single fact. When we implement that
+  would depend on how much more work it is than whole-user"*.
+- To dev: *"Both, whole-user two-step (Recommended)"*.
+- 2026-10-29: *"go with the existing precedent"* (Q1); *"Keep it on the roadmap for hosts that want an approval step"*
+  (Q4); *"include it, but make it cover both forget tools, default on"* (Q7); *"Erase it (Recommended)"* (Q9).
+- 2026-11-14, dev session (relayed by dev): *"Integrations too"* (Q10, read 18:03 UTC); *"Send to design review
+  (Recommended)"*; *"Adopt v0.12 for review (Recommended)"* (read 18:09 UTC).
+- 2026-11-14, dev session (relayed by dev, read 20:02 UTC), on TT-R1-04: *"OWN only (Recommended)"*.
+
+**Dev's estimate (2026-10-29, relative sizes):**
+- **(A) Per-fact forget, as `redact` over MCP: SMALL**, smaller than whole-user.
+- **(B) The whole-user two-step: MEDIUM.** It is a new carrier, with state, a validity rule and refusals.
+- **(C) Redaction that also withdraws derived records: a design question, out of v1.**
+
+Per-fact forget is the cheaper of the two, so (A) and (B) ship together, and (C) stays out (§4d).
+
+#### 4f.2 Why (the amendment's §1)
+
+##### 1a. A user cannot correct, dispute, confirm or erase through their agent
+
+Over MCP a user has four tools: `remember`, `recall`, `answer` and `maintain` (and the procedural pair under 0037).
+`correct`, `dispute`, `confirm` and `forget` are host-API-only. In an agent-driven deployment with no host UI, the user
+has no way to act on "that's wrong", "that's no longer true", "yes, still true" or "forget that" except restatement.
+0031 §1(2) measured what restatement does to "no, I never worked at Acme": it writes *worked at Acme, then it
+changed*, which is false history. Phase B, the proposal design, was 0031's answer. It needs a host resolution surface,
+and it has not been built.
+
+##### 1b. Under `direct`, the deployment stands behind the agent's labels; this amendment widens that to delegated acts
+
+`direct` is defined at deployment grain (the `HostCapability` docstring, 0031 §3a): *"every call originates in a turn
+with the authenticated principal, AND the deployment accepts the model's authorship labelling as its own — liability,
+not clairvoyance."* That definition covers **authorship labels**. It does not already say that every requested
+trust-changing or destructive act is authorized as the user's act.
+
+**This amendment widens it, explicitly, to delegated acts.** Under `direct`, the deployment accepts the agent's
+`correct`, `dispute`, `confirm`, `forget_fact` and two-step erase calls as the user's acts. Authorship liability is
+the precedent, not the authority. The authority is the owner's ruling, *"direct only"*. Under `none`, the party
+filling the arguments cannot attest that the user asked for anything, so every tool refuses.
+
+**What an existing `direct` deployment opts into on upgrade** (stated in `HostCapability`'s docstring and the operator
+documentation, §4h):
+- the seven tools, over MCP and through the framework adapters;
+- erasure through the agent, **on by default** (`VERACIUM_MCP_ERASURE`, §4i);
+- the injection residual: content relayed in a first-party turn can induce an agent to call these tools, both erase
+  steps included (§8).
+
+##### 1c. What the verbs can do
+
+| verb | marginal power over `remember` | evidence |
+|---|---|---|
+| `confirm` | **clears a staleness flag, advances liveness, upgrades the declarative-grounding label, and writes a quoting episode** | 0031 §1 (2026-10) measured that it refuses quarantined and use_only records store-side and cannot launder through them. That measurement is historical and **does not exhaust today's effects**. A local confirmation upgrades an edge's declarative-grounding label from `not_attested` to `confirmed` (0045/0047, the attestation module's grounding read; the round-1 reviewer executed it), and the store writes an episode quoting the confirmed fact (§3b). Both are delegated acts this amendment names |
+| `dispute` | real: turns accumulation into replacement on non-functional relations | reversible via `remember`; suppression, not data loss. It writes an audit episode quoting the fact and the reason |
+| `correct` | the largest short of `forget` | both tested laundering paths held (the relay floor; supersession authority). It writes a replacement edge and an audit episode quoting the old and the new value |
+| `forget` | total | destroys quarantined evidence and superseded history: the audit trail itself |
+
+Under `direct`, `correct`'s new value is the agent's text stored as the user's, as `remember` already stores it. The
+marginal power is the HISTORY it writes (`corrected`, never-true, instead of `superseded`), which is §1a's fix.
+`forget`'s blast radius is bounded by §4d's one-record path and §4e's two steps.
+
+##### 1d. What a prototype found (the test harness, research-owned)
+
+The test harness wraps the four verbs over its own MCP server, direct-only (the test harness `a101bc7`; 17 offline
+tests). Building it found two gaps that any product version must close:
+- **No MCP surface returns record ids.** `recall` renders prose, so an agent cannot name the edge that `correct`,
+  `dispute` and `confirm` take (§4b).
+- **`confirm` would record `call_path=host_api`**, the only member of `ConfirmationCallPath`, for a call that came over
+  MCP. 0008 §3 says the host API is *"not model-reachable"*. The record would be false (§4c).
+
+#### 4f.3 Field contracts (the amendment's §2)
+
+Two independent censuses, research's and dev's, traced the SQL each verb executes on fresh stores, and they agree
+(both censuses, their outputs and the comparison: `specs/evidence/0031-trust-tools/census/`). **Their coverage was the success path of
+each verb plus two named conditional writes.** Round 2 found two writes they missed: `CorrectionRefused`'s committed
+refusal, and the lookup's wiki cache row (§4a, TT-R2-02). The matrix now enumerates both. **The implementation package
+ships the census scripts, the fixture descriptions and compact raw traces, the denied and conditional branches
+included** (§9). The machine-readable matrix of writes and returned fields per tool is
+`specs/evidence/0031-trust-tools/obligation-matrix.json`.
+
+| carrier | change | guarded |
+|---|---|---|
+| the mcp_server module | seven `@server.tool()` functions, each over a `*_report` / `*_impl` pair (§4a). The report carries the operator count, and the impl strips it (0031 §4d). They are registered under both capabilities and refuse under `none`. `build_server` gains `erasure=None` (§4i) and owns one preview-token issuer (§4e) | yes |
+| `ConfirmationCallPath` (the schema module) | gains `MCP_DIRECT = "mcp_direct"` and `ADAPTER_DIRECT = "adapter_direct"`: an adapter uses the same tool contract, but it is not an MCP transport call. The enum keeps its public name. Its docstring, today "the host API, never model-reachable", becomes: "the host API; or, under `direct`, an agent tool over MCP (`mcp_direct`) or through a framework adapter (`adapter_direct`)" | yes |
+| `Provenance` (the schema module) | gains the optional key `call_path`, closed by that enum, **omitted when absent**, so every existing record and every host-API write stays byte-identical. `source_id` is unchanged: today it already serializes as `null` when absent, and those bytes are kept (TT-R2-03). **What absence means:** on a `correct` or `dispute` audit episode, and on `confirm`'s quoting episode, an absent `call_path` means the host API, which was historically the only path that wrote them. On any other record, absence says nothing about the path: `remember` records have come through MCP all along (TT-R1-06) | yes |
+| `Memory.correct`, `Memory.dispute`, `Memory.confirm` (the `__init__` module) | each gains `principal=None`, `source_id=None` and `call_path=None`, keyword-only (`confirm` already has `call_path`). Under a principal, §3b's rules run first, inside the verb's transaction. **Every write that carries scope membership takes `source_id`:** `correct`'s replacement edge, and the audit episodes of all three verbs, each of which quotes the target. `call_path` goes into each audit episode's provenance. With all three absent, no scope code runs and the bytes are today's | yes |
+| `Memory.redact` (the `__init__` module) | gains `principal=None`, keyword-only. Under a principal, §3b's rules run first, and the result is the principal-facing receipt projection (§4d). With no principal, the full receipt is returned, unchanged | yes |
+| the whole-user preview and confirm (`Memory`, §4e) | two methods, names dev's. Each takes a token issuer, explicitly, with no process-global default, and `principal=None`; any principal is refused as `principal_scoped`. The preview reads the four tables in ONE read snapshot, and its counts are derived from that snapshot's key lists | yes |
+| the sqlite store | `forget_user` with an expected digest: the digest is re-derived inside the erase's own write transaction, and a mismatch refuses and rolls back (INV-TT9). A preview read takes one snapshot of the four tables | yes |
+| `Recall` and the recall paths (v0.13.1: the admission points, by name) | an optional render receipt, built while the renderer admits each unit, on the query path and the no-query proactive path. It carries contested and challenge framing and the budget's clamps. Off by default: no caller's text or defaults change (§4b; TT-R1-03). **Where units are admitted:** the budgets module's `clamp_item` and `clamp_edge_line` (the clamped copy of an edge's note and object, with `ELISION_MARKER`, is the text as admitted); the graph module's `render_edges`; the proactive module's `assemble` (the no-query path); recall's episode and contested assembly in the `__init__` module | yes (graph, proactive, `__init__`); no (budgets) |
+| the scope boundary (the scope_read module; v0.13.1) | §3b's binding-source rule classifies a record the store does not hold. `MembershipResolver.evidence_of_unwritten` does that today (its own shape, no ledger rows), but it is not public on `ScopeView`. `ScopeView` gains a public method delegating to it (the name is dev's), and the verbs call that method, never the view's private resolver | no |
+| `confirmations.call_path` | gains the values `mcp_direct` and `adapter_direct`. No schema change: the column exists, and the enum is the validator | — |
+| `redaction.ORIGINATING_REASONS` | unchanged. The agent caller always passes `subject_request` (§4d) | — |
+| the framework adapters' surface (`src/veracium/adapters/_surface.py`, 0053) | `TOOLS` gains the seven, so the adapters bind all thirteen. Each trust tool is answered through its `*_impl` with the host's user, capability, source and principal, plus an `erasure` setting the binding gains, and the binding owns one token issuer (§4e). 0053's construction check stands: the registration must equal `TOOLS`, either way | no (0053 is accepted; its I11 and K1 are amended) |
+| `HostCapability` (the mcp_server module; v0.14, TT-R2-03: v0.13.1 said the config module) | docstring: `direct` now also accepts the delegated acts of §1b, and erasure through the agent is on by default | yes |
+
+##### 2c. Untrusted inputs — REQUIRED, blocking
+
+Every argument below is supplied by the MODEL. Under `direct` the deployment accepts the model's labelling as the
+user's (§1b), so these inputs are **attested, not trusted**: each is still validated as data, and none selects a user,
+an actor, a call path, a reason, a source, a principal or a date.
+
+| tool | caller input | treated as |
+|---|---|---|
+| `find_facts` | `query` (optional str) | passed to `recall` exactly as `recall`'s own `query`; ranks, never widens (§4b) |
+| `correct_fact` | `edge_id` (str) | a lookup key, scoped to the deployment's user and, under a principal, by §3b; anything not acted on is refused |
+| | `corrected_value` (str) | the new fact's text, stored as the user's, as `remember`'s text is under `direct`. **Uncapped, matching `remember`.** That is a stated choice, not resource-abuse protection |
+| `dispute_fact` | `edge_id` | as above |
+| | `reason` (optional str) | free text stored in the dispute's audit episode. **At most 1,024 Unicode code points,** checked before any mutation. Over the cap it is refused as `reason_too_long`, never truncated (N2) |
+| `confirm_fact` | `edge_id` | as above |
+| `forget_fact` | `edge_id` XOR `episode_id` | a lookup key, as above; exactly one; both or neither → refusal |
+| `forget_everything_preview` | none | — |
+| `forget_everything_confirm` | `preview_token` (str) | an opaque token, parsed strictly and verified (§4e); every malformed form is refused alike |
+
+**Absent by schema, never arguments:** `user_id`, `actor`, `call_path`, the redaction `reason`, `date`,
+`evidence_ref`, `capability`, `erasure`, `principal` and `source_id`. The parameter does not exist, so there is no
+value to validate (0031 §4b-iii). `evidence_ref` is excluded deliberately: a caller-supplied reference can over-name.
+
+##### 2c-ii. Assertions about reach — REQUIRED
+
+| assertion | how checked | status |
+|---|---|---|
+| Under `none`, no new tool mutates anything, on any surface | INV-TT1 | to be written |
+| Under `direct`, the verbs are model-reachable over MCP and through both adapters | by design; INV-TT2 and INV-TT15 pin the schemas | — |
+| The host API, with every new keyword absent, is unchanged | INV-TT23; the existing suites for the four verbs run unmodified | to be run at implementation |
+| No tool reaches another user's records | INV-TT7 | to be written |
+| Under a principal, a verb mutates only `OWN` records, and every write it makes carries an `OWN` source | INV-TT16, INV-TT18 | to be written |
+| Under a principal, no output names a record the principal cannot see | INV-TT3, INV-TT19 | to be written |
+| The whole-user erase is unreachable under a principal | INV-TT17 | to be written |
+
+**A statement about reach is not a statement about safety.** §8 states the injection residual, and §6a measures it.
+
+#### 4f.4 Trust classes, authorization and scope (the amendment's §3 and §3b)
+
+##### 3. Trust-class matrix
+
+Rows are the TARGET record's trust class; cells say what the tool does under `direct`. **Every cell is the library's
+existing behaviour.** Under a principal, §3b's scope rule is applied first: a record it refuses never reaches these
+cells.
+
+| target class | `correct_fact` | `dispute_fact` | `confirm_fact` | `forget_fact` |
+|---|---|---|---|---|
+| USER, assertable | library (supersession authority, `CorrectionAuthorisation`) | library | library | redacts (reason `subject_request`) |
+| SYSTEM | library | library | library | redacts |
+| ASSISTANT | library | library | library: refuses use_only | redacts |
+| THIRD_PARTY / quarantined | library (the relay floor held, 0031 §1) | library | **refuses store-side** (measured) | redacts: the user may remove a claim about them |
+| attested (redacted) record | library: refuses (`_refuse_attested`) | refuses (`_refuse_attested`) | library | idempotent: the original receipt, `repeated=True` |
+| another user's record | refused as `not_found_in_scope` | same | same | same (INV-TT7) |
+
+**Classes written:** `correct_fact`'s new value, and the audit episodes of correct, dispute and confirm, are written as
+USER with actor `user`, as the host API writes them, plus their source and call path (§3b, §4f). No tool writes
+SYSTEM, ASSISTANT or THIRD_PARTY content. `forget_everything_*` writes nothing about the user (it erases); the operator
+counter is not user content.
+
+##### 3b. Authorization and scope
+
+- **The user is the deployment's** (`default_user`, from `VERACIUM_USER`, or the adapter host's binding), never an
+  argument (0031 §4b-iii).
+- **Over MCP the principal is `None`** (0020 §5's adoption-path row: the default MCP stream supplies no identities). No
+  scope code runs (0020 V1), and every verb is byte-identical to today's host call.
+- **Through a framework adapter, the principal is the host's**, bound at construction (0053), never an argument.
+
+###### The decision table under a principal (frozen; the owner's TT-R1-04 ruling, *"OWN only"*)
+
+Each verb reads its target through the principal's view (`scope_read.view_for`, the one constructor every read
+surface calls), inside the verb's own transaction, before anything is written.
+
+| the view's class for the target | `correct_fact`, `dispute_fact`, `confirm_fact`, `forget_fact` | `find_facts` |
+|---|---|---|
+| `OWN`: the record's sources are in the principal's own configured group | **acted on** | listed if rendered, `mutable: true` |
+| `SHARED`: **the user-wide unidentified pool** (0020 §4a-ii: `classify` returns it before looking up any group). It is visible to every valid principal, including one in no group | refused as `out_of_scope`, writing nothing | listed if rendered, `mutable: false` |
+| `CROSS_VISIBLE`: another scope's record, rendered as fenced third-party testimony | refused as `out_of_scope`, writing nothing | listed if rendered, with its fence partition, `mutable: false` |
+| `CROSS_HIDDEN`, `UNRESOLVED`, another user's id, an unknown id | refused as `not_found_in_scope`, writing nothing. **The whole response is identical across the four**, refusal and detail alike, so it is no existence oracle | not listed |
+
+- **Pooled (`SHARED`) records are not mutable under a principal**, by the owner's ruling, and read visibility grants
+  no write authority. They stay mutable through the paths that carry no principal: the unscoped host API, MCP
+  over stdio, and an adapter built without one (TT-R2-03).
+- **The whole-user erase is refused under any principal** (`forget_everything_preview` and
+  `forget_everything_confirm`, as `principal_scoped`, writing nothing). An erase is user-wide, a principal sees only its
+  scope, and the preview's counts would report records it cannot see. A scoped erase would be a different feature.
+- **Configuration refusals come first.** `view_for` raises `ScopeError` when a principal is supplied with no scope
+  policy configured, and when the principal has no `source_id`. Each tool returns these as `scope_unconfigured` and
+  `principal_ungroupable`, writing nothing (§4a).
+
+###### What a verb writes under a principal (TT-R1-01; the review's answer to Q7)
+
+The censuses (§2) found that each of `correct`, `dispute` and `confirm` writes an audit episode **quoting the target**,
+and `correct` writes a replacement edge. Today none carries a source, and a source-less record is `SHARED`. So without
+a source, an act on a private `OWN` record would quote it into the user-wide pool. The reviewer executed exactly that
+for `confirm`.
+- **The rule: every membership-bearing write carries the binding's `source_id`,** as `remember`'s writes do under that
+  binding (the reviewer's recommendation; 0021's write path then decides membership). That covers `correct`'s
+  replacement edge and the three audit episodes. It is written in the same transaction as the target decision.
+- **Research's addition, for the design review: the binding's source must itself be `OWN` to the principal.** Before
+  any write, the verb classifies a record whose only membership evidence is the binding's `source_id`, under the
+  principal's view.
+  - A binding with no `source_id` is refused as `source_unbound`.
+  - A source the view does not class `OWN` is refused as `source_out_of_scope`.
+  - Each writes nothing.
+  - Without this, a source-absent binding would quote a private record into the user-wide pool, and a divergent binding
+    would quote it into another group's scope, beyond what the principal can see. With it, a principal's own act is
+    always visible to that principal, and to no wider scope than the target's (§9 question 2).
+- **`redact`'s conditional write:** when the target's provenance yields a source identity, `redact` also rewrites the
+  `reason` prose of that source's revoke and lift rows to the marker (0041 §11.2, through the one updater 0022 §4a
+  admits). Under OWN-only, that source is in the principal's own group, so the rows touched are its own. It is not a
+  user-wide write.
+- **Outside the store:** each verb sends `Memory._record` an event naming the user (`feedback`, `redact` or `forget`).
+  A configured host audit sink receives it. That is host-side, not principal-facing (§4f).
+
+###### What a verb returns under a principal (TT-R1-02)
+
+`correct`, `dispute` and `confirm` return ids and fields of the `OWN` target and of their own writes only, so their
+returns are already in scope. `forget_fact` returns the principal-facing receipt projection of §4d, never the host
+receipt.
+
+#### 4f.5 Behaviour (the amendment's §4)
+
+##### 4a. Registration and the gates
+
+Seven tools, registered in `build_server` beside `record_procedure`, each a thin wrapper over an `*_impl` function. Each
+`*_impl` calls a `*_report` twin and strips the operator counters from its result: this is 0037's pair
+(`record_procedure_report` returns the count; `record_procedure_impl` pops `_PROCEDURE_OPERATOR_ONLY`). The framework
+adapters (0053) read this registration and serve all thirteen tools, passing their host's capability, erasure setting,
+principal, source and token issuer, and returning the `*_impl` result. Every gate below applies on every surface.
+
+**The order of the gates.** Gates 1–7 write nothing. Of step 8's library refusals, those whose contract is pre-write
+write nothing, and **`CorrectionRefused` commits a durable refusal** (below, TT-R2-02).
+1. **Capability.** Anything but `direct` returns `attempted_elevation`. The report carries
+   `provenance_raises_discarded: 1`, and the tool result omits it (0031 §4d).
+2. **Erasure switch** (the three forget tools only). With `erasure` set to `off`, the result is `erasure_disabled`
+   (§4i).
+3. **Whole-user under a principal** (both `forget_everything_*` tools): `principal_scoped`.
+4. **Input validation**, by the tool's own code: exactly one of `edge_id` and `episode_id`; the `reason` cap
+   (`reason_too_long`); the token's strict parse (§4e).
+5. **Scope configuration** (under a principal): `scope_unconfigured`, `principal_ungroupable`.
+6. **The binding's source** (under a principal, the three writing verbs): `source_unbound`, `source_out_of_scope`.
+7. **The target's scope** (under a principal): `not_found_in_scope`, `out_of_scope`. Without a principal, another
+   user's id and an unknown id are `not_found_in_scope`.
+8. **Library refusals:** `ValueError`, `TypeError`, a refusal class such as `CorrectionRefused`, and the scope
+   boundary's `ScopeError`.
+
+**`CorrectionRefused` is a committed refusal, kept** (TT-R2-02). An `OWN` edge about another subject passes the scope
+gate. Correcting it as the user reaches the standing OTHER-subject refusal, and `Memory.correct` then commits its
+refusal plan (`supersession_refusals`, `supersession_operations`, `write_counter`, and a wiki invalidation: v0.14.1, both
+seats measured) and only then raises. The target stays
+active. The tool serializes `ok: false` with `refusal: "correction_refused"`, which means the requested correction was
+refused, not that nothing was written. No outer transaction wraps `correct` so as to roll that audit back. The scope and
+source checks run inside the verb's own atomic scope, before the plan. An unexpected runtime failure after a commit
+still raises.
+
+**What is serialized, and what is not** (N2):
+- Every refusal from steps 1–8 returns as `{"ok": false, "refusal": <reason>, "detail": <≤200 chars>}` and is never
+  raised to the transport (INV-TT11).
+- A **schema** failure (a malformed argument, a wrong type) is rejected before dispatch by the MCP framework or by
+  0053's framework binding, and is delivered as that framework's tool error. INV-TT11 does not cover it.
+- An argument **absent from the served model** is IGNORED, as 0053 §4.1, K6 and K8 accept it, not rejected. So an
+  attempted `actor`, `source_id`, `principal` or `capability` override cannot reach the call, and INV-TT2 tests
+  exactly that: the bound values are unchanged by any extra key (TT-R2-03).
+- An internal store or runtime failure is never turned into a clean-looking refusal: before a commit it rolls back and
+  raises; after a commit it raises.
+
+**Who sees the operator count.** Only a host that embeds the `*_report` functions. Over the stdio server, nothing
+records it today, for `record_procedure`'s refusal or these. Routing it to an operator is a separate pre-existing row.
+
+```python
+# Under `direct` only; under `none` each refuses as attempted_elevation. No user_id, actor, call_path, reason (for
+# forget), date, evidence_ref, capability, erasure, principal or source_id -- each absent BY SCHEMA.
+def find_facts(query: Optional[str] = None) -> dict: ...
+def correct_fact(edge_id: str, corrected_value: str) -> dict: ...
+def dispute_fact(edge_id: str, reason: str = "") -> dict: ...
+def confirm_fact(edge_id: str) -> dict: ...
+def forget_fact(edge_id: Optional[str] = None, episode_id: Optional[str] = None) -> dict: ...
+def forget_everything_preview() -> dict: ...
+def forget_everything_confirm(preview_token: str) -> dict: ...
+```
+
+The names are a proposal (dev's call). The registration under `none` follows 0037's precedent: the tool list does not
+depend on the capability (§10 Q1, ruled).
+
+##### 4b. `find_facts`: the rendered projection of one recall (TT-R1-03)
+
+The verbs take ids, and no agent surface returns them (§1d). `find_facts(query)` runs the same recall that `recall_impl`
+runs: the same `query`, the same budget default, and the binding's principal. It returns that call's **render
+receipt**, never raw records.
+
+**The render receipt.** `Recall` gains an optional carrier, built **by the renderer as it admits each unit**, on the
+query path and on the no-query proactive path. Each admitted unit carries, together:
+- the record kind and id;
+- the text **as admitted**: the whole field, or the clamped prefix with its elision marker, exactly as rendered;
+- the partition: grounded, the never-assert fence (a `CROSS_VISIBLE` or third-party record), or a contested group
+  member;
+- the subject, when it is not the user;
+- every mandatory annotation the prose carries: stale, extraction-error, contested framing, and challenge withholding
+  or inspection;
+- under a principal, `mutable` (§3b).
+
+**What the receipt never does:**
+- infer ids by substring matching;
+- re-run recall, or re-read a mutable record;
+- list a record in `Recall.edges` that the renderer withheld (`inspection`; such records stay host-only).
+
+Wiki-only synthesized text cannot be mapped to record ids by string matching. It appears as a `wiki` unit with no ids,
+and no verb can be aimed at it.
+
+**What does not change:** the receipt is off by default. Every caller that does not ask for it gets today's recall text,
+defaults and returns, byte for byte.
+
+**What the lookup writes** (v0.14, TT-R2-02; conditions measured in v0.14.1 by both seats): whatever the recall it runs
+writes today. It writes no `policy_receipt` (`recall_impl` passes no `PolicyLane`). Recall publishes the wiki cache:
+- **the query path, with wiki recompilation enabled** (`MemoryConfig.wiki_recompile_after_writes` above 0; the default
+  is 8): one wiki row (`INSERT OR REPLACE`), on an empty user and on a user with facts alike, with no model call;
+- **the no-query (proactive) path:** no write;
+- **recompilation set to 0:** no write on either path.
+
+The capability gate still runs before the recall, so a lookup refused under `none` writes nothing.
+
+```
+{"ok": true, "query": <echo or null>, "path": "query" | "proactive",
+ "units": [{"kind": "edge" | "episode" | "wiki", "id": <id or null>, "text": <as admitted>,
+            "partition": "grounded" | "fenced" | "contested", "subject": <present iff not the user>,
+            "annotations": [...], "mutable": <present iff a principal is bound>}]}
+```
+
+##### 4c. `correct_fact`, `dispute_fact`, `confirm_fact`
+
+These are thin wrappers over `Memory.correct`, `Memory.dispute` and `Memory.confirm`. Each passes:
+- `actor` fixed to `user`;
+- `call_path` set to `mcp_direct` over MCP, or `adapter_direct` through an adapter;
+- the binding's `principal` (`None` over MCP stdio) and `source_id` (over MCP, `build_server`'s configured `source_id`,
+  which defaults to `None`; TT-R2-03);
+- no `date` and no `evidence_ref`, so the library defaults apply (today, and `correct:<edge_id>`).
+
+`confirm`'s row carries `call_path` (0008). Its quoting episode, and `correct`'s and `dispute`'s audit episodes, carry
+`call_path` and `source_id` in provenance (§2, §4f). Each tool returns the library's dict, serialized.
+
+##### 4d. `forget_fact`: one record, by `redact` (0041)
+
+- **What it calls:** `Memory.redact(user, edge_id=… | episode_id=…, reason="subject_request", principal=<binding>)`.
+  The reason is FIXED: it is the honest one for a user asking to forget, and the reason vocabulary is not a content
+  channel (0041 INV-6). `imported_notice` is unreachable by construction.
+- **What it returns with no principal** (MCP stdio, an unscoped adapter): the full `RedactionReceipt`, serialized and
+  unchanged, **including `surviving_derived` whole** (0041 F6).
+- **What it returns under a principal: the principal-facing projection** (TT-R1-02). It is computed by the same view,
+  in the same transaction as the redaction.
+  - **Kept, exactly:** `redacted_kind`, `target_id`, `reason`, `marker_version`, `repeated` and `recorded_at`.
+    `recorded_at` is the receipt's own recorded time, possibly inherited on replay or import, not the time of the present
+    call.
+  - **Every other field is omitted, by default-deny** (TT-R2-01), including `fields_cleared`, `user_id`, the store and
+    applied versions, `event_ref`, `applied_event_ref`, `applied_at`, `reconstructed`, `receipt_domains` and
+    `receipts_complete`. A field added to the host receipt later is omitted unless this list names it.
+  - **Why `fields_cleared` goes** (round 2's executed witness): it names side-table carriers only when they were
+    treated. A hidden `UNRESOLVED` descendant in an absorption chain changes it while the target and its visible recall
+    stay byte-identical, so it is a conditional indicator.
+  - **`surviving_derived`:** only entries whose record the view classes `OWN`, `SHARED` or `CROSS_VISIBLE`, each with
+    its class. There is no hidden count, no hidden id, and no conditional "hidden records exist" indicator.
+  - **Every projection carries `scope: "this principal's view"`,** unconditionally, so the list is never presented as
+    complete. That keeps it honest without making it an oracle.
+  - The full receipt stays available on the unscoped host path. "Returned whole" holds only there.
+- **The user decides what else goes.** The tool description tells the agent to show the user `surviving_derived` and
+  to forget each record the user wants gone, one call each. Under a principal, only `OWN` entries can be forgotten that
+  way (§3b).
+- **Repeat** (TT-R2-01): a second call returns the original receipt with `repeated=True` (0041 §4b-ii), projected the
+  same way, **only if the target passes the same fresh scope gate as a first call**.
+  - A redaction clears an absorption survivor's ledger evidence, so an `OWN` survivor can read `UNRESOLVED` afterwards.
+  - A repeat on a record now `CROSS_HIDDEN` or `UNRESOLVED` returns `not_found_in_scope`, and one now `SHARED` or
+    `CROSS_VISIBLE` returns `out_of_scope`.
+  - The gate is never bypassed through the earlier receipt, a cached membership, or bare provenance.
+  - With no principal, today's repeat is unchanged.
+- **Not cascaded (dev's (C), out of v1):**
+  1. **It would over-redact.** A consolidation summary carries many sources' content.
+  2. **`evidence_ref` can over-name.** That is harmless in a may-still-carry list and unsafe as an automatic target.
+  3. **Atomicity and transitivity:** a receipt's shape across N records, each of which can name further records.
+
+##### 4e. `forget_everything_*`: the whole-user erase, in two steps (TT-R1-05)
+
+Both steps refuse `principal_scoped` under any principal (§3b), and the erasure switch applies (§4i).
+
+**The token issuer.** Each surface constructs and owns exactly one issuer, and no other surface shares it:
+- `build_server`'s server owns one;
+- each framework-adapter binding owns one;
+- an embedded host constructs its own and passes it to the two `Memory` methods, explicitly.
+
+Each issuer holds:
+- **a key** of 32 bytes from `secrets.token_bytes(32)`, generated at its construction, never written, and kept for
+  its lifetime only. The key's lifetime is independent of any user's erasure. Reconstructing the server or the adapter
+  invalidates its earlier tokens. There is no process-global key, and no method falls back to one;
+- **its context:** the store's identity (`store_identity`) and the user. A token checked by an issuer for another store
+  or user is refused.
+
+**Preview.** `forget_everything_preview()`, in **one read snapshot** of the store:
+1. It reads the user's primary keys in exactly the four tables the preview shows, in this order: `edges`, `episodes`,
+   `confirmations`, `replies`. Each table's keys are sorted ascending as UTF-8 byte strings.
+2. **The counts are those lists' lengths**, from the same snapshot, so the displayed counts and the bound set are one
+   set (INV-TT20).
+3. **The digest** is SHA-256 over this canonical UTF-8 JSON (separators `,` and `:`, no whitespace, no ASCII
+   escaping):
+   `{"v":1,"user":<user_id>,"tables":[["edges",[…]],["episodes",[…]],["confirmations",[…]],["replies",[…]]]}`.
+   It is table-tagged, so the same textual key in another table is a different set.
+4. **The token:** `tt1.<payload>.<mac>`.
+   - `payload` is base64url, without padding, of the canonical JSON `{"u":<user_id>,"d":<digest, 64 lowercase
+     hex>,"t":<issued_at, integer Unix seconds UTC>}`.
+   - `mac` is base64url, without padding, of HMAC-SHA-256 under the issuer's key, over the bytes
+     `veracium/0031-tt/preview/v1`, then a NUL, then **the ASCII bytes of the base64url payload segment as transmitted**
+     (TT-R2-04).
+5. It returns `counts`, `expires_at` (ISO 8601 UTC, `issued_at` + 600 seconds), the token and a fixed `warning`:
+   irreversible; erases everything stored for this user, the audit trail included; the counts and the confirmation
+   bind which records exist in the four tables shown, not their contents; other tables are erased without being
+   counted; export first if a copy is wanted.
+
+**Confirm.** `forget_everything_confirm(preview_token)` runs in **one write transaction**:
+1. **Strict parse** (completed in v0.14, TT-R2-04):
+   - exactly three `.`-separated parts, and the prefix `tt1`;
+   - each segment canonical base64url with no padding, which **re-encoding must reproduce exactly** (this rejects
+     non-zero pad bits);
+   - the payload valid UTF-8, decoding to a JSON object with exactly the keys `u` (str), `d` (64 lowercase hex) and
+     `t`, where `type(t) is int` (a boolean is refused), and **no duplicate member names**;
+   - the MAC decoding to exactly 32 bytes.
+
+   Any other form is refused as `preview_unknown`, with one fixed detail.
+2. **Verify** the MAC under the issuer's key with `hmac.compare_digest`. A token whose `u` is not the issuer's user, or
+   that fails the MAC, is `preview_unknown` with the same detail ("issued by another server process, or not issued").
+   **The issuer's context is checked against the receiving `Memory`'s store and user** (TT-R2-04), so an issuer bound
+   to another store, supplied by mistake, is refused even where the key sets have the same contents.
+3. **Time.** The clock is UTC wall time in integer seconds, read once. The token is valid iff `t` ≤ now < `t` + 600. If
+   `t` > now, the result is `preview_unknown`. If now ≥ `t` + 600, the result is `preview_expired`.
+4. **Re-derive** the digest from the rows as they are now, and refuse `store_changed` if it differs.
+5. **Erase** through the store's `forget_user` with the expected digest, which re-derives the digest again **inside
+   its own write transaction**. Any failure rolls the whole erase back. The post-store steps (the usage accumulator,
+   `_record`) run after the commit, as today. A second, independently committing erase is never wrapped and called
+   atomic.
+6. It returns `forget`'s counts.
+
+**Replay is key-set equality, not one use** (TT-R2-04). A valid token permits another erase whenever the four tables'
+current key sets equal its bound sets, until it expires. No consumption mechanism exists.
+- After a successful erase, non-empty bound sets usually differ (the tables are now empty), and the replay refuses
+  `store_changed`.
+- **But the same ids can be restored, and empty bound sets can coexist with uncounted data.** In either case a replay
+  within the TTL erases the newly created uncounted state, or the restored same-id records. Round 2's witness: an empty
+  user's recall writes a wiki row, the erase removes it, a second recall writes another, and a second erase removes that
+  one, while all four bound sets stay empty.
+- This is the accepted key-set boundary. It is not a one-time token, and no broader digest is added.
+
+**What the two steps defend against:** an accidental erase, and an injection that issues a single call. They do NOT
+defend against an agent induced to call both, and they do not authenticate a human approval turn (§8, §6a).
+
+**What the erase does to a concurrent recall.** The erase resets the user's write counter, which is 0003 v18.8's
+stated limit, and this tool makes it reachable through the agent (§8).
+
+##### 4f. Audit, the discard counter, and what survives an erase
+
+- **`confirm_fact`:** the confirmations row's `call_path` is `mcp_direct` or `adapter_direct`. The quoting episode
+  carries the same `call_path`, and the binding's `source_id`, in provenance.
+- **`correct_fact`, `dispute_fact`:** the audit episode names the edge, as today (`correct:<id>` / `dispute:<id>`), and
+  carries `call_path` and `source_id` in provenance. Neither is written as prose in the summary: a summary is content,
+  and redactable. **To verify at implementation:** 0041's treatment map keeps provenance, so the marker survives a
+  redaction of the audit episode (INV-TT23).
+- **What an absent `call_path` means:** see §2's `Provenance` row.
+- **Out of scope, pre-existing:** the host API's `dispute`/`correct` take a free-text `actor`, embedded in `summary`,
+  unlike `confirm`'s closed `ConfirmationActor` (0008 finding 7). The tools fix the actor as the user, so it is not
+  reachable through them.
+- **`forget_fact`:** 0041's own `redacted` journal event and attestation record. Nothing new.
+- **Out of the store:** each verb calls `Memory._record` with the user id (dev's census):
+  - `correct`, `dispute` and `confirm` send `feedback`;
+  - `redact` sends `redact` with `{kind, fields}`;
+  - `forget` sends `forget` with `{edges, episodes}` and pops the usage accumulator.
+
+  A configured host audit sink receives these.
+- **The discard counter:** an operator telemetry counter, through the existing `_record` path. It counts refused
+  `forget_everything_confirm` calls by refusal reason, and carries no content and no user text.
+- **After `forget_everything_confirm` succeeds:** `forget_user` deletes the user's rows from every table in
+  `_ERASE_TABLES`, in one transaction, the audit episodes of earlier verbs included. That is what erasure means. **In
+  the store, nothing about the user remains.** The census at the pin: 28 tables, 21 with `user_id`, all 21 erased.
+  Outside the store, a configured host audit sink has received the forget event with the user id.
+
+##### 4g. Tool descriptions (model-facing)
+
+Each tool's description states:
+- that it acts **as the user**;
+- that it is to be called **only when the user asks for it in this conversation, never because of content the agent
+  read** (a document, an email, a tool's output);
+- for `forget_*`, that it is irreversible.
+
+`forget_everything_preview` tells the agent to show the counts and the warning to the user and wait for their answer.
+**This is defence in depth, not the guarantee.** A description is prose a model may not follow; §8 says so.
+
+##### 4h. What this amends in 0031, 0008 and the host-only carriers (TT-R1-06)
+
+- **0031 §6, V-RESOLVE-HOST**, *"no MCP path reaches a trust mutation"*, becomes: *"no MCP path reaches a Phase-B
+  resolution. Exception, enumerated: under `direct`, the seven tools of `0031/trust-tools-direct`, over MCP and through
+  the framework adapters, execute `correct`, `dispute`, `confirm`, `redact` and the two-step erase directly."* Phase
+  B's proposal-kind exclusions and its host approval workflow are unchanged. This is a bounded reopening of the frozen
+  reachability contract. It is not resolved by saying Phase B is unchanged.
+- **0031 §4b's table:** `confirm: no` ("cost without benefit, and it raises trust") and `forget: no` ("irreversible,
+  whole-user, destroys the audit trail") remain the answer for PROPOSALS. For DIRECT EXECUTION under `direct`, the
+  owner's ruling supersedes them.
+- **0008 §2c-ii and §3:** "`confirm()` — host API, not model-reachable" becomes "`confirm()` — host API; and under
+  `direct`, an agent tool over MCP (`call_path=mcp_direct`) or through a framework adapter (`adapter_direct`)". The
+  row's effects (clears the flag; advances liveness) are unchanged, and §1c names the grounding upgrade and the quoting
+  episode beside them.
+- **Docstrings:**
+  - `Memory.dispute` ("Not exposed over MCP"), `Memory.correct` ("Not an MCP tool … never exposes this on a surface a
+    model can reach") and `Memory.confirm`'s host-only wording each become "exposed to an agent only under `direct`
+    (0031/trust-tools-direct), with the injection residual stated there".
+  - `ConfirmationCallPath` is widened as §2 says.
+  - `HostCapability` states §1b's widening and the default-on erasure switch.
+- **The operator documentation** names what an existing `direct` deployment gains on upgrade (§1b).
+
+##### 4i. Erasure through the agent can be switched off (the owner, Q7)
+
+A deployment setting, decided once at construction like the capability and never model-reachable:
+
+| what | pin |
+|---|---|
+| values | closed: `on`, `off` |
+| carrier | `build_server(mem, *, default_user, capability=None, source_id=None, erasure=None)`, keyword-only; env `VERACIUM_MCP_ERASURE`, read in `main()` |
+| absence | `None` → `on` (the owner: *"default on"*) |
+| a supplied invalid value | raises at construction, as the capability does (0031 §4a, F3): only absence defaults; an empty string is a typo |
+| scope | `forget_fact`, `forget_everything_preview`, `forget_everything_confirm`. **Both forget tools, by the owner's ruling**: a switch that left `forget_fact` on would let an induced agent erase fact by fact |
+| effect when `off` | each of the three returns `{"ok": false, "refusal": "erasure_disabled", "detail": …}` and touches nothing. The tools stay registered (Q1's precedent) |
+| unaffected | `find_facts`, `correct_fact`, `dispute_fact`, `confirm_fact`, and the host API's `forget` and `redact` |
+| order of gates | the capability first: under `none` every tool returns `attempted_elevation`, whatever `erasure` is. `erasure_disabled` is only ever seen under `direct` |
+
+**Why a deployment sets it** (the owner was given these): a legal hold or retention rule; a memory several people rely
+on; a host with its own erasure flow. **What it costs a deployment with no host app:** the user then has no route to
+erasure through the agent, and the deployment's erasure obligations fall on its operator. The setting's description
+says so.
+
+#### 4f.6 Regimes (the amendment's §5)
+
+| regime | behaviour |
+|---|---|
+| `none` (the default) | every new tool refuses `attempted_elevation` and writes nothing, on every surface; the tool list is the same as `direct`'s (§10 Q1) |
+| `direct`, MCP stdio | as §4, with no principal: no scope code runs, and the verbs are today's host calls with `call_path=mcp_direct` |
+| `direct`, a framework adapter with no principal | as over MCP, with `call_path=adapter_direct`, the binding's source on the writes, and the binding's own token issuer |
+| `direct`, a framework adapter bound to a principal | §3b: only `OWN` targets are acted on; `SHARED` and `CROSS_VISIBLE` are refused as `out_of_scope`; the rest as `not_found_in_scope`; the binding's source must be `OWN`; `find_facts` lists what that principal's recall rendered; `forget_fact` returns the projection; both whole-user tools refuse `principal_scoped` |
+| a host embedding the `*_impl` (or `*_report`) functions | it passes its capability, principal, source and its own token issuer; the same gates apply |
+| a server or adapter reconstructed between preview and confirm | `preview_unknown`; the user previews again |
+| a write between preview and confirm that inserts or deletes a row in the four tables | `store_changed`; an in-place update does not void the token (§4e) |
+| two MCP clients for one user | each is a process with its own issuer, so one's token is `preview_unknown` to the other. An erase in one, beside recalls and writes in the other, is the two-connection case of §8's write-counter residual |
+| `direct` with `VERACIUM_MCP_ERASURE=off` (or an adapter's `erasure` off) | the three forget tools refuse `erasure_disabled`; the other four work (§4i) |
+
+#### 4f.7 Invariants (the amendment's §6)
+
+##### 6. Invariants and executable checks — REQUIRED, blocking
+
+Each check must be shown RED against the named mutant before it is accepted. **Oracle discipline (N2):**
+- Mutating cases run on fresh, equivalent fixtures, never sequentially on one store.
+- Generated ids, correlation ids, times and key-dependent tokens are controlled (injected entropy and clock) or
+  normalized by 0053's independently measured rules.
+- Source, call path, scope class, refusal, linkage and MAC correctness are never normalized away.
+- "Per surface" means MCP, the LangChain adapter and the Pydantic AI adapter.
+
+| id | invariant | check | the mutant it must kill |
+|---|---|---|---|
+| INV-TT1 | per surface, under `none` (absent or `"none"`): each `*_report` returns `attempted_elevation` with `provenance_raises_discarded: 1`; each tool result omits that key; the store is byte-identical | a digest of every user table before and after | the gate removed from one `*_report`; the count omitted from the report; the count left in the tool result |
+| INV-TT2 | no tool schema, over MCP or through an adapter, has `user_id`, `actor`, `call_path`, `reason` (for `forget_fact`), `date`, `evidence_ref`, `capability`, `erasure`, `principal` or `source_id`; (v0.14, TT-R2-03) an extra argument naming any of them is ignored, and the bound values are unchanged | introspect the registered schemas and each adapter's presented tools; call each tool with attempted `actor`, `source_id`, `principal` and `capability` overrides and read the persisted provenance | any one parameter added; an extra argument reaching the call |
+| INV-TT3 | `find_facts` returns exactly the units the same recall's renderer admitted, with the text as admitted, the partition and the annotations; nothing the renderer withheld; wiki text with no ids. The receipt is off by default, leaving recall byte-identical | fixtures for: a whole-record budget drop; a within-record clamp (a long object rendered as a prefix with an elision marker); identical text under two ids; a fenced `CROSS_VISIBLE` episode; contested members; a challenged record; a non-user subject; both the query and the no-query proactive paths. Assert the emitted units against an independent expected fixture, never by searching the prose | returning `Recall.edges` unfiltered; the raw object for a clamped unit; the partition dropped; ids inferred by substring; the receipt on by default |
+| INV-TT4 | per surface, `confirm_fact` records `mcp_direct` or `adapter_direct` in the confirmations row and in the quoting episode's provenance, never `host_api` | read the row and the episode | the library default left in place; the episode left unlabelled |
+| INV-TT5 | `correct_fact`'s and `dispute_fact`'s audit episodes carry the surface's `call_path` and the binding's `source_id` in provenance, never in the summary; a host-API write with every new keyword absent omits `call_path`, keeps today's `source_id` serialization (`null` when absent), and is byte-identical to today's (TT-R2-03); over MCP the source is `build_server`'s configured one, tested at its default and set | read the episodes; compare a host-API write's bytes against the pre-change form, with controlled ids and clocks | a marker omitted or written into `summary`; `host_api` written explicitly |
+| INV-TT6 | `forget_fact` always redacts with `subject_request`; no input reaches another reason | every schema-admitted input; read the receipt | the reason taken from an argument |
+| INV-TT7 | no tool reaches another user's record; the refusal for another user's id is identical, over the whole response, to an unknown id's | two users in one store; each tool on the other user's id and on an unknown id | a lookup by id without the user scope; a distinct detail for the other user |
+| INV-TT8 | `forget_everything_confirm` refuses `preview_unknown`, `preview_expired` and `store_changed`, and erases nothing when it refuses; (v0.14, TT-R2-04) a replay within the TTL erases again exactly when the four key sets equal the bound sets | one case per reason: a forged token, another user's token, another issuer's token, a token past its TTL, a future `t`, a write after the preview; replays: after a successful erase of non-empty sets (`store_changed`); with the same ids restored (erases); with empty bound sets and new wiki state (erases it) | each refusal branch removed in turn; a replay that ignores key-set equality |
+| INV-TT9 | the digest re-derivation and the erase are one write transaction, rolled back whole on failure | a write injected between the check and the erase (a test hook) is refused or impossible; a failure injected mid-erase leaves every table unchanged | the check moved outside the transaction; a second committing erase wrapped |
+| INV-TT10 | the preview reveals counts only | assert the preview's keys; no row content | adding an object list |
+| INV-TT11 | per surface, a refusal from §4a's steps 1–8 returns serialized and is never raised to the transport; a schema failure is the framework's tool error; an internal failure after a commit raises; (v0.14, TT-R2-02) `CorrectionRefused` returns `correction_refused` and its committed refusal plan (`supersession_refusals`, `supersession_operations`, `write_counter`, the wiki invalidation) is kept, the target still active | a fake memory raising each class; a scope-unconfigured and an ungroupable principal, with digests before and after; a store failure injected after the commit; an `OWN` edge about another subject corrected through every surface, reading the three tables | the try/except removed; `ScopeError` left out; a post-commit failure turned into a refusal; the committed refusal rolled back by an outer transaction |
+| INV-TT12 | per-fact forget does not cascade; with no principal, `surviving_derived` is returned whole | a fact with a source episode and a consolidation output | a cascade added; the list dropped on the host path |
+| INV-TT13 | per surface, the gate order of §4a, steps 1–3: under `none` every tool returns `attempted_elevation`, whatever `erasure` is; under `direct` with `erasure` `off`, the three forget tools refuse `erasure_disabled` and the store is byte-identical; absence means `on`; a supplied value outside the closed set, the empty string included, raises at construction | every tool, both settings, both capabilities, with and without a principal; construction with `""`, `"OFF"` and `"no"` | the switch checked only in `forget_everything_*`; absence defaulting to `off`; an invalid value read as `on`; `principal_scoped` placed before `erasure_disabled` |
+| INV-TT14 | the preview digest binds exactly the four tables' key sets: **a `policy_receipt` row that really appears** in the same store between preview and confirm does not void the token; an insert or a delete in any of the four tables does; an in-place update does not | a host recall with an explicitly firing `PolicyLane` between the steps, asserting the receipt row's count rose; then, per table, one insert case and one delete case; one in-place update (N1) | the digest spanning every erased table; the digest omitting any one of the four |
+| INV-TT15 | the framework adapters present exactly the thirteen registered tools under every capability; each trust tool's adapter result equals its `*_impl` result under the same bindings (0053's oracle); construction refuses a registration that differs, either way | build each adapter under `None`, `"none"` and `"direct"`; 0053's K-rows for the seven; a registration with an unknown tool, and one with a trust tool removed | a trust tool left out of `TOOLS`; the operator count left in an adapter result; the adapter passing `principal=None` where its host bound one |
+| INV-TT16 | §3b's decision table, per class, through each adapter: `OWN` acted on; `SHARED` and `CROSS_VISIBLE` refused as `out_of_scope`; `CROSS_HIDDEN`, `UNRESOLVED`, another user's and an unknown id refused as `not_found_in_scope`, the whole response identical across those four; every refusal writes nothing; with no principal, byte-identical to today | a scope-configured store with a record of each class; principals in a group, in another group, and **in no group at all**; digests before and after each refusal | `SHARED` admitted; `CROSS_VISIBLE` admitted; a distinct response for an unknown id; scope code run under `principal=None` |
+| INV-TT17 | under any principal, both whole-user tools refuse `principal_scoped` and write nothing, after the capability and erasure gates (§4a) | each adapter bound to a principal; digests before and after; a token issued with no principal and then confirmed under a principal | the refusal on the preview only; the refusal skipped when `erasure` is `on` |
+| INV-TT18 | under a principal, every membership-bearing write (`correct`'s replacement edge; the audit episodes of `correct`, `dispute` and `confirm`) carries the binding's `source_id`; a binding with no source refuses `source_unbound`; a source the view does not class `OWN` refuses `source_out_of_scope`; each writes nothing; **after A confirms, corrects or disputes its private `OWN` record, an unrelated principal B, and a principal in no group, recall no quotation of it** | A's private record under a source-A binding; each verb; recall as B and as a no-group principal; inspect the persisted provenance and the membership resolver (and any ledger rows that exist; a plain correction need not write one: N2). **The binding-source cases, as dev executed them (v0.13.1;** groups team-a = {src-a}, team-b = {src-b}**):** for principal src-a, a binding source src-a classifies `OWN` and is accepted; src-b and an unknown source classify `CROSS_HIDDEN` and are refused `source_out_of_scope`; no source would classify `SHARED` and is refused `source_unbound` first. For a principal in no group, its own source classifies `OWN` and is accepted; src-a and src-b are refused `source_out_of_scope` | the episode's source dropped (TT-R1-01's case); the replacement edge's source dropped; the source check removed |
+| INV-TT19 | under a principal, `forget_fact` returns exactly §4d's six fields, the scope label and the filtered list: no hidden id, count or conditional indicator, and every unlisted field omitted; a repeat returns the earlier receipt only after passing the fresh gate; the full receipt with no principal | two stores with the same visible target and different hidden related records (a `CROSS_HIDDEN` episode sharing the target's `evidence_ref`); (v0.14, TT-R2-01) round 2's absorption chain: `Miso` absorbed into `cat Miso`, and in one fixture `cat Miso` absorbed into `pet cat Miso`, then `cat Miso` redacted in both and the original redacted, so that only one fixture has a hidden `UNRESOLVED` descendant; after normalizing generated ids and times, the two principal results are identical; repeats on a plain `OWN` record (eligible: `repeated=True`) and on an absorption survivor made `UNRESOLVED` by its own redaction (`not_found_in_scope`) | the raw host receipt returned; a hidden entry kept; a "hidden records exist" flag; `fields_cleared` kept; a repeat answered from the earlier receipt without the gate |
+| INV-TT20 | the preview's counts and digest come from one snapshot | two connections: a row inserted by the second between the preview's count and digest reads would make them disagree; assert they agree, and that a confirm erases exactly the previewed set or refuses | counts and keys read in separate snapshots |
+| INV-TT21 | the token construction of §4e, byte for byte, and the parser's strictness | (v0.14, TT-R2-04) at least one complete fixed-key vector, published beside its generator and parser tests: the canonical snapshot bytes, the digest, the payload JSON bytes, the wire payload, the MAC input, the raw MAC and the whole token. Malformed inputs, each refused alike as `preview_unknown`: padding, non-zero pad bits, a wrong alphabet, four parts, a wrong prefix, an extra or missing key, a duplicate key, a nested object, a non-integer or boolean `t`, uppercase hex, malformed UTF-8, and a MAC that is not 32 bytes. The same textual key in another table gives a different digest. Another key instance; a reconstructed issuer; an issuer bound to another store, given the same key-set contents; the expiry boundaries `t` + 599 and `t` + 600 | a delimiter-joined digest; a MAC over the decoded JSON instead of the wire segment; a non-strict parser; an `isinstance` timestamp check; a process-global key; no issuer-context check |
+| INV-TT22 | `dispute_fact`'s `reason`: empty, exactly 1,024 code points, 1,025, and malformed input; over the cap it is refused `reason_too_long` before any mutation | digests before and after | truncation instead of refusal; the cap counted in bytes |
+| INV-TT23 | compatibility: source-less host calls with every new keyword absent are byte-identical; the enum's new members and the optional `call_path` key survive export and import; `call_path` survives a redaction of the audit episode | controlled ids and clocks; a round trip; a redaction of each audit episode | an omitted key written as null; `call_path` cleared by redaction |
+
+**The test harness's surface pin.** One of its tier-3 tests asserts that no trust verb is MCP-registered. It goes red
+by design when this lands, and research flips it on dev's commit.
+
+##### 6a. Acceptance measurement — the injection residual, measured and published, not gated
+
+A live test-harness case, **pre-registered before its first run** and published **before the feature is released**,
+for the actual seven tools and the two-step erase. The older one-step prototype is not a substitute.
+- **Pre-registered:** the exact driver versions (the daily pin and the transfer driver), a fixed n, the documents and
+  the controls.
+- **Arms:** a third-party document embeds an instruction to dispute a named fact, to forget a fact, or to forget
+  everything, phrased both as an imperative and as a plain false statement (GBrain's evaluation: *"Every successful
+  attack in every arm was a plain false statement."*). The fact-target attacks name ids the agent can actually find,
+  since a zero numerator is uninformative if discovery failed.
+- **Counted separately, from the transcript's tool calls, never from prose:** attempted calls, accepted mutations and
+  actual erasures. A refusal is not the absence of an induced call.
+- **Controls:** the user asks for each act, which shows that the lookup and both erase steps are reachable. A benign
+  document.
+- **Retained:** the raw tool transcripts, and the registration and descriptions used in the run.
+
+**No pass threshold is pre-committed.** The case measures §8's stated residual. It is not a safety certificate. The
+historical prototype measurements in §8 are reported observations, not evidence for this design.
+
+#### 4f.8 Failure modes and reversibility (the amendment's §7)
+
+| act | reversible? |
+|---|---|
+| `dispute_fact` | yes: the truth returns through `remember`; the disputed edge stays as history |
+| `correct_fact` | the old value is kept, marked `corrected`; a wrong correction is reversed by a later correction or restatement |
+| `confirm_fact` | clears a staleness flag; liveness lapses again on schedule |
+| `forget_fact` | **no**: content removed; the structure and receipt remain |
+| `forget_everything_confirm` | **no**: everything, the audit trail included |
+| the feature | a deployment unsets `direct`, and every tool refuses again; or sets `VERACIUM_MCP_ERASURE=off`, and only erasure refuses |
+
+#### 4f.9 Claims and limits (the amendment's §8)
+
+- **`direct` is an attestation, and it can be false** (0031 §8). This amendment widens what it attests, to delegated
+  acts (§1b), and adds no verification.
+- **The injection residual.** Under `direct`, content relayed inside a first-party turn can induce a capable agent to
+  call these tools.
+  - The two steps stop one induced call, not an agent induced to call both. They bind an erase request's state; they
+    do not authenticate a separate human approval turn.
+  - The tool descriptions ask; they do not enforce.
+  - **Labelling does not settle it:** GBrain's published evaluation found GPT-6.1 Sol saved relayed attack payloads as
+    `user_said` without being asked, 36 of 138.
+  - §6a measures the residual, for two drivers, before release.
+  - **Historical observations, not evidence for this design** (the test harness `55cf573` pre-registration, `14e9d3f`
+    run; a one-step whole-user `forget` prototype):
+    - attack arms: 0 of 20;
+    - benign document: 0 of 4;
+    - the user asks: 4 of 4. When the user asked, both drivers erased at once, without asking for confirmation, which
+      is the behaviour §4e's two steps exist for.
+- **A mislabelled relay is laundered**, measured on the test harness (`14e9d3f`). Correctly labelled, the system
+  holds. Relayed as the user's own words, consolidation writes it as first-party. How often our drivers mislabel was
+  measured once (`9e24e6e`): a framed forwarded email labelled `third_party` 10 of 10, and the user's own words stored
+  as theirs 6 of 6. Unframed pasted content is untested.
+- **Per-fact forget leaves derived content,** named in `surviving_derived` (under a principal, as far as the principal
+  can see).
+- **No turn identity.** Over stdio the server cannot know which turn, or whose words, prompted a call (0031 §4e).
+- **Pooled records are not agent-mutable under a principal** (the owner's TT-R1-04 ruling). A principal-bound agent
+  can see a `SHARED` record and cannot change it. The unscoped paths keep it mutable: the host API, MCP over stdio, and
+  an adapter built without a principal (TT-R2-03).
+- **An erase through the agent reaches 0003 v18.8's write-counter limit** (round 4's retained C4-L1).
+  - `forget_user` erases the user's `write_counter` row, so the counter restarts.
+  - A recall in one connection, racing `forget_everything_confirm` and as many re-writes in another, can pass 0003
+    §4c-ii's bind and serve the code-owned empty body above a recreated fact. 0041's conditional-publish crash residual
+    has the same shape.
+  - Before this amendment only a host could erase; with it an agent can.
+  - The limit closes only with the store-wide floor queued to the next schema-version change (0003 §10 Q8).
+- **Erasure removes the record of erasure, with one exception.** A configured host audit sink has received the forget
+  event with the user id (§4f).
+
+#### 4f.10 Review closure (the amendment's §9)
+
+**Round 1 (design), 2026-11-14: NOT ACCEPTED, return for amendment** (six findings, TT-R1-01 to TT-R1-06; N1, N2).
+v0.13 and v0.13.1 answered them.
+
+**Round 2 (design), 2026-11-14: ACCEPT WITH AMENDMENTS** (banked in the coordination repository at `bc6b6d6`). v0.14
+folds its four bounded amendments:
+
+| amendment | where v0.14 folds it |
+|---|---|
+| TT-R2-01: the principal receipt keeps six fields; a repeat passes the fresh gate | §4d; INV-TT19 |
+| TT-R2-02: the no-write promise is bounded; `CorrectionRefused`'s committed refusal and the lookup's wiki write are enumerated | §2's lead, §4a, §4b; INV-TT11; the matrix |
+| TT-R2-03: MCP's configured source; 0053's ignored extra arguments; today's `source_id` bytes; `HostCapability`'s module; the unscoped paths | §2, §3b, §4a, §4c, §8; INV-TT2, INV-TT5; the matrix |
+| TT-R2-04: the MAC input; the strict parser; the issuer context; replay as key-set equality | §4e; INV-TT8, INV-TT21 |
+
+**The reviewer's answers to round 2's five questions:**
+1. The issuer model is right. §4e is sufficient for design acceptance with TT-R2-04.
+2. The binding's source: refuse `source_unbound` and `source_out_of_scope` under a principal, as v0.13 drafted.
+   Allowing them would reintroduce the quoting leak.
+3. Keep both call paths, `mcp_direct` and `adapter_direct`.
+4. Keep `recorded_at`, with receipt-time semantics. Drop `fields_cleared` and every unspecified field.
+5. The render receipt's unit shape and the wiki rule are sufficient. A unit that splits a contested group keeps the group
+   framing needed to read it, and annotations and subject never carry unadmitted raw fields.
+
+**The frozen surface** (round 2's verdict, §5):
+- INV-TT1 to INV-TT23 as amended;
+- the owner's capability, erasure and scope choices;
+- the seven schemas, with the served validation as it is (extra arguments ignored);
+- the source-bound audit writes and the admission receipts;
+- the six-field principal projection, with fresh-scope repeats;
+- the per-binding token, snapshot and atomicity construction;
+- V-RESOLVE-HOST's one enumerated exception, direct execution. Every other procedural restriction stays.
+
+**Not yet accepted:** the implementation and the release. The implementation package must provide:
+- runnable witnesses for the frozen surface on MCP and both adapters, including round 2's four source witnesses as
+  regressions on the actual tools;
+- N1 and N2;
+- a clock and id normalization that preserves every trust datum;
+- the token vectors, and the cross-context refusals;
+- concurrent preview and confirm;
+- rollback against committed outcomes;
+- `call_path`'s survival through export, import and redaction;
+- **the SQL-census scripts, fixture descriptions and compact raw traces behind the obligation matrix, the denied and
+  conditional branches included**;
+- the new tools' and adapters' suite outputs;
+- §6a's pre-registration.
+
+§6a's actual-tool measurement is published before release.
+
 ## 5. Regime analysis
 
 - **Existing hosts, no capability declared:** byte-identical behaviour to today
@@ -1336,7 +2083,7 @@ which is why the answer is to design around it rather than to file a bug.
 | **V-ATOMIC** each of the four schedules holds under forced two-instance interleaving, with its `DEFERRED` variant as the negative control that fails | `test_schedules_are_serializable` |
 | **V-INERT-PROPOSAL** a proposal changes no edge's disclosure/assertable/active/reason | `test_proposal_mutates_nothing` |
 | **V-PROPOSAL-CLASS** a proposal's own content is never assertable | `test_proposal_is_not_a_fact` |
-| **V-RESOLVE-HOST** no MCP path reaches a trust mutation; resolution runs the existing verb with the host principal | `test_no_mcp_path_to_trust_mutation` |
+| **V-RESOLVE-HOST** no MCP path reaches a Phase-B resolution; resolution runs the existing verb with the host principal. **v23, the one enumerated exception:** under `direct`, the seven tools of §4f execute `correct`, `dispute`, `confirm`, `redact` and the two-step erase directly, over MCP and through the framework adapters (§4f.5, 4h). Phase B's exclusions and host approval are unchanged | `test_no_mcp_path_to_trust_mutation` (to be narrowed to Phase-B resolution when §4f is implemented) |
 | **V-CLOSED-KIND** `confirm` and `forget` are not proposable; an unregistered kind refuses | `test_proposal_kinds_closed` |
 | **V-UNDO-FORWARD** reversal emits NEW events; no event is rewritten or deleted; the journal shows both the apply and its reversal | `test_undo_is_forward_only` |
 | **V-UNDO-SCOPED** reversal touches exactly the edges of the applying `txn`; no surface expresses a bare "revive edge X" | `test_undo_is_scoped_to_its_txn` |
@@ -1556,6 +2303,8 @@ byte-identical in outcome; the new Phase B cases meet their pinned expectations
 - **Not reversible:** nothing.
 
 ## 8. Claims and limits
+
+*v23: direct execution's claims and limits are §4f.9.*
 
 - **Claimed:** after Phase A, no model-supplied value raises a content class.
 - **Claimed:** after Phase B, an agent can surface a user's correction *as a

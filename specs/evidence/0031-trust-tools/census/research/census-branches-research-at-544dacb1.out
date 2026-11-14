@@ -1,0 +1,8 @@
+default MemoryConfig wiki_recompile_after_writes = 8
+correct, an OTHER-subject edge (person:alice)              -> CorrectionRefused  {'DELETE wiki': 1, 'INSERT supersession_operations': 1, 'INSERT supersession_refusals': 1, 'INSERT write_counter': 1}
+recompilation 0: recall_impl, empty user, query 'empty'    -> ok                 {}
+recompilation 0: recall_impl, a fact, a query              -> ok                 {}
+recompilation 0: recall_impl, a fact, no query             -> ok                 {}
+default config: recall_impl, empty user, query 'empty'     -> ok                 {'INSERT OR REPLACE wiki': 1}
+default config: recall_impl, a fact, a query               -> ok                 {'INSERT OR REPLACE wiki': 1}
+default config: recall_impl, a fact, no query              -> ok                 {}

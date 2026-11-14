@@ -1,0 +1,66 @@
+veracium from /var/tmp/v31.yVtk/src/veracium/__init__.py
+
+=== correct(e1)
+  error: None
+  write statements by table: {'edge_event': 2, 'edges': 2, 'episodes': 1, 'migration_outcome': 1, 'supersession_operations': 1, 'wiki': 2, 'write_counter': 2}
+  row diff edge_event: +2 -0
+  row diff edges: +2 -1
+      new/changed row: {'id': 'e-3ff5993a0bec', 'text': 'e1-corrected', 'source_id': None, 'call_path': None}
+      new/changed row: {'id': 'e1', 'text': 'e1-content', 'source_id': None, 'call_path': None}
+  row diff episodes: +1 -0
+      new/changed row: {'id': 'ep-44297c9c0367', 'text': "(user) corrected 'likes_e1: e1-content' to 'e1-corrected'", 'source_id': None, 'call_path': None}
+  row diff supersession_operations: +1 -0
+  row diff write_counter: +1 -1
+  returns: {"corrected": "str", "replacement": "str"}
+
+=== dispute(e1)
+  error: None
+  write statements by table: {'edge_event': 1, 'edges': 1, 'episodes': 1, 'migration_outcome': 1, 'wiki': 2, 'write_counter': 2}
+  row diff edge_event: +1 -0
+  row diff edges: +1 -1
+      new/changed row: {'id': 'e1', 'text': 'e1-content', 'source_id': None, 'call_path': None}
+  row diff episodes: +1 -0
+      new/changed row: {'id': 'ep-c44d132fc16b', 'text': "(user) disputed the remembered fact 'likes_e1: e1-content' — no longer true", 'source_id': None, 'call_path': None}
+  row diff write_counter: +1 -1
+  returns: {"disputed": "str", "relation": "str"}
+
+=== confirm(e1)
+  error: None
+  write statements by table: {'act_counter': 1, 'confirmations': 1, 'edges': 1, 'episodes': 1, 'request_registry': 1, 'write_counter': 1}
+  row diff act_counter: +1 -1
+  row diff confirmations: +1 -0
+      new/changed row: {'id': 'c-9ffe2b95e23e', 'text': '', 'source_id': None, 'call_path': None, 'call_path_col': 'host_api'}
+  row diff episodes: +1 -0
+      new/changed row: {'id': 'ep-c-9ffe2b95e23e', 'text': "(user) confirmed 'likes_e1: e1-content' still holds", 'source_id': None, 'call_path': None}
+  row diff request_registry: +1 -0
+  row diff write_counter: +1 -1
+  returns: {"confirmed": "str", "valid_from": "str", "confirmed_at": "str", "correlation_id": "str", "replayed": "bool"}
+
+=== redact(edge e1)
+  error: None
+  write statements by table: {'confirmations': 1, 'contribution_ledger': 1, 'edge_embedding': 1, 'edge_event': 2, 'edges': 1, 'migration_outcome': 1, 'redactions': 1, 'replies': 2, 'request_registry': 1, 'supersession_refusals': 1, 'wiki': 2, 'write_counter': 1}
+  row diff edge_event: +2 -1
+  row diff edges: +1 -1
+      new/changed row: {'id': 'e1', 'text': '\x00veracium:redacted\x00', 'source_id': None, 'call_path': None}
+  row diff redactions: +1 -0
+  row diff write_counter: +1 -1
+  returns: {"<RedactionReceipt>": {"redacted_kind": "str", "target_id": "str", "user_id": "str", "reason": "str", "fields_cleared": ["str"], "marker_version": "int", "store_version_before": "int", "store_version_after": "int", "recorded_at": "str", "event_ref": "str", "applied_at": "NoneType", "applied_store_version_before": "NoneType", "applied_store_version_after": "NoneType", "applied_event_ref": "NoneType", "repeated": "bool", "reconstructed": "bool", "receipts_complete": "bool", "receipt_domains": ["str"], "surviving_derived": [{"kind": "str", "id": "str", "via": "str", "note": "str"}]}}
+
+=== redact(episode ep1)
+  error: None
+  write statements by table: {'contribution_ledger': 1, 'episode_event': 1, 'episodes': 1, 'redactions': 1, 'wiki': 1, 'write_counter': 1}
+  row diff episode_event: +1 -0
+  row diff episodes: +1 -1
+      new/changed row: {'id': 'ep1', 'text': '\x00veracium:redacted\x00', 'source_id': None, 'call_path': None}
+  row diff redactions: +1 -0
+  row diff write_counter: +1 -1
+  returns: {"<RedactionReceipt>": {"redacted_kind": "str", "target_id": "str", "user_id": "str", "reason": "str", "fields_cleared": ["str"], "marker_version": "int", "store_version_before": "int", "store_version_after": "int", "recorded_at": "str", "event_ref": "str", "applied_at": "NoneType", "applied_store_version_before": "NoneType", "applied_store_version_after": "NoneType", "applied_event_ref": "NoneType", "repeated": "bool", "reconstructed": "bool", "receipts_complete": "bool", "receipt_domains": ["str"], "surviving_derived": [{"kind": "str", "id": "str", "via": "str", "note": "str"}]}}
+
+=== forget(user)
+  error: None
+  write statements by table: {'arity_inventory': 1, 'confirmations': 1, 'consolidation_ops': 1, 'contribution_ledger': 1, 'edge_embedding': 1, 'edge_event': 1, 'edges': 1, 'episode_event': 1, 'episodes': 1, 'migration_outcome': 1, 'migration_run': 1, 'policy_receipt': 1, 'redactions': 1, 'refusal_inventory': 1, 'replies': 1, 'request_registry': 1, 'source_revocations': 1, 'supersession_operations': 1, 'supersession_refusals': 1, 'wiki': 1, 'write_counter': 1}
+  row diff edge_event: +0 -2
+  row diff edges: +0 -2
+  row diff episodes: +0 -1
+  row diff write_counter: +0 -1
+  returns: {"edges": "int", "episodes": "int", "confirmations": "int", "replies": "int"}

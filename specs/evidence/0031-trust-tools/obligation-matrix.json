@@ -1,0 +1,814 @@
+{
+ "id": "0031/trust-tools-direct",
+ "version": "v0.14.1",
+ "date": "2026-11-14",
+ "derivation": "every write measured by two independent SQL-trace censuses at veracium 544dacb1 / 78a20f4a (src identical): research proposals/evidence-0031tt-r2-writes/, dev .claude/skills/pre-seal/impl-review/0031tt/census/; the conditions read in code and, for confirm's journal, measured; operation types measured by SQL trace (research census-ops at 544dacb1); COVERAGE (v0.14, TT-R2-02): the two censuses measured each verb's success path plus the named conditional writes; round 2 added CorrectionRefused's committed refusal and the lookup's wiki write. The implementation package ships the census scripts, fixtures and raw traces, denied and conditional branches included; v0.14.1: dev's branch census (19 cases, write_census_branches.py, census-branches-78a20f4a.txt) and research's re-measure (census-branches-research-at-544dacb1.out) agree on CorrectionRefused and on the lookup's conditions",
+ "surfaces": {
+  "mcp": {
+   "principal": null,
+   "call_path": "mcp_direct",
+   "source_id": "build_server's configured source_id (default None) (TT-R2-03)"
+  },
+  "adapter.langchain": {
+   "principal": "the host's, bound at construction",
+   "call_path": "adapter_direct"
+  },
+  "adapter.pydantic_ai": {
+   "principal": "the host's, bound at construction",
+   "call_path": "adapter_direct"
+  }
+ },
+ "gate_order": [
+  "capability: not direct -> attempted_elevation",
+  "erasure off (forget tools) -> erasure_disabled",
+  "principal bound (whole-user tools) -> principal_scoped",
+  "input validation -> named refusal (reason_too_long; exactly one id; token strict parse -> preview_unknown)",
+  "scope configuration (principal) -> scope_unconfigured / principal_ungroupable",
+  "binding source (principal; correct/dispute/confirm) -> source_unbound / source_out_of_scope",
+  "target scope (principal) -> not_found_in_scope (CROSS_HIDDEN, UNRESOLVED, other user, unknown; identical response) / out_of_scope (SHARED, CROSS_VISIBLE)",
+  "library refusals (ValueError, TypeError, CorrectionRefused, ScopeError)"
+ ],
+ "tools": {
+  "find_facts": {
+   "inputs": {
+    "query": "optional str"
+   },
+   "calls": "the same recall recall_impl runs, with the binding's principal, render receipt on",
+   "writes": [
+    {
+     "table": "wiki",
+     "op": "INSERT OR REPLACE",
+     "what": "the recall's wiki cache publication, inherited",
+     "condition": "the query path with wiki recompilation enabled (MemoryConfig.wiki_recompile_after_writes > 0; default 8): one row, empty user or not; the no-query proactive path: none; recompilation 0: none (both seats measured, v0.14.1)",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "writes_note": "no policy_receipt (recall_impl passes no PolicyLane, N1); under none the capability gate refuses before recall, so nothing is written",
+   "returns": {
+    "ok": "bool",
+    "query": "echo or null",
+    "path": "query | proactive",
+    "units": [
+     {
+      "kind": "edge | episode | wiki",
+      "id": "id or null (wiki)",
+      "text": "as admitted by the renderer",
+      "partition": "grounded | fenced | contested",
+      "subject": "present iff not the user",
+      "annotations": "stale, extraction-error, contested, challenge",
+      "mutable": "present iff a principal is bound"
+     }
+    ]
+   },
+   "principal_projection": "units only for what that principal's recall rendered (the renderer's own admission)"
+  },
+  "correct_fact": {
+   "inputs": {
+    "edge_id": "str",
+    "corrected_value": "str, uncapped (matches remember)"
+   },
+   "calls": "Memory.correct(user, edge_id, corrected_value, actor=user, principal, source_id, call_path)",
+   "writes": [
+    {
+     "table": "edges",
+     "op": "INSERT OR REPLACE",
+     "what": "the replacement edge",
+     "condition": "always",
+     "scope_source": "the binding's source_id (over MCP, build_server's configured source_id, default None); under a principal it must be OWN to the principal, else source_unbound / source_out_of_scope (§3b)",
+     "call_path": null,
+     "quotes_target": true
+    },
+    {
+     "table": "edges",
+     "op": "UPDATE",
+     "what": "the target invalidated (corrected)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_event",
+     "op": "INSERT",
+     "what": "journal: the replacement created, the target invalidated (2 events)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "supersession_operations",
+     "op": "INSERT",
+     "what": "the correction plan",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episodes",
+     "op": "INSERT OR REPLACE",
+     "what": "the audit episode: \"(user) corrected '<rel>: <old>' to '<new>'\"",
+     "condition": "always",
+     "scope_source": "the binding's source_id (over MCP, build_server's configured source_id, default None); under a principal it must be OWN to the principal, else source_unbound / source_out_of_scope (§3b)",
+     "call_path": "mcp_direct over MCP, adapter_direct through an adapter (§2)",
+     "quotes_target": true
+    },
+    {
+     "table": "wiki",
+     "op": "DELETE",
+     "what": "cached wiki rows deleted (stale)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "write_counter",
+     "op": "INSERT (upsert)",
+     "what": "the per-user store_version advanced",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "migration_outcome",
+     "op": "UPDATE",
+     "what": "1 statement, no row changed in either census",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "returns": {
+    "host": {
+     "corrected": "str",
+     "replacement": "str"
+    },
+    "principal": "the same: the OWN target's id and its own replacement's id"
+   },
+   "out_of_store": "Memory._record('feedback', ..., user_id)",
+   "writes_on_correction_refused": [
+    {
+     "table": "supersession_refusals",
+     "op": "INSERT",
+     "what": "the durable refusal row",
+     "condition": "the standing OTHER-subject refusal (CorrectionRefused); committed before raising"
+    },
+    {
+     "table": "supersession_operations",
+     "op": "INSERT",
+     "what": "the refusal plan",
+     "condition": "same"
+    },
+    {
+     "table": "write_counter",
+     "op": "INSERT (upsert)",
+     "what": "store_version advanced",
+     "condition": "same"
+    },
+    {
+     "table": "wiki",
+     "op": "DELETE",
+     "what": "cached wiki rows invalidated",
+     "condition": "same (both seats measured, v0.14.1)"
+    }
+   ]
+  },
+  "dispute_fact": {
+   "inputs": {
+    "edge_id": "str",
+    "reason": "optional str, at most 1,024 code points (reason_too_long)"
+   },
+   "calls": "Memory.dispute(user, edge_id, reason=, actor=user, principal, source_id, call_path)",
+   "writes": [
+    {
+     "table": "edges",
+     "op": "UPDATE",
+     "what": "the target invalidated (disputed)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_event",
+     "op": "INSERT",
+     "what": "journal: invalidated",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episodes",
+     "op": "INSERT OR REPLACE",
+     "what": "the audit episode: \"(user) disputed the remembered fact '<rel>: <obj>' — <reason>\"",
+     "condition": "always",
+     "scope_source": "the binding's source_id (over MCP, build_server's configured source_id, default None); under a principal it must be OWN to the principal, else source_unbound / source_out_of_scope (§3b)",
+     "call_path": "mcp_direct over MCP, adapter_direct through an adapter (§2)",
+     "quotes_target": true
+    },
+    {
+     "table": "wiki",
+     "op": "DELETE",
+     "what": "cached wiki rows deleted (stale)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "write_counter",
+     "op": "INSERT (upsert)",
+     "what": "store_version advanced",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "migration_outcome",
+     "op": "UPDATE",
+     "what": "1 statement, no row changed",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "returns": {
+    "host": {
+     "disputed": "str",
+     "relation": "str"
+    },
+    "principal": "the same"
+   },
+   "out_of_store": "Memory._record('feedback', ..., user_id)"
+  },
+  "confirm_fact": {
+   "inputs": {
+    "edge_id": "str"
+   },
+   "calls": "Memory.confirm(user, edge_id, actor=USER, call_path, principal, source_id)",
+   "writes": [
+    {
+     "table": "confirmations",
+     "op": "INSERT",
+     "what": "the confirmation row",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": "call_path column: mcp_direct over MCP, adapter_direct through an adapter (§2)",
+     "quotes_target": false
+    },
+    {
+     "table": "edges",
+     "op": "UPDATE",
+     "what": "needs_confirmation cleared; observed_at = max(observed_at, confirmed_at); confidence = max(confidence, 0.9)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_event",
+     "op": "INSERT",
+     "what": "journal: mutated",
+     "condition": "only when the confirmation changes the edge's stored bytes: confidence < 0.9, or observed_at before the confirmation's instant (date-less confirm: today 00:00 UTC), or needs_confirmation set; none of the three -> no event",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episodes",
+     "op": "INSERT OR REPLACE",
+     "what": "the quoting episode: \"(user) confirmed '<rel>: <obj>' still holds\" (TT-R1-01)",
+     "condition": "always",
+     "scope_source": "the binding's source_id (over MCP, build_server's configured source_id, default None); under a principal it must be OWN to the principal, else source_unbound / source_out_of_scope (§3b)",
+     "call_path": "mcp_direct over MCP, adapter_direct through an adapter (§2)",
+     "quotes_target": true
+    },
+    {
+     "table": "request_registry",
+     "op": "INSERT",
+     "what": "the request's registry row (0008 §6c)",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "act_counter",
+     "op": "UPDATE",
+     "what": "the act sequence",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "write_counter",
+     "op": "INSERT (upsert)",
+     "what": "store_version advanced",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "returns": {
+    "host": {
+     "confirmed": "str",
+     "valid_from": "str",
+     "confirmed_at": "str",
+     "correlation_id": "str",
+     "replayed": "bool"
+    },
+    "principal": "the same"
+   },
+   "effects_beyond_writes": "the declarative-grounding read upgrades not_attested to confirmed (0045/0047)",
+   "out_of_store": "Memory._record('feedback', ..., user_id)"
+  },
+  "forget_fact": {
+   "inputs": {
+    "edge_id XOR episode_id": "str"
+   },
+   "calls": "Memory.redact(user, edge_id= | episode_id=, reason='subject_request', principal)",
+   "writes_edge_target": [
+    {
+     "table": "redactions",
+     "op": "INSERT",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edges",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_event",
+     "op": "INSERT and UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_embedding",
+     "op": "DELETE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "replies",
+     "op": "UPDATE (2)",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "confirmations",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "contribution_ledger",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "request_registry",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "supersession_refusals",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "wiki",
+     "op": "DELETE (2)",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "write_counter",
+     "op": "INSERT (upsert)",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "migration_outcome",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "source_revocations",
+     "op": "UPDATE",
+     "what": "reason prose to the marker on the target's source's revoke/lift rows (0041 §11.2)",
+     "condition": "only when the target's provenance yields a source identity digest; under OWN-only that source is the principal's own",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "writes_episode_target": [
+    {
+     "table": "redactions",
+     "op": "INSERT",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episodes",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episode_event",
+     "op": "INSERT",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "contribution_ledger",
+     "op": "UPDATE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "wiki",
+     "op": "DELETE",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "write_counter",
+     "op": "INSERT (upsert)",
+     "what": "0041's treatment map",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "source_revocations",
+     "op": "UPDATE",
+     "what": "reason prose to the marker on the target's source's revoke/lift rows (0041 §11.2)",
+     "condition": "only when the target's provenance yields a source identity digest; under OWN-only that source is the principal's own",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "returns": {
+    "host": {
+     "RedactionReceipt": [
+      "redacted_kind",
+      "target_id",
+      "user_id",
+      "reason",
+      "fields_cleared",
+      "marker_version",
+      "store_version_before",
+      "store_version_after",
+      "recorded_at",
+      "event_ref",
+      "applied_at",
+      "applied_store_version_before",
+      "applied_store_version_after",
+      "applied_event_ref",
+      "repeated",
+      "reconstructed",
+      "receipts_complete",
+      "receipt_domains",
+      "surviving_derived[kind,id,via,note]"
+     ]
+    },
+    "principal": {
+     "kept": [
+      "redacted_kind",
+      "target_id",
+      "reason",
+      "marker_version",
+      "repeated",
+      "recorded_at"
+     ],
+     "surviving_derived": "only OWN, SHARED or CROSS_VISIBLE entries, each with its class; no hidden id, count or indicator",
+     "scope": "always \"this principal's view\"",
+     "dropped": "DEFAULT-DENY: every host-receipt field not in 'kept', including fields_cleared, user_id, store/applied versions, event_ref, applied_event_ref, applied_at, reconstructed, receipt_domains, receipts_complete (TT-R2-01)",
+     "recorded_at": "the receipt's own recorded time, possibly inherited on replay or import; not the present call's time",
+     "repeat": "returns the original receipt only if the target passes the same fresh scope gate; else not_found_in_scope (CROSS_HIDDEN, UNRESOLVED) or out_of_scope (SHARED, CROSS_VISIBLE) (TT-R2-01)"
+    }
+   },
+   "out_of_store": "Memory._record('redact', {kind, fields}, user_id)"
+  },
+  "forget_everything_preview": {
+   "inputs": {},
+   "principal": "refused: principal_scoped",
+   "calls": "the Memory preview method with the surface's token issuer; one read snapshot of edges, episodes, confirmations, replies",
+   "writes": [],
+   "returns": {
+    "counts": {
+     "edges": "int",
+     "episodes": "int",
+     "confirmations": "int",
+     "replies": "int"
+    },
+    "expires_at": "ISO 8601 UTC",
+    "preview_token": "tt1.<payload>.<mac>",
+    "warning": "fixed text (§4e)"
+   },
+   "mac_input": "b'veracium/0031-tt/preview/v1' + b'\\x00' + the ASCII bytes of the base64url payload segment as transmitted (TT-R2-04)"
+  },
+  "forget_everything_confirm": {
+   "inputs": {
+    "preview_token": "str, strictly parsed"
+   },
+   "principal": "refused: principal_scoped",
+   "calls": "verify, expiry, re-derive digest, store forget_user with the expected digest, one write transaction",
+   "writes": [
+    {
+     "table": "arity_inventory",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "confirmations",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "consolidation_ops",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "contribution_ledger",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_embedding",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edge_event",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "edges",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episode_event",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "episodes",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "migration_outcome",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "migration_run",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "policy_receipt",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "redactions",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "refusal_inventory",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "replies",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "request_registry",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "source_revocations",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "supersession_operations",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "supersession_refusals",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "wiki",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    },
+    {
+     "table": "write_counter",
+     "op": "DELETE",
+     "what": "the user's rows",
+     "condition": "always",
+     "scope_source": null,
+     "call_path": null,
+     "quotes_target": false
+    }
+   ],
+   "writes_note": "the 21 tables of _ERASE_TABLES (28 tables, 21 with user_id, all erased)",
+   "returns": {
+    "edges": "int",
+    "episodes": "int",
+    "confirmations": "int",
+    "replies": "int"
+   },
+   "refusals": [
+    "preview_unknown",
+    "preview_expired",
+    "store_changed"
+   ],
+   "out_of_store": "Memory._record('forget', {edges, episodes}, user_id); the usage accumulator popped",
+   "replay": "key-set equality, not one use: a valid token erases again whenever the four current key sets equal its bound sets within the TTL; restored same-id records or new uncounted state may be erased (TT-R2-04)"
+  }
+ },
+ "schema_extras": "an argument absent from the served model is IGNORED (0053 §4.1, K6, K8); an attempted override cannot affect the bound values (TT-R2-03)",
+ "denied_branch_writes": {
+  "gates_1_to_7": [],
+  "library_refusals_pre_write": [],
+  "CorrectionRefused": {
+   "writes": [
+    "supersession_refusals",
+    "supersession_operations",
+    "write_counter",
+    "wiki (DELETE: invalidation)"
+   ],
+   "committed": true,
+   "rolled_back": false,
+   "result": "ok:false, refusal correction_refused; the target stays active (TT-R2-02)"
+  }
+ }
+}
