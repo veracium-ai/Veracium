@@ -1,5 +1,5 @@
 {
- "body_sha256": "89c92ef6cac29848fc50897cfaf72be0c0c6bcab89e10858dd2b9d1dec32a666",
+ "body_sha256": "2e8c7a6710bec721ac1d38c3975c89b868ddc31eb7b935e50b1e6e29652a67d0",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 6
    }
   },
-  "commit": "d49a32660ca3ffebf0bc84e6da3147e41f2a7a4a",
+  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
   "control_definitions": {
    "NOOP-0018-AR-R3-01-cli": "570dbe761c1aa86d26729143a9dc163060dd621ee4fe804d96310a179534be61",
    "NOOP-0018-AR-R3-01-release_migration": "cef890ac20867983e46a8459261e206fa642e816ebb2a10658edb7738b191b31"
@@ -92,7 +92,7 @@
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/cli.py": "e58ca686a72dabf3356b4d106a66b6de6254a4d3366527094836a5d8c2f06540",
+   "src/veracium/cli.py": "4bf5fb967a9f64d8730e2b6f71ce58a747f1d2e66748c310dc8a885fd7f13e2a",
    "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
    "tests/test_0018_rungs_t4.py": "540bf298b098183fd6484c7c819988fec246e6b3da894c655fb10b581b58b2a3",
    "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
@@ -102,14 +102,17 @@
    "tests/test_0018_rungs_t4.py::test_the_classifier_takes_no_diagnostic",
    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "specs/0003-supersession-authority.md",
-   "specs/STATUS.md",
+   "docs/api.md",
+   "specs/0042-exercised-guarantees.md",
+   "specs/ALLOCATION.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
@@ -121,20 +124,25 @@
    "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
+   "specs/evidence/0042/derive_keys.py",
+   "specs/evidence/0042/retired_overrides.py",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0044/campaign/result.json",
-   "specs/evidence/0044/obligation_map.json",
-   "specs/evidence/0044/obligation_map.md",
-   "specs/evidence/sr2-01/mutation-table.json",
-   "specs/evidence/sr2-01/wiki_cache_mutants.py",
    "specs/generated/0002-audit-manifest.md",
-   "src/veracium/budgets.py",
+   "src/veracium/__init__.py",
    "src/veracium/cli.py",
-   "src/veracium/compile.py",
-   "tests/test_sr2_01_wiki_upgrade.py"
+   "src/veracium/graph.py",
+   "src/veracium/introspect.py",
+   "src/veracium/store/base.py",
+   "src/veracium/store/sqlite.py",
+   "tests/test_0042_retired_overrides.py",
+   "tests/test_0042_sites.py",
+   "tests/test_0049_edges_since_learned.py",
+   "tests/test_host_queries.py",
+   "tests/test_introspect_cli.py",
+   "tests/test_rii_r2_01_writer_inventory.py"
   ]
  },
  "rows": [
@@ -172,7 +180,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.45s",
+   "pytest": "3 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "every unchanged carrier the rows do not name retries blindly"
@@ -205,7 +213,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.47s",
    "reason": null,
    "reason_seen": null,
    "what": "U3 claims it knows which cause happened"
@@ -238,7 +246,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "unknown facts print the last known version"
@@ -253,6 +261,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 13
+  "seconds": 15
  }
 }

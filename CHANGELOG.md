@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+**`edges_since` means learned** (specs/0049; design accepted with amendments at external review round 1, 2026-11-15).
+- **Changed (a fix): `Memory.edges_since(user_id, since)` returns the edges this store LEARNED after `since`,** by
+  the first journal event's store-minted time (specs/0029), not the event's own date. An edge remembered today about a
+  2024 event is returned for a cutoff yesterday; before this release it was not. A later confirm, update or
+  reinstatement of the same id does not make it newly learned, and an import or restore is learned when this store
+  received it. A store migrated from before the journal was baselined at migration, so for those edges the method can
+  only say "learned by the baseline". It is a new-record listing, not a change feed, and a strict timestamp cutoff, not
+  a lossless pagination cursor. A store that cannot supply first-record times refuses (`NotImplementedError`), and an
+  edge with no journal event refuses (`ValueError`); a learned time is never guessed.
+- **Deprecated: `introspect` / `veracium introspect --json`'s `last_recorded`.** It was always max(`observed_at`), an
+  observation time, so it is now `last_observed`; `last_recorded` carries the same value for one more release and is
+  then removed. **Who must act:** a consumer reading `last_recorded` should read `last_observed`. The CLI summary
+  line now labels both times ("facts valid from …; last observed …").
+
 **The trust tools: under `direct`, a user can look up, correct, dispute, confirm and erase their memory through
 their agent** (specs/0031 v23–v23.2, §4f; design accepted with amendments at external review round 2, 2026-11-14).
 **Not yet released:** the implementation review and the pre-registered injection measurement (§6a) come first.

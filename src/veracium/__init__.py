@@ -83,6 +83,10 @@ _SITE_EDGE_UNKNOWN_TARGET = declare_site("memory.edge.unknown-target")
 _SITE_CONFIRM_UNKNOWN_TARGET = declare_site("memory.confirm.unknown-target")
 _SITE_DISPUTE_INACTIVE = declare_site("memory.dispute.inactive-edge")
 _SITE_FEEDBACK_ATTESTED = declare_site("memory.feedback.attested-target")
+# specs/0049 §5 (E2, E2b): edges_since refuses rather than guess a learned time (research stage 1 and the round-1
+# verdict's Q5: both ENFORCEMENT)
+_SITE_EDGES_SINCE_NO_JOURNAL = declare_site("memory.edges-since.no-journal")
+_SITE_EDGES_SINCE_NO_EVENT = declare_site("memory.edges-since.no-journal-event")
 _SITE_OUTCOME_ACTOR = declare_site("memory.record-outcome.actor-vocabulary")
 _SITE_OUTCOME_HUMAN = declare_site("memory.record-outcome.human-judgment")
 _SITE_OUTCOME_SYSTEM = declare_site("memory.record-outcome.system-judgment")
@@ -1972,18 +1976,52 @@ class Memory:
 
     def edges_since(self, user_id: str, since) -> list[Edge]:
         """Edges *learned* after `since` (ISO date/datetime string, or a
-        datetime) — filtered on `provenance.observed_at`, i.e. when veracium
-        recorded the fact, not `valid_from` (when it became true). Includes
-        superseded and quarantined edges so change-detection sees everything;
-        filter on `.active` / `.assertable` / provenance as needed."""
+        datetime): learned is the store-minted `recorded_at` of the edge's
+        FIRST journal event (specs/0029's transaction-time carrier;
+        specs/0049), never the event's own date (`valid_from`,
+        `provenance.observed_at`). Includes superseded and quarantined edges;
+        filter on `.active` / `.assertable` / provenance as needed. A store that cannot supply
+        first-record times REFUSES (`NotImplementedError`), and so does an
+        edge with no journal event (`ValueError`): a learned time that cannot
+        be read is not guessed. Both reads (the first-record times and the
+        edge listing) are ONE snapshot, the store's `read_window`, so a write
+        landing during the call is either wholly in the result or wholly out.
+
+        A NEW-RECORD listing, not a change feed: a later confirm, update,
+        redaction or reinstatement of an edge does not make it newly learned,
+        and a store migrated from before the journal (specs/0029's baseline)
+        can only say an edge was learned BY the migration. The cutoff is a
+        strict timestamp, not a lossless pagination cursor: two transactions
+        may share a `recorded_at`."""
         from datetime import datetime, timezone
         if isinstance(since, str):
             since = datetime.fromisoformat(since)
         if since.tzinfo is None:
             since = since.replace(tzinfo=timezone.utc)
-        return [e for e in self.store.edges(user_id, active_only=False,
-                                            include_quarantined=True)
-                if e.provenance.observed_at > since]
+        # specs/0049 v2.2 (0049-R1-01): the timestamp map and the edge listing are read in ONE snapshot, the store's
+        # read window, so a writer committing between them cannot make a complete journal look incomplete. Under WAL
+        # the writer commits and this read keeps its snapshot; under the default journal it waits for the window.
+        with self.store.read_window(user_id):
+            learned = self.store.first_recorded_at(user_id)
+            with _SITE_EDGES_SINCE_NO_JOURNAL.consult():
+                if learned is None:
+                    raise _SITE_EDGES_SINCE_NO_JOURNAL.fire(NotImplementedError(
+                        f"{type(self.store).__name__} cannot supply first-record times (specs/0029's transaction-time "
+                        f"journal), so it cannot say when an edge was learned (specs/0049)"), "no-journal")
+            out = []
+            for e in self.store.edges(user_id, active_only=False, include_quarantined=True):
+                at = learned.get(e.id)
+                with _SITE_EDGES_SINCE_NO_EVENT.consult():
+                    if at is None:
+                        raise _SITE_EDGES_SINCE_NO_EVENT.fire(ValueError(
+                            f"edge {e.id!r} has no journal event, so when it was learned is unknown (specs/0049)"),
+                            "no-event")
+                t = datetime.fromisoformat(at)
+                if t.tzinfo is None:
+                    t = t.replace(tzinfo=timezone.utc)
+                if t > since:
+                    out.append(e)
+        return out
 
     # -- user feedback verbs -------------------------------------------------
     def _refuse_attested(self, user_id: str, edge_id: str, op: str) -> None:

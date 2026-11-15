@@ -118,7 +118,24 @@ def sub_ov(m):
     matches = [l for l in nl if stmt_at(mod, l) == prev[0]["statement"]]
     assert len(matches) == 1, (key, prev[0]["statement"][:60], matches)
     return f'("{mod}", {matches[0]})'
-ov_new = re.sub(r'\("([^"]+)",\s*(\d+)\)', sub_ov, ov_src.split("\n", 1)[1])
+# A plan-time override whose STATEMENT a code change removed has no group to land in: it is dropped only when
+# retired_overrides.py declares it, each retirement checked against the literal, the plan-time inventory, the previous
+# generation's recorded statement and the current declared sites (specs/0042 v12.18). An undeclared vanished group
+# still refuses in sub_ov's hop (KeyError on the group).
+_rs = importlib.util.spec_from_file_location("retired_overrides", S / "retired_overrides.py")
+_ro = importlib.util.module_from_spec(_rs); _rs.loader.exec_module(_ro)
+_ov_plan_at = next(ast.literal_eval(n.value) for n in ast.parse(ov_src).body
+                   if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "OVERRIDE")
+fired_in = {sid: {(m, inv_key[(m, l)]["qualname"]) for m, l in lst if (m, l) in inv_key} for sid, lst in found.items()}
+retired = _ro.check(_ro.RETIRED_OVERRIDES, _ov_plan_at, old_inv, inv, prev_rp or {}, fired_in) if prev_rp else set()
+retired_groups = {tuple(_ro.RETIRED_OVERRIDES[k]["group"]) for k in retired}
+_ov_body = ov_src.split("\n", 1)[1]
+for (_m, _l) in sorted(retired):
+    _ov_body, _n = re.subn(r'\("' + re.escape(_m) + r'",\s*' + str(_l) + r'\):\s*"[^"]+",\s*', "", _ov_body)
+    assert _n == 1, (_m, _l, "a retired key must occur once in the literal")
+if retired:
+    print(f"retired {len(retired)} plan-time OVERRIDE entr(y/ies): {sorted(retired)}")
+ov_new = re.sub(r'\("([^"]+)",\s*(\d+)\)', sub_ov, _ov_body)
 # 2026-10-24 (R-II round 3, NEXT-ROUND): an OVERRIDE entry added AFTER plan time lives only in the input review, so
 # rebuilding from override_at_plan.py alone dropped it — four at RII-R2-01 (schema.py 659 and 686/1438 among them),
 # re-added by hand each generation. Every INPUT entry is now re-keyed to the target through the previous generation's
@@ -139,6 +156,8 @@ if prev_rp is not None:
         r = prev_at.get((mod, ln))
         assert r is not None, (mod, ln, "an input OVERRIDE line the previous reviewed_points.json does not record")
         q, k, o = r["key"].split(":", 1)[1].rsplit(":", 2)
+        if (mod, q, k) in retired_groups:                  # its statement is gone: retired above, checked
+            continue
         nl = N.get((mod, q, k), [])
         if len(nl) == prev_n[(mod, q, k)]:
             cur = nl[int(o) - 1]

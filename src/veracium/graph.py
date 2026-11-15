@@ -794,8 +794,9 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     # only query-RELEVANT assertable records. specs/0027 §2: the scan itself
     # is the extracted `_lexical_scored` (unscoped here — this function IS the
     # legacy `principal=None` path the V10 oracle freezes); its recency
-    # tiebreak reads observed_at — "most recently recorded", not "became true
-    # earliest" (valid_from is the first-known axis).
+    # tiebreak reads observed_at — "most recently observed", not "became true
+    # earliest" (valid_from is the first-known axis; when the store LEARNED a
+    # record is the journal's recorded_at, specs/0049).
     scored3, relevant_ids, _by_id = _lexical_scored(store, user_id, query)
     scored = [(sc, e) for sc, _ov, e in scored3]
     # specs/0012 I8: collapse strictly-redundant ACTIVE duplicates AFTER scoring

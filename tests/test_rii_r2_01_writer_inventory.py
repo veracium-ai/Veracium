@@ -398,6 +398,7 @@ READS = {
     "act_rows", "act_state", "acted_edge_ids", "active_challenges", "arity_plan_state", "challenge_snapshot",
     "confirm_notice", "confirmations_for", "contributions", "contributions_naming", "contributors_of_source",
     "current_state", "edge_events", "edge_state_at", "edges", "edges_superseding", "embedding_keys", "episodes",
+    "first_recorded_at",
     "get_wiki", "list_users", "local_origin", "migration_outcomes", "migration_outcomes_by_uid", "notice_body",
     "notice_id", "pending_consolidations", "pending_notices", "policy_receipt", "policy_receipts",
     "quiescent_episode_snapshot", "read_window", "redacted_targets", "redaction_records", "refusal_inventory_ids",

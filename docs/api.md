@@ -410,9 +410,20 @@ Host/admin queries (neither is an MCP tool by design):
   `[{"user_id": "vendor:acme", "edges": 12, "episodes": 4}, ...]`. For deciding
   what to recall proactively or auditing coverage.
 - **`edges_since`** — edges *learned* after a date (`"2026-07-01"` or a
-  datetime): filters on `provenance.observed_at` (when Veracium recorded it),
-  not `valid_from` (when it became true). Includes superseded and quarantined
-  edges so change-detection sees everything — filter on `.active`/`.assertable`.
+  datetime): the store RECORDED them after it, read as the `recorded_at` of each
+  edge's first journal event (specs/0029 transaction time), not
+  `provenance.observed_at` or `valid_from`, which come from the event's own date.
+  A fact remembered today about last year's event was learned today; an import or
+  a restore is learned when this store received it. Edges older than the journal
+  read as learned at or before the migration that added it (an upper bound, not an
+  exact time). Includes superseded and quarantined edges — filter on
+  `.active`/`.assertable`. It is a NEW-RECORD listing, not a change feed: a later
+  confirm, update, redaction or reinstatement of an edge does not make it newly
+  learned. The cutoff is strict (`since` itself is excluded) and is a timestamp,
+  not a lossless pagination cursor: two transactions may share a `recorded_at`.
+  Both reads are one snapshot. A store that cannot supply first-record times
+  refuses (`NotImplementedError`), and so does an edge with no journal event
+  (`ValueError`); neither is answered from event time (specs/0049).
 
 ### `introspect(user_id, *, mode="summary") -> dict`
 

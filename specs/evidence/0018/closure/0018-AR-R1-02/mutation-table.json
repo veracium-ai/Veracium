@@ -1,5 +1,5 @@
 {
- "body_sha256": "b9e9cc79e2229f59b0e84d4cdfa0b8a4ed3254d6c64299a2082ec0f85a7d4d2e",
+ "body_sha256": "e7840a9c8aec69f1ab76639e9f2d1838235ca30a4df6823a3c738f093c03fca4",
  "controls": [
   {
    "anchor_counts": [
@@ -70,7 +70,7 @@
     "passed": 4
    }
   },
-  "commit": "d49a32660ca3ffebf0bc84e6da3147e41f2a7a4a",
+  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
   "control_definitions": {
    "NOOP-0018-AR-R1-02-migration": "f06e9e769f4df581428ac3763df6fdd188a9e422a98c6b25aa38486688f1c150",
    "NOOP-0018-AR-R1-02-sa10_gate": "76db3004598a1fbea61dbebd9863b07cb2f3112ea3181eb3a9caa30aca396c73"
@@ -99,29 +99,37 @@
   "honest_nodes": [
    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "specs/0003-supersession-authority.md",
-   "specs/STATUS.md",
+   "docs/api.md",
+   "specs/0042-exercised-guarantees.md",
+   "specs/ALLOCATION.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
+   "specs/evidence/0042/derive_keys.py",
+   "specs/evidence/0042/retired_overrides.py",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0044/campaign/result.json",
-   "specs/evidence/0044/obligation_map.json",
-   "specs/evidence/0044/obligation_map.md",
-   "specs/evidence/sr2-01/mutation-table.json",
-   "specs/evidence/sr2-01/wiki_cache_mutants.py",
    "specs/generated/0002-audit-manifest.md",
-   "src/veracium/budgets.py",
+   "src/veracium/__init__.py",
    "src/veracium/cli.py",
-   "src/veracium/compile.py",
-   "tests/test_sr2_01_wiki_upgrade.py"
+   "src/veracium/graph.py",
+   "src/veracium/introspect.py",
+   "src/veracium/store/base.py",
+   "src/veracium/store/sqlite.py",
+   "tests/test_0042_retired_overrides.py",
+   "tests/test_0042_sites.py",
+   "tests/test_0049_edges_since_learned.py",
+   "tests/test_host_queries.py",
+   "tests/test_introspect_cli.py",
+   "tests/test_rii_r2_01_writer_inventory.py"
   ]
  },
  "rows": [
@@ -153,7 +161,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.48s",
+   "pytest": "1 failed in 0.51s",
    "reason": null,
    "reason_seen": null,
    "what": "head equality is widened to every historical constructor, which round 1 ruled out. Here and not in SA10's table because its cell is in T2"
@@ -186,7 +194,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "a `data` entry issues DDL: what the kind rule stops and SA10 alone would admit elsewhere"
@@ -219,7 +227,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung stamps head"
@@ -235,6 +243,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 26
+  "seconds": 31
  }
 }

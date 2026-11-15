@@ -1760,6 +1760,37 @@ DECLINES.update({
         ValueError, _trust_tools.PreviewTokenIssuer("o", U).verify,
         _trust_tools.PreviewTokenIssuer("o", U).issue("0" * 64, 1_800_000_000), store_identity="o", user_id=U),
 })
+
+
+# specs/0049 v2.2 (E2, E2b): edges_since refuses rather than guess a learned time. Each driven through a store whose
+# first-record projection is the refusal's condition: none at all (the base Store's default), and a map missing the
+# one edge listed (one edge, so the per-edge site consults once).
+class _NoFirstRecordTimes(SqliteStore):
+    def first_recorded_at(self, user_id):
+        return None
+
+
+class _MissingFirstRecordTime(SqliteStore):
+    def first_recorded_at(self, user_id):
+        return {}
+
+
+def _edges_since_on(store_cls, *, with_edge):
+    st = store_cls(":memory:")
+    if with_edge:
+        st.add_edge(_edge("u1"))
+    m = veracium.Memory(llm=lambda p, **k: "", store=st, config=MemoryConfig(db_path=":memory:"))
+    return m
+
+
+DECLINES.update({
+    "memory.edges-since.no-journal": TwoPhase(
+        lambda mp: _edges_since_on(_NoFirstRecordTimes, with_edge=False),
+        lambda m: _raises(NotImplementedError, m.edges_since, U, "2020-01-01")),
+    "memory.edges-since.no-journal-event": TwoPhase(
+        lambda mp: _edges_since_on(_MissingFirstRecordTime, with_edge=True),
+        lambda m: _raises(ValueError, m.edges_since, U, "2020-01-01")),
+})
 SITES.update({sid: census._REGISTRY[sid] for sid in census.registry()})
 
 

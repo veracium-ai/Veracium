@@ -433,6 +433,13 @@ class Store(ABC):
 
     # -- specs/0029: the transaction-time carrier (read surface; additive) -----
 
+    def first_recorded_at(self, user_id: str) -> Optional[dict]:
+        """specs/0049 §4: each edge's FIRST journal event's `recorded_at` (the store-minted transaction time of
+        specs/0029), as `{edge_id: recorded_at}`. TIMESTAMPS ONLY: no `state`, `reason` or `kind` leaves the store
+        (specs/0029 V-INERT's one exception, read by `Memory.edges_since` alone). `None` when the store keeps no
+        transaction-time journal. Not abstract."""
+        return None
+
     def edge_events(self, user_id: str, *, edge_id: Optional[str] = None,
                     until_txn: Optional[int] = None) -> list:
         """§4d — typed `EdgeEvent` rows in `seq` order; `until_txn` bounds by

@@ -261,7 +261,7 @@ def _memory_verbs(args) -> int:
             print(f"memory for '{out['user_id']}': {out['facts']} facts, "
                   f"{out['unverified_claims']} unverified claims, "
                   f"{out['episodes']['interaction']} episodes "
-                  f"({out['first_known'] or 'n/a'} → {out['last_recorded'] or 'n/a'})")
+                  f"(facts valid from {out['first_known'] or 'n/a'}; last observed {out['last_observed'] or 'n/a'})")
             rec = out.get("wiki_compile_record") or {}
             if rec.get("status") == "ok":
                 print(f"wiki compile: +{rec['facts_dropped']} facts / "

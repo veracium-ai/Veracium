@@ -154,6 +154,8 @@ edges-text	src/veracium/store/sqlite.py	str:edges	"edges", "episodes", "wiki", "
 edges-text	src/veracium/store/sqlite.py	str:edges	"ruling": "erasure: deletes the user's edges AND the user's events in "
 edges-text	src/veracium/store/sqlite.py	str:edges	"ruling": "imports edges through the choke point (created for new ids, "
 edges-text	src/veracium/store/sqlite.py	str:edges	_SITE_EDGES_READ_FENCE = declare_site("store.edges.read-fence")
+edges-text	src/veracium/__init__.py	str:edges	_SITE_EDGES_SINCE_NO_JOURNAL = declare_site("memory.edges-since.no-journal")
+edges-text	src/veracium/__init__.py	str:edges	_SITE_EDGES_SINCE_NO_EVENT = declare_site("memory.edges-since.no-journal-event")
 edges-text	src/veracium/store/sqlite.py	str:edges	edges = plan.get("edges", [])
 edges-text	src/veracium/store/sqlite.py	str:edges	return [{"user_id": u, "edges": int(e or 0), "episodes": int(p or 0)}
 edges-text	src/veracium/store/sqlite.py	str:edges	return {"edges": len(edges), "episodes": len(episodes),

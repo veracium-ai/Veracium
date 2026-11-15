@@ -597,6 +597,15 @@ class SqliteStore(Store):
         return t
 
     # -- specs/0029 read surface --------------------------------------------
+    def first_recorded_at(self, user_id: str) -> dict:
+        """specs/0049 §4: `{edge_id: recorded_at}` of each edge's FIRST journal event, by `seq`. Timestamps only:
+        no payload column is read (specs/0029 V-INERT's 0049 exception)."""
+        out: dict = {}
+        for edge_id, recorded_at in self._conn.execute(
+                "SELECT edge_id, recorded_at FROM edge_event WHERE user_id=? ORDER BY seq", (user_id,)):
+            out.setdefault(edge_id, recorded_at)
+        return out
+
     def edge_events(self, user_id: str, *, edge_id: Optional[str] = None,
                     until_txn: Optional[int] = None) -> list[EdgeEvent]:
         q = ("SELECT user_id, seq, txn, edge_id, kind, reason, state, recorded_at "
@@ -1583,7 +1592,7 @@ class SqliteStore(Store):
                 return None
             e = Edge.model_validate_json(row[0])
             lifetime = lifetimes.get(e.volatility)
-            # liveness ages against observed_at (when we last recorded this), not valid_from — on the CURRENT row
+            # liveness ages against observed_at (when we last observed this), not valid_from — on the CURRENT row
             if lifetime is None or (now - e.provenance.observed_at).days <= lifetime:
                 return None
             behavior = behaviors[e.volatility]

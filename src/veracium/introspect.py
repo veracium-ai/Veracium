@@ -108,6 +108,9 @@ def report(store, user_id: str, *, mode: str = "summary",
         # per-pass `recovered` count — a live op is pending, never recovered.
         "consolidation_pending": len(store.pending_consolidations(user_id)),
         "first_known": min(firsts).isoformat() if firsts else None,
+        # specs/0049 v2.2 (the owner's ruling, 2026-11-15): max(provenance.observed_at) is an OBSERVATION time, so it
+        # is `last_observed`; `last_recorded`, its old name, is a deprecated alias with the same value for one release
+        "last_observed": max(lasts).isoformat() if lasts else None,
         "last_recorded": max(lasts).isoformat() if lasts else None,
     }
     if mode == "categories":

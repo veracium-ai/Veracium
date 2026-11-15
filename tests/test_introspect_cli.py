@@ -50,7 +50,8 @@ def test_introspect_summary_counts():
         assert out["by_disclosure"]["quarantined"] == 1
         assert out["retired"] == {"superseded": 1}
         assert out["episodes"]["interaction"] == 3
-        assert out["first_known"] and out["last_recorded"]
+        assert out["first_known"] and out["last_observed"]
+        assert out.get("last_recorded") == out["last_observed"]   # specs/0049 v2.2: the deprecated alias, one release
         json.dumps(out)  # JSON-able throughout
         mem.close()
 

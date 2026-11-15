@@ -635,6 +635,9 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0049 v2.2 (E6): an import is learned when THIS store received it, pinned in both modes (import_memory, a
+    # same-user and a cross-user remap; restore=True)
+    ("test_0049_edges_since_learned.py", "test_e6_an_import_is_learned_when_this_store_received_it"): "both",
     # 0044 T11a (outcome portability): the module's one helper forwards `restore=` from each cell — both modes
     ("test_0044_t11a_portability.py", "_import"): "both",
     ("test_0044_t11a_portability.py", "_refuses"): "both",
