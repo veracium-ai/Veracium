@@ -165,6 +165,11 @@ def test_ungrounded_grants_nothing():
                        # turns, separately, to judge a user's dated obligation; it never reads the stored flag. It only
                        # RESTRICTS (MENTIONABLE -> USE_ONLY, a date only another speaker grounds), never grants:
                        # WITHHOLDING-side, U2's class.
+                       # the render receipt (0031 §4f §4b, 2026-11-15): `trust_tools.edge_annotations` names the
+                       # marker the rendered line already carries ("[possible extraction error]") as the unit's
+                       # `extraction_error` annotation — the same MARKER surface as graph.py; no branch keys
+                       # anything on the flag, and the receipt is off by default.
+                       "trust_tools.py",
                        "speaker_backstop.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
