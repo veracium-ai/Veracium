@@ -1,5 +1,5 @@
 {
- "body_sha256": "bf5e5ad42903eabcccb729ed1a4c68dfa0495ce2220d369ddda523b55513fdff",
+ "body_sha256": "89618886b350dea03c6865c817bd6cbf4bada60b19c98d806536f2e070c22f16",
  "controls": [
   {
    "anchor_counts": [
@@ -27,6 +27,7 @@
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[confirm-host_api]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[correct-host_api]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[dispute-host_api]",
+    "tests/test_0031_trust_tools_library.py::test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused",
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[correct]",
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[dispute]",
     "tests/test_0031_trust_tools_library.py::test_an_export_carrying_an_agent_path_is_15_and_one_without_keeps_its_era_and_bytes",
@@ -67,7 +68,7 @@
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]"
    ],
-   "definition_sha256": "4346b8a981ed895318a1689d18dca85369f069d71b41242d2dbea5197917f6ca",
+   "definition_sha256": "20d88438c4f77645a043da9472d9ecc68b144a9fd6efe3ef2c8cde6e923cfc7f",
    "expected": "SURVIVED",
    "file": "src/veracium/__init__.py",
    "good": true,
@@ -93,6 +94,7 @@
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[confirm-host_api]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[correct-host_api]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[dispute-host_api]",
+    "tests/test_0031_trust_tools_library.py::test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused",
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[correct]",
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[dispute]",
     "tests/test_0031_trust_tools_library.py::test_an_export_carrying_an_agent_path_is_15_and_one_without_keeps_its_era_and_bytes",
@@ -135,6 +137,29 @@
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/__init__.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0031_trust_tools_mcp.py::test_find_facts_writes_only_the_conditional_wiki_cache_row"
+   ],
+   "definition_sha256": "7d760ebf6efb6ba8c72e04b29dbfcd93976cfa02850d34aa253b303bda4fb243",
+   "expected": "SURVIVED",
+   "file": "src/veracium/compile.py",
+   "good": true,
+   "id": "NOOP-compile",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0031_trust_tools_mcp.py::test_find_facts_writes_only_the_conditional_wiki_cache_row"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/compile.py: its mutants' cells must all pass"
   },
   {
    "anchor_counts": [
@@ -478,6 +503,7 @@
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[correct-host_api]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[dispute-None]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[dispute-host_api]",
+    "tests/test_0031_trust_tools_library.py::test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused",
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[correct]",
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[dispute]",
     "tests/test_0031_trust_tools_library.py::test_an_export_carrying_an_agent_path_is_15_and_one_without_keeps_its_era_and_bytes",
@@ -535,6 +561,7 @@
     "tests/test_0031_trust_tools_mcp.py::test_confirm_fact_over_mcp_records_mcp_direct_in_the_row_and_the_episode",
     "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool",
     "tests/test_0031_trust_tools_mcp.py::test_erasure_off_leaves_the_other_four_working[confirm_fact]",
+    "tests/test_0031_trust_tools_mcp.py::test_find_facts_writes_only_the_conditional_wiki_cache_row",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_always_redacts_with_subject_request[edge]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_always_redacts_with_subject_request[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[edge]",
@@ -565,20 +592,21 @@
   },
   "clean": {
    "first": {
-    "of": 126,
+    "of": 129,
     "ok": true,
-    "passed": 126
+    "passed": 129
    },
    "last": {
-    "of": 126,
+    "of": 129,
     "ok": true,
-    "passed": 126
+    "passed": 129
    }
   },
-  "commit": "01c3f5853488f449eba89eb4db9ac5eb9651020c",
+  "commit": "9cf2860f5d846a4f215253e358f7dbf3e07d08f4",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "f10175444492ef1d884c099c95807b2607d8dd7ae4bc2d0e68622cc6ff68b4b3",
-   "NOOP-__init__": "4346b8a981ed895318a1689d18dca85369f069d71b41242d2dbea5197917f6ca",
+   "NOOP-__init__": "20d88438c4f77645a043da9472d9ecc68b144a9fd6efe3ef2c8cde6e923cfc7f",
+   "NOOP-compile": "7d760ebf6efb6ba8c72e04b29dbfcd93976cfa02850d34aa253b303bda4fb243",
    "NOOP-mcp_server": "37797deafcae40ce34d8ee756a46860a70467cb23ad5c32966a2fef553550a75",
    "NOOP-portability": "fce477616ba1cd93b08db672c70c1f9357316e51034051d27da68ca987a91a5e",
    "NOOP-proactive": "10c9b18f3d3752f50a8412114cb9ea12df8544553083f8989c9610c4f0516ccd",
@@ -586,74 +614,77 @@
    "NOOP-trust_tools": "0fc9caf8e3de1e0b487037b2eacaee2f25b7482c15c618314a5309a33fcdfd41"
   },
   "definitions": {
-   "TT1-capability-gate-removed": "026793f1f35885ea3f88924ee1d1e520b093afa97a7e20d91bdbd7e5eb049ec1",
-   "TT1-count-left-in-result": "ca16491d98a0d411568ea890e1c58aa918dc1c3a12cc6aed67938586379c71db",
-   "TT1-count-omitted-from-report": "5bd3cf8e66af9b9e0f129f55b381de7e95b9094d1e279a525737ceec9f20a653",
-   "TT10-preview-lists-objects": "b4383b27d36700d0cbd287259f61b67fab4a72ec1bad060f46560561eda72cbe",
-   "TT11-correction-refused-unmapped": "eae678f10a751ee5d5012a7354e8e8b40dc9535b354018aa2f48dd17e4752ad7",
-   "TT11-internal-failure-as-refusal": "b015108afbf9bf3268c0498c7a7eea66de468b67a1b9dd4eaa7dc9248e3476cf",
-   "TT12-cascade-added": "6e0c509bd8eb78332673880ff24262e44d5b993e65d1d3aecaaeab908bb477ab",
-   "TT12-lineage-by-raw-id": "4f07b55af87add3646dc4c35a3fe75013b2de0c239c26c7e0dd49c21cfc85587",
-   "TT12-list-dropped-on-host-path": "fd56a4f5f420111b211fe0e20101eacaf039cfc4cc3eeae93076c777d693c7c7",
-   "TT13-absence-off": "d4b74655bdcd3c5f0b65f1883a0757caffe202437defe0a5a681224936af7533",
-   "TT13-erasure-only-on-whole-user": "9fd0b8e2d2feb46e5d706be2467881a33c5509d6a1aa6fb390b0cd84e1acdfb9",
-   "TT13-invalid-read-as-on": "272f6d4de17db0cd771f9f2e02a653afb5b7e498f5087a6830842f6d955e3df1",
-   "TT13-principal-before-erasure": "17757159f0b4cd541880eab481122d7039ea4ea1408cea86062a2aacf87e4b0f",
-   "TT14-digest-omits-replies": "9a256d896722ba6185a7394d5bd935d0f698b9ad18750b4bc34ecf17ec48b8f8",
-   "TT16-cross-visible-admitted": "0a263931f11b0cd8e83d7827f744574a96c629806aa32d22ee3ce078b8c75a0f",
-   "TT16-scope-code-without-principal": "72bc9543ad6b85a8d3d300910b40058324d39311bcc9162e4cdafa9f3f646c73",
-   "TT16-shared-admitted": "8f4285d684cbceeb90d7e1691c8536919212156df9bb9a3e7fc064999e407765",
-   "TT17-library-principal-on-preview-only": "1809071d9e432fe8e98f2afaf23c072ef2187dea80be4cec1158b80c8f227f30",
-   "TT17-tool-principal-on-preview-only": "20cb6c4e11a1a47fd73ecf4897141dac93b84aab696f596b02919c65e4ab53a4",
-   "TT18-dispute-episode-source-dropped": "e8c63467ba90cbec586f6bef833eccaad6acad753297d6c7b98a2ae9ba802f38",
-   "TT18-replacement-edge-source-dropped": "5e8815f049797d75c9c6eee757882767c00eba6dc8db6ea84aca144966e3d862",
-   "TT18-source-check-removed": "8e7fd328feb73edd44e767cb1be82eaf4a5e2733ba56610310deef6593c3c39e",
-   "TT18-source-unbound-removed": "80fe174b6536b38714ac9594a21dcb0e49098e9887f7ae0d3b650c9d9ffc8393",
-   "TT19-fields-cleared-kept": "f3b1f08e446c8e2ee64d3b4a05d60f207b573a261b9f70f7a8a36bb8a5ec9f1f",
-   "TT19-hidden-entry-kept": "c0288cc2fd7122209ae1fdc4a15173beef131f8d45d8a4f3bc4494c73d5f31c0",
-   "TT19-raw-receipt-returned": "70107d2f249c931b6935ddb4ec5e28755f561f890d1715cfca04545f7a38a10c",
-   "TT2-server-source-not-passed": "0b33a5e133306471776f10842581931f05b227b4c8fa4b0c16a3043e95f40d15",
-   "TT20-preview-outside-one-snapshot": "d01483a80d1b4e12ed2b997e257a0f88f9ce186728fe8325fcefc4158605fb0b",
-   "TT21-delimiter-joined-digest": "5a108279ebf455a8143ab4e24a567cacd68f46379bc6056f1967f2bb03204ea1",
-   "TT21-duplicate-key-accepted": "a51db7c9d3ebce5606088ccdffeb297f1a56fdfd95587b4b87486c9d1fc1fe56",
-   "TT21-expiry-off-by-one": "5dc9693c13b9c69b3400ce518c46f1d77537ed6f80d3f151c9bb5f52a23a5926",
-   "TT21-isinstance-timestamp": "4a9284ab7f056fd79cd5d737596eeb561a694b95f5ef00587e62bdd373ae97b9",
-   "TT21-mac-over-decoded-json": "3060d80bf05fef82e3832fa7878c8e3a6fc835d3fadcfc176fb6f36c7f00550b",
-   "TT21-no-issuer-context-check": "ca5191081c3d44e4812601796f83f7816d92702e0267f8315e4753383807e871",
-   "TT21-non-canonical-base64": "c6817eb3aedb93584ce17ff99cd83616bb088b68842e764b3b5b247f781745a9",
-   "TT21-process-global-key": "2381fabc92aa477f39a8607efae3679379af7b939f560057370316ad0c796c64",
-   "TT21-uppercase-hex": "e4255e19b8a624e9c16148ef008ac80405d9e9273e36cc44f38b5714f869914a",
-   "TT22-cap-in-bytes": "5298feaee87a0920cee032507a0369edabffb13bd5fe23c1b1de4199c173064c",
-   "TT22-truncation": "36391043379903bbc485d8689042d1d0e01f19eaf95495189ebe30f8a2753ead",
-   "TT23-era-reads-edges-only": "8df180cf0b61dee4b82775c2a9dbb482b6ebff4c790e02704ba04c81ff3690fa",
-   "TT23-planted-call-path-not-refused": "ff8ddfe58187fb493db67d2bb3586b2bd6eeed34c64cd15af20ab12f06d8a205",
-   "TT3-annotations-dropped": "d336a8aa412a58e8ff55c4ac8933b68507e00eb51fe47258d261940aeb59ca82",
-   "TT3-contested-framing-dropped": "7c1ba61be0789314bfb9d32584c4760dac615ee15e675bc0bd1fd3582038db0f",
-   "TT3-contested-partition-dropped": "2e614859c128680babaa163667bde6809ab8c95129af347c59837ace08c2f045",
-   "TT3-episode-admission-skipped": "60db0f99f897f815e13933b0c9c867507980ccf5988df1fdbde6c2003d4b356d",
-   "TT3-fenced-partition-dropped": "90f47ae4ca37d82ee7fc526597582807c58999df7c04099039c5ee83e58fb7c3",
+   "TT1-capability-gate-removed": "ff2524217be7818d46b658bf6be8047cb66ad4c00bce05012664b7df62470a1e",
+   "TT1-count-left-in-result": "0414be67c37de8e414de6ac0c264d089bddb3f32c41a2b09616fba47224865af",
+   "TT1-count-omitted-from-report": "908236a0cd13cd352e61cd7b4ac79ebb677c97a0de41d939e7110a16e323ec2f",
+   "TT10-preview-lists-objects": "17c5a3384e21f2210797cc2d48b52fb2da8be92b3436671adb7ea3dc13e7d740",
+   "TT11-correction-refused-unmapped": "9f6a668537e3884b4da6d3e06475aa73f9a817d744d05a0071939080c016cc8b",
+   "TT11-internal-failure-as-refusal": "4a16dc888519a76c4cfde1fca2004e6e28558af312e7564147bfacb6e44b023f",
+   "TT11-wiki-cache-freshness-ignored": "b0de299040e4e0c11fd292d58648ac78f26db63bddd2dbcc023b8c90ed9befca",
+   "TT12-cascade-added": "d2c35f40329e27ae683ce29d44b7241939c5057e1e9f42a0a312cb6742e21a30",
+   "TT12-lineage-by-raw-id": "8ee1baaa4dd491a1003b3cbc47317c6908dd8aa199bbb0f412bd310b40ce8cb0",
+   "TT12-list-dropped-on-host-path": "67e34cb24c83ae20aa4a0ab68c1685b8a7649a104396098f7a61f26e87ae0cda",
+   "TT13-absence-off": "ba0790e3e1a0a38748412254d020167ca36a358f6a70f6005d3b3f6aca61073a",
+   "TT13-erasure-only-on-whole-user": "c9904498435ed3351f1e462e0edaca677784e589e3652cc0837f398f1b89125e",
+   "TT13-invalid-read-as-on": "55915fe459edda1fe5644f424dfec7535a4234beadf35eefb4099c1f5aa3eb46",
+   "TT13-principal-before-erasure": "abf8757bcc6e3f88b1317b4f82e04381af9ca88b0c5a898e6eb65ebae5f1ac50",
+   "TT14-digest-omits-replies": "9840ee8520211c59dc3e828763287079b643a542f81c94fa7daf2d4375e06dcd",
+   "TT16-cross-visible-admitted": "f5cb4d3fceaec8ea46cae8448ad1da9c1dc98b28f4508ba6f6391ae8786050ae",
+   "TT16-scope-code-without-principal": "9fb8acce5d183bc8f946bc86f547bd6d8ade26849d1ba4c6e350c9bc877b5b3c",
+   "TT16-shared-admitted": "36f854fe3bc49af428555f656f8c537a3d9683b70444004d15ba2625f58c2327",
+   "TT17-library-principal-on-preview-only": "a9b8c35914b7ae055f5a0a061d873e8f3e787057a028934826786c2f89d385db",
+   "TT17-tool-principal-on-preview-only": "1b7e8d512d1b25c12d9c4e3e3e8bb3ef73f5305ea90ce4dcfd02d07bb9f7a1da",
+   "TT18-dispute-episode-source-dropped": "6855a97eed104e18b49a4cffb2adaf61fa23dc9b666ba99b6f0f91409c76f20e",
+   "TT18-replacement-edge-source-dropped": "ca11f2246b429ccda189fc74e94f2cf3e5b5a3f29fda70992def7e3d2dbab9b3",
+   "TT18-source-check-removed": "dc6f1efbc261821a1393c92559b0eb59afdee57a24e6ffd524114ba62cedaf3d",
+   "TT18-source-unbound-removed": "21b13f4ef3a5b250da1700470cb2404d0d12df84d5e1546f54a556113ad202d1",
+   "TT19-fields-cleared-kept": "44a4ce2ab91dbf0eb840cd6dd6eac0750b5e63153a19a297d09b7dbbce871f7d",
+   "TT19-hidden-entry-kept": "3b8eb820f57294ccbb2abbbb8572093e5a7a41d4055a4d9267372c8fbf6912f6",
+   "TT19-raw-receipt-returned": "67e377d0d00a30bf2d647956b70c7fea2d21309096cfb183b065e3444701e57f",
+   "TT19-repeat-skips-the-gate": "10525e147ee5acbab5853805e377718830c589382b8b66812eb25c000b989f75",
+   "TT2-server-source-not-passed": "d9870fb84981d5e7bbbcbe9742b311b10f9eadae20f0f055bea6fa03916c1b14",
+   "TT20-preview-outside-one-snapshot": "9db7cbd886c7b1863c4dce020658d242e3a1e7816499ebfe244a1187f0c5fdbc",
+   "TT21-delimiter-joined-digest": "0fe1706db11919841efaac3b39a1a249d3ca02bbc736ad3adc713d156c472b69",
+   "TT21-duplicate-key-accepted": "fa04042a452280c94d2041e5ade4d0520e47e5209e356522dd2e2f33ad0bc004",
+   "TT21-expiry-off-by-one": "d948919346e8df37973c120437eb86dc1bee94048e46b9a84d7d78c0c4e3004c",
+   "TT21-isinstance-timestamp": "6e9b59a7037408f73dc2f0d0d23cc2fa31f52f72441d011c5fd9e113c15ec19e",
+   "TT21-mac-over-decoded-json": "39731a10bb042b1e66ae2453f69066307ff119a1b505f3cba3fb2d8fd0eb5212",
+   "TT21-no-issuer-context-check": "347f8876d5e2cfaa2cd3d5e13241f6f68f28a3da7641a840af284dd5b6a70a0a",
+   "TT21-non-canonical-base64": "9def22d6db3b0c38124323c0405144fde0cad1fdafc8cf4614336cae3ef999dc",
+   "TT21-process-global-key": "5595e98370cdf1fa327b972e0e9383d6e667e0e43d7132fc2c23bdc92fc8aaf0",
+   "TT21-uppercase-hex": "f9df02f8bbd9c27dc8965580f641877dbae2ecfa9de508cebb046e6ffc26e3ab",
+   "TT22-cap-in-bytes": "44c47a62dedb7561fe2b717fc4e26e5412357b969151af020c50e2c28dbedd23",
+   "TT22-truncation": "2cc1d424b418c96698834d71c3091d526d14a67994cafc52006e93b27c53912b",
+   "TT23-era-reads-edges-only": "24bb0951a1e4407d27d65c24cb45fc3c162acf82d6ecdb6f275f4db1382d2500",
+   "TT23-planted-call-path-not-refused": "3364a487011b3056989bf293ce7244f16b453e55860db48fa66f0e59923476fa",
+   "TT3-annotations-dropped": "def27c171409067171b526655a83a5e49c0b3b35d1a5f85fe37399db0242be47",
+   "TT3-contested-framing-dropped": "95d44002b2d9b2caaa27b422a4a90286b16a856e4bd138b07701f86bce6cd5c2",
+   "TT3-contested-partition-dropped": "79b2b1ba386e3347ec9140dc1e7fab8dd3c6024b1728a94727e1873fe1ccb256",
+   "TT3-episode-admission-skipped": "8902500df30521be5b20c1f812798bb4d2d703a59d8d083fe33e9efe0ef26a7b",
+   "TT3-fenced-partition-dropped": "4fa86199e7c7ae8108a2d95be8df69129b6240240118fcf2bd8d02e85800320d",
    "TT3-proactive-admission-skipped": "129a03787350e510817a16d20e2f5c41f4fefa0f2be7e49ad01a158ef9d10206",
-   "TT3-raw-object-for-clamped": "5431518db7618fcac1b01126c6e325525c36990b22d3807fcfe27e37b6d852d9",
-   "TT3-recall-edges-unfiltered": "9e31a6112e2a0e919f61c97395cab63a608c82e6b3fb63fb39826f790ffb29cc",
-   "TT3-receipt-on-by-default": "b525895c546c14c4662b1f5da511a5d425bd0c68d43a2af7422cad97ed4c0b42",
-   "TT3-shared-or-cross-mutable": "c562eca6be5b6de63bb742ae2d3bb97ab821cf431c87adaaa64b6326b734e1e7",
-   "TT3-subject-dropped": "937a0ed5aae0881b0b1f848b8ec09466975dfba6cb95a91cfd26708e70f230ed",
-   "TT3-wiki-unit-dropped": "7a8d1180d2631d74ef5a17db85c0051cfe4660fbe9a5170297dbedad5700bc8a",
-   "TT4-confirm-episode-unlabelled": "207f9465f7ba1c5410d25af30df452908ffb932152386aefbd3d760a11362b6e",
-   "TT4-mcp-direct-not-passed": "26925c2dcbb7ce1568163ecb72f3828425ada063f7b8e92a00c51a80429129af",
-   "TT5-dispute-episode-unlabelled": "9255b0110c1dfaba5aeff4eb2a84e3129bf904422cf7386cab5d4d1e0e92a13b",
-   "TT5-host-api-written": "d8b4beb89bfc572c7a4fb7f2d5ea51aea532f44263560a347ab4824c115daf3c",
-   "TT6-forget-reason-from-argument": "af2f5bd0f5e611c2219e24c74b716accfe1c923c2bbc30b62c4eb8ccd4e0bf5c",
-   "TT7-unscoped-lookup-removed": "cdd88523bf4f2f95c46aa485b2d387cd15c05b72b4ba7df3621c723679cb8ed3",
-   "TT8-future-t-accepted": "1199d370679636a1198ac6650e48b8e179a9e3cff7fbd9fc90bbb263ae28ea25",
-   "TT8-store-changed-removed": "b9f8405c8a1cf932508e24b9c07d5e829b6eb66b39bfb9c0bd53e66791dd35b1",
-   "TT9-check-outside-the-erase-transaction": "e826db4d2bf8aa3498ae93edbbe4009ccc53f0df99933d7e7559419256216ec3"
+   "TT3-raw-object-for-clamped": "3034c9dce30f3cb12bf1ce7947a76f118542d8067bbc140b5ed6ece404f849e7",
+   "TT3-recall-edges-unfiltered": "2cdd58149bc7df7c4597767204d38fd2ad666bed6192280ff4efd9c97cf7a1dd",
+   "TT3-receipt-on-by-default": "a0363b285b2bd6c9a589f9b29f4c695e1561fe4261a3311accf75a771497941d",
+   "TT3-shared-or-cross-mutable": "fe2b08c02026fe04a2f9cb1377c82f0e3114754521d0e96e9ada8f7419eafe91",
+   "TT3-subject-dropped": "30ab5e60965a9088c72396f010b3bc5cd3ed6337ba45baecfadc3fb6d009e701",
+   "TT3-wiki-unit-dropped": "715c0eb7d708fb0ff2df2faa6c8f018f41bd26eb462f24ef0a8ef297ef4f37a3",
+   "TT4-confirm-episode-unlabelled": "903fb9191a40daede68edd38fd88c5e7c8b4b4bfc9b77efbe647531cb418e9a9",
+   "TT4-mcp-direct-not-passed": "dbb657561c9a88909647ec02f10fcc7772e1d9e26b3964d10ef0c9bcffe79769",
+   "TT5-dispute-episode-unlabelled": "6c2d819f14079e295e3d315eeef81b5c9e378e3e33e68ce1e2428b0852be4d99",
+   "TT5-host-api-written": "12c9be5810d035cd66afba23841b783ac4df761913b429318a7083eadbd82930",
+   "TT6-forget-reason-from-argument": "12792c34fadbc2e27df24b6975bdb39b4d20c7e37b9223536b651e563d3af834",
+   "TT7-unscoped-lookup-removed": "96b14e9b4dfe354dea523664fbaa2f52fb0bda03902eebd8fd76fc3ce746fd18",
+   "TT8-future-t-accepted": "38d3952b7e2d66e4a0741a66b6a83ac8a67010ba3a33949f59642048bbe2847e",
+   "TT8-store-changed-removed": "94f7d1162c9a1b846301742287b7a1e80f786482ae77104b5af4c7beb6fd559d",
+   "TT9-check-outside-the-erase-transaction": "4dcd39c443636472b35d0edd985864a1dbd95e57b29673aedcaa86c20ed344d3"
   },
   "digests": {
-   "specs/evidence/0031-trust-tools/implementation_mutants.py": "e4817f3480a1a55a41f288d7ff83731c7da5103a64c5bc0b8687c517c145c790",
+   "specs/evidence/0031-trust-tools/implementation_mutants.py": "32a3295f7215fed4657620f6356a7757035d90997e170eecc525f54ee2be983d",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "d9934d11e13b0ad12572ae8b0d5b3d42f157e4812fe9b94089539578b623f61a",
+   "src/veracium/compile.py": "4e410634231d7bf59ccf06c1a3f88402230f9e4ef4a0ef439d7e669ee092006d",
    "src/veracium/mcp_server.py": "c1703568ad4535774b9e524f65b8a0dc6bb2027098bdb87d6db9a92e09ead8e7",
    "src/veracium/portability.py": "be7ec05a5b0391dbb2ac359a52c7de692c6e2d0c670bbe8a116d75b03f908930",
    "src/veracium/proactive.py": "fb007901df09c9d3b86190598e60d89bfc6d83d70589df78aa05a384b7668463",
@@ -661,18 +692,20 @@
    "src/veracium/trust_tools.py": "8a47d81a5208bbf3aa4e51905f826a1a38ed8f31916631b21add0f52dae57f21",
    "tests/test_0031_render_receipt.py": "c5c1f1b5d8f850277d5f4ca64b9832a1f8823eead2d7fe402ddfd609002d2bfc",
    "tests/test_0031_trust_tools_erase.py": "3fb2c7d930078b66e6a092a618daea07a18de1b898f58867be206f84f7d86a5d",
-   "tests/test_0031_trust_tools_library.py": "b7a6177708bebab02216d4a78a0dcaca8d47111532f27808a9f77e2f0de444e3",
-   "tests/test_0031_trust_tools_mcp.py": "fb12d2c3e72a78f802eddc2e90308bbf480a089501b5d79ad4d81bb136ebacbd"
+   "tests/test_0031_trust_tools_library.py": "2498f126d06ca0833444ec1efabbbf1b9436a7b422b211c39aaac482b347b7e6",
+   "tests/test_0031_trust_tools_mcp.py": "d00799fee16de6ec706766979d0b181fc17b2febdd3f55319a70ee07c0e20edc"
   },
   "finding": "implementation",
   "honest_nodes": [
+   "tests/test_0031_render_receipt.py::test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal",
    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing",
-   "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted",
-   "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]",
-   "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[correct-principal6-src-b-source_out_of_scope]",
-   "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]",
-   "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[dispute_fact]",
-   "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+   "tests/test_0031_render_receipt.py::test_the_receipt_is_refused_with_as_of",
+   "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]",
+   "tests/test_0031_trust_tools_erase.py::test_the_expiry_boundaries[599-ok]",
+   "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]",
+   "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal4-src-z-accepted]",
+   "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[forget_fact]",
+   "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
   ],
   "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
@@ -680,6 +713,7 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0031-trust-tools/implementation_mutants.py",
+   "tests/test_0031_trust_tools_library.py",
    "tests/test_0031_trust_tools_mcp.py"
   ]
  },
@@ -739,13 +773,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-None]",
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-none]"
    ],
-   "definition_sha256": "026793f1f35885ea3f88924ee1d1e520b093afa97a7e20d91bdbd7e5eb049ec1",
+   "definition_sha256": "ff2524217be7818d46b658bf6be8047cb66ad4c00bce05012664b7df62470a1e",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[dispute_fact]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT1-capability-gate-removed",
    "import": "ok",
@@ -778,7 +812,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "23 failed in 2.74s",
+   "pytest": "23 failed in 3.03s",
    "reason": null,
    "reason_seen": null,
    "what": "the `direct` gate removed from the trust tools"
@@ -822,13 +856,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-None]",
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-none]"
    ],
-   "definition_sha256": "ca16491d98a0d411568ea890e1c58aa918dc1c3a12cc6aed67938586379c71db",
+   "definition_sha256": "0414be67c37de8e414de6ac0c264d089bddb3f32c41a2b09616fba47224865af",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[dispute_fact]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT1-count-left-in-result",
    "import": "ok",
@@ -853,7 +887,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "15 failed in 2.32s",
+   "pytest": "15 failed in 2.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the operator count left in the tool result"
@@ -895,13 +929,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-None]",
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-none]"
    ],
-   "definition_sha256": "5bd3cf8e66af9b9e0f129f55b381de7e95b9094d1e279a525737ceec9f20a653",
+   "definition_sha256": "908236a0cd13cd352e61cd7b4ac79ebb677c97a0de41d939e7110a16e323ec2f",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[dispute_fact]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT1-count-omitted-from-report",
    "import": "ok",
@@ -925,7 +959,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "14 failed in 1.93s",
+   "pytest": "14 failed in 2.13s",
    "reason": null,
    "reason_seen": null,
    "what": "the attempted-elevation count missing from the *_report"
@@ -941,13 +975,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_an_extra_argument_cannot_override_a_binding_over_mcp[chat-app]"
    ],
-   "definition_sha256": "0b33a5e133306471776f10842581931f05b227b4c8fa4b0c16a3043e95f40d15",
+   "definition_sha256": "d9870fb84981d5e7bbbcbe9742b311b10f9eadae20f0f055bea6fa03916c1b14",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT2-server-source-not-passed",
    "import": "ok",
@@ -958,7 +992,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "the server's configured source not passed to dispute_fact"
@@ -974,13 +1008,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_annotations_and_a_non_user_subject"
    ],
-   "definition_sha256": "d336a8aa412a58e8ff55c4ac8933b68507e00eb51fe47258d261940aeb59ca82",
+   "definition_sha256": "def27c171409067171b526655a83a5e49c0b3b35d1a5f85fe37399db0242be47",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-annotations-dropped",
    "import": "ok",
@@ -991,7 +1025,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.54s",
    "reason": null,
    "reason_seen": null,
    "what": "a unit's mandatory annotations (stale, extraction error) dropped"
@@ -1007,13 +1041,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
-   "definition_sha256": "7c1ba61be0789314bfb9d32584c4760dac615ee15e675bc0bd1fd3582038db0f",
+   "definition_sha256": "95d44002b2d9b2caaa27b422a4a90286b16a856e4bd138b07701f86bce6cd5c2",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal"
    ],
    "id": "TT3-contested-framing-dropped",
    "import": "ok",
@@ -1024,7 +1058,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member without its group framing"
@@ -1040,13 +1074,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
-   "definition_sha256": "2e614859c128680babaa163667bde6809ab8c95129af347c59837ace08c2f045",
+   "definition_sha256": "79b2b1ba386e3347ec9140dc1e7fab8dd3c6024b1728a94727e1873fe1ccb256",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal"
    ],
    "id": "TT3-contested-partition-dropped",
    "import": "ok",
@@ -1057,7 +1091,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member labelled grounded"
@@ -1073,13 +1107,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_identical_text_under_two_ids_is_two_units"
    ],
-   "definition_sha256": "60db0f99f897f815e13933b0c9c867507980ccf5988df1fdbde6c2003d4b356d",
+   "definition_sha256": "8902500df30521be5b20c1f812798bb4d2d703a59d8d083fe33e9efe0ef26a7b",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-episode-admission-skipped",
    "import": "ok",
@@ -1090,7 +1124,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "an admitted grounded episode missing from the receipt"
@@ -1108,13 +1142,13 @@
     "tests/test_0031_render_receipt.py::test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal",
     "tests/test_0031_render_receipt.py::test_a_third_party_claim_and_episode_are_fenced"
    ],
-   "definition_sha256": "90f47ae4ca37d82ee7fc526597582807c58999df7c04099039c5ee83e58fb7c3",
+   "definition_sha256": "4fa86199e7c7ae8108a2d95be8df69129b6240240118fcf2bd8d02e85800320d",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-fenced-partition-dropped",
    "import": "ok",
@@ -1126,7 +1160,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.60s",
+   "pytest": "2 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "a fenced (third-party) unit labelled grounded"
@@ -1165,7 +1199,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.66s",
+   "pytest": "3 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query path admits nothing into the receipt"
@@ -1181,13 +1215,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_a_clamped_record_carries_its_prefix_and_the_elision_marker"
    ],
-   "definition_sha256": "5431518db7618fcac1b01126c6e325525c36990b22d3807fcfe27e37b6d852d9",
+   "definition_sha256": "3034c9dce30f3cb12bf1ce7947a76f118542d8067bbc140b5ed6ece404f849e7",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-raw-object-for-clamped",
    "import": "ok",
@@ -1198,7 +1232,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped unit's text is the raw object, not the text as admitted"
@@ -1230,13 +1264,13 @@
     "tests/test_0031_render_receipt.py::test_identical_text_under_two_ids_is_two_units",
     "tests/test_0031_render_receipt.py::test_wiki_text_is_a_unit_with_no_id"
    ],
-   "definition_sha256": "9e31a6112e2a0e919f61c97395cab63a608c82e6b3fb63fb39826f790ffb29cc",
+   "definition_sha256": "2cdd58149bc7df7c4597767204d38fd2ad666bed6192280ff4efd9c97cf7a1dd",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_the_receipt_is_refused_with_as_of"
    ],
    "id": "TT3-recall-edges-unfiltered",
    "import": "ok",
@@ -1255,7 +1289,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "9 failed in 1.11s",
+   "pytest": "9 failed in 1.18s",
    "reason": null,
    "reason_seen": null,
    "what": "the receipt built from `Recall.edges` instead of the renderer's admissions"
@@ -1271,13 +1305,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_the_receipt_is_off_by_default_and_on_it_changes_no_byte[engineer]"
    ],
-   "definition_sha256": "b525895c546c14c4662b1f5da511a5d425bd0c68d43a2af7422cad97ed4c0b42",
+   "definition_sha256": "a0363b285b2bd6c9a589f9b29f4c695e1561fe4261a3311accf75a771497941d",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-receipt-on-by-default",
    "import": "ok",
@@ -1288,7 +1322,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the render receipt built when the caller did not ask for it"
@@ -1304,13 +1338,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal"
    ],
-   "definition_sha256": "c562eca6be5b6de63bb742ae2d3bb97ab821cf431c87adaaa64b6326b734e1e7",
+   "definition_sha256": "fe2b08c02026fe04a2f9cb1377c82f0e3114754521d0e96e9ada8f7419eafe91",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-shared-or-cross-mutable",
    "import": "ok",
@@ -1321,7 +1355,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "`mutable: true` on a SHARED or CROSS_VISIBLE unit"
@@ -1339,13 +1373,13 @@
     "tests/test_0031_render_receipt.py::test_annotations_and_a_non_user_subject",
     "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
-   "definition_sha256": "937a0ed5aae0881b0b1f848b8ec09466975dfba6cb95a91cfd26708e70f230ed",
+   "definition_sha256": "30ab5e60965a9088c72396f010b3bc5cd3ed6337ba45baecfadc3fb6d009e701",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal"
    ],
    "id": "TT3-subject-dropped",
    "import": "ok",
@@ -1357,7 +1391,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.61s",
+   "pytest": "2 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "a non-user subject left off its unit"
@@ -1373,13 +1407,13 @@
    "cells_failed": [
     "tests/test_0031_render_receipt.py::test_wiki_text_is_a_unit_with_no_id"
    ],
-   "definition_sha256": "7a8d1180d2631d74ef5a17db85c0051cfe4660fbe9a5170297dbedad5700bc8a",
+   "definition_sha256": "715c0eb7d708fb0ff2df2faa6c8f018f41bd26eb462f24ef0a8ef297ef4f37a3",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_render_receipt.py::test_the_proactive_path_lists_what_the_briefing_admitted"
+    "tests/test_0031_render_receipt.py::test_contested_members_are_contested_units_with_the_group_framing"
    ],
    "id": "TT3-wiki-unit-dropped",
    "import": "ok",
@@ -1390,7 +1424,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the admitted wiki text missing from the receipt"
@@ -1408,13 +1442,13 @@
     "tests/test_0031_trust_tools_library.py::test_confirm_records_the_agent_path_in_the_row_and_the_quoting_episode[adapter_direct]",
     "tests/test_0031_trust_tools_library.py::test_confirm_records_the_agent_path_in_the_row_and_the_quoting_episode[mcp_direct]"
    ],
-   "definition_sha256": "207f9465f7ba1c5410d25af30df452908ffb932152386aefbd3d760a11362b6e",
+   "definition_sha256": "903fb9191a40daede68edd38fd88c5e7c8b4b4bfc9b77efbe647531cb418e9a9",
    "file": "src/veracium/store/sqlite.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT4-confirm-episode-unlabelled",
    "import": "ok",
@@ -1426,7 +1460,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm's quoting episode written without the agent call path"
@@ -1444,13 +1478,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_confirm_fact_over_mcp_records_mcp_direct_in_the_row_and_the_episode",
     "tests/test_0031_trust_tools_mcp.py::test_erasure_off_leaves_the_other_four_working[confirm_fact]"
    ],
-   "definition_sha256": "26925c2dcbb7ce1568163ecb72f3828425ada063f7b8e92a00c51a80429129af",
+   "definition_sha256": "dbb657561c9a88909647ec02f10fcc7772e1d9e26b3964d10ef0c9bcffe79769",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT4-mcp-direct-not-passed",
    "import": "ok",
@@ -1462,7 +1496,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.96s",
+   "pytest": "2 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm_fact over MCP records the host API"
@@ -1486,13 +1520,13 @@
     "tests/test_0031_trust_tools_library.py::test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provenance_never_the_summary[src-a-dispute]",
     "tests/test_0031_trust_tools_library.py::test_the_call_path_survives_export_import_and_a_redaction_of_the_audit_episode"
    ],
-   "definition_sha256": "9255b0110c1dfaba5aeff4eb2a84e3129bf904422cf7386cab5d4d1e0e92a13b",
+   "definition_sha256": "6c2d819f14079e295e3d315eeef81b5c9e378e3e33e68ce1e2428b0852be4d99",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT5-dispute-episode-unlabelled",
    "import": "ok",
@@ -1507,7 +1541,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.03s",
+   "pytest": "5 failed in 1.13s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's audit episode written without the agent call path"
@@ -1533,13 +1567,13 @@
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[correct-host_api]",
     "tests/test_0031_trust_tools_library.py::test_a_host_api_write_keeps_todays_provenance_bytes[dispute-host_api]"
    ],
-   "definition_sha256": "d8b4beb89bfc572c7a4fb7f2d5ea51aea532f44263560a347ab4824c115daf3c",
+   "definition_sha256": "12c9be5810d035cd66afba23841b783ac4df761913b429318a7083eadbd82930",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT5-host-api-written",
    "import": "ok",
@@ -1555,7 +1589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.93s",
+   "pytest": "6 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the agent call path written as `host_api` on a host-API audit episode (it must be ABSENT, today's bytes)"
@@ -1571,13 +1605,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_always_redacts_with_subject_request[episode]"
    ],
-   "definition_sha256": "af2f5bd0f5e611c2219e24c74b716accfe1c923c2bbc30b62c4eb8ccd4e0bf5c",
+   "definition_sha256": "12792c34fadbc2e27df24b6975bdb39b4d20c7e37b9223536b651e563d3af834",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT6-forget-reason-from-argument",
    "import": "ok",
@@ -1588,7 +1622,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact's redaction reason varying with its input"
@@ -1610,13 +1644,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[dispute_fact]",
     "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[forget_fact]"
    ],
-   "definition_sha256": "cdd88523bf4f2f95c46aa485b2d387cd15c05b72b4ba7df3621c723679cb8ed3",
+   "definition_sha256": "96b14e9b4dfe354dea523664fbaa2f52fb0bda03902eebd8fd76fc3ce746fd18",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT7-unscoped-lookup-removed",
    "import": "ok",
@@ -1630,7 +1664,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.55s",
+   "pytest": "4 failed in 1.91s",
    "reason": null,
    "reason_seen": null,
    "what": "with no principal, another user's id answered unlike an unknown id"
@@ -1648,13 +1682,13 @@
     "tests/test_0031_trust_tools_erase.py::test_each_refusal_erases_nothing[future]",
     "tests/test_0031_trust_tools_erase.py::test_the_expiry_boundaries[-1-preview_unknown]"
    ],
-   "definition_sha256": "1199d370679636a1198ac6650e48b8e179a9e3cff7fbd9fc90bbb263ae28ea25",
+   "definition_sha256": "38d3952b7e2d66e4a0741a66b6a83ac8a67010ba3a33949f59642048bbe2847e",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT8-future-t-accepted",
    "import": "ok",
@@ -1666,7 +1700,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.54s",
+   "pytest": "2 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "a token issued in the future accepted"
@@ -1694,13 +1728,13 @@
     "tests/test_0031_trust_tools_erase.py::test_replay_is_key_set_equality_not_one_use",
     "tests/test_0031_trust_tools_erase.py::test_the_check_and_the_erase_are_one_write_transaction"
    ],
-   "definition_sha256": "b9f8405c8a1cf932508e24b9c07d5e829b6eb66b39bfb9c0bd53e66791dd35b1",
+   "definition_sha256": "94f7d1162c9a1b846301742287b7a1e80f786482ae77104b5af4c7beb6fd559d",
    "file": "src/veracium/store/sqlite.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT8-store-changed-removed",
    "import": "ok",
@@ -1717,7 +1751,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 1.07s",
+   "pytest": "7 failed in 1.33s",
    "reason": null,
    "reason_seen": null,
    "what": "the store_changed refusal removed: a changed store is erased"
@@ -1733,13 +1767,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_the_check_and_the_erase_are_one_write_transaction"
    ],
-   "definition_sha256": "e826db4d2bf8aa3498ae93edbbe4009ccc53f0df99933d7e7559419256216ec3",
+   "definition_sha256": "4dcd39c443636472b35d0edd985864a1dbd95e57b29673aedcaa86c20ed344d3",
    "file": "src/veracium/store/sqlite.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT9-check-outside-the-erase-transaction",
    "import": "ok",
@@ -1750,7 +1784,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the digest re-derived outside the erase's write transaction"
@@ -1766,13 +1800,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_the_preview_reveals_counts_only_and_writes_nothing"
    ],
-   "definition_sha256": "b4383b27d36700d0cbd287259f61b67fab4a72ec1bad060f46560561eda72cbe",
+   "definition_sha256": "17c5a3384e21f2210797cc2d48b52fb2da8be92b3436671adb7ea3dc13e7d740",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT10-preview-lists-objects",
    "import": "ok",
@@ -1783,7 +1817,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the preview reveals record content"
@@ -1799,13 +1833,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
-   "definition_sha256": "eae678f10a751ee5d5012a7354e8e8b40dc9535b354018aa2f48dd17e4752ad7",
+   "definition_sha256": "9f6a668537e3884b4da6d3e06475aa73f9a817d744d05a0071939080c016cc8b",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_another_users_id_and_an_unknown_id_give_one_response[forget_fact]"
    ],
    "id": "TT11-correction-refused-unmapped",
    "import": "ok",
@@ -1816,7 +1850,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "CorrectionRefused not serialized as `correction_refused`"
@@ -1832,13 +1866,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_an_internal_failure_raises_and_is_never_turned_into_a_refusal"
    ],
-   "definition_sha256": "b015108afbf9bf3268c0498c7a7eea66de468b67a1b9dd4eaa7dc9248e3476cf",
+   "definition_sha256": "4a16dc888519a76c4cfde1fca2004e6e28558af312e7564147bfacb6e44b023f",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT11-internal-failure-as-refusal",
    "import": "ok",
@@ -1849,10 +1883,43 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "an internal failure after a commit returned as a refusal"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_trust_tools_mcp.py::test_find_facts_writes_only_the_conditional_wiki_cache_row": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_trust_tools_mcp.py::test_find_facts_writes_only_the_conditional_wiki_cache_row"
+   ],
+   "definition_sha256": "b0de299040e4e0c11fd292d58648ac78f26db63bddd2dbcc023b8c90ed9befca",
+   "file": "src/veracium/compile.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
+   ],
+   "id": "TT11-wiki-cache-freshness-ignored",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_trust_tools_mcp.py::test_find_facts_writes_only_the_conditional_wiki_cache_row"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.04s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "every find_facts republishing the wiki cache: its conditional write made unconditional (round 2's witness lookup_writes)"
   },
   {
    "anchor_counts": [
@@ -1869,13 +1936,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]"
    ],
-   "definition_sha256": "6e0c509bd8eb78332673880ff24262e44d5b993e65d1d3aecaaeab908bb477ab",
+   "definition_sha256": "d2c35f40329e27ae683ce29d44b7241939c5057e1e9f42a0a312cb6742e21a30",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT12-cascade-added",
    "import": "ok",
@@ -1888,7 +1955,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.25s",
+   "pytest": "3 failed in 1.36s",
    "reason": null,
    "reason_seen": null,
    "what": "per-fact forget redacting the records it names as surviving derived"
@@ -1904,13 +1971,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]"
    ],
-   "definition_sha256": "4f07b55af87add3646dc4c35a3fe75013b2de0c239c26c7e0dd49c21cfc85587",
+   "definition_sha256": "8ee1baaa4dd491a1003b3cbc47317c6908dd8aa199bbb0f412bd310b40ce8cb0",
    "file": "src/veracium/store/sqlite.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT12-lineage-by-raw-id",
    "import": "ok",
@@ -1921,7 +1988,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "a restored consolidation output not named: lineage compared by the raw id, not the historical form (0041 R9-03's defect, reached through the tool)"
@@ -1941,13 +2008,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]"
    ],
-   "definition_sha256": "fd56a4f5f420111b211fe0e20101eacaf039cfc4cc3eeae93076c777d693c7c7",
+   "definition_sha256": "67e34cb24c83ae20aa4a0ab68c1685b8a7649a104396098f7a61f26e87ae0cda",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT12-list-dropped-on-host-path",
    "import": "ok",
@@ -1960,7 +2027,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.24s",
+   "pytest": "3 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact with no principal returning an empty `surviving_derived`"
@@ -1992,13 +2059,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_the_whole_user_tools_refuse_any_principal_after_capability_and_erasure[forget_everything_confirm]",
     "tests/test_0031_trust_tools_mcp.py::test_the_whole_user_tools_refuse_any_principal_after_capability_and_erasure[forget_everything_preview]"
    ],
-   "definition_sha256": "d4b74655bdcd3c5f0b65f1883a0757caffe202437defe0a5a681224936af7533",
+   "definition_sha256": "ba0790e3e1a0a38748412254d020167ca36a358f6a70f6005d3b3f6aca61073a",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT13-absence-off",
    "import": "ok",
@@ -2017,7 +2084,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "9 failed in 1.70s",
+   "pytest": "9 failed in 1.66s",
    "reason": null,
    "reason_seen": null,
    "what": "an absent erasure setting read as off"
@@ -2033,13 +2100,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_capability_first_then_erasure_then_principal[forget_fact-off]"
    ],
-   "definition_sha256": "9fd0b8e2d2feb46e5d706be2467881a33c5509d6a1aa6fb390b0cd84e1acdfb9",
+   "definition_sha256": "c9904498435ed3351f1e462e0edaca677784e589e3652cc0837f398f1b89125e",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT13-erasure-only-on-whole-user",
    "import": "ok",
@@ -2066,13 +2133,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_absence_means_on_and_a_supplied_invalid_value_raises_at_construction"
    ],
-   "definition_sha256": "272f6d4de17db0cd771f9f2e02a653afb5b7e498f5087a6830842f6d955e3df1",
+   "definition_sha256": "55915fe459edda1fe5644f424dfec7535a4234beadf35eefb4099c1f5aa3eb46",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT13-invalid-read-as-on",
    "import": "ok",
@@ -2083,7 +2150,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "an invalid erasure setting read as on instead of refused"
@@ -2101,13 +2168,13 @@
     "tests/test_0031_trust_tools_mcp.py::test_capability_first_then_erasure_then_principal[forget_everything_confirm-off]",
     "tests/test_0031_trust_tools_mcp.py::test_capability_first_then_erasure_then_principal[forget_everything_preview-off]"
    ],
-   "definition_sha256": "17757159f0b4cd541880eab481122d7039ea4ea1408cea86062a2aacf87e4b0f",
+   "definition_sha256": "abf8757bcc6e3f88b1317b4f82e04381af9ca88b0c5a898e6eb65ebae5f1ac50",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT13-principal-before-erasure",
    "import": "ok",
@@ -2119,7 +2186,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.96s",
+   "pytest": "2 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "`principal_scoped` decided before `erasure_disabled`"
@@ -2141,13 +2208,13 @@
     "tests/test_0031_trust_tools_erase.py::test_the_preview_reveals_counts_only_and_writes_nothing",
     "tests/test_0031_trust_tools_erase.py::test_the_token_matches_an_independent_construction_byte_for_byte"
    ],
-   "definition_sha256": "9a256d896722ba6185a7394d5bd935d0f698b9ad18750b4bc34ecf17ec48b8f8",
+   "definition_sha256": "9840ee8520211c59dc3e828763287079b643a542f81c94fa7daf2d4375e06dcd",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT14-digest-omits-replies",
    "import": "ok",
@@ -2161,7 +2228,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.74s",
+   "pytest": "4 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "the digest binds three tables, not four"
@@ -2183,13 +2250,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[True-dispute]",
     "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[True-redact]"
    ],
-   "definition_sha256": "0a263931f11b0cd8e83d7827f744574a96c629806aa32d22ee3ce078b8c75a0f",
+   "definition_sha256": "f5cb4d3fceaec8ea46cae8448ad1da9c1dc98b28f4508ba6f6391ae8786050ae",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT16-cross-visible-admitted",
    "import": "ok",
@@ -2203,7 +2270,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.13s",
+   "pytest": "4 failed in 1.20s",
    "reason": null,
    "reason_seen": null,
    "what": "a CROSS_VISIBLE target acted on under a principal"
@@ -2219,13 +2286,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_library.py::test_with_no_principal_no_scope_code_runs"
    ],
-   "definition_sha256": "72bc9543ad6b85a8d3d300910b40058324d39311bcc9162e4cdafa9f3f646c73",
+   "definition_sha256": "9fb8acce5d183bc8f946bc86f547bd6d8ade26849d1ba4c6e350c9bc877b5b3c",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT16-scope-code-without-principal",
    "import": "ok",
@@ -2236,7 +2303,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the scope gate run with no principal (0020 V1: no scope code may run)"
@@ -2266,13 +2333,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[True-dispute]",
     "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[True-redact]"
    ],
-   "definition_sha256": "8f4285d684cbceeb90d7e1691c8536919212156df9bb9a3e7fc064999e407765",
+   "definition_sha256": "36f854fe3bc49af428555f656f8c537a3d9683b70444004d15ba2625f58c2327",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[correct-principal6-src-b-source_out_of_scope]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT16-shared-admitted",
    "import": "ok",
@@ -2290,7 +2357,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "8 failed in 1.19s",
+   "pytest": "8 failed in 1.23s",
    "reason": null,
    "reason_seen": null,
    "what": "a SHARED (pooled) target acted on under a principal"
@@ -2306,13 +2373,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_both_steps_refuse_any_principal_and_write_nothing"
    ],
-   "definition_sha256": "1809071d9e432fe8e98f2afaf23c072ef2187dea80be4cec1158b80c8f227f30",
+   "definition_sha256": "a9b8c35914b7ae055f5a0a061d873e8f3e787057a028934826786c2f89d385db",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT17-library-principal-on-preview-only",
    "import": "ok",
@@ -2323,7 +2390,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "the library's confirm step accepts a principal"
@@ -2339,13 +2406,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_the_whole_user_tools_refuse_any_principal_after_capability_and_erasure[forget_everything_confirm]"
    ],
-   "definition_sha256": "20cb6c4e11a1a47fd73ecf4897141dac93b84aab696f596b02919c65e4ab53a4",
+   "definition_sha256": "1b7e8d512d1b25c12d9c4e3e3e8bb3ef73f5305ea90ce4dcfd02d07bb9f7a1da",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT17-tool-principal-on-preview-only",
    "import": "ok",
@@ -2356,7 +2423,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.87s",
+   "pytest": "1 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "the confirm tool accepts a principal"
@@ -2378,13 +2445,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal0-src-a-accepted]",
     "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal4-src-z-accepted]"
    ],
-   "definition_sha256": "e8c63467ba90cbec586f6bef833eccaad6acad753297d6c7b98a2ae9ba802f38",
+   "definition_sha256": "6855a97eed104e18b49a4cffb2adaf61fa23dc9b666ba99b6f0f91409c76f20e",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT18-dispute-episode-source-dropped",
    "import": "ok",
@@ -2398,7 +2465,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.79s",
+   "pytest": "4 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's audit episode written without the binding source"
@@ -2416,13 +2483,13 @@
     "tests/test_0031_trust_tools_library.py::test_an_act_on_a_private_record_is_quoted_to_no_wider_scope[correct]",
     "tests/test_0031_trust_tools_library.py::test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provenance_never_the_summary[src-a-correct]"
    ],
-   "definition_sha256": "5e8815f049797d75c9c6eee757882767c00eba6dc8db6ea84aca144966e3d862",
+   "definition_sha256": "ca11f2246b429ccda189fc74e94f2cf3e5b5a3f29fda70992def7e3d2dbab9b3",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT18-replacement-edge-source-dropped",
    "import": "ok",
@@ -2434,7 +2501,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.65s",
+   "pytest": "2 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "correct's replacement edge written without the binding source"
@@ -2472,13 +2539,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal5-src-a-source_out_of_scope]",
     "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal6-src-b-source_out_of_scope]"
    ],
-   "definition_sha256": "8e7fd328feb73edd44e767cb1be82eaf4a5e2733ba56610310deef6593c3c39e",
+   "definition_sha256": "dc6f1efbc261821a1393c92559b0eb59afdee57a24e6ffd524114ba62cedaf3d",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal4-src-z-accepted]"
    ],
    "id": "TT18-source-check-removed",
    "import": "ok",
@@ -2500,7 +2567,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "12 failed in 1.44s",
+   "pytest": "12 failed in 1.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the binding source's OWN check removed: a divergent source quotes a private record into another scope"
@@ -2520,13 +2587,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[correct-principal3-None-source_unbound]",
     "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal3-None-source_unbound]"
    ],
-   "definition_sha256": "80fe174b6536b38714ac9594a21dcb0e49098e9887f7ae0d3b650c9d9ffc8393",
+   "definition_sha256": "21b13f4ef3a5b250da1700470cb2404d0d12df84d5e1546f54a556113ad202d1",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT18-source-unbound-removed",
    "import": "ok",
@@ -2539,7 +2606,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.73s",
+   "pytest": "3 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "a binding with no source accepted under a principal (the quote lands in the user-wide pool)"
@@ -2555,13 +2622,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_library.py::test_the_principal_receipt_is_six_fields_the_scope_label_and_the_filtered_list"
    ],
-   "definition_sha256": "f3b1f08e446c8e2ee64d3b4a05d60f207b573a261b9f70f7a8a36bb8a5ec9f1f",
+   "definition_sha256": "44a4ce2ab91dbf0eb840cd6dd6eac0750b5e63153a19a297d09b7dbbce871f7d",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT19-fields-cleared-kept",
    "import": "ok",
@@ -2572,7 +2639,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "`fields_cleared` kept in the principal projection (a conditional indicator)"
@@ -2590,13 +2657,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_principal_receipt_is_six_fields_the_scope_label_and_the_filtered_list",
     "tests/test_0031_trust_tools_library.py::test_two_stores_differing_only_in_hidden_records_give_identical_principal_receipts"
    ],
-   "definition_sha256": "c0288cc2fd7122209ae1fdc4a15173beef131f8d45d8a4f3bc4494c73d5f31c0",
+   "definition_sha256": "3b8eb820f57294ccbb2abbbb8572093e5a7a41d4055a4d9267372c8fbf6912f6",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT19-hidden-entry-kept",
    "import": "ok",
@@ -2608,7 +2675,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a surviving-derived entry the principal cannot see kept in its projection"
@@ -2626,13 +2693,13 @@
     "tests/test_0031_trust_tools_library.py::test_the_principal_receipt_is_six_fields_the_scope_label_and_the_filtered_list",
     "tests/test_0031_trust_tools_library.py::test_two_stores_differing_only_in_hidden_records_give_identical_principal_receipts"
    ],
-   "definition_sha256": "70107d2f249c931b6935ddb4ec5e28755f561f890d1715cfca04545f7a38a10c",
+   "definition_sha256": "67e377d0d00a30bf2d647956b70c7fea2d21309096cfb183b065e3444701e57f",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT19-raw-receipt-returned",
    "import": "ok",
@@ -2644,10 +2711,43 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.64s",
+   "pytest": "2 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the host redaction receipt returned to a principal"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_trust_tools_library.py::test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_trust_tools_library.py::test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused"
+   ],
+   "definition_sha256": "10525e147ee5acbab5853805e377718830c589382b8b66812eb25c000b989f75",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
+   ],
+   "id": "TT19-repeat-skips-the-gate",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_trust_tools_library.py::test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.63s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a repeat redaction under a principal replaying its receipt without the fresh OWN gate (round 2's witness redaction_repeat: an absorption survivor left UNRESOLVED)"
   },
   {
    "anchor_counts": [
@@ -2660,13 +2760,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_the_preview_counts_and_digest_come_from_one_snapshot"
    ],
-   "definition_sha256": "d01483a80d1b4e12ed2b997e257a0f88f9ce186728fe8325fcefc4158605fb0b",
+   "definition_sha256": "9db7cbd886c7b1863c4dce020658d242e3a1e7816499ebfe244a1187f0c5fdbc",
    "file": "src/veracium/store/sqlite.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT20-preview-outside-one-snapshot",
    "import": "ok",
@@ -2677,7 +2777,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the preview's four reads taken outside one transaction"
@@ -2695,13 +2795,13 @@
     "tests/test_0031_trust_tools_erase.py::test_the_same_key_in_another_table_is_a_different_set",
     "tests/test_0031_trust_tools_erase.py::test_the_token_matches_an_independent_construction_byte_for_byte"
    ],
-   "definition_sha256": "5a108279ebf455a8143ab4e24a567cacd68f46379bc6056f1967f2bb03204ea1",
+   "definition_sha256": "0fe1706db11919841efaac3b39a1a249d3ca02bbc736ad3adc713d156c472b69",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-delimiter-joined-digest",
    "import": "ok",
@@ -2713,7 +2813,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.47s",
+   "pytest": "2 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the snapshot digest over a delimiter-joined string, not the table-tagged canonical JSON"
@@ -2729,13 +2829,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
-   "definition_sha256": "a51db7c9d3ebce5606088ccdffeb297f1a56fdfd95587b4b87486c9d1fc1fe56",
+   "definition_sha256": "fa04042a452280c94d2041e5ade4d0520e47e5209e356522dd2e2f33ad0bc004",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_the_expiry_boundaries[599-ok]"
    ],
    "id": "TT21-duplicate-key-accepted",
    "import": "ok",
@@ -2746,7 +2846,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "a payload with a duplicate member name accepted"
@@ -2764,13 +2864,13 @@
     "tests/test_0031_trust_tools_erase.py::test_each_refusal_erases_nothing[expired]",
     "tests/test_0031_trust_tools_erase.py::test_the_expiry_boundaries[600-preview_expired]"
    ],
-   "definition_sha256": "5dc9693c13b9c69b3400ce518c46f1d77537ed6f80d3f151c9bb5f52a23a5926",
+   "definition_sha256": "d948919346e8df37973c120437eb86dc1bee94048e46b9a84d7d78c0c4e3004c",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-expiry-off-by-one",
    "import": "ok",
@@ -2782,7 +2882,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.54s",
+   "pytest": "2 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "a token still valid at exactly t + 600"
@@ -2798,13 +2898,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[boolean t]"
    ],
-   "definition_sha256": "4a9284ab7f056fd79cd5d737596eeb561a694b95f5ef00587e62bdd373ae97b9",
+   "definition_sha256": "6e9b59a7037408f73dc2f0d0d23cc2fa31f52f72441d011c5fd9e113c15ec19e",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-isinstance-timestamp",
    "import": "ok",
@@ -2815,7 +2915,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "an `isinstance` check on `t`, so a boolean is accepted"
@@ -2831,13 +2931,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_the_token_matches_an_independent_construction_byte_for_byte"
    ],
-   "definition_sha256": "3060d80bf05fef82e3832fa7878c8e3a6fc835d3fadcfc176fb6f36c7f00550b",
+   "definition_sha256": "39731a10bb042b1e66ae2453f69066307ff119a1b505f3cba3fb2d8fd0eb5212",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-mac-over-decoded-json",
    "import": "ok",
@@ -2848,7 +2948,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "the MAC over the decoded payload, not the wire segment"
@@ -2864,13 +2964,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_another_key_instance_and_another_context_refuse"
    ],
-   "definition_sha256": "ca5191081c3d44e4812601796f83f7816d92702e0267f8315e4753383807e871",
+   "definition_sha256": "347f8876d5e2cfaa2cd3d5e13241f6f68f28a3da7641a840af284dd5b6a70a0a",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-no-issuer-context-check",
    "import": "ok",
@@ -2881,7 +2981,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.47s",
+   "pytest": "1 failed in 0.50s",
    "reason": null,
    "reason_seen": null,
    "what": "a token verified against another store's or user's context"
@@ -2897,13 +2997,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[non-zero pad bits]"
    ],
-   "definition_sha256": "c6817eb3aedb93584ce17ff99cd83616bb088b68842e764b3b5b247f781745a9",
+   "definition_sha256": "9def22d6db3b0c38124323c0405144fde0cad1fdafc8cf4614336cae3ef999dc",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-non-canonical-base64",
    "import": "ok",
@@ -2914,7 +3014,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "a non-canonical base64url segment (padding, pad bits) accepted"
@@ -2932,13 +3032,13 @@
     "tests/test_0031_trust_tools_erase.py::test_each_refusal_erases_nothing[another_issuer]",
     "tests/test_0031_trust_tools_erase.py::test_no_issuer_holds_a_shared_key"
    ],
-   "definition_sha256": "2381fabc92aa477f39a8607efae3679379af7b939f560057370316ad0c796c64",
+   "definition_sha256": "5595e98370cdf1fa327b972e0e9383d6e667e0e43d7132fc2c23bdc92fc8aaf0",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-process-global-key",
    "import": "ok",
@@ -2950,7 +3050,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.54s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "one fixed key for every issuer"
@@ -2966,13 +3066,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[uppercase hex]"
    ],
-   "definition_sha256": "e4255e19b8a624e9c16148ef008ac80405d9e9273e36cc44f38b5714f869914a",
+   "definition_sha256": "f9df02f8bbd9c27dc8965580f641877dbae2ecfa9de508cebb046e6ffc26e3ab",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[nested object]"
+    "tests/test_0031_trust_tools_erase.py::test_every_malformed_token_is_refused_alike[duplicate key]"
    ],
    "id": "TT21-uppercase-hex",
    "import": "ok",
@@ -2983,7 +3083,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.45s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "an uppercase-hex digest accepted"
@@ -2999,13 +3099,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_the_reason_cap_is_1024_code_points_and_refuses_before_any_mutation[\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9-True]"
    ],
-   "definition_sha256": "5298feaee87a0920cee032507a0369edabffb13bd5fe23c1b1de4199c173064c",
+   "definition_sha256": "44c47a62dedb7561fe2b717fc4e26e5412357b969151af020c50e2c28dbedd23",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT22-cap-in-bytes",
    "import": "ok",
@@ -3016,7 +3116,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's reason cap counted in UTF-8 bytes, not code points"
@@ -3032,13 +3132,13 @@
    "cells_failed": [
     "tests/test_0031_trust_tools_mcp.py::test_the_reason_cap_is_1024_code_points_and_refuses_before_any_mutation[\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9\\xe9-False]"
    ],
-   "definition_sha256": "36391043379903bbc485d8689042d1d0e01f19eaf95495189ebe30f8a2753ead",
+   "definition_sha256": "2cc1d424b418c96698834d71c3091d526d14a67994cafc52006e93b27c53912b",
    "file": "src/veracium/mcp_server.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_everything_preview-None]"
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
    ],
    "id": "TT22-truncation",
    "import": "ok",
@@ -3049,7 +3149,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "an over-long reason truncated instead of refused"
@@ -3069,13 +3169,13 @@
     "tests/test_0031_trust_tools_library.py::test_an_older_reader_refuses_a_15_file",
     "tests/test_0031_trust_tools_library.py::test_the_call_path_survives_export_import_and_a_redaction_of_the_audit_episode"
    ],
-   "definition_sha256": "8df180cf0b61dee4b82775c2a9dbb482b6ebff4c790e02704ba04c81ff3690fa",
+   "definition_sha256": "24bb0951a1e4407d27d65c24cb45fc3c162acf82d6ecdb6f275f4db1382d2500",
    "file": "src/veracium/portability.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT23-era-reads-edges-only",
    "import": "ok",
@@ -3088,7 +3188,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.91s",
+   "pytest": "3 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the format-15 predicate reads edges only: an export with an agent audit EPISODE stays 14"
@@ -3106,13 +3206,13 @@
     "tests/test_0031_trust_tools_library.py::test_a_file_declaring_14_that_carries_an_agent_path_is_refused_whole[confirmation_adapter_direct]",
     "tests/test_0031_trust_tools_library.py::test_a_file_declaring_14_that_carries_an_agent_path_is_refused_whole[episode_call_path]"
    ],
-   "definition_sha256": "ff8ddfe58187fb493db67d2bb3586b2bd6eeed34c64cd15af20ab12f06d8a205",
+   "definition_sha256": "3364a487011b3056989bf293ce7244f16b453e55860db48fa66f0e59923476fa",
    "file": "src/veracium/portability.py",
    "finding": "implementation",
    "good": true,
    "honest": "pass",
    "honest_nodes": [
-    "tests/test_0031_trust_tools_library.py::test_the_decision_table_under_a_principal[False-redact]"
+    "tests/test_0031_trust_tools_library.py::test_the_binding_source_must_itself_be_own_to_the_principal[dispute-principal1-src-b-source_out_of_scope]"
    ],
    "id": "TT23-planted-call-path-not-refused",
    "import": "ok",
@@ -3124,7 +3224,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.81s",
+   "pytest": "2 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "a pre-15 file carrying an agent call path imported instead of refused whole"
@@ -3132,13 +3232,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 62
+   "product": 64
   },
-  "controls": 7,
-  "controls_good": 7,
-  "good": 62,
-  "killed": 62,
-  "rows": 62,
-  "seconds": 227
+  "controls": 8,
+  "controls_good": 8,
+  "good": 64,
+  "killed": 64,
+  "rows": 64,
+  "seconds": 263
  }
 }

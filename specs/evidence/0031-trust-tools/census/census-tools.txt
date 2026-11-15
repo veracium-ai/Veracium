@@ -1,0 +1,71 @@
+src tree: fc0e55e5cd299991cc3717bb400910dd4365bfdf (unchanged since 0beb0aaf: fc0e55e5cd299991cc3717bb400910dd4365bfdf)
+write census of the seven trust tools through *_report; 34 cases, each on a fresh store
+find_facts / gate 1 capability none
+    refused:attempted_elevation      no writes
+correct_fact / gate 1 capability none
+    refused:attempted_elevation      no writes
+dispute_fact / gate 1 capability none
+    refused:attempted_elevation      no writes
+confirm_fact / gate 1 capability none
+    refused:attempted_elevation      no writes
+forget_fact / gate 1 capability none
+    refused:attempted_elevation      no writes
+forget_everything_preview / gate 1 capability none
+    refused:attempted_elevation      no writes
+forget_everything_confirm / gate 1 capability none
+    refused:attempted_elevation      no writes
+forget_fact / gate 2 erasure off
+    refused:erasure_disabled         no writes
+forget_everything_preview / gate 2 erasure off
+    refused:erasure_disabled         no writes
+forget_everything_confirm / gate 2 erasure off
+    refused:erasure_disabled         no writes
+forget_everything_preview / gate 3 principal
+    refused:principal_scoped         no writes
+forget_everything_confirm / gate 3 principal
+    refused:principal_scoped         no writes
+forget_fact / gate 4 both ids
+    refused:invalid_target           no writes
+dispute_fact / gate 4 reason over 1024 code points
+    refused:reason_too_long          no writes
+forget_everything_confirm / gate 4 malformed token
+    refused:preview_unknown          no writes
+correct_fact / gate 5 scope unconfigured
+    refused:scope_unconfigured       no writes
+find_facts / gate 5 principal ungroupable
+    refused:principal_ungroupable    no writes
+correct_fact / gate 7 unknown id, no principal
+    refused:not_found_in_scope       no writes
+dispute_fact / gate 7 unknown id, no principal
+    refused:not_found_in_scope       no writes
+confirm_fact / gate 7 unknown id, no principal
+    refused:not_found_in_scope       no writes
+forget_fact / gate 7 unknown id, no principal
+    refused:not_found_in_scope       no writes
+find_facts / accepted, user with facts, recompilation 0
+    ok                               no writes
+find_facts / CONDITIONAL empty user, default config: first lookup | second lookup
+    first:  ok                               INSERT wiki x1
+    second: ok                               no writes
+find_facts / CONDITIONAL user with facts, default config (recompilation on)
+    ok                               INSERT wiki x1
+find_facts / CONDITIONAL no query (the proactive path), default config
+    ok                               no writes
+correct_fact / accepted
+    ok                               DELETE wiki x2, INSERT edge_event x2, INSERT edges x1, INSERT episodes x1, INSERT supersession_operations x1, INSERT write_counter x2, UPDATE edges x1, UPDATE migration_outcome x1
+correct_fact / CONDITIONAL other-subject target: correction_refused, committed bookkeeping
+    refused:correction_refused       DELETE wiki x1, INSERT edge_event x1, INSERT edges x1, INSERT supersession_operations x1, INSERT supersession_refusals x1, INSERT write_counter x2
+dispute_fact / accepted
+    ok                               DELETE wiki x2, INSERT edge_event x1, INSERT episodes x1, INSERT write_counter x2, UPDATE edges x1, UPDATE migration_outcome x1
+confirm_fact / accepted
+    ok                               INSERT confirmations x1, INSERT edge_event x1, INSERT episodes x1, INSERT request_registry x1, INSERT write_counter x1, UPDATE act_counter x1, UPDATE edges x1
+forget_fact / accepted (edge)
+    ok                               DELETE edge_embedding x1, DELETE wiki x2, INSERT edge_event x1, INSERT redactions x1, INSERT write_counter x1, UPDATE confirmations x1, UPDATE contribution_ledger x1, UPDATE edge_event x1, UPDATE edges x1, UPDATE migration_outcome x1, UPDATE replies x2, UPDATE request_registry x1, UPDATE source_revocations x1, UPDATE supersession_refusals x1
+forget_fact / accepted (episode)
+    ok                               DELETE wiki x1, INSERT episode_event x1, INSERT redactions x1, INSERT write_counter x1, UPDATE contribution_ledger x1, UPDATE episodes x1, UPDATE source_revocations x1
+forget_everything_preview / accepted
+    ok                               no writes
+forget_everything_confirm / accepted
+    ok                               DELETE arity_inventory x1, DELETE confirmations x1, DELETE consolidation_ops x1, DELETE contribution_ledger x1, DELETE edge_embedding x1, DELETE edge_event x1, DELETE edges x1, DELETE episode_event x1, DELETE episodes x1, DELETE migration_outcome x1, DELETE migration_run x1, DELETE policy_receipt x1, DELETE redactions x1, DELETE refusal_inventory x1, DELETE replies x1, DELETE request_registry x1, DELETE source_revocations x1, DELETE supersession_operations x1, DELETE supersession_refusals x1, DELETE wiki x1, DELETE write_counter x1
+forget_everything_confirm / CONDITIONAL store changed since the preview
+    refused:store_changed            no writes

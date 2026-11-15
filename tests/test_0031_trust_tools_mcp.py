@@ -243,6 +243,38 @@ def test_another_users_id_and_an_unknown_id_give_one_response(tmp_path, name):
                                               "detail": NOT_FOUND_DETAIL}
 
 
+def test_find_facts_writes_only_the_conditional_wiki_cache_row(tmp_path):
+    """Round 2's witness `lookup_writes_and_keyset_replay`, its lookup half (TT-R2-02): find_facts is not write-free.
+    On an empty user with the default configuration, the recall it runs publishes the code-owned empty wiki body: ONE
+    write statement, into `wiki`, and no other table changes. The write is CONDITIONAL: a second find_facts, the cache
+    now fresh, executes no write at all. Mutant: the cache freshness check ignored (every lookup republishes)."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    m = Memory(llm=lambda *a, **k: pytest.fail("find_facts called a model"),
+               config=MemoryConfig(db_path=str(tmp_path / "v.db"), require_source_id=False))
+    server = M.build_server(m, default_user=U, capability="direct")
+    tables = [r[0] for r in m.store._conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+
+    def snap():
+        return {t: sorted(map(repr, m.store._conn.execute(f'SELECT * FROM "{t}"'))) for t in tables}
+
+    def writes_of(args):
+        sql = []
+        m.store._conn.set_trace_callback(sql.append)
+        try:
+            out = _call(server, "find_facts", args)
+        finally:
+            m.store._conn.set_trace_callback(None)
+        assert out.get("ok") is True, out
+        return [s for s in sql if s.lstrip().upper().startswith(("INSERT", "UPDATE", "DELETE", "REPLACE"))]
+
+    a = snap()
+    first = writes_of({"query": "empty"})
+    b = snap()
+    assert [t for t in tables if a[t] != b[t]] == ["wiki"] and len(b["wiki"]) == 1, (first, b["wiki"])
+    assert len(first) == 1 and "INTO wiki" in first[0], first
+    assert writes_of({"query": "empty"}) == []                  # the cache is fresh: the second lookup writes nothing
+
+
 def test_find_facts_lists_only_the_deployments_user(tmp_path):
     m = _mem(tmp_path)
     _edge(m, "e-mine", "tea"); _edge(m, "e-bob", "tea too", user="bob")

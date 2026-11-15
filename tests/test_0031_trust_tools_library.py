@@ -7,6 +7,7 @@ check here names the mutant it kills, and each mutating case runs on its own fre
 """
 import hashlib
 import json
+from datetime import datetime, timezone
 
 import pytest
 
@@ -269,6 +270,33 @@ def test_the_principal_receipt_is_six_fields_the_scope_label_and_the_filtered_li
     assert again["repeated"] is True and set(again) == set(r)
     host = m.redact(U, edge_id=e.id, reason="subject_request")
     assert {d["id"] for d in host.surviving_derived} == {"ep-hidden", "ep-mine"}   # whole on the host path
+
+
+def test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_is_refused(tmp_path):
+    """Round 2's witness `redaction_repeat` (TT-R2-01), on the real verb: a normal same-source ABSORPTION survivor is OWN
+    before its redaction and UNRESOLVED after it, because the redaction clears the ledger evidence its OWN rested on.
+    The first redaction under the principal succeeds; a repeat under the same principal runs the gate FRESH and is
+    refused, writing nothing; the host path's repeat still returns today's receipt (`repeated=True`). Mutant: a
+    repeat of an already-redacted target skipping the gate (a receipt replay)."""
+    from veracium import graph
+    from veracium.schema import Edge as _E
+    m = _mem(tmp_path)
+    t = datetime(2026, 11, 14, 12, tzinfo=timezone.utc)
+
+    def edge(eid, obj):
+        return _E(id=eid, user_id=U, subject="user", relation="has_pet", object=obj, valid_from=t,
+                  provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, source_id="src-a",
+                                        evidence_ref=f"ev-{eid}", observed_at=t))
+    m.store.add_edge(edge("e-short", "Miso"))
+    graph.apply_supersession(m.store, edge("e-full", "cat Miso"), m.config.relations)
+    assert m._find_edge(U, "e-short").invalidation_reason == "absorbed_duplicate"
+    first = m.redact(U, edge_id="e-full", reason="subject_request", principal=A)
+    assert first["repeated"] is False and first["target_id"] == "e-full"
+    before = _digest(m)
+    with pytest.raises(TrustRefused):
+        m.redact(U, edge_id="e-full", reason="subject_request", principal=A)
+    assert _digest(m) == before
+    assert m.redact(U, edge_id="e-full", reason="subject_request").repeated is True    # the host path, unchanged
 
 
 def test_two_stores_differing_only_in_hidden_records_give_identical_principal_receipts(tmp_path):
