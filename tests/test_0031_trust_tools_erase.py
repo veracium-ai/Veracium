@@ -344,43 +344,46 @@ def test_the_check_and_the_erase_are_one_write_transaction(tmp_path, monkeypatch
     assert seen == {"wrote": False} and _count(m, "edges") == 0
 
 
-def test_the_preview_counts_and_digest_come_from_one_snapshot(tmp_path):
-    """INV-TT20: a second connection's insert BETWEEN the preview's table reads cannot land, so the four lists, the
-    counts and the digest are one snapshot (the store's rollback journal: an open read transaction holds the lock a
-    writer's commit needs). The confirm then erases exactly the previewed set. Mutant: the reads taken outside one
-    transaction (the insert would land between them)."""
+def test_the_preview_counts_and_digest_come_from_one_snapshot(tmp_path, monkeypatch):
+    """INV-TT20, in research's mode-neutral form (research ac958e1c, proposals/evidence-0031tt-slice3-erase/): one
+    commit on a second connection writes an edge AND an episode just after PRODUCTION's read loop has read `edges`
+    and before it reads `episodes`. One snapshot shows the state before that commit or after it, never a mix, in any
+    journal mode (here the commit cannot land at all; under WAL it lands and the snapshot predates it). The counts and
+    the digest come from that one dict, and the confirm then erases exactly the previewed set or refuses. Mutant: the
+    reads taken outside one transaction (edges from before the commit, episodes from after: the torn state)."""
     m = _mem(tmp_path)
     _edge(m, "e-1")
-    from veracium.store import sqlite as S
-    calls = {"n": 0}
-    real = S.SqliteStore._erase_preview_keys
+    real = T._sorted_keys
+    state = {"n": 0}
 
-    def interleaved(self, user_id):
-        out = {}
-        from veracium.trust_tools import ERASE_PREVIEW_TABLES, _sorted_keys
-        for t in ERASE_PREVIEW_TABLES:
-            out[t] = _sorted_keys(r[0] for r in self._conn.execute(f"SELECT id FROM {t} WHERE user_id=?", (user_id,)))
-            if t == "edges" and calls["n"] == 0:
-                calls["n"] += 1
-                other = sqlite3.connect(str(tmp_path / "v.db"), timeout=0.05)
-                try:
-                    other.execute("INSERT INTO episodes(id,user_id,date,json) VALUES('ep-x','u','2026-11-01','{}')")
-                    other.commit()
-                    calls["landed"] = True
-                except sqlite3.OperationalError:
-                    calls["landed"] = False
-                finally:
-                    other.close()
+    def hooked(it):
+        out = real(it)
+        state["n"] += 1
+        if state["n"] == 1:                          # just after production read `edges`
+            other = sqlite3.connect(str(tmp_path / "v.db"), timeout=0.05)
+            try:
+                other.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
+                              "VALUES('e-x','u','user','r','o',1,0,'{}')")
+                other.execute("INSERT INTO episodes(id,user_id,date,json) VALUES('ep-x','u','2026-11-01','{}')")
+                other.commit()
+            except sqlite3.OperationalError:
+                pass
+            finally:
+                other.close()
         return out
-    S.SqliteStore._erase_preview_keys = interleaved
-    try:
-        clock = {"t": T0}
-        iss = _issuer(m, clock)
-        p = m.forget_everything_preview(U, issuer=iss)
-    finally:
-        S.SqliteStore._erase_preview_keys = real
-    assert calls == {"n": 1, "landed": False} and p["counts"]["episodes"] == 0
-    assert m.forget_everything_confirm(U, p["preview_token"], issuer=iss)["edges"] == 1
+    monkeypatch.setattr(T, "_sorted_keys", hooked)
+    iss = _issuer(m, {"t": T0})
+    p = m.forget_everything_preview(U, issuer=iss)
+    monkeypatch.setattr(T, "_sorted_keys", real)
+    keys = m.store.erase_preview_snapshot(U)
+    before = p["counts"] == {"edges": 1, "episodes": 0, "confirmations": 0, "replies": 0}
+    after = p["counts"] == {"edges": 2, "episodes": 1, "confirmations": 0, "replies": 0}
+    assert before or after, p["counts"]
+    if before and (keys["edges"], keys["episodes"]) != (["e-1"], []):
+        with pytest.raises(TrustRefused, match="store_changed"):     # the commit landed after the snapshot
+            m.forget_everything_confirm(U, p["preview_token"], issuer=iss)
+    else:
+        assert m.forget_everything_confirm(U, p["preview_token"], issuer=iss)["edges"] == p["counts"]["edges"]
 
 
 def test_both_steps_refuse_any_principal_and_write_nothing(tmp_path):
