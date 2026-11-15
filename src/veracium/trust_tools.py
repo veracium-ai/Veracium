@@ -6,6 +6,12 @@ verbs raise for the scope gates of §3b. A refusal is a VALUE: the tools return 
 """
 from __future__ import annotations
 
+from .census import declare_site
+
+# specs/0031 §4f §4e: research's 0042 stage-1 classification (2026-11-15) — enforcement points (INV-TT8, INV-TT21)
+_SITE_TOKEN_PARSE = declare_site("trust.token.parse")     # the single exit where every malformed token is refused
+_SITE_TOKEN_VERIFY = declare_site("trust.token.verify")   # context, MAC-or-user, a future t, expiry
+
 #: §4a's refusal vocabulary, closed. The order is the gate order of §4a where a gate owns the reason.
 REFUSALS = (
     "attempted_elevation",     # 1. capability: anything but `direct`
@@ -129,28 +135,29 @@ def _no_dup_object(pairs):
 def parse_token(token) -> tuple:
     """§4e confirm step 1, the STRICT parse (TT-R2-04). Returns `(payload_segment, u, d, t, mac)` or raises
     `TrustRefused("preview_unknown")` with its one fixed detail, for every malformed form alike."""
-    try:
-        if not isinstance(token, str):
-            raise ValueError("type")
-        parts = token.split(".")
-        if len(parts) != 3 or parts[0] != _PREFIX:
-            raise ValueError("shape")
-        payload_seg, mac_seg = parts[1], parts[2]
-        payload = _b64url_strict(payload_seg).decode("utf-8")          # malformed UTF-8 raises here
-        obj = _json.loads(payload, object_pairs_hook=_no_dup_object)
-        if not isinstance(obj, dict) or set(obj) != {"u", "d", "t"}:
-            raise ValueError("keys")
-        u, d, t = obj["u"], obj["d"], obj["t"]
-        if not isinstance(u, str) or type(t) is not int:                 # a boolean t is refused (type, not isinstance)
-            raise ValueError("types")
-        if not (isinstance(d, str) and len(d) == 64 and all(c in "0123456789abcdef" for c in d)):
-            raise ValueError("digest")
-        mac = _b64url_strict(mac_seg)
-        if len(mac) != 32:
-            raise ValueError("mac length")
-    except (ValueError, UnicodeDecodeError, _b64.binascii.Error):
-        raise TrustRefused("preview_unknown") from None
-    return payload_seg, u, d, t, mac
+    with _SITE_TOKEN_PARSE.consult():
+        try:
+            if not isinstance(token, str):
+                raise ValueError("type")
+            parts = token.split(".")
+            if len(parts) != 3 or parts[0] != _PREFIX:
+                raise ValueError("shape")
+            payload_seg, mac_seg = parts[1], parts[2]
+            payload = _b64url_strict(payload_seg).decode("utf-8")          # malformed UTF-8 raises here
+            obj = _json.loads(payload, object_pairs_hook=_no_dup_object)
+            if not isinstance(obj, dict) or set(obj) != {"u", "d", "t"}:
+                raise ValueError("keys")
+            u, d, t = obj["u"], obj["d"], obj["t"]
+            if not isinstance(u, str) or type(t) is not int:                 # a boolean t is refused (type, not isinstance)
+                raise ValueError("types")
+            if not (isinstance(d, str) and len(d) == 64 and all(c in "0123456789abcdef" for c in d)):
+                raise ValueError("digest")
+            mac = _b64url_strict(mac_seg)
+            if len(mac) != 32:
+                raise ValueError("mac length")
+        except (ValueError, UnicodeDecodeError, _b64.binascii.Error):
+            raise _SITE_TOKEN_PARSE.fire(TrustRefused("preview_unknown"), "malformed") from None
+        return payload_seg, u, d, t, mac
 
 
 class PreviewTokenIssuer:
@@ -196,16 +203,17 @@ class PreviewTokenIssuer:
         verify the MAC with `hmac.compare_digest`, then the time. Returns the bound digest; raises `TrustRefused`
         (`preview_unknown` or `preview_expired`)."""
         payload_seg, u, d, t, mac = parse_token(token)
-        if (store_identity, user_id) != (self.store_identity, self.user_id):
-            raise TrustRefused("preview_unknown")
-        if not _hmac.compare_digest(mac, self._mac(payload_seg)) or u != self.user_id:
-            raise TrustRefused("preview_unknown")
-        now = self.now()
-        if t > now:
-            raise TrustRefused("preview_unknown")
-        if now >= t + TOKEN_TTL:
-            raise TrustRefused("preview_expired")
-        return d
+        with _SITE_TOKEN_VERIFY.consult():
+            if (store_identity, user_id) != (self.store_identity, self.user_id):
+                raise _SITE_TOKEN_VERIFY.fire(TrustRefused("preview_unknown"), "context")
+            if not _hmac.compare_digest(mac, self._mac(payload_seg)) or u != self.user_id:
+                raise _SITE_TOKEN_VERIFY.fire(TrustRefused("preview_unknown"), "mac-or-user")
+            now = self.now()
+            if t > now:
+                raise _SITE_TOKEN_VERIFY.fire(TrustRefused("preview_unknown"), "future-t")
+            if now >= t + TOKEN_TTL:
+                raise _SITE_TOKEN_VERIFY.fire(TrustRefused("preview_expired"), "expired")
+            return d
 
 
 def expires_at(issued_at: int) -> str:

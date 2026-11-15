@@ -1699,6 +1699,67 @@ DECLINES.update({
                                         lambda store: compile_mod.empty_body_unbound(
                                             store, U, compile_mod._empty_input_body(), 4)),
 })
+# specs/0031 §4f (research's 0042 stage-1 classification, 2026-11-15): the trust tools' nine enforcement points, each
+# driven to ONE declining execution. The principal is in no group under the configured-empty policy, so its own
+# source classes OWN and every other record is out of its view.
+from veracium import trust_tools as _trust_tools
+from veracium.scope import Identity as _Identity
+_P = _Identity(None, "src-a")
+
+
+def _iss(mem):
+    return _trust_tools.PreviewTokenIssuer(mem.store.local_origin(), U)
+
+
+def _scoped_raises(fn):
+    mem = _mem(scope_groups={})
+    try:
+        with pytest.raises(ValueError):
+            fn(mem)
+    finally:
+        mem.close()
+
+
+def _with_hidden_derived_record():
+    """A principal's own edge and a hidden (another source's) episode sharing its evidence_ref: the redaction's
+    surviving_derived names it, and the principal's projection withholds it."""
+    mem = _mem(scope_groups={})
+    e = _edge("rr1").model_copy(update={"provenance": _edge("rr1").provenance.model_copy(update={"source_id": "src-a"})})
+    mem.store.add_edge(e)
+    mem.store.add_episode(Episode(id="ep-hidden", user_id=U, date="2026-11-01", summary="said elsewhere",
+                                  provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                                        evidence_ref=e.provenance.evidence_ref, source_id="src-b")))
+    return (mem, e.id)
+
+
+def _with_changed_store_after_preview():
+    mem = _mem(); mem.store.add_edge(_edge("sc1")); iss = _iss(mem)
+    token = mem.forget_everything_preview(U, issuer=iss)["preview_token"]
+    mem.store.add_edge(_edge("sc2"))
+    return (mem, iss, token)
+
+
+DECLINES.update({
+    "memory.recall.render-receipt-with-as-of": lambda mp: _memory_raises(
+        ValueError, lambda m: m.recall(U, "q", as_of=NOW, render_receipt=True)),
+    "trust.scope-gate": lambda mp: _scoped_raises(lambda m: m.dispute(U, "nope", principal=_P, source_id="src-a")),
+    "trust.erase.preview.principal-scoped": lambda mp: _memory_raises(
+        ValueError, lambda m: m.forget_everything_preview(U, issuer=_iss(m), principal=_P)),
+    "trust.erase.preview.issuer-context": lambda mp: _memory_raises(
+        ValueError, lambda m: m.forget_everything_preview(U, issuer=_trust_tools.PreviewTokenIssuer("elsewhere", U))),
+    "trust.erase.confirm.principal-scoped": lambda mp: _memory_raises(
+        ValueError, lambda m: m.forget_everything_confirm(U, "tt1.x.y", issuer=_iss(m), principal=_P)),
+    "trust.receipt.scope-filter": TwoPhase(lambda mp: _with_hidden_derived_record(),
+                                           lambda st: st[0].redact(U, edge_id=st[1], reason="subject_request",
+                                                                   principal=_P)),
+    "trust.erase.store-changed": TwoPhase(lambda mp: _with_changed_store_after_preview(),
+                                          lambda st: _raises(ValueError, st[0].forget_everything_confirm, U, st[2],
+                                                             issuer=st[1])),
+    "trust.token.parse": lambda mp: _raises(ValueError, _trust_tools.parse_token, "tt1.not-a-token"),
+    "trust.token.verify": lambda mp: _raises(
+        ValueError, _trust_tools.PreviewTokenIssuer("o", U).verify,
+        _trust_tools.PreviewTokenIssuer("o", U).issue("0" * 64, 1_800_000_000), store_identity="o", user_id=U),
+})
 SITES.update({sid: census._REGISTRY[sid] for sid in census.registry()})
 
 

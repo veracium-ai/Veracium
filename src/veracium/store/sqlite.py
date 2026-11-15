@@ -48,6 +48,7 @@ from ..census import declare_site
 # specs/0042 (tranche 5): the enforcement points of this module, each a declared site the
 # decision is returned THROUGH — consult() brackets the decision, fire() wraps the value
 _SITE_JOURNAL_REASON = declare_site("store.journal.reason-not-dispositioned")
+_SITE_TRUST_STORE_CHANGED = declare_site("trust.erase.store-changed")   # specs/0031 §4f §4e: INV-TT8, INV-TT9
 # specs/0041 tranche 1: INV-11's MIRROR and the two closures the redaction spec found missing (§2d-v)
 _SITE_UPSERT_MARKER = declare_site("store.upsert.marker-introduced")
 _SITE_UPSERT_RELATION_ONLY_QUARANTINE = declare_site("store.upsert.relation-only-quarantine")
@@ -4153,8 +4154,9 @@ class SqliteStore(Store):
         with self._lock, self._write_txn():
             if expected_digest is not None:
                 from ..trust_tools import TrustRefused, snapshot_digest
-                if snapshot_digest(user_id, self._erase_preview_keys(user_id)) != expected_digest:
-                    raise TrustRefused("store_changed")
+                with _SITE_TRUST_STORE_CHANGED.consult():
+                    if snapshot_digest(user_id, self._erase_preview_keys(user_id)) != expected_digest:
+                        raise _SITE_TRUST_STORE_CHANGED.fire(TrustRefused("store_changed"), "store_changed")
             n_edges = self._conn.execute(
                 "SELECT COUNT(*) FROM edges WHERE user_id=?", (user_id,)).fetchone()[0]
             n_eps = self._conn.execute(

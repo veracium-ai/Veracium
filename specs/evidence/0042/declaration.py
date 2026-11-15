@@ -55,6 +55,7 @@ DECLARATION = (
     ("memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "__init__.py:Memory._refuse_attested", "refuse"),
     ("memory.recall.as-of-on-proactive", "0028", "§2c", "__init__.py:Memory.recall", "refuse"),
     ("memory.recall.policy-with-as-of", "0027", "v13 §4c", "__init__.py:Memory._recall", "refuse"),
+    ("memory.recall.render-receipt-with-as-of", "0031", "INV-TT3", "__init__.py:Memory.recall", "refuse"),
     ("memory.record-outcome.actor-vocabulary", "0008", "§4", "__init__.py:Memory.record_outcome", "refuse"),
     ("memory.record-outcome.human-judgment", "0008", "§4", "__init__.py:Memory.record_outcome", "refuse"),
     ("memory.record-outcome.system-judgment", "0008", "§4", "__init__.py:Memory.record_outcome", "refuse"),
@@ -233,6 +234,14 @@ DECLARATION = (
     ("telemetry.flush.not-enabled", "0015", "§4", "telemetry.py:flush_if_due", "withhold"),
     ("telemetry.preview.invalid-consent", "0015", "§4", "telemetry.py:preview", "withhold"),
     ("telemetry.preview.not-enabled", "0015", "§4", "telemetry.py:preview", "withhold"),
+    ("trust.erase.confirm.principal-scoped", "0031", "INV-TT17", "__init__.py:Memory.forget_everything_confirm", "refuse"),
+    ("trust.erase.preview.issuer-context", "0031", "§4e", "__init__.py:Memory.forget_everything_preview", "refuse"),
+    ("trust.erase.preview.principal-scoped", "0031", "INV-TT17", "__init__.py:Memory.forget_everything_preview", "refuse"),
+    ("trust.erase.store-changed", "0031", "INV-TT8", "store/sqlite.py:SqliteStore.forget_user", "refuse"),
+    ("trust.receipt.scope-filter", "0031", "INV-TT19", "__init__.py:Memory._principal_receipt", "withhold"),
+    ("trust.scope-gate", "0031", "INV-TT16", "__init__.py:Memory._trust_scope_gate", "refuse"),
+    ("trust.token.parse", "0031", "INV-TT21", "trust_tools.py:parse_token", "refuse"),
+    ("trust.token.verify", "0031", "INV-TT8", "trust_tools.py:PreviewTokenIssuer.verify", "refuse"),
 )
 
 DECLARED_IDS = frozenset(row[0] for row in DECLARATION)

@@ -64,11 +64,19 @@ from .usage import (ATTRIBUTED_PAIRS, ROLE_FIELDS, ArmingComplete,
                     active_call as _active_call,
                     routing_frame as _routing_frame)
 from .census import declare_site
+from . import trust_tools as _trust_tools  # noqa: F401 — specs/0031 §4f: registers its census sites at import
 
 # specs/0042 (tranche 3): the enforcement points of this module, each a declared site the
 # decision is returned THROUGH — consult() brackets the decision, fire() wraps the value
 _SITE_SCOPE_LOCAL_ORIGIN = declare_site("memory.scope.local-origin-missing")
 _SITE_ASOF_ON_PROACTIVE = declare_site("memory.recall.as-of-on-proactive")
+_SITE_RECALL_RECEIPT_AS_OF = declare_site("memory.recall.render-receipt-with-as-of")  # specs/0031 §4f §4b (INV-TT3)
+# specs/0031 §4f (the trust tools): research's 0042 stage-1 classification (2026-11-15) — each an enforcement point
+_SITE_TRUST_SCOPE_GATE = declare_site("trust.scope-gate")                        # §3b: INV-TT16, INV-TT18, INV-TT7
+_SITE_TRUST_ERASE_PREVIEW = declare_site("trust.erase.preview.principal-scoped")  # INV-TT17
+_SITE_TRUST_ERASE_PREVIEW_CONTEXT = declare_site("trust.erase.preview.issuer-context")  # §4e: the issuer's context
+_SITE_TRUST_ERASE_CONFIRM = declare_site("trust.erase.confirm.principal-scoped")  # INV-TT17
+_SITE_TRUST_RECEIPT_FILTER = declare_site("trust.receipt.scope-filter")          # §4d: INV-TT19
 _SITE_POLICY_WITH_ASOF = declare_site("memory.recall.policy-with-as-of")
 _SITE_EDGE_UNKNOWN_TARGET = declare_site("memory.edge.unknown-target")
 # specs/0008 §6c (INV-Q2), R-A RA-03: confirm()'s unknown-edge refusal, reached only AFTER the store's registry decision
@@ -959,9 +967,12 @@ class Memory:
             if query is None and as_of is not None:
                 raise _SITE_ASOF_ON_PROACTIVE.fire(ValueError("as_of is refused on the proactive path: a briefing is a "
                                  "statement about now (specs/0028 §4c)"))
-        if as_of is not None and render_receipt:
-            # specs/0031 §4f §4b defines the render receipt for the query and the proactive paths only
-            raise ValueError("render_receipt is defined for the query and proactive paths, not as_of (specs/0031 §4b)")
+        with _SITE_RECALL_RECEIPT_AS_OF.consult():
+            if as_of is not None and render_receipt:
+                # specs/0031 §4f §4b defines the render receipt for the query and the proactive paths only: the as_of
+                # renderer has no admission points, so a receipt there could not be the units it admitted
+                raise _SITE_RECALL_RECEIPT_AS_OF.fire(ValueError(
+                    "render_receipt is defined for the query and proactive paths, not as_of (specs/0031 §4b)"))
         try:
             if query is None:
                 # proactive is LLM-free; the frame is pushed for uniformity
@@ -2010,28 +2021,29 @@ class Memory:
             return None
         from .trust_tools import TrustRefused
         from .scope import Identity
-        if self.scope_policy is None:
-            raise TrustRefused("scope_unconfigured")
-        if isinstance(principal, Identity) and not principal.groupable:
-            raise TrustRefused("principal_ungroupable")
-        view = self._scope_view(user_id, principal)      # a non-Identity principal raises ScopeError (a refusal)
-        if writes:
-            if source_id is None:
-                raise TrustRefused("source_unbound")
-            probe = Episode(id="ep-trust-source-probe", user_id=user_id, date=_today_utc(), summary="",
-                            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
-                                                  evidence_ref="trust-tools:source-probe", source_id=source_id))
-            if view.classify_unwritten(probe) != "OWN":
-                raise TrustRefused("source_out_of_scope")
-        record = self._trust_target(user_id, kind, record_id)
-        if record is None:
-            raise TrustRefused("not_found_in_scope")
-        cls = view.classification(record)
-        if cls == "OWN":
-            return view
-        if cls in ("SHARED", "CROSS_VISIBLE"):
-            raise TrustRefused("out_of_scope")
-        raise TrustRefused("not_found_in_scope")
+        with _SITE_TRUST_SCOPE_GATE.consult():          # every refusal fires with its reason as the label (the trace shows the branch)
+            if self.scope_policy is None:
+                raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("scope_unconfigured"), "scope_unconfigured")
+            if isinstance(principal, Identity) and not principal.groupable:
+                raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("principal_ungroupable"), "principal_ungroupable")
+            view = self._scope_view(user_id, principal)  # a non-Identity principal raises ScopeError (a refusal)
+            if writes:
+                if source_id is None:
+                    raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("source_unbound"), "source_unbound")
+                probe = Episode(id="ep-trust-source-probe", user_id=user_id, date=_today_utc(), summary="",
+                                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                                      evidence_ref="trust-tools:source-probe", source_id=source_id))
+                if view.classify_unwritten(probe) != "OWN":
+                    raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("source_out_of_scope"), "source_out_of_scope")
+            record = self._trust_target(user_id, kind, record_id)
+            if record is None:
+                raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("not_found_in_scope"), "not_found_in_scope")
+            cls = view.classification(record)
+            if cls == "OWN":
+                return view
+            if cls in ("SHARED", "CROSS_VISIBLE"):
+                raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("out_of_scope"), "out_of_scope")
+            raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused("not_found_in_scope"), "not_found_in_scope")
 
     def _find_edge(self, user_id: str, edge_id: str) -> Edge:
         with _SITE_EDGE_UNKNOWN_TARGET.consult():
@@ -2506,10 +2518,12 @@ class Memory:
         its context must be this store and this user. Any `principal` is refused as `principal_scoped`: an erase is
         user-wide and a principal sees only its scope (§3b). Raises `trust_tools.TrustRefused`."""
         from . import trust_tools as _tt
-        if principal is not None:
-            raise _tt.TrustRefused("principal_scoped")
-        if (issuer.store_identity, issuer.user_id) != (self.store.local_origin(), user_id):
-            raise _tt.TrustRefused("preview_unknown")
+        with _SITE_TRUST_ERASE_PREVIEW.consult():
+            if principal is not None:
+                raise _SITE_TRUST_ERASE_PREVIEW.fire(_tt.TrustRefused("principal_scoped"), "principal_scoped")
+        with _SITE_TRUST_ERASE_PREVIEW_CONTEXT.consult():
+            if (issuer.store_identity, issuer.user_id) != (self.store.local_origin(), user_id):
+                raise _SITE_TRUST_ERASE_PREVIEW_CONTEXT.fire(_tt.TrustRefused("preview_unknown"), "issuer-context")
         keys = self.store.erase_preview_snapshot(user_id)
         t = issuer.now()
         return {"counts": {tbl: len(keys[tbl]) for tbl in _tt.ERASE_PREVIEW_TABLES},
@@ -2527,8 +2541,9 @@ class Memory:
         with no content. Replay is key-set equality, not one use (TT-R2-04). Returns `forget`'s counts."""
         from . import trust_tools as _tt
         try:
-            if principal is not None:
-                raise _tt.TrustRefused("principal_scoped")
+            with _SITE_TRUST_ERASE_CONFIRM.consult():
+                if principal is not None:
+                    raise _SITE_TRUST_ERASE_CONFIRM.fire(_tt.TrustRefused("principal_scoped"), "principal_scoped")
             digest = issuer.verify(preview_token, store_identity=self.store.local_origin(), user_id=user_id)
             r = self.store.forget_user(user_id, expected_digest=digest)
         except _tt.TrustRefused as refusal:
@@ -2649,16 +2664,19 @@ class Memory:
         whole = receipt.model_dump(mode="json")
         out = {k: whole[k] for k in self.PRINCIPAL_RECEIPT_FIELDS}
         listed = []
-        for entry in receipt.surviving_derived:
-            record = self._trust_target(user_id, entry.get("kind"), entry.get("id"))
-            if record is None:
-                continue
-            cls = view.classification(record)
-            if cls in ("OWN", "SHARED", "CROSS_VISIBLE"):
-                listed.append({**entry, "class": cls})
-        out["surviving_derived"] = listed
-        out["scope"] = "this principal's view"
-        return out
+        with _SITE_TRUST_RECEIPT_FILTER.consult():
+            for entry in receipt.surviving_derived:
+                record = self._trust_target(user_id, entry.get("kind"), entry.get("id"))
+                if record is None:
+                    continue
+                cls = view.classification(record)
+                if cls in ("OWN", "SHARED", "CROSS_VISIBLE"):
+                    listed.append({**entry, "class": cls})
+            out["surviving_derived"] = listed
+            out["scope"] = "this principal's view"
+            # the withheld entries are not visible in the value, so the decline is stated: fewer listed than held
+            return _SITE_TRUST_RECEIPT_FILTER.fire(out, "withhold",
+                                                   declined=len(listed) < len(receipt.surviving_derived))
 
     def pending_notices(self, user_id: str) -> list:
         """specs/0041 §11.6.6 (T4): the user's PENDING redaction notices — another store's testimony that it redacted a
