@@ -403,6 +403,7 @@ READS = {
     "quiescent_episode_snapshot", "read_window", "redacted_targets", "redaction_records", "refusal_inventory_ids",
     "refusals", "replies_for", "semantic_candidates", "standing_revocations", "store_version", "supersession_receipt",
     "supersessions_refused", "validate_receipt_state", "close", "atomic", "epoch_txn",
+    "erase_preview_snapshot",     # specs/0031 §4f §4e: the erase preview's one read snapshot of four tables' keys
 }
 
 

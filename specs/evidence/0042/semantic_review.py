@@ -117,8 +117,11 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
     ("store/schema_version.py", 1987): "argument-check", ("store/schema_version.py", 2179): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
-    ("mcp_server.py", 924): "cli-usage", ("mcp_server.py", 930): "cli-usage", ("mcp_server.py", 936): "cli-usage", ("mcp_server.py", 956): "cli-usage",
+    ("mcp_server.py", 937): "cli-usage", ("mcp_server.py", 943): "cli-usage", ("mcp_server.py", 949): "cli-usage", ("mcp_server.py", 969): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
+    ("__init__.py", 302): "control-flow",   # carried: __init__.py:_agent_call_path:RETURN_NONE:1
+    ("__init__.py", 2021): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1
+    ("__init__.py", 2551): "control-flow",   # carried: __init__.py:Memory.forget_everything_confirm:RAISE:2
     ("__init__.py", 2581): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
     ("__init__.py", 2591): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
     ("adapters/_surface.py", 49): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
@@ -127,6 +130,17 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("compile.py", 245): "predicate-helper",   # SR2-01: the cached code-owned empty body test, consumed by needs_recompile
     ("compile.py", 466): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
     ("lifecycle.py", 63): "internal-invariant",   # specs/0048 §4D, the owner's "Refuse, name it": a store without the transition refuses (the Store base's refusing-default class)
+    ("mcp_server.py", 400): "control-flow",   # carried: mcp_server.py:_trust_gates:RETURN_NONE:1
+    ("mcp_server.py", 406): "control-flow",   # carried: mcp_server.py:_scope_configuration:RETURN_NONE:1
+    ("mcp_server.py", 412): "control-flow",   # carried: mcp_server.py:_scope_configuration:RETURN_NONE:2
+    ("mcp_server.py", 419): "control-flow",   # carried: mcp_server.py:_unscoped_target_missing:RETURN_NONE:1
+    ("mcp_server.py", 454): "control-flow",   # carried: mcp_server.py:find_facts_report:BOOL_RETURN:1
+    ("mcp_server.py", 468): "control-flow",   # carried: mcp_server.py:correct_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 478): "control-flow",   # carried: mcp_server.py:dispute_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 486): "control-flow",   # carried: mcp_server.py:dispute_fact_report:BOOL_RETURN:2
+    ("mcp_server.py", 496): "control-flow",   # carried: mcp_server.py:confirm_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 510): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 516): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:2
     ("proactive.py", 243): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
     ("proactive.py", 292): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
     ("schema.py", 639): "predicate-helper",   # 0.29.0 B1+B2: schema.py:is_obligation:BOOL_RETURN:1 (consumed by the backstop and _lexical_scored)
@@ -143,26 +157,9 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/schema_version.py", 1991): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:3
     ("store/schema_version.py", 1993): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:4
     ("store/schema_version.py", 2000): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:5
-    # specs/0031 §4f (research's 0042 stage-1 classification, 2026-11-15): the trust tools' NOT candidates whose module
-    # default is not the truth — the "go on" exits, a re-raise after counting, ordering and reads, the reports'
-    # `return refused` (they CONSUME the gates: Part A step 1 counts before the branch, never where it is consumed)
-    ("__init__.py", 302): "control-flow",
-    ("__init__.py", 2021): "control-flow",
-    ("__init__.py", 2551): "control-flow",
-    ("mcp_server.py", 400): "control-flow",
-    ("mcp_server.py", 406): "control-flow",
-    ("mcp_server.py", 412): "control-flow",
-    ("mcp_server.py", 419): "control-flow",
-    ("mcp_server.py", 454): "control-flow",
-    ("mcp_server.py", 468): "control-flow",
-    ("mcp_server.py", 478): "control-flow",
-    ("mcp_server.py", 486): "control-flow",
-    ("mcp_server.py", 496): "control-flow",
-    ("mcp_server.py", 510): "control-flow",
-    ("mcp_server.py", 516): "control-flow",
-    ("store/sqlite.py", 4134): "control-flow",
-    ("trust_tools.py", 56): "internal-invariant",
-    ("trust_tools.py", 95): "control-flow",
+    ("store/sqlite.py", 4134): "control-flow",   # carried: store/sqlite.py:SqliteStore._erase_preview_keys:FILTER_RETURN:1
+    ("trust_tools.py", 56): "internal-invariant",   # carried: trust_tools.py:TrustRefused.__init__:RAISE:1
+    ("trust_tools.py", 95): "control-flow",   # carried: trust_tools.py:_sorted_keys:FILTER_RETURN:1
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",

@@ -5435,40 +5435,40 @@
   "line": 83,
   "statement": "raise SystemExit(\"internal: this veracium verb should never invoke the LLM \""
  },
- "mcp_server.py:main:924:RAISE": {
+ "mcp_server.py:main:937:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:1",
-  "line": 924,
+  "line": 937,
   "statement": "raise SystemExit(f\"veracium-mcp: unknown argument {args[0]!r} (see --help). \""
  },
- "mcp_server.py:main:930:RAISE": {
+ "mcp_server.py:main:943:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:2",
-  "line": 930,
+  "line": 943,
   "statement": "raise SystemExit(\"The MCP server needs the SDK: pip install veracium[mcp]\") from e"
  },
- "mcp_server.py:main:936:RAISE": {
+ "mcp_server.py:main:949:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:3",
-  "line": 936,
+  "line": 949,
   "statement": "raise SystemExit(f\"veracium-mcp: failed to start: {e}\\n(see veracium-mcp --help)\") from e"
  },
- "mcp_server.py:main:956:RAISE": {
+ "mcp_server.py:main:969:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:4",
-  "line": 956,
+  "line": 969,
   "statement": "raise SystemExit("
  },
  "__init__.py:Memory._build_scope_policy:433:RETURN_NONE": {

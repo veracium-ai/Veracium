@@ -351,6 +351,34 @@ DISPOSITIONS: dict[str, dict] = {
         disposition="WRITE path over MCP (specs/0037 §4b): the capability-gated "
                     "adapter to `Memory.record_procedure`; refuses under "
                     "`none` as an attempted elevation; renders nothing."),
+    "mcp_server.find_facts_impl": dict(
+        returns_records=True, principal="threaded",
+        carriers="the render receipt of one recall: each admitted unit's kind, id, text as admitted, partition, annotations, subject, and `mutable` under a principal",
+        disposition="SCOPED. The same recall `recall_impl` runs, with the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5), so the receipt lists only what that principal's recall rendered (INV-TT3)"),
+    "mcp_server.correct_fact_impl": dict(
+        returns_records=False, principal="threaded",
+        carriers="`{ok, corrected, replacement}` or a serialized refusal",
+        disposition="WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): only OWN targets are acted on"),
+    "mcp_server.dispute_fact_impl": dict(
+        returns_records=False, principal="threaded",
+        carriers="`{ok, disputed, relation}` or a serialized refusal",
+        disposition="WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): only OWN targets are acted on"),
+    "mcp_server.confirm_fact_impl": dict(
+        returns_records=False, principal="threaded",
+        carriers="`{ok, confirmed, valid_from, confirmed_at, correlation_id, replayed}` or a serialized refusal",
+        disposition="WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): only OWN targets are acted on"),
+    "mcp_server.forget_fact_impl": dict(
+        returns_records=False, principal="threaded",
+        carriers="the full redaction receipt with no principal; under one, the six-field projection with the scope label and the filtered surviving_derived (INV-TT19)",
+        disposition="WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): the projection, computed by that principal's view"),
+    "mcp_server.forget_everything_preview_impl": dict(
+        returns_records=False, principal="threaded",
+        carriers="counts only, a token, its expiry and the warning (INV-TT10)",
+        disposition="The `principal` parameter exists to REFUSE: any principal is `principal_scoped` (INV-TT17)"),
+    "mcp_server.forget_everything_confirm_impl": dict(
+        returns_records=False, principal="threaded",
+        carriers="`forget`'s counts",
+        disposition="The `principal` parameter exists to REFUSE: any principal is `principal_scoped` (INV-TT17)"),
     "mcp_server.describe_procedures_impl": dict(
         returns_records=True, principal="threaded",
         carriers="`DescribeResult` as JSON",

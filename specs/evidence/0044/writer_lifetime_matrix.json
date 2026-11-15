@@ -33,6 +33,7 @@
    ],
    "forget_user": [
     "__init__.py:Memory.forget",
+    "__init__.py:Memory.forget_everything_confirm",
     "cli.py:_forget"
    ]
   },

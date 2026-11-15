@@ -50,7 +50,7 @@ Each cell: `observed` (the inputs that produced it, by running them) or not obse
 | `_recompute_edge_row` | store/revocation.py:_apply_statement_effect | — |
 | `commit_outcome_import_plan` | portability.py:_preflight_and_commit | portability.py:_preflight_and_commit |
 | `_redact_in_txn` | store/sqlite.py:SqliteStore.commit_outcome_import_plan, store/sqlite.py:SqliteStore.confirm_notice, store/sqlite.py:SqliteStore.redact | store/sqlite.py:SqliteStore.redact |
-| `forget_user` | __init__.py:Memory.forget, cli.py:_forget | — |
+| `forget_user` | __init__.py:Memory.forget, __init__.py:Memory.forget_everything_confirm, cli.py:_forget | — |
 
 ## Not-observed cells, with their reasons
 

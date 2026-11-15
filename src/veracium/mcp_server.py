@@ -553,32 +553,45 @@ def _strip(report: dict) -> dict:
     return report
 
 
-def find_facts_impl(*a, **k) -> dict:
-    return _strip(find_facts_report(*a, **k))
+def find_facts_impl(mem: Memory, user_id: str, query: Optional[str] = None, *, capability=None,
+                    principal=None) -> dict:
+    return _strip(find_facts_report(mem, user_id, query, capability=capability, principal=principal))
 
 
-def correct_fact_impl(*a, **k) -> dict:
-    return _strip(correct_fact_report(*a, **k))
+def correct_fact_impl(mem: Memory, user_id: str, edge_id: str, corrected_value: str, *, capability=None,
+                      principal=None, source_id: Optional[str] = None, call_path=None) -> dict:
+    return _strip(correct_fact_report(mem, user_id, edge_id, corrected_value, capability=capability,
+                                      principal=principal, source_id=source_id, call_path=call_path))
 
 
-def dispute_fact_impl(*a, **k) -> dict:
-    return _strip(dispute_fact_report(*a, **k))
+def dispute_fact_impl(mem: Memory, user_id: str, edge_id: str, reason: str = "", *, capability=None,
+                      principal=None, source_id: Optional[str] = None, call_path=None) -> dict:
+    return _strip(dispute_fact_report(mem, user_id, edge_id, reason, capability=capability, principal=principal,
+                                      source_id=source_id, call_path=call_path))
 
 
-def confirm_fact_impl(*a, **k) -> dict:
-    return _strip(confirm_fact_report(*a, **k))
+def confirm_fact_impl(mem: Memory, user_id: str, edge_id: str, *, capability=None, principal=None,
+                      source_id: Optional[str] = None, call_path=None) -> dict:
+    return _strip(confirm_fact_report(mem, user_id, edge_id, capability=capability, principal=principal,
+                                      source_id=source_id, call_path=call_path))
 
 
-def forget_fact_impl(*a, **k) -> dict:
-    return _strip(forget_fact_report(*a, **k))
+def forget_fact_impl(mem: Memory, user_id: str, edge_id: Optional[str] = None, episode_id: Optional[str] = None,
+                     *, capability=None, erasure=None, principal=None) -> dict:
+    return _strip(forget_fact_report(mem, user_id, edge_id, episode_id, capability=capability, erasure=erasure,
+                                     principal=principal))
 
 
-def forget_everything_preview_impl(*a, **k) -> dict:
-    return _strip(forget_everything_preview_report(*a, **k))
+def forget_everything_preview_impl(mem: Memory, user_id: str, *, capability=None, erasure=None, principal=None,
+                                   issuer=None) -> dict:
+    return _strip(forget_everything_preview_report(mem, user_id, capability=capability, erasure=erasure,
+                                                   principal=principal, issuer=issuer))
 
 
-def forget_everything_confirm_impl(*a, **k) -> dict:
-    return _strip(forget_everything_confirm_report(*a, **k))
+def forget_everything_confirm_impl(mem: Memory, user_id: str, preview_token, *, capability=None, erasure=None,
+                                   principal=None, issuer=None) -> dict:
+    return _strip(forget_everything_confirm_report(mem, user_id, preview_token, capability=capability,
+                                                   erasure=erasure, principal=principal, issuer=issuer))
 
 
 #: §4g, the model-facing descriptions: each acts AS THE USER, only when the user asks in this conversation, never

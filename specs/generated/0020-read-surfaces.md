@@ -5,9 +5,9 @@
 
 # specs/0020 §4f — public read-surface manifest
 
-**42 public surfaces** — every public method of `Memory` plus every public
+**49 public surfaces** — every public method of `Memory` plus every public
 `*_impl` in `mcp_server` — enumerated by **parsing the AST**, not by reading
-the spec's prose inventory. **5 of them return record objects.**
+the spec's prose inventory. **6 of them return record objects.**
 
 The §4f inventory is a claim about COMPLETENESS, and completeness written by
 hand is the thing that silently rots: a read path added next quarter would
@@ -67,7 +67,14 @@ and 0020's claim is about the surfaces named here.
 | `Memory.undo_restoration` | no | none | `{undone, undone_at, correlation_id, replayed, already_undone}` | WRITE path (host-only, never MCP; specs/0044 §4i): retires one restored value again; ids and a time leave, no record content. |
 | `Memory.unrevoke_source` | no | none | the completeness statement, exactly `revoke_source`'s | AN OPERATOR SURFACE BY DECISION, `revoke_source`'s class (specs/0022 §4f): the lift, the same computation over the new standing set. Host API only, never MCP. |
 | `mcp_server.answer_impl` | no | `principal=` **threaded** | the answer string over MCP | Passes the host's principal through to `Memory.answer`; no new MCP field (as above). |
+| `mcp_server.confirm_fact_impl` | no | `principal=` **threaded** | `{ok, confirmed, valid_from, confirmed_at, correlation_id, replayed}` or a serialized refusal | WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): only OWN targets are acted on |
+| `mcp_server.correct_fact_impl` | no | `principal=` **threaded** | `{ok, corrected, replacement}` or a serialized refusal | WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): only OWN targets are acted on |
 | `mcp_server.describe_procedures_impl` | **yes** | `principal=` **threaded** | `DescribeResult` as JSON | Passes `principal` through to `Memory.describe_procedures` (the served tool binds the deployment's user and no principal, as `recall` does); no new MCP field. |
+| `mcp_server.dispute_fact_impl` | no | `principal=` **threaded** | `{ok, disputed, relation}` or a serialized refusal | WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): only OWN targets are acted on |
+| `mcp_server.find_facts_impl` | **yes** | `principal=` **threaded** | the render receipt of one recall: each admitted unit's kind, id, text as admitted, partition, annotations, subject, and `mutable` under a principal | SCOPED. The same recall `recall_impl` runs, with the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5), so the receipt lists only what that principal's recall rendered (INV-TT3) |
+| `mcp_server.forget_everything_confirm_impl` | no | `principal=` **threaded** | `forget`'s counts | The `principal` parameter exists to REFUSE: any principal is `principal_scoped` (INV-TT17) |
+| `mcp_server.forget_everything_preview_impl` | no | `principal=` **threaded** | counts only, a token, its expiry and the warning (INV-TT10) | The `principal` parameter exists to REFUSE: any principal is `principal_scoped` (INV-TT17) |
+| `mcp_server.forget_fact_impl` | no | `principal=` **threaded** | the full redaction receipt with no principal; under one, the six-field projection with the scope label and the filtered surviving_derived (INV-TT19) | WRITE path; passes the host's principal THROUGH to the library (specs/0031 §4f §3b); over the stdio server it is None (0020 §5): the projection, computed by that principal's view |
 | `mcp_server.maintain_impl` | no | none | the maintenance report | MAINTAIN path over MCP; policy is read-side only. |
 | `mcp_server.recall_impl` | no | `principal=` **threaded** | `Recall.context` (the rendered block) over MCP | PASSES THE HOST'S PRINCIPAL THROUGH — and adds NO MCP tool field (§4f). The registered `recall` tool calls this with `principal=None`, which is §5's adoption-path honesty row: the default MCP stream supplies no identities, so NO isolation exists on it. Docs and the marketing rail say exactly that. |
 | `mcp_server.record_procedure_impl` | no | none | `{ok, edge_id}` or the serialized refusal `{ok: false, refusal}` | WRITE path over MCP (specs/0037 §4b): the capability-gated adapter to `Memory.record_procedure`; refuses under `none` as an attempted elevation; renders nothing. |
