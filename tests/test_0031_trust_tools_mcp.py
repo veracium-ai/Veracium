@@ -171,15 +171,37 @@ def _rows(m, kind, ids):
     return {i: m.store._conn.execute(f"SELECT json FROM {table} WHERE id=?", (i,)).fetchone()[0] for i in ids}
 
 
-@pytest.mark.parametrize("target", ["edge", "episode"])
+@pytest.mark.parametrize("target", ["edge", "episode", "restored-consolidation-input"])
 def test_forget_fact_does_not_cascade_and_names_every_derived_record(tmp_path, target):
     """§4d: per-fact forget redacts ONE record. Its derived records — an edge's source episode and the outcome
     episode that quotes it; the fact extracted from an episode — are left exactly as they were, and with no principal
-    the receipt names every one of them (`surviving_derived` whole). (A consolidation output beside its LIVE input
-    exists only after a restore import, consolidation consumes its inputs; 0041's surviving-derived cells hold that
-    lineage join.) Mutants: a cascade added; the list dropped on the host path."""
+    the receipt names every one of them (`surviving_derived` whole). A consolidation output stands beside its LIVE
+    input only after a restore (consolidation consumes its inputs: 0041's
+    test_a_consumed_consolidation_input_cannot_be_redacted), so the third case is 0041's restore pair
+    (test_the_receipt_names_a_restored_output_whose_lineage_consumed_the_redacted_episode) driven through the TOOL:
+    the output whose lineage consumed the input is named, `via` lineage, and left untouched. Mutants: a cascade
+    added; the list dropped on the host path."""
     m = _mem(tmp_path)
-    if target == "edge":
+    if target == "restored-consolidation-input":
+        import json as _json
+        from datetime import datetime, timezone
+        from veracium.lifecycle import consolidate
+        from veracium.portability import export_memory, import_memory
+        src = _mem(tmp_path / "src")
+        for i in range(8):
+            src.store.add_episode(Episode(id=f"ep-{i}", user_id=U, date=f"2026-01-{i + 1:02d}", summary=f"day {i}",
+                                          provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                                                evidence_ref=f"ev-day-{i}")))
+        export_memory(src.store, U, tmp_path / "before.jsonl")
+        consolidate(src.store, lambda p, system=None, role=None: _json.dumps(
+            {"records": [{"date": "2026-01-01", "summary": "week"}]}), U, src.config,
+            now=datetime(2026, 9, 1, tzinfo=timezone.utc))
+        export_memory(src.store, U, tmp_path / "after.jsonl")
+        import_memory(m.store, tmp_path / "before.jsonl", restore=True)
+        import_memory(m.store, tmp_path / "after.jsonl", restore=True)
+        (cons,) = [e for e in m.store.episodes(U) if e.lineage]
+        args, derived = {"episode_id": "ep-3"}, {("episode", cons.id)}
+    elif target == "edge":
         _edge(m, "e-1")
         m.store.add_episode(Episode(id="ep-src", user_id=U, date="2026-11-01", summary="I like tea",
                                     provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
@@ -197,6 +219,8 @@ def test_forget_fact_does_not_cascade_and_names_every_derived_record(tmp_path, t
     out = _call(M.build_server(m, default_user=U, capability="direct"), "forget_fact", args)
     assert out.get("ok") is True, out
     assert {(d["kind"], d["id"]) for d in out.get("surviving_derived", [])} == derived, out
+    if target == "restored-consolidation-input":
+        assert [d["via"] for d in out["surviving_derived"]] == ["lineage"], out
     for k in ("edge", "episode"):
         assert _rows(m, k, list(before[k])) == before[k], k          # no derived record touched
         assert not set(before[k]) & set(m.store.redacted_targets(U, k)), k
