@@ -49,7 +49,7 @@ is the number that decides what can be built.
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-14 | 0 | 4 | 0 | 0 | 0 | — |
 | **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-11 | 0 | 9 | 0 | 0 | 0 | — |
 | **0041** | targeted redaction — stored content removed, the record that it existed retained | `accepted` | 2026-11-14 | 1 | 14 | 0 | 0 | 0 | — |
-| **0042** | exercised guarantees — measuring whether what we specify is what runs | `accepted` | 2026-10-02 | 0 | 23 | 0 | 0 | 0 | — |
+| **0042** | exercised guarantees — measuring whether what we specify is what runs | `accepted` | 2026-11-15 | 0 | 23 | 0 | 0 | 0 | — |
 | **0043** | the refusal harness — measuring whether the gate declines when it should | `accepted` | 2026-10-10 | 0 | 9 | 0 | 0 | 0 | — |
 | **0044** | relation arity — a functional relation is ONE SLOT PER SUBJECT, and three of ours should not be | `accepted` | 2026-10-24 | 0 | 4 | 2 | 0 | 0 | — |
 | **0045** | the declarative grounding axis — was a fact STATED, or not shown to be? | `accepted` | 2026-10-24 | 0 | 4 | 0 | 0 | 0 | — |
@@ -58,7 +58,7 @@ is the number that decides what can be built.
 | **0048** | maintenance never raises confidence — the decay bounds (0002's N4, carried) | `accepted` | 2026-11-06 | 0 | 6 | 2 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
 | **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-14 | 0 | 0 | 9 | 0 | 0 | — |
-| **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-12 | 0 | 0 | 0 | 0 | 0 | — |
+| **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-15 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
