@@ -139,7 +139,7 @@ def test_c11_export_carries_confirmations_with_origin_and_derived_identity(tmp_p
     a, e1, e2, cid = _history(tmp_path)
     f = _export(a, tmp_path, "a.jsonl")
     recs = _lines(f)
-    assert recs[0]["version"] == P.FORMAT_VERSION == 14
+    assert recs[0]["version"] == 14 and P.FORMAT_VERSION == 15  # specs/0031 v23.1: 14->15, the call-path era, conditionally stamped the same way
     acts = _act_lines(recs)
     held = {r["id"]: r for r in _acts(a)}
     assert len(acts) == len(held) == 4

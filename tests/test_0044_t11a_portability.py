@@ -144,7 +144,7 @@ def test_a_migrated_store_exports_its_plan_state_and_its_outcomes(tmp_path):
     p = _store(tmp_path, "s.db", _pair())
     _run(p)
     lines = _lines(_export(p, tmp_path, "s.jsonl"))
-    assert lines[0]["version"] == P._ARITY_VERSION == P.FORMAT_VERSION == 14
+    assert lines[0]["version"] == P._ARITY_VERSION == 14 and P.FORMAT_VERSION == 15  # specs/0031 v23.1: 14->15, the call-path era, conditionally stamped the same way
     plan = [x for x in lines if x.get("record") == "arity_plan"]
     outs = [x for x in lines if x.get("record") == "arity_outcome"]
     assert plan == [{"record": "arity_plan", "state": "initialized"}]

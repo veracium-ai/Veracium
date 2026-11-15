@@ -102,11 +102,15 @@ class Disclosure(str, Enum):
 # from the protected `confirm()` call path, not from any label (§6a, C2a).
 # --------------------------------------------------------------------------- #
 class ConfirmationCallPath(str, Enum):
-    """Which entry point invoked the confirmation. `0008` has one — the host
-    API, never model-reachable (§2c-ii). A closed enum so an unknown value is
-    rejected rather than stored as free text; recording *which* privileged path
-    was used, and gating it, is evidence-basis's concern and on no roadmap (§4)."""
+    """Which entry point invoked the act: the host API; or, under `direct`, an
+    agent tool over MCP (`mcp_direct`) or through a framework adapter
+    (`adapter_direct`) — specs/0031 §4f (amendment `0031/trust-tools-direct`)
+    and 0008 §2c-ii. An adapter uses the same tool contract, but it is not an
+    MCP transport call. A closed enum so an unknown value is rejected rather
+    than stored as free text. It is audit metadata and grants nothing."""
     HOST_API = "host_api"
+    MCP_DIRECT = "mcp_direct"
+    ADAPTER_DIRECT = "adapter_direct"
 
 
 class ConfirmationActor(str, Enum):
@@ -243,6 +247,13 @@ class Provenance(BaseModel):
     # the doctor counts both as `procedural_unstamped`). Frozen with the
     # model: no stamp can be flipped on a built Provenance (V-PROVENANCE-FROZEN).
     producer: Optional[Literal["host", "extractor"]] = None
+    # specs/0031 §4f (amendment `0031/trust-tools-direct`, §2's Provenance row) — the agent CALL PATH of the act
+    # that wrote this record, closed by `ConfirmationCallPath`, OMITTED when absent (below) so every existing record
+    # and every host-API write stays byte-identical. Written on the audit episodes of correct, dispute and confirm
+    # when an agent tool called the verb. What absence means: on such an audit episode, the host API (historically
+    # the only path that wrote them); on any other record, nothing about the path (`remember` records have come
+    # through MCP all along, TT-R1-06).
+    call_path: Optional[ConfirmationCallPath] = None
     model_config = {"frozen": True}
 
     @model_validator(mode="after")
@@ -269,6 +280,9 @@ class Provenance(BaseModel):
             d.pop("basis", None)
         if d.get("producer") is None:
             d.pop("producer", None)
+        # specs/0031 §4f: ABSENT, not null, when no agent call path wrote the record (TT-R2-03, INV-TT5)
+        if d.get("call_path") is None:
+            d.pop("call_path", None)
         return d
 
     @property
@@ -1435,6 +1449,7 @@ ASSERTION_VIEW_KEEPS: dict = {
         "source_id": "diagnostic only (specs/0006 I5: it groups, never grants)",
         "origin": "diagnostic only (specs/0006 I5)",
         "producer": "the procedural stamp's producer; the stamp itself (record_kind, basis) is in the view",
+        "call_path": "audit metadata naming the agent path of an act (specs/0031 §4f); it grants nothing",
     },
     "episode": {
         "id": "the row's identity, never asserted",

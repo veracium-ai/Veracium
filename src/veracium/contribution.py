@@ -194,7 +194,11 @@ EXACT_EQUAL_PROV_FIELDS = ("author_of_evidence", "evidence_ref",
                            # a host input), absent when None, absorption never
                            # touches it; it binds the digest of the records it
                            # is set on and leaves every other digest unchanged
-                           "producer")
+                           "producer",
+                           # specs/0031 §4f: the agent CALL PATH, the same shape
+                           # again — a write-time fact absent when None (so no
+                           # existing digest moves), never touched by absorption
+                           "call_path")
 # EXACTLY the fields the shipped C' absorption inherits (graph.py absorption
 # loop): the three winner-inheritance maxima/minima PLUS `ungrounded` — the
 # 0019 rider's RECOMPUTED class: absorption may change it from the raw

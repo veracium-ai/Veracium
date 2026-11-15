@@ -30,7 +30,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from veracium import Memory, MemoryConfig
-from veracium.schema import (ASSERTION_VIEW_KEEPS, Disclosure, Edge, Episode, EvidenceAuthor, Outcome, Provenance,
+from veracium.schema import (ASSERTION_VIEW_KEEPS, ConfirmationCallPath, Disclosure, Edge, Episode, EvidenceAuthor, Outcome, Provenance,
                              Volatility, _ASSERTION_VIEW_READS, assertion_view)
 from veracium.store.sqlite import SqliteStore
 
@@ -71,6 +71,7 @@ PROVENANCE_MUTATIONS = {
     "author_of_evidence": EvidenceAuthor.THIRD_PARTY, "evidence_ref": "ev-2", "observed_at": _NOW,
     "disclosure": Disclosure.QUARANTINED, "confidence": 0.31, "derived_from": EvidenceAuthor.THIRD_PARTY,
     "source_id": "src-9", "origin": "o-9", "record_kind": "procedural", "basis": "stated", "producer": "host",
+    "call_path": ConfirmationCallPath.MCP_DIRECT,     # specs/0031 §4f: audit metadata, outside the view
 }
 EPISODE_MUTATIONS = {
     "id": "p-other", "user_id": "v", "date": "2026-02-02", "summary": "The user moved to Porto.", "provenance": None,

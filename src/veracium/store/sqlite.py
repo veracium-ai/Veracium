@@ -986,7 +986,8 @@ class SqliteStore(Store):
         return row[0]
 
     def confirm_edge(self, user_id, edge_id, *, actor, call_path, correlation_id,
-                     request_digest, confirmed_at) -> Confirmation:
+                     request_digest, confirmed_at, episode_source_id=None,
+                     episode_call_path=None) -> Confirmation:
         _COLS = ("id, user_id, edge_id, confirmed_at, actor, call_path, "
                  "correlation_id, request_digest")
         with self._lock, self._write_txn():
@@ -1058,7 +1059,11 @@ class SqliteStore(Store):
                                           f"'{edge.relation}: {edge.object}' still holds",
                                   provenance=Provenance(
                                       author_of_evidence=EvidenceAuthor.USER,
-                                      evidence_ref=f"confirm:{edge_id}")
+                                      evidence_ref=f"confirm:{edge_id}",
+                                      # specs/0031 §4f: the binding's source and the agent call path,
+                                      # absent (today's bytes) on a host-API confirmation
+                                      source_id=episode_source_id,
+                                      call_path=episode_call_path)
                                   ).model_dump_json()
                 ep_prior = self._conn.execute("SELECT json FROM episodes WHERE id=?", (ep_id,)).fetchone()
                 self._conn.execute(

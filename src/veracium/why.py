@@ -61,7 +61,7 @@ _TRACKED = ("subject", "relation", "object", "note", "volatility", "valid_from",
             "times_used", "outcome_counts", "last_outcome", "last_outcome_at")
 _PROV_TRACKED = ("author_of_evidence", "evidence_ref", "observed_at", "disclosure",
                  "confidence", "derived_from", "source_id", "origin", "record_kind",
-                 "basis", "producer")
+                 "basis", "producer", "call_path")      # call_path: specs/0031 §4f
 
 
 @dataclass

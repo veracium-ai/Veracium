@@ -263,7 +263,7 @@ def test_the_export_stamps_12_only_for_a_producer_bearing_store_and_old_readers_
     h, recs = _export(mem, tmp_path / "new.jsonl")
     # 0041 tranche 4b (2026-09-20): the reader's head moved to 13 (the redaction era); 0044 T11a to 14 (the arity
     # era); the producer era stays 12
-    assert h["version"] == 12 and portability._PRODUCER_VERSION == 12 and portability.FORMAT_VERSION == 14
+    assert h["version"] == 12 and portability._PRODUCER_VERSION == 12 and portability.FORMAT_VERSION == 15  # specs/0031 v23.1: 14->15, the call-path era, conditionally stamped the same way
     assert next(r for r in recs if r["id"] == pid)["provenance"]["producer"] == "host"
     mem.close()
     monkeypatch.setattr(portability, "FORMAT_VERSION", 11)

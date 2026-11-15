@@ -73,7 +73,17 @@ _SITE_IMPORT_AXIS = declare_site("portability.import.axis")
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
 # specs/0019: v6 added the `ungrounded` flag (same refuse-don't-drop rule).
-FORMAT_VERSION = 14  # specs/0044 §4l (T11a, 2026-10-20): the ARITY era — a file may carry `{"record":
+FORMAT_VERSION = 15  # specs/0031 v23.1 (§4f.3's portability row): the CALL-PATH era — `Provenance.call_path` on an
+# edge or episode, or a confirmation line whose `call_path` is not `host_api`. Stamped CONDITIONALLY like every era
+# below: a store holding no such record exports exactly the bytes it exported before (0026 V7); every older reader
+# REFUSES a 15 file; a file declaring below 15 that carries either is REFUSED WHOLE, never stripped — a strip would
+# move an agent's act to the host reading, the false record 0031 §4f §1d prevents (the arity era's rule, not the
+# producer era's).
+_CALL_PATH_VERSION = 15
+#: the two AGENT call paths a confirmation line can carry (ConfirmationCallPath minus host_api). A line carrying any
+#: OTHER value is not an agent path but a malformed one, refused by the act lines' closed shape (0047 I2), not here
+_AGENT_CALL_PATHS = frozenset(("mcp_direct", "adapter_direct"))
+# Was: FORMAT_VERSION = 14  # specs/0044 §4l (T11a, 2026-10-20): the ARITY era — a file may carry `{"record":
 # "arity_outcome", ...}` lines (the user's migration outcomes for edges the file carries) and at most one
 # `{"record": "arity_plan", "state": ...}` line (the EXPORTING store's plan state, written only when it holds a plan
 # header: absence reads "uninitialized", so a feature-free export stays byte-identical — 0026 V7). Stamped
@@ -556,7 +566,11 @@ def export_memory(store, user_id: str, path) -> dict:
             arity_outcomes, plan_state = [], "uninitialized"
         # specs/0008 §6d / 0047 §4f (T11b): the user's acts, with their origin; never the request registry
         acts = store.act_rows(user_id)
-        _version = (_ARITY_VERSION
+        _version = (_CALL_PATH_VERSION
+                    if (any(e.provenance.call_path is not None for e in edges)
+                        or any(ep.provenance.call_path is not None for ep in episodes)
+                        or any(r["table"] == "confirmations" and r["call_path"] != "host_api" for r in acts))
+                    else _ARITY_VERSION
                     if arity_outcomes or plan_state != "uninitialized" or acts or any(e.att is not None for e in edges)
                     else _REDACTION_VERSION
                     if redaction_records
@@ -873,6 +887,17 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             raise _SITE_IMPORT_FILE.fire(ValueError(
                 f"{path}: the file declares format {src_version} but carries redaction notices (format "
                 f"{_REDACTION_VERSION}) — refused (specs/0041 §4g)"), "notice-below-era")
+        # specs/0031 v23.1: the call-path era, refused WHOLE in a file that declares below it — before any record is
+        # admitted, before the act lines are parsed (a planted `adapter_direct` confirmation in a 14 file refuses here,
+        # naming the era, rather than as an unknown enum value)
+        if src_version < _CALL_PATH_VERSION and (
+                any(isinstance(r.get("provenance"), dict) and "call_path" in r["provenance"]
+                    for r in edge_recs + ep_recs)
+                or any(m == "confirmation" and r.get("call_path") in _AGENT_CALL_PATHS for m, r in act_raw)):
+            raise _SITE_IMPORT_FILE.fire(ValueError(
+                f"{path}: the file declares format {src_version} but carries an agent call path (format "
+                f"{_CALL_PATH_VERSION}) — refused whole: a stripped call path would read as a host act "
+                f"(specs/0031 v23.1)"), "call-path-below-era")
         # specs/0044 §4l (T11a): the arity era's records, validated whole here, before any record is admitted
         arity_outcomes, src_arity_state = _arity_records(path, outcome_recs, plan_recs, src_version)
         # specs/0008 §6e (T11b): the act lines, validated whole here, before any record is admitted

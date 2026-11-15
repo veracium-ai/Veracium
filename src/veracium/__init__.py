@@ -22,6 +22,7 @@ import json
 import re
 import threading
 import time
+import contextlib
 from contextlib import contextmanager
 from uuid import uuid4
 from dataclasses import dataclass, field
@@ -272,6 +273,17 @@ class PolicyReceipt:
 
 
 _RECEIPT_FIELDS = tuple(f.name for f in dataclasses.fields(PolicyReceipt))
+
+
+def _agent_call_path(call_path) -> Optional[ConfirmationCallPath]:
+    """specs/0031 §4f: the call path an AUDIT EPISODE carries. An agent path (`mcp_direct`, `adapter_direct`) is
+    written; absence and `host_api` are both written as ABSENT, because absence on an audit episode means the host
+    API (§2's Provenance row) and a host-API write must stay byte-identical (INV-TT5's `host_api written explicitly`
+    mutant)."""
+    if call_path is None:
+        return None
+    cp = ConfirmationCallPath(call_path)
+    return None if cp is ConfirmationCallPath.HOST_API else cp
 
 
 def _today_utc() -> str:
@@ -1913,6 +1925,54 @@ class Memory:
                     f"refused: edge {edge_id!r} is redacted — {op} quotes the record it acts on, and a redacted "
                     f"record is not quoted (specs/0041 §4b-ii, round 10)"), op)
 
+    def _trust_target(self, user_id: str, kind: str, record_id: str):
+        """The user's own record by id, of either kind, in any state (inactive and quarantined included), or None.
+        Another user's id and an unknown id are both None: the lookup is scoped by the user (specs/0031 §4f, INV-TT7)."""
+        if kind == "edge":
+            return next((e for e in self.store.edges(user_id, active_only=False, include_quarantined=True)
+                         if e.id == record_id), None)
+        return next((e for e in self.store.episodes(user_id) if e.id == record_id), None)
+
+    def _trust_scope_gate(self, user_id: str, principal, *, kind: str, record_id: str,
+                          writes: bool, source_id: Optional[str] = None):
+        """specs/0031 §4f §3b, the decision table under a principal (the owner's TT-R1-04 ruling, "OWN only"), run
+        INSIDE the calling verb's own transaction and before anything is written. Returns the principal's view, or
+        None when `principal` is None — then no scope code runs at all (0020 V1) and the verb is today's.
+
+        The gates, in §4a's order, each raising `TrustRefused` and writing nothing:
+          5. scope configuration: `scope_unconfigured` (no policy), `principal_ungroupable` (no source_id);
+          6. the binding's source, for the three verbs that WRITE a membership-bearing record (`writes`): none is
+             `source_unbound`; a source the view does not class `OWN` is `source_out_of_scope` — a probe whose only
+             membership evidence is that source is classified through `ScopeView.classify_unwritten`;
+          7. the target: `OWN` is acted on; `SHARED` and `CROSS_VISIBLE` are `out_of_scope`; `CROSS_HIDDEN`,
+             `UNRESOLVED`, another user's id and an unknown id are all `not_found_in_scope`, one response."""
+        if principal is None:
+            return None
+        from .trust_tools import TrustRefused
+        from .scope import Identity
+        if self.scope_policy is None:
+            raise TrustRefused("scope_unconfigured")
+        if isinstance(principal, Identity) and not principal.groupable:
+            raise TrustRefused("principal_ungroupable")
+        view = self._scope_view(user_id, principal)      # a non-Identity principal raises ScopeError (a refusal)
+        if writes:
+            if source_id is None:
+                raise TrustRefused("source_unbound")
+            probe = Episode(id="ep-trust-source-probe", user_id=user_id, date=_today_utc(), summary="",
+                            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                                  evidence_ref="trust-tools:source-probe", source_id=source_id))
+            if view.classify_unwritten(probe) != "OWN":
+                raise TrustRefused("source_out_of_scope")
+        record = self._trust_target(user_id, kind, record_id)
+        if record is None:
+            raise TrustRefused("not_found_in_scope")
+        cls = view.classification(record)
+        if cls == "OWN":
+            return view
+        if cls in ("SHARED", "CROSS_VISIBLE"):
+            raise TrustRefused("out_of_scope")
+        raise TrustRefused("not_found_in_scope")
+
     def _find_edge(self, user_id: str, edge_id: str) -> Edge:
         with _SITE_EDGE_UNKNOWN_TARGET.consult():
             for e in self.store.edges(user_id, active_only=False, include_quarantined=True):
@@ -1921,18 +1981,29 @@ class Memory:
             raise _SITE_EDGE_UNKNOWN_TARGET.fire(ValueError(f"no edge {edge_id!r} for user {user_id!r}"))
 
     def dispute(self, user_id: str, edge_id: str, *, reason: str = "",
-                actor: str = "user") -> dict:
+                actor: str = "user", principal=None, source_id: Optional[str] = None,
+                call_path: Optional[ConfirmationCallPath] = None) -> dict:
         """The user challenges a remembered fact. Non-destructive: the edge is
         invalidated (reason 'disputed') — out of every assertable surface
         immediately, retained as queryable history — and the dispute itself is
         recorded as the user's own episode (kind interaction) with the actor and reason. If the fact
         was actually right, it re-enters the normal way: new evidence via
-        `remember()`. Not exposed over MCP (an agent-callable suppress verb is
-        a prompt-injection target); hosts wire it to a real user action."""
+        `remember()`. Exposed to an agent only under `direct`
+        (0031/trust-tools-direct), with the injection residual stated there; an
+        agent-callable suppress verb is a prompt-injection target, so a host
+        without `direct` wires it to a real user action.
+
+        specs/0031 §4f: `principal`, `source_id` and `call_path` are keyword-only
+        and default to absent, and with all three absent the bytes are today's.
+        Under a principal the §3b scope gate runs first, inside this transaction
+        (`TrustRefused`, writing nothing); the audit episode carries `source_id`
+        and the agent `call_path` in provenance, never in its summary."""
         # specs/0041 round 10 (found in sweep A): the record is read, judged and quoted INSIDE one write
         # transaction — a redaction cannot land between the read and the derived episode — and an
         # ATTESTED target is refused before anything is written
         with self.store.atomic():
+            self._trust_scope_gate(user_id, principal, kind="edge", record_id=edge_id, writes=True,
+                                   source_id=source_id)
             self._refuse_attested(user_id, edge_id, "dispute")
             edge = self._find_edge(user_id, edge_id)
             with _SITE_DISPUTE_INACTIVE.consult():
@@ -1947,7 +2018,8 @@ class Memory:
                 summary=f"({actor}) disputed the remembered fact "
                         f"'{edge.relation}: {edge.object}'{note}",
                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
-                                      evidence_ref=f"dispute:{edge_id}")))
+                                      evidence_ref=f"dispute:{edge_id}", source_id=source_id,
+                                      call_path=_agent_call_path(call_path))))
         self._record("feedback", {"disputed": 1, "confirmed": 0}, user_id)
         return {"disputed": edge_id, "relation": edge.relation}
 
@@ -1955,7 +2027,8 @@ class Memory:
                 date: Optional[str] = None,
                 actor: ConfirmationActor = ConfirmationActor.USER,
                 call_path: ConfirmationCallPath = ConfirmationCallPath.HOST_API,
-                correlation_id: Optional[str] = None) -> dict:
+                correlation_id: Optional[str] = None, principal=None,
+                source_id: Optional[str] = None) -> dict:
         """The user explicitly validates a remembered fact (specs/0008). This is the
         ONLY path that clears `needs_confirmation`; reinforcement no longer does. In
         one atomic store operation it clears the flag, advances liveness
@@ -1969,7 +2042,14 @@ class Memory:
 
         `actor` and `call_path` are closed enums (audit metadata; they grant
         nothing — authority is the protected call path, not the label). `confirm()`
-        is HOST API only, never model-reachable. `correlation_id` (opaque, ≤64
+        is the host API, and is exposed to an agent only under `direct`
+        (0031/trust-tools-direct), with the injection residual stated there: the
+        agent tool passes `call_path=mcp_direct` or `adapter_direct`, recorded in
+        the confirmations row and in the quoting episode's provenance (a host-API
+        call leaves the episode's key absent). `principal` and `source_id` are
+        keyword-only and default to absent; under a principal the §3b scope gate
+        runs first, inside the confirmation's transaction (`TrustRefused`), and the
+        quoting episode carries `source_id`. `correlation_id` (opaque, ≤64
         chars) gives replay protection across an unknown commit outcome; omitted, one
         is generated and there is none to retry against. The return is a mapping:
         `{confirmed, valid_from, confirmed_at, correlation_id, replayed}`."""
@@ -1989,15 +2069,26 @@ class Memory:
         # instant — so two date-less retries are the SAME request (§6c). `OMITTED`
         # is a value; `rule_version` guards against a rule change colliding digests.
         caller_date = date if date is not None else "OMITTED"
+        # specs/0031 §4f: a binding source is a caller input, so it enters the request identity; absent, the digest
+        # input is exactly today's (no new component), so a host retry keeps its digest
         request_digest = hashlib.sha256("\x1f".join(
             [user_id, edge_id, call_path.value, actor.value,
-             CONFIRMATION_RULE_VERSION, caller_date]).encode()).hexdigest()
+             CONFIRMATION_RULE_VERSION, caller_date]
+            + ([f"source_id={source_id}"] if source_id is not None else [])).encode()).hexdigest()
         when = _event_dt(date or _today_utc())
+        _scope_kw = {} if (source_id is None and _agent_call_path(call_path) is None) else {
+            "episode_source_id": source_id, "episode_call_path": _agent_call_path(call_path)}
         try:
-            conf = self.store.confirm_edge(
-                user_id, edge_id, actor=actor, call_path=call_path,
-                correlation_id=correlation_id, request_digest=request_digest,
-                confirmed_at=when)
+            # specs/0031 §4f §3b: under a principal the scope gate runs inside the confirmation's own transaction,
+            # before the registry decision writes anything. With no principal no transaction is opened here, and
+            # the call is today's: INV-Q2's registry-first order, the store's own transaction
+            with (self.store.atomic() if principal is not None else contextlib.nullcontext()):
+                self._trust_scope_gate(user_id, principal, kind="edge", record_id=edge_id, writes=True,
+                                       source_id=source_id)
+                conf = self.store.confirm_edge(
+                    user_id, edge_id, actor=actor, call_path=call_path,
+                    correlation_id=correlation_id, request_digest=request_digest,
+                    confirmed_at=when, **_scope_kw)
         except UnknownEdge as e:
             with _SITE_CONFIRM_UNKNOWN_TARGET.consult():
                 raise _SITE_CONFIRM_UNKNOWN_TARGET.fire(ValueError(f"no edge {edge_id!r} for user {user_id!r}")) from e
@@ -2196,13 +2287,15 @@ class Memory:
 
     def correct(self, user_id: str, edge_id: str, corrected_value: str, *,
                 actor: str = "user", evidence_ref: Optional[str] = None,
-                date: Optional[str] = None) -> dict:
+                date: Optional[str] = None, principal=None, source_id: Optional[str] = None,
+                call_path: Optional[ConfirmationCallPath] = None) -> dict:
         """Explicit FACT-level correction: the remembered value itself was wrong.
         Supersedes the edge with `invalidation_reason="corrected"` (distinguishable
         at recall from natural change) and records the corrected value as a new
         user-authored assertable edge. This — and only this — invalidates a fact;
         `record_outcome(outcome="corrected")` judges a *decision* and never
-        touches the facts it consulted. Not an MCP tool.
+        touches the facts it consulted. Exposed to an agent only under `direct`
+        (0031/trust-tools-direct), with the injection residual stated there.
 
         specs/0011 §4e (E5): the correction reaches storage only through the
         atomic plan machinery with a `CorrectionAuthorisation` verified inside
@@ -2210,9 +2303,17 @@ class Memory:
         a caller-supplied principal and this is a PROTECTED HOST API; the host
         authenticates the principal and establishes intent before calling, and
         never exposes this on a surface a model can reach with a caller-chosen
-        principal. §4b applies to corrections: a bare self-assertion cannot
-        retire an OTHER-subject prior — that raises `graph.CorrectionRefused`
-        after the durable refusal row commits."""
+        principal (the agent tool fixes `actor` to the user, 0031 §4f). §4b
+        applies to corrections: a bare self-assertion cannot retire an
+        OTHER-subject prior — that raises `graph.CorrectionRefused` after the
+        durable refusal row commits.
+
+        specs/0031 §4f: `principal`, `source_id` and `call_path` are keyword-only
+        and default to absent, and with all three absent the bytes are today's.
+        Under a principal the §3b scope gate runs first, inside this transaction
+        (`TrustRefused`, writing nothing). The replacement edge carries
+        `source_id`; the audit episode carries `source_id` and the agent
+        `call_path`, in provenance."""
         from . import authority, graph
         from .schema import CorrectionAuthorisation, correction_digest
         from .store.base import PLAN_STALE
@@ -2228,6 +2329,8 @@ class Memory:
         # transaction — a redaction cannot land between the read and the derived episode — and an
         # ATTESTED target is refused before anything is written
         with self.store.atomic():
+            self._trust_scope_gate(user_id, principal, kind="edge", record_id=edge_id, writes=True,
+                                   source_id=source_id)
             self._refuse_attested(user_id, edge_id, "correct")
             for _ in range(graph._MAX_PLAN_ATTEMPTS):
                 edge = self._find_edge(user_id, edge_id)
@@ -2270,7 +2373,7 @@ class Memory:
                     provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                           evidence_ref=evidence_ref or f"correct:{edge_id}",
                                           disclosure=_disc,
-                                          observed_at=when))
+                                          observed_at=when, source_id=source_id))
                 plan, refused = graph.plan_correction(
                     self.store, edge, new, op_id=f"corr-{new.id}")
                 auth = None if refused else CorrectionAuthorisation(
@@ -2292,7 +2395,8 @@ class Memory:
                              f"to '{corrected_value}'"),
                     provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                           evidence_ref=evidence_ref or f"correct:{edge_id}",
-                                          observed_at=when)))
+                                          observed_at=when, source_id=source_id,
+                                          call_path=_agent_call_path(call_path))))
         # the refusal is raised AFTER the atomic scope: raised inside it, the scope would roll back the durable
         # refusal row the plan just wrote — and specs/0011 §4b requires that row to commit
         with _SITE_CORRECT_REFUSED.consult():
@@ -2394,7 +2498,7 @@ class Memory:
 
     # -- specs/0041 §4a: targeted redaction (tranche 3) -----------------------
     def redact(self, user_id: str, *, edge_id: Optional[str] = None, episode_id: Optional[str] = None,
-               reason: str):
+               reason: str, principal=None):
         """Remove one record's CONTENT while keeping its structure (specs/0041): every carrier in the
         treatment map is replaced by the marker, cleared, or deleted in ONE store transaction; the journal
         is tombstoned and a `redacted` event appended; a redaction record ATTESTS the fields, and an ordinary
@@ -2404,10 +2508,51 @@ class Memory:
         Idempotent by content: a second call returns the original receipt with `repeated=True`. Returns a
         `RedactionReceipt`, which never carries a content digest and names the derived records that may
         still carry the content (F6) and the receipt domains it cannot vouch for (§4f). Not a deletion and
-        not an entitlement operation (§4d): use `forget` for erasure."""
-        r = self.store.redact(user_id, edge_id=edge_id, episode_id=episode_id, reason=reason)
+        not an entitlement operation (§4d): use `forget` for erasure.
+
+        specs/0031 §4f §4d: `principal` is keyword-only and defaults to absent, and with it absent this is today's
+        call and today's receipt, `surviving_derived` whole. Under a principal the §3b scope gate runs first, in the
+        redaction's own transaction (`TrustRefused`, writing nothing), and the result is the PRINCIPAL-FACING
+        PROJECTION (`principal_receipt`), computed by the same view in the same transaction. A repeat passes the
+        same fresh gate as a first call (TT-R2-01)."""
+        if principal is None:
+            r = self.store.redact(user_id, edge_id=edge_id, episode_id=episode_id, reason=reason)
+            self._record("redact", {"kind": r.redacted_kind, "fields": len(r.fields_cleared), "repeated": r.repeated}, user_id)
+            return r
+        if (edge_id is None) == (episode_id is None):
+            # the store's own refusal, raised before the gate reads anything: there is no single target to scope
+            return self.store.redact(user_id, edge_id=edge_id, episode_id=episode_id, reason=reason)
+        kind, rid = ("edge", edge_id) if edge_id is not None else ("episode", episode_id)
+        with self.store.atomic():
+            view = self._trust_scope_gate(user_id, principal, kind=kind, record_id=rid, writes=False)
+            r = self.store.redact(user_id, edge_id=edge_id, episode_id=episode_id, reason=reason)
+            projection = self._principal_receipt(user_id, view, r)
         self._record("redact", {"kind": r.redacted_kind, "fields": len(r.fields_cleared), "repeated": r.repeated}, user_id)
-        return r
+        return projection
+
+    #: specs/0031 §4f §4d (TT-R2-01): the ONLY receipt fields a principal is shown. DEFAULT-DENY: a field added to the
+    #: host receipt later is omitted unless this tuple names it.
+    PRINCIPAL_RECEIPT_FIELDS = ("redacted_kind", "target_id", "reason", "marker_version", "repeated", "recorded_at")
+
+    def _principal_receipt(self, user_id: str, view, receipt) -> dict:
+        """specs/0031 §4f §4d: the principal-facing projection of a `RedactionReceipt`. The six named fields, exactly;
+        `surviving_derived` filtered to the entries whose record THIS view classes `OWN`, `SHARED` or `CROSS_VISIBLE`,
+        each with its class; and the unconditional label `scope: "this principal's view"`, so the list is never
+        presented as complete. No hidden count, no hidden id, no conditional "hidden records exist" indicator.
+        `fields_cleared` is omitted: it names side-table carriers only when they were treated, so a hidden descendant
+        changes it (round 2's witness)."""
+        out = {k: getattr(receipt, k) for k in self.PRINCIPAL_RECEIPT_FIELDS}
+        listed = []
+        for entry in receipt.surviving_derived:
+            record = self._trust_target(user_id, entry.get("kind"), entry.get("id"))
+            if record is None:
+                continue
+            cls = view.classification(record)
+            if cls in ("OWN", "SHARED", "CROSS_VISIBLE"):
+                listed.append({**entry, "class": cls})
+        out["surviving_derived"] = listed
+        out["scope"] = "this principal's view"
+        return out
 
     def pending_notices(self, user_id: str) -> list:
         """specs/0041 §11.6.6 (T4): the user's PENDING redaction notices — another store's testimony that it redacted a

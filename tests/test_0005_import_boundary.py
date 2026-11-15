@@ -639,6 +639,11 @@ _CALLSITE_DISPOSITIONS = {
     ("test_0044_t11a_portability.py", "_import"): "both",
     ("test_0044_t11a_portability.py", "_refuses"): "both",
     ("test_0047_t11b_portability.py", "_refused"): "both",
+    # specs/0031 v23.1 (the call-path era): the round trip restores the store's own export; the old-reader and
+    # planted-file cells are refusals before any record is admitted, the same in either mode, run as restores
+    ("test_0031_trust_tools_library.py", "test_the_call_path_survives_export_import_and_a_redaction_of_the_audit_episode"): "restore",
+    ("test_0031_trust_tools_library.py", "test_an_older_reader_refuses_a_15_file"): "restore",
+    ("test_0031_trust_tools_library.py", "test_a_file_declaring_14_that_carries_an_agent_path_is_refused_whole"): "restore",
     # R-II round 2 (RII-01): an imported challenge evicts the cached wiki — both imports are restores of the user's own file
     ("test_0047_rii01_wiki_bind.py", "test_a_challenge_admitted_after_a_cached_wiki_is_never_asserted_by_it"): "restore",
     # R-II round 3 (RII-R3-01, 0004 v3.5 §2c (ii)/(iii)): the import's episode admission refuses by the id — the helper

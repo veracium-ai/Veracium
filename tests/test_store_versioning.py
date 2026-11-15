@@ -559,7 +559,7 @@ def test_s7_export_format_version_is_independent():
     # gained Episode.consolidation_output_index per accepted 0010's refuse-don't-drop
     # rule). It now reads 5 while SCHEMA_VERSION reads 6 — they are INDEPENDENT and no
     # longer coincide, which is the point.
-    assert FORMAT_VERSION == 14     # specs/0026 bumped 9->10, 0037 10->11, 0037 v23 11->12, 0041 4b 12->13, 0044 T11a 13->14, all conditional
+    assert FORMAT_VERSION == 15     # specs/0026 bumped 9->10, 0037 10->11, 0037 v23 11->12, 0041 4b 12->13, 0044 T11a 13->14, 0031 v23.1 14->15, all conditional
                                     # stamp (0001: 8->9; 0025: 7->8)
     assert FORMAT_VERSION != SCHEMA_VERSION
 

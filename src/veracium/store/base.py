@@ -574,7 +574,8 @@ class Store(ABC):
     def confirm_edge(self, user_id: str, edge_id: str, *,
                      actor: ConfirmationActor, call_path: ConfirmationCallPath,
                      correlation_id: str, request_digest: str,
-                     confirmed_at) -> Confirmation:
+                     confirmed_at, episode_source_id: Optional[str] = None,
+                     episode_call_path=None) -> Confirmation:
         """The ONLY path that clears `needs_confirmation` (specs/0008 §6b). In ONE
         transaction: verify ownership + assertability, clear the flag, advance
         `observed_at`/`confidence`, write the confirmation episode, and persist the

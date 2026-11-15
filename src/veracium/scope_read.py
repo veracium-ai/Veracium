@@ -350,6 +350,20 @@ class ScopeView:
     def visible(self, record) -> bool:
         return self.decision(record)[0]
 
+    def classification(self, record) -> str:
+        """The record's CLASS under this view (`OWN`, `SHARED`, `CROSS_VISIBLE`, `CROSS_HIDDEN`, `UNRESOLVED`), from
+        the same evidence `decision` reads. specs/0031 §4f §3b decides a trust verb by the class, because `SHARED`
+        and `CROSS_VISIBLE` are both visible and only `OWN` is acted on."""
+        return classify(self.evidence(record), self.principal, self.policy, self.local_origin)
+
+    def classify_unwritten(self, record) -> str:
+        """The class of a record the store does NOT hold, from its own shape and no ledger rows: the public face of
+        `MembershipResolver.evidence_of_unwritten` (specs/0031 §4f, §2's scope-boundary row). A trust verb under a
+        principal classifies a probe whose only membership evidence is the binding's `source_id`, before any write
+        (§3b, the binding's source must itself be `OWN`)."""
+        return classify(self._resolver.evidence_of_unwritten(record), self.principal, self.policy,
+                        self.local_origin)
+
     # -- the restrict-only shaping (§4b) ------------------------------------
     def assertable(self, record) -> bool:
         """§4b: is this record assertable TO THIS PRINCIPAL? The authority is
