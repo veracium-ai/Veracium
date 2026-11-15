@@ -7,6 +7,10 @@ reflects. An adapter presents those, so it has no copy of a schema or a descript
 is validated, extra arguments ignored as FastMCP ignores them. Then it calls the `*_impl` function the served tool
 calls, with the host's user, capability, source and principal, all fixed at construction. No tool argument reaches a
 binding.
+
+The trust tools (specs/0031 §4f) take, besides those, the binding's ERASURE setting (§4i, decided here once) and its
+own PREVIEW-TOKEN ISSUER (§4e: each binding owns one, shared with no other surface, so a token one binding issued is
+`preview_unknown` to every other).
 """
 from __future__ import annotations
 
@@ -18,7 +22,11 @@ from .. import mcp_server as _mcp
 
 #: The served tools this module knows how to answer. `served_tools` refuses a registration that differs, either way:
 #: a new served tool with no binding here would otherwise be dropped or answered by nothing.
-TOOLS = ("remember", "recall", "answer", "maintain", "record_procedure", "describe_procedures")
+TOOLS = ("remember", "recall", "answer", "maintain", "record_procedure", "describe_procedures",
+         # specs/0031 §4f (the owner's Q10 ruling, "Integrations too"): the seven trust tools, answered through their
+         # `*_impl` with the host's bindings and `call_path=adapter_direct`
+         "find_facts", "correct_fact", "dispute_fact", "confirm_fact", "forget_fact",
+         "forget_everything_preview", "forget_everything_confirm")
 
 
 @dataclass(frozen=True)
@@ -59,7 +67,7 @@ class Binding:
     """The host's bindings, fixed at construction, and the one way a call reaches the library."""
 
     def __init__(self, mem, *, user_id: str = "default", capability=None, source_id: Optional[str] = None,
-                 principal=None):
+                 principal=None, erasure=None):
         if not isinstance(user_id, str) or not user_id:
             raise ValueError(f"user_id must be a non-empty string, not {user_id!r}")
         self._mem = mem
@@ -68,6 +76,11 @@ class Binding:
         self._capability = _mcp._resolve_capability(capability)
         self._source_id = source_id
         self._principal = principal
+        self._erasure = _mcp._resolve_erasure(erasure)     # specs/0031 §4i: an invalid value raises now
+        from ..schema import ConfirmationCallPath
+        from ..trust_tools import PreviewTokenIssuer
+        self._call_path = ConfirmationCallPath.ADAPTER_DIRECT
+        self._issuer = PreviewTokenIssuer(mem.store.local_origin(), user_id)   # this binding's own (§4e)
         self._tools = _registered(mem, self._capability)
         self._models = {t.name: t.fn_metadata for t in self._tools}
 
@@ -104,4 +117,26 @@ class Binding:
                                               capability=self._capability)
         if name == "describe_procedures":
             return _mcp.describe_procedures_impl(mem, user, a["query"], principal=self._principal)
+        # specs/0031 §4f: the trust tools, with the host's principal, source, erasure setting and issuer
+        cap, pr, src, cp = self._capability, self._principal, self._source_id, self._call_path
+        if name == "find_facts":
+            return _mcp.find_facts_impl(mem, user, a["query"], capability=cap, principal=pr)
+        if name == "correct_fact":
+            return _mcp.correct_fact_impl(mem, user, a["edge_id"], a["corrected_value"], capability=cap,
+                                          principal=pr, source_id=src, call_path=cp)
+        if name == "dispute_fact":
+            return _mcp.dispute_fact_impl(mem, user, a["edge_id"], a["reason"], capability=cap, principal=pr,
+                                          source_id=src, call_path=cp)
+        if name == "confirm_fact":
+            return _mcp.confirm_fact_impl(mem, user, a["edge_id"], capability=cap, principal=pr, source_id=src,
+                                          call_path=cp)
+        if name == "forget_fact":
+            return _mcp.forget_fact_impl(mem, user, a["edge_id"], a["episode_id"], capability=cap,
+                                         erasure=self._erasure, principal=pr)
+        if name == "forget_everything_preview":
+            return _mcp.forget_everything_preview_impl(mem, user, capability=cap, erasure=self._erasure,
+                                                       principal=pr, issuer=self._issuer)
+        if name == "forget_everything_confirm":
+            return _mcp.forget_everything_confirm_impl(mem, user, a["preview_token"], capability=cap,
+                                                       erasure=self._erasure, principal=pr, issuer=self._issuer)
         raise ValueError(f"unknown tool {name!r}")   # unreachable while TOOLS and the branches agree

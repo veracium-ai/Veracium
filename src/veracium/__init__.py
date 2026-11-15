@@ -2646,7 +2646,8 @@ class Memory:
         presented as complete. No hidden count, no hidden id, no conditional "hidden records exist" indicator.
         `fields_cleared` is omitted: it names side-table carriers only when they were treated, so a hidden descendant
         changes it (round 2's witness)."""
-        out = {k: getattr(receipt, k) for k in self.PRINCIPAL_RECEIPT_FIELDS}
+        whole = receipt.model_dump(mode="json")
+        out = {k: whole[k] for k in self.PRINCIPAL_RECEIPT_FIELDS}
         listed = []
         for entry in receipt.surviving_derived:
             record = self._trust_target(user_id, entry.get("kind"), entry.get("id"))

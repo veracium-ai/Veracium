@@ -146,9 +146,10 @@ def test_main_reads_the_environment_once_and_refuses_a_supplied_invalid(tmp_path
         def run(self):
             seen["ran"] = True
 
-    def fake_build_server(mem, *, default_user, capability=None, source_id=None):
+    def fake_build_server(mem, *, default_user, capability=None, source_id=None, erasure=None):
         seen["capability"] = capability
         seen["source_id"] = source_id                 # 0006 v7: read once here too
+        seen["erasure"] = erasure                     # specs/0031 §4i: read once here too
         _resolve_capability(capability)          # the real validator, kept
         return _Srv()
 
@@ -166,6 +167,19 @@ def test_main_reads_the_environment_once_and_refuses_a_supplied_invalid(tmp_path
     monkeypatch.setenv("VERACIUM_MCP_CAPABILITY", "bogus")
     with pytest.raises(SystemExit, match="refusing to start"):
         M.main([])
+    # specs/0031 §4i: VERACIUM_MCP_ERASURE, the same discipline — unset is absence (None, which means `on`); a
+    # supplied value outside {on, off}, the empty string included, refuses to start
+    monkeypatch.setenv("VERACIUM_MCP_CAPABILITY", "direct")
+    monkeypatch.delenv("VERACIUM_MCP_ERASURE", raising=False)
+    M.main([])
+    assert seen["erasure"] is None
+    monkeypatch.setenv("VERACIUM_MCP_ERASURE", "off")
+    M.main([])
+    assert seen["erasure"] == "off"
+    for bad in ("", "OFF", "no"):
+        monkeypatch.setenv("VERACIUM_MCP_ERASURE", bad)
+        with pytest.raises(SystemExit, match="VERACIUM_MCP_ERASURE"):
+            M.main([])
 
 
 def test_capability_is_immutable_after_construction(tmp_path, monkeypatch):
@@ -579,7 +593,12 @@ def test_phase_a_inventory(tmp_path):
     # `none` as an attempted elevation) and `describe_procedures` (a read).
     # Neither is a proposal, resolution, correction, confirmation, deletion
     # or trust-mutation operation; the set stays pinned by identity.
-    assert names == ["answer", "describe_procedures", "maintain", "recall",
+    # specs/0031 v23 §4f.5 (4h): the ONE enumerated exception to "no correction, confirmation, deletion or trust
+    # mutation" — the seven trust tools of `0031/trust-tools-direct`, executing `correct`, `dispute`, `confirm`,
+    # `redact` and the two-step erase directly under `direct` (and refusing under `none`). Still no proposal or
+    # resolution operation: Phase B is unbuilt. Pinned by identity, the thirteen.
+    assert names == ["answer", "confirm_fact", "correct_fact", "describe_procedures", "dispute_fact", "find_facts",
+                     "forget_everything_confirm", "forget_everything_preview", "forget_fact", "maintain", "recall",
                      "record_procedure", "remember"]
 
 

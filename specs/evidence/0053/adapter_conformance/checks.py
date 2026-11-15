@@ -57,10 +57,27 @@ _MAINTAIN_IDS = {
 }
 _MAINTAIN_CLOCKS = {("edge_event", "recorded_at", ()), ("consolidation_ops", "lease_expires_at", ()),
                     ("contribution_ledger", "created_at", ())}
+#: specs/0053 v0.6 (0031 §4f): the trust tools' writes — MEASURED from twin reference runs (`measured_lists`)
+_TRUST_IDS = {
+    ("confirmations", "id", ()), ("confirmations", "correlation_id", ()),
+    ("edge_event", "edge_id", ()), ("edge_event", "state", ("$", "id")),
+    ("edges", "id", ()), ("edges", "json", ("$", "id")),
+    ("episodes", "id", ()), ("episodes", "json", ("$", "id")),
+    ("redactions", "id", ()),
+    ("request_registry", "correlation_id", ()), ("request_registry", "result_ref", ()),
+    ("supersession_operations", "logical_request_digest", ()), ("supersession_operations", "operation_id", ()),
+}
+_TRUST_CLOCKS = {
+    ("edge_event", "recorded_at", ()), ("episode_event", "recorded_at", ()),
+    ("episodes", "json", ("$", "provenance", "observed_at")),
+    ("redactions", "recorded_at", ()), ("request_registry", "written_at", ()),
+    ("edge_event", "state", ("$", "invalidated_at")), ("edges", "json", ("$", "invalidated_at")),   # dispute's retirement
+}
 DECLARED = {
     "dated": (frozenset(_IDS), frozenset({("edge_event", "recorded_at", ())})),
     "undated": (frozenset(_IDS), frozenset({("edge_event", "recorded_at", ())} | _EVENT_TIME)),
     "maintain": (frozenset(_MAINTAIN_IDS), frozenset(_MAINTAIN_CLOCKS)),
+    "trust": (frozenset(_TRUST_IDS), frozenset(_TRUST_CLOCKS)),
 }
 
 
@@ -70,10 +87,51 @@ def load_cases(path=None):
     q = doc["queries"]
 
     def resolve(v):
+        # a query placeholder; record placeholders (@EDGE:, @EPISODE:) and a two-call case's @PREVIOUS. are resolved
+        # later, against the template (`resolve_records`) and the before step (`after_step`)
+        if isinstance(v, str) and v.startswith(("@EDGE:", "@EPISODE:", "@PREVIOUS.")):
+            return v
         return q[v[1:]] if isinstance(v, str) and v.startswith("@") else v
     for c in doc["cases"]:
         c["args"] = {k: resolve(v) for k, v in c["args"].items()}
     return doc
+
+
+def resolve_records(doc, template: str) -> None:
+    """specs/0053 v0.6 (0031 §4f): a trust tool takes a record id the fixture minted. A case names it by a placeholder,
+    resolved ONCE against the template store (every fresh copy holds the same ids):
+      `@EDGE:<user>:<relation>=<object>`  the user's one edge with that relation and object;
+      `@EPISODE:<user>:<summary>`         the user's one episode with that summary.
+    An unmatched or ambiguous placeholder refuses, by name: a case aimed at nothing is a vacuous case."""
+    mem = F.open_memory(template)
+    try:
+        def find(v):
+            kind, rest = v[1:].split(":", 1)
+            user, key = rest.split(":", 1)
+            if kind == "EDGE":
+                rel, obj = key.split("=", 1)
+                hits = [e.id for e in mem.store.edges(user, active_only=False, include_quarantined=True)
+                        if e.relation == rel and e.object == obj]
+            else:
+                hits = [e.id for e in mem.store.episodes(user) if e.summary == key]
+            if len(hits) != 1:
+                raise AssertionError(f"the placeholder {v!r} names {len(hits)} records in the fixture, not one")
+            return hits[0]
+        for c in doc["cases"]:
+            for step in [c] + ([c["before"]] if "before" in c else []):
+                step["args"] = {k: (find(v) if isinstance(v, str) and v.startswith(("@EDGE:", "@EPISODE:")) else v)
+                                for k, v in step["args"].items()}
+    finally:
+        mem.close()
+
+
+def after_step(args: dict, before_outcome) -> dict:
+    """A two-call case (0031 §4e: the erase's confirm takes the preview's token): `@PREVIOUS.<key>` is the before
+    step's returned value under that key, on the SAME binding. A before step that refused makes the case vacuous."""
+    if not (before_outcome[0] == "ok" and isinstance(before_outcome[1], dict) and before_outcome[1].get("ok")):
+        raise AssertionError(f"the before step did not succeed: {before_outcome!r:.200}")
+    return {k: (before_outcome[1][v[len("@PREVIOUS."):]] if isinstance(v, str) and v.startswith("@PREVIOUS.") else v)
+            for k, v in args.items()}
 
 
 def binding(doc, name) -> dict:
@@ -91,6 +149,10 @@ def _json_form(v):
         raise AssertionError(f"a reference value is not JSON-serialisable: {v!r:.200}") from exc
 
 
+from veracium.schema import ConfirmationCallPath as _CCP
+_ADAPTER = _CCP.ADAPTER_DIRECT
+
+
 @dataclass
 class Ref:
     case: dict
@@ -104,6 +166,7 @@ class Oracle:
         self.workdir = workdir
         self.template = F.build_template(os.path.join(workdir, "template"))
         self.doc = load_cases()
+        resolve_records(self.doc, self.template)
         mem = F.open_memory(F.fresh_copy(self.template, os.path.join(workdir, "served"), "served"))
         server = M.build_server(mem)
         self.listing = [{"name": t.name, "description": t.description, "parameters": t.inputSchema}
@@ -117,7 +180,7 @@ class Oracle:
         self._n += 1
         return F.fresh_copy(self.template, os.path.join(self.workdir, "runs"), f"{tag}-{self._n}")
 
-    def call(self, mem, b: dict, tool: str, args: dict):
+    def call(self, mem, b: dict, tool: str, args: dict, issuer=None):
         meta = self._meta[tool]
         try:
             a = meta.arg_model.model_validate(meta.pre_parse_json(dict(args))).model_dump_one_level()
@@ -140,6 +203,28 @@ class Oracle:
                                             date=a["date"], source_id=sid, capability=cap)
             elif tool == "describe_procedures":
                 v = M.describe_procedures_impl(mem, user, a["query"], principal=pr)
+            # specs/0053 v0.6 (0031 §4f): the seven trust tools, as a binding answers them — the binding's principal
+            # and source, `call_path=adapter_direct`, the binding's erasure setting, and ONE issuer per case run
+            elif tool == "find_facts":
+                v = M.find_facts_impl(mem, user, a["query"], capability=cap, principal=pr)
+            elif tool == "correct_fact":
+                v = M.correct_fact_impl(mem, user, a["edge_id"], a["corrected_value"], capability=cap, principal=pr,
+                                        source_id=sid, call_path=_ADAPTER)
+            elif tool == "dispute_fact":
+                v = M.dispute_fact_impl(mem, user, a["edge_id"], a["reason"], capability=cap, principal=pr,
+                                        source_id=sid, call_path=_ADAPTER)
+            elif tool == "confirm_fact":
+                v = M.confirm_fact_impl(mem, user, a["edge_id"], capability=cap, principal=pr, source_id=sid,
+                                        call_path=_ADAPTER)
+            elif tool == "forget_fact":
+                v = M.forget_fact_impl(mem, user, a["edge_id"], a["episode_id"], capability=cap,
+                                       erasure=b.get("erasure"), principal=pr)
+            elif tool == "forget_everything_preview":
+                v = M.forget_everything_preview_impl(mem, user, capability=cap, erasure=b.get("erasure"),
+                                                     principal=pr, issuer=issuer)
+            elif tool == "forget_everything_confirm":
+                v = M.forget_everything_confirm_impl(mem, user, a["preview_token"], capability=cap,
+                                                     erasure=b.get("erasure"), principal=pr, issuer=issuer)
             else:
                 raise AssertionError(f"the oracle has no call for {tool!r}")
         except AssertionError:
@@ -153,7 +238,13 @@ class Oracle:
         llm = F.ScriptedComplete()
         mem = F.open_memory(path, llm)
         try:
-            out = self.call(mem, binding(self.doc, case["binding"]), case["tool"], case["args"])
+            b = binding(self.doc, case["binding"])
+            from veracium.trust_tools import PreviewTokenIssuer
+            issuer = PreviewTokenIssuer(mem.store.local_origin(), b["user_id"])   # one per case run, as per binding
+            args = case["args"]
+            if "before" in case:
+                args = after_step(args, self.call(mem, b, case["before"]["tool"], case["before"]["args"], issuer))
+            out = self.call(mem, b, case["tool"], args, issuer)
         finally:
             mem.close()
         return Ref(case, out, path, llm.prompts)
@@ -420,6 +511,41 @@ def _idmap(canon: K.Canon, store: str) -> dict:
     return m
 
 
+def _clockmap(canon: K.Canon, store: str) -> dict:
+    """specs/0053 v0.6 (0031 §4f): a declared CLOCK value the outcome repeats (a redaction receipt's `recorded_at`) maps
+    to its ORDER among the store's declared clock values, so two honest runs agree and a reordered or invented time
+    does not."""
+    vals = sorted({v for t, n, c, path, v in K.leaves(store) if K.pattern(t, c, path) in canon.clocks
+                   and isinstance(v, str)})
+    out = {v: f"<clock:{i}>" for i, v in enumerate(vals)}
+    # the receipt renders its own recorded_at; the store may hold the same instant in another ISO form
+    from datetime import datetime
+    for v in vals:
+        try:
+            out.setdefault(datetime.fromisoformat(v.replace("Z", "+00:00")).isoformat(), out[v])
+        except ValueError:
+            pass
+    return out
+
+
+def _canon_token(v):
+    """specs/0053 v0.6 (0031 §4f.7's oracle discipline): a preview token is keyed by its binding's own issuer, so two
+    honest bindings mint different MACs. It is compared by WHAT IT BINDS — the user and the snapshot digest, parsed
+    strictly — never by dropping it; its expiry must be its own `t` + 600 or it stays raw (and differs). The MAC is
+    proven by the two-call case (K5-erase), where the adapter's confirm must accept its own preview's token."""
+    from veracium import trust_tools as TT
+    if not isinstance(v, dict) or "preview_token" not in v:
+        return v
+    try:
+        _seg, u, d, issued, _mac = TT.parse_token(v["preview_token"])
+    except TT.TrustRefused:
+        return v
+    out = {**v, "preview_token": {"u": u, "d": d}}
+    if v.get("expires_at") == TT.expires_at(issued):
+        out["expires_at"] = "<t+600>"
+    return out
+
+
 def _same_schema(served: dict, got: dict) -> list[str]:
     out = []
     sp, gp = served.get("properties", {}), (got or {}).get("properties", {})
@@ -480,7 +606,10 @@ def run_families(o: Oracle, factory, tag="drv") -> dict:
         try:
             drv = factory(mem, binding(o.doc, c["binding"]))
             try:
-                got = drv.decode(drv.call(c["tool"], c["args"]))
+                args = c["args"]
+                if "before" in c:                    # the same driver, so the same binding and its one issuer
+                    args = after_step(args, drv.decode(drv.call(c["before"]["tool"], c["before"]["args"])))
+                got = drv.decode(drv.call(c["tool"], args))
             except Exception as exc:                 # a framework exception is a K6 defect wherever it happens
                 got = ("exception", f"{type(exc).__name__}: {exc}")
         finally:
@@ -498,8 +627,10 @@ def run_families(o: Oracle, factory, tag="drv") -> dict:
         g = c.get("clock_group", "dated")
         canon = K.Canon(*DECLARED[g])
         if fam in ("K5", "K7"):
-            exp_v = _canon_value(ref.outcome, _idmap(canon, ref.store))
-            got_v = _canon_value(got, _idmap(canon, path))
+            exp_v = _canon_value(ref.outcome, {**_clockmap(canon, ref.store), **_idmap(canon, ref.store)})
+            got_v = _canon_value(got, {**_clockmap(canon, path), **_idmap(canon, path)})
+            if isinstance(exp_v, tuple) and isinstance(got_v, tuple):
+                exp_v, got_v = (exp_v[0], _canon_token(exp_v[1])), (got_v[0], _canon_token(got_v[1]))
         else:
             exp_v, got_v = ref.outcome, got
         if got_v != exp_v:

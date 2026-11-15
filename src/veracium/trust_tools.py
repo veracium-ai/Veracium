@@ -243,9 +243,9 @@ class RenderReceipt:
     def admit(self, kind: str, record, text: str, partition: str, annotations=()):
         unit = {"kind": kind, "id": None if record is None else record.id, "text": text,
                 "partition": partition, "annotations": list(annotations)}
-        subject = getattr(record, "subject", None)
-        if subject is not None and subject != "user":
-            unit["subject"] = subject
+        from .schema import Edge
+        if isinstance(record, Edge) and record.subject != "user":     # an episode or the wiki has no subject
+            unit["subject"] = record.subject
         if self.view is not None:
             unit["mutable"] = record is not None and self.view.classification(record) == "OWN"
         self.units.append(unit)

@@ -54,14 +54,15 @@ def _tool(binding: Binding, spec, Tool, ModelRetry):
 
 
 def as_tools(mem, *, user_id: str = "default", capability=None, source_id: Optional[str] = None,
-             principal=None, max_retries: Optional[int] = None) -> list:
+             principal=None, max_retries: Optional[int] = None, erasure=None) -> list:
     """The served tools over `mem` as Pydantic AI `Tool`s, in the server's registration order. `max_retries`, when
     given, is every tool's error budget (None: the agent's own `retries`)."""
     if max_retries is not None and (isinstance(max_retries, bool) or not isinstance(max_retries, int)
                                     or max_retries < 0):
         raise ValueError(f"max_retries must be a non-negative int or None, not {max_retries!r}")
     Tool, ModelRetry = _framework()
-    binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal)
+    binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal,
+                      erasure=erasure)          # specs/0031 §4i: the deployment's erasure setting, decided once
     tools = [_tool(binding, spec, Tool, ModelRetry) for spec in binding.tools()]
     if max_retries is not None:
         for t in tools:

@@ -367,7 +367,8 @@ def test_the_surface_refuses_a_registration_it_cannot_answer(tmp_path, oracle):
     """A served tool the core has no binding for (or a binding for a tool not served) is refused at construction,
     never dropped or answered by nothing."""
     dst = str(tmp_path / "pkg")
-    MU.apply_edits(MU.ADAPTERS, dst, [(MU.S, '"describe_procedures")\n', '"describe_procedures", "forget")\n')])
+    MU.apply_edits(MU.ADAPTERS, dst, [(MU.S, '"forget_everything_preview", "forget_everything_confirm")\n',
+                                       '"forget_everything_preview", "forget_everything_confirm", "forget")\n')])
     surface, _ = MU.load_package(dst)
     mem = F.open_memory(oracle.fresh("registration"))
     try:

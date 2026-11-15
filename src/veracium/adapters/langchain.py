@@ -49,8 +49,9 @@ def _tool(binding: Binding, spec, StructuredTool, ToolException):
 
 
 def as_tools(mem, *, user_id: str = "default", capability=None, source_id: Optional[str] = None,
-             principal=None) -> list:
+             principal=None, erasure=None) -> list:
     """The served tools over `mem` as LangChain `StructuredTool`s, in the server's registration order."""
     StructuredTool, ToolException = _framework()
-    binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal)
+    binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal,
+                      erasure=erasure)          # specs/0031 §4i: the deployment's erasure setting, decided once
     return [_tool(binding, spec, StructuredTool, ToolException) for spec in binding.tools()]
