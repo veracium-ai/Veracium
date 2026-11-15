@@ -252,8 +252,8 @@ _CONFLICT = "different projection"
     ("actor", "host", _CONFLICT), ("confirmed_at", "2026-10-09T00:00:00+00:00", _CONFLICT), ("act_seq", 77, _CONFLICT),
     ("recorded_correlation_id", "other-id", _CONFLICT), ("request_digest", "0" * 64, _CONFLICT),
     ("edge_id", "SWAP", _CONFLICT),
-    # `ConfirmationCallPath` is closed with ONE value (`host_api`): any other value is outside the shape, so the
-    # projection's call-path field can only differ by a shape refusal
+    # `ConfirmationCallPath` has three values since specs/0031 §4f (host_api, mcp_direct, adapter_direct); "mcp" is
+    # outside the enum, so it keeps the closed-shape refusal (0031 v23.2); a VALID changed call path is the next cell
     ("call_path", "mcp", "closed shape"),
 ])
 def test_i2_a_structural_change_under_a_held_uid_refuses_the_whole_unit(tmp_path, field, value, match):
@@ -270,6 +270,24 @@ def test_i2_a_structural_change_under_a_held_uid_refuses_the_whole_unit(tmp_path
         k = _one(r for r in recs if r.get("record") == "confirmation" and r["edge_id"] == e1)
         k[field] = e2 if value == "SWAP" else value
     _refused(b, _edit(f, "g.jsonl", change), match, restore=True)
+    assert _acts(b) == before
+
+
+def test_i2_a_held_confirmation_re_arriving_with_an_agent_call_path_is_a_different_projection(tmp_path):
+    """specs/0031 v23.2 (research's note on I2): a held-uid confirmation that re-arrives in a FORMAT-15 file with its
+    `call_path` changed from `host_api` to `mcp_direct` is a valid value under its era, so it is a conflicting replay
+    (`different projection`), not a shape refusal and not an era refusal; the whole unit refused, nothing written."""
+    a, e1, e2, _c = _history(tmp_path)
+    f = _export(a, tmp_path, "a.jsonl")
+    b = _mem(tmp_path, "b.db")
+    _ok(b.import_memory, f, restore=True)
+    before = _acts(b)
+
+    def change(recs):
+        recs[0]["version"] = 15
+        k = _one(r for r in recs if r.get("record") == "confirmation" and r["edge_id"] == e1)
+        k["call_path"] = "mcp_direct"
+    _refused(b, _edit(f, "g15.jsonl", change), _CONFLICT, restore=True)
     assert _acts(b) == before
 
 
