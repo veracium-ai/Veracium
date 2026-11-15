@@ -165,6 +165,43 @@ def test_forget_fact_always_redacts_with_subject_request(tmp_path, target):
     assert "surviving_derived" in out                     # the full receipt with no principal (INV-TT12)
 
 
+# ------------------------------------------------------------------ INV-TT12: no cascade; the list whole on the host path
+def _rows(m, kind, ids):
+    table = "edges" if kind == "edge" else "episodes"
+    return {i: m.store._conn.execute(f"SELECT json FROM {table} WHERE id=?", (i,)).fetchone()[0] for i in ids}
+
+
+@pytest.mark.parametrize("target", ["edge", "episode"])
+def test_forget_fact_does_not_cascade_and_names_every_derived_record(tmp_path, target):
+    """§4d: per-fact forget redacts ONE record. Its derived records — an edge's source episode and the outcome
+    episode that quotes it; the fact extracted from an episode — are left exactly as they were, and with no principal
+    the receipt names every one of them (`surviving_derived` whole). (A consolidation output beside its LIVE input
+    exists only after a restore import, consolidation consumes its inputs; 0041's surviving-derived cells hold that
+    lineage join.) Mutants: a cascade added; the list dropped on the host path."""
+    m = _mem(tmp_path)
+    if target == "edge":
+        _edge(m, "e-1")
+        m.store.add_episode(Episode(id="ep-src", user_id=U, date="2026-11-01", summary="I like tea",
+                                    provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                                          evidence_ref="ev-e-1")))
+        from veracium.schema import Outcome, OutcomeJudgmentDraft
+        out_ep = m.store.append_outcome_if_head(U, "e-1", "run-1", None, OutcomeJudgmentDraft(
+            author=EvidenceAuthor.USER, event_timestamp="2026-11-02", outcome=Outcome.CONFIRMED, summary="tea, yes"))
+        args, derived = {"edge_id": "e-1"}, {("episode", "ep-src"), ("episode", out_ep.id)}
+    else:
+        _episode(m, "ep-1")
+        m.store.add_edge(Edge(id="e-x", user_id=U, subject="user", relation="likes", object="tea",
+                              provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev-ep-1")))
+        args, derived = {"episode_id": "ep-1"}, {("edge", "e-x")}
+    before = {k: _rows(m, k, [i for kk, i in derived if kk == k]) for k in ("edge", "episode")}
+    out = _call(M.build_server(m, default_user=U, capability="direct"), "forget_fact", args)
+    assert out.get("ok") is True, out
+    assert {(d["kind"], d["id"]) for d in out.get("surviving_derived", [])} == derived, out
+    for k in ("edge", "episode"):
+        assert _rows(m, k, list(before[k])) == before[k], k          # no derived record touched
+        assert not set(before[k]) & set(m.store.redacted_targets(U, k)), k
+
+
 # ------------------------------------------------------------------ INV-TT7: another user's id is an unknown id
 @pytest.mark.parametrize("name", ["correct_fact", "dispute_fact", "confirm_fact", "forget_fact"])
 def test_another_users_id_and_an_unknown_id_give_one_response(tmp_path, name):
