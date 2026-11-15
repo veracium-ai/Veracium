@@ -754,6 +754,9 @@ _CALLSITE_DISPOSITIONS = {
     # CROSS-USER import on the capping path whose minted imp-… survivor the ledger treatment must read
     ("test_0041_round10_matrix.py", "test_the_receipt_names_a_restored_output_whose_lineage_consumed_the_redacted_episode"): "restore",
     ("test_0041_round10_matrix.py", "test_an_imported_absorption_ledger_is_treated_under_its_minted_id"): "default",
+    # 0031 §4f INV-TT12's third case: 0041's round-10 restore pair (before, then after a consolidation) driven through
+    # forget_fact, so a consolidation output stands beside its live input
+    ("test_0031_trust_tools_mcp.py", "test_forget_fact_does_not_cascade_and_names_every_derived_record"): "restore",
     # 0041 round 10, the notice across the import boundary (R9-04/05/08 on the capping path; R9-06 restores the
     # frozen store's own treated history)
     ("test_0041_round11_provenance.py", "test_R10_04_every_admitted_local_reason_round_trips"): "restore",

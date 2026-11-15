@@ -312,6 +312,10 @@ INVENTORY = [
      "git-checkout", "specs/0003 §4c-ii (SR2-01's mutation table, the 0003/obligations shape): the no-op control's run "
      "snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has none, so the cell "
      "cannot run there — CI is a checkout, where it always runs"),
+    ("tests/test_0031_trust_tools_implementation_mutants.py", "skipif", "not _is_checkout()",
+     "git-checkout", "specs/0031 §4f (the trust tools' implementation mutation table, the 0048 shape): the no-op "
+     "control's run snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has "
+     "none, so the cell cannot run there — CI is a checkout, where it always runs"),
     ("tests/test_0048_implementation_mutants.py", "skipif", "not _is_checkout()",
      "git-checkout", "specs/0048 §6 (the implementation's mutation table, the 0003/obligations shape): the no-op "
      "control's run snapshots the TRACKED tree (git ls-files); a git-less copy (an sdist, a reviewer's tree/) has "
@@ -669,6 +673,8 @@ EMITTED = {
     ("tests/test_c3_01_empty_body_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_sr2_01_wiki_cache_mutants.py", "not _is_checkout()"):
+        ("a git-less copy has none",),
+    ("tests/test_0031_trust_tools_implementation_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
     ("tests/test_0048_implementation_mutants.py", "not _is_checkout()"):
         ("a git-less copy has none",),
