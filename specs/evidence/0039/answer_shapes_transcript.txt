@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — DEV's instrument (specs/evidence/0039/answer_shapes.py)
-# generated 2026-09-12 against veracium @ 0cfbb0a7641b9f9374bdaa6bbeafcf344371c8f8
+# generated 2026-09-12 against veracium @ af8e44b27633415951a3cda28793e0ce7dc24dcb
+# RE-PINNED 2026-11-15 (af8e44b2: specs/0049 v2.2, edges_since means learned — the read window, the first-record projection, two census sites, introspect's last_observed, two comments; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-15 (0cfbb0a7: specs/0031 §4f, the trust tools — the call path and scope gate on the four verbs, the render receipt off by default, the two-step erase, the seven MCP tools and the adapters' bindings, and nine 0042 census sites; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-14 (544dacb1: the schema evidence records v0.32.1, one row of src/veracium/store/evidence/legacy_stores.json; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-14 (92c76c47: shipped-changes round 4's text notes, 0003 v18.11 (SR4-N1) and the two bind helpers' docstrings in compile.py (SR4-N2), no code; both instruments re-run, and the body is byte-identical)
