@@ -210,3 +210,42 @@ class PreviewTokenIssuer:
 
 def expires_at(issued_at: int) -> str:
     return _dt.fromtimestamp(issued_at + TOKEN_TTL, tz=_tz.utc).isoformat()
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# §4b: the render receipt — what the renderer ADMITTED, built as it admits each unit (TT-R1-03)
+# --------------------------------------------------------------------------------------------------------------------
+def edge_annotations(edge) -> list:
+    """The mandatory annotations an edge's rendered line carries (graph.render_edges), as closed labels: never a raw
+    field (round 2's answer 5: annotations never carry unadmitted raw fields)."""
+    out = []
+    if not edge.active:
+        out.append("superseded")
+    if edge.active and edge.needs_confirmation:
+        out.append("stale")
+    if edge.ungrounded:
+        out.append("extraction_error")
+    if edge.active and edge.use_only and not edge.quarantined:
+        out.append("unconfirmed")
+    return out
+
+
+class RenderReceipt:
+    """One recall's render receipt (§4b): a unit per record the renderer admitted, appended AT the admission point,
+    in admission order, with the text exactly as admitted. Never built by matching prose, never by re-reading a
+    record, never from `Recall.edges`: a record the renderer withheld is not a unit. `view` is the call's principal
+    view (None unscoped); under one, each unit carries `mutable` (§3b: OWN only)."""
+
+    def __init__(self, view=None):
+        self.view = view
+        self.units: list = []
+
+    def admit(self, kind: str, record, text: str, partition: str, annotations=()):
+        unit = {"kind": kind, "id": None if record is None else record.id, "text": text,
+                "partition": partition, "annotations": list(annotations)}
+        subject = getattr(record, "subject", None)
+        if subject is not None and subject != "user":
+            unit["subject"] = subject
+        if self.view is not None:
+            unit["mutable"] = record is not None and self.view.classification(record) == "OWN"
+        self.units.append(unit)

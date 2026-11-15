@@ -122,6 +122,17 @@ DISPOSITIONS: dict[str, dict] = {
                     "LOSSY file that reads as complete. (0021 owns what "
                     "travels; the ledger does not.)"),
 
+    "Memory.forget_everything_preview": dict(
+        returns_records=False, principal="threaded",
+        carriers="`{counts, expires_at, preview_token, warning}`: four counts, never row content (0031 INV-TT10)",
+        disposition="THE WHOLE-USER ERASE'S FIRST STEP (specs/0031 §4f §4e). The `principal` parameter exists to "
+                    "REFUSE: any principal is `principal_scoped`, writing nothing, because an erase is user-wide and "
+                    "a principal sees only its scope (§3b)."),
+    "Memory.forget_everything_confirm": dict(
+        returns_records=False, principal="threaded",
+        carriers="`forget`'s counts",
+        disposition="THE WHOLE-USER ERASE'S SECOND STEP (specs/0031 §4f §4e). Any principal is `principal_scoped`, "
+                    "erasing nothing; unscoped, it is `forget` bound to the preview's key sets."),
     "Memory.forget": dict(
         returns_records=False, principal="none",
         carriers="`{edges, episodes}` counts; the erasure itself",
@@ -131,7 +142,7 @@ DISPOSITIONS: dict[str, dict] = {
                     "worst possible failure on this surface."),
 
     "Memory.redact": dict(
-        returns_records=False, principal="none",
+        returns_records=False, principal="threaded",
         carriers="a `RedactionReceipt`: the target's kind and id, the carrier NAMES treated, the "
                  "vocabulary reason, the marker and store versions, the journal event ref, the "
                  "ids of derived records that may still carry the content (F6), the receipt "
@@ -140,7 +151,11 @@ DISPOSITIONS: dict[str, dict] = {
                     "INV-5 (a cross-user or unknown target refuses with the same words, so the "
                     "existence of another user's record is not disclosed). It is a WRITE that "
                     "returns a receipt, the `forget` shape: the data subject's request must "
-                    "reach every carrier the map names or none, so no principal narrows it."),
+                    "reach every carrier the map names or none, so no principal narrows WHAT IT "
+                    "TREATS. specs/0031 §4f §4d: a principal GATES it (§3b, OWN only, before any write) "
+                    "and receives the principal-facing projection — six named fields, the scope label, "
+                    "and `surviving_derived` filtered to what that principal's view can see — never the "
+                    "host receipt; with no principal, the full receipt, unchanged."),
 
     "Memory.confirm_notice": dict(
         returns_records=False, principal="none",
@@ -244,14 +259,16 @@ DISPOSITIONS: dict[str, dict] = {
                     "F5): no host policy can widen or narrow what the store "
                     "merges. 0021 rules maintenance."),
     "Memory.dispute": dict(
-        returns_records=False, principal="none",
+        returns_records=False, principal="threaded",
         carriers="`{disputed, relation}`",
-        disposition="WRITE path (user feedback verb); no record set leaves."),
+        disposition="WRITE path (user feedback verb); no record set leaves. " + "Under a principal (specs/0031 §4f §3b, the owner's 'OWN only'): the target is read through the principal's view inside the verb's transaction before any write; only OWN is acted on, SHARED and CROSS_VISIBLE refuse out_of_scope, the rest not_found_in_scope with one response; "
+                    "the binding's source must itself be OWN. With no principal, today's call."),
     "Memory.confirm": dict(
-        returns_records=False, principal="none",
+        returns_records=False, principal="threaded",
         carriers="`{confirmed, valid_from, confirmed_at, correlation_id, "
                  "replayed}`",
-        disposition="WRITE path; no record set leaves."),
+        disposition="WRITE path; no record set leaves. " + "Under a principal (specs/0031 §4f §3b, the owner's 'OWN only'): the target is read through the principal's view inside the verb's transaction before any write; only OWN is acted on, SHARED and CROSS_VISIBLE refuse out_of_scope, the rest not_found_in_scope with one response; "
+                    "the binding's source must itself be OWN. With no principal, today's call."),
     "Memory.undo_restoration": dict(
         returns_records=False, principal="none",
         carriers="`{undone, undone_at, correlation_id, replayed, "
@@ -267,9 +284,10 @@ DISPOSITIONS: dict[str, dict] = {
                     "appends one reply; ids, a closed kind and a time leave, "
                     "never the reply's text or the fact's content."),
     "Memory.correct": dict(
-        returns_records=False, principal="none",
+        returns_records=False, principal="threaded",
         carriers="`{corrected, replacement}`",
-        disposition="WRITE path; no record set leaves."),
+        disposition="WRITE path; no record set leaves. " + "Under a principal (specs/0031 §4f §3b, the owner's 'OWN only'): the target is read through the principal's view inside the verb's transaction before any write; only OWN is acted on, SHARED and CROSS_VISIBLE refuse out_of_scope, the rest not_found_in_scope with one response; "
+                    "the binding's source must itself be OWN. With no principal, today's call."),
     "Memory.record_outcome": dict(
         returns_records=False, principal="none",
         carriers="`{edge_id, outcome, upgraded, times_used}`",

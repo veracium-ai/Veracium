@@ -145,6 +145,11 @@ class Recall:
     # edge whose entry is not `assertable`, and must show the unit wherever it shows the record (the consumer duty).
     # APPENDED WITH A DEFAULT (V-COMPAT).
     inspection: dict[str, "EdgeInspection"] = field(default_factory=dict)
+    # specs/0031 §4f §4b — the RENDER RECEIPT: None unless the call asked for it (`render_receipt=True`); then one
+    # unit per record the renderer ADMITTED into `context`, in admission order: {kind, id, text as admitted,
+    # partition, annotations, subject iff not the user, mutable iff a principal is bound}. Built at the admission
+    # points, never by matching the prose; a withheld record is never a unit. APPENDED WITH A DEFAULT (V-COMPAT).
+    render_receipt: Optional[list] = None
 
 
 @dataclass(frozen=True)
@@ -273,6 +278,11 @@ class PolicyReceipt:
 
 
 _RECEIPT_FIELDS = tuple(f.name for f in dataclasses.fields(PolicyReceipt))
+
+
+def _trust_edge_annotations(edge) -> list:
+    from .trust_tools import edge_annotations
+    return edge_annotations(edge)
 
 
 def _agent_call_path(call_path) -> Optional[ConfirmationCallPath]:
@@ -856,7 +866,7 @@ class Memory:
     def recall(self, user_id: str, query: Optional[str] = None, *,
                token_budget: Optional[int] = None,
                principal=None, semantic="auto", as_of=None, policy=None,
-               **filters) -> Recall:
+               render_receipt: bool = False, **filters) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
         `policy` (specs/0027 v13 §4c): a `PolicyLane` the host built for THIS
@@ -867,6 +877,12 @@ class Memory:
         `semantic=False` (it is byte-identical to the legacy projection with
         the semantic lane empty), so the receipt exists on the non-semantic
         path too. Not combinable with `as_of`.
+
+        `render_receipt` (specs/0031 §4f §4b): off by default, and then nothing about the call changes. On, the
+        result's `render_receipt` lists one unit per record the renderer ADMITTED into `context`, built at the
+        admission points as each unit is admitted — `{kind, id, text as admitted, partition, annotations}`, with
+        `subject` when it is not the user and, under a principal, `mutable` (OWN only). Withheld records are never
+        units; wiki text is a unit with no id. The query and no-query paths carry it; `as_of` refuses it.
 
         Combines the LLM-curated wiki (the grounded, verified working view,
         recompiled after N writes) with a per-query entity-matched subgraph for
@@ -949,12 +965,14 @@ class Memory:
                 # (recall is in the §4b context-entering set) and stays inert.
                 with self._usage_operation(user_id, "recall") as (_op_llm, _fin):
                     return self._proactive(user_id, token_budget,
-                                           principal=principal, filters=filters)
+                                           principal=principal, filters=filters,
+                                           render_receipt=render_receipt)
             with self._usage_operation(user_id, "recall") as (op_llm, usage_finish):
                 return self._recall(user_id, query, token_budget,
                                     op_llm, usage_finish,
                                     principal=principal, filters=filters,
-                                    semantic=semantic, as_of=as_of, policy=policy)
+                                    semantic=semantic, as_of=as_of, policy=policy,
+                                    render_receipt=render_receipt)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
@@ -981,7 +999,7 @@ class Memory:
         return list(answer.facts)
 
     def _proactive(self, user_id: str, token_budget: Optional[int],
-                   *, principal=None, filters: Optional[dict] = None) -> Recall:
+                   *, principal=None, filters: Optional[dict] = None, render_receipt: bool = False) -> Recall:
         from . import proactive
         # specs/0012 I10: proactive is ALWAYS budgeted — the config default (1,200)
         # applies when the caller omits token_budget.
@@ -997,11 +1015,14 @@ class Memory:
         # 0003/obligations §4b: the briefing's contested groups, by the ONE refusal-scoped construction and with no
         # query selection, so only mentionable members are named; the briefing's Recall.contested stays empty
         groups, _ = self._build_contested(user_id, [], view)
+        from .trust_tools import RenderReceipt
+        rr = RenderReceipt(view) if render_receipt else None       # specs/0031 §4b: off by default
         context, edges, episodes, truncated = proactive.assemble(
             self.store, user_id, self.config,
             token_budget=token_budget, est=self._est_tokens,
             visible=(view.lens if view is not None else None), snap=snap,
-            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups])
+            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups],
+            **({} if rr is None else {"receipt": rr}))
         self._record("recall", {"wiki_used": False, "subgraph_edges": len(edges),
                                 "grounded_items": len(edges), "unverified_items": 0,
                                 "proactive": 1, "trimmed": 1 if truncated else 0},
@@ -1010,7 +1031,8 @@ class Memory:
                       edges=edges, episodes=episodes,
                       tokens_estimated=self._est_tokens(context), truncated=truncated,
                       inspection={e.id: snap.inspect(e, visible=(view.visible if view is not None else None),
-                                                      cap_tokens=self.config.item_cap_tokens) for e in edges})
+                                                      cap_tokens=self.config.item_cap_tokens) for e in edges},
+                      render_receipt=None if rr is None else rr.units)
 
     @staticmethod
     def _est_tokens(text: str) -> int:
@@ -1020,7 +1042,7 @@ class Memory:
                 token_budget: Optional[int] = None,
                 op_llm=None, usage_finish=dict,
                 *, principal=None, filters: Optional[dict] = None,
-                semantic="auto", as_of=None, policy=None) -> Recall:
+                semantic="auto", as_of=None, policy=None, render_receipt: bool = False) -> Recall:
         # specs/0017: op_llm is the operation's arming provider proxy (or the
         # raw llm when unmetered); usage_finish merges the token buffer into
         # the terminal _record exactly once.
@@ -1067,6 +1089,11 @@ class Memory:
         with _SITE_POLICY_WITH_ASOF.consult():
             if policy is not None and as_of is not None:
                 raise _SITE_POLICY_WITH_ASOF.fire(ValueError("recall(policy=...) is not combinable with as_of= (specs/0027 v13 §4c: the as-of path carries no receipt)"))
+        if as_of is not None and render_receipt:
+            # specs/0031 §4f §4b defines the render receipt for the query and the proactive paths only
+            raise ValueError("render_receipt is defined for the query and proactive paths, not as_of (specs/0031 §4b)")
+        from .trust_tools import RenderReceipt
+        rr = RenderReceipt(view) if render_receipt else None
         if as_of is not None:
             # specs/0028 §4c — the as-of branch: the §4a resolution is the
             # pre-filter; ranking and budget run over its candidates with the
@@ -1244,7 +1271,7 @@ class Memory:
         # does not spend flows to detail below.
         contested_block, spent, c_trunc, c_loss = self._render_contested(
             contested_render, max(1, int(token_budget * self.config.contested_render_share)),
-            self._est_tokens)
+            self._est_tokens, receipt=rr)
         if filter_report:                       # §4e M-3, charged before detail
             spent += self._est_tokens(filter_report)
         if withheld_report:                     # 0047 §4d: charged before detail, never dropped
@@ -1259,8 +1286,12 @@ class Memory:
             wiki = None
         wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
             wiki, detail_edges, episodes, max(0, token_budget - spent), query,
-            contested_loss=c_loss)
+            contested_loss=c_loss, receipt=rr)
         truncated = c_trunc or d_trunc
+        if rr is not None and wiki:
+            # specs/0031 §4b: wiki-only synthesized text has no record ids; it is a `wiki` unit no verb can aim at,
+            # its text the wiki exactly as admitted (clamped, marker kept, by the fitter above)
+            rr.admit("wiki", None, wiki, "grounded")
 
         grounded_parts = []
         if filter_report:
@@ -1325,10 +1356,11 @@ class Memory:
                       recalled_edges=sem_meta, semantic_status=sem_status,
                       policy_receipt=policy_receipt,
                       inspection={e.id: snap.inspect(e, visible=(view.visible if view is not None else None),
-                                                      cap_tokens=self.config.item_cap_tokens) for e in edges})
+                                                      cap_tokens=self.config.item_cap_tokens) for e in edges},
+                      render_receipt=None if rr is None else rr.units)
 
     def _contested_line(self, g: "ContestedGroup",
-                        line_budget: Optional[int] = None):
+                        line_budget: Optional[int] = None, emitted: Optional[list] = None):
         """One deterministic line for a contested group, budget-aware PACKED per
         specs/0012 §4c (I10i): the heading's subject/relation render CONTENT-CLAMPED
         under the group-heading allowance; the withheld marker is reserved FIRST; the
@@ -1357,8 +1389,10 @@ class Memory:
                     f"[{e.provenance.author_of_evidence.value}]")
 
         squeezed = False
+        shown = []                                          # (edge, its rendered member text), in line order
         if line_budget is None:
             members = [_member(e, self.config.item_cap_tokens) for e in grounded[:k_cap]]
+            shown = list(zip(grounded[:k_cap], members))
             withheld = len(grounded) - len(members)
         else:
             remaining = (line_budget - est_tokens(f"- {head}: {tail}")
@@ -1384,6 +1418,7 @@ class Memory:
                 rendered = _member(m, m_cap)
                 squeezed = squeezed or est_tokens(m.object) > m_cap
                 members.append(rendered)
+                shown.append((m, rendered))
                 remaining -= est_tokens(rendered)
             for e in grounded[len(mandatory):]:
                 if len(members) >= k_cap:
@@ -1392,14 +1427,21 @@ class Memory:
                 if est_tokens(cand) > remaining:           # admit only while it fits WHOLE
                     continue
                 members.append(cand)
+                shown.append((e, cand))
                 remaining -= est_tokens(cand)
             withheld = len(grounded) - len(members)
         squeezed = squeezed or withheld > 0                # I10i: EVERY cause signals
         vals = " / ".join(members)
         wh = f" (+{withheld} more contending values withheld)" if withheld > 0 else ""
+        if emitted is not None:
+            # specs/0031 §4b: each emitted member is a unit; the group's framing rides with it (round 2's answer 5),
+            # as the heading as rendered and the withheld count, never an unadmitted member's value
+            emitted.extend((e, text, f"contested: {head} — no single current value"
+                                     + (f"; {withheld} more contending values withheld" if withheld else ""))
+                           for e, text in shown)
         return f"- {head}: {vals}{wh}{tail}", squeezed, withheld
 
-    def _render_contested(self, contested, budget=None, est=None):
+    def _render_contested(self, contested, budget=None, est=None, receipt=None):
         """Render the deterministic CONTESTED FUNCTIONAL FACTS block from the grounded
         exposed members (specs/0003 §4c-ii). Returns (block, tokens_spent, truncated,
         loss). Group lines are walked IN THE ORDER `_build_contested` RETURNS THEM —
@@ -1415,10 +1457,13 @@ class Memory:
             return "", 0, False, NO_CONTESTED_LOSS
         heading = "## CONTESTED FUNCTIONAL FACTS (no single current value; do not assert one)"
         if budget is None or est is None:
-            results = [self._contested_line(g) for g in contested]
+            emitted = [] if receipt is not None else None
+            results = [self._contested_line(g, emitted=emitted) for g in contested]
             lines = [ln for ln, _sq, _wh in results if ln]
             if not lines:
                 return "", 0, False, NO_CONTESTED_LOSS
+            for e, text, framing in (emitted or []):
+                receipt.admit("edge", e, text, "contested", [framing] + _trust_edge_annotations(e))
             # I10i: within-group withholding signals truncation even unbudgeted
             any_sq = any(sq for ln, sq, _wh in results if ln)
             withheld = sum(wh for ln, _sq, wh in results if ln)
@@ -1429,8 +1474,9 @@ class Memory:
         for idx, g in enumerate(contested):
             # I10i: each group line is PACKED within what remains — one group can
             # never break the budget (the first line is best-effort unconditional)
+            emitted = [] if receipt is not None else None
             line, squeezed, wh = self._contested_line(
-                g, line_budget=remaining if sel else max(remaining, 1))
+                g, line_budget=remaining if sel else max(remaining, 1), emitted=emitted)
             if line is None:
                 continue
             truncated = truncated or squeezed             # EVERY cause signals (I10i)
@@ -1443,6 +1489,8 @@ class Memory:
                                   if self._contested_line(h)[0] is not None)
                 break
             sel.append(line)
+            for e, text, framing in (emitted or []):       # admitted: the line made it into the block
+                receipt.admit("edge", e, text, "contested", [framing] + _trust_edge_annotations(e))
             withheld += wh
             remaining -= cost
         if not sel:
@@ -1547,7 +1595,7 @@ class Memory:
     def _fit_to_budget(self, wiki: Optional[str], edges, episodes,
                        budget: int, query: str = "", *,
                        assertable=None, claims=None,
-                       render=None, contested_loss=None) -> tuple[Optional[str], str, str, bool]:
+                       render=None, contested_loss=None, receipt=None) -> tuple[Optional[str], str, str, bool]:
         """Greedy selection under the token budget in the specs/0012 I10f precedence
         (mirroring the surface order; the contested block was already charged upstream):
 
@@ -1618,15 +1666,22 @@ class Memory:
         # claim lines carry their never-assert label at the FRONT; content still
         # clamps first so the label+content pair stays within the cap (I10c)
         def _claim_lines(es):
-            return [ln for ln in
-                    (clamp_edge_line(e, cap, render_fn) for e in es) if ln]
+            # (record, line) pairs, so an admission can name its record (specs/0031 §4b); the lines are today's
+            return [(e, ln) for e, ln in
+                    ((e, clamp_edge_line(e, cap, render_fn)) for e in es) if ln]
         # 0023 §4a-iv / N14: the render split runs on the SHARED predicate —
         # assertable to ordinary detail, everything else to the fenced section
         # (fenced, not suppressed: Q5)
-        ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
+        ep_lines = [(e, clamp_item(f"[{e.date}] {e.summary}", cap)) for e in episodes
                     if is_assertable(e)]
-        tp_ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
+        tp_ep_lines = [(e, clamp_item(f"[{e.date}] {e.summary}", cap)) for e in episodes
                        if not is_assertable(e)]
+
+        def _unit(record, line, partition):
+            if receipt is not None:
+                kind = "edge" if isinstance(record, Edge) else "episode"
+                receipt.admit(kind, record, line, partition,
+                              _trust_edge_annotations(record) if kind == "edge" else [])
 
         headers = est("## RELEVANT DETAIL\n") \
             + est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
@@ -1656,23 +1711,27 @@ class Memory:
                         if cost <= remaining:
                             n_clamped += 1                 # clamp-to-fit SIGNALS (I10a)
                             sel.append(line)
+                            _unit(e, line, "grounded")
                             remaining -= cost
                             continue
                     dropped += 1
                     continue
                 sel.append(line)
+                _unit(e, line, "grounded")
                 remaining -= cost
             return dropped
 
-        def _admit(lines, sel):
+        def _admit(pairs, sel):
+            # every line admitted here lands in the FENCED section (claims and third-party episodes)
             dropped = 0
             nonlocal remaining
-            for line in lines:
+            for record, line in pairs:
                 cost = est(line) + 1                       # +1: the join newline
                 if cost > remaining:
                     dropped += 1
                     continue
                 sel.append(line)
+                _unit(record, line, "fenced")
                 remaining -= cost
             return dropped
 
@@ -1710,12 +1769,13 @@ class Memory:
                                best_effort_first=not sel_edges)
         sel_eps: list[str] = []
         d_eps = 0
-        for line in reversed(ep_lines):                    # episodes: newest first
+        for ep, line in reversed(ep_lines):                # episodes: newest first
             cost = est(line) + 1                           # +1: the join newline
             if cost > remaining:
                 d_eps += 1
                 continue
             sel_eps.append(line)
+            _unit(ep, line, "grounded")
             remaining -= cost
         sel_eps.reverse()                                  # render chronologically
         d_safety += _admit(_claim_lines(claims_unmatched), sel_unv)   # remaining partition

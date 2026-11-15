@@ -66,7 +66,8 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
              token_budget: Optional[int] = None,
              est: Callable[[str], int] = lambda s: max(1, len(s) // 4),
              visible: Optional[Callable[[list], list]] = None,
-             snap=None, contested: Optional[list] = None) -> tuple[str, list[Edge], list[Episode], bool]:
+             snap=None, contested: Optional[list] = None,
+             receipt=None) -> tuple[str, list[Edge], list[Episode], bool]:
     """Build the briefing. Returns (context, edges, episodes, truncated).
 
     `visible` (specs/0020 §4f) is the PRINCIPAL LENS: when a principal was
@@ -439,11 +440,26 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     sel_eps: list[Episode] = []
     admitted: dict[str, list[str]] = {h: [] for h, _ in sections}
     dropped: dict[str, int] = {h: 0 for h, _ in sections}
-    def _select(unit):
+    _contested_ids = {eid for _s, _r, ids in (contested or []) for eid in ids}
+
+    def _select(unit, line):
         if isinstance(unit, _ContestedCommitment):
             sel_edges.extend(unit.edges)
         else:
             (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+        if receipt is not None:
+            # specs/0031 §4f §4b: the no-query path's admission point. The line is the text AS ADMITTED; a contested
+            # commitment's one line names every member, so each member is a unit carrying that line (its framing)
+            from .trust_tools import edge_annotations
+            if isinstance(unit, _ContestedCommitment):
+                for m in unit.edges:
+                    receipt.admit("edge", m, line, "contested", ["contested"] + edge_annotations(m))
+            elif isinstance(unit, Edge):
+                c = unit.id in _contested_ids
+                receipt.admit("edge", unit, line, "contested" if c else "grounded",
+                              (["contested"] if c else []) + edge_annotations(unit))
+            else:
+                receipt.admit("episode", unit, line, "grounded")
 
     if token_budget is None:
         for header, items in sections:
@@ -452,7 +468,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                     dropped[header] += 1
                     continue
                 admitted[header].append(line)
-                _select(unit)
+                _select(unit, line)
     else:
         remaining = token_budget - REPORT_RESERVE
         precedence = ["## CONFIRM WHEN NATURAL", "## DATED COMMITMENTS",
@@ -510,7 +526,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 admitted[header].append(line)
                 remaining -= cost
                 first_admitted = True
-                _select(unit)
+                _select(unit, line)
         if admitted["## RECENT HISTORY"]:
             admitted["## RECENT HISTORY"].sort()           # render chronologically
             #                                                ([YYYY-MM-DD] prefix sorts)
