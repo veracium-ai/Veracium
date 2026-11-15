@@ -103,11 +103,12 @@ def test_under_none_every_report_refuses_counted_and_writes_nothing(tmp_path, ca
     before = _digest(m)
     rep = _report(name, m, U, _args(name), capability=capability,
                   **_kw(name, issuer=PreviewTokenIssuer(m.store.local_origin(), U)))
-    assert rep["ok"] is False and rep["refusal"] == "attempted_elevation" and rep["provenance_raises_discarded"] == 1
+    assert rep.get("ok") is False and rep.get("refusal") == "attempted_elevation" \
+        and rep.get("provenance_raises_discarded") == 1, rep
     assert _digest(m) == before
     server = M.build_server(m, default_user=U, capability=capability)
     out = _call(server, name, _args(name))
-    assert out["refusal"] == "attempted_elevation" and "provenance_raises_discarded" not in out
+    assert out.get("refusal") == "attempted_elevation" and "provenance_raises_discarded" not in out, out
     assert _digest(m) == before
 
 
@@ -246,9 +247,12 @@ def test_correction_refused_is_a_committed_refusal_kept_through_the_tool(tmp_pat
                           provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev")))
     n = {t: m.store._conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
          for t in ("supersession_refusals", "supersession_operations")}
-    out = _call(M.build_server(m, default_user=U, capability="direct"), "correct_fact",
-                {"edge_id": "e-alice", "corrected_value": "Oslo"})
-    assert out["ok"] is False and out["refusal"] == "correction_refused"
+    try:
+        out = _call(M.build_server(m, default_user=U, capability="direct"), "correct_fact",
+                    {"edge_id": "e-alice", "corrected_value": "Oslo"})
+    except Exception as exc:                      # a refusal raised to the transport is the defect, asserted below
+        out = {"raised": f"{type(exc).__name__}: {exc}"}
+    assert out.get("ok") is False and out.get("refusal") == "correction_refused", out
     for t, k in n.items():
         assert m.store._conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] > k, t
     assert next(e for e in m.store.edges(U) if e.id == "e-alice").active
@@ -270,12 +274,12 @@ def test_capability_first_then_erasure_then_principal(tmp_path, name, erasure):
     iss = PreviewTokenIssuer(m.store.local_origin(), U)
     before = _digest(m)
     none = _report(name, m, U, _args(name), capability=None, **_kw(name, erasure=erasure, issuer=iss))
-    assert none["refusal"] == "attempted_elevation"
+    assert none.get("refusal") == "attempted_elevation", none
     if erasure == "off":
         for p in (None, Identity(None, "src-a")):
             out = _report(name, m, U, _args(name), capability="direct",
                           **_kw(name, erasure=erasure, issuer=iss, principal=p))
-            assert out["refusal"] == "erasure_disabled", (p, out)
+            assert out.get("refusal") == "erasure_disabled", (p, out)
         assert _digest(m) == before
 
 
@@ -305,12 +309,14 @@ def test_the_whole_user_tools_refuse_any_principal_after_capability_and_erasure(
     m = _mem(tmp_path, scope_groups={})
     _edge(m, "e-1")
     iss = PreviewTokenIssuer(m.store.local_origin(), U)
-    tok = M.forget_everything_preview_impl(m, U, capability="direct", issuer=iss)["preview_token"]
+    preview = M.forget_everything_preview_impl(m, U, capability="direct", issuer=iss)
+    assert "preview_token" in preview, preview          # absence of the erasure setting means ON (INV-TT13)
+    tok = preview["preview_token"]
     before = _digest(m)
     args = {} if name == "forget_everything_preview" else {"preview_token": tok}
     out = _report(name, m, U, args, capability="direct", **_kw(name, erasure="on", issuer=iss,
                                                                  principal=Identity(None, "src-a")))
-    assert out["refusal"] == "principal_scoped" and _digest(m) == before
+    assert out.get("refusal") == "principal_scoped" and _digest(m) == before, out
 
 
 # ------------------------------------------------------------------ the two steps over MCP, one server's issuer
@@ -319,7 +325,8 @@ def test_the_erase_over_mcp_and_a_reconstructed_server_voids_the_token(tmp_path)
     _edge(m, "e-1"); _edge(m, "e-bob", user="bob")
     server = M.build_server(m, default_user=U, capability="direct")
     p = _call(server, "forget_everything_preview")
-    assert p["counts"]["edges"] == 1 and set(p) == {"ok", "counts", "expires_at", "preview_token", "warning"}
+    assert set(p) == {"ok", "counts", "expires_at", "preview_token", "warning"}, p
+    assert p["counts"]["edges"] == 1
     other = M.build_server(m, default_user=U, capability="direct")
     assert _call(other, "forget_everything_confirm", {"preview_token": p["preview_token"]})["refusal"] \
         == "preview_unknown"
@@ -341,7 +348,7 @@ def test_the_reason_cap_is_1024_code_points_and_refuses_before_any_mutation(tmp_
         ep = next(e for e in m.store.episodes(U) if e.provenance.evidence_ref == "dispute:e-1")
         assert reason in ep.summary
     else:
-        assert out["refusal"] == "reason_too_long" and _digest(m) == before
+        assert out.get("refusal") == "reason_too_long" and _digest(m) == before, out
 
 
 def test_a_malformed_reason_is_the_frameworks_schema_error(tmp_path):

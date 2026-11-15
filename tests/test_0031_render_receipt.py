@@ -128,8 +128,9 @@ def test_a_cross_visible_episode_is_fenced_and_not_mutable_under_a_principal(tmp
     m.store.add_episode(_ep("ep-theirs", "the engineer offer, from team b", source_id="src-b"))
     r = m.recall(U, "engineer", principal=A, render_receipt=True)
     units = {u["id"]: u for u in r.render_receipt}
-    assert units["e-mine"]["mutable"] is True and units["e-mine"]["partition"] == "grounded"
-    assert units["ep-theirs"]["mutable"] is False and units["ep-theirs"]["partition"] == "fenced"
+    mine, theirs = units.get("e-mine", {}), units.get("ep-theirs", {})
+    assert mine.get("mutable") is True and mine.get("partition") == "grounded", mine
+    assert theirs.get("mutable") is False and theirs.get("partition") == "fenced", theirs
     unscoped = m.recall(U, "engineer", render_receipt=True)
     assert all("mutable" not in u for u in unscoped.render_receipt)
 
@@ -144,7 +145,7 @@ def test_annotations_and_a_non_user_subject(tmp_path):
     r = m.recall(U, "engineer", render_receipt=True)
     units = {u["id"]: u for u in r.render_receipt}
     assert "stale" in units["e-stale"]["annotations"] and "subject" not in units["e-stale"]
-    assert units["e-alice"]["subject"] == "person:alice"
+    assert units["e-alice"].get("subject") == "person:alice", units["e-alice"]
     assert "extraction_error" in units["e-err"]["annotations"]
 
 
@@ -167,7 +168,7 @@ def test_contested_members_are_contested_units_with_the_group_framing(tmp_path):
     assert {u["id"] for u in contested} <= {e.id for g in r.contested for e in g.exposed}
     assert contested, [g for g in r.contested]
     for u in contested:
-        assert any(a.startswith("contested: ") for a in u["annotations"]) and u["subject"] == "person:x"
+        assert any(a.startswith("contested: ") for a in u["annotations"]) and u.get("subject") == "person:x", u
     _check_as_admitted(r)
 
 

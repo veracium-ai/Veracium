@@ -72,7 +72,7 @@ def test_confirm_records_the_agent_path_in_the_row_and_the_quoting_episode(tmp_p
     m.confirm(U, e.id, call_path=path, source_id="src-a")
     assert m.store.confirmations_for(U, e.id)[0].call_path is path
     p = _prov_json(_episode(m, "confirm:"))
-    assert p["call_path"] == path.value and p["source_id"] == "src-a"
+    assert p.get("call_path") == path.value and p.get("source_id") == "src-a", p
 
 
 @pytest.mark.parametrize("verb", ["correct", "dispute"])
@@ -88,7 +88,7 @@ def test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provena
         m.dispute(U, e.id, reason="no", call_path=C.MCP_DIRECT, source_id=source)
     ep = _episode(m, f"{verb}:")
     p = _prov_json(ep)
-    assert p["call_path"] == "mcp_direct" and p["source_id"] == source
+    assert p.get("call_path") == "mcp_direct" and p.get("source_id") == source, p
     assert "mcp_direct" not in ep.summary and (source is None or source not in ep.summary)
     if verb == "correct":
         new = next(x for x in m.store.edges(U) if x.object == "coffee")
@@ -235,8 +235,14 @@ def test_with_no_principal_no_scope_code_runs(tmp_path, monkeypatch):
     m = _mem(tmp_path)
     e = _edge(m, "e-1", "tea", source_id="src-b")
     from veracium import scope_read
-    monkeypatch.setattr(scope_read, "view_for", lambda *a, **k: pytest.fail("a view was built under principal=None"))
-    m.dispute(U, e.id, source_id="src-a", call_path=C.ADAPTER_DIRECT)
+    built, refused = [], None
+    real = scope_read.view_for
+    monkeypatch.setattr(scope_read, "view_for", lambda *a, **k: built.append(a) or real(*a, **k))
+    try:
+        m.dispute(U, e.id, source_id="src-a", call_path=C.ADAPTER_DIRECT)
+    except Exception as exc:                      # scope code run under principal=None: the defect, asserted below
+        refused = f"{type(exc).__name__}: {exc}"
+    assert built == [] and refused is None, (built, refused)
 
 
 # ------------------------------------------------------------------ INV-TT19: the principal-facing receipt
@@ -256,6 +262,7 @@ def test_the_principal_receipt_is_six_fields_the_scope_label_and_the_filtered_li
                                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                                       evidence_ref="ev-e-1", source_id="src-a")))
     r = m.redact(U, edge_id=e.id, reason="subject_request", principal=A)
+    assert isinstance(r, dict), type(r).__name__            # the projection, never the host receipt
     assert set(r) == SIX | {"surviving_derived", "scope"} and r["scope"] == "this principal's view"
     assert [(d["id"], d["class"]) for d in r["surviving_derived"]] == [("ep-mine", "OWN")]
     again = m.redact(U, edge_id=e.id, reason="subject_request", principal=A)
@@ -277,6 +284,7 @@ def test_two_stores_differing_only_in_hidden_records_give_identical_principal_re
                                         provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                                               evidence_ref="ev-e-1", source_id="src-b")))
         r = m.redact(U, edge_id=e.id, reason="subject_request", principal=A)
+        assert isinstance(r, dict), type(r).__name__
         out.append({**r, "recorded_at": "<t>"})
     assert out[0] == out[1]
 
@@ -321,7 +329,12 @@ def test_the_call_path_survives_export_import_and_a_redaction_of_the_audit_episo
     p = tmp_path / "x.jsonl"
     m.export_memory(U, p)
     dst = _mem(tmp_path / "dst", scoped=False)
-    dst.import_memory(p, restore=True)
+    refused = None
+    try:
+        dst.import_memory(p, restore=True)
+    except ValueError as exc:                     # an export that does not declare its era is refused: the defect
+        refused = str(exc)[:200]
+    assert refused is None, refused
     assert _episode(dst, "dispute:").provenance.call_path is C.MCP_DIRECT
 
 

@@ -340,8 +340,12 @@ def test_the_check_and_the_erase_are_one_write_transaction(tmp_path, monkeypatch
             other.close()
         return orig(user_id)
     monkeypatch.setattr(m.store, "_erase_preview_keys", probe)
-    m.forget_everything_confirm(U, tok, issuer=iss)
-    assert seen == {"wrote": False} and _count(m, "edges") == 0
+    refused = None
+    try:
+        m.forget_everything_confirm(U, tok, issuer=iss)
+    except TrustRefused as exc:                   # the write landed between the check and the erase: the defect
+        refused = exc.reason
+    assert seen == {"wrote": False} and refused is None and _count(m, "edges") == 0, (seen, refused)
 
 
 def test_the_preview_counts_and_digest_come_from_one_snapshot(tmp_path, monkeypatch):
