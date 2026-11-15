@@ -31,7 +31,11 @@ import uuid
 HERE = pathlib.Path(__file__).resolve().parent
 DOCKERFILE = HERE / "Dockerfile"
 LOCK = HERE / "requirements.lock"
-SIX = ["answer", "describe_procedures", "maintain", "recall", "record_procedure", "remember"]
+# the served tools (I5, I7's control): the six of 0031 Phase A and 0037, and since specs/0031 §4f the seven trust tools,
+# registered under every capability (they refuse under `none`). Sorted, as `tools/list`'s names are compared.
+SERVED = sorted(["answer", "describe_procedures", "maintain", "recall", "record_procedure", "remember",
+                 "find_facts", "correct_fact", "dispute_fact", "confirm_fact", "forget_fact",
+                 "forget_everything_preview", "forget_everything_confirm"])
 TRUST_VARS = ("ANTHROPIC_API_KEY", "VERACIUM_MCP_CAPABILITY", "VERACIUM_MCP_SOURCE_ID", "VERACIUM_USER")
 # I8a, two tiers (0054 v0.5): the first refused anywhere outside the base, whatever any RECORD says (a RECORD is the
 # package's own claim, and the 0.1.2–0.15.0 leak was the project's own file); the second unless a distribution OTHER
@@ -178,7 +182,7 @@ def check(img: str, version: str, only=None, key_env=None) -> list:
             v = _volume(); vols.append(v)
             names = _handshake(img, v)
             if want("I5"):
-                record("I5", names == SIX, f"--network none, no key: {names}")
+                record("I5", names == SERVED, f"--network none, no key: {names}")
             if want("I4"):
                 u = cfg.get("User") or "(unset)"
                 st = _run(img, "-c", "stat -c '%u %n' /data/veracium.db 2>&1", entry="sh", vol=v).stdout.strip()
@@ -206,9 +210,9 @@ def check(img: str, version: str, only=None, key_env=None) -> list:
                 errtext = open(ef.name).read()
             after = _run(img, "-c", "sha256sum /data/veracium.db", entry="sh", vol=v).stdout.split()[:1]
             named = "newer" in errtext and "SCHEMA_VERSION" in errtext            # the refusal's own words
-            ok = ctl == SIX and isinstance(refused, str) and named and before == after and len(stamp) == 2
+            ok = ctl == SERVED and isinstance(refused, str) and named and before == after and len(stamp) == 2
             tail = errtext.strip().splitlines()[0][:160] if errtext.strip() else "(empty)"
-            record("I7", ok, f"control at {stamp[:1]}: {'opens' if ctl == SIX else ctl}; stamped {stamp[1:]}: "
+            record("I7", ok, f"control at {stamp[:1]}: {'opens' if ctl == SERVED else ctl}; stamped {stamp[1:]}: "
                              f"{'refused' if isinstance(refused, str) else 'OPENED'}, in its own words: {named}; "
                              f"bytes unchanged: {before == after}; stderr: {tail}")
         if want("I8"):
