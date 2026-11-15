@@ -939,25 +939,24 @@ def main(argv=None) -> None:
     # variable is UNSET (absence → none) and "" when it is set empty (supplied
     # and invalid → build_server raises) — the two are deliberately distinct.
     try:
-        _resolve_erasure(os.environ.get("VERACIUM_MCP_ERASURE"))
-    except ValueError as e:
-        raise SystemExit(
-            f"veracium-mcp: refusing to start: VERACIUM_MCP_ERASURE="
-            f"{os.environ.get('VERACIUM_MCP_ERASURE')!r} is not one of "
-            f"{[c.value for c in ErasureSetting]} (unset it for 'on'). "
-            f"A mistyped setting must fail here (specs/0031 §4i).") from e
-    try:
         server = build_server(
             mem, default_user=os.environ.get("VERACIUM_USER", "default"),
             capability=os.environ.get("VERACIUM_MCP_CAPABILITY"),
             source_id=os.environ.get("VERACIUM_MCP_SOURCE_ID") or None,
             erasure=os.environ.get("VERACIUM_MCP_ERASURE"))
     except ValueError as e:
+        # build_server resolves the capability first, then the erasure setting (specs/0031 §4i), so the refusal names
+        # the capability when it is the invalid one, and the erasure setting otherwise
+        cap_raw = os.environ.get("VERACIUM_MCP_CAPABILITY")
+        cap_bad = cap_raw is not None and cap_raw not in [c.value for c in HostCapability]
+        var, closed, unset, why = (("VERACIUM_MCP_CAPABILITY", [c.value for c in HostCapability], "none",
+                                    "A mistyped attestation must fail here, not run un-attested.") if cap_bad else
+                                   ("VERACIUM_MCP_ERASURE", [c.value for c in ErasureSetting], "on",
+                                    "A mistyped setting must fail here (specs/0031 §4i)."))
         raise SystemExit(
-            f"veracium-mcp: refusing to start: VERACIUM_MCP_CAPABILITY="
-            f"{os.environ.get('VERACIUM_MCP_CAPABILITY')!r} is not one of "
-            f"{[c.value for c in HostCapability]} (unset it for 'none'). "
-            f"A mistyped attestation must fail here, not run un-attested.") from e
+            f"veracium-mcp: refusing to start: {var}="
+            f"{os.environ.get(var)!r} is not one of "
+            f"{closed} (unset it for '{unset}'). {why}") from e
     server.run()
 
 

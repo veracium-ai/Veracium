@@ -959,6 +959,9 @@ class Memory:
             if query is None and as_of is not None:
                 raise _SITE_ASOF_ON_PROACTIVE.fire(ValueError("as_of is refused on the proactive path: a briefing is a "
                                  "statement about now (specs/0028 §4c)"))
+        if as_of is not None and render_receipt:
+            # specs/0031 §4f §4b defines the render receipt for the query and the proactive paths only
+            raise ValueError("render_receipt is defined for the query and proactive paths, not as_of (specs/0031 §4b)")
         try:
             if query is None:
                 # proactive is LLM-free; the frame is pushed for uniformity
@@ -1089,9 +1092,6 @@ class Memory:
         with _SITE_POLICY_WITH_ASOF.consult():
             if policy is not None and as_of is not None:
                 raise _SITE_POLICY_WITH_ASOF.fire(ValueError("recall(policy=...) is not combinable with as_of= (specs/0027 v13 §4c: the as-of path carries no receipt)"))
-        if as_of is not None and render_receipt:
-            # specs/0031 §4f §4b defines the render receipt for the query and the proactive paths only
-            raise ValueError("render_receipt is defined for the query and proactive paths, not as_of (specs/0031 §4b)")
         from .trust_tools import RenderReceipt
         rr = RenderReceipt(view) if render_receipt else None
         if as_of is not None:
