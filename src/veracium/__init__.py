@@ -2419,6 +2419,10 @@ class Memory:
         preserves. There is no undo — export first (`export_memory`) if a
         recoverable copy is wanted. Confirmation is the host's responsibility."""
         r = self.store.forget_user(user_id)
+        return self._after_forget(user_id, r)
+
+    def _after_forget(self, user_id: str, r: dict) -> dict:
+        """The post-store steps of an erase, run after its commit (today's order; specs/0031 §4e step 5 keeps it)."""
         # specs/0017 §4d transition 5: delete the user's accumulator entry AND
         # cancel every active registry entry for the user — ONE critical
         # section, so a concurrent terminal merge either completed before us
@@ -2430,6 +2434,47 @@ class Memory:
                     entry["cancelled"] = True
         self._record("forget", {"edges": r["edges"], "episodes": r["episodes"]}, user_id)
         return r
+
+    def forget_everything_preview(self, user_id: str, *, issuer, principal=None) -> dict:
+        """specs/0031 §4f §4e, the FIRST of the whole-user erase's two steps (the agent tool
+        `forget_everything_preview`; a host may call it too). Writes nothing. In ONE read snapshot it reads the user's
+        keys in the four tables the preview shows (edges, episodes, confirmations, replies); the counts are those
+        lists' lengths and the digest binds the same lists (INV-TT20). Returns `{counts, expires_at, preview_token,
+        warning}`: counts only, never row content (INV-TT10).
+
+        `issuer` is a `trust_tools.PreviewTokenIssuer`, passed EXPLICITLY — there is no process-global default — and
+        its context must be this store and this user. Any `principal` is refused as `principal_scoped`: an erase is
+        user-wide and a principal sees only its scope (§3b). Raises `trust_tools.TrustRefused`."""
+        from . import trust_tools as _tt
+        if principal is not None:
+            raise _tt.TrustRefused("principal_scoped")
+        if (issuer.store_identity, issuer.user_id) != (self.store.local_origin(), user_id):
+            raise _tt.TrustRefused("preview_unknown")
+        keys = self.store.erase_preview_snapshot(user_id)
+        t = issuer.now()
+        return {"counts": {tbl: len(keys[tbl]) for tbl in _tt.ERASE_PREVIEW_TABLES},
+                "expires_at": _tt.expires_at(t),
+                "preview_token": issuer.issue(_tt.snapshot_digest(user_id, keys), t),
+                "warning": _tt.ERASE_WARNING}
+
+    def forget_everything_confirm(self, user_id: str, preview_token, *, issuer, principal=None) -> dict:
+        """specs/0031 §4f §4e, the SECOND step: verify the preview's token and erase. The token is parsed strictly,
+        checked against the issuer's context (this store and user) and its MAC, then its time (valid iff
+        t <= now < t + 600); `forget_user` then re-derives the four tables' digest INSIDE its own write transaction
+        and erases only if it equals the token's, rolling the whole erase back on any failure (INV-TT9). Refusals
+        raise `trust_tools.TrustRefused` (`principal_scoped`, `preview_unknown`, `preview_expired`, `store_changed`)
+        with nothing erased, and each is counted on the operator's discard counter, by reason, through `_record`,
+        with no content. Replay is key-set equality, not one use (TT-R2-04). Returns `forget`'s counts."""
+        from . import trust_tools as _tt
+        try:
+            if principal is not None:
+                raise _tt.TrustRefused("principal_scoped")
+            digest = issuer.verify(preview_token, store_identity=self.store.local_origin(), user_id=user_id)
+            r = self.store.forget_user(user_id, expected_digest=digest)
+        except _tt.TrustRefused as refusal:
+            self._record("erase_refused", {"reason": refusal.reason}, user_id)
+            raise
+        return self._after_forget(user_id, r)
 
     # -- specs/0022 §4g: source revocation, the HOST API (library only: no CLI verb, no MCP tool — R14) ---------------
     def revoke_source(self, user_id: str, origin: Optional[str], source_id: str, reason: str, *,

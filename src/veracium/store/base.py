@@ -848,7 +848,7 @@ class Store(ABC):
 
     # -- compliance erasure -------------------------------------------------
     @store_mutator
-    def forget_user(self, user_id: str) -> dict:
+    def forget_user(self, user_id: str, *, expected_digest: Optional[str] = None) -> dict:
         """Irreversibly erase EVERYTHING stored for `user_id` — edges (including
         superseded history and quarantined claims), episodes, the wiki cache,
         counters, and (where the store keeps them) the user's confirmations,

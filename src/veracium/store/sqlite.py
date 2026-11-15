@@ -4125,8 +4125,36 @@ class SqliteStore(Store):
             applied_at=recorded_at, applied_store_version_before=vb, applied_store_version_after=va,
             applied_event_ref=event_ref, **common)
 
-    def forget_user(self, user_id) -> dict:
+    def _erase_preview_keys(self, user_id) -> dict:
+        """specs/0031 §4f §4e step 1: the user's primary keys in exactly the four tables the preview shows, in order,
+        each sorted ascending as UTF-8 byte strings. Read on the connection's CURRENT transaction: the caller owns
+        the snapshot (`erase_preview_snapshot`'s read transaction, or `forget_user`'s write transaction)."""
+        from ..trust_tools import ERASE_PREVIEW_TABLES, _sorted_keys
+        return {t: _sorted_keys(r[0] for r in self._conn.execute(f"SELECT id FROM {t} WHERE user_id=?", (user_id,)))
+                for t in ERASE_PREVIEW_TABLES}
+
+    def erase_preview_snapshot(self, user_id) -> dict:
+        """specs/0031 §4f §4e: the four tables' key lists read in ONE read snapshot (a deferred transaction whose
+        snapshot is fixed by its first read), so the counts and the bound set are one set (INV-TT20). Writes
+        nothing."""
+        with self._lock:
+            if self._conn.in_transaction:
+                return self._erase_preview_keys(user_id)
+            self._conn.execute("BEGIN")
+            try:
+                return self._erase_preview_keys(user_id)
+            finally:
+                self._conn.rollback()
+
+    def forget_user(self, user_id, *, expected_digest=None) -> dict:
+        """`expected_digest` (specs/0031 §4f §4e step 5): the preview's snapshot digest. Re-derived INSIDE this write
+        transaction, before any delete; a mismatch raises `trust_tools.TrustRefused("store_changed")` and the
+        transaction rolls back with nothing erased (INV-TT9). Absent, this is today's erase."""
         with self._lock, self._write_txn():
+            if expected_digest is not None:
+                from ..trust_tools import TrustRefused, snapshot_digest
+                if snapshot_digest(user_id, self._erase_preview_keys(user_id)) != expected_digest:
+                    raise TrustRefused("store_changed")
             n_edges = self._conn.execute(
                 "SELECT COUNT(*) FROM edges WHERE user_id=?", (user_id,)).fetchone()[0]
             n_eps = self._conn.execute(
