@@ -1,5 +1,5 @@
 {
- "body_sha256": "febfe86d0d7f34280a351cbbedae9c8a6a8df1a0867e75590c86a5d3aa0ac7d1",
+ "body_sha256": "95c33fb786997842dd72b755a687c3a7aec5bd97ff05bf67c9d3250eabfc75bf",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "08b85244982a6c9a4d3ab6e467f3e63fea3362ea",
+  "commit": "9d73bdf48b33ff1616cdac2efbfa4941e7a15e78",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -64,7 +64,7 @@
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "specs/skip_inventory.py": "b0e7382e1862a69c6a462d5b7f72c942cc82d13f70c83941cf1526d74f5f521e",
+   "specs/skip_inventory.py": "08e570fea37a8765afa024d318d4187cbf9a4b2ad0b853a31eb6175b597511a3",
    "tests/test_spec_gate.py": "e7be4a8f7f8128234b8c8a7f1fac47c9b9c594f6533b307c2fa95922922c85f1"
   },
   "finding": "SA-R1-C2",
@@ -76,9 +76,10 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0044/campaign/result.json",
-   "specs/evidence/0044/obligation_map.json",
-   "specs/evidence/0044/obligation_map.md"
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0003/within_episode_mutants.py"
   ]
  },
  "rows": [
@@ -117,7 +118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.47s",
+   "pytest": "2 failed in 2.90s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -153,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.47s",
+   "pytest": "2 failed in 2.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -168,6 +169,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 92
+  "seconds": 111
  }
 }

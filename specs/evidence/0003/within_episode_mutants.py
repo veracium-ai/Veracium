@@ -126,7 +126,7 @@ CONTROLS = [
     _noop(I, "def ingest_event(", _cells_of(I)),
     _noop(P, "def date_context(", _cells_of(P)),
     _noop(S, "class SupersessionPlan(BaseModel):", _cells_of(S)),
-    _noop(Q, "    def forget_user(self, user_id) -> dict:", _cells_of(Q)),
+    _noop(Q, "    def forget_user(self, user_id, *, expected_digest=None) -> dict:", _cells_of(Q)),   # 0031 §4f: + expected_digest
     ("CTRL-unrelated-TypeError", G,
      [("    keys: dict = {}\n", '    raise TypeError("an unrelated execution failure (classifier negative control)")\n'
                              "    keys: dict = {}\n")],

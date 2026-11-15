@@ -624,6 +624,10 @@ SQL_CALLS = ("execute", "executemany", "executescript")
 # expression's ast.dump) -> its static text, the reviewed reading: none writes edges.json except the write method's own
 # `sql`, whose callers' literals are the closed set above. A new or changed non-literal site refuses until listed.
 NONLITERAL = {
+    # specs/0031 §4f §4e: the erase preview's read of the four tables' keys; `t` ranges over trust_tools'
+    # ERASE_PREVIEW_TABLES, a module-level tuple of four literals — a SELECT, never a write
+    ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'):
+        (1, "f'SELECT id FROM {t} WHERE user_id=?'"),
     ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'):
         (1, "f'PRAGMA busy_timeout = {int(busy_timeout_ms)}'"),
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'):
@@ -716,6 +720,7 @@ MIGRATION_MODULES = {"veracium/store/migration.py", "veracium/store/schema_versi
 # value reads, followed into every function or method it reaches (`_sql_binding`; `_binding_digest`, sha256/16) —
 # regenerated from the tree and re-reviewed when it moves
 NONLITERAL_BINDING = {
+    ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'): 'd5cce0a3ca1cfe5d',
     ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): 'a007dac83ad5a192',
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'): 'db9f67ef1d767cb0',
     ('SqliteStore._attested_by_another_owner', 'eb2ba4c3290426945f64f55e532238461d5d9d44a5ee085a4f52645c927eeb3a'): 'd4fc7f5ee142b3a5',
@@ -741,7 +746,7 @@ NONLITERAL_BINDING = {
     ('SqliteStore.commit_outcome_import_plan', 'add6a203baf74ebdf25588d537da098d28d3d62b1dd80390be8daa6599b1fb04'): '6f9398b295171a36',
     ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'): '6d5a5fff8f0d0aec',
     ('SqliteStore.commit_outcome_import_plan', 'e09d8261753337dde680071ab5bdc7e6175a5754f49b43053debc68f25e57da4'): '58ce5c12abef5978',
-    ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'): 'ed117a2c64ccf155',
+    ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'): 'b2dc7d1543169c2a',   # 0031 §4f: re-reviewed — the episode gains its source/call path; the SQL is unchanged
     ('SqliteStore.confirm_notice', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'): '9f164edab461b1c5',
     ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): '05623ef1b5666877',
     ('SqliteStore.confirmations_for', '6de03e078785d11fe4b34b9c39000a308103c9a26815b350347938403fc4eea6'): '17ed76defda31afb',
@@ -749,7 +754,7 @@ NONLITERAL_BINDING = {
     ('SqliteStore.contributors_of_source', 'ff79d44b37b3604e5d6ef605c9bec3381dec33cb8f91d45a207c030863ae2a27'): '4c3df298fc8b4db1',
     ('SqliteStore.edge_events', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'): 'f952d758c62e895e',
     ('SqliteStore.edges', 'ea84967ae8e3eeaac6eca15de3557d2ce972249021e2339bd2f233b1737a612e'): '0c543259081195a0',
-    ('SqliteStore.forget_user', '99b754925b96f9575742044fee438d82476f53a86a23cd0dd138a323fc044add'): 'a3396a908001aa71',
+    ('SqliteStore.forget_user', '99b754925b96f9575742044fee438d82476f53a86a23cd0dd138a323fc044add'): '077f67199a11afe4',   # 0031 §4f: re-reviewed — the expected-digest check precedes the same deletes
     ('SqliteStore.migration_outcomes', 'e8e50718b302ae192e9d7ec4f38f340869dceab25ea51999b09d66a1041cf291'): 'f759f8fe493a46ea',
     ('SqliteStore.migration_outcomes_by_uid', '0af9489795fdbff7246fc9b15f70bf20e45f07abc5cdb64638b5a4e429a4e3a4'): '72f22f204b4df4af',
     ('SqliteStore.policy_receipts', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'): '93162dbd3567d5ad',
@@ -880,7 +885,9 @@ SRC_IMPORTS = {
     "datetime": {"date", "datetime", "timedelta", "timezone"},
     "enum": {"Enum"},
     "fcntl": {"LOCK_EX", "LOCK_NB", "LOCK_UN", "flock"},
+    "base64": {"urlsafe_b64decode", "urlsafe_b64encode"},   # specs/0031 §4f §4e: the preview token's wire form
     "hashlib": {"sha256"},
+    "hmac": {"compare_digest", "new"},                     # specs/0031 §4f §4e: the preview token's MAC
     "importlib.metadata": {"PackageNotFoundError", "version"},
     "json": {"JSONDecodeError", "JSONDecoder", "dump", "dumps", "load", "loads"},
     "langchain_core.tools": {"StructuredTool", "ToolException"},     # specs/0053: veracium.adapters.langchain, an optional extra

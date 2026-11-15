@@ -346,3 +346,5 @@ other-object	src/veracium/mcp_server.py	getattr	target = getattr(server, "_mcp_s
 edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	row = self._conn.execute("SELECT json, active FROM edges WHERE id=? AND user_id=?",
 validated-write	src/veracium/store/sqlite.py	confidence	decayed = e.provenance.confidence * decay_factor
 validated-write	src/veracium/store/sqlite.py	str:confidence	e.provenance = Provenance.model_validate({**e.provenance.model_dump(), "confidence": decayed})
+edges-text	src/veracium/trust_tools.py	str:edges	ERASE_PREVIEW_TABLES = ("edges", "episodes", "confirmations", "replies")
+edges-text	src/veracium/trust_tools.py	str:edges	"the confirmation bind which records exist in the four tables shown (edges, episodes, "

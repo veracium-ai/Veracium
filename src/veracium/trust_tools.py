@@ -155,7 +155,7 @@ def parse_token(token) -> tuple:
             mac = _b64url_strict(mac_seg)
             if len(mac) != 32:
                 raise ValueError("mac length")
-        except (ValueError, UnicodeDecodeError, _b64.binascii.Error):
+        except ValueError:          # binascii.Error and UnicodeDecodeError are both ValueErrors
             raise _SITE_TOKEN_PARSE.fire(TrustRefused("preview_unknown"), "malformed") from None
         return payload_seg, u, d, t, mac
 

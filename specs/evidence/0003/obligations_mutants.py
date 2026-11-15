@@ -114,7 +114,8 @@ XCHK = lambda i: C(f"test_is_obligation_and_subject_class_name_one_user[{i}]")  
 UN, NA = "subject-user", "subject-named"
 
 _SUBJECT_AXIS = '            elif (subject_class(edge.user_id, prior.subject) == "OTHER"\n'
-_CARRIER = "            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups])"
+# specs/0031 §4f (slice 2): the carrier line now ends with a comma — the render receipt's keyword follows it
+_CARRIER = "            contested=[(g.subject, g.relation, [e.id for e in g.exposed]) for g in groups],"
 _TIER = "            _ms = [_tier[i] for i in _ids if i in _tier and i not in _grouped]\n"
 _REPLACE = "            commitments = [p for p in commitments if p[1].id not in _grouped] + _units\n"
 _RULE = '- A dated obligation the user states (an appointment, a deadline, a due date,\n  a renewal, a scheduled event) is ONE triple whose SUBJECT is the obligation\n  itself ("dentist appointment", "Q3 report", "lease renewal"), relation\n  `deadline`, and whose object is the date as an ISO date (YYYY-MM-DD): a\n  weekday or "tomorrow" copied from the DATE CONTEXT calendar; a stated date\n  with no year ("November 12") is the next such date on or after the day the\n  event occurred, unless the event says which year. A date with no\n  stated day ("sometime in November", "next month"), or a relative date the\n  calendar does not hold ("in three weeks"), keeps the text\'s words: never\n  give it a day. Never use the subject `user` for an obligation: the user has\n  many. A third party\'s claim about the user\'s obligations is still a CLAIM\n  under the rule above.\n'
@@ -127,7 +128,7 @@ MUTANTS = [
      [OB2, OB3], [NAMES], None, "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's "
                                "one-episode case is still caught by 0003 §4c-iv's within-episode net, so it is not named)"),
     ("OB3-no-briefing-carrier", "product", M,
-     [(_CARRIER, "            contested=None)")],
+     [(_CARRIER, "            contested=None,")],
      [OB3, OB10, OUTSIDE, FLAGGED], [NAMES], None, "today's per-edge rendering: the briefing path builds no contested groups"),
     ("OB3-member-also-rendered-plain", "product", X,
      [(_REPLACE, "            commitments = commitments + _units\n")],

@@ -1,5 +1,5 @@
 {
- "body_sha256": "320c97a3e393a05908ba26c1ff740e99cd103dff62092850436925e0069c2758",
+ "body_sha256": "56ee9eb2c4dfec4680c1d73fad72e5dc6c4cce4bf56ee463e5294b5e4f36d43e",
  "controls": [
   {
    "anchor_counts": [
@@ -218,7 +218,7 @@
     "passed": 16
    }
   },
-  "commit": "920b8fa8384a7ff7f144e27f246f2d38341cf674",
+  "commit": "9d73bdf48b33ff1616cdac2efbfa4941e7a15e78",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
@@ -246,12 +246,12 @@
    "specs/evidence/c3-01/empty_body_mutants.py": "6b9ce7f02c5f9e8842ea405c979e1b4183c7d5e37687f6f16a96500818b4d724",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "f45fc0c1378474928e13eb627fca931e94703a1e0a1a6efa5c0937dc03813b73",
+   "src/veracium/__init__.py": "d9934d11e13b0ad12572ae8b0d5b3d42f157e4812fe9b94089539578b623f61a",
    "src/veracium/compile.py": "4e410634231d7bf59ccf06c1a3f88402230f9e4ef4a0ef439d7e669ee092006d",
-   "src/veracium/mcp_server.py": "677d6bcc36de02fd9a7045af6c480869a1ec50a4770bd9d269ad7f2deaacceb7",
+   "src/veracium/mcp_server.py": "c1703568ad4535774b9e524f65b8a0dc6bb2027098bdb87d6db9a92e09ead8e7",
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
    "src/veracium/store/revocation.py": "14aebf929c07e968c987b85c05c565d1b582de2e548b41dfe3d4de1147317c8d",
-   "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
+   "src/veracium/store/sqlite.py": "939b879e8dcb483055ce34ae62019e565ec3eaa354d90e7e2429b988192f48a4",
    "tests/test_0031_server_reports_itself.py": "5ff827b81d01cf38d6759892b4c311aea19be03a45ae63ebce8dbb9c27a786da",
    "tests/test_c3_01_empty_body_bind.py": "a6befb0770902488995da33414599d633dc97cfba28dc5fe8873ebb4d3de4c2f",
    "tests/test_c3_01_writers_census.py": "cbf5bb6bd2b3de1a4b4e0f95a4f56f87529cb90e908cba552aa329760f08ea73"
@@ -267,11 +267,12 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0003-supersession-authority.md",
-   "specs/evidence/c3-01/empty_body_mutants.py",
-   "specs/generated/0002-audit-manifest.md",
-   "src/veracium/compile.py",
-   "tests/test_c3_01_empty_body_bind.py"
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0003/within_episode_mutants.py",
+   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
+   "specs/evidence/0007/sa/mutation-table.json"
   ]
  },
  "rows": [
@@ -315,7 +316,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.63s",
+   "pytest": "5 failed in 2.22s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -352,7 +353,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.93s",
+   "pytest": "2 failed in 1.15s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -385,7 +386,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -418,7 +419,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -457,7 +458,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.75s",
+   "pytest": "3 failed in 1.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty body always omitted: the no-write response no longer equals the bind-off one (v18.11 I6d)"
@@ -491,7 +492,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
@@ -525,7 +526,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 112.35s (0:01:52)",
+   "pytest": "1 failed in 154.79s (0:02:34)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
@@ -558,7 +559,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 104.50s (0:01:44)",
+   "pytest": "1 failed in 145.76s (0:02:25)",
    "reason": null,
    "reason_seen": null,
    "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
@@ -591,7 +592,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.34s",
+   "pytest": "1 failed in 3.48s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -627,7 +628,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.91s",
+   "pytest": "2 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -660,7 +661,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -675,6 +676,6 @@
   "good": 11,
   "killed": 11,
   "rows": 11,
-  "seconds": 682
+  "seconds": 893
  }
 }

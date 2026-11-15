@@ -1,5 +1,5 @@
 {
- "body_sha256": "481b0d831694e56f233f042999d734bf647413665d943600d2b29736faf70399",
+ "body_sha256": "a8323db73a05e7a9d904186bd3d2dcff6da0a7a008af592a187a8e7ac5fdd8ca",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 5
    }
   },
-  "commit": "674244842fe548b8f5bfa764aa483bd08e59b842",
+  "commit": "9d73bdf48b33ff1616cdac2efbfa4941e7a15e78",
   "control_definitions": {
    "NOOP-0048-R4-01-sqlite": "70dfd3b5e6fee200758b3e0359060f958944425f59737cbaf8d763a45a2708e7"
   },
@@ -62,43 +62,29 @@
    "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/store/sqlite.py": "a056953324ccf27e96776212d52a19417099b4c4e5d4b03d2c80d5635e2c0148",
-   "tests/test_0048_decay_bounds.py": "28b93e54f23eda6d0b2a3907a7e2debd83b91e2e9a8ba8bc96511577157b1cff"
+   "src/veracium/store/sqlite.py": "939b879e8dcb483055ce34ae62019e565ec3eaa354d90e7e2429b988192f48a4",
+   "tests/test_0048_decay_bounds.py": "32cfe7896e816cdae0d52f3c3b6ca69656cfac8655660a7bc25e62d7da1aa240"
   },
   "finding": "0048-R4-01",
   "honest_nodes": [
    "tests/test_0048_decay_bounds.py::test_other_fields_still_assign",
    "tests/test_0048_decay_bounds.py::test_the_store_refuses_an_out_of_bound_edge"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/test.yml",
-   "CHANGELOG.md",
-   "pyproject.toml",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/obligations_mutants.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0003/within_episode_mutants.py",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0053/adapter_conformance/checks.py",
-   "specs/evidence/0053/adapter_conformance/drivers.py",
-   "specs/evidence/0053/adapter_conformance/mutants.py",
-   "specs/evidence/0053/adapter_conformance/rows.py",
-   "specs/skip_inventory.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0053_adapter_conformance.py"
+   "specs/evidence/c3-01/mutation-table.json",
+   "src/veracium/trust_tools.py",
+   "tests/test_0048_decay_bounds.py"
   ]
  },
  "rows": [
@@ -133,7 +119,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.30s",
+   "pytest": "2 failed in 7.08s",
    "reason": null,
    "reason_seen": null,
    "what": "the write method no longer refuses a call whose before/after lengths misplace the captured json (R4-01 (a)'s second layer; the static gate also refuses the changed body)"
@@ -169,7 +155,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.44s",
+   "pytest": "2 failed in 6.94s",
    "reason": null,
    "reason_seen": null,
    "what": "the frozen layout names the wrong json position for the INSERT: it no longer equals the layout SQLite gives by execution (R4-01 (a))"
@@ -184,6 +170,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 47
+  "seconds": 44
  }
 }
