@@ -159,7 +159,8 @@ def test_every_omitted_date_default_uses_the_utc_clock():
             for sub in ast.walk(node):
                 if isinstance(sub, ast.Call) and getattr(sub.func, "id", None) == "_today_utc":
                     callers.add(node.name)
-    assert callers == {"remember", "dispute", "confirm", "record_outcome", "correct"}, callers
+    # specs/0031 §4f §3b: the scope gate dates its binding-source PROBE (a never-written episode) by the UTC clock too
+    assert callers == {"remember", "dispute", "confirm", "record_outcome", "correct", "_trust_scope_gate"}, callers
 
 
 def _local_calendar_calls(tree):

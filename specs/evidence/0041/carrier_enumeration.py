@@ -353,7 +353,12 @@ def triage():
             if top not in persisted or persisted[top].startswith("UNRESOLVED"):
                 continue
             for sub in nested_models(mdl):
-                if sub.__name__ not in persisted:
+                # CONTAINMENT OUTRANKS A NAME-ONLY NEAR-MATCH (2026-11-15, specs/0031 §4f): a model held inside a
+                # persisted container IS stored, through it, whatever table its field NAMES also happen to share.
+                # Provenance gained `call_path`, so it shares two names (`origin`, `call_path`) with `confirmations`
+                # and near-matched it as UNRESOLVED, though it is written only inside Edge/Episode json. Overriding an
+                # UNRESOLVED near-match here can only resolve a model to STORED, never to a non-carrier.
+                if sub.__name__ not in persisted or persisted[sub.__name__].startswith("UNRESOLVED"):
                     persisted[sub.__name__] = f"nested in {top} ({persisted[top]})"
                     changed = True
 

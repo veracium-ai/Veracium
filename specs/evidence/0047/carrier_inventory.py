@@ -83,6 +83,10 @@ CLASSIFIED = {
     ("graph.py", "_lexical_scored"): ("INTERNAL", "retrieval scoring"),
     ("graph.py", "semantic_duplicate_of"): ("INTERNAL", "duplicate detection for the write path"),
     ("authority.py", "scope_fingerprint"): ("INTERNAL", "the CAS fingerprint"),
+    # specs/0031 §4f §4d: the redaction receipt's principal projection and its serialization over the tools — record
+    # ids, kinds, view classes and the receipt's own fields (the redaction's facts), never a record's content
+    ("__init__.py", "Memory._principal_receipt"): ("INTERNAL", "the principal-facing redaction receipt: ids, kinds and view classes, never content"),
+    ("mcp_server.py", "forget_fact_report.run"): ("INTERNAL", "forget_fact's redaction receipt, serialized: ids and the redaction's own fields, never content"),
     ("semantic.py", "content_digest"): ("INTERNAL", "an embedding cache key"),
     ("semantic.py", "embedded_text"): ("INTERNAL", "the text embedded for retrieval; never rendered"),
     ("procedures.py", "describe_procedures._rel"): ("INTERNAL", "a reply cannot attach to a procedural edge (0047 v1.4 ruling, INV-R19); these surfaces never meet a challenge"),

@@ -7,6 +7,7 @@ compare-consume, the four-column carrier matrix, and successful-operation
 scoping. Review-round reproductions are regression cells here (R3-1 shared
 wrapper, R6-1/R7-2 stale-context, R8-1 close cross-product, R9-1 barrier
 seams)."""
+import re
 import ast
 import contextvars
 import json
@@ -361,7 +362,8 @@ def test_carrier_consent_matrix(tmp_path):
 # -- I7: no MCP surface carries usage ------------------------------------------------
 def test_mcp_results_carry_no_usage_fields():
     body = (SRC / "mcp_server.py").read_text()
-    assert "_tok" not in body
+    # a usage token field ends in `_tok` (in_tok, out_tok); specs/0031 §4f's `preview_token` is not one
+    assert not re.search(r"_tok\b", body), re.findall(r"\w*_tok\b", body)
     assert "llm_usage" not in body
     assert "introspect" not in body.lower() or "@server.tool" not in body, \
         "introspect must not be an MCP tool"

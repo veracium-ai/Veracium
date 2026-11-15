@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 
 
 def test_call_path_and_actor_are_closed_enums():
-    assert [c.value for c in ConfirmationCallPath] == ["host_api"]
+    # specs/0031 §4f (0008 v9 §2c-ii): the agent paths under `direct`, over MCP and through a framework adapter
+    assert [c.value for c in ConfirmationCallPath] == ["host_api", "mcp_direct", "adapter_direct"]
     assert set(a.value for a in ConfirmationActor) == {"user", "host"}
     with pytest.raises(ValueError):
         ConfirmationCallPath("free text")
