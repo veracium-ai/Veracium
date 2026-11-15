@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+**The trust tools: under `direct`, a user can look up, correct, dispute, confirm and erase their memory through
+their agent** (specs/0031 v23–v23.2, §4f; design accepted with amendments at external review round 2, 2026-11-14).
+**Not yet released:** the implementation review and the pre-registered injection measurement (§6a) come first.
+
+- **New: seven agent tools,** over MCP and through the LangChain and Pydantic AI adapters: `find_facts` (what memory
+  shows the user, with record ids), `correct_fact`, `dispute_fact`, `confirm_fact`, `forget_fact` (one record, by
+  redaction), and the two-step whole-user erase `forget_everything_preview` / `forget_everything_confirm` (a ten-minute
+  token bound to the previewed records). Registered on every server; under `none` every call refuses
+  `attempted_elevation` and writes nothing.
+- **Who must act: a deployment that already sets `VERACIUM_MCP_CAPABILITY=direct` opts into these tools on upgrade,**
+  with erasure through the agent ON by default. Set `VERACIUM_MCP_ERASURE=off` (or an adapter's `erasure="off"`) to
+  refuse the three forget tools. Content relayed in a first-party turn can induce an agent to call them; the two steps
+  stop one induced call, not an agent induced to call both.
+- **New in the library:** `correct`, `dispute`, `confirm` and `redact` take `principal`, `source_id` and `call_path`
+  keyword-only (absent, a call writes today's bytes); under a principal only the principal's own records are acted on,
+  and `redact` returns a six-field projection. `recall(..., render_receipt=True)` lists the units it rendered.
+  `Memory.forget_everything_preview` / `forget_everything_confirm` take an explicit `trust_tools.PreviewTokenIssuer`.
+- **Export format 15, stamped only when a record carries an agent call path** (an audit episode or confirmation the
+  tools wrote); a store without one exports exactly as before, and an older Veracium refuses a 15 file rather than
+  read an agent's act as the host's. Store schema unchanged.
+
 ## 0.32.1 — 2026-11-14
 
 **A recall no longer states that the view is empty above a fact written during it, and the MCP server reports its own

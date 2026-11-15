@@ -106,6 +106,12 @@ INVENTORY = [
                             "the served server, so each cell skips without the SDK (an autouse fixture, never a "
                             "module-level skip; the pydantic-floor lane). Author line: all PASS with mcp installed",
      "job:runs"),
+    ("tests/test_0031_trust_tools_mcp.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — specs/0031 §4f's seven trust tools on the served server and at "
+                            "their *_report/*_impl pairs; each cell builds or reaches the served surface, so each "
+                            "skips without the SDK (an autouse fixture, never a module-level skip; the pydantic-floor "
+                            "lane). Author line: all PASS with mcp installed",
+     "job:runs"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "

@@ -876,6 +876,21 @@ Environment:
                       refuses to start. This is attested by the host, NOT
                       verified by veracium: a server reachable by a public or
                       untrusted agent must leave it unset.
+                      Since 0031 §4f, "direct" ALSO accepts the agent's
+                      delegated acts as the user's own: the seven trust tools
+                      (find_facts, correct_fact, dispute_fact, confirm_fact,
+                      forget_fact, forget_everything_preview,
+                      forget_everything_confirm) execute directly. Content
+                      relayed in a first-party turn can induce an agent to call
+                      them; their descriptions ask, they do not enforce.
+  VERACIUM_MCP_ERASURE
+                      "on" (the default when unset) or "off": erasure through
+                      the agent (forget_fact and the two-step whole-user erase,
+                      under "direct"). "off" refuses those three tools and
+                      leaves the others; the user then has no route to erasure
+                      through the agent, and the deployment's erasure
+                      obligations fall on its operator. Any other value — the
+                      empty string included — refuses to start.
 
 Options:
   -h, --help     show this help and exit

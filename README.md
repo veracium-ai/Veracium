@@ -37,7 +37,7 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
   each dated obligation is stored under its own name with an ISO date, and a rescheduled one shows once, marked
   contested, with both dates kept. `correct()` applies no reschedule to such a date (it refuses: the subject is the
   obligation, not the user, specs/0011 §4b) and `confirm()` retires neither; the user resolves it by disputing each
-  stale date (`dispute()`, a host-wired user action, not exposed over MCP), which keeps it as history.
+  stale date (`dispute()`, a host-wired user action; or, where the host attests `direct`, the agent's `dispute_fact` tool), which keeps it as history.
   *(The category commercial memory systems handle worst; Veracium's strongest.)*
 - **Representation is a security control.** Third-party claims (received email,
   external docs) are quarantined *structurally* — stored as `third_party_claim`

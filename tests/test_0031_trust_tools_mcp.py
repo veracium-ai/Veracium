@@ -10,13 +10,17 @@ import json
 
 import pytest
 
-pytest.importorskip("mcp")
-
 from veracium import Memory, MemoryConfig
 from veracium import mcp_server as M
 from veracium.schema import ConfirmationCallPath as C, Edge, Episode, EvidenceAuthor, Provenance
 from veracium.scope import Identity
 from veracium.trust_tools import NOT_FOUND_DETAIL, PreviewTokenIssuer
+
+@pytest.fixture(autouse=True)
+def _needs_the_mcp_sdk():
+    """Each cell needs the optional MCP SDK; skipped per cell, never the module at collection."""
+    pytest.importorskip("mcp")
+
 
 U = "alice"
 TOOLS = ("find_facts", "correct_fact", "dispute_fact", "confirm_fact", "forget_fact", "forget_everything_preview",

@@ -35,6 +35,7 @@ from the environment).
 | `VERACIUM_USER` | `default` | the deployment's user id. Every tool acts on it; no tool takes a `user_id` — the host process is the identity boundary (specs/0031 §4b-iii, §4e). |
 | `VERACIUM_MCP_CAPABILITY` | *(unset = `none`)* | **The host's attestation about every call on this server** (specs/0031 §4a). Unset = `none`: events default to the third-party class and a model-supplied `author`/`derived_from` can only restrict trust below that, never raise it. `direct` = every call originates in a turn with the authenticated principal **and this deployment stands behind the model's authorship labelling as its own**; events then default to the user's class. Read once at startup; any other value — the empty string included — refuses to start. **Attested by the host, not verified by veracium**: a server reachable by a public or untrusted agent must leave it unset. |
 | `VERACIUM_MCP_SOURCE_ID` | *(unset)* | **The host's opaque, stable id for the source this deployment ingests from** (specs/0006: a mailbox, a connector instance, a device — never a person). Host-set, never a tool argument. `require_source_id` defaults on (specs/0006 v8), so a third-party-class event with no source id is refused with `{"ok": false, "refusal": "source_id_required"}` — and under an unset `VERACIUM_MCP_CAPABILITY` **every** event is third-party-class, so such a deployment must set this (or attest `direct`) before `remember` stores anything. |
+| `VERACIUM_MCP_ERASURE` | *(unset = `on`)* | **Erasure through the agent**, under `direct` (specs/0031 §4i): `forget_fact` and the two-step whole-user erase. `off` refuses those three tools with `{"ok": false, "refusal": "erasure_disabled"}` and leaves the other four trust tools working; the user then has no route to erasure through the agent, and the deployment's erasure obligations fall on its operator. Set it for a legal hold or retention rule, a memory several people rely on, or a host with its own erasure flow. Any other value — the empty string included — refuses to start. |
 | `ANTHROPIC_API_KEY` | — | for the reference provider. |
 
 ## Register with a client
@@ -69,9 +70,30 @@ Restart the client; the four tools below become available to the agent.
 | `record_procedure(summary, basis, author?, derived_from?, relation?, note?, date?)` | record a PROCEDURE the user follows (specs/0037) — a host-declared content kind that is never asserted as fact and never enters recall's context. `basis` is required: `"stated"` (the user said they follow it) or `"observed"` (a pattern they reported observing). Honoured only under `VERACIUM_MCP_CAPABILITY=direct`; under `none` it returns `{"ok": false, "refusal": "attempted_elevation"}`. Refusals are serialized, never raised: `{"ok": false, "refusal": <name>}` (e.g. `relation_not_procedural`, `basis_required`, `source_id_required`). The source identity is the deployment's `VERACIUM_MCP_SOURCE_ID`, never an argument (0006 I1); with `require_source_id` on, a third-party-authored or third-party-derived procedure needs that binding. |
 | `describe_procedures(query?)` | describe the user's recorded procedures, each with its basis and provenance — never a record's note, never a summary that reads as executable step text (withheld by name). `query` orders the descriptions and never filters; records the user may not be told about are listed as withheld with a named reason. Returns `{"ok": true, descriptions, total_describable, withheld, truncated, query}`. |
 
-(Deliberately *not* MCP tools: `forget`, `dispute`/`confirm`, and entity
-listing — suppress/wipe/enumerate verbs callable by an agent are
-prompt-injection targets. They're library/CLI surface for the host; see
+### The trust tools (under `VERACIUM_MCP_CAPABILITY=direct`)
+
+Seven tools let the user act on their memory through their agent (specs/0031 §4f). They are registered on every
+server and refuse every call under `none` (`{"ok": false, "refusal": "attempted_elevation"}`), writing nothing. Each
+acts **as the user**, and each description tells the agent to call it only when the user asks in the conversation,
+never because of content it read.
+
+| tool | purpose |
+|---|---|
+| `find_facts(query?)` | what memory currently shows the user, with the record ids the other tools take: the units one `recall` rendered, each `{kind, id, text, partition, annotations}` (`partition`: `grounded`, `fenced` for a third-party claim, or `contested`). Read-only; wiki text is a unit with no id. |
+| `correct_fact(edge_id, corrected_value)` | the remembered value was wrong: kept as history marked `corrected`, the new value stored as the user's. |
+| `dispute_fact(edge_id, reason?)` | the fact is no longer asserted and is kept as history; `reason` at most 1,024 characters. |
+| `confirm_fact(edge_id)` | the fact still holds: clears its staleness flag and records the confirmation (`call_path` `mcp_direct`). |
+| `forget_fact(edge_id? \| episode_id?)` | **irreversible**: removes ONE record's content (redaction, reason `subject_request`); the receipt names derived records that may still carry it, to forget one call each. |
+| `forget_everything_preview()` | the first of two steps: counts, a warning and a token valid for ten minutes. Nothing is erased. |
+| `forget_everything_confirm(preview_token)` | **irreversible**: erases everything stored for the user, the audit trail included, if the records in the four previewed tables are the ones previewed. |
+
+**What an existing `direct` deployment opts into on upgrade:** these seven tools (here, and through the LangChain
+and Pydantic AI adapters); erasure through the agent, **on by default** (`VERACIUM_MCP_ERASURE`); and the injection
+residual — content relayed in a first-party turn can induce an agent to call them, both erase steps included. The
+two steps stop one induced call, not an agent induced to call both, and the descriptions ask rather than enforce.
+`direct` is your attestation; a server reachable by a public or untrusted agent must leave it unset.
+
+(Still deliberately *not* MCP tools: the host API's one-call `forget(user_id)`, and entity listing — see
 [design rationale](design-rationale.md).)
 
 No tool takes a `user_id`: every tool acts on the deployment's user

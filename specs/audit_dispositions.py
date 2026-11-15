@@ -37,12 +37,13 @@ DISPOSITIONS = {
  # -- explicit user verbs ----------------------------------------------------
  ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "e2b396f8489a"):
    (W, "`active`, `invalidation_reason`", "act", "clean — narrows only", "`test_dispute_removes_from_assertable_but_keeps_history`"),
- ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "c77fe9f6b653"):
-   (W, "episode provenance", "act", "clean", "`test_dispute_removes_from_assertable_but_keeps_history`"),
- ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "b1b92807403e"):
+ ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "208aed161b9f"):
+   (W, "episode provenance (specs/0031 §4f: + the binding's `source_id` and the agent `call_path`, both absent on a host-API call)", "act",
+    "clean — under a principal the §3b scope gate runs first, in the same transaction", "`test_dispute_removes_from_assertable_but_keeps_history` · `test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provenance_never_the_summary`"),
+ ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "102939177bee"):
    (W, "`needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation", "act",
     "clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7)",
-    "`test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known`"),
+    "`test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known` · `test_confirm_records_the_agent_path_in_the_row_and_the_quoting_episode`"),
  ("src/veracium/__init__.py", "Memory.undo_restoration", "undo_restoration", "7a97cc565969"):
    (W, "`active` (0), `invalidated_at`/`invalidation_reason` (set back to the outcome row's recorded pre-state), the outcome row's `undone_at`/`undo_request_ref`, an `undo` registry row — ALL in one write transaction", "act",
     "clean — `specs/0044` §4i (T7-2): host-only; eligibility is the outcome row plus its `applicable` episode flag, PROOF origins only; the restore goes through the invalidate method, so 0029's choke point journals it and the lifetime hook ends the episode; no other field is touched",
@@ -61,11 +62,15 @@ DISPOSITIONS = {
  ("src/veracium/__init__.py", "Memory.correct", "apply_supersession_plan", "ba370b6342c2"):
    (W, "`active`, `invalidation_reason=corrected`, `supersedes`, `author_of_evidence` USER", "act",
     "clean — **M7-correct CLOSED (specs/0011 §4e, E5)**: the correction reaches storage only through the atomic plan with a CorrectionAuthorisation verified in-transaction; §4b subject entitlement applies", "`test_correct_requires_bound_authorisation`"),
- ("src/veracium/__init__.py", "Memory.correct", "add_episode", "9fce4dabcb6f"):
+ ("src/veracium/__init__.py", "Memory.correct", "add_episode", "00ee7b102926"):
    (W, "episode provenance", "act",
-    "clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision", "`test_correct_requires_bound_authorisation`"),
+    "clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision. specs/0031 §4f: it carries the binding's `source_id` and the agent `call_path` in provenance", "`test_correct_requires_bound_authorisation` · `test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provenance_never_the_summary`"),
  ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"):
    (W, "**all** — irreversible erasure", "act", "clean — erasure is the contract", "`test_forget_erases_everything_and_only_that_user`"),
+ ("src/veracium/__init__.py", "Memory.forget_everything_confirm", "forget_user", "ed4422fbd96b"):
+   (W, "**all** — irreversible erasure, bound to the preview's four-table key sets", "act",
+    "clean — specs/0031 §4f §4e: the token's MAC, context and time verified first; `forget_user` re-derives the digest INSIDE its own write transaction and refuses `store_changed` before any delete (INV-TT9)",
+    "`test_confirm_erases_the_previewed_user_and_only_that_user` · `test_the_check_and_the_erase_are_one_write_transaction`"),
  ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"):
    (W, "**all**", "act", "clean — same verb through the CLI", "`test_forget_cli_requires_confirmation`"),
 
@@ -201,15 +206,16 @@ DISPOSITIONS = {
 STATES = {
   ("src/veracium/__init__.py", "Memory.embed_backfill", "upsert_embedding", "edb8a9a9b201"): "clean",
   ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "e2b396f8489a"): "clean",
-  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "c77fe9f6b653"): "clean",
-  ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "b1b92807403e"): "clean",
+  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "208aed161b9f"): "clean",
+  ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "102939177bee"): "clean",
   ("src/veracium/__init__.py", "Memory.undo_restoration", "undo_restoration", "7a97cc565969"): "clean",
   ("src/veracium/__init__.py", "Memory.reply", "add_reply", "38702764f859"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "append_outcome_if_head", "c581fd572ad4"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "e00d08c435b4"): "clean",
   ("src/veracium/__init__.py", "Memory.correct", "apply_supersession_plan", "ba370b6342c2"): "clean",
-  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "9fce4dabcb6f"): "clean",
+  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "00ee7b102926"): "clean",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
+  ("src/veracium/__init__.py", "Memory.forget_everything_confirm", "forget_user", "ed4422fbd96b"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "4365735ba43d"): "clean",
   ("src/veracium/compile.py", "bound_wiki", "discard_wiki", "291cbd6abaed"): "clean",
