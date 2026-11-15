@@ -65,7 +65,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "coverage is all or nothing per row",
-   "line": "tests/test_0047_t11b_portability.py:648",
+   "line": "tests/test_0047_t11b_portability.py:666",
    "node": "tests/test_0047_t11b_portability.py::test_rr6_rr9_an_old_or_partial_notice_refuses_an_arriving_act",
    "row": "0008 INV-I5",
    "text": "INV-I5's coverage clause"
@@ -175,7 +175,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "written with BOTH `text` and `request_digest` treated",
-   "line": "tests/test_0047_t11b_portability.py:687",
+   "line": "tests/test_0047_t11b_portability.py:705",
    "node": "tests/test_0047_t11b_portability.py::test_rr8_rule4_writes_a_covered_act_treated_even_where_its_notice_stays_pending",
    "row": "0041 INV-RR8",
    "text": "INV-RR8 and 0008's INV-I4"
@@ -185,7 +185,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "written with BOTH content carriers treated",
-   "line": "tests/test_0047_t11b_portability.py:687",
+   "line": "tests/test_0047_t11b_portability.py:705",
    "node": "tests/test_0047_t11b_portability.py::test_rr8_rule4_writes_a_covered_act_treated_even_where_its_notice_stays_pending",
    "row": "0008 INV-I4",
    "text": "INV-RR8 and 0008's INV-I4"
@@ -215,7 +215,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "two acts at one position refuse the unit",
-   "line": "tests/test_0047_t11b_portability.py:580",
+   "line": "tests/test_0047_t11b_portability.py:598",
    "node": "tests/test_0047_t11b_portability.py::test_q10_ties_a_second_resolve_and_a_resolve_before_its_challenge_each_refuse",
    "row": "0008 INV-Q10",
    "text": "INV-Q10 at §6f"
@@ -225,7 +225,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "two acts at one position refuse the unit",
-   "line": "tests/test_0047_t11b_portability.py:964",
+   "line": "tests/test_0047_t11b_portability.py:982",
    "node": "tests/test_0047_t11b_portability.py::test_s2_research_rm_q_a_new_act_at_a_held_acts_position_ties",
    "row": "0008 INV-Q10",
    "text": "RM-Q (INV-Q10)"
@@ -235,7 +235,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "an order that cannot be established",
-   "line": "tests/test_0047_t11b_portability.py:542",
+   "line": "tests/test_0047_t11b_portability.py:560",
    "node": "tests/test_0047_t11b_portability.py::test_q10_incomparable_or_unknown_positions_refuse_unless_the_challenge_is_resolved",
    "row": "0008 INV-Q10",
    "text": "(INV-Q10, INV-R23;"
@@ -245,7 +245,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "an order that cannot be established",
-   "line": "tests/test_0047_t11b_portability.py:569",
+   "line": "tests/test_0047_t11b_portability.py:587",
    "node": "tests/test_0047_t11b_portability.py::test_rm1_a_legacy_position_restores_first_among_proof_acts_and_refuses_whole_in_default",
    "row": "0008 INV-Q10",
    "text": "R-M1 (INV-Q10, INV-R23)"
@@ -255,7 +255,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "or when an order it needs cannot be established",
-   "line": "tests/test_0047_t11b_portability.py:569",
+   "line": "tests/test_0047_t11b_portability.py:587",
    "node": "tests/test_0047_t11b_portability.py::test_rm1_a_legacy_position_restores_first_among_proof_acts_and_refuses_whole_in_default",
    "row": "0047 INV-R23",
    "text": "R-M1 (INV-Q10, INV-R23)"
@@ -265,7 +265,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "an order that cannot be established",
-   "line": "tests/test_0047_t11b_portability.py:949",
+   "line": "tests/test_0047_t11b_portability.py:967",
    "node": "tests/test_0047_t11b_portability.py::test_s2_research_rm_i_r_m1_needs_both_labels_proof_a_testimony_challenge_stays_incomparable",
    "row": "0008 INV-Q10",
    "text": "RM-I (INV-Q10, INV-R23)"
@@ -275,7 +275,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "or when an order it needs cannot be established",
-   "line": "tests/test_0047_t11b_portability.py:949",
+   "line": "tests/test_0047_t11b_portability.py:967",
    "node": "tests/test_0047_t11b_portability.py::test_s2_research_rm_i_r_m1_needs_both_labels_proof_a_testimony_challenge_stays_incomparable",
    "row": "0047 INV-R23",
    "text": "RM-I (INV-Q10, INV-R23)"
@@ -285,7 +285,7 @@
    "bound": true,
    "cell": "mutant",
    "clause": "judge only incoming confirmations",
-   "line": "tests/test_0047_t11b_portability.py:525",
+   "line": "tests/test_0047_t11b_portability.py:543",
    "node": "tests/test_0047_t11b_portability.py::test_q10_a_confirmation_before_the_challenge_is_consistent_and_an_incoming_challenge_meets_a_held_one",
    "row": "0008 INV-Q10",
    "text": "INV-Q10 at §6f's first row"
@@ -295,7 +295,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "a legitimate challenge → resolve → confirm history is admitted",
-   "line": "tests/test_0047_t11b_portability.py:506",
+   "line": "tests/test_0047_t11b_portability.py:524",
    "node": "tests/test_0047_t11b_portability.py::test_q10_a_resolved_history_is_admitted_with_the_challenge_held_and_the_rest_arriving",
    "row": "0008 INV-Q10",
    "text": "INV-R23 and INV-Q10"
@@ -305,7 +305,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "a confirmation made under a challenge that is unresolved in H is refused",
-   "line": "tests/test_0047_t11b_portability.py:980",
+   "line": "tests/test_0047_t11b_portability.py:998",
    "node": "tests/test_0047_t11b_portability.py::test_s2_research_rm_y_a_resolve_after_the_confirmation_does_not_clear_it",
    "row": "0008 INV-Q10",
    "text": "RM-Y (INV-Q10, INV-R23)"
@@ -315,7 +315,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "an incoming confirmation is refused when a challenge of its edge is unresolved in destination ∪ file and ordered before it",
-   "line": "tests/test_0047_t11b_portability.py:980",
+   "line": "tests/test_0047_t11b_portability.py:998",
    "node": "tests/test_0047_t11b_portability.py::test_s2_research_rm_y_a_resolve_after_the_confirmation_does_not_clear_it",
    "row": "0047 INV-R23",
    "text": "RM-Y (INV-Q10, INV-R23)"
@@ -335,7 +335,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "An act's origin never upgrades",
-   "line": "tests/test_0047_t11b_portability.py:858",
+   "line": "tests/test_0047_t11b_portability.py:876",
    "node": "tests/test_0047_t11b_portability.py::test_d14_the_commit_primitive_refuses_an_act_labelled_local_or_keyed_in_the_callers_grammar",
    "row": "0047 INV-R21",
    "text": "(INV-Q5, 0047 INV-R21)"
@@ -365,7 +365,7 @@
    "bound": true,
    "cell": "invariant",
    "clause": "never exempts another new act in the unit from validation",
-   "line": "tests/test_0047_t11b_portability.py:493",
+   "line": "tests/test_0047_t11b_portability.py:511",
    "node": "tests/test_0047_t11b_portability.py::test_q10_a_confirmation_under_an_open_challenge_refuses_in_one_file_and_across_two",
    "row": "0008 INV-I3",
    "text": "0008's INV-I3: the held challenge REPLAYS"
@@ -373,7 +373,7 @@
  ],
  "campaign": {
   "defined": 546,
-  "pin_digest": "fa70de2d824ec0ba4c40f2e9931d58f54ee95943b7bc39d481f1753b6becf4c2",
+  "pin_digest": "b9bd0a08e3be9684633d0f16eaf2948d130a6da2bb35acc7a3bab8ee7011cd33",
   "results": 546,
   "retired": [
    {
@@ -396,7 +396,7 @@
    "killed": 546,
    "mutants": 546
   },
-  "tree_digest": "fa70de2d824ec0ba4c40f2e9931d58f54ee95943b7bc39d481f1753b6becf4c2"
+  "tree_digest": "b9bd0a08e3be9684633d0f16eaf2948d130a6da2bb35acc7a3bab8ee7011cd33"
  },
  "findings_unbound_kills": [],
  "gates": {
@@ -772,6 +772,7 @@
    ],
    "bound": {
     "tests/test_0047_t11b_portability.py::test_i1_repeat_import_is_a_noop_in_both_modes_with_no_request_id": "cites the row",
+    "tests/test_0047_t11b_portability.py::test_i2_a_held_confirmation_re_arriving_with_an_agent_call_path_is_a_different_projection": "cites the row",
     "tests/test_0047_t11b_portability.py::test_i2_a_structural_change_under_a_held_uid_refuses_the_whole_unit": "cites the row",
     "tests/test_0047_t11b_portability.py::test_i6_two_differing_copies_in_one_unit_refuse_and_two_equal_copies_are_one_act": "cites the row",
     "tests/test_0047_t11b_portability.py::test_r11_an_act_whose_edge_is_nowhere_refuses_the_whole_file_before_any_write": "cites the row",
