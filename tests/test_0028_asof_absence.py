@@ -51,13 +51,16 @@ def test_the_static_form_reaches_the_roots_and_finds_no_predicate_access():
     assert w.not_followed, "the boundary must be visible: some receivers are not followable statically"
 
 
-def test_the_behavioural_form_runs_the_shipped_asof_tests_under_the_clock():
+def test_the_behavioural_form_runs_the_shipped_asof_tests_under_the_clock(tmp_path):
     """The positive behavioural run: the whole as-of test surface under the
     recording clock — classifications > 0, accesses > 0 (the clock is live),
     violations == 0."""
-    r = subprocess.run([sys.executable, str(ARTIFACT), "--json", str(ROOT / ".asof_absence_matrix.json")],
+    # The report goes to this test's own tmp_path, never a fixed path in the repo root: the suite runs this test on an
+    # xdist worker WHILE the closure-evidence gate runs it again as 0028-R3-1, and a shared path lets one run's
+    # unlink race the other's read (the class test_collected_header's d0862e9a fixed).
+    out = tmp_path / "asof_absence_matrix.json"
+    r = subprocess.run([sys.executable, str(ARTIFACT), "--json", str(out)],
                        cwd=str(ROOT), capture_output=True, text=True)
-    out = ROOT / ".asof_absence_matrix.json"
     try:
         assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-1000:]
         import json

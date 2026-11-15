@@ -2019,7 +2019,8 @@ def test_every_closure_evidence_command_actually_runs():
             "output_sha256": hashlib.sha256(out).hexdigest(),
         }, (None if r.returncode == 0 else
             f"{spec} {fid}: exit {r.returncode}\n    {evidence}\n"
-            f"    {out.decode(errors='replace')[-200:]}")
+            f"    {out.decode(errors='replace')[-2000:]}")   # 2000, not 200: a 200-char tail named the failing test
+                                                               # but not its assertion (0028-R3-1, 2026-11-15)
 
     wall0 = time.monotonic()
     with ThreadPoolExecutor(max_workers=workers) as pool:
