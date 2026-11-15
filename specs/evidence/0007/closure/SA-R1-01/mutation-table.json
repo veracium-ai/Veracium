@@ -1,5 +1,5 @@
 {
- "body_sha256": "a7ed5bc4169ef671c05c3995f173f1bec15d874c96b2441f564405d5fcaa857c",
+ "body_sha256": "e3bf18d1a296b5c6240c053bc5dd27e45bfac25a06cfadf615f1cd9dc613100c",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "47069a01492270586fe3a47e0cca21bba0af7e05",
+  "commit": "08156c92361d3aa0a6c70723d8fec08c39ce5c63",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -71,27 +71,11 @@
   "honest_nodes": [
    "tests/test_0013_sa10_gate.py::test_the_control_harness_is_green_without_a_channel[allowlist]"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
-  "tracked_changes": [
-   "specs/0003-supersession-authority.md",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/STATUS.md",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/store/data_migration.py",
-   "src/veracium/store/revocation.py"
-  ]
+  "tracked_changes": []
  },
  "rows": [
   {
@@ -125,7 +109,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.48s",
+   "pytest": "2 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -158,7 +142,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.05s",
+   "pytest": "1 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -191,7 +175,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -224,7 +208,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.98s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -239,6 +223,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 23
+  "seconds": 21
  }
 }
