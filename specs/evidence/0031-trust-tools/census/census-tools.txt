@@ -1,5 +1,5 @@
-src tree: fc0e55e5cd299991cc3717bb400910dd4365bfdf (unchanged since 0beb0aaf: fc0e55e5cd299991cc3717bb400910dd4365bfdf)
-write census of the seven trust tools through *_report; 34 cases, each on a fresh store
+src tree: c2cada12c2d44245e0a4b65caf5ed1ac56aa172a
+write census of the seven trust tools through *_report; 45 cases, each on a fresh store
 find_facts / gate 1 capability none
     refused:attempted_elevation      no writes
 correct_fact / gate 1 capability none
@@ -28,12 +28,34 @@ forget_fact / gate 4 both ids
     refused:invalid_target           no writes
 dispute_fact / gate 4 reason over 1024 code points
     refused:reason_too_long          no writes
+forget_fact / gate 4 neither id
+    refused:invalid_target           no writes
+dispute_fact / gate 4 reason not a string
+    refused:refused                  no writes
 forget_everything_confirm / gate 4 malformed token
     refused:preview_unknown          no writes
 correct_fact / gate 5 scope unconfigured
     refused:scope_unconfigured       no writes
 find_facts / gate 5 principal ungroupable
     refused:principal_ungroupable    no writes
+correct_fact / gate 6 source_unbound (no source)
+    refused:source_unbound           no writes
+correct_fact / gate 6 source_out_of_scope (src-b)
+    refused:source_out_of_scope      no writes
+correct_fact / accepted under a principal, its own source (gate 6's control)
+    ok                               DELETE wiki x2, INSERT edge_event x2, INSERT edges x1, INSERT episodes x1, INSERT supersession_operations x1, INSERT write_counter x2, UPDATE edges x1, UPDATE migration_outcome x1
+dispute_fact / gate 6 source_unbound (no source)
+    refused:source_unbound           no writes
+dispute_fact / gate 6 source_out_of_scope (src-b)
+    refused:source_out_of_scope      no writes
+dispute_fact / accepted under a principal, its own source (gate 6's control)
+    ok                               DELETE wiki x2, INSERT edge_event x1, INSERT episodes x1, INSERT write_counter x2, UPDATE edges x1, UPDATE migration_outcome x1
+confirm_fact / gate 6 source_unbound (no source)
+    refused:source_unbound           no writes
+confirm_fact / gate 6 source_out_of_scope (src-b)
+    refused:source_out_of_scope      no writes
+confirm_fact / accepted under a principal, its own source (gate 6's control)
+    ok                               INSERT confirmations x1, INSERT edge_event x1, INSERT episodes x1, INSERT request_registry x1, INSERT write_counter x1, UPDATE act_counter x1, UPDATE edges x1
 correct_fact / gate 7 unknown id, no principal
     refused:not_found_in_scope       no writes
 dispute_fact / gate 7 unknown id, no principal
@@ -54,7 +76,7 @@ find_facts / CONDITIONAL no query (the proactive path), default config
 correct_fact / accepted
     ok                               DELETE wiki x2, INSERT edge_event x2, INSERT edges x1, INSERT episodes x1, INSERT supersession_operations x1, INSERT write_counter x2, UPDATE edges x1, UPDATE migration_outcome x1
 correct_fact / CONDITIONAL other-subject target: correction_refused, committed bookkeeping
-    refused:correction_refused       DELETE wiki x1, INSERT edge_event x1, INSERT edges x1, INSERT supersession_operations x1, INSERT supersession_refusals x1, INSERT write_counter x2
+    refused:correction_refused       DELETE wiki x1, INSERT supersession_operations x1, INSERT supersession_refusals x1, INSERT write_counter x1
 dispute_fact / accepted
     ok                               DELETE wiki x2, INSERT edge_event x1, INSERT episodes x1, INSERT write_counter x2, UPDATE edges x1, UPDATE migration_outcome x1
 confirm_fact / accepted

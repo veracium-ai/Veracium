@@ -143,6 +143,10 @@ case("forget_fact / gate 4 both ids")(lambda: (lambda m: traced(m, lambda: M.for
     m, U, edge_id(m), episode_id(m), capability="direct")))(fresh()))
 case("dispute_fact / gate 4 reason over 1024 code points")(lambda: (lambda m: traced(m, lambda: M.dispute_fact_report(
     m, U, edge_id(m), "é" * 1025, capability="direct", call_path=MCP)))(fresh()))
+case("forget_fact / gate 4 neither id")(lambda: (lambda m: traced(m, lambda: M.forget_fact_report(
+    m, U, capability="direct")))(fresh()))
+case("dispute_fact / gate 4 reason not a string")(lambda: (lambda m: traced(m, lambda: M.dispute_fact_report(
+    m, U, edge_id(m), ["not", "a string"], capability="direct", call_path=MCP)))(fresh()))
 case("forget_everything_confirm / gate 4 malformed token")(lambda: (lambda m: traced(m, lambda: M.forget_everything_confirm_report(
     m, U, "tt1.x.y", capability="direct", issuer=issuer(m))))(fresh()))
 
@@ -151,6 +155,36 @@ case("correct_fact / gate 5 scope unconfigured")(lambda: (lambda m: traced(m, la
     m, U, edge_id(m), "Paris", capability="direct", principal=A, call_path=MCP)))(fresh()))
 case("find_facts / gate 5 principal ungroupable")(lambda: (lambda m: traced(m, lambda: M.find_facts_report(
     m, U, "Berlin", capability="direct", principal=Identity(None, None))))(fresh(scoped=True)))
+
+# ---- gate 6: the binding's source, the three writing verbs under a principal ----------------------------------------
+# (added before round 3's dispatch, research's pre-seal read: the census had no gate-6 case, and a digest of the end
+# state cannot see a statement executed and rolled back; the trace can)
+for tool in ("correct_fact", "dispute_fact", "confirm_fact"):
+    for label, src in (("source_unbound (no source)", None), ("source_out_of_scope (src-b)", "src-b")):
+        def _source(tool=tool, src=src):
+            m = fresh(scoped=True)
+            eid = edge_id(m)
+            calls = {
+                "correct_fact": lambda: M.correct_fact_report(m, U, eid, "Paris", capability="direct", principal=A,
+                                                              source_id=src, call_path=MCP),
+                "dispute_fact": lambda: M.dispute_fact_report(m, U, eid, "wrong", capability="direct", principal=A,
+                                                              source_id=src, call_path=MCP),
+                "confirm_fact": lambda: M.confirm_fact_report(m, U, eid, capability="direct", principal=A,
+                                                              source_id=src, call_path=MCP),
+            }
+            return traced(m, calls[tool])
+        case(f"{tool} / gate 6 {label}")(_source)
+    # the control beside them: the same call with the principal's OWN source passes gate 6 and writes the verb's
+    # accepted set, so the two refusals above are reached on the principal path, not refused earlier
+    def _own(tool=tool):
+        m = fresh(scoped=True)
+        eid = edge_id(m)
+        kw = dict(capability="direct", principal=A, source_id="src-a", call_path=MCP)
+        calls = {"correct_fact": lambda: M.correct_fact_report(m, U, eid, "Paris", **kw),
+                 "dispute_fact": lambda: M.dispute_fact_report(m, U, eid, "wrong", **kw),
+                 "confirm_fact": lambda: M.confirm_fact_report(m, U, eid, **kw)}
+        return traced(m, calls[tool])
+    case(f"{tool} / accepted under a principal, its own source (gate 6's control)")(_own)
 
 # ---- gate 7: not found in scope -------------------------------------------------------------------------------------
 for tool in ("correct_fact", "dispute_fact", "confirm_fact", "forget_fact"):
@@ -184,9 +218,16 @@ case("find_facts / CONDITIONAL no query (the proactive path), default config")(l
     m, lambda: M.find_facts_report(m, U, None, capability="direct")))(fresh(default_wiki=True)))
 case("correct_fact / accepted")(lambda: (lambda m: traced(m, lambda: M.correct_fact_report(
     m, U, edge_id(m), "Paris", capability="direct", call_path=MCP)))(fresh()))
-case("correct_fact / CONDITIONAL other-subject target: correction_refused, committed bookkeeping")(
-    lambda: (lambda m: traced(m, lambda: M.correct_fact_report(m, U, other_subject(m), "Osaka", capability="direct",
-                                                               call_path=MCP)))(fresh()))
+def _other_subject_refused():
+    m = fresh()
+    # the fixture's own edge is written BEFORE the trace starts. It used to run inside the traced lambda (an argument
+    # evaluated inside fn()), and the census charged its INSERT edges, INSERT edge_event and one write_counter upsert
+    # to the refused correction (found 2026-11-16 by the package's raw traces; the matrix declares four tables)
+    eid = other_subject(m)
+    return traced(m, lambda: M.correct_fact_report(m, U, eid, "Osaka", capability="direct", call_path=MCP))
+
+
+case("correct_fact / CONDITIONAL other-subject target: correction_refused, committed bookkeeping")(_other_subject_refused)
 case("dispute_fact / accepted")(lambda: (lambda m: traced(m, lambda: M.dispute_fact_report(
     m, U, edge_id(m), "that's wrong", capability="direct", call_path=MCP)))(fresh()))
 case("confirm_fact / accepted")(lambda: (lambda m: traced(m, lambda: M.confirm_fact_report(

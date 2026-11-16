@@ -1,5 +1,5 @@
 {
- "body_sha256": "83f2af78b1ab655a3c6064b3903883c4c04a252120635223b43c535e3c5cf4e9",
+ "body_sha256": "242ea0dae85e0a54de2e8cba5ab0ea2c36655c96d7e918e84620e70b2a12a951",
  "controls": [
   {
    "anchor_counts": [
@@ -169,6 +169,7 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
+    "tests/test_0031_trust_tools_mcp.py::test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation",
     "tests/test_0031_trust_tools_mcp.py::test_absence_means_on_and_a_supplied_invalid_value_raises_at_construction",
     "tests/test_0031_trust_tools_mcp.py::test_an_extra_argument_cannot_override_a_binding_over_mcp[chat-app]",
     "tests/test_0031_trust_tools_mcp.py::test_an_internal_failure_raises_and_is_never_turned_into_a_refusal",
@@ -193,6 +194,10 @@
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[edge]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-mcp]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]",
     "tests/test_0031_trust_tools_mcp.py::test_scope_configuration_refusals_return_serialized_and_write_nothing[unconfigured]",
     "tests/test_0031_trust_tools_mcp.py::test_scope_configuration_refusals_return_serialized_and_write_nothing[ungroupable]",
     "tests/test_0031_trust_tools_mcp.py::test_the_erase_over_mcp_and_a_reconstructed_server_voids_the_token",
@@ -215,7 +220,7 @@
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-None]",
     "tests/test_0031_trust_tools_mcp.py::test_under_none_every_report_refuses_counted_and_writes_nothing[forget_fact-none]"
    ],
-   "definition_sha256": "37797deafcae40ce34d8ee756a46860a70467cb23ad5c32966a2fef553550a75",
+   "definition_sha256": "e77339e15b3ac45189e975b861eaa9702c041d9c35118eba5770300cdd89f153",
    "expected": "SURVIVED",
    "file": "src/veracium/mcp_server.py",
    "good": true,
@@ -223,6 +228,7 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
+    "tests/test_0031_trust_tools_mcp.py::test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation",
     "tests/test_0031_trust_tools_mcp.py::test_absence_means_on_and_a_supplied_invalid_value_raises_at_construction",
     "tests/test_0031_trust_tools_mcp.py::test_an_extra_argument_cannot_override_a_binding_over_mcp[chat-app]",
     "tests/test_0031_trust_tools_mcp.py::test_an_internal_failure_raises_and_is_never_turned_into_a_refusal",
@@ -247,6 +253,10 @@
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[edge]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-mcp]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]",
     "tests/test_0031_trust_tools_mcp.py::test_scope_configuration_refusals_return_serialized_and_write_nothing[unconfigured]",
     "tests/test_0031_trust_tools_mcp.py::test_scope_configuration_refusals_return_serialized_and_write_nothing[ungroupable]",
     "tests/test_0031_trust_tools_mcp.py::test_the_erase_over_mcp_and_a_reconstructed_server_voids_the_token",
@@ -542,6 +552,7 @@
     "tests/test_0031_trust_tools_library.py::test_the_principal_receipt_is_six_fields_the_scope_label_and_the_filtered_list",
     "tests/test_0031_trust_tools_library.py::test_two_stores_differing_only_in_hidden_records_give_identical_principal_receipts",
     "tests/test_0031_trust_tools_library.py::test_with_no_principal_no_scope_code_runs",
+    "tests/test_0031_trust_tools_mcp.py::test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation",
     "tests/test_0031_trust_tools_mcp.py::test_absence_means_on_and_a_supplied_invalid_value_raises_at_construction",
     "tests/test_0031_trust_tools_mcp.py::test_an_extra_argument_cannot_override_a_binding_over_mcp[chat-app]",
     "tests/test_0031_trust_tools_mcp.py::test_an_internal_failure_raises_and_is_never_turned_into_a_refusal",
@@ -567,6 +578,10 @@
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[edge]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]",
     "tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-mcp]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]",
     "tests/test_0031_trust_tools_mcp.py::test_scope_configuration_refusals_return_serialized_and_write_nothing[unconfigured]",
     "tests/test_0031_trust_tools_mcp.py::test_scope_configuration_refusals_return_serialized_and_write_nothing[ungroupable]",
     "tests/test_0031_trust_tools_mcp.py::test_the_erase_over_mcp_and_a_reconstructed_server_voids_the_token",
@@ -592,22 +607,22 @@
   },
   "clean": {
    "first": {
-    "of": 129,
+    "of": 134,
     "ok": true,
-    "passed": 129
+    "passed": 134
    },
    "last": {
-    "of": 129,
+    "of": 134,
     "ok": true,
-    "passed": 129
+    "passed": 134
    }
   },
-  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
+  "commit": "b58830a0d58c20538d6dad59e447d7d71acb73bb",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "f10175444492ef1d884c099c95807b2607d8dd7ae4bc2d0e68622cc6ff68b4b3",
    "NOOP-__init__": "20d88438c4f77645a043da9472d9ecc68b144a9fd6efe3ef2c8cde6e923cfc7f",
    "NOOP-compile": "7d760ebf6efb6ba8c72e04b29dbfcd93976cfa02850d34aa253b303bda4fb243",
-   "NOOP-mcp_server": "37797deafcae40ce34d8ee756a46860a70467cb23ad5c32966a2fef553550a75",
+   "NOOP-mcp_server": "e77339e15b3ac45189e975b861eaa9702c041d9c35118eba5770300cdd89f153",
    "NOOP-portability": "fce477616ba1cd93b08db672c70c1f9357316e51034051d27da68ca987a91a5e",
    "NOOP-proactive": "10c9b18f3d3752f50a8412114cb9ea12df8544553083f8989c9610c4f0516ccd",
    "NOOP-sqlite": "eccb14e09fc7d25f27dbfdfc377783e05008e1fab5d65f4274078267372b13ac",
@@ -620,6 +635,8 @@
    "TT10-preview-lists-objects": "17c5a3384e21f2210797cc2d48b52fb2da8be92b3436671adb7ea3dc13e7d740",
    "TT11-correction-refused-unmapped": "9f6a668537e3884b4da6d3e06475aa73f9a817d744d05a0071939080c016cc8b",
    "TT11-internal-failure-as-refusal": "4a16dc888519a76c4cfde1fca2004e6e28558af312e7564147bfacb6e44b023f",
+   "TT11-invalid-target-neither-accepted": "64b614693c913cdf5ffcef39e3396bd7a3cf0564f280de64e5435aea393a581a",
+   "TT11-invalid-target-removed": "abae5941a83bc7586f573ae97ea3873720fd96af629d68354bc5c65f8b9b5555",
    "TT11-scope-configuration-gate-removed": "b318aca0e45ecf6712639313e6ed807705bbf9558324bc99e3da2a608231ea0d",
    "TT11-wiki-cache-freshness-ignored": "b0de299040e4e0c11fd292d58648ac78f26db63bddd2dbcc023b8c90ed9befca",
    "TT12-cascade-added": "d2c35f40329e27ae683ce29d44b7241939c5057e1e9f42a0a312cb6742e21a30",
@@ -655,6 +672,7 @@
    "TT21-process-global-key": "5595e98370cdf1fa327b972e0e9383d6e667e0e43d7132fc2c23bdc92fc8aaf0",
    "TT21-uppercase-hex": "f9df02f8bbd9c27dc8965580f641877dbae2ecfa9de508cebb046e6ffc26e3ab",
    "TT22-cap-in-bytes": "44c47a62dedb7561fe2b717fc4e26e5412357b969151af020c50e2c28dbedd23",
+   "TT22-non-string-reason-accepted": "b6331c5bada9c4fed35c09a9863108518d9dba739aa96a4a7b6eefcb34922d57",
    "TT22-truncation": "2cc1d424b418c96698834d71c3091d526d14a67994cafc52006e93b27c53912b",
    "TT23-era-reads-edges-only": "24bb0951a1e4407d27d65c24cb45fc3c162acf82d6ecdb6f275f4db1382d2500",
    "TT23-planted-call-path-not-refused": "3364a487011b3056989bf293ce7244f16b453e55860db48fa66f0e59923476fa",
@@ -681,7 +699,7 @@
    "TT9-check-outside-the-erase-transaction": "4dcd39c443636472b35d0edd985864a1dbd95e57b29673aedcaa86c20ed344d3"
   },
   "digests": {
-   "specs/evidence/0031-trust-tools/implementation_mutants.py": "a29445e0a4e418f0bbd258be72064329ad66341a7904bdc0900f0d6f9e6950c0",
+   "specs/evidence/0031-trust-tools/implementation_mutants.py": "c317a19494cb12f45d49cc7365e5cb6cc606fd21f9333e178bd5e304d9104951",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "80f650dd3fdc6c50d1d234690bd22a226a65a0582f39a7fb5e1d49372e3114a9",
@@ -694,7 +712,7 @@
    "tests/test_0031_render_receipt.py": "c5c1f1b5d8f850277d5f4ca64b9832a1f8823eead2d7fe402ddfd609002d2bfc",
    "tests/test_0031_trust_tools_erase.py": "3fb2c7d930078b66e6a092a618daea07a18de1b898f58867be206f84f7d86a5d",
    "tests/test_0031_trust_tools_library.py": "2498f126d06ca0833444ec1efabbbf1b9436a7b422b211c39aaac482b347b7e6",
-   "tests/test_0031_trust_tools_mcp.py": "d00799fee16de6ec706766979d0b181fc17b2febdd3f55319a70ee07c0e20edc"
+   "tests/test_0031_trust_tools_mcp.py": "5a5f30381b87b236411540b949473f9778e7fd1647fc7958ccaa0e492b2ff0ee"
   },
   "finding": "implementation",
   "honest_nodes": [
@@ -713,52 +731,11 @@
   "spec": "0031",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
-   "docs/api.md",
-   "specs/0042-exercised-guarantees.md",
-   "specs/ALLOCATION.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/derive_keys.py",
-   "specs/evidence/0042/retired_overrides.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/cli.py",
-   "src/veracium/graph.py",
-   "src/veracium/introspect.py",
-   "src/veracium/store/base.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0042_retired_overrides.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0049_edges_since_learned.py",
-   "tests/test_host_queries.py",
-   "tests/test_introspect_cli.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "specs/evidence/0031-trust-tools/census/census-tools.txt",
+   "specs/evidence/0031-trust-tools/census/write_census_tools.py",
+   "specs/evidence/0031-trust-tools/implementation_mutants.py",
+   "tests/test_0031_trust_tools_census.py",
+   "tests/test_0031_trust_tools_mcp.py"
   ]
  },
  "rows": [
@@ -856,7 +833,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "23 failed in 2.52s",
+   "pytest": "23 failed in 2.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the `direct` gate removed from the trust tools"
@@ -931,7 +908,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "15 failed in 2.19s",
+   "pytest": "15 failed in 2.50s",
    "reason": null,
    "reason_seen": null,
    "what": "the operator count left in the tool result"
@@ -1003,7 +980,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "14 failed in 1.82s",
+   "pytest": "14 failed in 2.07s",
    "reason": null,
    "reason_seen": null,
    "what": "the attempted-elevation count missing from the *_report"
@@ -1036,7 +1013,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "the server's configured source not passed to dispute_fact"
@@ -1069,7 +1046,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "a unit's mandatory annotations (stale, extraction error) dropped"
@@ -1102,7 +1079,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member without its group framing"
@@ -1135,7 +1112,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member labelled grounded"
@@ -1168,7 +1145,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "an admitted grounded episode missing from the receipt"
@@ -1204,7 +1181,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.58s",
+   "pytest": "2 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "a fenced (third-party) unit labelled grounded"
@@ -1243,7 +1220,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.66s",
+   "pytest": "3 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query path admits nothing into the receipt"
@@ -1276,7 +1253,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.49s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped unit's text is the raw object, not the text as admitted"
@@ -1333,7 +1310,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "9 failed in 1.11s",
+   "pytest": "9 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "the receipt built from `Recall.edges` instead of the renderer's admissions"
@@ -1366,7 +1343,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the render receipt built when the caller did not ask for it"
@@ -1399,7 +1376,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "`mutable: true` on a SHARED or CROSS_VISIBLE unit"
@@ -1435,7 +1412,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.60s",
+   "pytest": "2 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "a non-user subject left off its unit"
@@ -1468,7 +1445,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the admitted wiki text missing from the receipt"
@@ -1504,7 +1481,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.64s",
+   "pytest": "2 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm's quoting episode written without the agent call path"
@@ -1540,7 +1517,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.98s",
+   "pytest": "2 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm_fact over MCP records the host API"
@@ -1585,7 +1562,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.01s",
+   "pytest": "5 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's audit episode written without the agent call path"
@@ -1633,7 +1610,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.92s",
+   "pytest": "6 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the agent call path written as `host_api` on a host-API audit episode (it must be ABSENT, today's bytes)"
@@ -1666,7 +1643,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact's redaction reason varying with its input"
@@ -1708,7 +1685,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.49s",
+   "pytest": "4 failed in 1.55s",
    "reason": null,
    "reason_seen": null,
    "what": "with no principal, another user's id answered unlike an unknown id"
@@ -1744,7 +1721,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.53s",
+   "pytest": "2 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "a token issued in the future accepted"
@@ -1795,7 +1772,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 1.04s",
+   "pytest": "7 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "the store_changed refusal removed: a changed store is erased"
@@ -1828,7 +1805,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the digest re-derived outside the erase's write transaction"
@@ -1861,7 +1838,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the preview reveals record content"
@@ -1894,10 +1871,88 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "CorrectionRefused not serialized as `correction_refused`"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]": "assertion",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]"
+   ],
+   "definition_sha256": "64b614693c913cdf5ffcef39e3396bd7a3cf0564f280de64e5435aea393a581a",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
+   ],
+   "id": "TT11-invalid-target-neither-accepted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.98s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "forget_fact's gate-4 check refusing only BOTH ids: with neither it falls through to the target lookup (an argument check outside the 0042 census, found before round 3's dispatch)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-impl]": "assertion",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-mcp]": "assertion",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]": "assertion",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-mcp]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]"
+   ],
+   "definition_sha256": "abae5941a83bc7586f573ae97ea3873720fd96af629d68354bc5c65f8b9b5555",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
+   ],
+   "id": "TT11-invalid-target-removed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[both-mcp]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-impl]",
+    "tests/test_0031_trust_tools_mcp.py::test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation[neither-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 1.22s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "forget_fact's gate-4 check (exactly one of edge_id and episode_id) removed (an argument check outside the 0042 census, found before round 3's dispatch)"
   },
   {
    "anchor_counts": [
@@ -1927,7 +1982,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "an internal failure after a commit returned as a refusal"
@@ -1963,7 +2018,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.11s",
+   "pytest": "2 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "the MCP tools' scope-configuration gate (gate 5: scope_unconfigured, principal_ungroupable) removed, one of the six dict-returned refusals outside the 0042 census"
@@ -1996,7 +2051,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "every find_facts republishing the wiki cache: its conditional write made unconditional (round 2's witness lookup_writes)"
@@ -2035,7 +2090,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.42s",
+   "pytest": "3 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "per-fact forget redacting the records it names as surviving derived"
@@ -2068,7 +2123,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "a restored consolidation output not named: lineage compared by the raw id, not the historical form (0041 R9-03's defect, reached through the tool)"
@@ -2107,7 +2162,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.20s",
+   "pytest": "3 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact with no principal returning an empty `surviving_derived`"
@@ -2164,7 +2219,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "9 failed in 1.66s",
+   "pytest": "9 failed in 1.77s",
    "reason": null,
    "reason_seen": null,
    "what": "an absent erasure setting read as off"
@@ -2197,7 +2252,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "the erasure switch checked only by the whole-user tools (forget_fact still erases)"
@@ -2230,7 +2285,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.93s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "an invalid erasure setting read as on instead of refused"
@@ -2266,7 +2321,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.91s",
+   "pytest": "2 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "`principal_scoped` decided before `erasure_disabled`"
@@ -2308,7 +2363,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.74s",
+   "pytest": "4 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "the digest binds three tables, not four"
@@ -2350,7 +2405,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.05s",
+   "pytest": "4 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "a CROSS_VISIBLE target acted on under a principal"
@@ -2383,7 +2438,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "the scope gate run with no principal (0020 V1: no scope code may run)"
@@ -2437,7 +2492,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "8 failed in 1.07s",
+   "pytest": "8 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "a SHARED (pooled) target acted on under a principal"
@@ -2470,7 +2525,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the library's confirm step accepts a principal"
@@ -2503,7 +2558,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "the confirm tool accepts a principal"
@@ -2545,7 +2600,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.79s",
+   "pytest": "4 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's audit episode written without the binding source"
@@ -2581,7 +2636,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.61s",
+   "pytest": "2 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "correct's replacement edge written without the binding source"
@@ -2647,7 +2702,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "12 failed in 1.35s",
+   "pytest": "12 failed in 1.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the binding source's OWN check removed: a divergent source quotes a private record into another scope"
@@ -2686,7 +2741,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.69s",
+   "pytest": "3 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a binding with no source accepted under a principal (the quote lands in the user-wide pool)"
@@ -2719,7 +2774,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "`fields_cleared` kept in the principal projection (a conditional indicator)"
@@ -2755,7 +2810,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.67s",
+   "pytest": "2 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "a surviving-derived entry the principal cannot see kept in its projection"
@@ -2791,7 +2846,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the host redaction receipt returned to a principal"
@@ -2824,7 +2879,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "a repeat redaction under a principal replaying its receipt without the fresh OWN gate (round 2's witness redaction_repeat: an absorption survivor left UNRESOLVED)"
@@ -2857,7 +2912,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the preview's four reads taken outside one transaction"
@@ -2893,7 +2948,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.44s",
+   "pytest": "2 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "the snapshot digest over a delimiter-joined string, not the table-tagged canonical JSON"
@@ -2926,7 +2981,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "a payload with a duplicate member name accepted"
@@ -2962,7 +3017,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.51s",
+   "pytest": "2 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "a token still valid at exactly t + 600"
@@ -2995,7 +3050,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.49s",
    "reason": null,
    "reason_seen": null,
    "what": "an `isinstance` check on `t`, so a boolean is accepted"
@@ -3028,7 +3083,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.48s",
    "reason": null,
    "reason_seen": null,
    "what": "the MAC over the decoded payload, not the wire segment"
@@ -3061,7 +3116,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.47s",
    "reason": null,
    "reason_seen": null,
    "what": "a token verified against another store's or user's context"
@@ -3094,7 +3149,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.46s",
    "reason": null,
    "reason_seen": null,
    "what": "a non-canonical base64url segment (padding, pad bits) accepted"
@@ -3130,7 +3185,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.52s",
+   "pytest": "2 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "one fixed key for every issuer"
@@ -3163,10 +3218,43 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.43s",
+   "pytest": "1 failed in 0.47s",
    "reason": null,
    "reason_seen": null,
    "what": "an uppercase-hex digest accepted"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0031_trust_tools_mcp.py::test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0031_trust_tools_mcp.py::test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation"
+   ],
+   "definition_sha256": "b6331c5bada9c4fed35c09a9863108518d9dba739aa96a4a7b6eefcb34922d57",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool"
+   ],
+   "id": "TT22-non-string-reason-accepted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0031_trust_tools_mcp.py::test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.92s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "dispute's gate-4 type check removed: a non-string reason on the adapters' *_impl path reaches the library (an argument check outside the 0042 census, found before round 3's dispatch)"
   },
   {
    "anchor_counts": [
@@ -3196,7 +3284,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's reason cap counted in UTF-8 bytes, not code points"
@@ -3229,7 +3317,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "an over-long reason truncated instead of refused"
@@ -3268,7 +3356,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.86s",
+   "pytest": "3 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "the format-15 predicate reads edges only: an export with an agent audit EPISODE stays 14"
@@ -3304,7 +3392,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "a pre-15 file carrying an agent call path imported instead of refused whole"
@@ -3312,13 +3400,13 @@
  ],
  "summary": {
   "by_kind": {
-   "product": 65
+   "product": 68
   },
   "controls": 8,
   "controls_good": 8,
-  "good": 65,
-  "killed": 65,
-  "rows": 65,
-  "seconds": 219
+  "good": 68,
+  "killed": 68,
+  "rows": 68,
+  "seconds": 262
  }
 }

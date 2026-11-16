@@ -450,3 +450,33 @@ def test_a_malformed_reason_is_the_frameworks_schema_error(tmp_path):
     with pytest.raises(Exception):
         asyncio.run(M.build_server(m, default_user=U, capability="direct").call_tool(
             "dispute_fact", {"edge_id": "e-1", "reason": {"not": "a string"}}))
+
+
+def test_a_non_string_reason_on_the_adapters_path_is_refused_before_any_mutation(tmp_path):
+    """INV-TT22's malformed input on the path the framework adapters call (`dispute_fact_impl`; over MCP the served
+    schema refuses first, above): §4a gate 4, the tool's own type check. Mutant: the check removed (a list then
+    passes the cap and reaches the library)."""
+    m = _mem(tmp_path)
+    _edge(m, "e-1")
+    before = _digest(m)
+    out = M.dispute_fact_impl(m, U, "e-1", ["not", "a string"], capability="direct", call_path=C.MCP_DIRECT)
+    assert out == {"ok": False, "refusal": "refused", "detail": "reason must be a string"}, out
+    assert _digest(m) == before
+
+
+# ------------------------------------------------------------------ §4a gate 4: forget_fact's one target (INV-TT11)
+@pytest.mark.parametrize("surface", ["mcp", "impl"])
+@pytest.mark.parametrize("target", ["both", "neither"])
+def test_forget_fact_takes_exactly_one_target_and_refuses_before_any_mutation(tmp_path, target, surface):
+    """§4a gate 4: exactly one of `edge_id` and `episode_id`. Both and neither are `invalid_target`, serialized, writing
+    nothing, over MCP and on the adapters' `*_impl` path. Mutants: the check removed; only `both` refused (`neither`
+    then falls through to the target lookup and reads as `not_found_in_scope`)."""
+    m = _mem(tmp_path)
+    _edge(m, "e-1")
+    _episode(m, "ep-1")
+    before = _digest(m)
+    args = {"edge_id": "e-1", "episode_id": "ep-1"} if target == "both" else {}
+    out = (_call(M.build_server(m, default_user=U, capability="direct"), "forget_fact", args) if surface == "mcp"
+           else M.forget_fact_impl(m, U, capability="direct", **args))
+    assert out == {"ok": False, "refusal": "invalid_target", "detail": "exactly one of edge_id and episode_id"}, out
+    assert _digest(m) == before
