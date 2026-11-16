@@ -1,5 +1,5 @@
 {
- "body_sha256": "e3bf18d1a296b5c6240c053bc5dd27e45bfac25a06cfadf615f1cd9dc613100c",
+ "body_sha256": "911146477aa92ef1618eacafdd99c659e81b420e1f741faa5811f5eb9e2c6d47",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "08156c92361d3aa0a6c70723d8fec08c39ce5c63",
+  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -75,7 +75,37 @@
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   ".github/workflows/test.yml",
+   "CHANGELOG.md",
+   "docs/api.md",
+   "docs/mcp.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/budgets.py",
+   "src/veracium/graph.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/proactive.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/trust_tools.py",
+   "tests/test_0031_proposal_ddl.py",
+   "tests/test_0031_trust_tools_census.py",
+   "tests/test_0031_trust_tools_erase.py",
+   "tests/test_0031_trust_tools_library.py",
+   "tests/test_0031_trust_tools_mcp.py",
+   "tests/test_0042_inv7.py"
+  ]
  },
  "rows": [
   {
@@ -109,7 +139,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.21s",
+   "pytest": "2 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -142,7 +172,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -175,7 +205,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -208,7 +238,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -223,6 +253,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 21
+  "seconds": 19
  }
 }

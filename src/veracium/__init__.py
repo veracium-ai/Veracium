@@ -1451,8 +1451,11 @@ class Memory:
         if emitted is not None:
             # specs/0031 §4b: each emitted member is a unit; the group's framing rides with it (round 2's answer 5),
             # as the heading as rendered and the withheld count, never an unadmitted member's value
+            # TT-R3-02: the subject rides in that framing as the clamped head rendered it, never the raw field
+            from .budgets import rendered_subject
+            subj = None if g.subject == "user" else rendered_subject(g.subject, head)
             emitted.extend((e, text, f"contested: {head} — no single current value"
-                                     + (f"; {withheld} more contending values withheld" if withheld else ""))
+                                     + (f"; {withheld} more contending values withheld" if withheld else ""), subj)
                            for e, text in shown)
         return f"- {head}: {vals}{wh}{tail}", squeezed, withheld
 
@@ -1477,8 +1480,9 @@ class Memory:
             lines = [ln for ln, _sq, _wh in results if ln]
             if not lines:
                 return "", 0, False, NO_CONTESTED_LOSS
-            for e, text, framing in (emitted or []):
-                receipt.admit("edge", e, text, "contested", [framing] + _trust_edge_annotations(e))
+            for e, text, framing, subj in (emitted or []):
+                receipt.admit("edge", e, text, "contested", [framing] + _trust_edge_annotations(e),
+                              subject=None if subj is None else (subj, framing, len("contested: ")))
             # I10i: within-group withholding signals truncation even unbudgeted
             any_sq = any(sq for ln, sq, _wh in results if ln)
             withheld = sum(wh for ln, _sq, wh in results if ln)
@@ -1504,8 +1508,9 @@ class Memory:
                                   if self._contested_line(h)[0] is not None)
                 break
             sel.append(line)
-            for e, text, framing in (emitted or []):       # admitted: the line made it into the block
-                receipt.admit("edge", e, text, "contested", [framing] + _trust_edge_annotations(e))
+            for e, text, framing, subj in (emitted or []):  # admitted: the line made it into the block
+                receipt.admit("edge", e, text, "contested", [framing] + _trust_edge_annotations(e),
+                              subject=None if subj is None else (subj, framing, len("contested: ")))
             withheld += wh
             remaining -= cost
         if not sel:
@@ -1695,8 +1700,12 @@ class Memory:
         def _unit(record, line, partition):
             if receipt is not None:
                 kind = "edge" if isinstance(record, Edge) else "episode"
+                # TT-R3-02: the subject as `render_edges` placed it in this line (its format, its prefix constant)
+                from .graph import edge_subject_span
+                span = edge_subject_span(record) if kind == "edge" else None
                 receipt.admit(kind, record, line, partition,
-                              _trust_edge_annotations(record) if kind == "edge" else [])
+                              _trust_edge_annotations(record) if kind == "edge" else [],
+                              subject=None if span is None else (span[0], line, span[1]))
 
         headers = est("## RELEVANT DETAIL\n") \
             + est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")

@@ -45,6 +45,69 @@ from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              StoreVersionError, open_versioned)
 from ..census import declare_site
 
+import contextvars as _contextvars
+
+# specs/0031 §4f §4a step 8, INV-TT11 (round 3, TT-R3-03): the commit PHASE of one trust-tool call, recorded AT THE
+# COMMIT. `_trust_call` opens a cell bound to ITS Memory's connection; that connection appends to it each time a
+# transaction that WROTE commits. Another connection's commit (a second Memory on the same file) never counts.
+# A refusal is serialized only while the cell is empty ("before anything has committed in the call"); after a writing
+# commit every failure raises. Outside a trust call the var holds None and nothing is recorded: host calls unchanged.
+_TRUST_COMMITS: _contextvars.ContextVar = _contextvars.ContextVar("veracium_trust_commits", default=None)
+
+
+@contextlib.contextmanager
+def trust_commit_phase(conn):
+    """Open the per-call commit record for `conn` (a list, one entry per writing COMMIT on `conn` in this context).
+    Per context, so a commit made by another thread or another call is never counted; per connection, so another
+    connection's commit is never counted either. `conn` None (a memory with no store connection) records nothing."""
+    cell: list = []
+    token = _TRUST_COMMITS.set((conn, cell))
+    try:
+        yield cell
+    finally:
+        _TRUST_COMMITS.reset(token)
+
+
+class _PhaseConnection(sqlite3.Connection):
+    """The store's connection: today's sqlite3 connection, plus the commit-phase record (0031 v23.3, §4b-ii's one
+    subclass, held to a positive shape there). Every store writer ends its transaction through `commit()` or
+    `rollback()`, so both pass here. The read window's explicit COMMIT/ROLLBACK statements do not, and need not: that
+    window writes nothing by contract. A COMMIT is recorded only when the transaction WROTE, meaning SQLite's
+    `total_changes()` moved since the last end, read by one literal statement, so a read-only COMMIT is never a commit
+    of the call. The read never raises over a commit or a rollback: a failed read leaves the mark unknown, and the next
+    commit then counts as a write (fail-safe: a refusal after it raises, never the reverse)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._changes_mark = self._changes()
+
+    def _changes(self):
+        return self.execute("SELECT total_changes()").fetchone()[0]
+
+    def _ended(self, committed: bool) -> None:
+        try:
+            now = self._changes()
+        except Exception:                   # never raised over the transaction's own end (a rollback's cause, above
+            now = None                      # all); an unread counter leaves the mark unknown, which counts as a write
+        wrote = now is None or self._changes_mark is None or now != self._changes_mark
+        self._changes_mark = now
+        if committed and wrote:
+            bound = _TRUST_COMMITS.get()
+            if bound is not None and bound[0] is self:
+                bound[1].append(now)
+
+    def commit(self):
+        was = self.in_transaction
+        super().commit()
+        if was:
+            self._ended(True)
+
+    def rollback(self):
+        was = self.in_transaction
+        super().rollback()
+        if was:
+            self._ended(False)
+
 # specs/0042 (tranche 5): the enforcement points of this module, each a declared site the
 # decision is returned THROUGH — consult() brackets the decision, fire() wraps the value
 _SITE_JOURNAL_REASON = declare_site("store.journal.reason-not-dispositioned")
@@ -342,7 +405,7 @@ class SqliteStore(Store):
             raise ValueError("store path exceeds the 4096-byte audit limit")
         # check_same_thread=False + a lock: safe for the library's typical
         # single-writer, many-reader agent usage without a connection pool.
-        self._conn = sqlite3.connect(self._path, check_same_thread=False)
+        self._conn = sqlite3.connect(self._path, check_same_thread=False, factory=_PhaseConnection)
         # 0007 §4c: `database is locked` waits this long, then refuses loudly
         # with reason="locked" — a startup failure that manifests as a hang is
         # worse than one that manifests as an error.

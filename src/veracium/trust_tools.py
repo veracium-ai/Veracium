@@ -47,6 +47,12 @@ _DETAILS = {
 }
 
 
+class TrustInternalError(RuntimeError):
+    """specs/0031 §4a step 8, INV-TT11 (round 3, TT-R3-03): a failure inside a trust-tool call AFTER something in the
+    call committed. Never a refusal and never a ValueError/TypeError, so no caller can read it as one; the original
+    failure is chained as `__cause__`."""
+
+
 class TrustRefused(ValueError):
     """A §3b scope refusal raised by a library verb under a principal, BEFORE anything is written. `reason` is one
     of `REFUSALS`; the detail is fixed per reason, so no refusal carries record content or an existence signal."""
@@ -248,12 +254,18 @@ class RenderReceipt:
         self.view = view
         self.units: list = []
 
-    def admit(self, kind: str, record, text: str, partition: str, annotations=()):
+    def admit(self, kind: str, record, text: str, partition: str, annotations=(), subject=None):
+        """`subject` (TT-R3-02) is `(segment, anchor, offset)` from the composer that rendered it: the subject AS
+        RENDERED (clamped when the line clamped it), found at `offset` in `anchor`, which is the admitted text or one
+        of the unit's annotations. None when the admitted line names no subject other than the user; then the unit
+        carries none. Never the record's raw field: a segment not at its place is an internal failure."""
         unit = {"kind": kind, "id": None if record is None else record.id, "text": text,
                 "partition": partition, "annotations": list(annotations)}
-        from .schema import Edge
-        if isinstance(record, Edge) and record.subject != "user":     # an episode or the wiki has no subject
-            unit["subject"] = record.subject
+        if subject is not None:
+            seg, anchor, off = subject
+            if not (anchor == text or anchor in unit["annotations"]) or anchor[off:off + len(seg)] != seg:
+                raise RuntimeError("render receipt: a subject segment not at its place in the admitted text")
+            unit["subject"] = seg
         if self.view is not None:
             unit["mutable"] = record is not None and self.view.classification(record) == "OWN"
         self.units.append(unit)

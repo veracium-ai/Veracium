@@ -29,13 +29,22 @@ their agent** (specs/0031 v23–v23.2, §4f; design accepted with amendments at 
   with erasure through the agent ON by default. Set `VERACIUM_MCP_ERASURE=off` (or an adapter's `erasure="off"`) to
   refuse the three forget tools. Content relayed in a first-party turn can induce an agent to call them; the two steps
   stop one induced call, not an agent induced to call both.
-- **New in the library:** `correct`, `dispute`, `confirm` and `redact` take `principal`, `source_id` and `call_path`
-  keyword-only (absent, a call writes today's bytes); under a principal only the principal's own records are acted on,
-  and `redact` returns a six-field projection. `recall(..., render_receipt=True)` lists the units it rendered.
+- **New in the library:** `correct`, `dispute` and `confirm` take `principal`, `source_id` and `call_path`
+  keyword-only, and `redact` takes `principal` (absent, a call writes today's bytes); under a principal only the
+  principal's own records are acted on, and `redact` returns a six-field projection. `recall(..., render_receipt=True)` lists the units it rendered.
   `Memory.forget_everything_preview` / `forget_everything_confirm` take an explicit `trust_tools.PreviewTokenIssuer`.
 - **Export format 15, stamped only when a record carries an agent call path** (an audit episode or confirmation the
   tools wrote); a store without one exports exactly as before, and an older Veracium refuses a 15 file rather than
   read an agent's act as the host's. Store schema unchanged.
+- **Who must act: do not open a store the tools have written with an older Veracium in place.** An older build reads
+  an episode's `call_path`, ignores it, and drops it whenever it re-serializes that episode (a retirement, a
+  reinstatement, a consolidation claim or abandon, a redaction); the episode then reads as the host's act. Exports are
+  protected by the format-15 refusal; a store opened in place is not (specs/0031 §4f.8).
+- **Corrected before release (implementation review round 3):** a lookup's units name only the records the rendered
+  text shows, so a contested group's values summarised as "or K more" are not units; a unit's `subject` is the one its
+  line rendered, never a longer raw value, and a line that names no subject carries none. A tool reports a refusal
+  only when nothing has committed in the call: a failure after a commit is raised through the transport's error
+  channel as `trust_tools.TrustInternalError`, never returned as a clean refusal.
 
 ## 0.32.1 — 2026-11-14
 

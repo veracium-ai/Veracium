@@ -421,10 +421,10 @@ def test_the_erase_over_mcp_and_a_reconstructed_server_voids_the_token(tmp_path)
     assert set(p) == {"ok", "counts", "expires_at", "preview_token", "warning"}, p
     assert p["counts"]["edges"] == 1
     other = M.build_server(m, default_user=U, capability="direct")
-    assert _call(other, "forget_everything_confirm", {"preview_token": p["preview_token"]})["refusal"] \
-        == "preview_unknown"
+    refused = _call(other, "forget_everything_confirm", {"preview_token": p["preview_token"]})
+    assert refused.get("refusal") == "preview_unknown", refused
     done = _call(server, "forget_everything_confirm", {"preview_token": p["preview_token"]})
-    assert done["ok"] is True and done["edges"] == 1
+    assert done.get("ok") is True and done.get("edges") == 1, done
     assert m.store.edges(U, active_only=False) == [] and len(m.store.edges("bob")) == 1
 
 

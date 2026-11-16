@@ -416,3 +416,85 @@ def test_a_refused_confirm_is_counted_by_reason_with_no_content(tmp_path):
     with pytest.raises(TrustRefused):
         m.forget_everything_confirm(U, "tt1.x.y", issuer=iss)
     assert seen == [("erase_refused", {"reason": "preview_unknown"}, U)]
+
+
+# ------------------------------------------------------------------ INV-TT14, the whole matrix (round 3, TT-R3-04 A)
+# Four bound tables x insert / delete / in-place update, each change ISOLATED: made with raw SQL on that table alone,
+# with the other three tables asserted byte-unchanged, so a digest omitting the table under test cannot be rescued by
+# a side effect in another (the round-3 reviewer's point: `Memory.confirm` also writes an episode). An insert or a
+# delete moves that table's key set and voids the token; an in-place update of a non-key column moves no key and
+# does not.
+_UPDATE_COLUMN = {"edges": "object", "episodes": "date", "confirmations": "confirmed_at", "replies": "text"}
+
+
+def _seeded(tmp_path):
+    m = _mem(tmp_path)
+    _edge(m, "e-1"); _edge(m, "e-2")
+    m.confirm(U, "e-1", correlation_id="c-1"); m.confirm(U, "e-2", correlation_id="c-2")
+    m.reply(U, "e-1", kind="context", text="note one"); m.reply(U, "e-2", kind="context", text="note two")
+    for t in T.ERASE_PREVIEW_TABLES:                               # every table holds two keys to change
+        assert m.store._conn.execute(f"SELECT count(*) FROM {t} WHERE user_id=?", (U,)).fetchone()[0] >= 2, t
+    return m
+
+
+def _rows(m):
+    return {t: sorted(tuple(r) for r in m.store._conn.execute(f"SELECT * FROM {t}")) for t in T.ERASE_PREVIEW_TABLES}
+
+
+def _change(m, table, op):
+    c = m.store._conn
+    cols = [r[1] for r in c.execute(f"PRAGMA table_info({table})")]
+    row = c.execute(f"SELECT * FROM {table} WHERE user_id=? ORDER BY id LIMIT 1", (U,)).fetchone()
+    if op == "insert":
+        new = list(row)
+        new[cols.index("id")] = row[cols.index("id")] + "-copy"
+        for uniq in ("correlation_id",):                           # confirmations/replies: UNIQUE(user, correlation)
+            if uniq in cols:
+                new[cols.index(uniq)] = str(row[cols.index(uniq)]) + "-copy"
+        c.execute(f"INSERT INTO {table} ({','.join(cols)}) VALUES ({','.join('?' * len(cols))})", new)
+    elif op == "delete":
+        c.execute(f"DELETE FROM {table} WHERE id=?", (row[cols.index("id")],))
+    else:
+        col = _UPDATE_COLUMN[table]
+        c.execute(f"UPDATE {table} SET {col} = {col} || '-x' WHERE id=?", (row[cols.index("id")],))
+    c.commit()
+
+
+@pytest.mark.parametrize("op", ["insert", "delete", "update"])
+@pytest.mark.parametrize("table", list(T.ERASE_PREVIEW_TABLES))
+def test_each_bound_table_by_each_operation_in_isolation(tmp_path, table, op):
+    m = _seeded(tmp_path)
+    clock = {"t": T0}
+    iss = _issuer(m, clock)
+    tok = m.forget_everything_preview(U, issuer=iss)["preview_token"]
+    before = _rows(m)
+    _change(m, table, op)
+    after = _rows(m)
+    assert after[table] != before[table]                                       # the change really happened
+    assert {t: after[t] for t in after if t != table} == {t: before[t] for t in before if t != table}
+    if op == "update":
+        assert m.forget_everything_confirm(U, tok, issuer=iss)["edges"] == 2
+    else:
+        with pytest.raises(TrustRefused, match="store_changed"):
+            m.forget_everything_confirm(U, tok, issuer=iss)
+        assert _rows(m) == after                                               # refused: nothing erased
+
+
+def test_a_firing_policy_lane_between_the_steps_does_not_void_the_token(tmp_path):
+    """INV-TT14's unbound table, through the real integration: a PolicyLane that FIRES on a recall writes its
+    policy_receipt row; the four bound key sets do not move, and the token still erases (the receipt with it)."""
+    from veracium import PolicyLane
+    m = _mem(tmp_path)
+    _edge(m, "e-1")
+    clock = {"t": T0}
+    iss = _issuer(m, clock)
+    tok = m.forget_everything_preview(U, issuer=iss)["preview_token"]
+    keys = m.store.erase_preview_snapshot(U)
+    n = m.store._conn.execute("SELECT count(*) FROM policy_receipt").fetchone()[0]
+    r = m.recall(U, "tea", semantic=False, policy=PolicyLane(policy_id="review", policy_version="1",
+                                                             ranks={"e-1": 1}))
+    assert r.policy_receipt is not None
+    assert m.store._conn.execute("SELECT count(*) FROM policy_receipt").fetchone()[0] == n + 1
+    assert m.store.erase_preview_snapshot(U) == keys
+    assert m.forget_everything_confirm(U, tok, issuer=iss)["edges"] == 1
+    assert m.store._conn.execute("SELECT count(*) FROM policy_receipt").fetchone()[0] == 0

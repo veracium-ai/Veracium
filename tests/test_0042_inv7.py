@@ -2655,8 +2655,12 @@ def test_r20_census_output_never_reaches_the_isolated_child_s_response(cell, suf
     problem here is never a manifest mismatch)."""
     un = _load("inv7_uninstrument_r20f1", EVIDENCE / "inv7_uninstrument.py")
     # raising=False: the matrix reaches the defect through names the round-19 pin also has, so there every cell fails
-    # on the transport itself (a bare JSONDecodeError), not on this round's budget constant
-    monkeypatch.setattr(un, "_ISOLATION_TIMEOUT", 8, raising=False)
+    # on the transport itself (a bare JSONDecodeError), not on this round's budget constant.
+    # 60 s, not the 8 s of the never-ends cell below: every cell here FINISHES, so the budget only caps a regression
+    # that hangs. Measured under the two-phase suite's -n 8 phase (five runs, 2026-11-14..16): a whole cell, four
+    # children included, took at most 3.44 s. The external reviewer's full concurrent offline run (0031 round 3)
+    # took one child past 8 s, and the same selections passed alone; 60 s is about 17x the worst cell measured here.
+    monkeypatch.setattr(un, "_ISOLATION_TIMEOUT", 60, raising=False)
     ref = un.REFERENCE_CENSUS.read_text()
     head = ref + suffix
     # derive() over the edited census

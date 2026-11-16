@@ -721,7 +721,7 @@ MIGRATION_MODULES = {"veracium/store/migration.py", "veracium/store/schema_versi
 # regenerated from the tree and re-reviewed when it moves
 NONLITERAL_BINDING = {
     ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'): 'd5cce0a3ca1cfe5d',
-    ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): 'a007dac83ad5a192',
+    ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): 'e2ac717c5894eabd',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'): 'db9f67ef1d767cb0',
     ('SqliteStore._attested_by_another_owner', 'eb2ba4c3290426945f64f55e532238461d5d9d44a5ee085a4f52645c927eeb3a'): 'd4fc7f5ee142b3a5',
     ('SqliteStore._attested_fields', 'b4446c6ae88d8497d190f8f13a92911f81cf0e25a5c0df840c605cad4633adbf'): '471eb25f14d333e4',
@@ -733,7 +733,7 @@ NONLITERAL_BINDING = {
     ('SqliteStore._redact_in_txn', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'): 'c092f64467014f77',
     ('SqliteStore._redaction_record', 'c2aa0c6f503ee77f2f03c4cd951b3745a4d865b0e283306c915c53d5fbb16e05'): 'cd48256676379af6',
     ('SqliteStore._reply_replay', 'ebab35174f4bd03a186cdddb45260a877bf8623edb94965487f0a205325d2eac'): 'da23ba8b0553970b',
-    ('SqliteStore._source_redacted', '29a9ff461c9d9dce95085ee23caaf9cf3005b1caa65b04eaaa213d5db57baa50'): '2799124cf5fa5c48',
+    ('SqliteStore._source_redacted', '29a9ff461c9d9dce95085ee23caaf9cf3005b1caa65b04eaaa213d5db57baa50'): '4f85982f06d6114e',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore._surviving_derived', '3d9f2c553d81b34f9e0c3dae13bdce09ed08cd1a45de42c73e1c810fdaef9421'): '00fc3fe13f6cd5b6',
     ('SqliteStore._write_edge_row', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'): '837cbf13ae6f3251',
     ('SqliteStore._write_op', 'b0447a31f610348c07a0930af4ffe437a4178a7e2f7cdc52d11e2e5d8753060b'): 'f33708a9b03795b5',
@@ -742,13 +742,13 @@ NONLITERAL_BINDING = {
     ('SqliteStore.add_reply', 'a2022f06b808b3a462a935471067cafc7535c753122add6c146aa954827fa400'): '16ce222052f71771',
     ('SqliteStore.commit_outcome_import_plan', '03827958ec7b7072aefe89448678674c9fc02886e4c4edb1311a054d9d8f4a2d'): '9c2d3144a3f87cbb',
     ('SqliteStore.commit_outcome_import_plan', '25a68e8dfc53a69efba960f40b99fc74fd55430b7a5d678e75be6ac3347e56eb'): '8b9ba230c6669e58',
-    ('SqliteStore.commit_outcome_import_plan', '70905b22342c93513fc74ea1d16e4f11233b00789a3dd9f73bc874dac57eebc9'): '6d5a5fff8f0d0aec',
+    ('SqliteStore.commit_outcome_import_plan', '70905b22342c93513fc74ea1d16e4f11233b00789a3dd9f73bc874dac57eebc9'): 'def3b1074fa32e36',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore.commit_outcome_import_plan', 'add6a203baf74ebdf25588d537da098d28d3d62b1dd80390be8daa6599b1fb04'): '6f9398b295171a36',
-    ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'): '6d5a5fff8f0d0aec',
+    ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'): 'def3b1074fa32e36',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore.commit_outcome_import_plan', 'e09d8261753337dde680071ab5bdc7e6175a5754f49b43053debc68f25e57da4'): '58ce5c12abef5978',
     ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'): 'b2dc7d1543169c2a',   # 0031 §4f: re-reviewed — the episode gains its source/call path; the SQL is unchanged
     ('SqliteStore.confirm_notice', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'): '9f164edab461b1c5',
-    ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): '05623ef1b5666877',
+    ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): 'b68c504456272ac2',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore.confirmations_for', '6de03e078785d11fe4b34b9c39000a308103c9a26815b350347938403fc4eea6'): '17ed76defda31afb',
     ('SqliteStore.contributions', 'c1a33b453a06fc1a588f12603f9d30098c211b2f378a5aa76edf0dfc0c49e6ef'): 'f98d99163f1cec8b',
     ('SqliteStore.contributors_of_source', 'ff79d44b37b3604e5d6ef605c9bec3381dec33cb8f91d45a207c030863ae2a27'): '4c3df298fc8b4db1',
@@ -761,7 +761,7 @@ NONLITERAL_BINDING = {
     ('SqliteStore.redact', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): '0fa9218fe3cded6b',
     ('SqliteStore.redacted_targets', '6f6166079c03b2f9ad0b61e4d8ba0e1882ed1b32d1d221f124d45d4b67c39af6'): '3308dde1ffb62e56',
     ('SqliteStore.replies_for', '0e50f0c8b250ce20c7dcb393bdcbfc6c910b7099e5eb19b7c5a02ef0c64833d6'): 'c76c555fda255a01',
-    ('SqliteStore.transition_consolidation_if_current', '5126e0419cd211f8dc948a7d1276927164e8eab4a076c2c872d1addc70fe9f09'): '1eee398d92ea435c',
+    ('SqliteStore.transition_consolidation_if_current', '5126e0419cd211f8dc948a7d1276927164e8eab4a076c2c872d1addc70fe9f09'): '15d32c08c5cc6c70',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
 }
 # round 5, research's stage 2 (S2-01): the same rule for every OTHER src module's non-literal SQL argument, keyed
 # ("<module>:<function>", sha256 of the expression) -> (times, its text, its binding). Wherever the connection travels
@@ -3699,7 +3699,10 @@ def _sql_caller():
     The authorizer runs at prepare, inside the C call, so that frame is the statement's author. A write method on the
     stack proves nothing: a callee it reaches (next_seq, under the journal writer) runs under it."""
     f = sys._getframe(1)
-    while f is not None and f.f_code.co_filename == __file__:
+    # a method running ON the connection is never the author: 0031 v23.3's commit-phase subclass (§4b-ii) overrides
+    # `execute`, and the author is its caller (by property: the frame's `self` is a sqlite3.Connection)
+    while f is not None and (f.f_code.co_filename == __file__
+                             or isinstance(f.f_locals.get("self"), sqlite3.Connection)):
         f = f.f_back
     return f.f_code if f is not None else None
 

@@ -109,6 +109,20 @@ def clamp_item(line: str, cap_tokens: int) -> str:
     return line[:keep] + ELISION_MARKER
 
 
+def rendered_subject(subject: str, rendered: str) -> str:
+    """specs/0031 §4b (TT-R3-02): the subject AS A CLAMP RENDERED IT, where `rendered` is `clamp_item` of a string
+    that begins with `subject`: the whole subject when the clamp kept it, else the prefix it kept plus the elision
+    marker. Never the record's raw field when the clamp cut it. Raises RuntimeError (an internal failure, never a
+    refusal) when `rendered` is not a clamp of a string beginning with `subject`."""
+    if rendered.startswith(subject):
+        return subject
+    if rendered.endswith(ELISION_MARKER):
+        kept = rendered[:-len(ELISION_MARKER)]
+        if subject.startswith(kept):
+            return kept + ELISION_MARKER
+    raise RuntimeError("rendered_subject: the rendered text is not a clamp of the subject")
+
+
 # --- the compile-drop marker (0012 §4c(iv), FROZEN grammar R10-3/R12-1) ------------- #
 MARKER_GRAMMAR_VERSION = "v1"
 MARKER_PREFIX = "[[veracium-wiki-compile:"

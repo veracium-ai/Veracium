@@ -7,6 +7,8 @@ check here names the mutant it kills, and each mutating case runs on its own fre
 """
 import hashlib
 import json
+import pathlib
+import sys
 from datetime import datetime, timezone
 
 import pytest
@@ -123,6 +125,25 @@ def test_a_bound_source_changes_the_confirmation_request_identity_and_absence_ke
                                    "2026-11-01"]).encode()).hexdigest()
     assert m.store.confirmations_for(U, e.id)[0].request_digest == today
     assert m.confirm(U, e.id, correlation_id="c-1", date="2026-11-01")["replayed"] is True
+
+
+
+@pytest.mark.parametrize("held_under", ["src-a", "src-b"])
+def test_a_supplied_source_enters_the_identity_a_repeat_replays_and_another_source_conflicts(tmp_path, held_under):
+    """v23.2's source contribution, exercised by SUPPLYING sources (round 3, TT-R3-04 B): under one held correlation
+    id, the same source replays and a different source is a conflict; the digest moves with the source. Mutant: the
+    non-null source dropped from confirm's request digest (both sources then replay)."""
+    m = _mem(tmp_path, scoped=False)
+    e = _edge(m, "e-1", "tea")
+    other = "src-b" if held_under == "src-a" else "src-a"
+    first = m.confirm(U, e.id, source_id=held_under, correlation_id="held", date="2026-11-01")
+    assert first["replayed"] is False
+    assert m.confirm(U, e.id, source_id=held_under, correlation_id="held", date="2026-11-01")["replayed"] is True
+    with pytest.raises(ValueError):
+        m.confirm(U, e.id, source_id=other, correlation_id="held", date="2026-11-01")
+    with pytest.raises(ValueError):
+        m.confirm(U, e.id, correlation_id="held", date="2026-11-01")            # absent is a third identity
+    assert len(m.store.confirmations_for(U, e.id)) == 1                         # neither conflict wrote
 
 
 # ------------------------------------------------------------------ §3b: configuration refusals (gate 5)
@@ -291,10 +312,12 @@ def test_a_repeat_under_a_principal_passes_a_fresh_gate_an_unresolved_survivor_i
     graph.apply_supersession(m.store, edge("e-full", "cat Miso"), m.config.relations)
     assert m._find_edge(U, "e-short").invalidation_reason == "absorbed_duplicate"
     first = m.redact(U, edge_id="e-full", reason="subject_request", principal=A)
+    assert isinstance(first, dict), type(first).__name__        # the projection, never the host receipt
     assert first["repeated"] is False and first["target_id"] == "e-full"
     before = _digest(m)
-    with pytest.raises(TrustRefused):
+    with pytest.raises(TrustRefused) as ei:
         m.redact(U, edge_id="e-full", reason="subject_request", principal=A)
+    assert ei.value.reason == "not_found_in_scope" and ei.value.detail == NOT_FOUND_DETAIL   # UNRESOLVED: one response
     assert _digest(m) == before
     assert m.redact(U, edge_id="e-full", reason="subject_request").repeated is True    # the host path, unchanged
 
@@ -315,6 +338,36 @@ def test_two_stores_differing_only_in_hidden_records_give_identical_principal_re
         assert isinstance(r, dict), type(r).__name__
         out.append({**r, "recorded_at": "<t>"})
     assert out[0] == out[1]
+
+
+# ------------------------------------------------------------------ INV-TT5 / INV-TT23: bytes against the last release
+EVIDENCE = pathlib.Path(__file__).resolve().parents[1] / "specs" / "evidence" / "0031-trust-tools"
+LEGACY = json.loads((EVIDENCE / "legacy" / "v0.32.1.json").read_text(encoding="utf-8"))
+
+
+def _legacy_bytes():
+    sys.path.insert(0, str(EVIDENCE))
+    try:
+        import legacy_bytes
+    finally:
+        sys.path.remove(str(EVIDENCE))
+    return legacy_bytes
+
+
+@pytest.mark.parametrize("explicit", [False, True], ids=["keywords-absent", "host-api-explicit"])
+@pytest.mark.parametrize("case", ["correct", "dispute", "confirm"])
+def test_a_host_call_is_byte_identical_to_the_last_release_before_the_trust_tools(case, explicit):
+    """TT-R3-04 D (INV-TT5, INV-TT23): one host verb with today's arguments, under controlled ids and clocks, gives
+    the SAME return value, every row of every table and the same export bytes as the released v0.32.1 wheel (the
+    baseline `legacy/v0.32.1.json`, made by `legacy_bytes.py` under that wheel; its sha256 is recorded there). Passing
+    `call_path=host_api` explicitly changes nothing either. Mutants: `host_api` written explicitly; an omitted
+    `source_id` written as null or dropped; the export era raised for a host-only store."""
+    assert LEGACY["veracium"] == "0.32.1" and LEGACY["wheel_sha256"].startswith("4cd8ebf0")
+    got = _legacy_bytes().run_case(case, {"call_path": C.HOST_API} if explicit else {})
+    want = LEGACY["cases"][case]
+    assert got["return"] == want["return"]
+    assert got["rows"] == want["rows"], [r for r in got["rows"] if r not in want["rows"]][:5]
+    assert got["export"] == want["export"]
 
 
 # ------------------------------------------------------------------ INV-TT23 (v23.1): the call-path export era

@@ -24,11 +24,14 @@ _reached: set = set()
 
 
 def _src_frame(f):
-    """The innermost frame inside src/veracium (never this plugin, never a test)."""
+    """The innermost frame inside src/veracium (never this plugin, never a test), skipping a method running ON the
+    connection itself: 0031 v23.3's commit-phase subclass (§4b-ii) overrides `execute`/`commit`/`rollback`, and the
+    writer is whoever called it, never the connection (by property: the frame's `self` is a sqlite3.Connection)."""
+    import sqlite3
     while f is not None:
         path = f.f_code.co_filename
         i = path.find("/src/veracium/")
-        if i >= 0:
+        if i >= 0 and not isinstance(f.f_locals.get("self"), sqlite3.Connection):
             return path[i + len("/src/veracium/"):], f.f_code.co_name
         f = f.f_back
     return None

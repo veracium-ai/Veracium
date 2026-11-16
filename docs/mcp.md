@@ -79,7 +79,7 @@ never because of content it read.
 
 | tool | purpose |
 |---|---|
-| `find_facts(query?)` | what memory currently shows the user, with the record ids the other tools take: the units one `recall` rendered, each `{kind, id, text, partition, annotations}` (`partition`: `grounded`, `fenced` for a third-party claim, or `contested`). Read-only; wiki text is a unit with no id. |
+| `find_facts(query?)` | what memory currently shows the user, with the record ids the other tools take: the units one `recall` rendered, each `{kind, id, text, partition, annotations}` (`partition`: `grounded`, `fenced` for a third-party claim, or `contested`), and a `subject` exactly as the unit's line rendered it, when the line names one other than the user. It changes no fact; like any `recall`, a query lookup refreshes the user's wiki cache (one row) when wiki recompilation is on (the default), and a lookup without a query writes nothing. Wiki text is a unit with no id. |
 | `correct_fact(edge_id, corrected_value)` | the remembered value was wrong: kept as history marked `corrected`, the new value stored as the user's. |
 | `dispute_fact(edge_id, reason?)` | the fact is no longer asserted and is kept as history; `reason` at most 1,024 characters. |
 | `confirm_fact(edge_id)` | the fact still holds: clears its staleness flag and records the confirmation (`call_path` `mcp_direct`). |

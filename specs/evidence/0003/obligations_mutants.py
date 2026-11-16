@@ -184,18 +184,20 @@ MUTANTS = [
      [SR1_FOLD, SR1_MIX, SR1_REVIEWER, N1_K], [OB3], None, "distinct values decided AFTER the clamp, so two different "
                                                             "values that shorten alike are one and K loses one (SR1-01)"),
     ("SR1-01-collision-shown-twice", "product", X,
-     [("                if s not in out:\n                    out.append(s)\n", "                out.append(s)\n")],
+     [("                if s not in out:\n                    out.append(s)\n                    kept.append(v)",
+       "                out.append(s)\n                kept.append(v)")],
      [SR1_FOLD, SR1_MIX], [OB3], None, "a value whose clamped display repeats a shown one is shown again (\"X or X\"), "
                                       "not folded into K (research's stage 1, Q1)"),
     # ---- research's stage 2 on 974a6122 (R2S-2): the one-slot fallback, and two siblings of the n-slot form ----------
     ("R2S-2-one-slot-k-counts-displays", "product", X,
-     [("            k = len(values) - 1\n", "            k = len(_shown(len(values))) - 1\n")],
+     [("            k, kept = len(values) - 1, [values[0]]",
+       "            k, kept = len(_shown(len(values))[0]) - 1, [values[0]]")],
      [R2S2_SR1], [OB3], None, "the one-slot fallback counts K over clamped displays: SR1-01 on the other path (A4)"),
     ("R2S-2-one-slot-shows-farthest", "product", X,
      [("                first = _clamp(values[0], content)\n", "                first = _clamp(values[-1], content)\n")],
      [R2S2_NEAREST], [OB3], None, "the one-slot fallback shows the FARTHEST value, not the nearest (A8)"),
     ("R2S-2-one-slot-k-zero", "product", X,
-     [("            k = len(values) - 1\n", "            k = 0\n")],
+     [("            k, kept = len(values) - 1, [values[0]]", "            k, kept = 0, [values[0]]")],
      [R2S2_NEAREST, R2S2_SR1], [OB3], None, "the one-slot fallback names no other value (A10)"),
     ("R2S-2-k-counts-slots", "product", X,
      [("            cand = head + _body(shown, len(values) - len(shown)) + tail\n",
@@ -213,7 +215,7 @@ MUTANTS = [
        "            cand = head + _body(shown, len(ms) - len(shown)) + tail\n"),
       ("                line, k, first = cand, len(values) - len(shown), shown[0]\n",
        "                line, k, first = cand, len(ms) - len(shown), shown[0]\n"),
-      ("            k = len(values) - 1\n", "            k = len(ms) - 1\n")],
+      ("            k, kept = len(values) - 1, [values[0]]", "            k, kept = len(ms) - 1, [values[0]]")],
      [SR2_03_SLOT, SR2_03_ORD], [OB3], None, "K counted over the MEMBERS, not the distinct values: a repeated value "
                                             "with a distinct note is counted twice, on both paths (SR2-03, the "
                                             "reviewer's three-site mutant)"),
@@ -233,8 +235,10 @@ MUTANTS = [
     ("NEW1-mark-outside-the-cap", "product", X,
      [("        head, tail = f\"{e.relation}: {s_out}\", _flag_of[e.id] + _marked.get(e.id, \"\")\n",
        "        head, tail = f\"{e.relation}: {s_out}\", _flag_of[e.id]\n"),
-      ("                    _clamped_ids.add((\"edge\", e.id))\n                return line\n",
-       "                    _clamped_ids.add((\"edge\", e.id))\n                return line + _marked.get(e.id, \"\")\n")],
+      ("                    _subject_at[(e.id, line)] = (rendered_subject(e.subject, s_out), len(f\"{e.relation}: \"))\n"
+       "                return line\n",
+       "                    _subject_at[(e.id, line)] = (rendered_subject(e.subject, s_out), len(f\"{e.relation}: \"))\n"
+       "                return line + _marked.get(e.id, \"\")\n")],
      [NEW1_MARK], [OUTSIDE], None, "the lone member's mark appended after the line is held to the cap (NEW 1)"),
     ("N2-grouped-members-composed", "product", X,
      [("            _unit = _ContestedCommitment(_ms)\n",

@@ -1,5 +1,5 @@
 {
- "body_sha256": "19d674c42d928e5ded7a7264a37eedfb41deb1a9813372b8841a80ee8dd96539",
+ "body_sha256": "145a5a6643faac36f2e759facae3b1a987959918fc3da98173651721b7a30069",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "08156c92361d3aa0a6c70723d8fec08c39ce5c63",
+  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
   "control_definitions": {
    "NOOP-SA-R5-C1-attestation_job": "c8777444888bf4662195743519ae4812aa42f6f93dfcfe7e3bb9943408be0934"
   },
@@ -69,6 +69,13 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   ".github/workflows/test.yml",
+   "CHANGELOG.md",
+   "docs/api.md",
+   "docs/mcp.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -80,7 +87,29 @@
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/budgets.py",
+   "src/veracium/graph.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/proactive.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/trust_tools.py",
+   "tests/test_0031_proposal_ddl.py",
+   "tests/test_0031_trust_tools_census.py",
+   "tests/test_0031_trust_tools_erase.py",
+   "tests/test_0031_trust_tools_library.py",
+   "tests/test_0031_trust_tools_mcp.py",
+   "tests/test_0042_inv7.py"
   ]
  },
  "rows": [
@@ -115,7 +144,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.79s",
+   "pytest": "2 failed in 10.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded read boundary: an XML declaration naming no text codec raises LookupError out of decide"
@@ -130,6 +159,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 60
+  "seconds": 54
  }
 }

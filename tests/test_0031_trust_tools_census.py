@@ -275,3 +275,49 @@ AGREEMENT_MUTANTS = {
 def test_the_agreement_check_refuses_each_mutant_by_name(name):
     bad = disagreements(*_mutated(name))
     assert any(AGREEMENT_MUTANTS[name] in b for b in bad), bad
+
+
+# ------------------------------------------------------------------ TT-R3-03: the phase rule over the census corpus
+def test_no_refusal_class_leaves_a_call_after_a_writing_commit_across_the_census(monkeypatch):
+    """v23.3's INV-TT11 check, "no refusal site reached after a writing commit in the call", over this census's 45 cases
+    (the corpus bound: every gate, accepted write, committed refusal and conditional write the census charges). Every
+    refusal-class exception (ValueError, TypeError, ScopeError, TrustRefused; CorrectionRefused apart, the committed
+    refusal) that leaves a tool's library call does so while the call's commit cell is EMPTY, so the phase rule turns
+    none of today's refusals into an internal failure. Read at the moment the exception leaves, from the cell the
+    connection itself fills. Gates 1 to 5 refuse before any library call, so the calls this reads are the ones that
+    reach the catch. Non-vacuous: the corpus reaches refusals and writing commits, both counted. Mutant: a
+    refusal-class raise after a commit (the confirm-then-readback shape) in a census case."""
+    from veracium import graph
+    from veracium import mcp_server as M
+    from veracium.scope_linkage import ScopeError
+    from veracium.store import sqlite as S
+    real, events, current = M._trust_call, [], [None]
+
+    def commits():
+        bound = S._TRUST_COMMITS.get()
+        return None if bound is None else len(bound[1])
+
+    def spy(mem, fn):
+        def inner():
+            try:
+                out = fn()
+            except graph.CorrectionRefused:
+                events.append((current[0], "correction_refused", commits()))
+                raise
+            except (ScopeError, ValueError, TypeError) as exc:
+                events.append((current[0], f"refusal {type(exc).__name__}", commits()))
+                raise
+            events.append((current[0], "returned", commits()))
+            return out
+        return real(mem, inner)
+
+    monkeypatch.setattr(M, "_trust_call", spy)
+    m = _module()
+    for name, fn in m.CASES:
+        current[0] = name
+        fn()
+    refusals = [e for e in events if e[1].startswith("refusal")]
+    after = [e for e in refusals if e[2] != 0]
+    assert after == [], after
+    assert len(m.CASES) == 45 and len(refusals) >= 5, (len(m.CASES), len(refusals))
+    assert any(e[1] == "returned" and e[2] for e in events), "no case committed a write: the check would be vacuous"

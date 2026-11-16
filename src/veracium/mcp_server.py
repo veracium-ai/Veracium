@@ -420,25 +420,34 @@ def _unscoped_target_missing(mem: Memory, user_id: str, principal, kind: str, re
     return _trust_refusal("not_found_in_scope")
 
 
-def _trust_call(fn) -> dict:
+def _trust_call(mem: Memory, fn) -> dict:
     """§4a step 8 and INV-TT11: a library REFUSAL returns serialized and is never raised to the transport. An
-    internal failure is never turned into a clean-looking refusal: anything outside the refusal classes raises (before
-    a commit the store rolled it back; after one, it raises)."""
+    internal failure is never turned into a clean-looking refusal.
+
+    Round 3 (TT-R3-03): the PHASE decides, recorded at the commit itself. The store's connection records each writing
+    COMMIT in this call's cell (`trust_commit_phase`). A refusal class is serialized only while the cell is EMPTY,
+    before anything has committed in the call. After a writing commit a refusal-class failure raises as
+    TrustInternalError, chained, whatever its site (the confirm-then-readback case: `_find_edge`'s unknown-target
+    ValueError after confirm committed is an internal failure, not a refusal). The one exception is CorrectionRefused,
+    the committed refusal TT-R2-02 defines. Anything outside the refusal classes raises unchanged in either phase."""
     from . import graph
     from .scope_linkage import ScopeError
-    from .trust_tools import TrustRefused
-    try:
-        return fn()
-    except TrustRefused as exc:
-        return _trust_refusal(exc.reason, exc.detail)
-    except graph.CorrectionRefused as exc:
-        # TT-R2-02: a COMMITTED refusal — the refusal plan is kept, the target stays active; "the correction was
-        # refused", not "nothing was written"
-        return _trust_refusal("correction_refused", str(exc))
-    except ScopeError as exc:
-        return _trust_refusal("refused", str(exc))
-    except (ValueError, TypeError) as exc:
-        return _trust_refusal("refused", str(exc))
+    from .store.sqlite import trust_commit_phase
+    from .trust_tools import TrustInternalError, TrustRefused
+    store = getattr(mem, "store", None)                # a test's fake memory has none: nothing to record
+    with trust_commit_phase(store._conn if store is not None else None) as committed:
+        try:
+            return fn()
+        except graph.CorrectionRefused as exc:
+            # TT-R2-02: a COMMITTED refusal — the refusal plan is kept, the target stays active; "the correction was
+            # refused", not "nothing was written"
+            return _trust_refusal("correction_refused", str(exc))
+        except (ScopeError, ValueError, TypeError) as exc:      # the refusal classes (TrustRefused is a ValueError)
+            if committed:
+                raise TrustInternalError(f"{type(exc).__name__} after a commit in this call") from exc
+            if isinstance(exc, TrustRefused):
+                return _trust_refusal(exc.reason, exc.detail)
+            return _trust_refusal("refused", str(exc))
 
 
 def _ok(result: dict) -> dict:
@@ -457,7 +466,7 @@ def find_facts_report(mem: Memory, user_id: str, query: Optional[str] = None, *,
         r = mem.recall(user_id, query, principal=principal, render_receipt=True)
         return _ok({"query": query, "path": "query" if query is not None else "proactive",
                     "units": r.render_receipt})
-    return _trust_call(run)
+    return _trust_call(mem, run)
 
 
 def correct_fact_report(mem: Memory, user_id: str, edge_id: str, corrected_value: str, *, capability=None,
@@ -466,7 +475,7 @@ def correct_fact_report(mem: Memory, user_id: str, edge_id: str, corrected_value
                or _unscoped_target_missing(mem, user_id, principal, "edge", edge_id))
     if refused:
         return refused
-    return _trust_call(lambda: _ok(mem.correct(user_id, edge_id, corrected_value, actor="user",
+    return _trust_call(mem, lambda: _ok(mem.correct(user_id, edge_id, corrected_value, actor="user",
                                                principal=principal, source_id=source_id,
                                                call_path=call_path)))
 
@@ -484,7 +493,7 @@ def dispute_fact_report(mem: Memory, user_id: str, edge_id: str, reason: str = "
                or _unscoped_target_missing(mem, user_id, principal, "edge", edge_id))
     if refused:
         return refused
-    return _trust_call(lambda: _ok(mem.dispute(user_id, edge_id, reason=reason, actor="user", principal=principal,
+    return _trust_call(mem, lambda: _ok(mem.dispute(user_id, edge_id, reason=reason, actor="user", principal=principal,
                                                source_id=source_id, call_path=call_path)))
 
 
@@ -495,7 +504,7 @@ def confirm_fact_report(mem: Memory, user_id: str, edge_id: str, *, capability=N
     if refused:
         return refused
     from .schema import ConfirmationActor
-    return _trust_call(lambda: _ok(mem.confirm(user_id, edge_id, actor=ConfirmationActor.USER, call_path=call_path,
+    return _trust_call(mem, lambda: _ok(mem.confirm(user_id, edge_id, actor=ConfirmationActor.USER, call_path=call_path,
                                                principal=principal, source_id=source_id)))
 
 
@@ -519,7 +528,7 @@ def forget_fact_report(mem: Memory, user_id: str, edge_id: Optional[str] = None,
         r = mem.redact(user_id, edge_id=edge_id, episode_id=episode_id, reason="subject_request",
                        principal=principal)
         return _ok(r if isinstance(r, dict) else r.model_dump(mode="json"))
-    return _trust_call(run)
+    return _trust_call(mem, run)
 
 
 def forget_everything_preview_report(mem: Memory, user_id: str, *, capability=None, erasure=None, principal=None,
@@ -528,7 +537,7 @@ def forget_everything_preview_report(mem: Memory, user_id: str, *, capability=No
                            principal=principal)
     if refused:
         return refused
-    return _trust_call(lambda: _ok(mem.forget_everything_preview(user_id, issuer=issuer)))
+    return _trust_call(mem, lambda: _ok(mem.forget_everything_preview(user_id, issuer=issuer)))
 
 
 def forget_everything_confirm_report(mem: Memory, user_id: str, preview_token, *, capability=None, erasure=None,
@@ -544,7 +553,7 @@ def forget_everything_confirm_report(mem: Memory, user_id: str, preview_token, *
     if refused:
         mem._record("erase_refused", {"reason": refused["refusal"]}, user_id)   # §4f: the discard counter
         return refused
-    return _trust_call(lambda: _ok(mem.forget_everything_confirm(user_id, preview_token, issuer=issuer)))
+    return _trust_call(mem, lambda: _ok(mem.forget_everything_confirm(user_id, preview_token, issuer=issuer)))
 
 
 def _strip(report: dict) -> dict:

@@ -221,6 +221,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     _flag_of: dict = {}        # a commitment-tier edge's due/overdue flag, kept until its line is composed
     _marked: dict = {}         # a lone contested member's mark (filled by the contested block below)
     _unit_parts: dict = {}     # a contested unit's (subject, relation, members), for recomposition
+    # 0031 round 3, TT-R3-01: (unit id, the line as composed) -> the ORIGINAL member values that line shows. The
+    # receipt admits exactly the members whose value is shown, never the group's whole membership; keyed by the line
+    # itself, so the first-item recomposition (the same composer at a smaller cap) carries its own set
+    _shown_values: dict = {}
+    # TT-R3-02: (record or unit id, the line as composed) -> (the subject AS RENDERED, its offset in the line), set by
+    # the composer that rendered it; a line with no entry names no subject other than the user
+    _subject_at: dict = {}
 
     def _commit_line(e, line_cap):
         # 0003/obligations §4b + 0012 I10a (research's stage-1 NEW 1 on ea88c72): the WHOLE line (relation, the
@@ -238,6 +245,9 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             if _est0(line) <= line_cap:
                 if s_out != s or o != e.object:
                     _clamped_ids.add(("edge", e.id))
+                if s:
+                    from .budgets import rendered_subject
+                    _subject_at[(e.id, line)] = (rendered_subject(e.subject, s_out), len(f"{e.relation}: "))
                 return line
             content -= _est0(line) - line_cap
         return None
@@ -259,12 +269,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         head, tail = f"{relation}: {label} — CONTESTED: ", " (unconfirmed which is current)"
 
         def _shown(n):
-            out = []
+            out, kept = [], []
             for v in values[:n]:
                 s = _clamp(v, max(16, _cap - 48))
                 if s not in out:
                     out.append(s)
-            return out
+                    kept.append(v)                 # the ORIGINAL value behind each shown slot (TT-R3-01)
+            return out, kept
 
         def _body(shown, k):
             if k:
@@ -273,13 +284,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
 
         line = None
         for n in range(len(values), 0, -1):        # the nearest n values, n falling: the farthest go first
-            shown = _shown(n)
+            shown, kept = _shown(n)
             cand = head + _body(shown, len(values) - len(shown)) + tail
             if _est0(cand) <= line_cap:
                 line, k, first = cand, len(values) - len(shown), shown[0]
                 break
         if line is None:                           # one slot, clamped to what the framing leaves
-            k = len(values) - 1
+            k, kept = len(values) - 1, [values[0]]   # one slot: the nearest value alone is shown
             content = line_cap - _est0(head + _body([""], k) + tail)
             while content >= 16:
                 first = _clamp(values[0], content)
@@ -292,6 +303,10 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 return None
         if label != subject or k or first != values[0] or any(_obj(m) != m.object for m in ms):
             _clamped_ids.add(("contested", unit.id))      # ONE item, however many of its parts were clamped
+        _shown_values[(unit.id, line)] = frozenset(kept)
+        if subject != "user":
+            from .budgets import rendered_subject
+            _subject_at[(unit.id, line)] = (rendered_subject(subject, label), len(f"{relation}: "))
         return line
 
     for e in surfaced:
@@ -448,16 +463,25 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         else:
             (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
         if receipt is not None:
-            # specs/0031 §4f §4b: the no-query path's admission point. The line is the text AS ADMITTED; a contested
-            # commitment's one line names every member, so each member is a unit carrying that line (its framing)
+            # specs/0031 §4f §4b: the no-query path's admission point. The line is the text AS ADMITTED. A contested
+            # commitment's line shows only the values that fit ("or K more" names the rest by count), so a unit is
+            # admitted for exactly the members whose value the line shows (TT-R3-01), from the composer's own record
+            # of what it showed, never by reading the prose. `sel_edges` above still returns every member: that is
+            # the host's `Recall.edges`, which §4b leaves holding records the renderer withheld (host-only)
             from .trust_tools import edge_annotations
+            def _subj(key):
+                at = _subject_at.get((key, line))
+                return None if at is None else (at[0], line, at[1])
             if isinstance(unit, _ContestedCommitment):
+                shown = _shown_values[(unit.id, line)]
                 for m in unit.edges:
-                    receipt.admit("edge", m, line, "contested", ["contested"] + edge_annotations(m))
+                    if m.object in shown:
+                        receipt.admit("edge", m, line, "contested", ["contested"] + edge_annotations(m),
+                                      subject=_subj(unit.id))
             elif isinstance(unit, Edge):
                 c = unit.id in _contested_ids
                 receipt.admit("edge", unit, line, "contested" if c else "grounded",
-                              (["contested"] if c else []) + edge_annotations(unit))
+                              (["contested"] if c else []) + edge_annotations(unit), subject=_subj(unit.id))
             else:
                 receipt.admit("episode", unit, line, "grounded")
 

@@ -775,9 +775,14 @@ all edges (superseded history and quarantined claims included), all episodes,
 the wiki cache, and counters. The data-subject right, deliberately distinct
 from lifecycle: `maintain()` never deletes, `forget()` never preserves. No
 undo — `export_memory` first if a recoverable copy is wanted. Also on the CLI
-with a confirmation prompt: `veracium forget --user alice`. **Deliberately not
-an MCP tool** — an irreversible-wipe verb callable by an agent is a standing
-prompt-injection target; erasure is a host/operator action.
+with a confirmation prompt: `veracium forget --user alice`. **This one-call
+`forget` is deliberately not an MCP tool**: an irreversible wipe an agent can
+make in one call is a standing prompt-injection target. Under
+`VERACIUM_MCP_CAPABILITY=direct`, an agent reaches whole-user erasure only
+through the two-step flow `forget_everything_preview` then
+`forget_everything_confirm` (a ten-minute token bound to exactly the records
+the preview listed; see [the trust tools](mcp.md#the-trust-tools-under-veracium_mcp_capabilitydirect)),
+which the operator turns off with `VERACIUM_MCP_ERASURE=off`.
 
 ### `export_memory(user_id, path) -> dict` / `import_memory(path, *, user_id=None, restore=False) -> dict`
 

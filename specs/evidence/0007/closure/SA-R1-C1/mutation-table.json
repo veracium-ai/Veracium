@@ -1,5 +1,5 @@
 {
- "body_sha256": "b66cec9b4e712885aefb4945e9e307270fabda7d7ebffcbe33b01301bf18659a",
+ "body_sha256": "ca7a13a3a1fe29af7333e9a8516524674f5d9e67592e852bd18eecf9542cf8ed",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "08156c92361d3aa0a6c70723d8fec08c39ce5c63",
+  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -64,9 +64,38 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   ".github/workflows/test.yml",
+   "CHANGELOG.md",
+   "docs/api.md",
+   "docs/mcp.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation_mutants.py",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/budgets.py",
+   "src/veracium/graph.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/proactive.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/trust_tools.py",
+   "tests/test_0031_proposal_ddl.py",
+   "tests/test_0031_trust_tools_census.py",
+   "tests/test_0031_trust_tools_erase.py",
+   "tests/test_0031_trust_tools_library.py",
+   "tests/test_0031_trust_tools_mcp.py",
+   "tests/test_0042_inv7.py"
   ]
  },
  "rows": [
@@ -98,7 +127,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.10s",
+   "pytest": "1 failed in 0.08s",
    "reason": null,
    "reason_seen": null,
    "what": "the conflation round 1 named: one census carrying the step table's 432/1,685, its scope unstated, and the 48 PA1 fixtures' own scope and figures gone"

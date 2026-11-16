@@ -1326,3 +1326,136 @@ def test_spec_quotes_the_measured_partition_exactly():
         if "4,487" in line or "4487" in line:
             assert any(w in line.lower() for w in
                        ("supersed", "stale", "correct", "was ")), (i, line[:120])
+
+
+# ------------------------------------------------------------------ 0031 v23.3: the factory-subclass carve-out
+# §4b-ii's one carve-out (TT-R3-03's commit-phase connection): `sqlite3.Connection` as the BASE of ONE class in
+# store/sqlite.py, named only by its class statement and the `factory=` of that module's counted connect, its body
+# held to a positive shape (CONNECTION_SUBCLASS_SURFACE). Every neighbour below is a permanent negative.
+_F = "store/sqlite.py"
+_FACTORY_OK = """import sqlite3
+import contextvars
+
+_TRUST_COMMITS = contextvars.ContextVar("cell", default=None)
+
+
+class _Phase(sqlite3.Connection):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._changes_mark = self._changes()
+
+    def _changes(self):
+        return self.execute("SELECT total_changes()").fetchone()[0]
+
+    def commit(self):
+        was = self.in_transaction
+        super().commit()
+        return was
+
+
+def open_store(path):
+    return sqlite3.connect(path, factory=_Phase)
+"""
+_IN_COMMIT = "        return was\n"
+
+
+def _probe(stmt):
+    """The honest fixture with one statement added to `commit`, before its return (`commit` takes no parameter)."""
+    assert _FACTORY_OK.count(_IN_COMMIT) == 1
+    return _FACTORY_OK.replace(_IN_COMMIT, f"        {stmt}\n" + _IN_COMMIT)
+
+
+_FACTORY_MUTANTS = {
+    "instantiated directly": _FACTORY_OK + "\nextra = _Phase(':memory:')\n",
+    "aliased": _FACTORY_OK + "\nAlias = _Phase\n",
+    "passed to another call": _FACTORY_OK + "\nregister(_Phase)\n",
+    "subclassed again": _FACTORY_OK + "\n\nclass _Again(_Phase):\n    pass\n",
+    "factory of a second connect": _FACTORY_OK + "\nsecond = sqlite3.connect('other.db', factory=_Phase)\n",
+    "factory names another class": _FACTORY_OK.replace("factory=_Phase", "factory=Other"),
+    "factory of a non-sqlite3 connect": _FACTORY_OK.replace("sqlite3.connect(path, factory=_Phase)",
+                                                             "pool.connect(path, factory=_Phase)"),
+    "named in a string": _FACTORY_OK + "\nLOOKUP = '_Phase'\n",
+    "a metaclass keyword": _FACTORY_OK.replace("(sqlite3.Connection):", "(sqlite3.Connection, metaclass=Meta):"),
+    "a second base": _FACTORY_OK.replace("(sqlite3.Connection):", "(sqlite3.Connection, Mixin):"),
+    "a decorator": _FACTORY_OK.replace("class _Phase(", "@decorate\nclass _Phase("),
+    "a class attribute in the body": _FACTORY_OK.replace("    def commit(self):", "    row_factory = None\n\n    def commit(self):"),
+    "a decorated method": _FACTORY_OK.replace("    def commit(self):", "    @property\n    def commit(self):"),
+    "self.__init__(p) in a method": _probe("self.__init__('/tmp/other.db')"),
+    "super().__init__(p) outside __init__": _probe("super().__init__('/tmp/other.db')"),
+    "__init__ passing a changed path": _FACTORY_OK.replace("super().__init__(*args, **kwargs)",
+                                                           "super().__init__('/tmp/other.db', **kwargs)"),
+    "__init__ passing only some arguments": _FACTORY_OK.replace("super().__init__(*args, **kwargs)",
+                                                                "super().__init__(*args)"),
+    "__init__ rewriting its arguments first": _FACTORY_OK.replace(
+        "        super().__init__(*args, **kwargs)", "        args = ('/tmp/other.db',)\n        super().__init__(*args, **kwargs)"),
+    "type(self)(p)": _probe("type(self)(':memory:')"),
+    "self.__class__(p)": _probe("self.__class__(':memory:')"),
+    "a cursor's .connection": _probe("other = self.execute('SELECT total_changes()').connection"),
+    "self.execute with other SQL": _probe("self.execute('ATTACH DATABASE ? AS x', ('/tmp/x.db',))"),
+    "self.execute with a non-literal statement": _probe("self.execute(QUERY)"),
+    "a base call's return read": _probe("x = super().commit().connection"),
+    "getattr(self, ...)": _probe("getattr(self, 'execute')"),
+    "super(...) with arguments": _probe("super(sqlite3.Connection, self).commit()"),
+    "a base call to another method": _probe("super().rollback()"),
+    "a base call with changed parameters": _FACTORY_OK.replace("        super().commit()", "        super().commit(1)"),
+    "an untabled attribute on self": _probe("self.row_factory = None"),
+    "total_changes as an attribute": _probe("x = self.total_changes"),
+    "the C extension's Connection as the base": _FACTORY_OK.replace(
+        "import sqlite3\n", "import sqlite3\nimport _sqlite3\n").replace("(sqlite3.Connection)", "(_sqlite3.Connection)"),
+    "a from-imported Connection as the base": _FACTORY_OK.replace(
+        "import sqlite3\n", "import sqlite3\nfrom sqlite3 import Connection\n").replace("(sqlite3.Connection)", "(Connection)"),
+}
+
+#: CONNECTION_SUBCLASS_SURFACE probed BOTH ways: each row's clean probe is admitted; its refusing probe (the same
+#: attribute on a receiver the row does not name) refuses.
+_SURFACE_PROBES = {
+    ("self", "in_transaction"): ("x = self.in_transaction", "x = QUERY.in_transaction"),
+    ("self", "_changes"): ("x = self._changes()", "x = QUERY._changes()"),
+    ("self", "execute"): ("x = self.execute('SELECT total_changes()')", "x = QUERY.execute('SELECT total_changes()')"),
+    ("expression", "fetchone"): ("x = self.execute('SELECT total_changes()').fetchone()", "x = self.fetchone()"),
+    ("self", "_changes_mark"): ("x = self._changes_mark", "x = QUERY._changes_mark"),
+    ("self", "_ended"): ("x = self._ended", "x = QUERY._ended"),
+    ("module:_TRUST_COMMITS", "get"): ("x = _TRUST_COMMITS.get()", "x = self.get()"),
+    ("expression", "append"): ("_TRUST_COMMITS.get()[1].append(1)", "self.append(1)"),
+}
+
+
+def test_the_factory_subclass_carve_out_admits_its_shape_and_refuses_each_neighbour():
+    """0031 v23.3 §4b-ii: the honest shape is admitted (the inventory still counts the blessed call); each neighbour
+    refuses. The honest control runs first, so a refusal is never the rule refusing everything."""
+    assert _connect_census(_FACTORY_OK, _F) == {_F: 1}
+    for case, src in _FACTORY_MUTANTS.items():
+        hits = _connect_census(src, _F)
+        assert any("REFUSED" in k for k in hits), (case, hits)
+    assert any("REFUSED" in k for k in _connect_census(_FACTORY_OK, "store/other.py")), "another module"
+
+
+def test_the_connection_subclass_surface_is_probed_both_ways():
+    from connection_census import CONNECTION_SUBCLASS_SURFACE
+    assert set(_SURFACE_PROBES) == set(CONNECTION_SUBCLASS_SURFACE)
+    for row, (clean, refusing) in _SURFACE_PROBES.items():
+        assert _connect_census(_probe(clean), _F) == {_F: 1}, (row, "clean")
+        assert any("REFUSED" in k for k in _connect_census(_probe(refusing), _F)), (row, "refusing")
+
+
+def test_the_factory_subclass_is_one_across_the_tree_and_named_nowhere_else():
+    """The tree half: a second admitted subclass, and any reference to the admitted name from another file (an
+    import, an attribute, a name, a string), each refuse; the honest tree has no problem."""
+    from connection_census import factory_subclass_problems
+    assert factory_subclass_problems({_F: _FACTORY_OK, "b.py": "import os\n"}) == []
+    for case, other in {"an import of the name": "from .sqlite import _Phase\n",
+                        "an attribute of the module": "from . import sqlite\nc = sqlite._Phase(':memory:')\n",
+                        "a string": "NAME = '_Phase'\n"}.items():
+        assert factory_subclass_problems({_F: _FACTORY_OK, "b.py": other}), case
+    second = _FACTORY_OK.replace("_Phase", "_Other").split("import contextvars\n", 1)[1]
+    problems = factory_subclass_problems({_F: _FACTORY_OK + "\n" + second})     # a second such class, same file
+    assert len(problems) == 1 and "more than one sqlite3.Connection factory subclass" in problems[0], problems
+
+
+def test_the_real_tree_has_exactly_its_one_factory_subclass_and_no_tree_problem():
+    from connection_census import factory_subclass_names, factory_subclass_problems
+    root = SPEC.parents[1] / "src" / "veracium"
+    sources = {str(p.relative_to(root)): p.read_text() for p in sorted(root.rglob("*.py"))}
+    assert factory_subclass_problems(sources) == []
+    assert {rel: n for rel, src in sources.items() if (n := factory_subclass_names(src, rel))} == \
+        {"store/sqlite.py": {"_PhaseConnection"}}
