@@ -202,6 +202,18 @@ def test_the_first_item_recomposition_carries_its_own_shown_set(tmp_path):
     assert shown and "e-2" not in shown, tight.render_receipt
 
 
+def test_the_one_slot_fallback_admits_only_its_one_shown_value(tmp_path):
+    """Research's stage-2 S09: when even one clamped value with "or K more" overflows the remaining budget, the line
+    falls back to ONE slot, the nearest value alone; only that member is a unit. Mutant: the fallback's kept set
+    left as every value (the member behind "or 1 more" admitted)."""
+    m = _mem(tmp_path, cap=512)
+    _contend(m, "person:x", ["alpha 2026-11-16 " + "A" * 1600, "beta 2026-11-17 " + "B" * 1600])
+    tight = m.recall(U, token_budget=256, render_receipt=True)                 # the proactive floor
+    assert "alpha" in tight.context and "beta" not in tight.context and "1 more" in tight.context   # the trigger
+    shown = [u["id"] for u in tight.render_receipt if u["partition"] == "contested"]
+    assert shown == ["e-0"], tight.render_receipt
+
+
 # ====================================================================== TT-R3-02
 LONG = "person:" + "X" * 500 + "SUBJECT_TAIL_SENTINEL"
 
@@ -291,6 +303,38 @@ def _committed_dispute(m, transport, monkeypatch, error_type):
 def test_a_refusal_class_failure_after_a_commit_uses_the_error_channel(tmp_path, monkeypatch, transport, error_type):
     ch, out = _committed_dispute(_mem(tmp_path), transport, monkeypatch, error_type)
     assert ch == "error", (ch, out)
+
+
+@pytest.mark.parametrize("transport", SURFACES)
+@pytest.mark.parametrize("verb", ["forget_everything_confirm", "find_facts"])
+def test_a_failure_after_the_erase_or_the_wiki_write_commits_uses_the_error_channel(tmp_path, monkeypatch, transport,
+                                                                                    verb):
+    """Research's stage-2 S23 and S24: the two verbs whose only write is not an act (the whole-user erase; find_facts'
+    conditional wiki publication on an empty user, the default configuration) are phase-recorded too. A ValueError
+    raised once after that write committed goes through the surface's error channel, never as a refusal; the write
+    itself happened. Mutant: the verb's call made with no memory, so no cell records its commit."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    m = Memory(llm=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no model call")),
+               config=MemoryConfig(db_path=str(tmp_path / "v.db"), require_source_id=False))
+    call = surface(m, transport)
+    args = {"query": "empty"}
+    if verb == "forget_everything_confirm":
+        m.store.add_edge(_edge("e-1", "tea", "user"))
+        args = {"preview_token": _field(call("forget_everything_preview", {}), "preview_token")}
+    real, fired = M._ok, []
+
+    def once(result):
+        if not fired:
+            fired.append(1)
+            raise ValueError("after the commit")
+        return real(result)
+    monkeypatch.setattr(M, "_ok", once)
+    channel, out = call(verb, args)
+    assert fired and channel == "error", (channel, out)
+    if verb == "forget_everything_confirm":
+        assert m.store.edges(U, active_only=False) == []                       # the erase committed
+    else:
+        assert m.store._conn.execute("SELECT COUNT(*) FROM wiki").fetchone()[0] == 1   # the wiki row committed
 
 
 @pytest.mark.parametrize("transport", SURFACES)
