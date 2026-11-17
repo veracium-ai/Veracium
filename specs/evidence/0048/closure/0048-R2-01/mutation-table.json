@@ -1,5 +1,5 @@
 {
- "body_sha256": "729695514509f10d3f3e88342931e5e62ec0355445e2ab4a9d36a15ec0df73a3",
+ "body_sha256": "6815a4e25c8650de0a9697e5a9ead2fec15eecd864d7204563212757da719e24",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "28f1f3bbc8913b9a9d99c5b0a832fc702f32da01",
+  "commit": "5e58373d67afb996e8d5b48cff700b6834c551d6",
   "control_definitions": {
    "NOOP-0048-R2-01-test_0048_decay_bounds": "8801c0a0050c9e5c121e38458c399a3fb45804d89d17b4200ae54697e0131d57"
   },
@@ -65,19 +65,12 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation_mutants.py",
    "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
    "src/veracium/store/sqlite.py",
-   "tests/test_0031_proposal_ddl.py",
-   "tests/test_0031_trust_tools_surfaces.py",
-   "tests/test_0048_decay_bounds.py"
+   "tests/test_0031_proposal_ddl.py"
   ]
  },
  "rows": [
@@ -110,7 +103,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 6.60s",
+   "pytest": "1 failed in 6.79s",
    "reason": null,
    "reason_seen": null,
    "what": "an execute-family attribute held in a name is let through: R2-01's alias of `connection.execute`"
@@ -125,6 +118,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 56
+  "seconds": 59
  }
 }

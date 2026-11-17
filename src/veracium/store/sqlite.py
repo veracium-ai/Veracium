@@ -69,8 +69,9 @@ def trust_commit_phase(conn):
 
 
 class _PhaseConnection(sqlite3.Connection):
-    """The store's connection: today's sqlite3 connection, plus the commit-phase record (0031 v23.3, §4b-ii's one
-    subclass, held to a positive shape there). The writers a trust call reaches end their transactions through
+    """The store's connection: today's sqlite3 connection, plus the commit-phase record (0031 §4b-ii's one subclass,
+    v23.3; its body PINNED exactly there, v23.4: the census admits only this body, docstring and comments aside, and
+    a change to it is a change to the spec). The writers a trust call reaches end their transactions through
     `commit()` or `rollback()`, so both pass here. Statements ending a transaction by raw SQL do NOT pass here: the
     read window's COMMIT/ROLLBACK (it writes nothing by contract), creation's and migration's COMMIT in
     `open_versioned` (the store re-reads the mark once after opening, round 4 N1), and revocation's COMMIT. A COMMIT is

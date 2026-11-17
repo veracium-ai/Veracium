@@ -1,5 +1,5 @@
 {
- "body_sha256": "20ad3ec004c861803bb9a90035173460b19a45c8b60de579c3540fcb34a60bf4",
+ "body_sha256": "1e820088445a6dcb74166934685f75c9814de109ae494b8eb595e7eb433f3864",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "28f1f3bbc8913b9a9d99c5b0a832fc702f32da01",
+  "commit": "5e58373d67afb996e8d5b48cff700b6834c551d6",
   "control_definitions": {
    "NOOP-0048-R1-01-lifecycle": "6e91be8bea7312abb276ab369c6a729330d4723354d885ad796ffc857912de46"
   },
@@ -78,16 +78,9 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation_mutants.py",
    "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
    "src/veracium/store/sqlite.py",
-   "tests/test_0031_proposal_ddl.py",
-   "tests/test_0031_trust_tools_surfaces.py",
-   "tests/test_0048_decay_bounds.py"
+   "tests/test_0031_proposal_ddl.py"
   ]
  },
  "rows": [
@@ -122,7 +115,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.38s",
+   "pytest": "2 failed in 1.48s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -158,7 +151,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.42s",
+   "pytest": "2 failed in 1.44s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"

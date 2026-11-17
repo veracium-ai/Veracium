@@ -1061,6 +1061,75 @@ def connection_subclass_uses(body_source: str = CONNECTION_SUBCLASS_BODY) -> lis
     return out
 
 
+def canonical_free_names(body_source: str = CONNECTION_SUBCLASS_BODY):
+    """The names the canonical body READS without binding them in its methods: (builtins, module globals). The pin
+    compares syntax, so what these names mean is fixed by the FILE (rule 4), not by the body (stage 2 on 5e58373d:
+    a module-level `def super()` made the identical body initialize nothing)."""
+    import builtins as _builtins
+    tree = ast.parse(body_source)
+    free = set()
+    for fn in tree.body:
+        bound = {a.arg for a in fn.args.posonlyargs + fn.args.args + fn.args.kwonlyargs}
+        bound |= {a.arg for a in (fn.args.vararg, fn.args.kwarg) if a is not None}
+        bound |= {n.id for n in ast.walk(fn) if isinstance(n, ast.Name) and not isinstance(n.ctx, ast.Load)}
+        free |= {n.id for n in ast.walk(fn) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)
+                 and n.id not in bound}
+    return frozenset(x for x in free if hasattr(_builtins, x)), frozenset(x for x in free if not hasattr(_builtins, x))
+
+
+def _bindings_of(tree, names) -> list:
+    """Every place in `tree` that binds, deletes, declares or names (as an attribute target or a string) one of
+    `names`: (name, form, line)."""
+    out = []
+    for n in ast.walk(tree):
+        line = getattr(n, "lineno", 0)
+        if isinstance(n, ast.Name) and n.id in names and not isinstance(n.ctx, ast.Load):
+            out.append((n.id, f"a {type(n.ctx).__name__.lower()} of the name", line))
+        elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and n.name in names:
+            out.append((n.name, "a def or class", line))
+        elif isinstance(n, ast.alias) and (n.asname or n.name.split(".")[0]) in names:
+            out.append((n.asname or n.name, "an import", line))
+        elif isinstance(n, ast.arg) and n.arg in names:
+            out.append((n.arg, "a parameter", line))
+        elif isinstance(n, ast.ExceptHandler) and n.name in names:
+            out.append((n.name, "an except target", line))
+        elif isinstance(n, (ast.Global, ast.Nonlocal)):
+            out.extend((x, "a global or nonlocal declaration", line) for x in n.names if x in names)
+        elif isinstance(n, ast.Attribute) and n.attr in names and not isinstance(n.ctx, ast.Load):
+            out.append((n.attr, "an attribute target", line))
+        elif isinstance(n, ast.Constant) and isinstance(n.value, str) and n.value in names:
+            out.append((n.value, "a string", line))
+        else:
+            for f in ("name", "rest"):                     # match patterns (MatchAs, MatchStar, MatchMapping)
+                v = getattr(n, f, None) if type(n).__name__.startswith("Match") else None
+                if isinstance(v, str) and v in names:
+                    out.append((v, "a match target", line))
+            for tp in getattr(n, "type_params", None) or []:
+                if getattr(tp, "name", None) in names:
+                    out.append((tp.name, "a type parameter", line))
+    return out
+
+
+def _free_name_problem(tree):
+    """Rule 4: in the carve-out's file, the builtins the canonical body reads are never bound or named, and each
+    module global it reads is bound exactly once by a plain module-level assignment. None when the file holds; else
+    the first reason. A binding by a COMPUTED name (`globals()`, `locals()` or `vars()` keyed by a non-literal,
+    `setattr` on the module, `exec`/`eval`) is refused by this census's round-11 and round-12 rungs before this rule
+    runs, so this rule needs no list of its own (a check of its own was unkillable: stage-2 mutants, 2026-11-17)."""
+    builtin_names, global_names = canonical_free_names()
+    hits = _bindings_of(tree, builtin_names)
+    if hits:
+        name, form, line = hits[0]
+        return f"the file rebinds or names `{name}`, a builtin the pinned body reads ({form}, line {line})"
+    for g in sorted(global_names):
+        hits = _bindings_of(tree, {g})
+        top = [s for s in tree.body if isinstance(s, (ast.Assign, ast.AnnAssign)) and any(
+            isinstance(t, ast.Name) and t.id == g for t in (s.targets if isinstance(s, ast.Assign) else [s.target]))]
+        if len(hits) != 1 or len(top) != 1:
+            return f"`{g}`, a global the pinned body reads, is bound {len(hits)} time(s), not once at module level"
+    return None
+
+
 def _factory_subclass(tree, parent, node, rel=None):
     """`sqlite3.Connection` at `node` as a class BASE: (name, None) when the class is admitted, else (name or None,
     reason). The carve-out (0031 v23.4, §4b-ii):
@@ -1068,7 +1137,11 @@ def _factory_subclass(tree, parent, node, rel=None):
       2. its name occurs exactly twice in the file: the ClassDef, and ONE load that is the value of the `factory`
          keyword of a direct `sqlite3.connect(...)` call (any other position, attribute, alias or string refuses);
       3. its BODY, the class docstring removed, is `CONNECTION_SUBCLASS_BODY` by `ast.dump` equality, statement for
-         statement, both parsed by the running interpreter."""
+         statement, both parsed by the running interpreter;
+      4. what that body's free names mean is fixed by the file: the builtins it reads (`super`, `Exception`, `bool`)
+         are never bound or named anywhere in it, each global it reads (`_TRUST_COMMITS`) is bound exactly once by a
+         plain module-level assignment (`_free_name_problem`; a binding by a computed name is refused by the
+         round-11 and round-12 rungs)."""
     cls = parent.get(node)
     if not (isinstance(cls, ast.ClassDef) and node in cls.bases):
         return None, None
@@ -1101,6 +1174,9 @@ def _factory_subclass(tree, parent, node, rel=None):
     if [ast.dump(s) for s in _class_body_without_docstring(cls)] != _canonical_body_dump():
         return name, ("its body differs from CONNECTION_SUBCLASS_BODY (the pinned body: only a comment or the class "
                       "docstring may change)")
+    why = _free_name_problem(tree)
+    if why is not None:
+        return name, why
     return name, None
 
 

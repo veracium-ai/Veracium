@@ -1496,6 +1496,8 @@ def _canonical_variants():
         kinds = []
         if isinstance(node, _ast.stmt) and path[-1][1] is not None:
             kinds = ["deleted", "duplicated"]
+        elif isinstance(node, _ast.Constant) and not isinstance(node.value, bool) and node.value is not None:
+            kinds = ["replaced by self", "constant changed"]
         elif isinstance(node, _ast.expr):
             kinds = ["replaced by self"]
         for kind in kinds:
@@ -1509,6 +1511,9 @@ def _canonical_variants():
             elif kind == "duplicated":
                 block = getattr(owner, field)
                 block.insert(i, block[i])
+            elif kind == "constant changed":
+                target = getattr(owner, field) if i is None else getattr(owner, field)[i]
+                target.value = target.value + (" " if isinstance(target.value, str) else 1)
             else:
                 target = getattr(owner, field) if i is None else getattr(owner, field)[i]
                 ctx = getattr(target, "ctx", _ast.Load())
@@ -1537,7 +1542,7 @@ def test_every_generated_variant_of_the_canonical_body_refuses():
     the rule, not a judgement of each variant."""
     variants = _canonical_variants()
     kinds = {k.split(":")[0] for k in variants}
-    assert kinds == {"deleted", "duplicated", "replaced by self"}, kinds
+    assert kinds == {"deleted", "duplicated", "replaced by self", "constant changed"}, kinds
     assert len(variants) >= 100, len(variants)
     admitted = [k for k, body in variants.items() if not _refused({_F: _fixture(body)})]
     assert admitted == [], admitted
@@ -1578,6 +1583,70 @@ def test_the_uses_table_is_the_canonical_bodys_uses():
     assert sorted(connection_subclass_uses(more)) == sorted(tabled + [("__init__", "self")])
 
 
+_COUNTER = 'self.execute("SELECT total_changes()")'
+
+
+@pytest.mark.parametrize("literal", ["SELECT 1", "ATTACH DATABASE 'x.db' AS x", "SELECT total_changes() "])
+def test_the_counter_statement_is_the_one_literal_on_the_fixture_and_in_the_complete_tree(literal):
+    """Stage 2 on 5e58373d (C4): the one place the pinned body names SQL; an ATTACH there is TT-R4-01's own class
+    (another database file). Each changed literal refuses on the fixture and in the complete tree."""
+    swapped = f'self.execute("{literal}")'
+    assert _FACTORY_OK.count(_COUNTER) == 1
+    assert _refused({_F: _FACTORY_OK.replace(_COUNTER, swapped)}), ("fixture", literal)
+    real = _real_sources()
+    assert real[_F].count(_COUNTER) == 1 and not _refused(real)
+    real[_F] = real[_F].replace(_COUNTER, swapped)
+    assert _refused(real), ("tree", literal)
+
+
+#: rule 4 (stage 2 on 5e58373d, B1-B7 and every binding form the rule names): the builtins the pinned body reads are
+#: never bound or named in the file, the global it reads is bound once at module level, nothing reaches the namespace
+#: by name. Each is appended at module level (or, where a form needs a scope, inside a function).
+_FREE_NAME_NEIGHBOURS = {
+    "B1 a module-level def super()": "def super():\n    return None\n",
+    "B2 super assigned": "super = object\n",
+    "B3 Exception rebound": "Exception = ZeroDivisionError\n",
+    "B4 the cell global bound a second time": "_TRUST_COMMITS = None\n",
+    "B7 super as a for target": "for super in ():\n    pass\n",
+    "bool imported under its name": "from numbers import Number as bool\n",
+    "Exception as an except target": "try:\n    pass\nexcept ValueError as Exception:\n    pass\n",
+    "super as a with target": "import contextlib\nwith contextlib.nullcontext() as super:\n    pass\n",
+    "super by a walrus": "_ = (super := object)\n",
+    "a class named Exception": "class Exception(BaseException):\n    pass\n",
+    "a global declaration of super": "def _f():\n    global super\n    super = object\n",
+    "a parameter named bool": "def _f(bool=None):\n    return bool\n",
+    "super deleted": "del super\n",
+    "an attribute target named super": "import sys\nsys.modules[__name__].super = object\n",
+    "setattr by name": "import sys\nsetattr(sys.modules[__name__], 'su' + 'per', object)\n",
+    "globals() by name": "globals()['su' + 'per'] = object\n",
+    "locals() by name at module level (the module's globals)": "locals()['su' + 'per'] = object\n",
+    "vars() by name": "vars().update({'su' + 'per': object})\n",
+    "exec of a binding": "exec('su' + 'per = object')\n",
+    "a string naming super": "NAME = 'super'\n",
+    "the cell global bound in a function": "def _f():\n    global _TRUST_COMMITS\n    _TRUST_COMMITS = None\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(_FREE_NAME_NEIGHBOURS))
+def test_the_bodys_free_names_are_fixed_by_the_file(case):
+    """Stage 2 on 5e58373d: the pin compares syntax, so a module-level `def super()` left the identical body
+    initializing nothing (the store failed to open). Each neighbour refuses on the fixture and in the complete tree,
+    the unmodified tree admitted first."""
+    add = _FREE_NAME_NEIGHBOURS[case]
+    assert _refused({_F: _FACTORY_OK + "\n" + add}), ("fixture", case)
+    real = _real_sources()
+    assert not _refused(real)
+    real[_F] = real[_F] + "\n" + add
+    assert _refused(real), ("tree", case)
+
+
+def test_the_free_names_are_derived_and_the_cell_global_must_exist():
+    from connection_census import canonical_free_names
+    assert canonical_free_names() == (frozenset({"super", "Exception", "bool"}), frozenset({"_TRUST_COMMITS"}))
+    without = _FACTORY_OK.replace('_TRUST_COMMITS = contextvars.ContextVar("cell", default=None)\n', "")
+    assert without != _FACTORY_OK and _refused({_F: without})
+
+
 def test_the_factory_subclass_is_one_across_the_tree_and_named_nowhere_else():
     """The tree half: a second admitted subclass, and any reference to the admitted name from another file (an
     import, an attribute, a name, a string), each refuse; the honest tree has no problem."""
@@ -1587,7 +1656,7 @@ def test_the_factory_subclass_is_one_across_the_tree_and_named_nowhere_else():
                         "an attribute of the module": "from . import sqlite\nc = sqlite._Phase(':memory:')\n",
                         "a string": "NAME = '_Phase'\n"}.items():
         assert factory_subclass_problems({_F: _FACTORY_OK, "b.py": other}), case
-    second = _FACTORY_OK.replace("_Phase", "_Other").split("import contextvars\n", 1)[1]
+    second = _FACTORY_OK.replace("_Phase", "_Other").split('default=None)\n', 1)[1]     # the cell global bound once
     problems = factory_subclass_problems({_F: _FACTORY_OK + "\n" + second})     # a second such class, same file
     assert len(problems) == 1 and "more than one sqlite3.Connection factory subclass" in problems[0], problems
 
