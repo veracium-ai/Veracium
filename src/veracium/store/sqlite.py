@@ -70,12 +70,15 @@ def trust_commit_phase(conn):
 
 class _PhaseConnection(sqlite3.Connection):
     """The store's connection: today's sqlite3 connection, plus the commit-phase record (0031 v23.3, §4b-ii's one
-    subclass, held to a positive shape there). Every store writer ends its transaction through `commit()` or
-    `rollback()`, so both pass here. The read window's explicit COMMIT/ROLLBACK statements do not, and need not: that
-    window writes nothing by contract. A COMMIT is recorded only when the transaction WROTE, meaning SQLite's
-    `total_changes()` moved since the last end, read by one literal statement, so a read-only COMMIT is never a commit
-    of the call. The read never raises over a commit or a rollback: a failed read leaves the mark unknown, and the next
-    commit then counts as a write (fail-safe: a refusal after it raises, never the reverse)."""
+    subclass, held to a positive shape there). The writers a trust call reaches end their transactions through
+    `commit()` or `rollback()`, so both pass here. Statements ending a transaction by raw SQL do NOT pass here: the
+    read window's COMMIT/ROLLBACK (it writes nothing by contract), creation's and migration's COMMIT in
+    `open_versioned` (the store re-reads the mark once after opening, round 4 N1), and revocation's COMMIT. A COMMIT is
+    recorded only when the transaction WROTE, meaning SQLite's `total_changes()` moved since the last end seen here,
+    read by one literal statement, so a read-only COMMIT is never a commit of the call. A raw-SQL end leaves the mark
+    behind, and that can only make an empty commit count as a write. The read never raises over a commit or a
+    rollback: a failed read leaves the mark unknown, and the next commit then counts as a write (fail-safe both ways:
+    a refusal after it raises, never the reverse)."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -418,6 +421,11 @@ class SqliteStore(Store):
             # anything and commits exactly once.
             open_versioned(self._conn, self._path,
                            allow_adopt=allow_adopt, audit_sink=audit_sink)
+            # 0031 round 4 N1: creation and migration end by a raw COMMIT, which never passes the phase class, so the
+            # change counter has moved past the mark its constructor read. One empty transaction ended through its
+            # commit() re-reads the mark here, before any trust call can open a phase cell (nothing is recorded).
+            self._conn.execute("BEGIN")
+            self._conn.commit()
         except BaseException:
             self._conn.close()
             raise

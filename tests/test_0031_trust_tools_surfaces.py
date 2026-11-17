@@ -514,6 +514,30 @@ def test_a_read_only_commit_is_not_a_commit_of_the_call(tmp_path):
         assert len(cell) == 1
 
 
+@pytest.mark.parametrize("route", ["created", "reopened"])
+def test_an_opened_stores_first_empty_commit_is_not_a_commit_of_the_call(tmp_path, route):
+    """Round 4 N1: creation ends by `open_versioned`'s raw COMMIT, which never passes the phase class, so the
+    constructor's mark trailed the counter (0 against 4) and a fresh store's first empty `commit()` inside a phase
+    cell was recorded as a write. The store re-reads the mark after opening. Both routes an open completes by
+    (an older or unstamped store refuses at open: migration is offline) start with the mark AT the counter, a first
+    empty commit records nothing, and a real write still records. Mutant: the re-read after `open_versioned` removed."""
+    from veracium.store.sqlite import trust_commit_phase
+    if route == "reopened":
+        _mem(tmp_path).close()
+    m = _mem(tmp_path)
+    conn = m.store._conn
+    assert conn._changes_mark == conn.execute("SELECT total_changes()").fetchone()[0]
+    with trust_commit_phase(conn) as cell:
+        conn.execute("BEGIN")
+        conn.execute("SELECT 1").fetchall()
+        conn.commit()
+        assert cell == []
+        conn.execute("INSERT INTO write_counter(user_id, n) VALUES ('zz', 1)")
+        conn.commit()
+        assert len(cell) == 1
+    m.close()
+
+
 def test_a_failed_counter_read_never_replaces_a_rollbacks_cause_and_counts_the_next_commit(tmp_path):
     """Research's stage-1 note (b): the counter read runs inside `rollback()` and `commit()`. If it fails, the error
     that caused the rollback is the one that surfaces, and the mark is unknown, so the next commit counts as a write

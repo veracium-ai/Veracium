@@ -1,5 +1,5 @@
 {
- "body_sha256": "0bd5f85b67a477de61348cfaa5ad46c3883aa2b195b907ffbd975332574b166c",
+ "body_sha256": "c3ee67595712dfd0f114e600f7fdd97718f75b4b09fd6bfeab17674370e1bd3d",
  "controls": [
   {
    "anchor_counts": [
@@ -72,7 +72,7 @@
     "passed": 4
    }
   },
-  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
+  "commit": "28f1f3bbc8913b9a9d99c5b0a832fc702f32da01",
   "control_definitions": {
    "NOOP-0048-R1-02-lifecycle": "58af8cd46e0530858f5a9ff275a3988be0b37ebaa81ea4484cce7d54c504761f",
    "NOOP-0048-R1-02-sqlite": "94835607491707ed52493817d4c730fe5dd514975334291247515e3f3eee671f"
@@ -87,8 +87,8 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
-   "src/veracium/store/sqlite.py": "0e5ec19de3638827ef827d061f5bd4b9b11007c5173de7508329cff84ada6ca0",
-   "tests/test_0048_decay_bounds.py": "aa2e98b94b9e63507e53ef5eee509d180ca41ef24116ffd6fda3316c8cd2ae28"
+   "src/veracium/store/sqlite.py": "9ecc9cccae89e361c1071c30c3de66ebe01b7e37896c6cd941f4b556e3b8c554",
+   "tests/test_0048_decay_bounds.py": "9b74ab6f2ce8883dc9ace03c62428e5d3bcf93ff737af78d69f36eff2246f880"
   },
   "finding": "0048-R1-02",
   "honest_nodes": [
@@ -100,55 +100,16 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/test.yml",
-   "CHANGELOG.md",
-   "docs/api.md",
-   "docs/mcp.md",
    "specs/0031-agent-facing-trust-surface.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/obligations_mutants.py",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation_mutants.py",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
-   "specs/evidence/0047/carrier_inventory.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/c3-01/census_trace_plugin.py",
-   "specs/evidence/sr2-01/mutation-table.json",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/budgets.py",
-   "src/veracium/graph.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/proactive.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/trust_tools.py",
    "tests/test_0031_proposal_ddl.py",
-   "tests/test_0031_trust_tools_census.py",
-   "tests/test_0031_trust_tools_erase.py",
-   "tests/test_0031_trust_tools_library.py",
-   "tests/test_0031_trust_tools_mcp.py",
-   "tests/test_0042_inv7.py",
+   "tests/test_0031_trust_tools_surfaces.py",
    "tests/test_0048_decay_bounds.py"
   ]
  },
@@ -187,7 +148,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 2.32s",
+   "pytest": "3 failed in 2.34s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the shipped expire() body, deciding from its listing and writing the copy back"
@@ -221,7 +182,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.26s",
+   "pytest": "1 failed in 1.20s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"
@@ -236,6 +197,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 19
+  "seconds": 18
  }
 }

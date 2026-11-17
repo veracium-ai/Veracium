@@ -1328,44 +1328,49 @@ def test_spec_quotes_the_measured_partition_exactly():
                        ("supersed", "stale", "correct", "was ")), (i, line[:120])
 
 
-# ------------------------------------------------------------------ 0031 v23.3: the factory-subclass carve-out
+# ------------------------------------------------------------------ 0031 v23.4: the factory-subclass carve-out
 # §4b-ii's one carve-out (TT-R3-03's commit-phase connection): `sqlite3.Connection` as the BASE of ONE class in
-# store/sqlite.py, named only by its class statement and the `factory=` of that module's counted connect, its body
-# held to a positive shape (CONNECTION_SUBCLASS_SURFACE). Every neighbour below is a permanent negative.
+# store/sqlite.py, named only by its class statement and the `factory=` of that module's counted connect, its BODY
+# PINNED (v23.4, TT-R4-01): admitted only when `ast.dump` of the body, the class docstring removed, equals
+# CONNECTION_SUBCLASS_BODY's. Every neighbour below is a permanent negative; the honest fixture is GENERATED from the
+# canonical body, so the control and the pin are one datum.
+import ast as _ast  # noqa: E402
+import textwrap as _textwrap  # noqa: E402
+
+from connection_census import CONNECTION_SUBCLASS_BODY  # noqa: E402
+
 _F = "store/sqlite.py"
-_FACTORY_OK = """import sqlite3
-import contextvars
-
-_TRUST_COMMITS = contextvars.ContextVar("cell", default=None)
+_ANCHOR = "        super().__init__(*args, **kwargs)\n"
 
 
-class _Phase(sqlite3.Connection):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._changes_mark = self._changes()
-
-    def _changes(self):
-        return self.execute("SELECT total_changes()").fetchone()[0]
-
-    def commit(self):
-        was = self.in_transaction
-        super().commit()
-        return was
+def _fixture(body=CONNECTION_SUBCLASS_BODY, docstring=None, helper=""):
+    """A module holding ONE class over `body` (methods at column 0, indented here), a module-level helper if any, and
+    the one counted connect naming the class as its factory."""
+    doc = f'    """{docstring}"""\n\n' if docstring is not None else ""
+    return ("import sqlite3\nimport contextvars\n\n_TRUST_COMMITS = contextvars.ContextVar(\"cell\", default=None)\n"
+            + (("\n" + helper) if helper else "") + "\n\nclass _Phase(sqlite3.Connection):\n" + doc
+            + _textwrap.indent(body, "    ") + "\n\ndef open_store(path):\n    return sqlite3.connect(path, factory=_Phase)\n")
 
 
-def open_store(path):
-    return sqlite3.connect(path, factory=_Phase)
-"""
-_IN_COMMIT = "        return was\n"
+_FACTORY_OK = _fixture()
 
 
-def _probe(stmt):
-    """The honest fixture with one statement added to `commit`, before its return (`commit` takes no parameter)."""
-    assert _FACTORY_OK.count(_IN_COMMIT) == 1
-    return _FACTORY_OK.replace(_IN_COMMIT, f"        {stmt}\n" + _IN_COMMIT)
+def _refused(sources):
+    return any("REFUSED" in k for k in _connect_census(sources[_F], _F)) or bool(_tree_problems(sources))
 
 
-_FACTORY_MUTANTS = {
+def _tree_problems(sources):
+    from connection_census import factory_subclass_problems
+    return factory_subclass_problems(sources)
+
+
+def _real_sources():
+    root = SPEC.parents[1] / "src" / "veracium"
+    return {str(p.relative_to(root)): p.read_text() for p in sorted(root.rglob("*.py"))}
+
+
+#: the class's name and position: each refuses whatever the body (v23.3's rules outside the body, unchanged)
+_OUTSIDE_THE_BODY = {
     "instantiated directly": _FACTORY_OK + "\nextra = _Phase(':memory:')\n",
     "aliased": _FACTORY_OK + "\nAlias = _Phase\n",
     "passed to another call": _FACTORY_OK + "\nregister(_Phase)\n",
@@ -1378,64 +1383,199 @@ _FACTORY_MUTANTS = {
     "a metaclass keyword": _FACTORY_OK.replace("(sqlite3.Connection):", "(sqlite3.Connection, metaclass=Meta):"),
     "a second base": _FACTORY_OK.replace("(sqlite3.Connection):", "(sqlite3.Connection, Mixin):"),
     "a decorator": _FACTORY_OK.replace("class _Phase(", "@decorate\nclass _Phase("),
-    "a class attribute in the body": _FACTORY_OK.replace("    def commit(self):", "    row_factory = None\n\n    def commit(self):"),
-    "a decorated method": _FACTORY_OK.replace("    def commit(self):", "    @property\n    def commit(self):"),
-    "self.__init__(p) in a method": _probe("self.__init__('/tmp/other.db')"),
-    "super().__init__(p) outside __init__": _probe("super().__init__('/tmp/other.db')"),
-    "__init__ passing a changed path": _FACTORY_OK.replace("super().__init__(*args, **kwargs)",
-                                                           "super().__init__('/tmp/other.db', **kwargs)"),
-    "__init__ passing only some arguments": _FACTORY_OK.replace("super().__init__(*args, **kwargs)",
-                                                                "super().__init__(*args)"),
-    "__init__ rewriting its arguments first": _FACTORY_OK.replace(
-        "        super().__init__(*args, **kwargs)", "        args = ('/tmp/other.db',)\n        super().__init__(*args, **kwargs)"),
-    "type(self)(p)": _probe("type(self)(':memory:')"),
-    "self.__class__(p)": _probe("self.__class__(':memory:')"),
-    "a cursor's .connection": _probe("other = self.execute('SELECT total_changes()').connection"),
-    "self.execute with other SQL": _probe("self.execute('ATTACH DATABASE ? AS x', ('/tmp/x.db',))"),
-    "self.execute with a non-literal statement": _probe("self.execute(QUERY)"),
-    "a base call's return read": _probe("x = super().commit().connection"),
-    "getattr(self, ...)": _probe("getattr(self, 'execute')"),
-    "super(...) with arguments": _probe("super(sqlite3.Connection, self).commit()"),
-    "a base call to another method": _probe("super().rollback()"),
-    "a base call with changed parameters": _FACTORY_OK.replace("        super().commit()", "        super().commit(1)"),
-    "an untabled attribute on self": _probe("self.row_factory = None"),
-    "total_changes as an attribute": _probe("x = self.total_changes"),
     "the C extension's Connection as the base": _FACTORY_OK.replace(
         "import sqlite3\n", "import sqlite3\nimport _sqlite3\n").replace("(sqlite3.Connection)", "(_sqlite3.Connection)"),
     "a from-imported Connection as the base": _FACTORY_OK.replace(
         "import sqlite3\n", "import sqlite3\nfrom sqlite3 import Connection\n").replace("(sqlite3.Connection)", "(Connection)"),
 }
 
-#: CONNECTION_SUBCLASS_SURFACE probed BOTH ways: each row's clean probe is admitted; its refusing probe (the same
-#: attribute on a receiver the row does not name) refuses.
-_SURFACE_PROBES = {
-    ("self", "in_transaction"): ("x = self.in_transaction", "x = QUERY.in_transaction"),
-    ("self", "_changes"): ("x = self._changes()", "x = QUERY._changes()"),
-    ("self", "execute"): ("x = self.execute('SELECT total_changes()')", "x = QUERY.execute('SELECT total_changes()')"),
-    ("expression", "fetchone"): ("x = self.execute('SELECT total_changes()').fetchone()", "x = self.fetchone()"),
-    ("self", "_changes_mark"): ("x = self._changes_mark", "x = QUERY._changes_mark"),
-    ("self", "_ended"): ("x = self._ended", "x = QUERY._ended"),
-    ("module:_TRUST_COMMITS", "get"): ("x = _TRUST_COMMITS.get()", "x = self.get()"),
-    ("expression", "append"): ("_TRUST_COMMITS.get()[1].append(1)", "self.append(1)"),
+#: inside the body: (module-level helper, constructor lines after the one initializer). The reviewer's two round-4
+#: cases (R1, R2), research's stage-1 neighbours (N1-N14), and v23.3's body neighbours. Each refuses on the minimal
+#: fixture AND spliced into the complete current tree. `{o}` is another database path.
+_H_SUPER2 = "def retarget(conn, path):\n    super(type(conn), conn).__init__(path)\n"
+_O = repr("/tmp/other.db")
+_IN_THE_BODY = {
+    "R1 the reviewer's: parameters rebound, a second initializer": ("", f"        args = ({_O},)\n        super().__init__(*args, **kwargs)\n"),
+    "R2 the reviewer's: the instance passed to a helper that re-initializes it": (_H_SUPER2, f"        retarget(self, {_O})\n"),
+    "N1 a second initializer in a loop rebinding its parameters": ("", f"        for args in [({_O},)]:\n            super().__init__(*args, **kwargs)\n"),
+    "N2 a second initializer in an except branch": ("", "        try:\n            raise ValueError\n        except ValueError:\n"
+                                                        f"            args = ({_O},)\n            super().__init__(*args, **kwargs)\n"),
+    "N3 the instance captured by a nested def": (_H_SUPER2, f"        def go():\n            retarget(self, {_O})\n        go()\n"),
+    "N4 the instance captured by a lambda": (_H_SUPER2, f"        (lambda: retarget(self, {_O}))()\n"),
+    "N5 the instance through a walrus alias": (_H_SUPER2, f"        retarget((c := self), {_O})\n"),
+    "N6 the instance through a starred list": (_H_SUPER2, f"        retarget(*[self], {_O})\n"),
+    "N7 the instance through a ** dict": ("def retarget(conn=None, path=None):\n    super(type(conn), conn).__init__(path)\n",
+                                          f"        retarget(**{{'conn': self, 'path': {_O}}})\n"),
+    "N8 a bound method carried out (its __self__)": ("def retarget(m, path):\n    c = m.__self__\n    super(type(c), c).__init__(path)\n",
+                                                     f"        retarget(self._changes, {_O})\n"),
+    "N9 the counter statement's cursor carried out (its .connection)":
+        ("def retarget(cur, path):\n    c = cur.connection\n    super(type(c), c).__init__(path)\n",
+         f"        retarget(self.execute(\"SELECT total_changes()\"), {_O})\n"),
+    "N10 the instance stored through the commit cell": ("", "        _TRUST_COMMITS.get()[1].append(self) if _TRUST_COMMITS.get() else None\n"),
+    "N11 the instance raised in an exception": ("", "        raise RuntimeError(self)\n"),
+    "N12 the super() proxy carried out": ("def retarget(s, path):\n    s.__init__(path)\n", f"        retarget(super(), {_O})\n"),
+    "N14 the class's own recorder re-entered from the constructor": ("", "        self._ended(True)\n"),
+    "self.__init__(p)": ("", f"        self.__init__({_O})\n"),
+    "type(self)(p)": ("", "        type(self)(':memory:')\n"),
+    "self.__class__(p)": ("", "        self.__class__(':memory:')\n"),
+    "a cursor's .connection": ("", "        other = self.execute('SELECT total_changes()').connection\n"),
+    "self.execute with other SQL": ("", "        self.execute('ATTACH DATABASE ? AS x', ('/tmp/x.db',))\n"),
+    "getattr(self, ...)": ("", "        getattr(self, 'execute')\n"),
+    "an untabled attribute on self": ("", "        self.row_factory = None\n"),
 }
 
 
-def test_the_factory_subclass_carve_out_admits_its_shape_and_refuses_each_neighbour():
-    """0031 v23.3 §4b-ii: the honest shape is admitted (the inventory still counts the blessed call); each neighbour
-    refuses. The honest control runs first, so a refusal is never the rule refusing everything."""
+def _splice(source, helper, lines):
+    assert source.count(_ANCHOR) == 1
+    return source.replace(_ANCHOR, _ANCHOR + lines) + (("\n" + helper) if helper else "")
+
+
+def test_the_factory_subclass_admits_its_pinned_body_and_refuses_each_neighbour_outside_it():
+    """0031 v23.4 §4b-ii: the honest fixture (the canonical body) is admitted, the inventory still counting the blessed
+    call; each neighbour in the class's name or position refuses. The honest control runs first, so a refusal is never
+    the rule refusing everything."""
     assert _connect_census(_FACTORY_OK, _F) == {_F: 1}
-    for case, src in _FACTORY_MUTANTS.items():
+    for case, src in _OUTSIDE_THE_BODY.items():
         hits = _connect_census(src, _F)
         assert any("REFUSED" in k for k in hits), (case, hits)
     assert any("REFUSED" in k for k in _connect_census(_FACTORY_OK, "store/other.py")), "another module"
 
 
-def test_the_connection_subclass_surface_is_probed_both_ways():
-    from connection_census import CONNECTION_SUBCLASS_SURFACE
-    assert set(_SURFACE_PROBES) == set(CONNECTION_SUBCLASS_SURFACE)
-    for row, (clean, refusing) in _SURFACE_PROBES.items():
-        assert _connect_census(_probe(clean), _F) == {_F: 1}, (row, "clean")
-        assert any("REFUSED" in k for k in _connect_census(_probe(refusing), _F)), (row, "refusing")
+@pytest.mark.parametrize("case", sorted(_IN_THE_BODY))
+def test_each_body_neighbour_refuses_on_the_fixture_and_in_the_complete_tree(case):
+    """TT-R4-01: the reviewer's two cases and research's neighbours, each a permanent negative against BOTH the module
+    census and the complete-tree check: spliced after the one initializer of the minimal fixture, and of the real
+    class in the complete current source tree. The unmodified tree is admitted first."""
+    real = _real_sources()
+    assert not _refused(real)
+    helper, lines = _IN_THE_BODY[case]
+    assert _refused({_F: _splice(_FACTORY_OK, helper, lines)}), ("fixture", case)
+    tree = dict(real)
+    tree[_F] = _splice(real[_F], helper, lines)
+    assert _refused(tree), ("tree", case)
+
+
+def test_a_statement_in_the_class_body_outside_any_method_refuses():
+    """N13 (research): a class-body statement runs at class creation; the pinned body has none."""
+    assert _refused({_F: _FACTORY_OK.replace("class _Phase(sqlite3.Connection):\n",
+                                             "class _Phase(sqlite3.Connection):\n    _x = print('x')\n")})
+    real = _real_sources()
+    real[_F] = real[_F].replace("class _PhaseConnection(sqlite3.Connection):\n",
+                                "class _PhaseConnection(sqlite3.Connection):\n    _x = print('x')\n")
+    assert _refused(real)
+
+
+def _paths(node, prefix=()):
+    """Every statement position (a path ending in a statement list's index) and every expression node position under
+    `node`, as paths of (field, index-or-None) from the module."""
+    for field, val in _ast.iter_fields(node):
+        if isinstance(val, list):
+            for i, item in enumerate(val):
+                if isinstance(item, _ast.AST):
+                    yield (prefix + ((field, i),)), item
+                    yield from _paths(item, prefix + ((field, i),))
+        elif isinstance(val, _ast.AST):
+            yield (prefix + ((field, None),)), val
+            yield from _paths(val, prefix + ((field, None),))
+
+
+def _at(tree, path):
+    node = tree
+    for field, i in path[:-1]:
+        node = getattr(node, field) if i is None else getattr(node, field)[i]
+    return node, path[-1]
+
+
+def _canonical_variants():
+    """The generated matrix over the canonical body: each statement deleted (a `pass` keeps an emptied block
+    parseable), each statement duplicated, each expression replaced by `self`. A variant equal to the canonical body
+    (an expression that already is `self`) is not a variant and is skipped."""
+    canon = [_ast.dump(s) for s in _ast.parse(CONNECTION_SUBCLASS_BODY).body]
+    out = {}
+    for path, node in list(_paths(_ast.parse(CONNECTION_SUBCLASS_BODY))):
+        kinds = []
+        if isinstance(node, _ast.stmt) and path[-1][1] is not None:
+            kinds = ["deleted", "duplicated"]
+        elif isinstance(node, _ast.expr):
+            kinds = ["replaced by self"]
+        for kind in kinds:
+            tree = _ast.parse(CONNECTION_SUBCLASS_BODY)
+            owner, (field, i) = _at(tree, path)
+            if kind == "deleted":
+                block = getattr(owner, field)
+                del block[i]
+                if not block:
+                    block.append(_ast.Pass())
+            elif kind == "duplicated":
+                block = getattr(owner, field)
+                block.insert(i, block[i])
+            else:
+                target = getattr(owner, field) if i is None else getattr(owner, field)[i]
+                ctx = getattr(target, "ctx", _ast.Load())
+                if not isinstance(ctx, (_ast.Load, _ast.Store, _ast.Del)):
+                    ctx = _ast.Load()
+                repl = _ast.Name(id="self", ctx=ctx)
+                if i is None:
+                    setattr(owner, field, repl)
+                else:
+                    getattr(owner, field)[i] = repl
+            _ast.fix_missing_locations(tree)
+            try:
+                body = _ast.unparse(tree) + "\n"
+                _ast.parse(body)
+            except (SyntaxError, ValueError, TypeError, AttributeError):
+                continue
+            if [_ast.dump(s) for s in _ast.parse(body).body] == canon:
+                continue
+            out[f"{kind}: {_ast.unparse(node)[:60]} @ {'.'.join(f'{f}[{i}]' if i is not None else f for f, i in path)}"] = body
+    return out
+
+
+def test_every_generated_variant_of_the_canonical_body_refuses():
+    """The generated matrix (research's stage 1): the pin admits the canonical body and refuses every variant, whatever
+    it does. The census is held to EQUALITY, so a variant that would still be harmless refuses too; the matrix checks
+    the rule, not a judgement of each variant."""
+    variants = _canonical_variants()
+    kinds = {k.split(":")[0] for k in variants}
+    assert kinds == {"deleted", "duplicated", "replaced by self"}, kinds
+    assert len(variants) >= 100, len(variants)
+    admitted = [k for k, body in variants.items() if not _refused({_F: _fixture(body)})]
+    assert admitted == [], admitted
+
+
+def test_a_comment_or_the_class_docstring_may_change_and_nothing_else():
+    """The two admitted edits, as positive controls, on the fixture and in the real tree: the class docstring changed
+    (or added) and a comment added; and a docstring added to a METHOD (not the class's) refuses."""
+    assert _connect_census(_fixture(docstring="another docstring"), _F) == {_F: 1}
+    commented = _FACTORY_OK.replace(_ANCHOR, _ANCHOR + "        # a comment\n")
+    assert commented != _FACTORY_OK and _connect_census(commented, _F) == {_F: 1}
+    method_doc = _FACTORY_OK.replace("    def commit(self):\n", "    def commit(self):\n        \"\"\"doc\"\"\"\n")
+    assert method_doc != _FACTORY_OK and _refused({_F: method_doc})
+    documented = _fixture(docstring="the docstring")
+    second_string = documented.replace('    """the docstring"""\n', '    """the docstring"""\n    "a second string"\n')
+    assert second_string != documented and _refused({_F: second_string})     # only the LEADING string is the docstring
+    real = _real_sources()
+    src = real[_F]
+    head = '    """The store\'s connection: '
+    assert src.count(head) == 1 and src.count(_ANCHOR) == 1
+    for edited in (src.replace(head, '    """Edited. The store\'s connection: '),
+                   src.replace(_ANCHOR, _ANCHOR + "        # a comment\n")):
+        tree = dict(real)
+        tree[_F] = edited
+        assert not _refused(tree)
+
+
+def test_the_uses_table_is_the_canonical_bodys_uses():
+    """CONNECTION_SUBCLASS_USES, the tabled uses of the connection with their reasons, equals the uses DERIVED from
+    the canonical body (each maximal expression rooted at `self` or `super()`), multiplicity included; and a body
+    with one more use derives one more."""
+    from connection_census import CONNECTION_SUBCLASS_USES, connection_subclass_uses
+    tabled = sorted((m, e) for m, e, _ in CONNECTION_SUBCLASS_USES)
+    assert sorted(connection_subclass_uses()) == tabled
+    assert all(reason for _, _, reason in CONNECTION_SUBCLASS_USES)
+    more = CONNECTION_SUBCLASS_BODY.replace("    self._changes_mark = self._changes()\n",
+                                            "    self._changes_mark = self._changes()\n    retarget(self)\n", 1)
+    assert sorted(connection_subclass_uses(more)) == sorted(tabled + [("__init__", "self")])
 
 
 def test_the_factory_subclass_is_one_across_the_tree_and_named_nowhere_else():
@@ -1454,8 +1594,7 @@ def test_the_factory_subclass_is_one_across_the_tree_and_named_nowhere_else():
 
 def test_the_real_tree_has_exactly_its_one_factory_subclass_and_no_tree_problem():
     from connection_census import factory_subclass_names, factory_subclass_problems
-    root = SPEC.parents[1] / "src" / "veracium"
-    sources = {str(p.relative_to(root)): p.read_text() for p in sorted(root.rglob("*.py"))}
+    sources = _real_sources()
     assert factory_subclass_problems(sources) == []
     assert {rel: n for rel, src in sources.items() if (n := factory_subclass_names(src, rel))} == \
         {"store/sqlite.py": {"_PhaseConnection"}}

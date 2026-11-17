@@ -721,7 +721,7 @@ MIGRATION_MODULES = {"veracium/store/migration.py", "veracium/store/schema_versi
 # regenerated from the tree and re-reviewed when it moves
 NONLITERAL_BINDING = {
     ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'): 'd5cce0a3ca1cfe5d',
-    ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): 'e2ac717c5894eabd',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
+    ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): '2bdfaff36a562470',   # 0031 round 4 N1: __init__ ends one empty transaction after open_versioned (re-reviewed: the SQL text is still fixed by int(busy_timeout_ms) alone); before that, 0031 v23.3: self._conn's binder took factory=
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'): 'db9f67ef1d767cb0',
     ('SqliteStore._attested_by_another_owner', 'eb2ba4c3290426945f64f55e532238461d5d9d44a5ee085a4f52645c927eeb3a'): 'd4fc7f5ee142b3a5',
     ('SqliteStore._attested_fields', 'b4446c6ae88d8497d190f8f13a92911f81cf0e25a5c0df840c605cad4633adbf'): '471eb25f14d333e4',

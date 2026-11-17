@@ -16,13 +16,14 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     uses it ten times, all type annotations); as a Call's func it is an
     OPENER and refuses; captured anywhere else it refuses (round 6's
     capture lesson applied at definition) — with ONE carve-out (0031 v23.3,
-    §4f's TT-R3-03 phase hook): the sole base of ONE module-level class whose
-    only use is the `factory=` keyword of a blessed `sqlite3.connect` call in
-    the same file, in `store/sqlite.py`, its body held to a POSITIVE shape
-    (`CONNECTION_SUBCLASS_SURFACE`). It acquires nothing: the blessed call
-    still opens, and is still counted. `_factory_subclass` states the shape;
-    `factory_subclass_problems` holds it across the tree (one such class, its
-    name in no other file);
+    §4f's TT-R3-03 phase hook; its body PINNED in v23.4, TT-R4-01): the sole
+    base of ONE module-level class whose only use is the `factory=` keyword
+    of a blessed `sqlite3.connect` call in the same file, in
+    `store/sqlite.py`, its body, the class docstring removed, equal by
+    `ast.dump` to `CONNECTION_SUBCLASS_BODY`. It acquires nothing: the
+    blessed call still opens, and is still counted. `_factory_subclass`
+    states the rule; `factory_subclass_problems` holds it across the tree
+    (one such class, its name in no other file);
   * every other attribute of `sqlite3` must be in ALLOWED_ATTRS (exception
     classes, Row/Binary, version constants) or it REFUSES — unknown names
     (dbapi2 included) are refused-until-classified, never waved through;
@@ -810,14 +811,17 @@ SRC_DATA_DUNDERS_AT_ACCEPTANCE = 96
 #: 449 -> 452 (`_contextvars.ContextVar` x2, `contextlib.contextmanager`), dotted/module-protected 56 -> 57
 #: (`sqlite3.Connection` as the factory subclass's base, §4b-ii's v23.3 carve-out) and getattr/dataflow 38 -> 39
 #: (`_trust_call`'s probe of the memory's store, tabled); total 9,813 -> 9,858.
+#: 2026-11-17, 0031 round 4 N1: the store re-reads the phase mark after opening (`self._conn.execute` and
+#: `self._conn.commit`, two calls of two reads each): moved dotted/dataflow 9,287 -> 9,291, the rest unchanged;
+#: total 9,858 -> 9,862.
 SRC_ATTRIBUTE_PARTITION = {
-    "dotted/dataflow": 9287,
+    "dotted/dataflow": 9291,
     "dotted/module-machinery": 23,
     "dotted/module-plain": 452,
     "dotted/module-protected": 57,
     "getattr/dataflow": 39,
 }
-SRC_ATTRIBUTE_TOTAL = 9858
+SRC_ATTRIBUTE_TOTAL = 9862
 #: 2026-11-15, 0049 v2.2: +1 data dunder — `type(self.store).__name__` in edges_since's no-journal refusal message
 SRC_DATA_DUNDERS_IN_DATAFLOW = 167   # 2026-11-16, 0031 round 3: +2 — `type(exc).__name__` in _trust_call's internal-failure message (a CLASS name, never content) and `super().__init__` in the commit-phase connection subclass's pass-through constructor. Before: 2026-11-15, specs/0031 §4f: +1 — `super().__init__` in trust_tools.TrustRefused (a refusal's message from a closed reason and its fixed detail, never content). Before: 0018 T3: +2, `super().__new__` in RungReport and `type(exc).__name__` in the rung's refusal text (each a class or the object's own constructor, never content). T2: +1, `type(migrate_to).__name__`. T1: +1, `super().__init__` in `_VersionFault`. 2026-11-04, 0048 round 5 (R4-02): +1 — `type(value).__name__` in config._shown's refusal text for a value whose repr fails (a CLASS name, never content). Before: 2026-11-02, the specs/0048 implementation: +3 — `object.__setattr__` in MemoryConfig.__setattr__, `type(self).__name__` in Store.expiry_transition's refusal, `type(store).__name__` in expire()'s. Before: 2026-11-02, specs/0022 §4g's host API: +2 — `type(self.store).__name__` in Memory.source_revocations' and _source_revocation's NotImplementedError refusals. Before: 2026-10-31, research's n2 on eea0e76: +1 — `type(exc).__name__` in doctor._attested_builds' named listing escape. Before: 2026-10-26, 0007 I4 (A): -6 — the `type(...).__name__` in the retired legacy record validators (_structure_problems ×4, artifact_problems ×2). Before: 2026-10-26, 0007 I3(b): +1 — `type(r).__name__` in attestation_artifact_problems' malformed-revision message (a non-mapping record). Before: 2026-10-26, 0007 I3+I4 production, stage 2 on ce6117f: +2 — `type(exc).__name__` in the per-record validator escape (attestation_artifact_problems) and `type(status).__name__` in migration_runtime's refusal of an unmeasured status. Before: 2026-10-26, 0007 I3+I4 production: +2 — `type(exc).__name__` in runtime_status's fail-closed reason, `type(records).__name__` and `type(r).__name__` in the attestation validators (+3), and one `type(ex).__name__` gone with doctor's old runtime check (-1). Before: 2026-10-26, 0007 I1–I7's first commit: -2 — the two `type(...).__name__` in the deleted dead first copy of schema_version.artifact_problems (the live copy keeps its own two). Before: 2026-10-23, R-II round 2's RII-R2-01: +1 — `m.__name__` in schema._check_assertion_view_partition's refusal (the model it names). Before: 2026-10-20, 0044 T11b: +2 — `type(self).__name__` in the Store base's refusing `act_rows` and `act_state` defaults (store/base.py). Before: 2026-10-20, 0044 T11a: +3 — `type(self).__name__` in the Store base's refusing `arity_plan_state`, `migration_outcomes` and `migration_outcomes_by_uid` defaults (store/base.py), the T10a/T10b defaults' shape. Before: 2026-10-19, 0044 T10b: +1 — `type(self).__name__` in the Store base's refusing `challenge_snapshot` default (store/base.py), the T10a defaults' shape
 #   2026-10-19, 0044 T10a: +5 — in store/base.py, `super().__init__` in ReplyRefused (a refusal's message, from a closed reason and ids) and `type(self).__name__` in the Store base's four refusing reply defaults (add_reply, replies_for, active_challenges, acted_edge_ids)  # 2026-10-16, 0044 T7-2: +2 — in store/base.py, `super().__init__` in UndoRefused (a refusal's message, from a closed reason and ids) and `type(self).__name__` in the Store base's refusing `undo_restoration` default  # 2026-10-16, 0044 T6-1: +4 — in store/data_migration.py, `super().__new__` in DataMigrationResult's validating constructor, `super().__init__` in _Refusal, `type(registry).__name__` (the refused registry's CLASS name) and `type(x).__name__` (a failing user's exception CLASS name, never its message)  # 2026-10-15, 0044 T5-2: +1 — `type(self).__name__` in the Store base's refusing `refusal_inventory_ids` default  # 2026-10-14, 0008 v7: +1 — `super().__init__` in store/base.py's RequestRedacted (an exception's message, from ids and a verb)  # 2026-09-14 v14.1: +1 — `object.__setattr__` on the frozen PolicyLane (a list of tags taken as a tuple); +2 — the two `type(x).__name__` reads in the v22 type guards (procedural_gate.norm_ws, ingest_event)  # 2026-09-14, 0027 v14: +4 — `type(self).__name__` in the Store base's three refusing defaults, `type(d).__name__` in receipt_from_row  # 2026-09-19, 0042 census tranche 1: +1 — `type(decision).__name__` in census._label_of (a trace label is a CLASS NAME, never content)
@@ -943,92 +947,128 @@ def _harmless_literal_key(key):
             and key.value.split(".")[0] not in MACHINERY_MODULES)
 
 
-#: THE CONNECTION-SUBCLASS SURFACE (0031 v23.3 §4b-ii, the factory carve-out): every attribute the subclass's BODY
-#: touches, by (receiver kind, attribute), each with its reason. A subclass makes the acquisition capability reachable
-#: as `self` — object dataflow this census does not otherwise follow (round 15) — so the body is held to a POSITIVE
-#: shape: an attribute outside this table refuses. Receiver kinds: `self`; `parameter` (one of the method's own);
-#: `base-return` (a name bound from a base call — nothing is tabled on it, so `cur.connection` refuses);
-#: `module:<name>` (a module-level name); `local`; `expression` (a subscript or call result). Each row is probed both
-#: ways by tests/test_0031_proposal_ddl.py (a clean probe admitted, a refusing probe on another receiver refused).
-CONNECTION_SUBCLASS_SURFACE = {
-    ("self", "in_transaction"): "whether a transaction is open, read around each ending route",
-    ("self", "_changes"): "the class's own read of SQLite's change counter",
-    ("self", "execute"): "ONE statement, the literal `SELECT total_changes()` (`SUBCLASS_STATEMENTS`): the change "
-                         "counter read as SQL, so the connection's attribute surface stays 0048's closed set",
-    ("expression", "fetchone"): "that statement's one row",
-    ("self", "_changes_mark"): "the class's own mark of the counter at the last transaction end",
-    ("self", "_ended"): "the class's own recorder, called by each ending route",
-    ("module:_TRUST_COMMITS", "get"): "the per-call commit cell (a ContextVar) the recorder appends to",
-    ("expression", "append"): "the cell's list: one entry per writing COMMIT",
-}
-#: the only SQL the subclass's body may run on itself, each a literal (a read; nothing written, nothing attached)
-SUBCLASS_STATEMENTS = frozenset({"SELECT total_changes()"})
-#: names the body may not use anywhere (save the one pass-through constructor): re-initializing onto another path,
-#: or a second instance
-_FACTORY_FORBIDDEN_NAMES = frozenset({"__init__", "__new__", "__class__", "type"})
+#: THE CONNECTION-SUBCLASS BODY (0031 v23.4 §4b-ii, the factory carve-out with its body PINNED; round 4, TT-R4-01, the
+#: owner's "Pin the exact body (Recommended)"). A subclass makes the acquisition capability reachable as `self`, object
+#: dataflow this census does not otherwise follow (round 15), so the class's body is not judged by a grammar: this is
+#: the ONE admitted body, and the class is admitted only when `ast.dump` of its body, the class docstring removed,
+#: equals `ast.dump` of this source's, both parsed by the running interpreter. A comment or the class docstring may
+#: change; nothing else may. Reason: v23.3's positive-shape grammar admitted a second initializer after its parameters
+#: were rebound and the instance passed to a helper that re-initializes it (round 4), and eleven neighbours of those
+#: (research's stage 1: a loop, a branch, a closure, an alias, an unpacking, a bound method, a cursor, the commit cell,
+#: an exception); a pinned body leaves no grammar domain to enumerate. Any change to it is a change to the spec.
+CONNECTION_SUBCLASS_BODY = """\
+def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._changes_mark = self._changes()
+
+def _changes(self):
+    return self.execute("SELECT total_changes()").fetchone()[0]
+
+def _ended(self, committed: bool) -> None:
+    try:
+        now = self._changes()
+    except Exception:
+        now = None
+    wrote = now is None or self._changes_mark is None or now != self._changes_mark
+    self._changes_mark = now
+    if committed and wrote:
+        bound = _TRUST_COMMITS.get()
+        if bound is not None and bound[0] is self:
+            bound[1].append(now)
+
+def commit(self):
+    was = self.in_transaction
+    super().commit()
+    if was:
+        self._ended(True)
+
+def rollback(self):
+    was = self.in_transaction
+    super().rollback()
+    if was:
+        self._ended(False)
+"""
+
+#: Every use of the connection in that body: each maximal expression rooted at the method's `self` or at `super()`
+#: (`connection_subclass_uses` derives them; tests/test_0031_proposal_ddl.py holds this table equal to the derivation),
+#: each with why it cannot carry the connection out. What reaches anything outside the instance is an integer or a
+#: boolean: the change counter and `in_transaction`.
+CONNECTION_SUBCLASS_USES = (
+    ("__init__", "super().__init__(*args, **kwargs)",
+     "the ONE initializer: the constructor's first statement, its own parameters unchanged (the pinned body never "
+     "rebinds them); its value, None, is discarded"),
+    ("__init__", "self._changes_mark", "a store target: the integer counter kept on the instance itself"),
+    ("__init__", "self._changes()", "the class's own counter read: an integer"),
+    ("_changes", "self.execute('SELECT total_changes()').fetchone()[0]",
+     "the one literal statement; its cursor and row are consumed inside the expression, only the integer returned"),
+    ("_ended", "self._changes()", "the class's own counter read: an integer"),
+    ("_ended", "self._changes_mark", "read in a comparison: an integer or None"),
+    ("_ended", "self._changes_mark", "read in a comparison: an integer or None"),
+    ("_ended", "self._changes_mark", "a store target: the integer (or None) kept on the instance itself"),
+    ("_ended", "self", "an identity comparison, `bound[0] is self`: a boolean; the instance is not stored, passed, "
+                       "returned or captured, and the cell receives only the integer `now`"),
+    ("commit", "self.in_transaction", "a boolean"),
+    ("commit", "super().commit()", "the base method itself, no arguments; its value, None, is discarded"),
+    ("commit", "self._ended(True)", "the class's own recorder; its value, None, is discarded"),
+    ("rollback", "self.in_transaction", "a boolean"),
+    ("rollback", "super().rollback()", "the base method itself, no arguments; its value, None, is discarded"),
+    ("rollback", "self._ended(False)", "the class's own recorder; its value, None, is discarded"),
+)
 #: the one file the carve-out admits the class in
 FACTORY_SUBCLASS_FILE = "store/sqlite.py"
-
-
-def _passes_own_params(fn, call) -> bool:
-    """`call` passes `fn`'s own parameters (after self), in order, unchanged: positionals as names, then *args and
-    **kwargs as the starred names."""
-    a = fn.args
-    names = [x.arg for x in (a.posonlyargs + a.args)[1:]]
-    pos = list(call.args)
-    want = [ast.Name] * len(names)
-    if len(pos) != len(names) + (1 if a.vararg else 0):
-        return False
-    for i, n in enumerate(names):
-        if not (isinstance(pos[i], ast.Name) and pos[i].id == n):
-            return False
-    if a.vararg and not (isinstance(pos[-1], ast.Starred) and isinstance(pos[-1].value, ast.Name)
-                         and pos[-1].value.id == a.vararg.arg):
-        return False
-    kws = list(call.keywords)
-    if a.kwonlyargs:
-        return False
-    if a.kwarg:
-        return (len(kws) == 1 and kws[0].arg is None and isinstance(kws[0].value, ast.Name)
-                and kws[0].value.id == a.kwarg.arg)
-    return not kws and not want[len(names):]
 
 
 def _is_super_call(n) -> bool:
     return isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "super"
 
 
-def _receiver_kind(expr, fn, base_returns, module_names) -> str:
-    params = [x.arg for x in fn.args.posonlyargs + fn.args.args + fn.args.kwonlyargs]
-    for extra in (fn.args.vararg, fn.args.kwarg):
-        if extra is not None:
-            params.append(extra.arg)
-    if isinstance(expr, ast.Name):
-        if params and expr.id == params[0]:
-            return "self"
-        if expr.id in params[1:]:
-            return "parameter"
-        if expr.id in base_returns:
-            return "base-return"
-        local = any(isinstance(n, ast.Name) and n.id == expr.id and isinstance(n.ctx, ast.Store)
-                    for n in ast.walk(fn))
-        if not local and expr.id in module_names:
-            return f"module:{expr.id}"
-        return "local"
-    return "expression"
+def _class_body_without_docstring(cls) -> list:
+    body = list(cls.body)
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) \
+            and isinstance(body[0].value.value, str):
+        body = body[1:]
+    return body
+
+
+def _canonical_body_dump() -> list:
+    return [ast.dump(s) for s in ast.parse(CONNECTION_SUBCLASS_BODY).body]
+
+
+def connection_subclass_uses(body_source: str = CONNECTION_SUBCLASS_BODY) -> list:
+    """Every use of the connection in a class body given as source (its methods at column 0): for each method, each
+    maximal expression rooted at its first parameter or at a bare `super()` (climbing an attribute's value, a call's
+    function and a subscript's value), as (method, unparsed expression), in source order."""
+    tree = ast.parse(body_source)
+    parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
+    out = []
+    for fn in tree.body:
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        params = fn.args.posonlyargs + fn.args.args
+        me = params[0].arg if params else None
+        roots = [n for n in ast.walk(fn)
+                 if (isinstance(n, ast.Name) and n.id == me) or (_is_super_call(n) and not n.args and not n.keywords)]
+        for n in sorted(roots, key=lambda x: (x.lineno, x.col_offset)):
+            top = n
+            while True:
+                up = parent.get(top)
+                if (isinstance(up, ast.Attribute) and up.value is top) or (isinstance(up, ast.Call) and up.func is top) \
+                        or (isinstance(up, ast.Subscript) and up.value is top):
+                    top = up
+                    continue
+                break
+            out.append((fn.name, ast.unparse(top)))
+    return out
 
 
 def _factory_subclass(tree, parent, node, rel=None):
-    """`sqlite3.Connection` at `node` as a class BASE: (name, None) when the class is the admitted shape, else
-    (name or None, reason). The shape (0031 v23.3, §4b-ii's carve-out):
+    """`sqlite3.Connection` at `node` as a class BASE: (name, None) when the class is admitted, else (name or None,
+    reason). The carve-out (0031 v23.4, §4b-ii):
       1. ONE module-level ClassDef in `FACTORY_SUBCLASS_FILE`, no decorators, no keywords, Connection its ONLY base;
       2. its name occurs exactly twice in the file: the ClassDef, and ONE load that is the value of the `factory`
          keyword of a direct `sqlite3.connect(...)` call (any other position, attribute, alias or string refuses);
-      3. its BODY is methods only, of a positive shape: a constructor, if any, is `def __init__(self, *args,
-         **kwargs)` whose FIRST statement passes them unchanged to `super().__init__`; every other base call is
-         `super().<the method's own name>(<its own parameters, unchanged>)`; nothing else names `__init__`, `__new__`,
-         `__class__` or `type`; and every attribute the body touches is a (receiver kind, attribute) row of
-         `CONNECTION_SUBCLASS_SURFACE`."""
+      3. its BODY, the class docstring removed, is `CONNECTION_SUBCLASS_BODY` by `ast.dump` equality, statement for
+         statement, both parsed by the running interpreter."""
     cls = parent.get(node)
     if not (isinstance(cls, ast.ClassDef) and node in cls.bases):
         return None, None
@@ -1058,63 +1098,9 @@ def _factory_subclass(tree, parent, node, rel=None):
                   and call.func.value.id == "sqlite3")
     if not ok_use:
         return name, "its name is used other than once, as factory= of a direct sqlite3.connect call"
-    module_names = {t.id for s in tree.body if isinstance(s, (ast.Assign, ast.AnnAssign))
-                    for t in (s.targets if isinstance(s, ast.Assign) else [s.target]) if isinstance(t, ast.Name)}
-    for item in cls.body:
-        if isinstance(item, ast.Expr) and isinstance(item.value, ast.Constant) and isinstance(item.value.value, str):
-            continue                                                   # the docstring
-        if not isinstance(item, ast.FunctionDef) or item.decorator_list:
-            return name, "its body holds something other than plain methods"
-        fn = item
-        pass_through = None
-        if fn.name == "__init__":
-            first = fn.body[0] if fn.body else None
-            a = fn.args
-            if not (a.vararg and a.kwarg and len(a.args) == 1 and not a.posonlyargs and not a.kwonlyargs
-                    and not a.defaults and isinstance(first, ast.Expr) and isinstance(first.value, ast.Call)
-                    and isinstance(first.value.func, ast.Attribute) and first.value.func.attr == "__init__"
-                    and _is_super_call(first.value.func.value) and not first.value.func.value.args
-                    and not first.value.func.value.keywords and _passes_own_params(fn, first.value)):
-                return name, "a constructor that is not the pass-through form"
-            pass_through = first.value
-        base_returns = set()
-        for n in ast.walk(fn):
-            if isinstance(n, ast.Assign) and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Attribute) \
-                    and _is_super_call(n.value.func.value):
-                base_returns.update(x.id for x in n.targets if isinstance(x, ast.Name))
-        for n in ast.walk(fn):
-            if isinstance(n, ast.Name) and n.id in _FACTORY_FORBIDDEN_NAMES:
-                return name, f"its body names {n.id}"
-            if isinstance(n, ast.Constant) and n.value in _FACTORY_FORBIDDEN_NAMES:
-                return name, f"its body names {n.value!r}"
-            if _is_super_call(n):
-                outer = parent.get(n)
-                call = parent.get(outer)
-                if n.args or n.keywords or not (isinstance(outer, ast.Attribute) and isinstance(call, ast.Call)
-                                                and call.func is outer):
-                    return name, "a base reference other than super().<method>(...)"
-                if call is pass_through:
-                    continue
-                if outer.attr != fn.name or not _passes_own_params(fn, call):
-                    return name, f"super().{outer.attr}(...) in {fn.name}: not its own method with its own parameters"
-                continue
-            if isinstance(n, ast.Attribute):
-                if _is_super_call(n.value):
-                    continue                                           # judged as the base call above
-                if n.attr in _FACTORY_FORBIDDEN_NAMES:
-                    return name, f"its body names .{n.attr}"
-                kind = _receiver_kind(n.value, fn, base_returns, module_names)
-                if (kind, n.attr) not in CONNECTION_SUBCLASS_SURFACE:
-                    return name, f"its body touches {kind}.{n.attr}, outside CONNECTION_SUBCLASS_SURFACE"
-                if (kind, n.attr) == ("self", "execute"):
-                    call = parent.get(n)
-                    if not (isinstance(call, ast.Call) and call.func is n and len(call.args) == 1
-                            and not call.keywords and isinstance(call.args[0], ast.Constant)
-                            and call.args[0].value in SUBCLASS_STATEMENTS):
-                        return name, "self.execute other than a call with one SUBCLASS_STATEMENTS literal"
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in (
-                    "getattr", "setattr", "delattr", "vars", "globals", "locals", "eval", "exec"):
-                return name, f"its body calls {n.func.id}(...)"
+    if [ast.dump(s) for s in _class_body_without_docstring(cls)] != _canonical_body_dump():
+        return name, ("its body differs from CONNECTION_SUBCLASS_BODY (the pinned body: only a comment or the class "
+                      "docstring may change)")
     return name, None
 
 

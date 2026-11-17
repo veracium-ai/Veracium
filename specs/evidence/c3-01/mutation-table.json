@@ -1,5 +1,5 @@
 {
- "body_sha256": "c58608463e217b22d36d65600f8d5cdc70152b2b372bfc37af77a6895caf33be",
+ "body_sha256": "a237808d94947199e5560c4890cee0a1e25e179800b3bb13c54b28a730ce8d46",
  "controls": [
   {
    "anchor_counts": [
@@ -218,7 +218,7 @@
     "passed": 16
    }
   },
-  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
+  "commit": "28f1f3bbc8913b9a9d99c5b0a832fc702f32da01",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
@@ -251,7 +251,7 @@
    "src/veracium/mcp_server.py": "34841a86156af2084406fea818c586f0ea5478a077ba56235b48fab4e11fc20e",
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
    "src/veracium/store/revocation.py": "14aebf929c07e968c987b85c05c565d1b582de2e548b41dfe3d4de1147317c8d",
-   "src/veracium/store/sqlite.py": "0e5ec19de3638827ef827d061f5bd4b9b11007c5173de7508329cff84ada6ca0",
+   "src/veracium/store/sqlite.py": "9ecc9cccae89e361c1071c30c3de66ebe01b7e37896c6cd941f4b556e3b8c554",
    "tests/test_0031_server_reports_itself.py": "5ff827b81d01cf38d6759892b4c311aea19be03a45ae63ebce8dbb9c27a786da",
    "tests/test_c3_01_empty_body_bind.py": "a6befb0770902488995da33414599d633dc97cfba28dc5fe8873ebb4d3de4c2f",
    "tests/test_c3_01_writers_census.py": "cbf5bb6bd2b3de1a4b4e0f95a4f56f87529cb90e908cba552aa329760f08ea73"
@@ -267,37 +267,12 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/test.yml",
-   "CHANGELOG.md",
-   "docs/api.md",
-   "docs/mcp.md",
    "specs/0031-agent-facing-trust-surface.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/obligations_mutants.py",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation_mutants.py",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
-   "specs/evidence/0047/carrier_inventory.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -310,23 +285,10 @@
    "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
-   "specs/evidence/c3-01/census_trace_plugin.py",
-   "specs/evidence/sr2-01/mutation-table.json",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/budgets.py",
-   "src/veracium/graph.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/proactive.py",
+   "specs/evidence/0048/implementation/mutation-table.json",
    "src/veracium/store/sqlite.py",
-   "src/veracium/trust_tools.py",
    "tests/test_0031_proposal_ddl.py",
-   "tests/test_0031_trust_tools_census.py",
-   "tests/test_0031_trust_tools_erase.py",
-   "tests/test_0031_trust_tools_library.py",
-   "tests/test_0031_trust_tools_mcp.py",
-   "tests/test_0042_inv7.py",
+   "tests/test_0031_trust_tools_surfaces.py",
    "tests/test_0048_decay_bounds.py"
   ]
  },
@@ -371,7 +333,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.61s",
+   "pytest": "5 failed in 1.75s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -408,7 +370,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.91s",
+   "pytest": "2 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -441,7 +403,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -474,7 +436,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -513,7 +475,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.22s",
+   "pytest": "3 failed in 1.35s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty body always omitted: the no-write response no longer equals the bind-off one (v18.11 I6d)"
@@ -581,7 +543,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 88.88s (0:01:28)",
+   "pytest": "1 failed in 110.03s (0:01:50)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
@@ -614,7 +576,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 85.73s (0:01:25)",
+   "pytest": "1 failed in 110.14s (0:01:50)",
    "reason": null,
    "reason_seen": null,
    "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
@@ -647,7 +609,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.30s",
+   "pytest": "1 failed in 3.31s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -683,7 +645,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.86s",
+   "pytest": "2 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -716,7 +678,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -731,6 +693,6 @@
   "good": 11,
   "killed": 11,
   "rows": 11,
-  "seconds": 599
+  "seconds": 734
  }
 }
