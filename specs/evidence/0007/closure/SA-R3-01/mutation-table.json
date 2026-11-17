@@ -1,5 +1,5 @@
 {
- "body_sha256": "78c3c31272eb9072afae0f53de39deac44beceae064466106d7d1fdfebec4d30",
+ "body_sha256": "bc0b20246b2dd83106f03053ac687d8da7e8f82f537b65fb5a7b0f33f62e25d4",
  "controls": [
   {
    "anchor_counts": [
@@ -61,7 +61,7 @@
     "passed": 9
    }
   },
-  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
+  "commit": "fba1098755e0938e10a00f70ec2b2e46642db94d",
   "control_definitions": {
    "NOOP-SA-R3-01-sa10_gate": "2f108c8c5252acc1055d23401d2f059447456ea8cc805318b9be162b3fe37401"
   },
@@ -90,40 +90,13 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/test.yml",
-   "CHANGELOG.md",
-   "docs/api.md",
-   "docs/mcp.md",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0047/carrier_inventory.py",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/budgets.py",
-   "src/veracium/graph.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/proactive.py",
-   "src/veracium/store/sqlite.py",
-   "src/veracium/trust_tools.py",
-   "tests/test_0031_proposal_ddl.py",
-   "tests/test_0031_trust_tools_census.py",
-   "tests/test_0031_trust_tools_erase.py",
-   "tests/test_0031_trust_tools_library.py",
-   "tests/test_0031_trust_tools_mcp.py",
-   "tests/test_0042_inv7.py"
+   "specs/evidence/0031-trust-tools/census/census-tools.txt",
+   "specs/skip_inventory.py"
   ]
  },
  "rows": [
@@ -158,7 +131,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed, 2 warnings in 0.66s",
+   "pytest": "2 failed, 2 warnings in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped connect: the caller's arguments, factory included, reach sqlite3.connect"
@@ -191,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped seam: every sqlite3 attribute but connect forwarded"
@@ -227,7 +200,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.67s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a settable attribute takes any value, a Python factory included"
@@ -264,7 +237,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.34s",
+   "pytest": "2 failed in 0.36s",
    "reason": null,
    "reason_seen": null,
    "what": "replay re-runs a recorded connect's arguments and a recorded set's value"

@@ -1,5 +1,5 @@
 {
- "body_sha256": "8af4aea0c2ccb9f67270078fbbbedb22a1ce0ea432810a09366203b87902c385",
+ "body_sha256": "64cbb5b85f3d6ffb78063c26c782b77e7f41c1d920433ea2eeb54248409a8433",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "0c8c1ff7846f38676cd1beb06e379ad1fb799280",
+  "commit": "fba1098755e0938e10a00f70ec2b2e46642db94d",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -77,13 +77,6 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/test.yml",
-   "CHANGELOG.md",
-   "docs/api.md",
-   "docs/mcp.md",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -94,28 +87,8 @@
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation_mutants.py",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0047/carrier_inventory.py",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/budgets.py",
-   "src/veracium/graph.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/proactive.py",
-   "src/veracium/store/sqlite.py",
-   "src/veracium/trust_tools.py",
-   "tests/test_0031_proposal_ddl.py",
-   "tests/test_0031_trust_tools_census.py",
-   "tests/test_0031_trust_tools_erase.py",
-   "tests/test_0031_trust_tools_library.py",
-   "tests/test_0031_trust_tools_mcp.py",
-   "tests/test_0042_inv7.py"
+   "specs/evidence/0031-trust-tools/census/census-tools.txt",
+   "specs/skip_inventory.py"
   ]
  },
  "rows": [
@@ -150,7 +123,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 9.79s",
+   "pytest": "2 failed in 9.57s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -183,7 +156,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 9.05s",
+   "pytest": "1 failed in 9.42s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -216,7 +189,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 8.77s",
+   "pytest": "1 failed in 9.33s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -231,6 +204,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 163
+  "seconds": 169
  }
 }

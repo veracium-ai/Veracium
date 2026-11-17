@@ -144,15 +144,17 @@ INVENTORY = [
      "optional-dependency", "the optional MCP SDK — specs/0031 §4f's round-3 cells through every surface; the module "
                             "builds the served server and the adapters' shared core reads its registration, so the WHOLE "
                             "module skips without the SDK (a module-level importorskip; the pydantic-floor lane). Author "
-                            "line: all PASS with mcp installed"),
+                            "line: all PASS with mcp installed", "job:runs"),
     ("tests/test_0031_trust_tools_surfaces.py", "importorskip", "langchain",
      "optional-dependency", "the optional langchain extra — specs/0031 §4f's round-3 cells on the LangChain row skip by "
                             "name without langchain-core; the core's and MCP's cells run. In the adapter-conformance CI "
-                            "job VERACIUM_ADAPTER_ROWS=langchain makes a missing framework a failure, never a skip"),
+                            "job VERACIUM_ADAPTER_ROWS=langchain makes a missing framework a failure, never a skip",
+     "key"),
     ("tests/test_0031_trust_tools_surfaces.py", "importorskip", "pydantic_ai",
      "optional-dependency", "the optional pydantic_ai extra — specs/0031 §4f's round-3 cells on the Pydantic AI row skip "
                             "by name without pydantic-ai; the core's and MCP's cells run. In the adapter-conformance CI "
-                            "job VERACIUM_ADAPTER_ROWS names the row, so a missing framework is a failure, never a skip"),
+                            "job VERACIUM_ADAPTER_ROWS names the row, so a missing framework is a failure, never a skip",
+     "key"),
     ("tests/test_0053_adapter_conformance.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — specs/0053's oracle reads the served MCP surface (its tool listing "
                             "and each tool's argument model), so the WHOLE module skips without the SDK (a module-level "
