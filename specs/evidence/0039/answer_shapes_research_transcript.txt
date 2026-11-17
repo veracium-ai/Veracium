@@ -1,5 +1,5 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 2a8902748cd24588a3ef8cbab24db7535c4c43a5
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ b5d861c16863adcde14a2d51ba8b6600a64b625b
 # RE-PINNED 2026-11-16 (2a890274: specs/0031 round 3, TT-R3-01..03 — the proactive receipt's shown members, the rendered subject, the commit-phase connection and the internal-failure class; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-15 (af8e44b2: specs/0049 v2.2, edges_since means learned — the read window, the first-record projection, two census sites, introspect's last_observed, two comments; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-15 (0cfbb0a7: specs/0031 §4f, the trust tools — the call path and scope gate on the four verbs, the render receipt off by default, the two-step erase, the seven MCP tools and the adapters' bindings, and nine 0042 census sites; both instruments re-run, and the body is byte-identical)
@@ -148,6 +148,7 @@
 # RE-PINNED 2026-10-05 the 0041 round-13 corrections landed in 0333ad1fece3eab07a039261d47d4a8e16de9973 (e4c1573..0333ad1): bodies byte-identical; the pin moves to the commit that changed src/
 # RE-PINNED 2026-10-05 the 0041 round-14 corrections landed in a24a47dd2c8cbc1c930fac5507931993844ccd6a (2662970..a24a47d): bodies byte-identical; the pin moves to the commit that changed src/
 # RE-PINNED 2026-10-06 the owner's-name scrub of src/ comments and docstrings landed in e6bdac98f0dd235e24eee9999bb26701a53d7904 (no code change): bodies byte-identical; the pin moves to the commit that changed src/
+# RE-PINNED 2026-11-17 (b5d861c1: specs/0031 round 4, TT-R4-01 and N1/N2 — the phase mark re-read after the store opens, the commit-phase class's docstring; both instruments re-run, and the body is byte-identical)
 
   primary answer shape     outcome                                             
   ------------------------ ----------------------------------------------------
