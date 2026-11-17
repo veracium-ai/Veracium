@@ -139,9 +139,9 @@ def test_a_supplied_source_enters_the_identity_a_repeat_replays_and_another_sour
     first = m.confirm(U, e.id, source_id=held_under, correlation_id="held", date="2026-11-01")
     assert first["replayed"] is False
     assert m.confirm(U, e.id, source_id=held_under, correlation_id="held", date="2026-11-01")["replayed"] is True
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="already used for a DIFFERENT request"):     # the identity conflict itself
         m.confirm(U, e.id, source_id=other, correlation_id="held", date="2026-11-01")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="already used for a DIFFERENT request"):
         m.confirm(U, e.id, correlation_id="held", date="2026-11-01")            # absent is a third identity
     assert len(m.store.confirmations_for(U, e.id)) == 1                         # neither conflict wrote
 

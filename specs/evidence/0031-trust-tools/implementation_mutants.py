@@ -543,6 +543,12 @@ MUTANTS = [
      ['tests/test_0031_trust_tools_surfaces.py::test_a_failure_after_the_erase_or_the_wiki_write_commits_uses_the_error_channel[find_facts-core]', 'tests/test_0031_trust_tools_surfaces.py::test_a_failure_after_the_erase_or_the_wiki_write_commits_uses_the_error_channel[find_facts-mcp]'], ['tests/test_0031_trust_tools_surfaces.py::test_a_pre_commit_library_refusal_is_still_a_refusal[core]'], None,
      "research's stage-2 S24 (TT-R3-03 on find_facts): the wiki publication's commit not recorded, so a failure after "
      "it is serialized as a refusal"),
+    ('TT18-identity-conflict-reported-as-another-error', "product", 'src/veracium/store/sqlite.py',
+     [('                    f"correlation_id {correlation_id!r} was already used for a "\n                    f"DIFFERENT request — integrity conflict (specs/0008 §6c)"))',
+       '                    f"no edge {correlation_id!r} for user (specs/0008 §6c)"))')],
+     ['tests/test_0031_trust_tools_library.py::test_a_supplied_source_enters_the_identity_a_repeat_replays_and_another_source_conflicts[src-a]', 'tests/test_0031_trust_tools_library.py::test_a_supplied_source_enters_the_identity_a_repeat_replays_and_another_source_conflicts[src-b]'], ['tests/test_0031_trust_tools_library.py::test_a_principal_with_no_scope_policy_is_scope_unconfigured_and_writes_nothing'], None,
+     "research's pre-seal read (TT-R3-04 B, the class round 3 named in C): the source-identity conflict surfaces as an "
+     "unrelated ValueError, which a bare raises(ValueError) would accept"),
 ]
 
 
