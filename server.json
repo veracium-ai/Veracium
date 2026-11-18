@@ -7,12 +7,12 @@
     "source": "github"
   },
   "websiteUrl": "https://docs.veracium.ai",
-  "version": "0.16.0",
+  "version": "0.33.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "veracium",
-      "version": "0.16.0",
+      "version": "0.33.0",
       "transport": {
         "type": "stdio"
       },
@@ -40,10 +40,40 @@
         },
         {
           "name": "VERACIUM_MCP_CAPABILITY",
-          "description": "The host's attestation about every call on this server (specs/0031). Unset = none: events default to the third-party class and model-supplied provenance can only restrict. direct = every call originates in a turn with the authenticated principal and this deployment stands behind the model's authorship labelling as its own. Attested by the host, not verified by veracium: a server reachable by a public or untrusted agent must leave it unset. Any other value refuses to start.",
+          "description": "The host's attestation about every call on this server (specs/0031). Unset = none: events default to the third-party class, model-supplied provenance can only restrict, and the seven trust tools refuse every call and write nothing. direct = every call originates in a turn with the authenticated principal and this deployment stands behind the model's authorship labelling as its own; the trust tools then act (look up, correct, dispute, confirm, erase), with erasure on by default, and content relayed in a first-party turn can induce an agent to call them. Attested by the host, not verified by veracium: a server reachable by a public or untrusted agent must leave it unset. Any other value refuses to start.",
           "format": "string",
           "isRequired": false,
           "isSecret": false
+        },
+        {
+          "name": "VERACIUM_MCP_SOURCE_ID",
+          "description": "The host's opaque, stable id for the source this deployment ingests from (specs/0006: a mailbox, a connector instance, a device; never a person). Third-party-class events without one are refused (source_id_required), and with VERACIUM_MCP_CAPABILITY unset every event is third-party-class.",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "VERACIUM_MCP_ERASURE",
+          "description": "Erasure through the agent under direct (specs/0031 §4i): on (the default when unset) or off. off refuses forget_fact and the two-step whole-user erase and leaves the other trust tools working. Any other value, the empty string included, refuses to start.",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ],
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--from",
+          "value": "veracium[mcp,anthropic]==0.33.0",
+          "description": "The package with the MCP SDK and the reference Anthropic provider, which the server needs."
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp",
+          "description": "`veracium mcp` runs the MCP stdio server (the same server as `veracium-mcp`)."
         }
       ]
     }

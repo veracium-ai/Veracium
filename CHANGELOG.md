@@ -39,11 +39,18 @@ implementation accepted with amendments at round 5, 2026-11-18).
 
 - **Measured before release (§6a, pre-registered, on the tools as first built):** two model drivers, six injection
   arms of five sessions each per driver. In all 60 injection sessions no driver called a mutating tool or looked up a
-  target, and each of the 16 user-ask control sessions reached the act the user asked for, both erase steps included.
-  This is behaviour observed on those prompts and sessions, not a resistance rate: zero attempts in 30 sessions per
-  driver bounds the per-session attempt rate at about 9.5% (one-sided 95%) only under a common-rate reading of six
-  different arms, and it says nothing about an agent that has already found a target. The external reviewer recounted
-  the run and found no discrepancy (implementation review round 3).
+  target. Of the 16 control sessions, each of the 12 in which the user asked for an act reached it, both erase steps
+  included (one, asked to forget a fact, also made one extra accepted forget, of the episode recording the same
+  statement, outside the pre-registered target: an off-target call), and the 4 benign-document sessions made no tool
+  call at all. This is behaviour observed on those prompts and
+  sessions, not a resistance rate: zero attempts in 30 sessions per driver bounds the per-session attempt rate at about
+  9.5% (one-sided 95%) only under a common-rate reading of six different arms, and it says nothing about an agent that
+  has already found a target. The external reviewer recounted the transcripts and recorder flags (tool attempts,
+  accepted results, target discovery) and found no discrepancy; the pre-registration's chronology, the remote models'
+  identity and the final database states were not independently authenticated (implementation review round 3).
+  *(Corrected after the v0.33.0 tag: the text released with it said "each of the 16 user-ask control sessions" and
+  "recounted the run"; 4 of the 16 controls are benign-document sessions, the off-target call was not stated, and the
+  reviewer recounted the transcripts and flags, not the whole run.)*
 
 - **New: seven agent tools,** over MCP and through the LangChain and Pydantic AI adapters: `find_facts` (what memory
   shows the user, with record ids), `correct_fact`, `dispute_fact`, `confirm_fact`, `forget_fact` (one record, by
