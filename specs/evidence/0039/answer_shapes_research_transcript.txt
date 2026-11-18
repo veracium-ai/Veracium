@@ -1,5 +1,5 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ e2f2a00bb99e68c7601102aad644f2c9a047b4c3
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ af2b6ab40b2a9284ba1507cc4f5efdc5ef7e42e1
 # RE-PINNED 2026-11-16 (2a890274: specs/0031 round 3, TT-R3-01..03 — the proactive receipt's shown members, the rendered subject, the commit-phase connection and the internal-failure class; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-15 (af8e44b2: specs/0049 v2.2, edges_since means learned — the read window, the first-record projection, two census sites, introspect's last_observed, two comments; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-15 (0cfbb0a7: specs/0031 §4f, the trust tools — the call path and scope gate on the four verbs, the render receipt off by default, the two-step erase, the seven MCP tools and the adapters' bindings, and nine 0042 census sites; both instruments re-run, and the body is byte-identical)
@@ -150,6 +150,7 @@
 # RE-PINNED 2026-10-06 the owner's-name scrub of src/ comments and docstrings landed in e6bdac98f0dd235e24eee9999bb26701a53d7904 (no code change): bodies byte-identical; the pin moves to the commit that changed src/
 # RE-PINNED 2026-11-17 (b5d861c1: specs/0031 round 4, TT-R4-01 and N1/N2 — the phase mark re-read after the store opens, the commit-phase class's docstring; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-18 (e2f2a00b: the `veracium mcp` subcommand in cli.py, the MCP server under the package's own command for the MCP registry; both instruments re-run, and the body is byte-identical)
+# RE-PINNED 2026-11-18 (af2b6ab4: the schema evidence records v0.33.0, one row of src/veracium/store/evidence/legacy_stores.json; both instruments re-run, and the body is byte-identical)
 
   primary answer shape     outcome                                             
   ------------------------ ----------------------------------------------------
