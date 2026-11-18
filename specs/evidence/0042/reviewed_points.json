@@ -5410,49 +5410,49 @@
   "line": 163,
   "statement": "raise ValueError(\"mac length\")"
  },
- "cli.py:<module>:683:RAISE": {
+ "cli.py:<module>:697:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:<module>:RAISE:1",
-  "line": 683,
+  "line": 697,
   "statement": "raise SystemExit(main())"
  },
- "cli.py:_build_llm:70:RAISE": {
+ "cli.py:_build_llm:71:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:_build_llm:RAISE:1",
-  "line": 70,
+  "line": 71,
   "statement": "raise"
  },
- "cli.py:_build_llm:72:RAISE": {
+ "cli.py:_build_llm:73:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:_build_llm:RAISE:2",
-  "line": 72,
+  "line": 73,
   "statement": "raise SystemExit(help_text)"
  },
- "cli.py:_build_llm:74:RAISE": {
+ "cli.py:_build_llm:75:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:_build_llm:RAISE:3",
-  "line": 74,
+  "line": 75,
   "statement": "raise SystemExit(help_text)"
  },
- "cli.py:_no_llm:83:RAISE": {
+ "cli.py:_no_llm:84:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:_no_llm:RAISE:1",
-  "line": 83,
+  "line": 84,
   "statement": "raise SystemExit(\"internal: this veracium verb should never invoke the LLM \""
  },
  "mcp_server.py:main:946:RAISE": {

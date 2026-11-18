@@ -1000,35 +1000,35 @@
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 70,
+   "line": 71,
    "module": "cli.py",
    "qualname": "_build_llm"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 72,
+   "line": 73,
    "module": "cli.py",
    "qualname": "_build_llm"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 74,
+   "line": 75,
    "module": "cli.py",
    "qualname": "_build_llm"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 83,
+   "line": 84,
    "module": "cli.py",
    "qualname": "_no_llm"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 683,
+   "line": 697,
    "module": "cli.py",
    "qualname": "<module>"
   },
