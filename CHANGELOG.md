@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+**`veracium mcp` runs the MCP server under the `veracium` command.**
+- **New: `veracium mcp`** is exactly `veracium-mcp`: the same stdio server, help, version, environment variables and
+  refusal of any other argument. A launcher that can name only the package's own command can now start the server,
+  for example `uvx --from "veracium[mcp,anthropic]" veracium mcp` (the MCP Registry's entry needs this form).
+  `veracium-mcp` is unchanged. **Who must act:** nobody.
+
 **`edges_since` means learned** (specs/0049; design accepted with amendments at external review round 1, 2026-11-15).
 - **Changed (a fix): `Memory.edges_since(user_id, since)` returns the edges this store LEARNED after `since`,** by
   the first journal event's store-minted time (specs/0029), not the event's own date. An edge remembered today about a

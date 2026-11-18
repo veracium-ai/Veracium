@@ -1,5 +1,5 @@
 {
- "body_sha256": "3c32e29d6415ad8f45385f6dac2af79c067f832e0af6644ab2c3f7692db63f4b",
+ "body_sha256": "85f90cd8d52ece7b3f120f74cd33f8e26c4442052ae4af6f6955ac516e3a934b",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
+  "commit": "3f9489b1e1daa3f74d6b73637f346b726013ab83",
   "control_definitions": {
    "NOOP-0018-AR-R3-03-release_migration": "d03378627000b684eb687cd6056bb85340fca1d4b0c930cd7b18d875a571a097"
   },
@@ -75,11 +75,7 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "docs/api.md",
-   "specs/0042-exercised-guarantees.md",
-   "specs/ALLOCATION.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
+   "docs/mcp.md",
    "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
@@ -93,25 +89,8 @@
    "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/derive_keys.py",
-   "specs/evidence/0042/retired_overrides.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
    "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/cli.py",
-   "src/veracium/graph.py",
-   "src/veracium/introspect.py",
-   "src/veracium/store/base.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0042_retired_overrides.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0049_edges_since_learned.py",
-   "tests/test_host_queries.py",
-   "tests/test_introspect_cli.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "src/veracium/cli.py"
   ]
  },
  "rows": [
@@ -146,7 +125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.50s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "any record counts, as round 2's model accepted any readback of kind `record`"
@@ -161,6 +140,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 7
+  "seconds": 10
  }
 }

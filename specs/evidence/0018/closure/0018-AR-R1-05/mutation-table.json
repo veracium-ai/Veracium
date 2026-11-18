@@ -1,5 +1,5 @@
 {
- "body_sha256": "760255f96218f84425da677a20b813cf435a13eba32ca30a8780840d13b9690f",
+ "body_sha256": "840efae0b46370ad9d3d951b1a53b01f2b2b078fd71e5cefce0c6db3198962eb",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
+  "commit": "3f9489b1e1daa3f74d6b73637f346b726013ab83",
   "control_definitions": {
    "NOOP-0018-AR-R1-05-release_migration": "32f31a4cb8c3d21b1d3f3c1e19517277ce16e90524cdcfde7e841eb6e74265f9"
   },
@@ -77,34 +77,13 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "docs/api.md",
-   "specs/0042-exercised-guarantees.md",
-   "specs/ALLOCATION.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
+   "docs/mcp.md",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/derive_keys.py",
-   "specs/evidence/0042/retired_overrides.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
    "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/cli.py",
-   "src/veracium/graph.py",
-   "src/veracium/introspect.py",
-   "src/veracium/store/base.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0042_retired_overrides.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0049_edges_since_learned.py",
-   "tests/test_host_queries.py",
-   "tests/test_introspect_cli.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "src/veracium/cli.py"
   ]
  },
  "rows": [
@@ -136,7 +115,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.50s",
+   "pytest": "1 failed in 0.47s",
    "reason": null,
    "reason_seen": null,
    "what": "U5 offers a retry with the same build"
@@ -169,7 +148,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.49s",
    "reason": null,
    "reason_seen": null,
    "what": "unknown facts with a version offer a rerun"

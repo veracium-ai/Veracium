@@ -24,6 +24,10 @@ ANTHROPIC_API_KEY=sk-... VERACIUM_DB_PATH=~/.veracium.db veracium-mcp
 (`veracium-mcp` is a stdio server meant to be launched by your MCP client —
 run `veracium-mcp --help` for a summary.)
 
+`veracium mcp` is the same server under the `veracium` command: the same help, version, environment and tools. It
+is for a launcher that can name only the package's own command, for example
+`uvx --from "veracium[mcp,anthropic]" veracium mcp`.
+
 The server owns its own model access (the Anthropic reference provider, configured
 from the environment).
 

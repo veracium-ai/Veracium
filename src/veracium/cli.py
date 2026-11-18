@@ -11,6 +11,7 @@ behavioral self-check.
     veracium doctor [--db X] [--user U]      # read-only store linter: version, objects, rows, refs, journal, revocation
 
     veracium export / import / forget        # portability + compliance erasure
+    veracium mcp                             # the MCP stdio server, exactly `veracium-mcp` (env-configured)
 
     veracium telemetry status        # show current setting
     veracium telemetry prompt        # run the consent question (first-run)
@@ -516,8 +517,21 @@ def _migrate_package_escape(e, committed) -> int:
 
 
 def main(argv=None) -> int:
+    import sys
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["mcp"]:
+        # `veracium mcp` IS `veracium-mcp`: the MCP registry launches a PyPI package by the distribution's own name
+        # (`uvx --from "veracium[mcp]==X" veracium mcp`), so the server needs a route under `veracium`. Dispatched
+        # before argparse: every remaining argument reaches the server's own handling unchanged (--help, --version,
+        # and its refusal of anything else), and nothing is written to stdout, the protocol channel, before it runs.
+        from .mcp_server import main as mcp_main
+        mcp_main(argv[1:])
+        return 0
     p = argparse.ArgumentParser(prog="veracium")
     sub = p.add_subparsers(dest="cmd")
+    sub.add_parser("mcp", add_help=False,
+                   help="run the MCP stdio server, the same as veracium-mcp (configured by environment variables; "
+                        "see `veracium mcp --help`)")
     t = sub.add_parser("telemetry", help="manage anonymous, content-free usage statistics (opt-in, default off)")
     ts = t.add_subparsers(dest="tcmd")
     ts.add_parser("status", help="show the current telemetry setting")

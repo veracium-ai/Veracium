@@ -1,5 +1,5 @@
 {
- "body_sha256": "012948b371e7b68a8e800374fee343ac02a566609cdcf2b62e45dde7dd2b22a7",
+ "body_sha256": "8a473c22c48abca7867bb2445efb5a717f5630b1acb76cef06e06df17e8e7463",
  "controls": [
   {
    "anchor_counts": [
@@ -83,7 +83,7 @@
     "passed": 7
    }
   },
-  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
+  "commit": "3f9489b1e1daa3f74d6b73637f346b726013ab83",
   "control_definitions": {
    "NOOP-0018-AR-R4-01-cli": "d5564764acea4d1f50f13bd10698900b6d477634e15ab69b8f2740fec7033576",
    "NOOP-0018-AR-R4-01-release_migration": "ea45787f8edff3fab5e61a2a562b99ab7200b5129f97d2f59888989ac9db25b2"
@@ -106,7 +106,7 @@
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/cli.py": "4bf5fb967a9f64d8730e2b6f71ce58a747f1d2e66748c310dc8a885fd7f13e2a",
+   "src/veracium/cli.py": "35d17c910177611d6ea7eeb692269ad5d0cae4dcc2f672e8c325072c6f409e59",
    "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
    "tests/test_0018_r4_closures.py": "94005e0f663087a1ac89ec572bfed9f2e288441176a5d71afbcbf64fa455c17a",
    "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
@@ -121,11 +121,7 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "docs/api.md",
-   "specs/0042-exercised-guarantees.md",
-   "specs/ALLOCATION.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
+   "docs/mcp.md",
    "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
@@ -140,25 +136,8 @@
    "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/derive_keys.py",
-   "specs/evidence/0042/retired_overrides.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
    "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/cli.py",
-   "src/veracium/graph.py",
-   "src/veracium/introspect.py",
-   "src/veracium/store/base.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0042_retired_overrides.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0049_edges_since_learned.py",
-   "tests/test_host_queries.py",
-   "tests/test_introspect_cli.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "src/veracium/cli.py"
   ]
  },
  "rows": [
@@ -193,7 +172,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.89s",
+   "pytest": "2 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: a failed rename is N1 whether or not it published, as round 4 shipped"
@@ -226,7 +205,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: the record that refuses append-once is read as nothing consumed"
@@ -259,7 +238,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: the terminal carrier hard-codes audit_committed=False, as round 4 shipped"
@@ -292,7 +271,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: a publication that cannot be read back is reported unpublished"
@@ -325,7 +304,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01 (research's read of 9a502e59): append-once on a terminal record that exists is reported unpublished"
@@ -358,7 +337,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: N2 tells the operator to query an id it does not print"
@@ -391,7 +370,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-01: E1's action line says not published whatever the write established"
@@ -406,6 +385,6 @@
   "good": 7,
   "killed": 7,
   "rows": 7,
-  "seconds": 30
+  "seconds": 54
  }
 }

@@ -1,5 +1,5 @@
 {
- "body_sha256": "ce6a96f20a59e82c8681e700ec186eca31f5c5b399f596f028d4875030522f03",
+ "body_sha256": "bbb2baad1761b01efff220bb4fa1d8d9969c8da4209ee72e6478374c2cbfb87a",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "a643588d20209acc8ebb70295c5ac8c956d75331",
+  "commit": "3f9489b1e1daa3f74d6b73637f346b726013ab83",
   "control_definitions": {
    "NOOP-0018-AR-R1-01-release_migration": "2c07b5064d834c82bdb75c52f0ceac40a7660e1e3738729d39375f605918457e"
   },
@@ -80,30 +80,9 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "CHANGELOG.md",
-   "docs/api.md",
-   "specs/0042-exercised-guarantees.md",
-   "specs/ALLOCATION.md",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/derive_keys.py",
-   "specs/evidence/0042/retired_overrides.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
+   "docs/mcp.md",
    "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/cli.py",
-   "src/veracium/graph.py",
-   "src/veracium/introspect.py",
-   "src/veracium/store/base.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0042_retired_overrides.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0049_edges_since_learned.py",
-   "tests/test_host_queries.py",
-   "tests/test_introspect_cli.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "src/veracium/cli.py"
   ]
  },
  "rows": [
@@ -135,7 +114,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.61s",
    "reason": null,
    "reason_seen": null,
    "what": "resolving a legacy store stamps it, so a stopped rung has changed it"
@@ -171,7 +150,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.65s",
+   "pytest": "2 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the authority carries the resolution's digest, not the store's own observation"
@@ -186,6 +165,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 11
+  "seconds": 12
  }
 }
