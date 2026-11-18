@@ -185,8 +185,11 @@ talked into. They need `SqliteStore`; any other store raises `NotImplementedErro
 `record_procedure` and `describe_procedures`, to any MCP-compatible agent (Claude
 Desktop/Code, others) with no host-side Python. It also registers seven trust tools, which act only under
 `VERACIUM_MCP_CAPABILITY=direct`: through them the user can look up, correct, dispute, confirm and erase their memory
-(under any other setting every call refuses and writes nothing). See
-[docs/mcp.md](docs/mcp.md) for the config JSON and tool reference.
+(under any other setting every call refuses and writes nothing). Under `direct`, erasure through the agent is on by
+default (`VERACIUM_MCP_ERASURE=off` refuses the three forget tools), and content relayed in a first-party turn can
+induce an agent to call these tools, both erase steps included: the two steps stop one induced call, not an agent
+induced to call both. A deployment already on `direct` opts into all of this on upgrade; read
+[docs/mcp.md](docs/mcp.md) (the config JSON and tool reference) before setting it.
 
 ## Documentation
 
@@ -219,7 +222,13 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 - **0.33.0** — a user can look up, correct, dispute, confirm and erase their memory through their agent (seven trust
   tools under `VERACIUM_MCP_CAPABILITY=direct`, over MCP and the LangChain and Pydantic AI adapters); `veracium mcp`
   starts the MCP server; `edges_since` returns what the store learned since a time. See the
-  [CHANGELOG](CHANGELOG.md#0330--2026-11-18).
+  [CHANGELOG](CHANGELOG.md#0330--2026-11-18). Do not open a store the trust tools have written in place with an older
+  Veracium: an older build drops an agent's call path when it rewrites an episode, which then reads as the host's act.
+- **0.32.1** — a recall no longer states that the view is empty above a fact written during it; the MCP server reports
+  its own version; the container image `ghcr.io/veracium-ai/veracium` (first published for 0.32.0). See the
+  [CHANGELOG](CHANGELOG.md#0321--2026-11-14).
+- **0.32.0** — `veracium.adapters` serves the same tools as the MCP server to LangChain and Pydantic AI, held to the
+  adapter conformance suite. See the [CHANGELOG](CHANGELOG.md#0320--2026-11-12).
 - **0.31.0** — `veracium migrate` upgrades a store written by any earlier release, one audited schema version at a
   time ([Upgrading an existing store](#upgrading-an-existing-store)).
 - **0.30.0** — a host on `SqliteStore` can revoke a source it no longer trusts
