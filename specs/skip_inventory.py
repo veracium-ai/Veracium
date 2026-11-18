@@ -112,6 +112,13 @@ INVENTORY = [
                             "skips without the SDK (an autouse fixture, never a module-level skip; the pydantic-floor "
                             "lane). Author line: all PASS with mcp installed",
      "job:runs"),
+    ("tests/test_cli_mcp_subcommand.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
+                            "test_the_registry_launch_serves_the_same_tools_over_real_stdio "
+                            "ONLY (an MCP client lists the tools of `veracium mcp` over real "
+                            "stdio); the file's other 5 cells run without the SDK. Author line: "
+                            "all 6 PASS (mcp importable in the authoring venv); an mcp-absent "
+                            "environment sees 5 PASS + 1 SKIP"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "
