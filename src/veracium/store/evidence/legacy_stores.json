@@ -453,6 +453,14 @@
       "store_schema_version": 16,
       "digest": "d2669f67de09e1d7edd8ff56f685a00f98a2ee3148f444272c6d666c996aebf3",
       "result": "ok"
+    },
+    {
+      "tag": "v0.33.0",
+      "commit": "8da4c2ad577faa7bd690e839140cca014f087a42",
+      "on_disk_user_version": 16,
+      "store_schema_version": 16,
+      "digest": "d2669f67de09e1d7edd8ff56f685a00f98a2ee3148f444272c6d666c996aebf3",
+      "result": "ok"
     }
   ]
 }
