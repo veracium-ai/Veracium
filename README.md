@@ -181,10 +181,12 @@ talked into. They need `SqliteStore`; any other store raises `NotImplementedErro
 
 ## Use (MCP)
 
-`veracium-mcp` exposes `remember` / `recall` / `answer` / `maintain`, plus
+`veracium-mcp` (or `veracium mcp`, the same server) exposes `remember` / `recall` / `answer` / `maintain`, plus
 `record_procedure` and `describe_procedures`, to any MCP-compatible agent (Claude
-Desktop/Code, others) with no host-side Python. See [docs/mcp.md](docs/mcp.md)
-for the config JSON and tool reference.
+Desktop/Code, others) with no host-side Python. It also registers seven trust tools, which act only under
+`VERACIUM_MCP_CAPABILITY=direct`: through them the user can look up, correct, dispute, confirm and erase their memory
+(under any other setting every call refuses and writes nothing). See
+[docs/mcp.md](docs/mcp.md) for the config JSON and tool reference.
 
 ## Documentation
 
@@ -214,6 +216,10 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 
 ## Recent changes
 
+- **0.33.0** — a user can look up, correct, dispute, confirm and erase their memory through their agent (seven trust
+  tools under `VERACIUM_MCP_CAPABILITY=direct`, over MCP and the LangChain and Pydantic AI adapters); `veracium mcp`
+  starts the MCP server; `edges_since` returns what the store learned since a time. See the
+  [CHANGELOG](CHANGELOG.md#0330--2026-11-18).
 - **0.31.0** — `veracium migrate` upgrades a store written by any earlier release, one audited schema version at a
   time ([Upgrading an existing store](#upgrading-an-existing-store)).
 - **0.30.0** — a host on `SqliteStore` can revoke a source it no longer trusts

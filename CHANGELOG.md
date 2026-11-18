@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.33.0 — 2026-11-18
+
+**A user can look up, correct, dispute, confirm and erase their memory through their agent, and `veracium mcp`
+starts the MCP server.** The trust tools' implementation was accepted with amendments at external review round 5
+(2026-11-18); the amendment, an evidence-checker fix, is in this release. `edges_since` now returns what the store
+learned since a time (a fix). Store schema stays 16. The export format is 15 only for a store holding an act an agent
+took through the tools; any other store exports as 14, exactly as before. **Who should upgrade:** deployments that
+want their users to manage their memory through the agent (under `VERACIUM_MCP_CAPABILITY=direct`); hosts that read
+`edges_since` as "what this store learned since"; and anyone launching the MCP server through a launcher that can
+name only the package's own command. **Who must act:** the "Who must act" lines below (a `direct` deployment opts into
+the tools on upgrade; a store the tools have written must not be opened in place by an older Veracium; readers of
+`last_recorded`).
 
 **`veracium mcp` runs the MCP server under the `veracium` command.**
 - **New: `veracium mcp`** is exactly `veracium-mcp`: the same stdio server, help, version, environment variables and
@@ -23,8 +34,16 @@
   line now labels both times ("facts valid from …; last observed …").
 
 **The trust tools: under `direct`, a user can look up, correct, dispute, confirm and erase their memory through
-their agent** (specs/0031 v23–v23.2, §4f; design accepted with amendments at external review round 2, 2026-11-14).
-**Not yet released:** the implementation review and the pre-registered injection measurement (§6a) come first.
+their agent** (specs/0031 v23–v23.5, §4f; design accepted with amendments at external review round 2, 2026-11-14;
+implementation accepted with amendments at round 5, 2026-11-18).
+
+- **Measured before release (§6a, pre-registered, on the tools as first built):** two model drivers, six injection
+  arms of five sessions each per driver. In all 60 injection sessions no driver called a mutating tool or looked up a
+  target, and each of the 16 user-ask control sessions reached the act the user asked for, both erase steps included.
+  This is behaviour observed on those prompts and sessions, not a resistance rate: zero attempts in 30 sessions per
+  driver bounds the per-session attempt rate at about 9.5% (one-sided 95%) only under a common-rate reading of six
+  different arms, and it says nothing about an agent that has already found a target. The external reviewer recounted
+  the run and found no discrepancy (implementation review round 3).
 
 - **New: seven agent tools,** over MCP and through the LangChain and Pydantic AI adapters: `find_facts` (what memory
   shows the user, with record ids), `correct_fact`, `dispute_fact`, `confirm_fact`, `forget_fact` (one record, by
@@ -51,6 +70,8 @@ their agent** (specs/0031 v23–v23.2, §4f; design accepted with amendments at 
   line rendered, never a longer raw value, and a line that names no subject carries none. A tool reports a refusal
   only when nothing has committed in the call: a failure after a commit is raised through the transport's error
   channel as `trust_tools.TrustInternalError`, never returned as a clean refusal.
+- **Corrected before release (implementation review round 4):** a store re-reads its commit counter once it has
+  opened, so a newly created store's first empty commit is no longer counted as a write of the call that follows.
 
 ## 0.32.1 — 2026-11-14
 
