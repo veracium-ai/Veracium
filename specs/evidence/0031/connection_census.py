@@ -1112,7 +1112,10 @@ def _bindings_of(tree, names) -> list:
 
 def _free_name_problem(tree):
     """Rule 4: in the carve-out's file, the builtins the canonical body reads are never bound or named, and each
-    module global it reads is bound exactly once by a plain module-level assignment. None when the file holds; else
+    module global it reads is bound exactly once by one module-level assignment statement of a value (chained targets
+    included; an annotation alone binds nothing: round 5, TT-R5-N1). Rule 4 fixes THAT the global is assigned once at
+    module level; it does not judge the value (`None`, or the ContextVar class, is admitted), which every writing
+    commit exercises (research's stage-1 limit on the TT-R5-N1 fix). None when the file holds; else
     the first reason. A binding by a COMPUTED name (`globals()`, `locals()` or `vars()` keyed by a non-literal,
     `setattr` on the module, `exec`/`eval`) is refused by this census's round-11 and round-12 rungs before this rule
     runs, so this rule needs no list of its own (a check of its own was unkillable: stage-2 mutants, 2026-11-17)."""
@@ -1123,10 +1126,16 @@ def _free_name_problem(tree):
         return f"the file rebinds or names `{name}`, a builtin the pinned body reads ({form}, line {line})"
     for g in sorted(global_names):
         hits = _bindings_of(tree, {g})
-        top = [s for s in tree.body if isinstance(s, (ast.Assign, ast.AnnAssign)) and any(
-            isinstance(t, ast.Name) and t.id == g for t in (s.targets if isinstance(s, ast.Assign) else [s.target]))]
+        # an annotation without a value binds nothing (`_TRUST_COMMITS: object` leaves the name out of the module's
+        # namespace, and the recorder raises NameError after a real commit): only an assignment OF A VALUE counts
+        # (round 5, TT-R5-N1)
+        top = [s for s in tree.body if (isinstance(s, ast.Assign) and any(isinstance(t, ast.Name) and t.id == g
+                                                                          for t in s.targets))
+               or (isinstance(s, ast.AnnAssign) and s.value is not None and isinstance(s.target, ast.Name)
+                   and s.target.id == g)]
         if len(hits) != 1 or len(top) != 1:
-            return f"`{g}`, a global the pinned body reads, is bound {len(hits)} time(s), not once at module level"
+            return (f"`{g}`, a global the pinned body reads, is named as a binding {len(hits)} time(s) and assigned a "
+                    f"value at module level {len(top)} time(s), not once each")
     return None
 
 
@@ -1139,8 +1148,9 @@ def _factory_subclass(tree, parent, node, rel=None):
       3. its BODY, the class docstring removed, is `CONNECTION_SUBCLASS_BODY` by `ast.dump` equality, statement for
          statement, both parsed by the running interpreter;
       4. what that body's free names mean is fixed by the file: the builtins it reads (`super`, `Exception`, `bool`)
-         are never bound or named anywhere in it, each global it reads (`_TRUST_COMMITS`) is bound exactly once by a
-         plain module-level assignment (`_free_name_problem`; a binding by a computed name is refused by the
+         are never bound or named anywhere in it, each global it reads (`_TRUST_COMMITS`) is bound exactly once by
+         one module-level assignment statement of a value (`_free_name_problem`; an annotation alone binds nothing,
+         TT-R5-N1; the value itself is not judged; a binding by a computed name is refused by the
          round-11 and round-12 rungs)."""
     cls = parent.get(node)
     if not (isinstance(cls, ast.ClassDef) and node in cls.bases):

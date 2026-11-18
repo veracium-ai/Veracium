@@ -1647,6 +1647,51 @@ def test_the_free_names_are_derived_and_the_cell_global_must_exist():
     assert without != _FACTORY_OK and _refused({_F: without})
 
 
+#: round 5, TT-R5-N1: rule 4's one module-level binding of the cell global must ASSIGN A VALUE. Each form REPLACES the
+#: file's sole binding (`{m}` is the contextvars module's name in that file); True = admitted. The refused forms are
+#: the reviewer's annotation alone and the neighbours that bind the name but not by one plain module-level assignment
+#: (a tuple target, a branch, an augmented assignment); the admitted ones are the plain, annotated and chained
+#: assignments of a value.
+_CELL_BINDINGS = {
+    "an annotation alone, the ContextVar type (the reviewer's)": ("_TRUST_COMMITS: {m}.ContextVar", False),
+    "an annotation alone, object": ("_TRUST_COMMITS: object", False),
+    "a tuple target": ('_TRUST_COMMITS, _spare = {m}.ContextVar("c", default=None), None', False),
+    "inside a module-level branch": ('if True:\n    _TRUST_COMMITS = {m}.ContextVar("c", default=None)', False),
+    "an augmented assignment alone": ("_TRUST_COMMITS += None", False),
+    "a plain assignment of a value": ('_TRUST_COMMITS = {m}.ContextVar("c", default=None)', True),
+    "an annotated assignment of a value": ('_TRUST_COMMITS: {m}.ContextVar = {m}.ContextVar("c", default=None)', True),
+    "a chained assignment of a value": ('_spare = _TRUST_COMMITS = {m}.ContextVar("c", default=None)', True),
+}
+_FIXTURE_CELL = '_TRUST_COMMITS = contextvars.ContextVar("cell", default=None)'
+_REAL_CELL = '_TRUST_COMMITS: _contextvars.ContextVar = _contextvars.ContextVar("veracium_trust_commits", default=None)'
+
+
+@pytest.mark.parametrize("case", sorted(_CELL_BINDINGS))
+def test_the_cell_global_is_assigned_a_value_once_on_the_fixture_and_in_the_complete_tree(case):
+    """Round 5, TT-R5-N1: an annotation without a value binds nothing, so the recorder would raise NameError after a
+    real commit; rule 4 counted it as the binding. Each form replaces the sole binding on the fixture and in the
+    complete tree (the unmodified tree admitted first) and is refused or admitted as tabled. What rule 4's "bound"
+    means is executed: every admitted form leaves a ContextVar in the namespace, and an annotation alone leaves none."""
+    import contextvars
+    form, admitted = _CELL_BINDINGS[case]
+    assert _FACTORY_OK.count(_FIXTURE_CELL) == 1
+    real = _real_sources()
+    assert real[_F].count(_REAL_CELL) == 1 and not _refused(real)
+    real[_F] = real[_F].replace(_REAL_CELL, form.format(m="_contextvars"))
+    observed = {"fixture refused": _refused({_F: _FACTORY_OK.replace(_FIXTURE_CELL, form.format(m="contextvars"))}),
+                "complete tree refused": _refused(real)}
+    assert observed == {"fixture refused": not admitted, "complete tree refused": not admitted}, case   # both halves
+    ns = {"_contextvars": contextvars}
+    try:
+        exec(compile(form.format(m="_contextvars"), "<cell binding>", "exec"), ns)
+    except NameError:
+        assert not admitted, case                                      # the augmented assignment alone
+    if admitted:
+        assert isinstance(ns.get("_TRUST_COMMITS"), contextvars.ContextVar), case
+    if form.startswith("_TRUST_COMMITS: ") and "=" not in form:
+        assert "_TRUST_COMMITS" not in ns, case
+
+
 def test_the_factory_subclass_is_one_across_the_tree_and_named_nowhere_else():
     """The tree half: a second admitted subclass, and any reference to the admitted name from another file (an
     import, an attribute, a name, a string), each refuse; the honest tree has no problem."""
