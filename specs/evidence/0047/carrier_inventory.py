@@ -53,6 +53,8 @@ CLASSIFIED = {
     ("proactive.py", "assemble._obj_counted"): ("PROACTIVE", "the counted proactive object"),
     # 0003/obligations N1–N4 (53b7655): the two composers render a DATED COMMITMENTS line from surfaced edges only, so
     # 0047's withholding (applied before collapse) has already removed a challenged fact from what they compose
+    ("proactive.py", "assemble._framed_line"): ("PROACTIVE", "composes a CONFIRM WHEN NATURAL or follow-up line naming "
+                                                             "a non-user subject, held to its cap (0012 v18.2)"),
     ("proactive.py", "assemble._commit_line"): ("PROACTIVE", "composes a plain commitment line, held to its cap"),
     ("proactive.py", "assemble._contested_line"): ("PROACTIVE", "composes a contested group's line from its surfaced members"),
     ("proactive.py", "assemble._select"): ("PROACTIVE", "chooses the receipt's members of each rendered line: a contested "
