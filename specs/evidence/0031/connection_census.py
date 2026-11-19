@@ -32,13 +32,30 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     surface, not a dataflow rule: every `with`/`async with` item in src/ is a
     call (never a `sqlite3.connect(...)` call itself;
     `contextlib.closing(sqlite3.connect(...))` stays legal), an `IfExp` judged
-    by its branches, or a name or attribute that EVERY binding in src/
-    assigns a `threading.Lock()`/`RLock()` (so `self._lock = conn` cannot
-    launder one; a LITERAL-name `setattr`, `__setattr__`, `globals()[...]`,
-    `vars(...)[...]` or `__dict__[...]` store is a binding too, v23.6.1).
-    `with_item_problems` holds it across the tree. The limits, stated: a
-    helper CALL that returns the connection (getattr included) is outside the
-    rung, and so is a binding by a COMPUTED name;
+    by its branches, or a name or attribute whose IDENTIFIER every binding
+    in src/ assigns a `threading.Lock()`/`RLock()` (so `self._lock = conn`
+    cannot launder one; a LITERAL-name `setattr`, `__setattr__`,
+    `globals()[...]`, `vars(...)[...]` or `__dict__[...]` store is a binding
+    too, v23.6.1). TT-R6-01 (round 6): the key is the identifier alone,
+    receiver- and scope-blind, so a class-body or module binding is judged at
+    the key its attribute item uses; and the binding domain is decided form by
+    form (`BINDING_FORMS`: the grammar's identifier, string and context fields,
+    3.10-3.14; `NAMESPACE_FORMS`: every call or construct that binds by a
+    LITERAL identifier). Pattern captures, type parameters, def/class/except
+    names and parameters bind; a literal identifier passed to any call, a
+    keyword name or a dict-literal key binds (setattr/__setattr__ with a
+    Lock()/RLock() value the one lock-capable call); an annotation alone in a
+    class body is a field and binds, at module or function level it binds
+    nothing, and `global`/`nonlocal` bind nothing. Three tree-wide refusals: a
+    star import refuses every name and attribute item; a binding of
+    `__getattr__`/`__getattribute__` refuses every attribute item; a binding of
+    `threading`, `Lock`, `RLock` or their import aliases other than the import
+    refuses every name and attribute item. `with_item_problems` holds it across
+    the tree. The limits, stated: a helper CALL that returns the connection
+    (getattr included) is outside the rung, and so is a binding by a COMPUTED
+    name (a name reaching a binding call through a variable or any non-literal
+    expression, an f-string or a concatenation included; a namespace alias; a
+    custom `__setattr__` storing under the name it is given; exec/eval);
   * every other attribute of `sqlite3` must be in ALLOWED_ATTRS (exception
     classes, Row/Binary, version constants) or it REFUSES — unknown names
     (dbapi2 included) are refused-until-classified, never waved through;
@@ -1252,14 +1269,98 @@ def _is_lock_call(value, mods, locals_) -> bool:
 
 
 def _binding_key(target):
-    """The key a with-item's name or attribute is classified by: a bare name by its id, an attribute by its
-    attribute name whatever the receiver (`self._lock`, `store._lock` and `s._lock` share one key, so a binding of
-    any of them anywhere in src/ counts for all)."""
+    """The key a with-item's name or attribute is classified by, and every binding is recorded under: the bare
+    IDENTIFIER, whatever the receiver and whatever the scope. `self._lock`, `store._lock`, `Holder._lock`, a bare
+    `_lock` and a module global `_lock` (reachable as `mod._lock`) share the key `_lock`, so a binding of that
+    identifier ANYWHERE in src/, by any form, counts for every item that names it (TT-R6-01 B: a class-body or module
+    binding was recorded as a name while the item `Holder._lock` was judged as an attribute, and an honest
+    `self._lock = threading.Lock()` certified it). Receiver- and scope-blind on purpose: an over-approximation that can
+    only refuse more, never admit more."""
     if isinstance(target, ast.Name):
-        return ("name", target.id)
+        return target.id
     if isinstance(target, ast.Attribute):
-        return ("attr", target.attr)
+        return target.attr
     return None
+
+
+#: the string-field binders (the bound identifier is a str field, never an `ast.Name(Store)`), by node type and field.
+#: TT-R6-01 A: a structural-pattern capture rebinds a lock name invisibly to a Name(Store) walk. Python 3.12's type
+#: parameters are in the table only where the running ast has them.
+STRING_FIELD_BINDERS = tuple(
+    (getattr(ast, node), field) for node, field in (
+        ("FunctionDef", "name"), ("AsyncFunctionDef", "name"), ("ClassDef", "name"),
+        ("ExceptHandler", "name"), ("MatchAs", "name"), ("MatchStar", "name"), ("MatchMapping", "rest"),
+        ("TypeVar", "name"), ("ParamSpec", "name"), ("TypeVarTuple", "name"), ("arg", "arg"))
+    if hasattr(ast, node))
+
+
+#: TT-R6-01's decision table: every field of the Python grammar that carries an identifier as a string, and every node
+#: that carries an expression context, with the with rung's decision for it. A test derives the same domain from the
+#: running ast (`_field_types`, CPython 3.13+) and compares it with these keys both ways, and every decision has an
+#: executable witness in tests/test_0031_proposal_ddl.py (`_BINDING_WITNESSES`).
+_NON_LOCK = "binding, never a lock"
+BINDING_FORMS = {
+    "Name.id": "binding in a Store or Del context (a lock only as a direct Assign or valued AnnAssign target whose "
+               "value is a Lock()/RLock() call); a Load is a use",
+    "Attribute.attr": "binding in a Store or Del context, on any receiver, keyed by the identifier alone (as Name.id)",
+    "FunctionDef.name": _NON_LOCK, "AsyncFunctionDef.name": _NON_LOCK, "ClassDef.name": _NON_LOCK,
+    "ExceptHandler.name": _NON_LOCK, "arg.arg": _NON_LOCK,
+    "MatchAs.name": _NON_LOCK, "MatchStar.name": _NON_LOCK, "MatchMapping.rest": _NON_LOCK,
+    "TypeVar.name": _NON_LOCK, "ParamSpec.name": _NON_LOCK, "TypeVarTuple.name": _NON_LOCK,
+    "alias.name": "binding, never a lock (its first dotted part when there is no asname); `*` refuses every name and "
+                  "attribute item while it is in the tree",
+    "alias.asname": _NON_LOCK,
+    "Global.names": "not a binding: a declaration (the binding it redirects is counted; the key is scope-blind)",
+    "Nonlocal.names": "not a binding: a declaration (as Global.names)",
+    "MatchClass.kwd_attrs": "not a binding: an attribute matched against (the pattern beside it binds)",
+    "keyword.arg": "binding, never a lock: a keyword name of ANY call binds by a literal identifier (SimpleNamespace, "
+                   "a dataclass/NamedTuple constructor, dict methods on a namespace); see NAMESPACE_FORMS",
+    "ImportFrom.module": "not a binding: the module imported from (its aliases bind)",
+    "Constant.kind": "not an identifier (the `u` prefix)", "TypeIgnore.tag": "not an identifier",
+    **{f"{n}.type_comment": "not an identifier (a comment; ast.parse drops it by default)"
+       for n in ("Assign", "For", "AsyncFor", "With", "AsyncWith", "FunctionDef", "AsyncFunctionDef", "arg")},
+    "Subscript.ctx": "not a name binding, except a literal str key on a namespace expression (globals()/vars()/"
+                     "locals()/__dict__): a store binds that name (a lock only for a Lock()/RLock() value), a delete "
+                     "binds it non-lock, a read binds nothing",
+    "Starred.ctx": "a container: the targets inside it are judged", "List.ctx": "a container (as Starred.ctx)",
+    "Tuple.ctx": "a container (as Starred.ctx); a target inside a tuple is never a lock binding",
+    "Name.ctx": "the context Name.id is judged by", "Attribute.ctx": "the context Attribute.attr is judged by",
+}
+
+
+#: The namespace machinery, the forms that are calls or constructs rather than grammar fields. Its domain, by research's
+#: principle (stage-1 read of the TT-R6-01 fold): every call or construct that binds a name or attribute by a LITERAL
+#: identifier, the lock constructor's own names included. Each form decided, with witnesses as BINDING_FORMS.
+NAMESPACE_FORMS = {
+    "a literal identifier passed to any call": "a non-lock binding of it, however the callee is spelled (setattr, "
+                                               "builtins.setattr, an alias of it, delattr, operator.setitem, "
+                                               "vars().setdefault, getattr too: an over-approximation)",
+    "setattr/__setattr__ by a literal name with a Lock()/RLock() value": "a lock binding (the one lock-capable call)",
+    "a keyword name of any call": "a non-lock binding of it (as keyword.arg)",
+    "an identifier-shaped dict-literal key": "a non-lock binding of it (type('H', (), {...}), __dict__ |= {...})",
+    "a literal-key subscript of globals()/vars()/locals()/__dict__": "as Subscript.ctx: a store binds (a lock only "
+                                                                     "for a Lock()/RLock() value), a delete binds "
+                                                                     "non-lock, a read binds nothing",
+    "an annotation alone in a class body": "a non-lock binding (a dataclass/NamedTuple field the generated __init__ "
+                                           "binds); at module or function level it binds nothing",
+    "a binding of __getattr__/__getattribute__": "refuses every attribute item: a class answers attributes it never "
+                                                 "bound",
+    "a binding of threading/Lock/RLock or their import aliases, other than the import": "refuses every name and "
+                                                                                        "attribute item: no Lock() "
+                                                                                        "call can be trusted",
+    "a star import": "refuses every name and attribute item (as alias.name `*`)",
+    "a literal identifier string anywhere else (a tuple, an assignment, __slots__)": "not a binding",
+    "a COMPUTED name (stated limit)": "outside the rung: a name reaching a binding call through a variable or any "
+                                      "non-literal expression (an f-string or a concatenation included), a namespace "
+                                      "alias (`d = globals(); d[k] = v`), a custom __setattr__ storing under the name "
+                                      "it is given, exec/eval",
+    "a helper call returning the connection (stated limit)": "outside the rung: the item is a call",
+}
+
+def _is_namespace_expr(e) -> bool:
+    """`globals()`, `vars(...)`, `locals()` or `X.__dict__`: a namespace a literal string key can bind through."""
+    return ((isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id in ("globals", "vars", "locals"))
+            or (isinstance(e, ast.Attribute) and e.attr == "__dict__"))
 
 
 def _is_sqlite_connect(call, sq_mods, sq_connects) -> bool:
@@ -1271,17 +1372,51 @@ def _is_sqlite_connect(call, sq_mods, sq_connects) -> bool:
 def with_item_problems(sources: dict) -> list:
     """The `with` surface across the tree (N2; see the module docstring): `[REFUSED: ...]` lines, empty when every
     `with`/`async with` item in every source is a call other than `sqlite3.connect(...)`, an IfExp whose branches
-    each pass, or a name or attribute whose EVERY binding in the tree is a `threading.Lock()`/`RLock()` call. A
-    binding is any assignment, augmented or annotated assignment, `for`/`with`/except target, walrus, import, def,
-    class, parameter or `del` of that name, or any store to that attribute name on any receiver."""
+    each pass, or a name or attribute whose IDENTIFIER (`_binding_key`) every binding in the tree assigns a
+    `threading.Lock()`/`RLock()` call. The binding domain is decided form by form (TT-R6-01 and research's stage-1
+    read of its fold): `BINDING_FORMS` is every identifier, string and expression-context field of the grammar (a test
+    derives that domain from the running ast and compares it both ways), and `NAMESPACE_FORMS` is every call or
+    construct that binds a name or attribute by a LITERAL identifier, the lock constructor's own names included:
+      - every `Name`/`Attribute` in a Store or Del context, on any receiver; only a direct assignment target (or a
+        valued annotation) whose value is a Lock()/RLock() call is a lock binding;
+      - every string-field binder (`STRING_FIELD_BINDERS`) and every import alias: non-lock;
+      - an annotation without a value IN A CLASS BODY (a dataclass/NamedTuple field the generated __init__ binds):
+        non-lock; at module or function level it binds nothing (rule 4's TT-R5-N1 holding);
+      - a literal identifier passed to ANY call (positionally or as a keyword name) or used as a dict-literal key:
+        non-lock (setattr however spelled, SimpleNamespace(_lock=...), type('H', (), {'_lock': ...}), dict methods on
+        a namespace, operator.setitem), except `setattr(o, "n", Lock())`/`o.__setattr__("n", Lock())`, a lock;
+      - a literal-key subscript of globals()/vars()/locals()/__dict__: a store binds (a lock only for a Lock() value),
+        a delete binds, a read binds nothing;
+      - tree-wide refusals: a star import (names its AST does not carry) refuses every name and attribute item; a
+        binding of `__getattr__`/`__getattribute__` (a class answering attributes it never bound) refuses every
+        attribute item; a binding of `threading`, `Lock`, `RLock` or their import aliases other than the import
+        itself refuses every name and attribute item (no Lock() call can then be trusted);
+      - NOT bindings: `global`/`nonlocal` (declarations; the binding they redirect is counted, the key being
+        scope-blind), and a literal identifier string anywhere else (a tuple, an assignment, `__slots__`).
+    The stated limits stay: a helper CALL that returns the connection (getattr included), and a binding whose name is
+    COMPUTED (a name reaching a binding call through a variable or any non-literal expression, an f-string or a
+    concatenation included; a namespace alias such as `d = globals(); d[k] = v`; a custom `__setattr__` storing under
+    the name it is given; exec/eval)."""
     trees = {rel: ast.parse(src) for rel, src in sources.items()}
     lock_ok: dict = {}
+    non_import: dict = {}               # identifier -> its first binding site other than an import of the real thing
+    star_imports = []
+    ctor_ids = {"threading", *_LOCK_FACTORIES}
+    for tree in trees.values():
+        mods, locals_ = _threading_names(tree)
+        ctor_ids |= mods | locals_
 
-    def record(key, is_lock):
+    def record(key, is_lock, site, genuine_import=False):
         if key is not None:
             lock_ok[key] = lock_ok.get(key, True) and is_lock
+            if not genuine_import:
+                non_import.setdefault(key, site)
+
+    def literal_ident(e):
+        return e.value if isinstance(e, ast.Constant) and isinstance(e.value, str) and e.value.isidentifier() else None
     for rel, tree in trees.items():
         mods, locals_ = _threading_names(tree)
+        parent = {c: p for p in ast.walk(tree) for c in ast.iter_child_nodes(p)}
         by_statement = set()            # ids of the targets an Assign/AnnAssign records (below), never re-recorded
         for n in ast.walk(tree):
             if isinstance(n, ast.Assign):
@@ -1292,55 +1427,68 @@ def with_item_problems(sources: dict) -> list:
             elif isinstance(n, ast.AnnAssign):
                 by_statement.add(id(n.target))
         for n in ast.walk(tree):
+            site = f"{rel}:{getattr(n, 'lineno', '?')}"
+            for node_type, field in STRING_FIELD_BINDERS:
+                if isinstance(n, node_type) and getattr(n, field, None):
+                    record(getattr(n, field), False, site)
             if isinstance(n, ast.Assign):
                 for tg in n.targets:
                     for x in ast.walk(tg):
                         if isinstance(x, (ast.Name, ast.Attribute)) and isinstance(x.ctx, ast.Store):
-                            record(_binding_key(x), tg is x and _is_lock_call(n.value, mods, locals_))
+                            record(_binding_key(x), tg is x and _is_lock_call(n.value, mods, locals_), site)
             elif isinstance(n, ast.AnnAssign):
-                record(_binding_key(n.target), n.value is not None and _is_lock_call(n.value, mods, locals_))
+                if n.value is not None:
+                    record(_binding_key(n.target), _is_lock_call(n.value, mods, locals_), site)
+                elif isinstance(parent.get(n), ast.ClassDef):          # a field: the generated __init__ binds it
+                    record(_binding_key(n.target), False, site)
             elif isinstance(n, (ast.Name, ast.Attribute)) and isinstance(n.ctx, (ast.Store, ast.Del)):
-                # every other store or delete (AugAssign, for/with/comprehension targets, walrus, del) is a non-lock
-                # binding
+                # every other store or delete (AugAssign, for/with/comprehension targets, walrus, type alias, del)
+                # is a non-lock binding
                 if id(n) not in by_statement:
-                    record(_binding_key(n), False)
+                    record(_binding_key(n), False, site)
             elif isinstance(n, ast.Call):
-                # a binding by a LITERAL name through the namespace machinery (research's v23.6.1 condition):
-                # setattr(o, "n", v), object.__setattr__(o, "n", v), o.__setattr__("n", v); a non-lock unless v is a
-                # Lock()/RLock() call. Keyed as both a name and an attribute (setattr on a module binds a global).
-                # A COMPUTED name is the stated limit (and connect_census's namespace rungs)
                 f, a = n.func, n.args
-                pair = None
+                exact = None                    # setattr(o, "n", v) / o.__setattr__("n", v): the one lock-capable form
                 if isinstance(f, ast.Name) and f.id == "setattr" and len(a) == 3:
-                    pair = (a[1], a[2])
+                    exact = (a[1], a[2])
                 elif isinstance(f, ast.Attribute) and f.attr == "__setattr__":
-                    pair = (a[1], a[2]) if len(a) == 3 else (a[0], a[1]) if len(a) == 2 else None
-                if pair and isinstance(pair[0], ast.Constant) and isinstance(pair[0].value, str):
-                    ok = _is_lock_call(pair[1], mods, locals_)
-                    record(("name", pair[0].value), ok)
-                    record(("attr", pair[0].value), ok)
-            elif isinstance(n, ast.Subscript) and isinstance(n.ctx, (ast.Store, ast.Del)):
-                # globals()["n"] = v / vars(o)["n"] = v / o.__dict__["n"] = v: the same literal-name binding
-                ns = n.value
-                is_ns = ((isinstance(ns, ast.Call) and isinstance(ns.func, ast.Name)
-                          and ns.func.id in ("globals", "vars", "locals"))
-                         or (isinstance(ns, ast.Attribute) and ns.attr == "__dict__"))
-                key = n.slice
-                if is_ns and isinstance(key, ast.Constant) and isinstance(key.value, str):
-                    value = next((s.value for s in ast.walk(tree) if isinstance(s, ast.Assign) and n in s.targets),
-                                 None) if isinstance(n.ctx, ast.Store) else None
-                    ok = value is not None and _is_lock_call(value, mods, locals_)
-                    record(("name", key.value), ok)
-                    record(("attr", key.value), ok)
-            elif isinstance(n, ast.arg):
-                record(("name", n.arg), False)
-            elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                record(("name", n.name), False)
+                    exact = (a[1], a[2]) if len(a) == 3 else (a[0], a[1]) if len(a) == 2 else None
+                if exact and literal_ident(exact[0]):
+                    record(exact[0].value, _is_lock_call(exact[1], mods, locals_), site)
+                # every literal identifier passed positionally (but the exact form's own name), every keyword name
+                for x in a:
+                    if (exact is None or x is not exact[0]) and literal_ident(x):
+                        record(x.value, False, site)
+                for kw in n.keywords:
+                    if kw.arg:
+                        record(kw.arg, False, site)
+            elif isinstance(n, ast.Dict):
+                for k in n.keys:
+                    if k is not None and literal_ident(k):
+                        record(k.value, False, site)
             elif isinstance(n, (ast.Import, ast.ImportFrom)):
-                for a in n.names:
-                    record(("name", (a.asname or a.name).split(".")[0]), False)
-            elif isinstance(n, ast.ExceptHandler) and n.name:
-                record(("name", n.name), False)
+                for al in n.names:
+                    if al.name == "*":
+                        star_imports.append(site)
+                        continue
+                    ident = (al.asname or al.name).split(".")[0]
+                    genuine = ((isinstance(n, ast.Import) and al.name == "threading")
+                               or (isinstance(n, ast.ImportFrom) and n.module == "threading" and not n.level
+                                   and al.name in _LOCK_FACTORIES)
+                               or ident not in ctor_ids)
+                    record(ident, False, site, genuine_import=genuine)
+            if _is_namespace_expr(n):
+                up = parent.get(n)
+                if (isinstance(up, ast.Subscript) and up.value is n and literal_ident(up.slice)):
+                    # globals()["n"] = v / vars(o)["n"] = v / o.__dict__["n"] = v (or del); a read binds nothing
+                    if isinstance(up.ctx, ast.Store):
+                        st = parent.get(up)
+                        value = st.value if isinstance(st, ast.Assign) and up in st.targets else None
+                        record(up.slice.value, value is not None and _is_lock_call(value, mods, locals_), site)
+                    elif isinstance(up.ctx, ast.Del):
+                        record(up.slice.value, False, site)
+    ctor_rebound = sorted(f"`{k}` at {s}" for k, s in non_import.items() if k in ctor_ids)
+    hooks = sorted(f"`{k}` at {non_import[k]}" for k in ("__getattr__", "__getattribute__") if k in non_import)
     problems = []
     for rel, tree in sorted(trees.items()):
         sq_mods = {a.asname or a.name for n in ast.walk(tree) if isinstance(n, ast.Import)
@@ -1357,6 +1505,15 @@ def with_item_problems(sources: dict) -> list:
             key = _binding_key(e)
             if key is None:
                 return f"a {type(e).__name__} expression"
+            if star_imports:
+                return (f"`{ast.unparse(e)}`, a name while a star import binds names the census cannot see "
+                        f"({', '.join(star_imports)})")
+            if ctor_rebound:
+                return (f"`{ast.unparse(e)}`, a name while the lock constructor's own names are rebound "
+                        f"({', '.join(ctor_rebound)}), so no Lock()/RLock() call can be trusted")
+            if isinstance(e, ast.Attribute) and hooks:
+                return (f"`{ast.unparse(e)}`, an attribute while a class answers attributes it never bound "
+                        f"({', '.join(hooks)})")
             if not lock_ok.get(key, False):
                 return f"`{ast.unparse(e)}`, not bound only to threading.Lock()/RLock() in src/"
             return None

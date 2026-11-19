@@ -1721,7 +1721,10 @@ def test_the_real_tree_has_exactly_its_one_factory_subclass_and_no_tree_problem(
 #: N2 (research's stage 2 on f25ff044; the rung's shape from research's stage 1 on 66bbb0a1): the `with` surface. Each
 #: form is ADDED as one more file of the real tree; True = refused. `with conn:` on the factory subclass commits
 #: without its overridden commit(), so any with-item that could be a connection refuses; a lock is admitted only when
-#: EVERY binding of its name (or attribute name) in src/ is a threading.Lock()/RLock() call.
+#: EVERY binding of its IDENTIFIER in src/ (as a name or an attribute, on any receiver, in any scope: TT-R6-01) is a
+#: threading.Lock()/RLock() call.
+_L = "import threading\n_PROBE_LOCK = threading.Lock()\n"          # an honest lock the probe then rebinds
+_C = "import threading\nclass C:\n    def __init__(self):\n        self._probe_lock = threading.Lock()\n"
 _WITH_FORMS = {
     "with conn": ("import sqlite3\nconn = sqlite3.connect('x.db')\nwith conn:\n    pass\n", True),
     "with self._conn": ("class A:\n    def f(self):\n        with self._conn:\n            pass\n", True),
@@ -1760,6 +1763,143 @@ _WITH_FORMS = {
     "a from-imported RLock": ("from threading import RLock as R\n_PROBE_LOCK = R()\nwith _PROBE_LOCK:\n    pass\n", False),
     "an IfExp of two calls": ("import contextlib\ndef f(x):\n    with (contextlib.nullcontext() if x else "
                               "contextlib.nullcontext()):\n        pass\n", False),
+    # TT-R6-01 (round 6's external review): the binding domain, every form decided (BINDING_FORMS). Each probe binds
+    # its OWN name (_PROBE_LOCK / _probe_lock) beside an honest lock, and holds its own with-item, so it refuses at the
+    # probe file alone, standalone and added to the complete tree. (A) pattern captures:
+    "a match capture rebinds a lock": (_L + "def f(c):\n    match c:\n        case _PROBE_LOCK:\n            pass\n"
+                                       "    with _PROBE_LOCK:\n        pass\n", True),
+    "a sequence capture rebinds a lock": (_L + "def f(c):\n    match c:\n        case [_PROBE_LOCK]:\n            pass\n"
+                                          "    with _PROBE_LOCK:\n        pass\n", True),
+    "a star capture rebinds a lock": (_L + "def f(c):\n    match c:\n        case [*_PROBE_LOCK]:\n            pass\n"
+                                      "    with _PROBE_LOCK:\n        pass\n", True),
+    "a mapping value capture rebinds a lock": (_L + "def f(c):\n    match c:\n        case {'k': _PROBE_LOCK}:\n"
+                                               "            pass\n    with _PROBE_LOCK:\n        pass\n", True),
+    "a mapping rest capture rebinds a lock": (_L + "def f(c):\n    match c:\n        case {**_PROBE_LOCK}:\n"
+                                              "            pass\n    with _PROBE_LOCK:\n        pass\n", True),
+    "a class-pattern capture rebinds a lock": (_L + "def f(c):\n    match c:\n        case object(real=_PROBE_LOCK):\n"
+                                               "            pass\n    with _PROBE_LOCK:\n        pass\n", True),
+    # (B) a namespace binding judged at the key the item uses (the identifier, receiver- and scope-blind):
+    "a class-body binding judged as a class attribute": (
+        "import threading\nclass Owner:\n    def __init__(self):\n        self._probe_lock = threading.Lock()\n"
+        "class Holder:\n    _probe_lock = None\nwith Holder._probe_lock:\n    pass\n", True),
+    "a module global rebound through a module attribute": (
+        _L + "import types\nm = types.ModuleType('m')\nm._PROBE_LOCK = None\nwith _PROBE_LOCK:\n    pass\n", True),
+    # every other string-field binder, and every Store form not tabled above:
+    "a def name rebinds a lock": (_L + "def _PROBE_LOCK():\n    pass\nwith _PROBE_LOCK:\n    pass\n", True),
+    "an async def name rebinds a lock": (_L + "async def _PROBE_LOCK():\n    pass\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a class name rebinds a lock": (_L + "class _PROBE_LOCK:\n    pass\nwith _PROBE_LOCK:\n    pass\n", True),
+    "an except-as name rebinds a lock": (_L + "try:\n    pass\nexcept Exception as _PROBE_LOCK:\n    pass\n"
+                                         "with _PROBE_LOCK:\n    pass\n", True),
+    "a parameter rebinds a lock": (_L + "def f(_PROBE_LOCK):\n    with _PROBE_LOCK:\n        pass\n", True),
+    "an import alias rebinds a lock": (_L + "import os as _PROBE_LOCK\nwith _PROBE_LOCK:\n    pass\n", True),
+    "an imported module name rebinds a lock": (
+        "import threading\n_probe_mod = threading.Lock()\nimport _probe_mod.sub\nwith _probe_mod:\n    pass\n", True),
+    "a walrus rebinds a lock": (_L + "def f(c):\n    if (_PROBE_LOCK := c):\n        pass\n    with _PROBE_LOCK:\n"
+                                "        pass\n", True),
+    "an augmented assignment rebinds a lock": (_L + "_PROBE_LOCK += 1\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a with-as target rebinds a lock": (_L + "def f(c):\n    with c.opened() as _PROBE_LOCK:\n        pass\n"
+                                        "    with _PROBE_LOCK:\n        pass\n", True),
+    "a comprehension target rebinds a lock": (_L + "[0 for _PROBE_LOCK in ()]\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a del of a lock": (_L + "del _PROBE_LOCK\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a valued annotation of a non-lock": (_L + "_PROBE_LOCK: object = None\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a starred target rebinds a lock": (_L + "*_PROBE_LOCK, = ()\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a list target rebinds a lock": (_L + "[_PROBE_LOCK] = [None]\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a global declaration, then a non-lock": (_L + "def f():\n    global _PROBE_LOCK\n    _PROBE_LOCK = None\n"
+                                              "with _PROBE_LOCK:\n    pass\n", True),
+    "a star import (refuses every lock name)": (_L + "from os import *\nwith _PROBE_LOCK:\n    pass\n", True),
+    # the namespace machinery by a literal name, every form other than the exact subscript store:
+    "delattr by a literal name": (_C + "    def f(self):\n        delattr(self, '_probe_lock')\n"
+                                  "        with self._probe_lock:\n            pass\n", True),
+    "object.__delattr__ by a literal name": (_C + "    def f(self):\n        object.__delattr__(self, '_probe_lock')\n"
+                                             "        with self._probe_lock:\n            pass\n", True),
+    "globals().update by a keyword": (_L + "globals().update(_PROBE_LOCK=None)\nwith _PROBE_LOCK:\n    pass\n", True),
+    "vars().setdefault by a literal": (_L + "vars().setdefault('_PROBE_LOCK', None)\nwith _PROBE_LOCK:\n    pass\n",
+                                       True),
+    "operator.setitem on globals()": (_L + "import operator\noperator.setitem(globals(), '_PROBE_LOCK', None)\n"
+                                      "with _PROBE_LOCK:\n    pass\n", True),
+    "a __dict__ |= by a literal key": (_C + "    def f(self):\n        self.__dict__ |= {'_probe_lock': None}\n"
+                                       "        with self._probe_lock:\n            pass\n", True),
+    "a del through globals()": (_L + "del globals()['_PROBE_LOCK']\nwith _PROBE_LOCK:\n    pass\n", True),
+    # research's stage-1 read of the fold (B1-B4): a literal identifier bound by ANY call, keyword or dict key; a
+    # class-body field; an attribute hook; the lock constructor's own names rebound
+    "builtins.setattr by a literal name": (
+        "import builtins, threading\nclass Holder:\n    _probe_lock = threading.Lock()\n"
+        "builtins.setattr(Holder, '_probe_lock', None)\nwith Holder._probe_lock:\n    pass\n", True),
+    "an aliased setattr by a literal name": (
+        "import threading\nfrom builtins import setattr as put\nclass Holder:\n    _probe_lock = threading.Lock()\n"
+        "put(Holder, '_probe_lock', None)\nwith Holder._probe_lock:\n    pass\n", True),
+    "a literal name read by getattr (counted)": (_L + "getattr(None, '_PROBE_LOCK', None)\nwith _PROBE_LOCK:\n"
+                                                 "    pass\n", True),
+    "a keyword name binds (dict(...))": (_L + "dict(_PROBE_LOCK=1)\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a keyword name binds (SimpleNamespace)": (_L + "import types\nh = types.SimpleNamespace(_PROBE_LOCK=None)\n"
+                                               "with h._PROBE_LOCK:\n    pass\n", True),
+    "a dict-literal key binds (type(...))": (_L + "H = type('H', (), {'_PROBE_LOCK': None})\nwith H._PROBE_LOCK:\n"
+                                             "    pass\n", True),
+    "a class-body annotation alone (a dataclass field)": (
+        "import dataclasses, threading\n_probe_lock = threading.Lock()\n@dataclasses.dataclass\nclass Holder:\n"
+        "    _probe_lock: object\nh = Holder(None)\nwith h._probe_lock:\n    pass\n", True),
+    "a __getattr__ hook (refuses every lock name)": (
+        _C + "    def f(self):\n        with self._probe_lock:\n            pass\nclass Hook:\n"
+        "    def __getattr__(self, n):\n        return None\n", True),
+    "a __getattribute__ bound by assignment (refuses every lock name)": (
+        _C + "    def f(self):\n        with self._probe_lock:\n            pass\nclass Hook:\n    pass\n"
+        "Hook.__getattribute__ = None\n", True),
+    "the Lock constructor rebound (refuses every lock name)": (_L + "threading.Lock = None\nwith _PROBE_LOCK:\n"
+                                                               "    pass\n", True),
+    "threading rebound (refuses every lock name)": (_L + "threading = None\nwith _PROBE_LOCK:\n    pass\n", True),
+    "an import under a lock constructor's name (refuses every lock name)": (
+        _L + "import os as Lock\nwith _PROBE_LOCK:\n    pass\n", True),
+    # admitted: each decision's honest half (a form that is NOT a binding, or a binding that IS a lock):
+    "a global declaration, then a lock": ("import threading\ndef init():\n    global _PROBE_LOCK\n"
+                                          "    _PROBE_LOCK = threading.Lock()\nwith _PROBE_LOCK:\n    pass\n", False),
+    "a nonlocal declaration, then a lock": (
+        "import threading\ndef outer():\n    _probe_lock = threading.Lock()\n    def inner():\n"
+        "        nonlocal _probe_lock\n        _probe_lock = threading.RLock()\n    with _probe_lock:\n"
+        "        pass\n", False),
+    "an annotation without a value, then a lock": (
+        "import threading\n_PROBE_LOCK: threading.Lock\n_PROBE_LOCK = threading.Lock()\nwith _PROBE_LOCK:\n    pass\n",
+        False),
+    "a valued annotation of a lock": (
+        "import threading\n_PROBE_LOCK: threading.Lock = threading.Lock()\nwith _PROBE_LOCK:\n    pass\n", False),
+    "a class-body lock as a class attribute": (
+        "import threading\nclass Holder:\n    _probe_lock = threading.Lock()\nwith Holder._probe_lock:\n    pass\n",
+        False),
+    "a class-pattern keyword attribute named like a lock": (
+        _L + "def f(c):\n    match c:\n        case object(_PROBE_LOCK=x):\n            pass\n"
+        "    with _PROBE_LOCK:\n        pass\n", False),
+    "a module imported from, named like a lock": (_L + "from _PROBE_LOCK import thing\nwith _PROBE_LOCK:\n    pass\n",
+                                                  False),
+    "a lock read elsewhere": (_L + "x = _PROBE_LOCK\ny = globals()['_PROBE_LOCK']\nwith _PROBE_LOCK:\n    pass\n",
+                              False),
+    "a lock stored through globals()": (
+        "import threading\nglobals()['_PROBE_LOCK'] = threading.Lock()\nwith _PROBE_LOCK:\n    pass\n", False),
+    "a u-string and comments beside a lock": (_L + "x = u'text'  # type: ignore\ny = 1  # type: int\n"
+                                              "with _PROBE_LOCK:\n    pass\n", False),
+    "an annotation alone in a function, then a lock": (
+        "import threading\ndef f():\n    _probe_lock: object\n    _probe_lock = threading.Lock()\n"
+        "    with _probe_lock:\n        pass\n", False),
+    "a lock name in __slots__": (
+        "import threading\nclass C:\n    __slots__ = ('_probe_lock',)\n    def __init__(self):\n"
+        "        self._probe_lock = threading.Lock()\n    def f(self):\n        with self._probe_lock:\n"
+        "            pass\n", False),
+    "a lock name as a plain string (not a binding)": (_L + "names = ('_PROBE_LOCK',)\nlabel = '_PROBE_LOCK'\n"
+                                                      "with _PROBE_LOCK:\n    pass\n", False),
+    "threading imported under an alias": ("import threading as th\n_PROBE_LOCK = th.Lock()\nwith _PROBE_LOCK:\n"
+                                          "    pass\n", False),
+    # the two stated limits, admitted by design (their witnesses keep the boundary executable):
+    "a computed setattr name (the stated limit)": (_C + "    def f(self, n, c):\n        setattr(self, n, c)\n"
+                                                   "        with self._probe_lock:\n            pass\n", False),
+    "a placeholder-free f-string name (the stated limit)": (
+        _C + "    def f(self, c):\n        setattr(self, f'_probe_lock', c)\n        with self._probe_lock:\n"
+        "            pass\n", False),
+    "a namespace alias (the stated limit)": (_L + "d = globals()\nd['_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
+                                             "    pass\n", False),
+    "a helper call (the stated limit)": ("def f(store):\n    with store.connection():\n        pass\n", False),
+    **({"a type parameter rebinds a lock": (_L + "def f[_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
+        "a ParamSpec rebinds a lock": (_L + "def f[**_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
+        "a TypeVarTuple rebinds a lock": (_L + "def f[*_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
+        "a type alias rebinds a lock": (_L + "type _PROBE_LOCK = int\nwith _PROBE_LOCK:\n    pass\n", True)}
+       if hasattr(__import__("ast"), "TypeVar") else {}),
 }
 
 
@@ -1776,6 +1916,191 @@ def test_the_with_surface_admits_calls_and_locks_and_refuses_a_possible_connecti
     assert bool(problems) is refused, (case, problems)
     if refused and "lock name" not in case:
         assert all(p.startswith("zz_with_probe.py:") for p in problems), problems
+    if "with " in form:       # a probe holding its own with-item is judged the same alone (TT-R6-01: both halves)
+        alone = with_item_problems({"zz_with_probe.py": form})
+        assert bool(alone) is refused, (case, alone)
+
+
+#: TT-R6-01: every decision in BINDING_FORMS has executable witnesses among _WITH_FORMS (a refusal for a binding, an
+#: admission for a non-binding or a lock binding). The type-parameter rows are witnessed only where the running ast
+#: parses them (3.12+); the domain test below runs where the grammar is introspectable (3.13+).
+_BINDING_WITNESSES = {
+    "Name.id": ["an augmented assignment rebinds a lock", "a del of a lock", "a lock read elsewhere",
+                "a valued annotation of a lock"],
+    "Attribute.attr": ["a lock name bound to a connection", "a module global rebound through a module attribute",
+                       "a class-body lock as a class attribute"],
+    "Name.ctx": ["a walrus rebinds a lock", "a lock read elsewhere"],
+    "Attribute.ctx": ["a class-body binding judged as a class attribute", "a fresh lock bound by setattr"],
+    "FunctionDef.name": ["a def name rebinds a lock"], "AsyncFunctionDef.name": ["an async def name rebinds a lock"],
+    "ClassDef.name": ["a class name rebinds a lock"], "ExceptHandler.name": ["an except-as name rebinds a lock"],
+    "arg.arg": ["a parameter rebinds a lock"],
+    "MatchAs.name": ["a match capture rebinds a lock", "a sequence capture rebinds a lock",
+                     "a mapping value capture rebinds a lock", "a class-pattern capture rebinds a lock"],
+    "MatchStar.name": ["a star capture rebinds a lock"], "MatchMapping.rest": ["a mapping rest capture rebinds a lock"],
+    "TypeVar.name": ["a type parameter rebinds a lock"], "ParamSpec.name": ["a ParamSpec rebinds a lock"],
+    "TypeVarTuple.name": ["a TypeVarTuple rebinds a lock"],
+    "alias.name": ["an imported module name rebinds a lock", "a star import (refuses every lock name)"],
+    "alias.asname": ["an import alias rebinds a lock"],
+    "Global.names": ["a global declaration, then a lock", "a global declaration, then a non-lock"],
+    "Nonlocal.names": ["a nonlocal declaration, then a lock"],
+    "MatchClass.kwd_attrs": ["a class-pattern keyword attribute named like a lock"],
+    "keyword.arg": ["a keyword name binds (dict(...))", "a keyword name binds (SimpleNamespace)",
+                    "globals().update by a keyword"],
+    "ImportFrom.module": ["a module imported from, named like a lock"],
+    "Constant.kind": ["a u-string and comments beside a lock"], "TypeIgnore.tag": ["a u-string and comments beside a lock"],
+    **{f"{n}.type_comment": ["a u-string and comments beside a lock"]
+       for n in ("Assign", "For", "AsyncFor", "With", "AsyncWith", "FunctionDef", "AsyncFunctionDef", "arg")},
+    "Subscript.ctx": ["a lock name bound through globals()", "a lock name bound through __dict__",
+                      "a del through globals()", "a lock stored through globals()", "a lock read elsewhere",
+                      "vars().setdefault by a literal", "operator.setitem on globals()",
+                      "a __dict__ |= by a literal key"],
+    "Starred.ctx": ["a starred target rebinds a lock"], "List.ctx": ["a list target rebinds a lock"],
+    "Tuple.ctx": ["a lock name in a tuple target"],
+}
+
+_NAMESPACE_WITNESSES = {
+    "a literal identifier passed to any call": [
+        "a lock name bound by setattr", "builtins.setattr by a literal name", "an aliased setattr by a literal name",
+        "delattr by a literal name", "object.__delattr__ by a literal name", "operator.setitem on globals()",
+        "vars().setdefault by a literal", "a literal name read by getattr (counted)"],
+    "setattr/__setattr__ by a literal name with a Lock()/RLock() value": ["a fresh lock bound by setattr",
+                                                                          "a lock name bound by object.__setattr__",
+                                                                          "a lock name bound by a bound __setattr__"],
+    "a keyword name of any call": ["a keyword name binds (dict(...))", "a keyword name binds (SimpleNamespace)",
+                                   "globals().update by a keyword"],
+    "an identifier-shaped dict-literal key": ["a dict-literal key binds (type(...))", "a __dict__ |= by a literal key"],
+    "a literal-key subscript of globals()/vars()/locals()/__dict__": [
+        "a lock name bound through globals()", "a lock name bound through __dict__", "a del through globals()",
+        "a lock stored through globals()", "a lock read elsewhere"],
+    "an annotation alone in a class body": ["a class-body annotation alone (a dataclass field)",
+                                            "an annotation without a value, then a lock",
+                                            "an annotation alone in a function, then a lock"],
+    "a binding of __getattr__/__getattribute__": ["a __getattr__ hook (refuses every lock name)",
+                                                  "a __getattribute__ bound by assignment (refuses every lock name)"],
+    "a binding of threading/Lock/RLock or their import aliases, other than the import": [
+        "the Lock constructor rebound (refuses every lock name)", "threading rebound (refuses every lock name)",
+        "an import under a lock constructor's name (refuses every lock name)", "threading imported under an alias",
+        "a from-imported RLock"],
+    "a star import": ["a star import (refuses every lock name)"],
+    "a literal identifier string anywhere else (a tuple, an assignment, __slots__)": [
+        "a lock name in __slots__", "a lock name as a plain string (not a binding)"],
+    "a COMPUTED name (stated limit)": ["a computed setattr name (the stated limit)",
+                                       "a namespace alias (the stated limit)",
+                                       "a placeholder-free f-string name (the stated limit)"],
+    "a helper call returning the connection (stated limit)": ["a helper call (the stated limit)"],
+}
+
+def _grammar_binding_domain():
+    """Every `identifier`, `string` and `expr_context` field of the running grammar, read from each node class's
+    docstring signature (CPython 3.10+; research's stage-1 method, probes/p_binder_census.py)."""
+    import ast
+    import re
+    out = set()
+    for name in dir(ast):
+        c = getattr(ast, name)
+        if not (isinstance(c, type) and issubclass(c, ast.AST) and c.__module__ == "ast" and c._fields and c.__doc__):
+            continue
+        m = re.match(rf"{name}\((.*)\)$", c.__doc__.strip().splitlines()[0])
+        if m:
+            for part in re.split(r",\s*", m.group(1)):
+                bits = part.split()
+                if len(bits) == 2 and bits[0].rstrip("*?") in ("identifier", "string", "expr_context"):
+                    out.add(f"{name}.{bits[1]}")
+    return out
+
+
+def test_every_binding_decision_has_a_witness_and_the_table_is_the_grammars_domain():
+    """TT-R6-01: (1) the witness maps cover BINDING_FORMS and NAMESPACE_FORMS exactly, and every witness is a tabled
+    form; (2) BINDING_FORMS, restricted to the node types the running ast has, is exactly the grammar's identifier,
+    string and expression-context fields, read from the node docstrings on every supported Python (equal both ways on
+    3.10.22, 3.11.18, 3.12.3, 3.13.18 and 3.14.7 when written); where the ast also carries `_field_types` (3.13+) the
+    same domain is derived from it and must agree, so neither reading is the only one."""
+    import ast
+    import connection_census as CC
+    assert set(_BINDING_WITNESSES) == set(CC.BINDING_FORMS), set(_BINDING_WITNESSES) ^ set(CC.BINDING_FORMS)
+    assert set(_NAMESPACE_WITNESSES) == set(CC.NAMESPACE_FORMS), set(_NAMESPACE_WITNESSES) ^ set(CC.NAMESPACE_FORMS)
+    present = {k for k in CC.BINDING_FORMS if hasattr(ast, k.split(".")[0])}
+    for key, cases in [*_BINDING_WITNESSES.items(), *_NAMESPACE_WITNESSES.items()]:
+        if key in CC.BINDING_FORMS and key not in present:
+            continue                                            # a type parameter on a pre-3.12 grammar
+        assert cases and all(c in _WITH_FORMS for c in cases), (key, [c for c in cases if c not in _WITH_FORMS])
+    domain = _grammar_binding_domain()
+    assert domain == present, {"untabled": sorted(domain - present), "not in the grammar": sorted(present - domain)}
+    if hasattr(ast.Name, "_field_types"):
+        typed = set()
+        for name in dir(ast):
+            c = getattr(ast, name)
+            if isinstance(c, type) and issubclass(c, ast.AST) and c.__module__ == "ast" and getattr(c, "_field_types", None):
+                for f, typ in c._field_types.items():
+                    s = str(typ)
+                    if f == "ctx" or ("str" in s and not any(k in s for k in ("expr", "stmt", "pattern"))):
+                        typed.add(f"{name}.{f}")
+        assert typed == domain, {"field_types only": sorted(typed - domain), "docstring only": sorted(domain - typed)}
+
+#: TT-R6-01's consequence controls, the reviewer's four families (round 6, repro/test_round6_with_bindings.py,
+#: re-written here): each is refused, standalone and added to the complete tree, AND executing it bypassing the
+#: census commits a real write that the trust phase cell does not record, so the refusal is about a real escape.
+_ESCAPES = {        # (module text before the honest owner, lines inside run() before the with, the with-item)
+    "capture": ("", "    match store._conn:\n        case review_lock:\n            pass\n", "review_lock"),
+    "sequence": ("", "    match [store._conn]:\n        case [review_lock]:\n            pass\n", "review_lock"),
+    "mapping": ("", "    match {'conn': store._conn}:\n        case {'conn': review_lock}:\n            pass\n",
+                "review_lock"),
+    "class_attribute": ("", "    class Holder:\n        _lock = store._conn\n", "Holder._lock"),
+    # research's stage-1 read of the fold, B1-B4 (round7-stage1/probes/p_r7_escapes.py), re-written here:
+    "builtins_setattr": ("import builtins\nclass Holder:\n    pass\n",
+                         "    builtins.setattr(Holder, '_lock', store._conn)\n", "Holder._lock"),
+    "aliased_setattr": ("from builtins import setattr as put\nclass Holder:\n    pass\n",
+                        "    put(Holder, '_lock', store._conn)\n", "Holder._lock"),
+    "keyword_name": ("import types\n", "    h = types.SimpleNamespace(_lock=store._conn)\n", "h._lock"),
+    "dict_key": ("", "    H = type('H', (), {'_lock': store._conn})\n", "H._lock"),
+    "dataclass_field": ("import dataclasses\n@dataclasses.dataclass\nclass Holder:\n    _lock: object\n",
+                        "    h = Holder(store._conn)\n", "h._lock"),
+    "namedtuple_field": ("import typing\nclass Holder(typing.NamedTuple):\n    review_lock: object\n",
+                         "    h = Holder(store._conn)\n", "h.review_lock"),
+    "getattr_hook": ("class Holder:\n    def __init__(self, c):\n        self.c = c\n    def __getattr__(self, n):\n"
+                     "        return self.c\n", "    h = Holder(store._conn)\n", "h._lock"),
+    "lock_constructor_rebound": ("", "    threading.Lock = lambda: store._conn\n    my_lock = threading.Lock()\n",
+                                 "my_lock"),
+}
+
+
+def _escape_source(pre, binding, item):
+    return ("import threading\n" + pre + "class HonestLockOwner:\n    def setup(self):\n"
+            "        self._lock = threading.Lock()\ndef run(store):\n    review_lock = threading.Lock()\n" + binding +
+            "    with " + item + ":\n"
+            "        store._conn.execute(\"INSERT INTO write_counter(user_id, n) VALUES ('review', 1)\")\n")
+
+
+@pytest.mark.parametrize("case", sorted(_ESCAPES))
+def test_each_refused_escape_is_refused_and_is_a_real_unrecorded_write(case, tmp_path):
+    """TT-R6-01's consequence controls: the reviewer's four families and research's eight (stage-1 read of the fold),
+    each refused standalone and added to the complete tree, while the honest lock alone is admitted; then executed
+    bypassing the census, each commits a durable write the trust phase cell never records. The lock-constructor
+    family rebinds threading.Lock in this process, restored before the test ends."""
+    import sqlite3
+    import threading
+    from connection_census import with_item_problems
+    from veracium.store.sqlite import SqliteStore, trust_commit_phase
+    src = _escape_source(*_ESCAPES[case])
+    assert with_item_problems({"zz_escape.py": src}), case
+    assert with_item_problems({**_real_sources(), "zz_escape.py": src}), case
+    honest = _escape_source("", "", "review_lock")
+    assert with_item_problems({"zz_escape.py": honest}) == []
+    saved = threading.Lock, threading.RLock
+    ns = {}
+    path = tmp_path / "escape.db"
+    store = SqliteStore(str(path))
+    try:
+        exec(compile(src, "<tt-r6-01-escape>", "exec"), ns)
+        with trust_commit_phase(store._conn) as cell:
+            ns["run"](store)
+            assert not store._conn.in_transaction
+            assert cell == [], cell                              # the phase cell never saw the commit
+        with sqlite3.connect(path) as independent:
+            assert independent.execute("SELECT n FROM write_counter WHERE user_id='review'").fetchall() == [(1,)]
+    finally:
+        threading.Lock, threading.RLock = saved
+        store.close()
 
 
 def test_the_real_trees_with_items_are_calls_and_locks_only():
