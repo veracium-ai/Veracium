@@ -213,3 +213,34 @@ def test_the_receipt_is_refused_with_as_of(tmp_path):
     m = _mem(tmp_path)
     with pytest.raises(ValueError, match="render_receipt"):
         m.recall(U, "engineer", as_of=NOW, render_receipt=True)
+
+
+@pytest.mark.parametrize("case", ["at its place in the text", "at its place in an annotation", "offset moved",
+                                  "anchor neither the text nor an annotation", "a longer raw value"])
+def test_admit_refuses_a_subject_segment_not_at_its_place(case):
+    """Research's stage 2 on f25ff044, S17 (NEXT-ROUND, disclosed at rounds 4 and 5): admit()'s place check guards
+    against a composer defect, and no cell reached it directly: with the check removed every composer still passed.
+    The segment must sit at `offset` in its anchor, and the anchor must be the admitted text or one of the unit's
+    annotations; otherwise the receipt raises an internal failure rather than carry a subject the line did not show.
+    The two honest placements are admitted with the segment as the unit's subject."""
+    from types import SimpleNamespace
+    from veracium.trust_tools import RenderReceipt
+    text = "plays: a long object — person:sam"
+    seg, off = "person:sam", text.index("person:sam")
+    note = "about person:sam"
+    subject, refuses = {
+        "at its place in the text": ((seg, text, off), False),
+        "at its place in an annotation": ((seg, note, note.index(seg)), False),
+        "offset moved": ((seg, text, off - 1), True),
+        "anchor neither the text nor an annotation": ((seg, "elsewhere: person:sam", 11), True),
+        "a longer raw value": ((seg + "uel", text, off), True),
+    }[case]
+    receipt = RenderReceipt()
+    record = SimpleNamespace(id="e-1")
+    if refuses:
+        with pytest.raises(RuntimeError, match="not at its place"):
+            receipt.admit("edge", record, text, "verified", annotations=[note], subject=subject)
+        assert receipt.units == []
+    else:
+        receipt.admit("edge", record, text, "verified", annotations=[note], subject=subject)
+        assert receipt.units[0]["subject"] == seg and receipt.units[0]["text"] == text

@@ -538,6 +538,48 @@ def test_an_opened_stores_first_empty_commit_is_not_a_commit_of_the_call(tmp_pat
     m.close()
 
 
+def test_a_rolled_back_write_is_no_commit_of_the_call_and_the_mark_follows_it(tmp_path):
+    """Research's stage 2 on f25ff044, S04-S06 (NEXT-ROUND, disclosed at rounds 4 and 5): no cell held a rolled-back
+    write inside a phase cell. SQLite's total_changes() keeps counting a rolled-back write, so the mark must follow a
+    rollback: the rollback itself records nothing (S04: a rollback recorded as a commit), and an empty commit after it
+    records nothing either (S05: a rollback not refreshing the mark); a real write after both still records. The
+    class's own constructor starts the mark AT the counter (S06: the mark starting unknown; through the store the
+    round-4 re-read after opening masks it, so it is held here on the class itself). Each mutant can only turn a
+    refusal into an internal error (fail-safe), and each now fails one of these assertions."""
+    import sqlite3
+    from veracium.store.sqlite import trust_commit_phase
+    m = _mem(tmp_path)
+    conn = m.store._conn
+    assert hasattr(type(conn), "_changes"), f"the store's connection is not the phase-recording class: {type(conn)}"
+    with trust_commit_phase(conn) as cell:
+        before = conn.execute("SELECT total_changes()").fetchone()[0]
+        conn.execute("BEGIN")
+        conn.execute("INSERT INTO write_counter(user_id, n) VALUES ('rb', 1)")
+        conn.rollback()
+        assert conn.execute("SELECT total_changes()").fetchone()[0] > before    # the counter kept the rolled-back row
+        assert conn.execute("SELECT count(*) FROM write_counter WHERE user_id = 'rb'").fetchone()[0] == 0
+        assert cell == [], cell                                                  # S04
+        assert conn._changes_mark == conn.execute("SELECT total_changes()").fetchone()[0]
+        conn.execute("BEGIN")
+        conn.execute("SELECT 1").fetchall()
+        conn.commit()
+        assert cell == [], cell                                                  # S05
+        conn.execute("INSERT INTO write_counter(user_id, n) VALUES ('rb', 1)")
+        conn.commit()
+        assert len(cell) == 1, cell                                              # a real write still records
+    m.close()
+    fresh = sqlite3.connect(":memory:", factory=type(conn))
+    try:
+        assert fresh._changes_mark == fresh.execute("SELECT total_changes()").fetchone()[0]    # S06
+        with trust_commit_phase(fresh) as cell:
+            fresh.execute("BEGIN")
+            fresh.execute("SELECT 1").fetchall()
+            fresh.commit()
+            assert cell == [], cell
+    finally:
+        fresh.close()
+
+
 def test_a_failed_counter_read_never_replaces_a_rollbacks_cause_and_counts_the_next_commit(tmp_path):
     """Research's stage-1 note (b): the counter read runs inside `rollback()` and `commit()`. If it fails, the error
     that caused the rollback is the one that surfaces, and the mark is unknown, so the next commit counts as a write
