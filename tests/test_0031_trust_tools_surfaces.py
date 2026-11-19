@@ -263,16 +263,20 @@ def test_a_query_line_renders_its_subject_whole_and_carries_it_whole(tmp_path, t
 
 
 @pytest.mark.parametrize("transport", SURFACES)
-def test_a_proactive_line_that_names_no_subject_carries_none(tmp_path, transport):
-    """CURRENT CONTEXT renders `relation: object (since …)`: no subject is admitted, so the unit carries none."""
+def test_a_proactive_current_line_names_its_subject_and_the_unit_carries_it(tmp_path, transport):
+    """0012 v18.2 (research's stage-2 N3, pre-existing since 0.4.0): CURRENT CONTEXT rendered `relation: object
+    (since …)` for a `person:x` fact, which read as the user's own; until v18.2 this cell pinned that line and a unit
+    carrying no subject. The line now names its subject as a DATED COMMITMENTS line does, and under TT-R3-02 the
+    receipt follows the line: the unit carries the subject as rendered, on every surface."""
     m = _mem(tmp_path)
     m.store.add_edge(_edge("e-c", "visiting Lisbon", "person:x", rel="currently", vol=Volatility.TRANSIENT))
     r = m.recall(U)
-    assert "visiting Lisbon" in r.context and "person:x" not in r.context      # the trigger
+    [line] = [ln for ln in r.context.splitlines() if "visiting Lisbon" in ln]
+    assert line.startswith("currently: person:x — visiting Lisbon (since "), line
     ch, out = surface(m, transport)("find_facts", {})
     assert ch == "ok"
     u = _unit(out, "e-c")
-    assert "subject" not in u and "person:x" not in json.dumps(out)
+    assert u["subject"] == "person:x", u
 
 
 def test_the_claim_line_prefix_is_the_marker_render_edges_writes():

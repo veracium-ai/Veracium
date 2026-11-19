@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+**The session-start briefing names whose fact a "confirm when natural" or "worth a follow-up" line is about.**
+- **Fixed (pre-existing since 0.4.0): a CONFIRM WHEN NATURAL line, and a "worth a follow-up" line in CURRENT
+  CONTEXT or RESTATED VARIANTS, now names a subject other than the user** (specs/0012 §4c-v, v18.2): `works_on:
+  person:sam — project alpha (since … — worth a follow-up)`, where it read `works_on: project alpha (since …)`, which
+  an agent took for the user's own fact. A DATED COMMITMENTS line has named its subject since 0.29.0; the other two
+  line kinds now do the same. A line about the user is byte-identical to before.
+- **Changed with it:** such a line is held to `item_cap_tokens` as a whole, as a commitment line is: the subject is
+  clamped at an eighth of the cap and the object takes what is left. A line whose framing leaves no room for 16 tokens
+  of object is now dropped and counted in the briefing's report line, where before it was admitted over the cap.
+- Through the trust tools (specs/0031 §4f), `find_facts`' unit for such a line now carries its `subject`, as rendered.
+- **Who should upgrade:** hosts whose users' memory holds facts about other people (a `person:…` subject), read
+  through the briefing or the trust tools.
+
 ## 0.33.0 — 2026-11-18
 
 **A user can look up, correct, dispute, confirm and erase their memory through their agent, and `veracium mcp`

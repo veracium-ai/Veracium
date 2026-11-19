@@ -229,6 +229,31 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # the composer that rendered it; a line with no entry names no subject other than the user
     _subject_at: dict = {}
 
+    # 0012 v18.2 (research's stage-2 note N3 on f25ff044, pre-existing since 0.4.0): a CONFIRM WHEN NATURAL or "worth a
+    # follow-up" line names a subject other than `user`, as a DATED COMMITMENTS line does (S1-4); before, `plays: x`
+    # read as the user's own fact. Composed by `_framed_line`, the structure of v18.1's NEW 1: the whole line (relation,
+    # the subject clamped at item_cap//8, the object, the framing at the end) held to `line_cap`, the object taking
+    # what the rest leaves, the subject registered for the receipt (TT-R3-02) for the line RETURNED, one clamped item
+    # per edge. Used at composition and on the first-item path; a subject-`user` line keeps its own path, byte-identical
+    _framed_tail: dict = {}     # edge id -> its framing tail, for the first-item recomposition of a subject line
+
+    def _framed_line(e, tail, line_cap):
+        s = _commitment_subject(e)
+        s_out = _clamp(s, max(16, _cap // 8))
+        head = f"{e.relation}: {s_out}"
+        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))
+        while content >= 16:
+            o = _clamp(e.object, content)
+            line = head + o + tail
+            if _est0(line) <= line_cap:
+                if s_out != s or o != e.object:
+                    _clamped_ids.add(("edge", e.id))
+                from .budgets import rendered_subject
+                _subject_at[(e.id, line)] = (rendered_subject(e.subject, s_out), len(f"{e.relation}: "))
+                return line
+            content -= _est0(line) - line_cap
+        return None
+
     def _commit_line(e, line_cap):
         # 0003/obligations §4b + 0012 I10a (research's stage-1 NEW 1 on ea88c72): the WHOLE line (relation, the
         # subject clamped at item_cap//8 (S1-4(a)), the object, the due/overdue flag and a lone member's mark) is held
@@ -323,8 +348,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             # WARNING regardless of its group-mates (R-impl4-1).
             xn = _c_info.get(e.id, {}).get("flagged_hidden", 0)
             tail = f" (×{xn + 1} restatements need confirmation)" if xn else ""
-            line = (f"{e.relation}: {_obj_counted(e)} — confirm when natural "
-                    f"(unrefreshed since {e.provenance.observed_at.date()}){tail}")
+            if e.subject != "user":
+                _framed_tail[e.id] = (f" — confirm when natural (unrefreshed since "
+                                      f"{e.provenance.observed_at.date()}){tail}")
+                line = _framed_line(e, _framed_tail[e.id], _cap)
+            else:
+                line = (f"{e.relation}: {_obj_counted(e)} — confirm when natural "
+                        f"(unrefreshed since {e.provenance.observed_at.date()}){tail}")
             confirms.append((line, e))
             seen.add(e.id)
             continue
@@ -341,9 +371,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
             since_dt = _c_info.get(e.id, {}).get("since", e.valid_from)
-            (variants if variant else current).append(
-                (f"{e.relation}: {_obj_counted(e)} "
-                 f"(since {since_dt.date()} — worth a follow-up)", e))
+            if e.subject != "user":
+                _framed_tail[e.id] = f" (since {since_dt.date()} — worth a follow-up)"
+                line = _framed_line(e, _framed_tail[e.id], _cap)
+            else:
+                line = (f"{e.relation}: {_obj_counted(e)} "
+                        f"(since {since_dt.date()} — worth a follow-up)")
+            (variants if variant else current).append((line, e))
             seen.add(e.id)
 
     # 0003/obligations §4b: a contested commitment renders ONCE. Members are what THIS briefing surfaced (so the lens,
@@ -526,6 +560,14 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                             # which keeps the framing at the end and registers its own clamp; never a tail clamp
                             line = (_contested_line if isinstance(unit, _ContestedCommitment) else _commit_line)(
                                 unit, remaining - header_cost - 1)
+                            if line is None:
+                                dropped[header] += 1
+                                continue
+                        elif isinstance(unit, Edge) and unit.id in _framed_tail:
+                            # 0012 v18.2 (N3): a subject line is RECOMPOSED by its own composer at the remaining
+                            # budget, which keeps the subject and the framing and registers the subject and its clamp
+                            # for the line it returns; never a replace inside the line, never a tail clamp
+                            line = _framed_line(unit, _framed_tail[unit.id], remaining - header_cost - 1)
                             if line is None:
                                 dropped[header] += 1
                                 continue
