@@ -1736,6 +1736,21 @@ _WITH_FORMS = {
         "import sqlite3\nclass B:\n    def __init__(self):\n        self._lock = sqlite3.connect('x.db')\n", True),
     "a lock name rebound by a for target": ("for _REGISTRY_LOCK in ():\n    pass\n", True),
     "a lock name in a tuple target": ("import threading\n_REGISTRY_LOCK, _spare = threading.Lock()\n", True),
+    "a lock name bound by setattr": (
+        "import sqlite3\nclass C:\n    def f(self):\n        setattr(self, '_lock', sqlite3.connect('x.db'))\n", True),
+    "a lock name bound by object.__setattr__": (
+        "import sqlite3\nclass C:\n    def f(self):\n        object.__setattr__(self, '_lock', sqlite3.connect('x.db'))\n",
+        True),
+    "a lock name bound by a bound __setattr__": (
+        "import sqlite3\nclass C:\n    def f(self):\n        self.__setattr__('_usage_lock', sqlite3.connect('x.db'))\n",
+        True),
+    "a lock name bound through globals()": (
+        "import sqlite3\nglobals()['_REGISTRY_LOCK'] = sqlite3.connect('x.db')\n", True),
+    "a lock name bound through __dict__": (
+        "import sqlite3\nclass C:\n    def f(self):\n        self.__dict__['_lock'] = sqlite3.connect('x.db')\n", True),
+    "a fresh lock bound by setattr": (
+        "import threading\nclass C:\n    def f(self):\n        setattr(self, '_probe_lock', threading.Lock())\n"
+        "        with self._probe_lock:\n            pass\n", False),
     "closing(sqlite3.connect(...))": (
         "import contextlib, sqlite3\nwith contextlib.closing(sqlite3.connect('x.db')):\n    pass\n", False),
     "a from-imported RLock": ("from threading import RLock as R\n_PROBE_LOCK = R()\nwith _PROBE_LOCK:\n    pass\n", False),

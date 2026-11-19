@@ -34,8 +34,11 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     `contextlib.closing(sqlite3.connect(...))` stays legal), an `IfExp` judged
     by its branches, or a name or attribute that EVERY binding in src/
     assigns a `threading.Lock()`/`RLock()` (so `self._lock = conn` cannot
-    launder one). `with_item_problems` holds it across the tree. The limit,
-    stated: a helper CALL that returns the connection is outside the rung;
+    launder one; a LITERAL-name `setattr`, `__setattr__`, `globals()[...]`,
+    `vars(...)[...]` or `__dict__[...]` store is a binding too, v23.6.1).
+    `with_item_problems` holds it across the tree. The limits, stated: a
+    helper CALL that returns the connection (getattr included) is outside the
+    rung, and so is a binding by a COMPUTED name;
   * every other attribute of `sqlite3` must be in ALLOWED_ATTRS (exception
     classes, Row/Binary, version constants) or it REFUSES — unknown names
     (dbapi2 included) are refused-until-classified, never waved through;
@@ -1294,6 +1297,34 @@ def with_item_problems(sources: dict) -> list:
                 # binding
                 if id(n) not in by_statement:
                     record(_binding_key(n), False)
+            elif isinstance(n, ast.Call):
+                # a binding by a LITERAL name through the namespace machinery (research's v23.6.1 condition):
+                # setattr(o, "n", v), object.__setattr__(o, "n", v), o.__setattr__("n", v); a non-lock unless v is a
+                # Lock()/RLock() call. Keyed as both a name and an attribute (setattr on a module binds a global).
+                # A COMPUTED name is the stated limit (and connect_census's namespace rungs)
+                f, a = n.func, n.args
+                pair = None
+                if isinstance(f, ast.Name) and f.id == "setattr" and len(a) == 3:
+                    pair = (a[1], a[2])
+                elif isinstance(f, ast.Attribute) and f.attr == "__setattr__":
+                    pair = (a[1], a[2]) if len(a) == 3 else (a[0], a[1]) if len(a) == 2 else None
+                if pair and isinstance(pair[0], ast.Constant) and isinstance(pair[0].value, str):
+                    ok = _is_lock_call(pair[1], mods, locals_)
+                    record(("name", pair[0].value), ok)
+                    record(("attr", pair[0].value), ok)
+            elif isinstance(n, ast.Subscript) and isinstance(n.ctx, (ast.Store, ast.Del)):
+                # globals()["n"] = v / vars(o)["n"] = v / o.__dict__["n"] = v: the same literal-name binding
+                ns = n.value
+                is_ns = ((isinstance(ns, ast.Call) and isinstance(ns.func, ast.Name)
+                          and ns.func.id in ("globals", "vars", "locals"))
+                         or (isinstance(ns, ast.Attribute) and ns.attr == "__dict__"))
+                key = n.slice
+                if is_ns and isinstance(key, ast.Constant) and isinstance(key.value, str):
+                    value = next((s.value for s in ast.walk(tree) if isinstance(s, ast.Assign) and n in s.targets),
+                                 None) if isinstance(n.ctx, ast.Store) else None
+                    ok = value is not None and _is_lock_call(value, mods, locals_)
+                    record(("name", key.value), ok)
+                    record(("attr", key.value), ok)
             elif isinstance(n, ast.arg):
                 record(("name", n.arg), False)
             elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
