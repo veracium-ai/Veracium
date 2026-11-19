@@ -45,6 +45,17 @@ def _section(ctx, header):
     return m.group(1).splitlines() if m else []
 
 
+def _one(lines):
+    """The one line a cell judges, asserted (a missing line fails by assertion, never by unpacking)."""
+    assert len(lines) == 1, lines
+    return lines[0]
+
+
+def _unit(units, eid):
+    assert eid in units, sorted(units)
+    return units[eid]
+
+
 def _clamped(ctx):
     found = re.findall(r"/ (\d+) clamped\]", ctx)
     return int(found[0]) if found else 0
@@ -72,10 +83,10 @@ def test_each_tier_names_a_non_user_subject_and_the_receipt_carries_it(tier):
     subject as rendered. Mutants: the line without its subject; the subject rendered but not registered."""
     header, edges, framing = TIERS[tier]
     ctx, units, _ = _brief(edges())
-    [line] = [ln for ln in _section(ctx, header) if "project alpha" in ln and "beta" not in ln
-              or "old boat" in ln]
+    line = _one([ln for ln in _section(ctx, header) if "project alpha" in ln and "beta" not in ln
+              or "old boat" in ln])
     assert re.match(r"^\w+: person:sam — ", line) and framing in line, line
-    assert units["x"]["subject"] == "person:sam", units["x"]
+    assert units.get("x", {}).get("subject") == "person:sam", units.get("x", {})
 
 
 @pytest.mark.parametrize("tier", sorted(TIERS))
@@ -91,7 +102,7 @@ def test_a_subject_user_line_is_byte_identical(tier):
     else:
         want = f"{e.relation}: {e.object} (since {e.valid_from.date()} — worth a follow-up)"
     assert want in lines, (want, lines)
-    assert "subject" not in units["x"]
+    assert "subject" not in _unit(units, "x")
 
 
 def test_the_restatement_tail_is_kept_after_the_subject():
@@ -99,7 +110,7 @@ def test_the_restatement_tail_is_kept_after_the_subject():
     ctx, units, _ = _brief([_e("x", "the old boat", rel="owns", vol=Volatility.SLOW, flag=True, days=200),
                             _e("x2", "the old boat", rel="owns", note="again", vol=Volatility.SLOW, flag=True,
                                days=150)])
-    [line] = [ln for ln in _section(ctx, "## CONFIRM WHEN NATURAL") if "old boat" in ln]
+    line = _one([ln for ln in _section(ctx, "## CONFIRM WHEN NATURAL") if "old boat" in ln])
     assert line.startswith("owns: person:sam — the old boat — confirm when natural"), line
     assert line.endswith(" restatements need confirmation)"), line
 
@@ -108,9 +119,9 @@ def test_an_object_that_is_a_substring_of_its_subject():
     """The subject is placed by the composer, never found by searching the line: an object equal to part of the
     subject leaves both intact, and the receipt's place check (admit) holds."""
     ctx, units, _ = _brief([_e("x", "alice", subject="person:alice")])
-    [line] = [ln for ln in _section(ctx, "## CURRENT CONTEXT") if "alice" in ln]
+    line = _one([ln for ln in _section(ctx, "## CURRENT CONTEXT") if "alice" in ln])
     assert line.startswith("works_on: person:alice — alice (since "), line
-    assert units["x"]["subject"] == "person:alice"
+    assert units.get("x", {}).get("subject") == "person:alice"
 
 
 @pytest.mark.parametrize("tier", ["confirm", "current", "variants"])
@@ -125,11 +136,12 @@ def test_the_whole_line_is_held_to_the_item_cap_at_new1_sizes(tier):
              else [_e("y", obj + " extra", subject=sub, note="NEWER", days=1),
                    _e("x", obj, subject=sub, note="OLDER", days=3)])
     ctx, units, cfg = _brief(edges, budget=4000)
-    [line] = [ln for ln in _section(ctx, header) if "ooo" in ln and units["x"]["text"] == ln]
+    line = _one([ln for ln in _section(ctx, header) if "ooo" in ln and units.get("x", {}).get("text") == ln])
     assert _est(line) <= cfg.item_cap_tokens, (_est(line), cfg.item_cap_tokens)
     assert framing in line and (line.endswith("— worth a follow-up)") if tier == "current" else
                                 line.endswith(")")), line[-80:]
-    seg = units["x"]["subject"]
+    seg = units.get("x", {}).get("subject")
+    assert isinstance(seg, str), units.get("x")
     assert seg != sub and sub.startswith(seg.split("…")[0]) and seg in line, seg      # clamped, as rendered
     assert _clamped(ctx) == (2 if tier == "variants" else 1), ctx
 
@@ -148,7 +160,7 @@ def test_the_first_item_recomposition_keeps_the_subject_in_the_line_and_the_rece
     full, *_ = _brief(edges, budget=4000)
     from veracium.budgets import floor_for
     ctx, units, _cfg = _brief(edges, budget=floor_for("proactive"))
-    [line] = [ln for ln in _section(ctx, header) if "ooo" in ln]
+    line = _one([ln for ln in _section(ctx, header) if "ooo" in ln])
     assert line not in full, "the budget did not force the first-item path"
     assert re.match(r"^\w+: person:sam — o+", line) and framing in line, line
-    assert units["x"]["subject"] == "person:sam" and units["x"]["text"] == line
+    assert units.get("x", {}).get("subject") == "person:sam" and units.get("x", {}).get("text") == line

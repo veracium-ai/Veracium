@@ -143,8 +143,9 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("mcp_server.py", 505): "control-flow",   # carried: mcp_server.py:confirm_fact_report:BOOL_RETURN:1
     ("mcp_server.py", 519): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:1
     ("mcp_server.py", 525): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:2
-    ("proactive.py", 253): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
-    ("proactive.py", 303): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
+    ("proactive.py", 255): "control-flow",   # 0012 v18.2 (N3): proactive.py:assemble._framed_line:RETURN_NONE:1, a subject line that cannot fit its cap is dropped (budget plumbing), as _commit_line's
+    ("proactive.py", 278): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
+    ("proactive.py", 328): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
     ("schema.py", 639): "predicate-helper",   # 0.29.0 B1+B2: schema.py:is_obligation:BOOL_RETURN:1 (consumed by the backstop and _lexical_scored)
     ("schema.py", 693): "predicate-helper",   # carried: schema.py:wiki_drops_on:BOOL_RETURN:1
     ("schema.py", 720): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1

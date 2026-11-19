@@ -61,9 +61,17 @@ S = "src/veracium/schema.py"
 I = "src/veracium/ingest.py"   # noqa: E741
 T = "tests/test_0003_obligations.py"
 SUBJECT = "obligations"
-DIGESTED = (G, M, X, D, P, SB, S, I, T, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
+T12 = "tests/test_0012_n3_subject_lines.py"     # 0012 v18.2 (research's N3): the subject line's own cells
+DIGESTED = (G, M, X, D, P, SB, S, I, T, T12, "specs/evidence/mutation_protocol.py", _protocol.KINDS, SELF)
 
 C = lambda name: f"{T}::{name}"                                                       # noqa: E731
+C12 = lambda name: f"{T12}::{name}"                                                   # noqa: E731
+N3_TIER = lambda t: C12(f"test_each_tier_names_a_non_user_subject_and_the_receipt_carries_it[{t}]")   # noqa: E731
+N3_USER = lambda t: C12(f"test_a_subject_user_line_is_byte_identical[{t}]")                          # noqa: E731
+N3_CAP = lambda t: C12(f"test_the_whole_line_is_held_to_the_item_cap_at_new1_sizes[{t}]")           # noqa: E731
+N3_FIRST = lambda t: C12(f"test_the_first_item_recomposition_keeps_the_subject_in_the_line_and_the_receipt[{t}]")  # noqa: E731,E501
+N3_TAIL = C12("test_the_restatement_tail_is_kept_after_the_subject")
+N3_SUBSTR = C12("test_an_object_that_is_a_substring_of_its_subject")
 OB2 = C("test_ob2_a_reschedule_is_contested_with_one_refusal_row")
 OB3 = C("test_ob3_the_briefing_renders_a_contested_commitment_once")
 OB10 = C("test_ob10_one_episode_naming_two_dates_renders_once_contested")
@@ -162,7 +170,8 @@ MUTANTS = [
      [('    return "" if e.subject == "user" else f"{e.subject} — "\n', '    return ""\n')],
      [NAMES], [USER_SAME], None, "the plain line drops a non-user subject (the obligation's name)"),
     ("S1-4a-subject-clamp-uncounted", "product", X,
-     [("                if s_out != s or o != e.object:\n", "                if o != e.object:\n")],
+     [("                if s_out != s or o != e.object:\n                    _clamped_ids.add((\"edge\", e.id))\n                if s:\n",
+       "                if o != e.object:\n                    _clamped_ids.add((\"edge\", e.id))\n                if s:\n")],
      [CLAMP], [NAMES], None, "an oversized subject clamped without the I10a signal"),
     ("S1-4b-withheld-subject-rendered", "product", X,
      [("    _edges = [e for e in _edges if not snap.withheld(e)]\n", "")],
@@ -226,10 +235,14 @@ MUTANTS = [
                                "the object width, so only first != values[0] signals the cut (A5, research's reach "
                                "measurement for round 3)"),
     ("NEW1-object-cap-ignores-the-line", "product", X,
-     [("        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
+     [("        head, tail = f\"{e.relation}: {s_out}\", _flag_of[e.id] + _marked.get(e.id, \"\")\n"
+       "        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
+       "        head, tail = f\"{e.relation}: {s_out}\", _flag_of[e.id] + _marked.get(e.id, \"\")\n"
        "        content = max(16, _cap - 48)\n"),
-      ("            if _est0(line) <= line_cap:\n                if s_out != s or o != e.object:\n",
-       "            if True:\n                if s_out != s or o != e.object:\n")],
+      ("            if _est0(line) <= line_cap:\n                if s_out != s or o != e.object:\n"
+       "                    _clamped_ids.add((\"edge\", e.id))\n                if s:\n",
+       "            if True:\n                if s_out != s or o != e.object:\n"
+       "                    _clamped_ids.add((\"edge\", e.id))\n                if s:\n")],
      [NEW1, NEW1_MARK], [CLAMP], None, "the superseded plain line: the object capped at item_cap−48 on top of the "
                                        "subject's own cap, the line unchecked (research's stage-1 NEW 1)"),
     ("NEW1-mark-outside-the-cap", "product", X,
@@ -334,6 +347,47 @@ MUTANTS = [
      [("    s = str(subject).strip().casefold()\n", "    s = str(subject)\n")],
      [IS_OB("User"), IS_OB("padded-user"), IS_OB("Person-ref"), XCHK("User"), XCHK("padded-USER")],
      [IS_OB("named")], None, "\"User\" is read as an obligation, not as the user (0011 E1 disagrees)"),
+    # ---- 0012 v18.2 (research's stage-2 note N3 on f25ff044; stage 1 on 66bbb0a1): the subject lines ----------------
+    ("N3-confirm-subject-dropped", "product", X,
+     [("            if e.subject != \"user\":\n                _framed_tail[e.id] = (f\" — confirm",
+       "            if False:\n                _framed_tail[e.id] = (f\" — confirm")],
+     [N3_TIER("confirm"), N3_TAIL, N3_CAP("confirm"), N3_FIRST("confirm")], [N3_USER("confirm")], None,
+     "the superseded CONFIRM WHEN NATURAL line: a non-user subject dropped (pre-existing since 0.4.0)"),
+    ("N3-followup-subject-dropped", "product", X,
+     [("            if e.subject != \"user\":\n                _framed_tail[e.id] = f\" (since",
+       "            if False:\n                _framed_tail[e.id] = f\" (since")],
+     [N3_TIER("current"), N3_TIER("variants"), N3_SUBSTR, N3_CAP("current"), N3_FIRST("current")],
+     [N3_USER("current")], None, "the superseded \"worth a follow-up\" line: a non-user subject dropped"),
+    ("N3-subject-unregistered", "product", X,
+     [("                from .budgets import rendered_subject\n"
+       "                _subject_at[(e.id, line)] = (rendered_subject(e.subject, s_out), len(f\"{e.relation}: \"))\n"
+       "                return line\n            content -= _est0(line) - line_cap\n        return None\n\n    def _commit_line",
+       "                return line\n            content -= _est0(line) - line_cap\n        return None\n\n    def _commit_line")],
+     [N3_TIER("confirm"), N3_TIER("current"), N3_TIER("variants"), N3_SUBSTR], [N3_USER("current")], None,
+     "a subject line rendered but its subject not registered: the receipt's unit carries none (TT-R3-02)"),
+    ("N3-first-item-not-recomposed", "product", X,
+     [("                        elif isinstance(unit, Edge) and unit.id in _framed_tail:\n",
+       "                        elif False:\n")],
+     [N3_FIRST("confirm"), N3_FIRST("current")], [N3_TIER("current")], None,
+     "the first-item path's replace and tail clamp for a subject line: the recomposed key misses the receipt"),
+    ("N3-line-not-held-to-its-cap", "product", X,
+     [("        s_out = _clamp(s, max(16, _cap // 8))\n        head = f\"{e.relation}: {s_out}\"\n"
+       "        content = min(max(16, _cap - 48), line_cap - _est0(head) - _est0(tail))\n",
+       "        s_out = _clamp(s, max(16, _cap // 8))\n        head = f\"{e.relation}: {s_out}\"\n"
+       "        content = max(16, _cap - 48)\n"),
+      ("            line = head + o + tail\n            if _est0(line) <= line_cap:\n"
+       "                if s_out != s or o != e.object:\n                    _clamped_ids.add((\"edge\", e.id))\n"
+       "                from .budgets",
+       "            line = head + o + tail\n            if True:\n"
+       "                if s_out != s or o != e.object:\n                    _clamped_ids.add((\"edge\", e.id))\n"
+       "                from .budgets")],
+     [N3_CAP("confirm"), N3_CAP("current"), N3_FIRST("confirm"), N3_FIRST("current")], [N3_TIER("current")], None,
+     "a subject line's object capped at item_cap−48 on top of the subject, the line unchecked (v18.1 NEW 1's overrun)"),
+    ("N3-subject-unclamped", "product", X,
+     [("        s_out = _clamp(s, max(16, _cap // 8))\n        head = f\"{e.relation}: {s_out}\"\n",
+       "        s_out = s\n        head = f\"{e.relation}: {s_out}\"\n")],
+     [N3_CAP("confirm"), N3_CAP("current")], [N3_TIER("current")], None,
+     "a subject line's subject rendered whole, never clamped at item_cap // 8"),
 ]
 
 
@@ -367,7 +421,7 @@ SUBJECT_P = _protocol.Subject(
     spec="0003", finding=SUBJECT, table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium.graph", "veracium", "veracium.proactive", "veracium.doctor", "veracium.prompts",
                     "veracium.speaker_backstop", "veracium.schema", "veracium.ingest"),
-    import_specs=(), cells_files=(T,), kinds=("product",))
+    import_specs=(), cells_files=(T, T12), kinds=("product",))
 
 definition_sha = _protocol.definition_sha
 canonical = _protocol.canonical

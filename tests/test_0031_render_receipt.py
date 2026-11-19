@@ -244,3 +244,15 @@ def test_admit_refuses_a_subject_segment_not_at_its_place(case):
     else:
         receipt.admit("edge", record, text, "verified", annotations=[note], subject=subject)
         assert receipt.units[0]["subject"] == seg and receipt.units[0]["text"] == text
+
+
+def test_a_unit_whose_line_names_no_subject_carries_none_whatever_the_record():
+    """TT-R3-02's other half, held directly on admit(): the unit's subject is the composer's, never the record's raw
+    field, so a unit admitted with no subject carries none even when its record's subject is not the user. Through the
+    product every edge line names a non-user subject since 0012 v18.2 (N3), so this is the cell that reaches it.
+    Mutant: the record's raw subject attached when the line names none (TT3-subject-on-a-line-naming-none)."""
+    from types import SimpleNamespace
+    from veracium.trust_tools import RenderReceipt
+    receipt = RenderReceipt()
+    receipt.admit("edge", SimpleNamespace(id="e-1", subject="person:sam"), "works_on: project alpha", "grounded")
+    assert "subject" not in receipt.units[0], receipt.units[0]
