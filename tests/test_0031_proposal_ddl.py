@@ -1889,11 +1889,53 @@ _WITH_FORMS = {
     # the two stated limits, admitted by design (their witnesses keep the boundary executable):
     "a computed setattr name (the stated limit)": (_C + "    def f(self, n, c):\n        setattr(self, n, c)\n"
                                                    "        with self._probe_lock:\n            pass\n", False),
-    "a placeholder-free f-string name (the stated limit)": (
+    "a placeholder-free f-string name (counted)": (
         _C + "    def f(self, c):\n        setattr(self, f'_probe_lock', c)\n        with self._probe_lock:\n"
+        "            pass\n", True),
+    "an f-string name whose placeholder is not a literal (the stated limit)": (
+        _C + "    def f(self, c, x):\n        setattr(self, f'_probe_{x}', c)\n        with self._probe_lock:\n"
         "            pass\n", False),
-    "a namespace alias (the stated limit)": (_L + "d = globals()\nd['_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
-                                             "    pass\n", False),
+    "a concatenated name (the stated limit)": (
+        _C + "    def f(self, c):\n        setattr(self, '_probe_' + 'lock', c)\n        with self._probe_lock:\n"
+        "            pass\n", False),
+    "a class keyword named like a lock (counted)": (
+        _L + "class Base:\n    def __init_subclass__(cls, **kw):\n        pass\nclass H(Base, _PROBE_LOCK=None):\n"
+        "    pass\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a namespace alias by a literal key": (_L + "d = globals()\nd['_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
+                                           "    pass\n", True),
+    "a frame's f_globals by a literal key (inspect)": (
+        _L + "import inspect\ndef f():\n    inspect.currentframe().f_globals['_PROBE_LOCK'] = None\n"
+        "with _PROBE_LOCK:\n    pass\n", True),
+    "a frame's f_globals by a literal key (sys._getframe)": (
+        _L + "import sys\ndef f():\n    sys._getframe().f_globals['_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
+        "    pass\n", True),
+    "a plain dict store named like a lock (counted)": (_L + "cache = {}\ncache['_PROBE_LOCK'] = 1\nwith _PROBE_LOCK:\n"
+                                                       "    pass\n", True),
+    "a literal nested in a call's arguments (update with pairs)": (
+        _L + "globals().update([('_PROBE_LOCK', None)])\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a literal nested in a call's arguments (zip)": (
+        _L + "globals().update(zip(['_PROBE_LOCK'], [None]))\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a literal nested in a call's arguments (dict.update on globals())": (
+        _L + "dict.update(globals(), [('_PROBE_LOCK', None)])\nwith _PROBE_LOCK:\n    pass\n", True),
+    # research's read of the cumulative fold, F2: a placeholder-free f-string is a literal in every position, and a
+    # key's whole expression is walked as a call's arguments are
+    "an f-string subscript key on globals() (counted)": (_L + "globals()[f'_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
+                                                         "    pass\n", True),
+    "an f-string subscript key on f_globals (counted)": (
+        _L + "import sys\ndef f():\n    sys._getframe().f_globals[f'_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
+        "    pass\n", True),
+    "an f-string dict key through |= (counted)": (
+        _L + "import sys\ndef f():\n    g = sys._getframe().f_globals\n    g |= {f'_PROBE_LOCK': None}\n"
+        "with _PROBE_LOCK:\n    pass\n", True),
+    "an f-string whose placeholder is a literal (counted)": (
+        _L + "globals()[f'{\"_PROBE_LOCK\"}'] = None\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a method called on a literal key (counted)": (_L + "globals()['_PROBE_LOCK'.strip()] = None\nwith _PROBE_LOCK:\n"
+                                                   "    pass\n", True),
+    "a lock bound by setattr under an f-string name": (
+        "import threading\nclass C:\n    def f(self):\n        setattr(self, f'_probe_lock', threading.Lock())\n"
+        "        with self._probe_lock:\n            pass\n", False),
+    "a computed subscript key (the stated limit)": (_L + "def f(d, k):\n    d[k] = None\nwith _PROBE_LOCK:\n"
+                                                    "    pass\n", False),
     "a helper call (the stated limit)": ("def f(store):\n    with store.connection():\n        pass\n", False),
     **({"a type parameter rebinds a lock": (_L + "def f[_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
         "a ParamSpec rebinds a lock": (_L + "def f[**_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
@@ -1951,6 +1993,7 @@ _BINDING_WITNESSES = {
     **{f"{n}.type_comment": ["a u-string and comments beside a lock"]
        for n in ("Assign", "For", "AsyncFor", "With", "AsyncWith", "FunctionDef", "AsyncFunctionDef", "arg")},
     "Subscript.ctx": ["a lock name bound through globals()", "a lock name bound through __dict__",
+                      "an f-string subscript key on globals() (counted)", "a method called on a literal key (counted)",
                       "a del through globals()", "a lock stored through globals()", "a lock read elsewhere",
                       "vars().setdefault by a literal", "operator.setitem on globals()",
                       "a __dict__ |= by a literal key"],
@@ -1959,16 +2002,22 @@ _BINDING_WITNESSES = {
 }
 
 _NAMESPACE_WITNESSES = {
-    "a literal identifier passed to any call": [
+    "a literal identifier anywhere in a call's arguments": [
         "a lock name bound by setattr", "builtins.setattr by a literal name", "an aliased setattr by a literal name",
         "delattr by a literal name", "object.__delattr__ by a literal name", "operator.setitem on globals()",
-        "vars().setdefault by a literal", "a literal name read by getattr (counted)"],
+        "vars().setdefault by a literal", "a literal name read by getattr (counted)",
+        "a literal nested in a call's arguments (update with pairs)", "a literal nested in a call's arguments (zip)",
+        "a literal nested in a call's arguments (dict.update on globals())",
+        "a placeholder-free f-string name (counted)"],
+    "a class statement's bases and keywords": ["a class keyword named like a lock (counted)"],
     "setattr/__setattr__ by a literal name with a Lock()/RLock() value": ["a fresh lock bound by setattr",
+                                                                          "a lock bound by setattr under an f-string name",
                                                                           "a lock name bound by object.__setattr__",
                                                                           "a lock name bound by a bound __setattr__"],
     "a keyword name of any call": ["a keyword name binds (dict(...))", "a keyword name binds (SimpleNamespace)",
                                    "globals().update by a keyword"],
-    "an identifier-shaped dict-literal key": ["a dict-literal key binds (type(...))", "a __dict__ |= by a literal key"],
+    "an identifier-shaped dict-literal key": ["a dict-literal key binds (type(...))", "a __dict__ |= by a literal key",
+                                              "an f-string dict key through |= (counted)"],
     "a literal-key subscript of globals()/vars()/locals()/__dict__": [
         "a lock name bound through globals()", "a lock name bound through __dict__", "a del through globals()",
         "a lock stored through globals()", "a lock read elsewhere"],
@@ -1982,11 +2031,17 @@ _NAMESPACE_WITNESSES = {
         "an import under a lock constructor's name (refuses every lock name)", "threading imported under an alias",
         "a from-imported RLock"],
     "a star import": ["a star import (refuses every lock name)"],
-    "a literal identifier string anywhere else (a tuple, an assignment, __slots__)": [
+    "a literal identifier string anywhere else (outside every call's arguments: a tuple or list assigned, "
+    "__slots__)": [
         "a lock name in __slots__", "a lock name as a plain string (not a binding)"],
+    "a literal-key subscript store or delete on any other receiver": [
+        "a namespace alias by a literal key", "a frame's f_globals by a literal key (inspect)",
+        "a frame's f_globals by a literal key (sys._getframe)", "a plain dict store named like a lock (counted)",
+        "an f-string subscript key on f_globals (counted)", "an f-string whose placeholder is a literal (counted)"],
     "a COMPUTED name (stated limit)": ["a computed setattr name (the stated limit)",
-                                       "a namespace alias (the stated limit)",
-                                       "a placeholder-free f-string name (the stated limit)"],
+                                       "a computed subscript key (the stated limit)",
+                                       "an f-string name whose placeholder is not a literal (the stated limit)",
+                                       "a concatenated name (the stated limit)"],
     "a helper call returning the connection (stated limit)": ["a helper call (the stated limit)"],
 }
 
@@ -2061,6 +2116,13 @@ _ESCAPES = {        # (module text before the honest owner, lines inside run() b
                      "        return self.c\n", "    h = Holder(store._conn)\n", "h._lock"),
     "lock_constructor_rebound": ("", "    threading.Lock = lambda: store._conn\n    my_lock = threading.Lock()\n",
                                  "my_lock"),
+    # research's stage 2 at c9a3881f: a frame's globals by a literal key (rebinding the module global the item names)
+    "frame_globals": ("import inspect\n_lock = threading.Lock()\n",
+                      "    inspect.currentframe().f_globals['_lock'] = store._conn\n", "_lock"),
+    # research's read of the f_globals fold, F1: a literal nested inside a call's arguments
+    "nested_literal": ("_lock = threading.Lock()\n", "    globals().update([('_lock', store._conn)])\n", "_lock"),
+    # its read of the cumulative fold, F2: a placeholder-free f-string as a subscript key
+    "fstring_key": ("_lock = threading.Lock()\n", "    globals()[f'_lock'] = store._conn\n", "_lock"),
 }
 
 
@@ -2073,7 +2135,9 @@ def _escape_source(pre, binding, item):
 
 @pytest.mark.parametrize("case", sorted(_ESCAPES))
 def test_each_refused_escape_is_refused_and_is_a_real_unrecorded_write(case, tmp_path):
-    """TT-R6-01's consequence controls: the reviewer's four families and research's eight (stage-1 read of the fold),
+    """TT-R6-01's consequence controls: the reviewer's four families, research's eight (stage-1 read of the fold) and
+    its frame-globals family (stage 2 at c9a3881f), nested-literal family (its read of that fold, F1) and f-string-key
+    family (F2),
     each refused standalone and added to the complete tree, while the honest lock alone is admitted; then executed
     bypassing the census, each commits a durable write the trust phase cell never records. The lock-constructor
     family rebinds threading.Lock in this process, restored before the test ends."""
