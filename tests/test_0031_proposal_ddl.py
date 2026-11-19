@@ -1624,6 +1624,10 @@ _FREE_NAME_NEIGHBOURS = {
     "exec of a binding": "exec('su' + 'per = object')\n",
     "a string naming super": "NAME = 'super'\n",
     "the cell global bound in a function": "def _f():\n    global _TRUST_COMMITS\n    _TRUST_COMMITS = None\n",
+    # v23.6's list, adopted for round 6 (its adoption check 1: every form refuses on the fixture as in the tree)
+    "bool augmented": "bool += 0\n",
+    "super captured by a match pattern": "match 1:\n    case super:\n        pass\n",
+    "Exception as a type parameter": "def _g[Exception]():\n    return None\n",
 }
 
 

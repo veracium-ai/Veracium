@@ -1132,11 +1132,14 @@ def _bindings_of(tree, names) -> list:
 
 
 def _free_name_problem(tree):
-    """Rule 4: in the carve-out's file, the builtins the canonical body reads are never bound or named, and each
-    module global it reads is bound exactly once by one module-level assignment statement of a value (chained targets
-    included; an annotation alone binds nothing: round 5, TT-R5-N1). Rule 4 fixes THAT the global is assigned once at
-    module level; it does not judge the value (`None`, or the ContextVar class, is admitted), which every writing
-    commit exercises (research's stage-1 limit on the TT-R5-N1 fix). None when the file holds; else
+    """Rule 4 (0031 §4b-ii, v23.6): in the carve-out's file, a builtin the canonical body reads is never bound or named,
+    and each module global it reads is bound or named exactly once, by one module-level assignment statement of a value
+    with the name itself among its targets (a chained or an annotated assignment included; an annotation alone binds
+    nothing, and neither an unpacking target nor an assignment inside a branch is one). To bind or name is any form
+    `_bindings_of` reads: assigning, augmenting or deleting, importing, a def or a class, a parameter, an except target,
+    a `global` or `nonlocal` declaration, an attribute target, a match capture, a type parameter, or a string literal
+    whose value is the name. The value given is not judged (`None`, or the ContextVar class, is admitted; research's
+    stage-1 limit), and every writing commit exercises it. None when the file holds; else
     the first reason. A binding by a COMPUTED name (`globals()`, `locals()` or `vars()` keyed by a non-literal,
     `setattr` on the module, `exec`/`eval`) is refused by this census's round-11 and round-12 rungs before this rule
     runs, so this rule needs no list of its own (a check of its own was unkillable: stage-2 mutants, 2026-11-17)."""
@@ -1169,9 +1172,10 @@ def _factory_subclass(tree, parent, node, rel=None):
       3. its BODY, the class docstring removed, is `CONNECTION_SUBCLASS_BODY` by `ast.dump` equality, statement for
          statement, both parsed by the running interpreter;
       4. what that body's free names mean is fixed by the file: the builtins it reads (`super`, `Exception`, `bool`)
-         are never bound or named anywhere in it, each global it reads (`_TRUST_COMMITS`) is bound exactly once by
-         one module-level assignment statement of a value (`_free_name_problem`; an annotation alone binds nothing,
-         TT-R5-N1; the value itself is not judged; a binding by a computed name is refused by the
+         are never bound or named anywhere in it, each global it reads (`_TRUST_COMMITS`) is bound or named exactly
+         once, by one module-level assignment statement of a value with the name among its targets (v23.6;
+         `_free_name_problem` states the forms; an annotation alone binds nothing, TT-R5-N1; the value itself is not
+         judged; a binding by a computed name is refused by the
          round-11 and round-12 rungs)."""
     cls = parent.get(node)
     if not (isinstance(cls, ast.ClassDef) and node in cls.bases):
