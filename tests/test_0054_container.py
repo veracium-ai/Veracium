@@ -148,3 +148,15 @@ def test_only_the_hand_run_release_workflow_can_push_an_image():
     assert "already exists; a fix is a new version" in rtext            # §4a.3, never re-pushed
     assert rtext.index("check_image.py check") < rtext.index("docker push")   # gated before pushed
     assert 'test "$gated" = "$pulled"' in rtext                        # the pushed image is the gated one
+
+
+def test_the_registry_label_names_the_server_json_server():
+    """The MCP Registry accepts an OCI package only from an image labelled with the server's registry name
+    (`io.modelcontextprotocol.server.name`), and that name must equal server.json's `name` (2026-11-19, the 0.33.0
+    registry ruling: "PyPI entry now, OCI later"). One carrier each; the label is read from the Dockerfile's LABEL
+    instruction, the name from server.json, and they must be equal, so a rename of either fails here."""
+    import json
+    import re
+    name = json.loads((C.parent / "server.json").read_text())["name"]
+    labels = re.findall(r'io\.modelcontextprotocol\.server\.name="([^"]+)"', DOCKERFILE)
+    assert labels == [name], (labels, name)

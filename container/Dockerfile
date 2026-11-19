@@ -47,6 +47,7 @@ RUN python -c "import sys; from veracium.store.schema_version import runtime_sta
 
 LABEL org.opencontainers.image.source="https://github.com/veracium-ai/Veracium" \
       org.opencontainers.image.description="Veracium: provenance-aware memory for AI agents, as an MCP stdio server (specs/0054)" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="MIT" \
+      io.modelcontextprotocol.server.name="io.github.veracium-ai/veracium"
 VOLUME ["/data"]
 ENTRYPOINT ["veracium-mcp"]
