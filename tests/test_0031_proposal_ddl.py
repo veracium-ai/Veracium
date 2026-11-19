@@ -1712,3 +1712,65 @@ def test_the_real_tree_has_exactly_its_one_factory_subclass_and_no_tree_problem(
     assert factory_subclass_problems(sources) == []
     assert {rel: n for rel, src in sources.items() if (n := factory_subclass_names(src, rel))} == \
         {"store/sqlite.py": {"_PhaseConnection"}}
+
+
+#: N2 (research's stage 2 on f25ff044; the rung's shape from research's stage 1 on 66bbb0a1): the `with` surface. Each
+#: form is ADDED as one more file of the real tree; True = refused. `with conn:` on the factory subclass commits
+#: without its overridden commit(), so any with-item that could be a connection refuses; a lock is admitted only when
+#: EVERY binding of its name (or attribute name) in src/ is a threading.Lock()/RLock() call.
+_WITH_FORMS = {
+    "with conn": ("import sqlite3\nconn = sqlite3.connect('x.db')\nwith conn:\n    pass\n", True),
+    "with self._conn": ("class A:\n    def f(self):\n        with self._conn:\n            pass\n", True),
+    "with store._conn": ("def f(store):\n    with store._conn:\n        pass\n", True),
+    "an alias, then with": ("def f(store):\n    c = store._conn\n    with c:\n        pass\n", True),
+    "a parenthesised item": ("def f(c):\n    with (c):\n        pass\n", True),
+    "async with": ("async def f(c):\n    async with c:\n        pass\n", True),
+    "the connection as the second item": (
+        "import threading\n_PROBE_LOCK = threading.Lock()\ndef f(c):\n    with _PROBE_LOCK, c:\n        pass\n", True),
+    "an IfExp with a connection branch": (
+        "import threading\n_PROBE_LOCK = threading.Lock()\ndef f(c, x):\n    with (_PROBE_LOCK if x else c):\n"
+        "        pass\n", True),
+    "with sqlite3.connect(...)": ("import sqlite3\nwith sqlite3.connect('x.db'):\n    pass\n", True),
+    "with an aliased connect(...)": ("from sqlite3 import connect as cx\nwith cx('x.db'):\n    pass\n", True),
+    "a lock name bound to a connection": (
+        "import sqlite3\nclass B:\n    def __init__(self):\n        self._lock = sqlite3.connect('x.db')\n", True),
+    "a lock name rebound by a for target": ("for _REGISTRY_LOCK in ():\n    pass\n", True),
+    "a lock name in a tuple target": ("import threading\n_REGISTRY_LOCK, _spare = threading.Lock()\n", True),
+    "closing(sqlite3.connect(...))": (
+        "import contextlib, sqlite3\nwith contextlib.closing(sqlite3.connect('x.db')):\n    pass\n", False),
+    "a from-imported RLock": ("from threading import RLock as R\n_PROBE_LOCK = R()\nwith _PROBE_LOCK:\n    pass\n", False),
+    "an IfExp of two calls": ("import contextlib\ndef f(x):\n    with (contextlib.nullcontext() if x else "
+                              "contextlib.nullcontext()):\n        pass\n", False),
+}
+
+
+@pytest.mark.parametrize("case", sorted(_WITH_FORMS))
+def test_the_with_surface_admits_calls_and_locks_and_refuses_a_possible_connection(case):
+    """N2: each form, added to the complete real tree as one more file, is refused or admitted as tabled; the
+    unmodified tree has no problem first. A refusal names the probe file, except where the form rebinds a lock name
+    the real tree uses, which refuses at the real tree's own `with` sites."""
+    from connection_census import with_item_problems
+    real = _real_sources()
+    assert with_item_problems(real) == []
+    form, refused = _WITH_FORMS[case]
+    problems = with_item_problems({**real, "zz_with_probe.py": form})
+    assert bool(problems) is refused, (case, problems)
+    if refused and "lock name" not in case:
+        assert all(p.startswith("zz_with_probe.py:") for p in problems), problems
+
+
+def test_the_real_trees_with_items_are_calls_and_locks_only():
+    """N2 on the real tree: 280 calls, one IfExp of two calls (__init__.py), and 71 lock items (self._lock 48,
+    self._usage_lock 7, _REGISTRY_LOCK 6, store._lock 4, _TRACE_LOCK 3, mem._usage_lock 2, s._lock 1 at 66bbb0a1),
+    with no problem. The counts are re-measured here, so a new with-item is seen, never assumed."""
+    import ast
+    import collections
+    from connection_census import with_item_problems
+    real = _real_sources()
+    kinds = collections.Counter()
+    for src in real.values():
+        for n in ast.walk(ast.parse(src)):
+            if isinstance(n, (ast.With, ast.AsyncWith)):
+                kinds.update(type(i.context_expr).__name__ for i in n.items)
+    assert set(kinds) <= {"Call", "IfExp", "Name", "Attribute"}, kinds
+    assert with_item_problems(real) == []

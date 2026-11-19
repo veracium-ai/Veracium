@@ -24,6 +24,18 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     blessed call still opens, and is still counted. `_factory_subclass`
     states the rule; `factory_subclass_problems` holds it across the tree
     (one such class, its name in no other file);
+  * the `with` surface (research's stage 2 on f25ff044, N2; stage 1 on
+    66bbb0a1): `with conn:` on the factory subclass commits WITHOUT calling
+    its overridden `commit()` (CPython 3.14.7), so a writer ending a
+    transaction that way escapes the commit-phase record. This census has no
+    facts about where an opened connection flows, so the rung is a POSITIVE
+    surface, not a dataflow rule: every `with`/`async with` item in src/ is a
+    call (never a `sqlite3.connect(...)` call itself;
+    `contextlib.closing(sqlite3.connect(...))` stays legal), an `IfExp` judged
+    by its branches, or a name or attribute that EVERY binding in src/
+    assigns a `threading.Lock()`/`RLock()` (so `self._lock = conn` cannot
+    launder one). `with_item_problems` holds it across the tree. The limit,
+    stated: a helper CALL that returns the connection is outside the rung;
   * every other attribute of `sqlite3` must be in ALLOWED_ATTRS (exception
     classes, Row/Binary, version constants) or it REFUSES — unknown names
     (dbapi2 included) are refused-until-classified, never waved through;
@@ -1205,6 +1217,119 @@ def factory_subclass_names(source, rel=None) -> set:
             if name is not None and why is None:
                 out.add(name)
     return out
+
+
+_LOCK_FACTORIES = frozenset({"Lock", "RLock"})
+
+
+def _threading_names(tree):
+    """(module aliases of `threading`, local names bound by `from threading import Lock/RLock`) in one source."""
+    mods, locals_ = set(), set()
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            mods.update(a.asname or a.name for a in n.names if a.name == "threading")
+        elif isinstance(n, ast.ImportFrom) and n.module == "threading" and not n.level:
+            locals_.update(a.asname or a.name for a in n.names if a.name in _LOCK_FACTORIES)
+    return mods, locals_
+
+
+def _is_lock_call(value, mods, locals_) -> bool:
+    if not isinstance(value, ast.Call):
+        return False
+    f = value.func
+    return ((isinstance(f, ast.Attribute) and f.attr in _LOCK_FACTORIES and isinstance(f.value, ast.Name)
+             and f.value.id in mods) or (isinstance(f, ast.Name) and f.id in locals_))
+
+
+def _binding_key(target):
+    """The key a with-item's name or attribute is classified by: a bare name by its id, an attribute by its
+    attribute name whatever the receiver (`self._lock`, `store._lock` and `s._lock` share one key, so a binding of
+    any of them anywhere in src/ counts for all)."""
+    if isinstance(target, ast.Name):
+        return ("name", target.id)
+    if isinstance(target, ast.Attribute):
+        return ("attr", target.attr)
+    return None
+
+
+def _is_sqlite_connect(call, sq_mods, sq_connects) -> bool:
+    f = call.func
+    return ((isinstance(f, ast.Attribute) and f.attr == "connect" and isinstance(f.value, ast.Name)
+             and f.value.id in sq_mods) or (isinstance(f, ast.Name) and f.id in sq_connects))
+
+
+def with_item_problems(sources: dict) -> list:
+    """The `with` surface across the tree (N2; see the module docstring): `[REFUSED: ...]` lines, empty when every
+    `with`/`async with` item in every source is a call other than `sqlite3.connect(...)`, an IfExp whose branches
+    each pass, or a name or attribute whose EVERY binding in the tree is a `threading.Lock()`/`RLock()` call. A
+    binding is any assignment, augmented or annotated assignment, `for`/`with`/except target, walrus, import, def,
+    class, parameter or `del` of that name, or any store to that attribute name on any receiver."""
+    trees = {rel: ast.parse(src) for rel, src in sources.items()}
+    lock_ok: dict = {}
+
+    def record(key, is_lock):
+        if key is not None:
+            lock_ok[key] = lock_ok.get(key, True) and is_lock
+    for rel, tree in trees.items():
+        mods, locals_ = _threading_names(tree)
+        by_statement = set()            # ids of the targets an Assign/AnnAssign records (below), never re-recorded
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Assign):
+                for tg in n.targets:
+                    for x in ast.walk(tg):
+                        if isinstance(x, (ast.Name, ast.Attribute)) and isinstance(x.ctx, ast.Store):
+                            by_statement.add(id(x))
+            elif isinstance(n, ast.AnnAssign):
+                by_statement.add(id(n.target))
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Assign):
+                for tg in n.targets:
+                    for x in ast.walk(tg):
+                        if isinstance(x, (ast.Name, ast.Attribute)) and isinstance(x.ctx, ast.Store):
+                            record(_binding_key(x), tg is x and _is_lock_call(n.value, mods, locals_))
+            elif isinstance(n, ast.AnnAssign):
+                record(_binding_key(n.target), n.value is not None and _is_lock_call(n.value, mods, locals_))
+            elif isinstance(n, (ast.Name, ast.Attribute)) and isinstance(n.ctx, (ast.Store, ast.Del)):
+                # every other store or delete (AugAssign, for/with/comprehension targets, walrus, del) is a non-lock
+                # binding
+                if id(n) not in by_statement:
+                    record(_binding_key(n), False)
+            elif isinstance(n, ast.arg):
+                record(("name", n.arg), False)
+            elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                record(("name", n.name), False)
+            elif isinstance(n, (ast.Import, ast.ImportFrom)):
+                for a in n.names:
+                    record(("name", (a.asname or a.name).split(".")[0]), False)
+            elif isinstance(n, ast.ExceptHandler) and n.name:
+                record(("name", n.name), False)
+    problems = []
+    for rel, tree in sorted(trees.items()):
+        sq_mods = {a.asname or a.name for n in ast.walk(tree) if isinstance(n, ast.Import)
+                   for a in n.names if a.name == "sqlite3"}
+        sq_connects = {a.asname or a.name for n in ast.walk(tree)
+                       if isinstance(n, ast.ImportFrom) and n.module == "sqlite3" and not n.level
+                       for a in n.names if a.name == "connect"}
+
+        def judge(e):
+            if isinstance(e, ast.Call):
+                return None if not _is_sqlite_connect(e, sq_mods, sq_connects) else "a sqlite3.connect(...) call"
+            if isinstance(e, ast.IfExp):
+                return judge(e.body) or judge(e.orelse)
+            key = _binding_key(e)
+            if key is None:
+                return f"a {type(e).__name__} expression"
+            if not lock_ok.get(key, False):
+                return f"`{ast.unparse(e)}`, not bound only to threading.Lock()/RLock() in src/"
+            return None
+        for n in ast.walk(tree):
+            if isinstance(n, (ast.With, ast.AsyncWith)):
+                for item in n.items:
+                    why = judge(item.context_expr)
+                    if why:
+                        problems.append(f"{rel}:{n.lineno} [REFUSED: a with item that is {why}: it could end a "
+                                        f"transaction past the commit-phase record (0031 §4b-ii, N2)]")
+    return problems
 
 
 def factory_subclass_problems(sources: dict) -> list:
