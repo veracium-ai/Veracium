@@ -47,10 +47,17 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     dict-literal key or in a subscript store's key, and a keyword name, binds
     (setattr/__setattr__ with a
     Lock()/RLock() value the one lock-capable call); an annotation alone in a
-    class body is a field and binds, at module or function level it binds
-    nothing, and `global`/`nonlocal` bind nothing. Three tree-wide refusals: a
-    star import refuses every name and attribute item; a binding of
-    `__getattr__`/`__getattribute__` refuses every attribute item; a binding of
+    class body, under any statement container in it too (TT-R7-01), is a
+    field and binds, at module or function level it binds nothing, and
+    `global`/`nonlocal` bind nothing. v23.7.2: in those literal positions a
+    string of identifiers separated by commas or whitespace binds each token
+    (namedtuple's and Enum's field grammar; in a call's or class statement's
+    arguments every identifier token, rename=True binding the rest), and
+    every literal identifier in
+    a value assigned to `_fields_` binds (ctypes' fields). Three tree-wide
+    refusals: a star import refuses every name and attribute item; a binding
+    of `__getattr__`/`__getattribute__`, an import included (TT-R7-02),
+    refuses every attribute item; a binding of
     `threading`, `Lock`, `RLock` or their import aliases other than the import
     refuses every name and attribute item. `with_item_problems` holds it across
     the tree. The limits, stated: a helper CALL that returns the connection
@@ -58,7 +65,11 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     name (a name reaching a binding call or subscript through a variable or
     any non-literal expression, an f-string whose placeholder is not a
     literal, a concatenation or a computed key included; a custom
-    `__setattr__` storing under the name it is given; exec/eval). A
+    `__setattr__` storing under the name it is given; exec/eval; a field
+    name reaching `_fields_` or a field-name string through a variable or
+    any non-literal expression (a helper's return, a string method);
+    `_fields_` bound by a for, with or match target; a name a library derives
+    from data, argparse's '--review-lock' becoming review_lock). A
     subscript store on ANY receiver binds every literal identifier in its key
     (a frame's f_globals and a namespace alias included);
   * every other attribute of `sqlite3` must be in ALLOWED_ATTRS (exception
@@ -1360,20 +1371,58 @@ NAMESPACE_FORMS = {
                                                                      "method called on a literal: an "
                                                                      "over-approximation)",
     "an annotation alone in a class body": "a non-lock binding (a dataclass/NamedTuple field the generated __init__ "
-                                           "binds); at module or function level it binds nothing",
+                                           "binds), under any statement container in the body too (if, try, with, "
+                                           "for, while, match: the nearest enclosing scope is the class, TT-R7-01); "
+                                           "at module or function level it binds nothing",
     "a binding of __getattr__/__getattribute__": "refuses every attribute item: a class answers attributes it never "
-                                                 "bound",
+                                                 "bound; every binding counts, an import included (TT-R7-02)",
     "a binding of threading/Lock/RLock or their import aliases, other than the import": "refuses every name and "
                                                                                         "attribute item: no Lock() "
                                                                                         "call can be trusted",
     "a star import": "refuses every name and attribute item (as alias.name `*`)",
+    "a string literal of identifiers separated by commas or whitespace": "v23.7.2 rule (a): wherever a literal "
+                                                                         "identifier is counted (a call's arguments, a "
+                                                                         "class statement's bases and keyword values, "
+                                                                         "a dict-literal key, a subscript key), each "
+                                                                         "token of s.replace(',', ' ').split() is a "
+                                                                         "non-lock binding when every token is an "
+                                                                         "identifier: the field names a generated "
+                                                                         "class takes as data (namedtuple('H', "
+                                                                         "'x review_lock'), Enum's functional API); "
+                                                                         "in a call's arguments and a class "
+                                                                         "statement's bases and keyword values, EVERY "
+                                                                         "identifier token counts whatever the others "
+                                                                         "are (namedtuple's rename=True renames the "
+                                                                         "rest, and rename can arrive by a keyword, "
+                                                                         "**, functools.partial, a wrapper or "
+                                                                         "__init_subclass__); in a dict-literal or "
+                                                                         "subscript key only when every token is one; "
+                                                                         "the exact lock-capable forms bind only a "
+                                                                         "whole identifier. An over-approximation, "
+                                                                         "stated: any call-argument string with an "
+                                                                         "identifier token naming a with-item counts "
+                                                                         "(print('waiting for _lock'), "
+                                                                         "log('review_lock acquired.')), and one "
+                                                                         "holding __getattr__ as a token trips the "
+                                                                         "hook refusal",
+    "an assignment to `_fields_`": "v23.7.2 rule (b): every literal identifier anywhere in the value is a non-lock "
+                                   "binding (ctypes' Structure/Union initializer binds each field it names), on a "
+                                   "Name, an Attribute or a literal-key subscript target, in a class body or after "
+                                   "it, by an assignment, a valued annotation, an augmented assignment or a walrus",
     "a literal identifier string anywhere else (outside every call's arguments: a tuple or list assigned, "
-    "__slots__)": "not a binding; if it reaches a binding call later through a variable, that is a COMPUTED name",
+    "__slots__)": "not a binding (`__slots__` and `__match_args__` bind nothing alone; `_fields_` is rule (b)); if it "
+                  "reaches a binding call later through a variable, that is a COMPUTED name",
     "a COMPUTED name (stated limit)": "outside the rung: a name reaching a binding call or subscript through a "
                                       "variable or any non-literal expression (an f-string whose placeholder is "
                                       "not a literal, a concatenation or a computed key included; a placeholder-free "
                                       "f-string is a literal in every position and binds), a custom __setattr__ "
-                                      "storing under the name it is given, exec/eval",
+                                      "storing under the name it is given, exec/eval; a field name reaching `_fields_` "
+                                      "or a field-name string through a variable or any non-literal expression (F = "
+                                      "'x review_lock' then namedtuple('H', F); _fields_ = F; a helper's return, "
+                                      "_fields_ = _mk(); a string method, 'X REVIEW_LOCK'.lower() or "
+                                      "'x review-lock'.replace('-', '_')), `_fields_` bound by a for, with or match "
+                                      "target, and a name a library DERIVES from data (argparse's '--review-lock' "
+                                      "becomes review_lock)",
     "a helper call returning the connection (stated limit)": "outside the rung: the item is a call",
 }
 
@@ -1381,6 +1430,20 @@ def _is_namespace_expr(e) -> bool:
     """`globals()`, `vars(...)`, `locals()` or `X.__dict__`: a namespace a literal string key can bind through."""
     return ((isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id in ("globals", "vars", "locals"))
             or (isinstance(e, ast.Attribute) and e.attr == "__dict__"))
+
+
+#: TT-R7-01 (round 7): the nodes that open a scope. A valueless annotation is a field when the NEAREST of them above it
+#: is a class, through any statement container between (if/elif/else, try/except/else/finally, try*, with, for/else,
+#: while/else, match/case): the annotation's immediate parent is only the innermost container.
+_SCOPE_NODES = (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
+
+
+def _enclosing_scope(node, parent):
+    """The nearest scope-opening node above `node` (`_SCOPE_NODES`), climbing through every statement container."""
+    p = parent.get(node)
+    while p is not None and not isinstance(p, _SCOPE_NODES):
+        p = parent.get(p)
+    return p
 
 
 def _is_sqlite_connect(call, sq_mods, sq_connects) -> bool:
@@ -1400,30 +1463,44 @@ def with_item_problems(sources: dict) -> list:
       - every `Name`/`Attribute` in a Store or Del context, on any receiver; only a direct assignment target (or a
         valued annotation) whose value is a Lock()/RLock() call is a lock binding;
       - every string-field binder (`STRING_FIELD_BINDERS`) and every import alias: non-lock;
-      - an annotation without a value IN A CLASS BODY (a dataclass/NamedTuple field the generated __init__ binds):
-        non-lock; at module or function level it binds nothing (rule 4's TT-R5-N1 holding);
+      - an annotation without a value IN A CLASS BODY (a dataclass/NamedTuple field the generated __init__ binds),
+        under any statement container in the body (its nearest enclosing scope is the class: TT-R7-01): non-lock;
+        at module or function level it binds nothing (rule 4's TT-R5-N1 holding);
       - a literal identifier (a str literal or a placeholder-free f-string) ANYWHERE in a call's arguments
         (positional or keyword value, inside a container or a nested call included) or in a dict-literal key, and a
         keyword name: non-lock (setattr however spelled,
         SimpleNamespace(_lock=...), type('H', (), {'_lock': ...}), globals().update([('_lock', ...)]),
         operator.setitem), except `setattr(o, "n", Lock())`/`o.__setattr__("n", Lock())`, a lock;
+      - v23.7.2 rule (a): in each of those positions, a string literal of identifiers separated by commas or whitespace
+        (namedtuple's and Enum's field grammar, `namedtuple('H', 'x review_lock')`) binds each token, non-lock, when
+        every token is an identifier, and in a call's arguments and a class statement's bases and keyword values every
+        identifier token whatever the others are (namedtuple's rename=True, which can arrive from anywhere) -- an
+        over-approximation, stated (a message naming a with-item in a call counts); v23.7.2 rule
+        (b): every literal identifier anywhere in a value assigned to `_fields_` (ctypes' Structure/Union fields) is a
+        non-lock binding, on a Name, an Attribute or a literal-key subscript target, by an assignment, a valued
+        annotation, an augmented assignment or a walrus, in a class body or after it (a for, with or match target is
+        the stated limit below);
       - a subscript store or delete binds every literal identifier anywhere in its key: on
         globals()/vars()/locals()/__dict__ with the literal as the whole key a store is a lock only for a Lock() value;
         on ANY other receiver (a frame's f_globals, a namespace alias, any mapping) never a lock; a read binds nothing;
       - tree-wide refusals: a star import (names its AST does not carry) refuses every name and attribute item; a
-        binding of `__getattr__`/`__getattribute__` (a class answering attributes it never bound) refuses every
-        attribute item; a binding of `threading`, `Lock`, `RLock` or their import aliases other than the import
+        binding of `__getattr__`/`__getattribute__` (a class answering attributes it never bound), an import
+        included (TT-R7-02), refuses every attribute item; a binding of `threading`, `Lock`, `RLock` or their import aliases other than the import
         itself refuses every name and attribute item (no Lock() call can then be trusted);
       - NOT bindings: `global`/`nonlocal` (declarations; the binding they redirect is counted, the key being
         scope-blind), and a literal identifier string outside every call's arguments (a tuple or list assigned,
-        `__slots__`).
+        `__slots__`), but in a value assigned to `_fields_` (rule (b)).
     The stated limits stay: a helper CALL that returns the connection (getattr included), and a binding whose name is
     COMPUTED (a name reaching a binding call or subscript through a variable or any non-literal expression, an f-string
     whose placeholder is not a literal, a concatenation or a computed key included; a custom `__setattr__` storing
-    under the name it is given; exec/eval)."""
+    under the name it is given; exec/eval; a field name reaching `_fields_` or a field-name string through a variable
+    or any non-literal expression (a helper's return, a string method); `_fields_` bound by a for, with or match
+    target; a name a library derives from data, argparse's '--review-lock'
+    becoming review_lock)."""
     trees = {rel: ast.parse(src) for rel, src in sources.items()}
     lock_ok: dict = {}
     non_import: dict = {}               # identifier -> its first binding site other than an import of the real thing
+    bound_any: dict = {}                # identifier -> its first binding site, imports included (TT-R7-02: the hooks)
     star_imports = []
     ctor_ids = {"threading", *_LOCK_FACTORIES}
     for tree in trees.values():
@@ -1433,28 +1510,59 @@ def with_item_problems(sources: dict) -> list:
     def record(key, is_lock, site, genuine_import=False):
         if key is not None:
             lock_ok[key] = lock_ok.get(key, True) and is_lock
+            bound_any.setdefault(key, site)
             if not genuine_import:
                 non_import.setdefault(key, site)
 
-    def literal_ident(e):
-        """The identifier a node spells LITERALLY: a str Constant, or a placeholder-free f-string (research's read of the
+    def literal_str(e):
+        """The string a node spells LITERALLY: a str Constant, or a placeholder-free f-string (research's read of the
         cumulative fold, F2: the f-string is a literal in every position, not only inside a call's arguments)."""
         if isinstance(e, ast.Constant) and isinstance(e.value, str):
-            s = e.value
-        elif isinstance(e, ast.JoinedStr) and all(isinstance(v, ast.Constant) and isinstance(v.value, str)
-                                                  for v in e.values):
-            s = "".join(v.value for v in e.values)
-        else:
-            return None
-        return s if s.isidentifier() else None
+            return e.value
+        if isinstance(e, ast.JoinedStr) and all(isinstance(v, ast.Constant) and isinstance(v.value, str)
+                                                for v in e.values):
+            return "".join(v.value for v in e.values)
+        return None
 
-    def walk_literals(e, skip=()):
+    def literal_ident(e):
+        """The identifier a literal spells WHOLE: the only name the exact lock-capable forms (setattr/__setattr__'s
+        name, a namespace store's whole key) can bind; a string such as "x review_lock" there names an attribute no
+        attribute item can spell, and the walk below counts its tokens as non-lock bindings instead."""
+        s = literal_str(e)
+        return s if s is not None and s.isidentifier() else None
+
+    def literal_tokens(e, in_call=False):
+        """v23.7.2 rule (a), research's stage-1 read of the round-7 verdict, item 4: the identifiers a literal spells as
+        DATA for a generated class, by namedtuple's and Enum's own field grammar (`s.replace(',', ' ').split()`); a
+        whole identifier is its own one token. In a call's arguments, a class statement's bases and keyword values
+        included (the arguments of its metaclass call), EVERY identifier token counts whatever the others are:
+        namedtuple(..., rename=True) renames the tokens that are not identifiers and binds the rest, and `rename` can
+        reach it from anywhere (a keyword, a ** argument, functools.partial, a wrapper, __init_subclass__: research's
+        reads of the round-8 fold, F1 and its class). In a dict-literal key or a subscript key, which binds the whole
+        string, the tokens count only when every one is an identifier."""
+        s = literal_str(e)
+        if s is None:
+            return []
+        toks = s.replace(",", " ").split()
+        if in_call:
+            return [tok for tok in toks if tok.isidentifier()]
+        return toks if toks and all(tok.isidentifier() for tok in toks) else []
+
+    def walk_literals(e, skip=(), in_call=False):
         """Every identifier spelled literally anywhere in an expression (a container, a nested call, an f-string's
-        literal parts and a method call's receiver included), but inside `skip`."""
+        literal parts and a method call's receiver included), a field-name string's tokens included (rule (a)), but
+        inside `skip`."""
         for x in ast.walk(e):
-            s = None if id(x) in skip else literal_ident(x)
-            if s:
-                yield s
+            if id(x) not in skip:
+                yield from literal_tokens(x, in_call)
+
+    def names_fields(x):
+        """A store target naming `_fields_`: a Name, an Attribute, or a subscript whose key is the literal `_fields_`
+        (`vars()['_fields_']` in a class body writes the class namespace) — v23.7.2 rule (b)."""
+        return (isinstance(getattr(x, "ctx", None), ast.Store)
+                and ((isinstance(x, ast.Name) and x.id == "_fields_")
+                     or (isinstance(x, ast.Attribute) and x.attr == "_fields_")
+                     or (isinstance(x, ast.Subscript) and literal_ident(x.slice) == "_fields_")))
     for rel, tree in trees.items():
         mods, locals_ = _threading_names(tree)
         parent = {c: p for p in ast.walk(tree) for c in ast.iter_child_nodes(p)}
@@ -1480,7 +1588,9 @@ def with_item_problems(sources: dict) -> list:
             elif isinstance(n, ast.AnnAssign):
                 if n.value is not None:
                     record(_binding_key(n.target), _is_lock_call(n.value, mods, locals_), site)
-                elif isinstance(parent.get(n), ast.ClassDef):          # a field: the generated __init__ binds it
+                elif isinstance(_enclosing_scope(n, parent), ast.ClassDef):    # a field the generated __init__
+                    # binds, under any statement container in the class body (TT-R7-01); at module or function
+                    # level it binds nothing
                     record(_binding_key(n.target), False, site)
             elif isinstance(n, (ast.Name, ast.Attribute)) and isinstance(n.ctx, (ast.Store, ast.Del)):
                 # every other store or delete (AugAssign, for/with/comprehension targets, walrus, type alias, del)
@@ -1502,7 +1612,7 @@ def with_item_problems(sources: dict) -> list:
                 # globals().update([('_lock', conn)])), but the exact form's own name; and every keyword name
                 skip = {id(x) for x in ast.walk(exact[0])} if exact_name else set()
                 for arg in [*a, *(kw.value for kw in n.keywords)]:
-                    for s in walk_literals(arg, skip):
+                    for s in walk_literals(arg, skip, in_call=True):
                         record(s, False, site)
                 for kw in n.keywords:
                     if kw.arg:
@@ -1511,7 +1621,7 @@ def with_item_problems(sources: dict) -> list:
                 # a class statement calls its metaclass: a literal identifier anywhere in its bases or keyword values,
                 # and every keyword name (passed to __init_subclass__), binds as a call's arguments do
                 for part in [*n.bases, *(kw.value for kw in n.keywords)]:
-                    for s in walk_literals(part):
+                    for s in walk_literals(part, in_call=True):
                         record(s, False, site)
                 for ck in n.keywords:
                     if ck.arg:
@@ -1534,6 +1644,14 @@ def with_item_problems(sources: dict) -> list:
                                    and al.name in _LOCK_FACTORIES)
                                or ident not in ctor_ids)
                     record(ident, False, site, genuine_import=genuine)
+            if (isinstance(n, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)) and n.value is not None
+                    and any(names_fields(x) for tg in (n.targets if isinstance(n, ast.Assign) else [n.target])
+                            for x in ast.walk(tg))):
+                # v23.7.2 rule (b): ctypes' Structure/Union initializer binds every field `_fields_` names; every
+                # literal identifier anywhere in a value assigned to `_fields_` (in a class body or after it, a valued
+                # annotation, an augmented assignment or a walrus) is a non-lock binding
+                for s in walk_literals(n.value):
+                    record(s, False, site)
             if _is_namespace_expr(n):
                 up = parent.get(n)
                 if (isinstance(up, ast.Subscript) and up.value is n and literal_ident(up.slice)):
@@ -1553,7 +1671,7 @@ def with_item_problems(sources: dict) -> list:
                 for s in walk_literals(n.slice):
                     record(s, False, site)
     ctor_rebound = sorted(f"`{k}` at {s}" for k, s in non_import.items() if k in ctor_ids)
-    hooks = sorted(f"`{k}` at {non_import[k]}" for k in ("__getattr__", "__getattribute__") if k in non_import)
+    hooks = sorted(f"`{k}` at {bound_any[k]}" for k in ("__getattr__", "__getattribute__") if k in bound_any)
     problems = []
     for rel, tree in sorted(trees.items()):
         sq_mods = {a.asname or a.name for n in ast.walk(tree) if isinstance(n, ast.Import)

@@ -1725,6 +1725,34 @@ def test_the_real_tree_has_exactly_its_one_factory_subclass_and_no_tree_problem(
 #: threading.Lock()/RLock() call.
 _L = "import threading\n_PROBE_LOCK = threading.Lock()\n"          # an honest lock the probe then rebinds
 _C = "import threading\nclass C:\n    def __init__(self):\n        self._probe_lock = threading.Lock()\n"
+#: TT-R7-01 (the round-7 verdict): every statement container a class body can hold, `{body}` where the nested
+#: statement goes (`async for`/`async with` cannot stand in a class body; `except*` parses from 3.11)
+_CLASS_CONTAINERS = {
+    "if": "if True:\n    {body}", "elif": "if False:\n    pass\nelif True:\n    {body}",
+    "else": "if False:\n    pass\nelse:\n    {body}", "try": "try:\n    {body}\nfinally:\n    pass",
+    "except": "try:\n    pass\nexcept Exception:\n    {body}",
+    "try-else": "try:\n    pass\nexcept Exception:\n    pass\nelse:\n    {body}",
+    "finally": "try:\n    pass\nfinally:\n    {body}",
+    **({"except*": "try:\n    pass\nexcept* Exception:\n    {body}"} if _sys.version_info >= (3, 11) else {}),
+    "with": "with open(__file__):\n    {body}", "for": "for _ in ():\n    {body}",
+    "for-else": "for _ in ():\n    pass\nelse:\n    {body}", "while": "while False:\n    {body}",
+    "while-else": "while False:\n    pass\nelse:\n    {body}", "match": "match 0:\n    case _:\n        {body}",
+}
+
+
+def _in_containers(kinds, body, indent):
+    """`body` nested in each container of `kinds` (outermost first), every line indented by `indent` spaces."""
+    for k in reversed(kinds):
+        tmpl = _CLASS_CONTAINERS[k]
+        at = next(line for line in tmpl.splitlines() if "{body}" in line).index("{body}")
+        body = tmpl.replace("{body}", body.replace("\n", "\n" + " " * at))
+    return "".join(" " * indent + line + "\n" for line in body.splitlines())
+
+
+_DC = "import dataclasses, threading\n_probe_lock = threading.Lock()\n"     # an honest lock, then a dataclass
+_HOOKED = _C + "    def f(self):\n        with self._probe_lock:\n            pass\n"   # an attribute item, then a hook
+_CT = _HOOKED + "import ctypes\n"                                                # ... then a ctypes class
+_NT = "import collections, enum, threading\nPROBE_LOCK = threading.Lock()\n"     # namedtuple refuses a leading _
 _WITH_FORMS = {
     "with conn": ("import sqlite3\nconn = sqlite3.connect('x.db')\nwith conn:\n    pass\n", True),
     "with self._conn": ("class A:\n    def f(self):\n        with self._conn:\n            pass\n", True),
@@ -1952,6 +1980,134 @@ _WITH_FORMS = {
     "a computed subscript key (the stated limit)": (_L + "def f(d, k):\n    d[k] = None\nwith _PROBE_LOCK:\n"
                                                     "    pass\n", False),
     "a helper call (the stated limit)": ("def f(store):\n    with store.connection():\n        pass\n", False),
+    # the round-7 verdict, TT-R7-01: a class-body annotation under any statement container (its nearest enclosing
+    # scope is the class), one form per container kind (research's stage-1 read of the verdict: a mutant dropping
+    # one kind survives an if/try-only set), two deep, a NamedTuple body, a class in a function and a class in a class;
+    # and the module, function and method controls, where an annotation binds nothing (rule 4, TT-R5-N1)
+    **{f"a class-body annotation under {k} (a dataclass field)": (
+        _DC + "@dataclasses.dataclass\nclass Holder:\n" + _in_containers([k], "_probe_lock: object", 4)
+        + "h = Holder(None)\nwith h._probe_lock:\n    pass\n", True) for k in _CLASS_CONTAINERS},
+    "a class-body annotation two containers deep, if then try (a dataclass field)": (
+        _DC + "@dataclasses.dataclass\nclass Holder:\n" + _in_containers(["if", "try"], "_probe_lock: object", 4)
+        + "h = Holder(None)\nwith h._probe_lock:\n    pass\n", True),
+    "a class-body annotation two containers deep, for then match (a dataclass field)": (
+        _DC + "@dataclasses.dataclass\nclass Holder:\n" + _in_containers(["for", "match"], "_probe_lock: object", 4)
+        + "h = Holder(None)\nwith h._probe_lock:\n    pass\n", True),
+    "a NamedTuple field under if": (
+        "import threading, typing\nprobe_lock = threading.Lock()\nclass Holder(typing.NamedTuple):\n"
+        + _in_containers(["if"], "probe_lock: object", 4) + "with probe_lock:\n    pass\n", True),
+    "a class-body annotation under if, the class in a function": (
+        _DC + "def f():\n    @dataclasses.dataclass\n    class Holder:\n" + _in_containers(["if"], "_probe_lock: object", 8)
+        + "with _probe_lock:\n    pass\n", True),
+    "a class-body annotation under try, the class in a class": (
+        _DC + "class Outer:\n    @dataclasses.dataclass\n    class Holder:\n"
+        + _in_containers(["try"], "_probe_lock: object", 8) + "with _probe_lock:\n    pass\n", True),
+    "an annotation in a module-level if, then a lock": (
+        "import threading\nif True:\n    _PROBE_LOCK: object\n_PROBE_LOCK = threading.Lock()\nwith _PROBE_LOCK:\n    pass\n",
+        False),
+    "an annotation in a function's if, then a lock": (
+        "import threading\ndef f():\n    if True:\n        _probe_lock: object\n    _probe_lock = threading.Lock()\n"
+        "    with _probe_lock:\n        pass\n", False),
+    "an annotation in a method under a class-level if, then a lock": (
+        _C + "    if True:\n        def m(self):\n            _probe_lock: object\n    def f(self):\n"
+        "        with self._probe_lock:\n            pass\n", False),
+    "an annotation in an async method under a class-level if, then a lock": (
+        _C + "    if True:\n        async def m(self):\n            _probe_lock: object\n    def f(self):\n"
+        "        with self._probe_lock:\n            pass\n", False),
+    # TT-R7-02: an import binding a hook name reaches the hook refusal (every binding counts there, an import included)
+    "an imported __getattr__ in a class body, relative (refuses every lock name)": (
+        _HOOKED + "class Hook:\n    from .helpers import answer as __getattr__\n", True),
+    "an imported __getattr__ in a class body, absolute (refuses every lock name)": (
+        _HOOKED + "class Hook:\n    from helpers import answer as __getattr__\n", True),
+    "an imported __getattr__ under a class-level if (refuses every lock name)": (
+        _HOOKED + "class Hook:\n    if True:\n        from helpers import answer as __getattr__\n", True),
+    "an imported __getattr__ under a class-level try (refuses every lock name)": (
+        _HOOKED + "class Hook:\n    try:\n        from helpers import answer as __getattr__\n    finally:\n"
+        "        pass\n", True),
+    "a module __getattr__ imported, PEP 562 (refuses every lock name)": (
+        _HOOKED + "from helpers import answer as __getattr__\n", True),
+    "an imported __getattr__ in a metaclass body (refuses every lock name)": (
+        _HOOKED + "class Meta(type):\n    from helpers import answer as __getattr__\n", True),
+    "an imported __getattribute__ in a class body (refuses every lock name)": (
+        _HOOKED + "class Hook:\n    from helpers import answer as __getattribute__\n", True),
+    "a module imported as __getattr__ (refuses every lock name)": (
+        _HOOKED + "class Hook:\n    import helpers as __getattr__\n", True),
+    # research's stage-1 read of the verdict, item 4, v23.7.2 rule (a): a string of identifiers separated by commas or
+    # whitespace binds each token where a literal identifier is counted (namedtuple's and Enum's field grammar)
+    "a namedtuple field string, space-separated (counted)": (
+        _NT + "H = collections.namedtuple('H', 'x PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string, comma-separated (counted)": (
+        _NT + "H = collections.namedtuple('H', 'x,PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string, comma and space (counted)": (
+        _NT + "H = collections.namedtuple('H', 'x, PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string as a placeholder-free f-string (counted)": (
+        _NT + "H = collections.namedtuple('H', f'x PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string in a class base (counted)": (
+        _NT + "class H(collections.namedtuple('H', 'x PROBE_LOCK')):\n    pass\nwith PROBE_LOCK:\n    pass\n", True),
+    "an Enum member string (counted)": (_NT + "E = enum.Enum('E', 'x PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    # research's reads of the round-8 fold, F1 and its class: rename=True binds the identifier tokens of a field string
+    # whatever the others are, and it can reach namedtuple from anywhere, so in a call's (or a class statement's)
+    # arguments every identifier token counts; a dict-literal key keeps the all-identifiers guard
+    "a namedtuple field string with rename=True and a non-identifier token (counted)": (
+        _NT + "H = collections.namedtuple('H', 'x 1bad PROBE_LOCK', rename=True)\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string with rename through ** (counted)": (
+        _NT + "H = collections.namedtuple('H', 'x 1bad PROBE_LOCK', **{'rename': True})\nwith PROBE_LOCK:\n    pass\n",
+        True),
+    "a field string with a non-identifier token and no rename in sight (counted)": (
+        _NT + "H = collections.namedtuple('H', 'x 1bad PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string through functools.partial with rename (counted)": (
+        _NT + "import functools\nH = functools.partial(collections.namedtuple, rename=True)('H', 'x 1bad PROBE_LOCK')\n"
+        "with PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string through a held partial (counted)": (
+        _NT + "import functools\nNT = functools.partial(collections.namedtuple, rename=True)\n"
+        "H = NT('H', 'x 1bad PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a namedtuple field string through a wrapper that renames (counted)": (
+        _NT + "def nt(name, fields):\n    return collections.namedtuple(name, fields, rename=True)\n"
+        "H = nt('H', 'x 1bad PROBE_LOCK')\nwith PROBE_LOCK:\n    pass\n", True),
+    "a field string as a class keyword's value (counted)": (
+        _NT + "class B:\n    def __init_subclass__(cls, f='', **k):\n        pass\nclass C(B, f='x 1bad PROBE_LOCK'):\n"
+        "    pass\nwith PROBE_LOCK:\n    pass\n", True),
+    "a dict-literal key sentence naming a lock (not every token an identifier)": (
+        _L + "D = {'the _PROBE_LOCK is held.': None}\nwith _PROBE_LOCK:\n    pass\n", False),
+    # its F2: a field name reached through a non-literal expression is the computed-name limit
+    "a ctypes _fields_ from a helper's return (the stated limit)": (
+        _CT + "def _mk():\n    return [('_probe_lock', ctypes.py_object)]\nclass S(ctypes.Structure):\n"
+        "    _fields_ = _mk()\n", False),
+    "a namedtuple field string through a string method (the stated limit)": (
+        "import collections, threading\nprobe_lock = threading.Lock()\n"
+        "H = collections.namedtuple('H', 'X PROBE_LOCK'.lower())\nwith probe_lock:\n    pass\n", False),
+    "a message of identifiers naming a lock in a call (counted)": (
+        _L + "print('waiting for _PROBE_LOCK')\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a sentence naming a lock in a call (counted)": (
+        _L + "print('the _PROBE_LOCK is held.')\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a setattr name of several identifiers (counted, never a lock)": (
+        _C + "    def f(self):\n        setattr(self, 'x _probe_lock', threading.Lock())\n"
+        "        with self._probe_lock:\n            pass\n", True),
+    # v23.7.2 rule (b): every literal identifier in a value assigned to `_fields_` (ctypes' generated initializer)
+    "a ctypes _fields_ list (counted)": (
+        _CT + "class S(ctypes.Structure):\n    _fields_ = [('_probe_lock', ctypes.py_object)]\n", True),
+    "a ctypes _fields_ tuple (counted)": (
+        _CT + "class S(ctypes.Structure):\n    _fields_ = (('_probe_lock', ctypes.py_object),)\n", True),
+    "a ctypes Union _fields_ (counted)": (
+        _CT + "class U(ctypes.Union):\n    _fields_ = [('_probe_lock', ctypes.py_object)]\n", True),
+    "a ctypes _fields_ under a class-level if (counted)": (
+        _CT + "class S(ctypes.Structure):\n    if True:\n        _fields_ = [('_probe_lock', ctypes.py_object)]\n", True),
+    "a ctypes _fields_ as a valued annotation (counted)": (
+        _CT + "class S(ctypes.Structure):\n    _fields_: list = [('_probe_lock', ctypes.py_object)]\n", True),
+    "a ctypes _fields_ set after the class (counted)": (
+        _CT + "class S(ctypes.Structure):\n    pass\nS._fields_ = [('_probe_lock', ctypes.py_object)]\n", True),
+    "a ctypes _fields_ extended by += (counted)": (
+        _CT + "class S(ctypes.Structure):\n    _fields_ = []\n    _fields_ += [('_probe_lock', ctypes.py_object)]\n",
+        True),
+    "a ctypes _fields_ through the class namespace (counted)": (
+        _CT + "class S(ctypes.Structure):\n    vars()['_fields_'] = [('_probe_lock', ctypes.py_object)]\n", True),
+    "a ctypes _fields_ bound by a class-body walrus (counted)": (
+        _CT + "class S(ctypes.Structure):\n    (_fields_ := [('_probe_lock', ctypes.py_object)])\n", True),
+    "a ctypes field promoted through _anonymous_ (counted)": (
+        _CT + "class U(ctypes.Union):\n    _fields_ = [('_probe_lock', ctypes.py_object)]\n"
+        "class S(ctypes.Structure):\n    _anonymous_ = ('u',)\n    _fields_ = [('u', U)]\n", True),
+    "a field list under another name (not a binding)": (
+        _CT + "class S:\n    _other_ = [('_probe_lock', None)]\n", False),
     **({"a type parameter rebinds a lock": (_L + "def f[_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
         "a ParamSpec rebinds a lock": (_L + "def f[**_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
         "a TypeVarTuple rebinds a lock": (_L + "def f[*_PROBE_LOCK]():\n    with _PROBE_LOCK:\n        pass\n", True),
@@ -2041,11 +2197,50 @@ _NAMESPACE_WITNESSES = {
     "a literal-key subscript of globals()/vars()/locals()/__dict__": [
         "a lock name bound through globals()", "a lock name bound through __dict__", "a del through globals()",
         "a lock stored through globals()", "a lock read elsewhere"],
-    "an annotation alone in a class body": ["a class-body annotation alone (a dataclass field)",
-                                            "an annotation without a value, then a lock",
-                                            "an annotation alone in a function, then a lock"],
-    "a binding of __getattr__/__getattribute__": ["a __getattr__ hook (refuses every lock name)",
-                                                  "a __getattribute__ bound by assignment (refuses every lock name)"],
+    "an annotation alone in a class body": [
+        "a class-body annotation alone (a dataclass field)", "an annotation without a value, then a lock",
+        "an annotation alone in a function, then a lock",
+        *(f"a class-body annotation under {k} (a dataclass field)" for k in _CLASS_CONTAINERS),
+        "a class-body annotation two containers deep, if then try (a dataclass field)",
+        "a class-body annotation two containers deep, for then match (a dataclass field)",
+        "a NamedTuple field under if", "a class-body annotation under if, the class in a function",
+        "a class-body annotation under try, the class in a class", "an annotation in a module-level if, then a lock",
+        "an annotation in a function's if, then a lock",
+        "an annotation in a method under a class-level if, then a lock",
+        "an annotation in an async method under a class-level if, then a lock"],
+    "a binding of __getattr__/__getattribute__": [
+        "a __getattr__ hook (refuses every lock name)",
+        "a __getattribute__ bound by assignment (refuses every lock name)",
+        "an imported __getattr__ in a class body, relative (refuses every lock name)",
+        "an imported __getattr__ in a class body, absolute (refuses every lock name)",
+        "an imported __getattr__ under a class-level if (refuses every lock name)",
+        "an imported __getattr__ under a class-level try (refuses every lock name)",
+        "a module __getattr__ imported, PEP 562 (refuses every lock name)",
+        "an imported __getattr__ in a metaclass body (refuses every lock name)",
+        "an imported __getattribute__ in a class body (refuses every lock name)",
+        "a module imported as __getattr__ (refuses every lock name)"],
+    "a string literal of identifiers separated by commas or whitespace": [
+        "a namedtuple field string, space-separated (counted)", "a namedtuple field string, comma-separated (counted)",
+        "a namedtuple field string, comma and space (counted)",
+        "a namedtuple field string as a placeholder-free f-string (counted)",
+        "a namedtuple field string in a class base (counted)", "an Enum member string (counted)",
+        "a namedtuple field string with rename=True and a non-identifier token (counted)",
+        "a namedtuple field string with rename through ** (counted)",
+        "a field string with a non-identifier token and no rename in sight (counted)",
+        "a namedtuple field string through functools.partial with rename (counted)",
+        "a namedtuple field string through a held partial (counted)",
+        "a namedtuple field string through a wrapper that renames (counted)",
+        "a field string as a class keyword's value (counted)",
+        "a dict-literal key sentence naming a lock (not every token an identifier)",
+        "a message of identifiers naming a lock in a call (counted)",
+        "a sentence naming a lock in a call (counted)",
+        "a setattr name of several identifiers (counted, never a lock)"],
+    "an assignment to `_fields_`": [
+        "a ctypes _fields_ list (counted)", "a ctypes _fields_ tuple (counted)", "a ctypes Union _fields_ (counted)",
+        "a ctypes _fields_ under a class-level if (counted)", "a ctypes _fields_ as a valued annotation (counted)",
+        "a ctypes _fields_ set after the class (counted)", "a ctypes _fields_ extended by += (counted)",
+        "a ctypes _fields_ through the class namespace (counted)",
+        "a ctypes _fields_ bound by a class-body walrus (counted)", "a ctypes field promoted through _anonymous_ (counted)", "a field list under another name (not a binding)"],
     "a binding of threading/Lock/RLock or their import aliases, other than the import": [
         "the Lock constructor rebound (refuses every lock name)", "threading rebound (refuses every lock name)",
         "an import under a lock constructor's name (refuses every lock name)", "threading imported under an alias",
@@ -2061,7 +2256,9 @@ _NAMESPACE_WITNESSES = {
     "a COMPUTED name (stated limit)": ["a computed setattr name (the stated limit)",
                                        "a computed subscript key (the stated limit)",
                                        "an f-string name whose placeholder is not a literal (the stated limit)",
-                                       "a concatenated name (the stated limit)"],
+                                       "a concatenated name (the stated limit)",
+                                       "a ctypes _fields_ from a helper's return (the stated limit)",
+                                       "a namedtuple field string through a string method (the stated limit)"],
     "a helper call returning the connection (stated limit)": ["a helper call (the stated limit)"],
 }
 
@@ -2087,9 +2284,12 @@ def _grammar_binding_domain():
 def test_every_binding_decision_has_a_witness_and_the_table_is_the_grammars_domain():
     """TT-R6-01: (1) the witness maps cover BINDING_FORMS and NAMESPACE_FORMS exactly, and every witness is a tabled
     form; (2) BINDING_FORMS, restricted to the node types the running ast has, is exactly the grammar's identifier,
-    string and expression-context fields, read from the node docstrings on every supported Python (equal both ways on
-    3.10.22, 3.11.18, 3.12.3, 3.13.18 and 3.14.7 when written); where the ast also carries `_field_types` (3.13+) the
-    same domain is derived from it and must agree, so neither reading is the only one."""
+    string and expression-context fields, read from the node docstrings on every supported Python (3.10.22, 3.11.18,
+    3.12.3, 3.13.18 and 3.14.7); where the ast also carries `_field_types` (3.13+) the same domain is derived from it
+    and must agree, so neither reading is the only one. Both scans read only actual grammar productions, the classes
+    with a non-empty `_fields` (TT-R7-N1, the round-7 verdict: 3.13.18's deprecated `_ast_Ellipsis` has empty
+    `_fields` and inherits `Constant`'s `_field_types`; the typed scan lacked the predicate, so the earlier "equal both
+    ways on 3.13.18" was never true of the typed half)."""
     import ast
     import connection_census as CC
     assert set(_BINDING_WITNESSES) == set(CC.BINDING_FORMS), set(_BINDING_WITNESSES) ^ set(CC.BINDING_FORMS)
@@ -2105,7 +2305,8 @@ def test_every_binding_decision_has_a_witness_and_the_table_is_the_grammars_doma
         typed = set()
         for name in dir(ast):
             c = getattr(ast, name)
-            if isinstance(c, type) and issubclass(c, ast.AST) and c.__module__ == "ast" and getattr(c, "_field_types", None):
+            if (isinstance(c, type) and issubclass(c, ast.AST) and c.__module__ == "ast" and c._fields
+                    and getattr(c, "_field_types", None)):
                 for f, typ in c._field_types.items():
                     s = str(typ)
                     if f == "ctx" or ("str" in s and not any(k in s for k in ("expr", "stmt", "pattern"))):
@@ -2115,6 +2316,10 @@ def test_every_binding_decision_has_a_witness_and_the_table_is_the_grammars_doma
 #: TT-R6-01's consequence controls, the reviewer's four families (round 6, repro/test_round6_with_bindings.py,
 #: re-written here): each is refused, standalone and added to the complete tree, AND executing it bypassing the
 #: census commits a real write that the trust phase cell does not record, so the refusal is about a real escape.
+#: TT-R7-02's escapes: a helper module registered at run time (the reviewer's second source file), whose `answer`
+#: returns the connection it is handed; the test removes it from sys.modules when it ends
+_HOOK_MODULE = ("import sys, types\n_m = types.ModuleType('review_hook_support')\n"
+                "_m.answer = lambda self, name: _m.held\nsys.modules['review_hook_support'] = _m\n")
 _ESCAPES = {        # (module text before the honest owner, lines inside run() before the with, the with-item)
     "capture": ("", "    match store._conn:\n        case review_lock:\n            pass\n", "review_lock"),
     "sequence": ("", "    match [store._conn]:\n        case [review_lock]:\n            pass\n", "review_lock"),
@@ -2150,6 +2355,28 @@ _ESCAPES = {        # (module text before the honest owner, lines inside run() b
     "class_keyword_value": ("_lock = threading.Lock()\nclass Base:\n    def __init_subclass__(cls, name=None, **kw):\n"
                             "        globals()[name] = cls.conn\n",
                             "    class H(Base, name=('_lock',)[0]):\n        conn = store._conn\n", "_lock"),
+    # the round-7 verdict: TT-R7-01, a class-body annotation under if or try (its repro/test_round7_scope_and_imports.py
+    # cases), and TT-R7-02, a hook bound by an import (a helper module registered at run time, as its two source files);
+    # research's stage-1 read of the verdict, item 4: names given as data, a ctypes field and a namedtuple field string
+    "if_annotation": ("import dataclasses\n@dataclasses.dataclass\nclass Holder:\n    if True:\n        _lock: object\n",
+                      "    h = Holder(store._conn)\n", "h._lock"),
+    "try_annotation": ("import dataclasses\n@dataclasses.dataclass\nclass Holder:\n    try:\n        _lock: object\n"
+                       "    finally:\n        pass\n", "    h = Holder(store._conn)\n", "h._lock"),
+    "imported_getattr": (_HOOK_MODULE + "class Holder:\n    from review_hook_support import answer as __getattr__\n",
+                         "    sys.modules['review_hook_support'].held = store._conn\n    h = Holder()\n", "h._lock"),
+    "imported_getattribute": (_HOOK_MODULE + "class Holder:\n    from review_hook_support import answer as "
+                              "__getattribute__\n",
+                              "    sys.modules['review_hook_support'].held = store._conn\n    h = Holder()\n", "h._lock"),
+    "ctypes_fields": ("import ctypes\nclass Holder(ctypes.Structure):\n    _fields_ = [('_lock', ctypes.py_object)]\n",
+                      "    h = Holder(store._conn)\n", "h._lock"),
+    "namedtuple_string": ("import collections\nHolder = collections.namedtuple('Holder', 'x review_lock')\n",
+                          "    h = Holder(1, store._conn)\n", "h.review_lock"),
+    # research's read of the round-8 fold, F1: rename=True binds the identifier tokens beside a non-identifier one
+    "namedtuple_rename": ("import collections\nHolder = collections.namedtuple('Holder', 'x 1bad review_lock', "
+                          "rename=True)\n", "    h = Holder(1, 1, store._conn)\n", "h.review_lock"),
+    "namedtuple_partial": ("import collections, functools\nNT = functools.partial(collections.namedtuple, rename=True)\n"
+                           "Holder = NT('Holder', 'x 1bad review_lock')\n", "    h = Holder(1, 1, store._conn)\n",
+                           "h.review_lock"),
 }
 
 
@@ -2164,10 +2391,15 @@ def _escape_source(pre, binding, item):
 def test_each_refused_escape_is_refused_and_is_a_real_unrecorded_write(case, tmp_path):
     """TT-R6-01's consequence controls: the reviewer's four families, research's eight (stage-1 read of the fold) and
     its frame-globals family (stage 2 at c9a3881f), nested-literal family (its read of that fold, F1) and f-string-key
-    family (F2), and dev's nested dict-key and class keyword-value families (its with-rung campaign at 4e8412fd),
-    each refused standalone and added to the complete tree, while the honest lock alone is admitted; then executed
-    bypassing the census, each commits a durable write the trust phase cell never records. The lock-constructor
-    family rebinds threading.Lock in this process, restored before the test ends."""
+    family (F2), dev's nested dict-key and class keyword-value families (its with-rung campaign at 4e8412fd), the
+    round-7 verdict's class-body annotations under if and try (TT-R7-01) and imported hooks (TT-R7-02), and research's
+    names given as data (its stage-1 read of that verdict: a ctypes field, a namedtuple field string; its read of the
+    round-8 fold, F1 and its class: a namedtuple field string under rename=True, given directly or through
+    functools.partial), each refused
+    standalone and added to the complete tree, while the honest lock alone is admitted; then executed bypassing the
+    census, each commits a durable write the trust phase cell never records. The lock-constructor family rebinds
+    threading.Lock in this process, and the imported hooks register a helper module; both are undone before the test
+    ends."""
     import sqlite3
     import threading
     from connection_census import with_item_problems
@@ -2191,6 +2423,7 @@ def test_each_refused_escape_is_refused_and_is_a_real_unrecorded_write(case, tmp
             assert independent.execute("SELECT n FROM write_counter WHERE user_id='review'").fetchall() == [(1,)]
     finally:
         threading.Lock, threading.RLock = saved
+        _sys.modules.pop("review_hook_support", None)
         store.close()
 
 
