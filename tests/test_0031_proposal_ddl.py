@@ -1917,6 +1917,21 @@ _WITH_FORMS = {
         _L + "globals().update(zip(['_PROBE_LOCK'], [None]))\nwith _PROBE_LOCK:\n    pass\n", True),
     "a literal nested in a call's arguments (dict.update on globals())": (
         _L + "dict.update(globals(), [('_PROBE_LOCK', None)])\nwith _PROBE_LOCK:\n    pass\n", True),
+    # dev's with-rung campaign at 4e8412fd (W34 survived) and its follow-up probes (X1, X2): a literal nested in a
+    # dict-literal key outside any call, and a literal in, or nested in, a class statement's base or keyword value
+    "a literal nested in a dict-literal key (|= on __dict__)": (
+        _C + "    def f(self):\n        self.__dict__ |= {('_probe_lock',)[0]: None}\n"
+        "        with self._probe_lock:\n            pass\n", True),
+    "a literal nested in a dict-literal key (an IfExp key)": (
+        _L + "D = {'_PROBE_LOCK' if True else 'x': None}\nglobals().update(D)\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a literal as a class keyword's value (counted)": (
+        _L + "class Base:\n    def __init_subclass__(cls, **kw):\n        pass\nclass H(Base, name='_PROBE_LOCK'):\n"
+        "    pass\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a literal nested in a class keyword's value (counted)": (
+        _L + "class Base:\n    def __init_subclass__(cls, **kw):\n        pass\n"
+        "class H(Base, name=('_PROBE_LOCK',)[0]):\n    pass\nwith _PROBE_LOCK:\n    pass\n", True),
+    "a literal nested in a class base (counted)": (
+        _L + "class H((object, '_PROBE_LOCK')[0]):\n    pass\nwith _PROBE_LOCK:\n    pass\n", True),
     # research's read of the cumulative fold, F2: a placeholder-free f-string is a literal in every position, and a
     # key's whole expression is walked as a call's arguments are
     "an f-string subscript key on globals() (counted)": (_L + "globals()[f'_PROBE_LOCK'] = None\nwith _PROBE_LOCK:\n"
@@ -2009,7 +2024,10 @@ _NAMESPACE_WITNESSES = {
         "a literal nested in a call's arguments (update with pairs)", "a literal nested in a call's arguments (zip)",
         "a literal nested in a call's arguments (dict.update on globals())",
         "a placeholder-free f-string name (counted)"],
-    "a class statement's bases and keywords": ["a class keyword named like a lock (counted)"],
+    "a class statement's bases and keywords": ["a class keyword named like a lock (counted)",
+                                               "a literal as a class keyword's value (counted)",
+                                               "a literal nested in a class keyword's value (counted)",
+                                               "a literal nested in a class base (counted)"],
     "setattr/__setattr__ by a literal name with a Lock()/RLock() value": ["a fresh lock bound by setattr",
                                                                           "a lock bound by setattr under an f-string name",
                                                                           "a lock name bound by object.__setattr__",
@@ -2017,7 +2035,9 @@ _NAMESPACE_WITNESSES = {
     "a keyword name of any call": ["a keyword name binds (dict(...))", "a keyword name binds (SimpleNamespace)",
                                    "globals().update by a keyword"],
     "an identifier-shaped dict-literal key": ["a dict-literal key binds (type(...))", "a __dict__ |= by a literal key",
-                                              "an f-string dict key through |= (counted)"],
+                                              "an f-string dict key through |= (counted)",
+                                              "a literal nested in a dict-literal key (|= on __dict__)",
+                                              "a literal nested in a dict-literal key (an IfExp key)"],
     "a literal-key subscript of globals()/vars()/locals()/__dict__": [
         "a lock name bound through globals()", "a lock name bound through __dict__", "a del through globals()",
         "a lock stored through globals()", "a lock read elsewhere"],
@@ -2123,6 +2143,13 @@ _ESCAPES = {        # (module text before the honest owner, lines inside run() b
     "nested_literal": ("_lock = threading.Lock()\n", "    globals().update([('_lock', store._conn)])\n", "_lock"),
     # its read of the cumulative fold, F2: a placeholder-free f-string as a subscript key
     "fstring_key": ("_lock = threading.Lock()\n", "    globals()[f'_lock'] = store._conn\n", "_lock"),
+    # dev's with-rung campaign at 4e8412fd: a literal nested in a dict-literal key outside any call (W34), and one nested
+    # in a class statement's keyword value, which the class calls __init_subclass__ with (X1, X2)
+    "nested_dict_key": ("_lock = threading.Lock()\n", "    g = globals()\n    g |= {('_lock',)[0]: store._conn}\n",
+                        "_lock"),
+    "class_keyword_value": ("_lock = threading.Lock()\nclass Base:\n    def __init_subclass__(cls, name=None, **kw):\n"
+                            "        globals()[name] = cls.conn\n",
+                            "    class H(Base, name=('_lock',)[0]):\n        conn = store._conn\n", "_lock"),
 }
 
 
@@ -2137,7 +2164,7 @@ def _escape_source(pre, binding, item):
 def test_each_refused_escape_is_refused_and_is_a_real_unrecorded_write(case, tmp_path):
     """TT-R6-01's consequence controls: the reviewer's four families, research's eight (stage-1 read of the fold) and
     its frame-globals family (stage 2 at c9a3881f), nested-literal family (its read of that fold, F1) and f-string-key
-    family (F2),
+    family (F2), and dev's nested dict-key and class keyword-value families (its with-rung campaign at 4e8412fd),
     each refused standalone and added to the complete tree, while the honest lock alone is admitted; then executed
     bypassing the census, each commits a durable write the trust phase cell never records. The lock-constructor
     family rebinds threading.Lock in this process, restored before the test ends."""
