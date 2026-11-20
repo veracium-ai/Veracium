@@ -52,7 +52,10 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     `global`/`nonlocal` bind nothing. v23.7.2: in those literal positions a
     string of identifiers separated by commas or whitespace binds each token
     (namedtuple's and Enum's field grammar; in a call's or class statement's
-    arguments every identifier token, rename=True binding the rest), and
+    arguments every identifier token, as rename=True renames the others and
+    binds the identifiers; in a dict-literal or subscript key, and in a value
+    assigned to `_fields_`, only when every token is one, since a key or a
+    ctypes field binds the whole string), and
     every literal identifier in
     a value assigned to `_fields_` binds (ctypes' fields). Three tree-wide
     refusals: a star import refuses every name and attribute item; a binding
@@ -67,8 +70,9 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     literal, a concatenation or a computed key included; a custom
     `__setattr__` storing under the name it is given; exec/eval; a field
     name reaching `_fields_` or a field-name string through a variable or
-    any non-literal expression (a helper's return, a string method);
-    `_fields_` bound by a for, with or match target; a name a library derives
+    any non-literal expression (a helper's return, a string method, a class
+    attribute an `__init_subclass__` reads); `_fields_` bound by a for, with
+    or match target; a name a library derives
     from data, argparse's '--review-lock' becoming review_lock). A
     subscript store on ANY receiver binds every literal identifier in its key
     (a frame's f_globals and a namespace alias included);
@@ -1383,7 +1387,8 @@ NAMESPACE_FORMS = {
     "a string literal of identifiers separated by commas or whitespace": "v23.7.2 rule (a): wherever a literal "
                                                                          "identifier is counted (a call's arguments, a "
                                                                          "class statement's bases and keyword values, "
-                                                                         "a dict-literal key, a subscript key), each "
+                                                                         "a dict-literal key, a subscript key, a value "
+                                                                         "assigned to `_fields_`), each "
                                                                          "token of s.replace(',', ' ').split() is a "
                                                                          "non-lock binding when every token is an "
                                                                          "identifier: the field names a generated "
@@ -1395,8 +1400,14 @@ NAMESPACE_FORMS = {
                                                                          "are (namedtuple's rename=True renames the "
                                                                          "rest, and rename can arrive by a keyword, "
                                                                          "**, functools.partial, a wrapper or "
-                                                                         "__init_subclass__); in a dict-literal or "
-                                                                         "subscript key only when every token is one; "
+                                                                         "__init_subclass__); in a dict-literal key, a "
+                                                                         "subscript key or a value assigned to "
+                                                                         "`_fields_` only when every token is one (a "
+                                                                         "key or a ctypes field binds the whole "
+                                                                         "string; its tokens reach a field generator "
+                                                                         "only inside a call's arguments, counted "
+                                                                         "there, or through a variable, the COMPUTED "
+                                                                         "limit); "
                                                                          "the exact lock-capable forms bind only a "
                                                                          "whole identifier. An over-approximation, "
                                                                          "stated: any call-argument string with an "
@@ -1420,7 +1431,9 @@ NAMESPACE_FORMS = {
                                       "or a field-name string through a variable or any non-literal expression (F = "
                                       "'x review_lock' then namedtuple('H', F); _fields_ = F; a helper's return, "
                                       "_fields_ = _mk(); a string method, 'X REVIEW_LOCK'.lower() or "
-                                      "'x review-lock'.replace('-', '_')), `_fields_` bound by a for, with or match "
+                                      "'x review-lock'.replace('-', '_'); a class attribute an __init_subclass__ "
+                                      "reads, class C(B): fields = 'x review_lock'), `_fields_` bound by a for, with "
+                                      "or match "
                                       "target, and a name a library DERIVES from data (argparse's '--review-lock' "
                                       "becomes review_lock)",
     "a helper call returning the connection (stated limit)": "outside the rung: the item is a call",
@@ -1475,7 +1488,10 @@ def with_item_problems(sources: dict) -> list:
         (namedtuple's and Enum's field grammar, `namedtuple('H', 'x review_lock')`) binds each token, non-lock, when
         every token is an identifier, and in a call's arguments and a class statement's bases and keyword values every
         identifier token whatever the others are (namedtuple's rename=True, which can arrive from anywhere) -- an
-        over-approximation, stated (a message naming a with-item in a call counts); v23.7.2 rule
+        over-approximation, stated (a message naming a with-item in a call counts); in a dict-literal key, a
+        subscript key and a value assigned to `_fields_` only when every token is one (a key or a ctypes field binds
+        the whole string; its tokens reach a field generator only inside a call's arguments, where they count, or
+        through a variable, the COMPUTED limit); v23.7.2 rule
         (b): every literal identifier anywhere in a value assigned to `_fields_` (ctypes' Structure/Union fields) is a
         non-lock binding, on a Name, an Attribute or a literal-key subscript target, by an assignment, a valued
         annotation, an augmented assignment or a walrus, in a class body or after it (a for, with or match target is
@@ -1494,7 +1510,8 @@ def with_item_problems(sources: dict) -> list:
     COMPUTED (a name reaching a binding call or subscript through a variable or any non-literal expression, an f-string
     whose placeholder is not a literal, a concatenation or a computed key included; a custom `__setattr__` storing
     under the name it is given; exec/eval; a field name reaching `_fields_` or a field-name string through a variable
-    or any non-literal expression (a helper's return, a string method); `_fields_` bound by a for, with or match
+    or any non-literal expression (a helper's return, a string method, a class attribute an `__init_subclass__`
+    reads); `_fields_` bound by a for, with or match
     target; a name a library derives from data, argparse's '--review-lock'
     becoming review_lock)."""
     trees = {rel: ast.parse(src) for rel, src in sources.items()}
