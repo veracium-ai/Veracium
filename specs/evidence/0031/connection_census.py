@@ -83,6 +83,15 @@ submodule re-export). THE SURFACE IS NOW DEFINED POSITIVELY:
     import ...`) REFUSES — a second name for the same surface;
   * the bare-name and dynamic-acquisition rules of rounds 4-6 stand.
 
+Every rung reads RUNTIME spellings (0031 round 9, TT-R8-01): `_parse` rewrites each identifier the compiler mangles
+(`__lock` in the body of class `Holder` runs as `_Holder__lock`) before any rung sees the tree, so a binding, a
+`with` item, an import alias, the lock constructor's names and every module alias are keyed as the compiler binds
+them, whichever class spelled them. Strings, keyword names and dunders are never mangled; a source whose private
+names a PEP 695 construct makes version-dependent (a generic class's own private type parameter included), or that
+imports a dotted private package without an alias, is refused whole (`PrivateNameSpellingUnknown`). Under
+`from __future__ import annotations` an annotation's expression is a string the compiler never mangles, and is read as
+written.
+
 The runtime MATRIX (in the driver's tests) derives every opener spelling
 from the interpreter itself — every sqlite3 attribute that IS the connect
 function or the Connection class, one submodule level down included — and
@@ -91,6 +100,137 @@ future stdlib re-export fails loudly instead of quietly widening the
 surface.
 """
 import ast
+
+
+class PrivateNameSpellingUnknown(ValueError):
+    """A class-private identifier whose RUNTIME spelling this census will not guess, so the source is refused whole
+    (every rung parses through `_parse`): its lexical class holds a PEP 695 construct, or is one (a generic class or
+    function, or a `type` statement; round 9 stage 1, B3: CPython mangles names around those by version-dependent
+    rules; a generic class's own type parameters belong to it, research's fold read 1, F2), or it is the first part of
+    a dotted import without an alias (R1: `import __x.y` binds the package to the mangled name, which no import alias
+    can say)."""
+
+
+def _runtime_name(ident, cls):
+    """CPython's private-name rule (the language reference, private-name mangling; the compiler's `_Py_Mangle`): an
+    identifier `__x`, not a dunder and with no dot (a dotted module name is never mangled), in the body of class `cls`
+    runs as `_<cls>__x`, the class name's leading underscores stripped; a class named only with underscores mangles
+    nothing."""
+    if cls is None or not ident.startswith("__") or ident.endswith("__") or "." in ident:
+        return ident
+    stripped = cls.lstrip("_")
+    return f"_{stripped}{ident}" if stripped else ident
+
+
+_GENERIC_DEFS = tuple(t for t in (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef) if "type_params" in t._fields)
+_TYPE_STATEMENT = getattr(ast, "TypeAlias", None)
+#: every identifier field the compiler mangles (round 9, TT-R8-01, measured against compile() by the matrix in
+#: tests/test_0031_proposal_ddl.py); a call's or class statement's keyword names, MatchClass.kwd_attrs and every
+#: string are never mangled and are not here
+_MANGLED_FIELDS = tuple((getattr(ast, t), f) for t, f in (
+    ("Name", "id"), ("Attribute", "attr"), ("arg", "arg"), ("FunctionDef", "name"), ("AsyncFunctionDef", "name"),
+    ("ClassDef", "name"), ("ExceptHandler", "name"), ("MatchAs", "name"), ("MatchStar", "name"),
+    ("MatchMapping", "rest"), ("TypeVar", "name"), ("ParamSpec", "name"), ("TypeVarTuple", "name"))
+    if hasattr(ast, t))
+
+
+def to_runtime_spellings(tree):
+    """Rewrite `tree` IN PLACE so every identifier the compiler mangles takes its runtime spelling (0031 round 9,
+    TT-R8-01: `__lock` in the body of class `Holder` runs as `_Holder__lock`, and every rung of this census keys,
+    compares and reports names as the compiler binds them). A node's lexical class is the innermost ClassDef whose
+    BODY holds it (stage 1, B2: a nested class's name, decorators, bases and keywords belong to the class around it);
+    a function or lambda does not stop the climb. The prefix comes from the class's ORIGINAL name. Imports are mangled
+    as the compiler mangles them (measured with dis on 3.14.7): `import __m` imports the module `_C__m`, `from os
+    import __f` fetches the attribute `_C__f`, `from __pkg import x` imports `_C__pkg`; a dotted module name is never
+    mangled. Under `from __future__ import annotations` an annotation's EXPRESSION is a string evaluated outside the
+    class, so it is left as written (its target is still mangled; research's fold read 1, F1). Raises
+    PrivateNameSpellingUnknown for the two cases it will not spell (its docstring)."""
+    parent = {c: p for p in ast.walk(tree) for c in ast.iter_child_nodes(p)}
+    stringified = set()                 # ids of the nodes in annotation expressions the compiler turns into strings
+    if any(isinstance(s, ast.ImportFrom) and s.module == "__future__" and any(a.name == "annotations" for a in s.names)
+           for s in tree.body):
+        for n in ast.walk(tree):
+            for e in ((n.annotation,) if isinstance(n, (ast.arg, ast.AnnAssign)) else
+                      (n.returns,) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) else ()):
+                if e is not None:
+                    stringified.update(id(x) for x in ast.walk(e))
+    names = {id(n): n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)}
+
+    def lexical_class(node):
+        c, p = node, parent.get(node)
+        while p is not None:
+            if isinstance(p, ast.ClassDef) and (any(c is b for b in p.body)
+                                                or any(c is b for b in getattr(p, "type_params", ()))):
+                return p
+            c, p = p, parent.get(p)
+        return None
+
+    tainted = set()
+    for n in ast.walk(tree):
+        if ((isinstance(n, _GENERIC_DEFS) and getattr(n, "type_params", None))
+                or (_TYPE_STATEMENT is not None and isinstance(n, _TYPE_STATEMENT))):
+            if isinstance(n, ast.ClassDef):
+                tainted.add(id(n))
+            owner = lexical_class(n)
+            if owner is not None:
+                tainted.add(id(owner))
+
+    def spell(node, ident):
+        if not isinstance(ident, str) or not ident.startswith("__"):      # the climb below only for a candidate
+            return ident
+        cls = lexical_class(node)
+        new = ident if cls is None else _runtime_name(ident, names[id(cls)])
+        if new != ident and id(cls) in tainted:
+            raise PrivateNameSpellingUnknown(
+                f"line {getattr(node, 'lineno', '?')}: `{ident}` in class `{names[id(cls)]}`, whose private names a "
+                "PEP 695 construct makes version-dependent (0031 round 9, B3)")
+        return new
+
+    edits = []                                  # applied after every read, so each lookup sees the ORIGINAL tree
+    for n in ast.walk(tree):
+        if id(n) in stringified:
+            continue
+        for t, f in _MANGLED_FIELDS:
+            if isinstance(n, t):
+                v = getattr(n, f, None)
+                new = spell(n, v)
+                if new != v:
+                    edits.append((n, f, new, None))
+        if isinstance(n, (ast.Global, ast.Nonlocal)):
+            for i, v in enumerate(n.names):
+                new = spell(n, v)
+                if new != v:
+                    edits.append((n, "names", new, i))
+        if isinstance(n, ast.ImportFrom) and n.module:
+            new = spell(n, n.module)
+            if new != n.module:
+                edits.append((n, "module", new, None))
+        if isinstance(n, ast.alias) and n.name != "*":
+            if n.asname is None and "." in n.name:
+                bound = n.name.split(".")[0]
+                if spell(n, bound) != bound:
+                    raise PrivateNameSpellingUnknown(
+                        f"line {getattr(n, 'lineno', '?')}: `import {n.name}` binds the package `{bound}` under its "
+                        "mangled name, which no import statement can spell (0031 round 9, R1)")
+            for f in ("name", "asname"):
+                v = getattr(n, f)
+                new = spell(n, v)
+                if new != v:
+                    edits.append((n, f, new, None))
+    for n, f, v, i in edits:
+        if i is None:
+            setattr(n, f, v)
+        else:
+            getattr(n, f)[i] = v
+    return tree
+
+
+def _parse(source):
+    """THE census's parse of a source: `ast.parse`, then `to_runtime_spellings`. Every rung reads the tree this
+    returns (round 9, R2: a test asserts by AST that `ast.parse` is called only here and in the string-annotation
+    sub-parse, whose names the compiler does not mangle)."""
+    return to_runtime_spellings(ast.parse(source))
+
 
 #: Non-opening sqlite3 attributes the codebase may use freely. POSITIVE
 #: surface: anything not listed here (and not the two special-cased names
@@ -477,7 +617,7 @@ def getattr_census(source, rel):
     sweep compares against GETATTR_ALLOWANCES. Refusals (untabled sites)
     are connect_census's business; this reader only counts allowances."""
     seen, untabled = {}, []
-    for n in ast.walk(ast.parse(source)):
+    for n in ast.walk(_parse(source)):
         if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
                 and n.func.id == "getattr" and len(n.args) >= 2
                 and isinstance(n.args[1], ast.Constant)
@@ -948,7 +1088,7 @@ def attribute_census(source, rel):
     "refused" with attr "<non-literal>". Paired tests compare the class
     of the same (receiver, attr) through both forms; the src sweep
     counts by form x class."""
-    tree = ast.parse(source)
+    tree = _parse(source)
     ctx = _binding_context(tree)
     out = []
     for n in ast.walk(tree):
@@ -1089,14 +1229,14 @@ def _class_body_without_docstring(cls) -> list:
 
 
 def _canonical_body_dump() -> list:
-    return [ast.dump(s) for s in ast.parse(CONNECTION_SUBCLASS_BODY).body]
+    return [ast.dump(s) for s in _parse(CONNECTION_SUBCLASS_BODY).body]
 
 
 def connection_subclass_uses(body_source: str = CONNECTION_SUBCLASS_BODY) -> list:
     """Every use of the connection in a class body given as source (its methods at column 0): for each method, each
     maximal expression rooted at its first parameter or at a bare `super()` (climbing an attribute's value, a call's
     function and a subscript's value), as (method, unparsed expression), in source order."""
-    tree = ast.parse(body_source)
+    tree = _parse(body_source)
     parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
     out = []
     for fn in tree.body:
@@ -1124,7 +1264,7 @@ def canonical_free_names(body_source: str = CONNECTION_SUBCLASS_BODY):
     compares syntax, so what these names mean is fixed by the FILE (rule 4), not by the body (stage 2 on 5e58373d:
     a module-level `def super()` made the identical body initialize nothing)."""
     import builtins as _builtins
-    tree = ast.parse(body_source)
+    tree = _parse(body_source)
     free = set()
     for fn in tree.body:
         bound = {a.arg for a in fn.args.posonlyargs + fn.args.args + fn.args.kwonlyargs}
@@ -1254,7 +1394,7 @@ def _factory_subclass(tree, parent, node, rel=None):
 
 def factory_subclass_names(source, rel=None) -> set:
     """The admitted factory subclasses in one source (for the tree-wide rule)."""
-    tree = ast.parse(source)
+    tree = _parse(source)
     parent = {c: n for n in ast.walk(tree) for c in ast.iter_child_nodes(n)}
     out = set()
     for n in ast.walk(tree):
@@ -1295,7 +1435,8 @@ def _binding_key(target):
     identifier ANYWHERE in src/, by any form, counts for every item that names it (TT-R6-01 B: a class-body or module
     binding was recorded as a name while the item `Holder._lock` was judged as an attribute, and an honest
     `self._lock = threading.Lock()` certified it). Receiver- and scope-blind on purpose: an over-approximation that can
-    only refuse more, never admit more."""
+    only refuse more, never admit more. The identifier is its RUNTIME spelling: every tree this census reads comes from
+    `_parse`, which has rewritten a class-private `__lock` to `_Holder__lock` (round 9, TT-R8-01)."""
     if isinstance(target, ast.Name):
         return target.id
     if isinstance(target, ast.Attribute):
@@ -1514,7 +1655,7 @@ def with_item_problems(sources: dict) -> list:
     reads); `_fields_` bound by a for, with or match
     target; a name a library derives from data, argparse's '--review-lock'
     becoming review_lock)."""
-    trees = {rel: ast.parse(src) for rel, src in sources.items()}
+    trees = {rel: _parse(src) for rel, src in sources.items()}
     lock_ok: dict = {}
     non_import: dict = {}               # identifier -> its first binding site other than an import of the real thing
     bound_any: dict = {}                # identifier -> its first binding site, imports included (TT-R7-02: the hooks)
@@ -1739,7 +1880,7 @@ def factory_subclass_problems(sources: dict) -> list:
         for other, src in sources.items():
             if other == rel:
                 continue
-            for n in ast.walk(ast.parse(src)):
+            for n in ast.walk(_parse(src)):
                 if ((isinstance(n, ast.Name) and n.id == name) or (isinstance(n, ast.Attribute) and n.attr == name)
                         or (isinstance(n, ast.alias) and name in (n.name, n.asname))
                         or (isinstance(n, ast.Constant) and n.value == name)):
@@ -1793,7 +1934,7 @@ def connect_census(source, rel):
     def bump(key):
         out[key] = out.get(key, 0) + 1
 
-    tree = ast.parse(source)
+    tree = _parse(source)
     ann_ids, ann_roots = _annotation_nodes(tree)
     parent = {}
     for n in ast.walk(tree):

@@ -2377,6 +2377,31 @@ _ESCAPES = {        # (module text before the honest owner, lines inside run() b
     "namedtuple_partial": ("import collections, functools\nNT = functools.partial(collections.namedtuple, rename=True)\n"
                            "Holder = NT('Holder', 'x 1bad review_lock')\n", "    h = Holder(1, 1, store._conn)\n",
                            "h.review_lock"),
+    # the round-8 verdict: TT-R8-01, a class-private field the compiler binds as `_Holder__lock` (its
+    # repro/test_round8_private_names.py cases: an annotation, one under if, an instance assignment), certified at the
+    # round-8 pin by an unrelated module lock of that spelling; research's stage-1 read of the round-9 design, B1: the
+    # lock constructor's names keyed by source spelling (a class's private import alias, rebound by the other class's
+    # runtime spelling) and B2: a nested class header's walrus, bound in the class AROUND it; and dev's mirror case, an
+    # item spelled `__lock` outside any class, which no class's `self.__lock` binds at run time
+    "private_annotation": ("import dataclasses\n_Holder__lock = threading.Lock()\n@dataclasses.dataclass\n"
+                           "class Holder:\n    __lock: object\n", "    h = Holder(store._conn)\n", "h._Holder__lock"),
+    "private_if_annotation": ("import dataclasses\n_Holder__lock = threading.Lock()\n@dataclasses.dataclass\n"
+                              "class Holder:\n    if True:\n        __lock: object\n", "    h = Holder(store._conn)\n",
+                              "h._Holder__lock"),
+    "private_instance_assignment": ("_Holder__lock = threading.Lock()\nclass Holder:\n    def __init__(self, v):\n"
+                                    "        self.__lock = v\n", "    h = Holder(store._conn)\n", "h._Holder__lock"),
+    "private_constructor_module": ("import types\nclass C:\n    import threading as __t\nclass D:\n"
+                                   "    def __init__(self):\n        self._dlock = __t.Lock()\n",
+                                   "    global _D__t\n    _D__t = types.SimpleNamespace(**{'Lo' + 'ck': lambda: store._conn})\n"
+                                   "    d = D()\n", "d._dlock"),
+    "private_constructor_name": ("class C:\n    from threading import Lock as __L\nclass D:\n"
+                                 "    def __init__(self):\n        self._dlock = __L()\n",
+                                 "    global _D__L\n    _D__L = lambda: store._conn\n    d = D()\n", "d._dlock"),
+    "private_header_walrus": ("", "    class C:\n        class D((__lock := store._conn).__class__):\n"
+                              "            pass\n        def setup(self):\n            self.__lock = threading.Lock()\n",
+                              "C._C__lock"),
+    "private_mirror": ("class Holder:\n    def __init__(self):\n        self.__lock = threading.Lock()\n",
+                       "    h = Holder()\n    setattr(h, '_' + '_lock', store._conn)\n", "h.__lock"),
 }
 
 
@@ -2395,7 +2420,9 @@ def test_each_refused_escape_is_refused_and_is_a_real_unrecorded_write(case, tmp
     round-7 verdict's class-body annotations under if and try (TT-R7-01) and imported hooks (TT-R7-02), and research's
     names given as data (its stage-1 read of that verdict: a ctypes field, a namedtuple field string; its read of the
     round-8 fold, F1 and its class: a namedtuple field string under rename=True, given directly or through
-    functools.partial), each refused
+    functools.partial), the round-8 verdict's class-private fields (TT-R8-01) and research's stage-1 read of the
+    round-9 design (B1, the lock constructor's private names; B2, a nested class header) with dev's mirror case,
+    each refused
     standalone and added to the complete tree, while the honest lock alone is admitted; then executed bypassing the
     census, each commits a durable write the trust phase cell never records. The lock-constructor family rebinds
     threading.Lock in this process, and the imported hooks register a helper module; both are undone before the test
@@ -2442,3 +2469,333 @@ def test_the_real_trees_with_items_are_calls_and_locks_only():
                 kinds.update(type(i.context_expr).__name__ for i in n.items)
     assert set(kinds) <= {"Call", "IfExp", "Name", "Attribute"}, kinds
     assert with_item_problems(real) == []
+
+
+# ---- round 9 (TT-R8-01): every rung reads RUNTIME spellings ----------------------------------------------------------
+#: binding and reference forms, each spelling class-private names (`__x`); the positions below place each block
+_SPELLING_FORMS = {
+    "name store/load/del": "__x = 1\nprint(__x)\ndel __x\n",
+    "attribute store/load": "o.__x = 1\nprint(o.__x)\n",
+    "annotations": "__x: int\n__y: int = 0\n",
+    "augmented": "__x += 1\n",
+    "def and parameters": "def __f(__p, *__a, __k=1, **__kw):\n    return __p\nasync def __g():\n    pass\n",
+    "class name": "class __X:\n    pass\n",
+    "lambda": "f = lambda __p: __p + __x\n",
+    "comprehension": "z = [__i for __i in __x if __i]\n",
+    "walrus": "y = (__x := 1)\n",
+    "for/with/except targets": ("for __i in ():\n    pass\nwith open('f') as __w:\n    pass\n"
+                                "try:\n    pass\nexcept E as __e:\n    pass\n"),
+    "async for/with targets": ("async def h():\n    async for __i in x:\n        pass\n"
+                               "    async with y as __w:\n        pass\n    return [__j async for __j in x]\n"),
+    "except star": "try:\n    pass\nexcept* E as __eg:\n    pass\n",
+    "match captures": ("match v:\n    case [__a, *__s]:\n        pass\n    case {'k': __b, **__r}:\n        pass\n"
+                       "    case P(__c, kw=__d):\n        pass\n    case P(__kw=1):\n        pass\n"),
+    "imports": ("import __m\nimport os as __o\nfrom os import __f, path as __p\nimport __m2 as g\n"
+                "import __pkg.sub as __ps\nfrom __pkg import __q\nfrom __pkg.sub import __r\nfrom . import __rel\n"),
+    "global and nonlocal": ("def f():\n    global __g\n    __g = 1\n    __n = 1\n    def h():\n        nonlocal __n\n"
+                            "        __n = 2\n"),
+    "decorator": "@__d\ndef f():\n    pass\n",
+    "keywords and strings": "g(__x=1, y='__z')\nsetattr(o, '__s', 1)\n__slots__ = ('__t',)\n",
+    "dunders and underscore runs": "__x__ = 1\nprint(o.__y__)\n__ = 1\n___ = 2\n__x_ = 3\no.___ = 4\n",
+    "nested class header": "class D(__B, metaclass=__M, __k=1):\n    __inner = 1\n",
+    "nested class header walrus": "class D((__lock := object()).__class__):\n    pass\n",
+}
+#: (in a class body?, the position's text; {B4}/{B8}/{B12} is the block indented four, eight or twelve spaces)
+_SPELLING_POSITIONS = {
+    "module": (False, "{B0}"),
+    "class body": (True, "class C:\n{B4}"),
+    "method": (True, "class C:\n    def m(self):\n{B8}"),
+    "function nested in a method": (True, "class C:\n    def m(self):\n        def h():\n{B12}"),
+    "class in a function in a class": (True, "class C:\n    def m(self):\n        class D:\n{B12}"),
+    "nested class": (True, "class C:\n    class D:\n{B8}"),
+    "class _C": (True, "class _C:\n{B4}"),
+    "class __C": (True, "class __C:\n{B4}"),
+    "class __ (underscores only)": (True, "class __:\n{B4}"),
+    "after a decorated nested class header": (
+        True, "class C:\n    @__deco\n    class D(__Base, metaclass=__Meta):\n        __in = 1\n{B4}"),
+    "class in a generic function": (True, "def f[T]():\n    class D:\n{B8}"),
+    "class whose nested class holds a generic method": (
+        True, "class C:\n    class D:\n        def g[T](self):\n            pass\n{B4}"),
+}
+
+
+def _compiled_names(code):
+    """Every (kind, name) a code object and its nested code objects compile to: a global or attribute name, a local, a
+    cell or a free variable, kept apart (a name the rewrite left private can turn a global into a local)."""
+    import types
+    out, stack = set(), [code]
+    while stack:
+        c = stack.pop()
+        for kind in ("co_names", "co_varnames", "co_cellvars", "co_freevars"):
+            out |= {(kind, n) for n in getattr(c, kind)}
+        stack += [k for k in c.co_consts if isinstance(k, types.CodeType)]
+    return out
+
+
+def _rewritten(src, what="<rewritten>"):
+    """The census's rewrite of `src`, compiled; an unexpected refusal or an uncompilable rewrite is an AssertionError
+    naming its cause (a crash is not a verdict)."""
+    import ast
+    from connection_census import PrivateNameSpellingUnknown, to_runtime_spellings
+    try:
+        tree = to_runtime_spellings(ast.parse(src))
+    except PrivateNameSpellingUnknown as e:
+        raise AssertionError(f"refused unexpectedly: {e}") from e
+    try:
+        return tree, compile(ast.unparse(tree), what, "exec")
+    except SyntaxError as e:
+        raise AssertionError(f"the rewrite does not compile: {e}") from e
+
+
+def _tree_identifiers(tree):
+    """Every string a tree spells in an identifier position (a str field or a list of them), dotted parts split."""
+    import ast
+    out = set()
+    for n in ast.walk(tree):
+        for _, v in ast.iter_fields(n):
+            if isinstance(v, str):
+                out.add(v)
+                out.update(v.split("."))
+            elif isinstance(v, list):
+                out.update(x for x in v if isinstance(x, str))
+    return out
+
+
+def _spelling_source(position, block):
+    import textwrap
+    text = _SPELLING_POSITIONS[position][1]
+    for k in (0, 4, 8, 12):
+        text = text.replace("{B%d}" % k, textwrap.indent(block, " " * k))
+    return text
+
+
+@pytest.mark.parametrize("position", sorted(_SPELLING_POSITIONS))
+def test_runtime_spellings_are_the_compilers_names(position):
+    """TT-R8-01, data against data: for every form in every position, the census's rewritten tree compiles to exactly
+    the names the ORIGINAL source compiles to (every code object's names, variables, cells and free variables), so the
+    census keys what the compiler binds; a dotted private import without an alias is refused in a class body (R1)
+    and compiles unchanged at module level. Runs on the interpreter at hand: CI's, 3.14 (the product's)."""
+    import ast
+    from connection_census import PrivateNameSpellingUnknown, to_runtime_spellings
+    for form, block in sorted(_SPELLING_FORMS.items()):
+        src = _spelling_source(position, block)
+        want = _compiled_names(compile(src, "<spelling>", "exec"))
+        tree, code = _rewritten(src)
+        got = _compiled_names(code)
+        assert got == want, (form, sorted(want - got), sorted(got - want))
+        # and the rewrite is COMPLETE: compiled again, the rewritten source binds no name it does not spell (the
+        # compiler would mangle any private spelling left in a class body), save the compiler's own names
+        residue = {n for _, n in got - {(k, x) for k in ("co_names", "co_varnames", "co_cellvars", "co_freevars")
+                                         for x in _tree_identifiers(tree)}
+                   if not (n.startswith(".") or (n.startswith("__") and n.endswith("__")) or n in ("format", ""))}
+        assert not residue, (form, sorted(residue))
+        # and nothing in it depends on a class's name any more: every class renamed to `__` (which mangles nothing),
+        # it compiles to the same (kind, name) pairs but the classes' own
+        own = {n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)}
+        for n in ast.walk(tree):
+            if isinstance(n, ast.ClassDef):
+                n.name = "__"
+        try:
+            unnamed = _compiled_names(compile(ast.unparse(tree), "<unnamed>", "exec"))
+        except SyntaxError as e:
+            raise AssertionError((form, f"the rewrite depends on its classes' names: {e}")) from e
+        keep = lambda pairs: {(k, n) for k, n in pairs if n not in own | {"__"}}
+        assert keep(unnamed) == keep(got), (form, sorted(keep(got) ^ keep(unnamed)))
+    dotted = _spelling_source(position, "import __pkg.sub\n")
+    if _SPELLING_POSITIONS[position][0] and position != "class __ (underscores only)":
+        with pytest.raises(PrivateNameSpellingUnknown, match="R1"):
+            to_runtime_spellings(ast.parse(dotted))
+    else:
+        assert ast.unparse(to_runtime_spellings(ast.parse(dotted))) == ast.unparse(ast.parse(dotted))
+
+
+def _compiled_strings(code):
+    import types
+    out, stack = set(), [code]
+    while stack:
+        c = stack.pop()
+        out |= {k for k in c.co_consts if isinstance(k, str)}
+        stack += [k for k in c.co_consts if isinstance(k, types.CodeType)]
+    return out
+
+
+@pytest.mark.parametrize("position", ["class body", "method", "nested class", "function nested in a method"])
+def test_future_annotations_are_strings_the_compiler_never_mangles(position):
+    """Research's fold read 1, F1: under `from __future__ import annotations` an annotation's expression is a string,
+    evaluated outside the class and never mangled, while its target still is; the rewritten tree compiles to the same
+    names AND the same string constants (the annotation strings among them) as the original."""
+    import ast
+    from connection_census import to_runtime_spellings
+    block = "x: __y.modules\n__z: __w = 1\ndef f(self, a: __t, *, b: __u.v) -> __r:\n    pass\n"
+    src = "from __future__ import annotations\n" + _spelling_source(position, block)
+    code = compile(src, "<future>", "exec")
+    rewritten = compile(ast.unparse(to_runtime_spellings(ast.parse(src))), "<rewritten>", "exec")
+    assert _compiled_names(rewritten) == _compiled_names(code)
+    assert _compiled_strings(rewritten) == _compiled_strings(code), sorted(
+        _compiled_strings(rewritten) ^ _compiled_strings(code))
+    without = compile(ast.unparse(to_runtime_spellings(ast.parse(src.split("\n", 1)[1]))), "<without>", "exec")
+    assert _compiled_names(without) == _compiled_names(compile(src.split("\n", 1)[1], "<w>", "exec"))
+
+
+#: B3: a class holding a PEP 695 construct (or being one) has version-dependent private names; refused whole
+_PEP695_TAINTED = {
+    "generic class in a class": "class C:\n    class D[T]:\n        pass\n    __lock = 1\n",
+    "generic method": "class C:\n    def m[T](self):\n        pass\n    __lock = 1\n",
+    "type statement": "class C:\n    type A = int\n    __lock = 1\n",
+    "generic class's own body": "class D[T]:\n    __lock = 1\n",
+    "a private base of a generic class": "class C:\n    class D[T](__B):\n        pass\n",
+    "a private type parameter": "class C:\n    def m[__T](self):\n        pass\n",
+    "a private ParamSpec": "class C:\n    def m[**__P](self):\n        pass\n",
+    "a private TypeVarTuple": "class C:\n    def m[*__Ts](self):\n        pass\n",
+    # research's fold read 1, F2: a module-level generic class's own private type parameter runs as `_G__T`
+    "a generic class's own private type parameter": "class G[__T]:\n    pass\n",
+    "a nested class's type statement": "class C:\n    class D:\n        type __A = int\n",
+    # conservative, not required (research's fold read 2): CPython mangles C's names in the ordinary way here on 3.13
+    # and 3.14, but the taint is by holding, and this census does not guess which holdings are harmless
+    "a type statement in a method": "class C:\n    def m(self):\n        type A = int\n    __lock = 1\n",
+}
+_PEP695_ADMITTED = {
+    "no private name": "class C:\n    class D[T]:\n        pass\n    lock = 1\n",
+    "class in a generic function": "def f[T]():\n    class D:\n        __lock = 1\n",
+    "class whose NESTED class holds the generic": "class C:\n    class D:\n        def m[T](self):\n            pass\n"
+                                                  "    __lock = 1\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(_PEP695_TAINTED))
+def test_a_private_name_beside_a_pep695_construct_refuses_the_source_everywhere(case):
+    """B3: every entry point refuses the source (PrivateNameSpellingUnknown), whichever way a module item spells the
+    name (research's addition: `__lock` and `_C__lock` alike, since no spelling is guessed)."""
+    import connection_census as cc
+    from connection_census import PrivateNameSpellingUnknown
+    for item in ("__lock", "_C__lock", "_D__lock"):
+        src = (_PEP695_TAINTED[case] + "def run(conn):\n    with " + item + ":\n"
+               "        conn.execute('x')\n")
+        for call in (lambda s: cc.connect_census(s, "p.py"), lambda s: cc.attribute_census(s, "p.py"),
+                     lambda s: cc.getattr_census(s, "p.py"), lambda s: cc.with_item_problems({"p.py": s}),
+                     lambda s: cc.factory_subclass_problems({"p.py": s})):
+            with pytest.raises(PrivateNameSpellingUnknown, match="B3"):
+                call(src)
+
+
+@pytest.mark.parametrize("case", sorted(_PEP695_ADMITTED))
+def test_a_pep695_construct_without_a_tainted_private_name_parses(case):
+    """B3's controls: taint is by direct holding (measured on 3.13 and 3.14 by research's probe_taint_depth)."""
+    import ast
+    from connection_census import to_runtime_spellings
+    src = _PEP695_ADMITTED[case]
+    want = _compiled_names(compile(src, "<spelling>", "exec"))
+    assert _compiled_names(_rewritten(src)[1]) == want
+
+
+#: one runtime program spelled twice: plain runtime names, and class-private names the compiler mangles to the same
+_SPELLING_PAIRS = {
+    "sqlite3 alias": ("import sqlite3 as _D__s\nclass D:\n    def f(self):\n        return _D__s.connect(':memory:')\n",
+                      "import sqlite3 as _D__s\nclass D:\n    def f(self):\n        return __s.connect(':memory:')\n"),
+    "sys alias": ("import sys as _D__y\nclass D:\n    def f(self):\n        return _D__y.modules\n",
+                  "import sys as _D__y\nclass D:\n    def f(self):\n        return __y.modules\n"),
+    "importlib alias": ("import importlib as _D__i\nclass D:\n    def f(self):\n        return _D__i.import_module('x')\n",
+                        "import importlib as _D__i\nclass D:\n    def f(self):\n        return __i.import_module('x')\n"),
+    "module assigned": ("import sqlite3\n_D__m = sqlite3\nclass D:\n    def f(self):\n        return _D__m.connect('')\n",
+                        "import sqlite3\n_D__m = sqlite3\nclass D:\n    def f(self):\n        return __m.connect('')\n"),
+    "protected from-import": ("from sqlite3 import connect as _D__c\nclass D:\n    def f(self):\n"
+                              "        return _D__c(':memory:')\n",
+                              "from sqlite3 import connect as _D__c\nclass D:\n    def f(self):\n"
+                              "        return __c(':memory:')\n"),
+    "class-level import": ("class C:\n    import sqlite3 as _C__q\nclass D:\n    def f(self):\n"
+                           "        return C._C__q.connect(':memory:')\n",
+                           "class C:\n    import sqlite3 as __q\nclass D:\n    def f(self):\n"
+                           "        return C._C__q.connect(':memory:')\n"),
+    "lock constructor alias": ("import multiprocessing\nclass C:\n    import threading as _C__t\n_D__t = multiprocessing\n"
+                               "class D:\n    def __init__(self):\n        self._dlock = _D__t.Lock()\n"
+                               "    def use(self, conn):\n        with self._dlock:\n            conn.execute('x')\n",
+                               "import multiprocessing\nclass C:\n    import threading as __t\n_D__t = multiprocessing\n"
+                               "class D:\n    def __init__(self):\n        self._dlock = __t.Lock()\n"
+                               "    def use(self, conn):\n        with self._dlock:\n            conn.execute('x')\n"),
+    "lock factory alias": ("import multiprocessing\nclass C:\n    from threading import Lock as _C__L\n"
+                           "_D__L = multiprocessing.Lock\nclass D:\n    def __init__(self):\n        self._dlock = _D__L()\n"
+                           "    def use(self, conn):\n        with self._dlock:\n            conn.execute('x')\n",
+                           "import multiprocessing\nclass C:\n    from threading import Lock as __L\n"
+                           "_D__L = multiprocessing.Lock\nclass D:\n    def __init__(self):\n        self._dlock = __L()\n"
+                           "    def use(self, conn):\n        with self._dlock:\n            conn.execute('x')\n"),
+}
+
+
+@pytest.mark.parametrize("pair", sorted(_SPELLING_PAIRS))
+def test_every_entry_point_gives_one_verdict_for_one_runtime_program(pair):
+    """TT-R8-01 across the whole census (dev's sweep, round 9: at the round-8 pin connect_census missed the sys alias's
+    refusal and attribute_census demoted every alias to dataflow under the private spelling): each entry point's
+    result for the private spelling equals its result for the plain one, byte for byte."""
+    import connection_census as cc
+    plain, private = _SPELLING_PAIRS[pair]
+    for name, call in (("connect_census", lambda s: cc.connect_census(s, "p.py")),
+                       ("attribute_census", lambda s: cc.attribute_census(s, "p.py")),
+                       ("getattr_census", lambda s: cc.getattr_census(s, "p.py")),
+                       ("with_item_problems", lambda s: cc.with_item_problems({"p.py": s})),
+                       ("factory_subclass_problems", lambda s: cc.factory_subclass_problems({"p.py": s}))):
+        assert call(private) == call(plain), name
+
+
+def test_a_future_annotation_reaching_a_module_alias_is_refused_as_written():
+    """Research's fold read 1, F1, its consequence: under the future import, `x: __y.modules` in a class body is the
+    string '__y.modules', which get_type_hints resolves against the module's `__y`, here sys; connect_census refuses
+    it (the round-8 pin did; fold9b's rewrite to `_C__y` admitted it)."""
+    from connection_census import connect_census
+    src = "from __future__ import annotations\nimport sys as __y\nclass C:\n    x: __y.modules\n"
+    assert connect_census(src, "p.py"), src
+
+
+def test_a_literal_name_joins_the_private_name_it_spells_at_run_time():
+    """Research's read of the round-9 redesign, (a): `setattr(self, "_Holder__lock", v)` and `self.__lock` in class
+    Holder bind one attribute, so a non-lock literal store refuses the item, and the honest lock alone is admitted."""
+    from connection_census import with_item_problems
+    honest = ("import threading\nclass Holder:\n    def __init__(self):\n        self.__lock = threading.Lock()\n"
+              "def run(h, conn):\n    with h._Holder__lock:\n        conn.execute('x')\n")
+    assert with_item_problems({"p.py": honest}) == []
+    joined = honest.replace("threading.Lock()\n", "threading.Lock()\n        setattr(self, '_Holder__lock', conn)\n", 1)
+    assert with_item_problems({"p.py": joined})
+    # a literal and a keyword name are never mangled: in a class body, `setattr(self, "__lock", lock)` binds `__lock`
+    # itself, so it certifies `h.__lock` outside the class; and a keyword name `__lock` there binds `__lock` too
+    literal = ("import threading, types\nclass Holder:\n    def __init__(self):\n"
+               "        setattr(self, '__lock', threading.Lock())\n"
+               "def run(h, conn):\n    with h.__lock:\n        conn.execute('x')\n")
+    assert with_item_problems({"p.py": literal}) == []
+    keyword = literal.replace("        setattr(self, '__lock', threading.Lock())\n",
+                              "        setattr(self, '__lock', threading.Lock())\n"
+                              "        self.ns = types.SimpleNamespace(__lock=conn)\n", 1)
+    assert keyword != literal and with_item_problems({"p.py": keyword})
+
+
+def test_the_census_parses_sources_only_through_the_rewrite():
+    """R2: by AST, the census module calls `ast.parse` in exactly two places, `_parse` and connect_census's
+    string-annotation sub-parse (mode="eval"; the compiler mangles no name inside a string); and it catches nothing but
+    that sub-parse's SyntaxError, so no rung can swallow PrivateNameSpellingUnknown."""
+    import ast
+    import inspect
+    import connection_census as cc
+    tree = ast.parse(inspect.getsource(cc))
+    parent = {c: p for p in ast.walk(tree) for c in ast.iter_child_nodes(p)}
+
+    def owner(n):
+        while n in parent:
+            n = parent[n]
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                return n.name
+    parses = [(owner(n), [k.arg for k in n.keywords]) for n in ast.walk(tree)
+              if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "parse"
+              and isinstance(n.func.value, ast.Name) and n.func.value.id == "ast"]
+    assert sorted(parses) == [("_parse", []), ("connect_census", ["mode"])], parses
+    handlers = [(owner(n), ast.unparse(n.type) if n.type else None) for n in ast.walk(tree)
+                if isinstance(n, ast.ExceptHandler)]
+    assert handlers == [("connect_census", "SyntaxError")], handlers
+
+
+def test_the_pinned_subclass_body_reads_the_same_inside_its_class():
+    """R3: `_factory_subclass` compares a src class body, rewritten under its class, with CONNECTION_SUBCLASS_BODY;
+    the pinned body has no private name, so its rewrite inside a class equals its module-level parse (a later
+    `self.__x` in the pinned body fails here first)."""
+    import ast
+    import textwrap
+    from connection_census import CONNECTION_SUBCLASS_BODY, _parse
+    inside = _parse("class Holder:\n" + textwrap.indent(CONNECTION_SUBCLASS_BODY, "    ")).body[0].body
+    assert [ast.dump(s) for s in inside] == [ast.dump(s) for s in ast.parse(CONNECTION_SUBCLASS_BODY).body]
