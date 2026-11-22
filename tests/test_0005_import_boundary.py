@@ -635,6 +635,16 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0041 v16.5 §11.7 (confirmation and dispute episodes in the receipt; the cross-user import's reference
+    # rewrite): the same-user/restore arrival cells pin both modes; every cross-user cell is a default import
+    ("test_0041_v16_5_confirm_quoting.py", "test_q1_an_imported_confirmation_episode_is_named_though_the_act_id_was_reminted"): "both",
+    ("test_0041_v16_5_confirm_quoting.py", "test_q1_a_dispute_episode_is_named_on_every_arrival_path"): "both",
+    ("test_0041_v16_5_confirm_quoting.py", "test_q1_a_cross_user_imported_confirmation_episode_is_named"): "default",
+    ("test_0041_v16_5_confirm_quoting.py", "test_q3_a_cross_user_import_rewrites_confirm_and_dispute_references_to_the_destination_ids"): "default",
+    ("test_0041_v16_5_confirm_quoting.py", "test_q3_a_caller_written_confirm_reference_still_joins_an_edge_to_its_source_episode"): "default",
+    ("test_0041_v16_5_confirm_quoting.py", "test_q3_control_correct_and_procedure_references_are_not_rewritten"): "default",
+    ("test_0041_v16_5_confirm_quoting.py", "test_q4_the_ledger_digest_of_an_absorbed_caller_written_reference_agrees_with_the_stored_value"): "default",
+    ("test_0041_v16_5_confirm_quoting.py", "_cross_user_imported"): "default",
     # specs/0049 v2.2 (E6): an import is learned when THIS store received it, pinned in both modes (import_memory, a
     # same-user and a cross-user remap; restore=True)
     ("test_0049_edges_since_learned.py", "test_e6_an_import_is_learned_when_this_store_received_it"): "both",
