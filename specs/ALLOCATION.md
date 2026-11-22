@@ -53,6 +53,7 @@
 | 0051 | `0051-speaker-turns-in-a-user-event.md` | `accepted` | speaker turns inside a user event — the assistant's first person is not the user's |  |
 | 0053 | `0053-adapter-conformance-suite.md` | `accepted` | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it |  |
 | 0054 | `0054-container-image.md` | `accepted` | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 |  |
+| 0055 | `0055-credential-shaped-text-never-stored.md` | `accepted` | credential-shaped text is never stored |  |
 
 ## Reservations (claimed, not drafted)
 
@@ -72,7 +73,7 @@
 
 none
 
-**Next number from this tree alone:** `0055`. *A new spec takes its number from `allocation.py --next`, which also steps past every draft in the peer seat's tree and refuses to answer without it — run it before the first numbered file is created, in either tree.*
+**Next number from this tree alone:** `0056`. *A new spec takes its number from `allocation.py --next`, which also steps past every draft in the peer seat's tree and refuses to answer without it — run it before the first numbered file is created, in either tree.*
 
 ## Registry state
 
