@@ -734,7 +734,7 @@ NONLITERAL_BINDING = {
     ('SqliteStore._redaction_record', 'c2aa0c6f503ee77f2f03c4cd951b3745a4d865b0e283306c915c53d5fbb16e05'): 'cd48256676379af6',
     ('SqliteStore._reply_replay', 'ebab35174f4bd03a186cdddb45260a877bf8623edb94965487f0a205325d2eac'): 'da23ba8b0553970b',
     ('SqliteStore._source_redacted', '29a9ff461c9d9dce95085ee23caaf9cf3005b1caa65b04eaaa213d5db57baa50'): '4f85982f06d6114e',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
-    ('SqliteStore._surviving_derived', '3d9f2c553d81b34f9e0c3dae13bdce09ed08cd1a45de42c73e1c810fdaef9421'): '00fc3fe13f6cd5b6',
+    ('SqliteStore._surviving_derived', '3d9f2c553d81b34f9e0c3dae13bdce09ed08cd1a45de42c73e1c810fdaef9421'): '869ec745d5af61ab',   # 0041 v16.5: the function gained the confirm/dispute reference arm (re-reviewed: the SQL text is still fixed by `table = "edges" if kind == "edge" else "episodes"`, unchanged)
     ('SqliteStore._write_edge_row', '33f41f90a9a4e29967595c068ca002673821bcb52a03d702ab8f50612eae4c23'): '837cbf13ae6f3251',
     ('SqliteStore._write_op', 'b0447a31f610348c07a0930af4ffe437a4178a7e2f7cdc52d11e2e5d8753060b'): 'f33708a9b03795b5',
     ('SqliteStore.acted_edge_ids', 'b4820e17f1261cb74f4605d69f700b538e78998cf1b5c347ff27fcff8c8b43e3'): 'c6a8d350c8576df4',

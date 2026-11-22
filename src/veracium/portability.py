@@ -733,6 +733,34 @@ def held_differs_verdict(attested_complete: bool, noticed: bool) -> str:
     return "inconsistent" if noticed else "conflict"
 
 
+QUOTING_REF_PREFIXES = ("confirm:", "dispute:")   # specs/0041 v16.5 §11.7.2: the WRITER-FIXED id-embedding conventions
+
+
+def _rewrite_quoting_refs(edge_recs: list, ep_recs: list, linkage_recs: list, id_map: dict) -> None:
+    """specs/0041 v16.5 §11.7.4 / 0009 §4c (amendment `0041/0009-quoting-ref-remap`): the rewrite R, under a cross-user
+    remap only. A `provenance.evidence_ref` exactly `confirm:<k>` or `dispute:<k>`, `k` an EDGE id of the file's own
+    universe, has `k` replaced by its mapped id — on every edge and episode record AND on the linkage snapshot's
+    `evidence_ref` (taken before the remap; reconstruction digests it into the ledger's `evidence_ref_digest`). R is
+    injective, so every equality over evidence_ref inside the unit holds, 0009 §4d's chain invariant included.
+    `correct:` and `procedure:` are caller-overridable and stay as they are."""
+    # the snapshot holds one entry per edge record, in the file's own (pre-remap) ids
+    edge_map = {lk["id"]: id_map[lk["id"]] for lk in linkage_recs if lk.get("id") is not None and lk["id"] in id_map}
+
+    def rewrite(v):
+        if isinstance(v, str):
+            for pfx in QUOTING_REF_PREFIXES:
+                if v.startswith(pfx) and v[len(pfx):] in edge_map:
+                    return pfx + edge_map[v[len(pfx):]]
+        return v
+    for rec in edge_recs + ep_recs:
+        prov = rec.get("provenance")
+        if isinstance(prov, dict) and prov.get("evidence_ref") is not None:
+            prov["evidence_ref"] = rewrite(prov["evidence_ref"])
+    for lk in linkage_recs:
+        if lk.get("evidence_ref") is not None:
+            lk["evidence_ref"] = rewrite(lk["evidence_ref"])
+
+
 def _chain_id(ep: Episode) -> tuple:
     """The `(edge_id, evidence_ref)` identity that groups one outcome chain."""
     return (ep.edge_id, ep.provenance.evidence_ref)
@@ -1246,6 +1274,14 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
                 rec["edge_id"] = _remap(rec["edge_id"])
             if rec.get("supersedes_episode") is not None:
                 rec["supersedes_episode"] = _remap(rec["supersedes_episode"])
+        # specs/0041 v16.5 §11.7.4 / 0009 §4c (amendment 0041/0009-quoting-ref-remap): the rewrite R. The two
+        # WRITER-FIXED conventions that embed an EDGE id in `provenance.evidence_ref` follow the same map, on every
+        # edge and episode record AND on the linkage snapshot (taken before the remap; reconstruction digests its
+        # evidence_ref into the ledger, so a rewrite of the records alone would leave the ledger digest over the old
+        # value). R is injective, so every equality over evidence_ref inside the unit holds (0009 §4d's chain
+        # invariant included). `correct:` and `procedure:` are caller-overridable and left as they are.
+        if remapping:
+            _rewrite_quoting_refs(edge_recs, ep_recs, linkage_recs, id_map)
         # specs/0041 §4g: the notice's SUBJECT moves with the record's — its target follows the same map (a
         # notice whose record is not in this file keeps the source's id: under a remap no record can arrive
         # under it, so it stands as the witness that the source redacted that id)

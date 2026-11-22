@@ -3,7 +3,9 @@ records that may still carry the content, found by an identifier join in EITHER 
 (outcome episodes by `edge_id`, consolidation outputs by lineage, ledger survivors) or its SOURCE (the episode an edge
 was extracted from, the edges extracted from an episode, by a shared `provenance.evidence_ref`). Dispute/correct
 summaries, which have no structural link this round, are a NAMED DOMAIN flagged when the record was disputed or
-corrected, or replaced a corrected prior (the owner's ruling (ii)).
+corrected, or replaced a corrected prior (the owner's ruling (ii)). From 0041 v16.5 (§11.7; the owner's §10 Q4
+ruling, 2026-11-22) dispute and confirmation episodes are named exactly by their reference, and the domain covers
+correct alone; tests/test_0041_v16_5_confirm_quoting.py carries that amendment's cells.
 
 Every join has a control that shares nothing with the target and is NOT named.
 """
@@ -119,11 +121,17 @@ def _domain(receipt):
     return SqliteStore.QUOTING_DOMAIN in receipt.receipt_domains
 
 
-def test_the_quoting_domain_is_named_for_a_disputed_record(tmp_path):
+def test_a_disputed_record_names_its_dispute_episode_exactly_and_no_quoting_domain(tmp_path):
+    """Was `test_the_quoting_domain_is_named_for_a_disputed_record`. From 0041 v16.5 the owner's §10 Q4 ruling
+    (2026-11-22, "Yes, name them exactly (Recommended)") moves dispute episodes to the exact tier by their
+    `dispute:<edge id>` reference (§11.7.3), and the domain covers correct alone."""
     m = tt._mem(tmp_path)
     m.store.add_edge(Edge(id="e-1", user_id=U, subject="user", relation="lives_at", object="x", provenance=_prov()))
     m.dispute(U, "e-1")
-    assert _domain(m.redact(U, edge_id="e-1", reason="subject_request"))
+    (dep,) = [e.id for e in m.store.episodes(U) if e.provenance.evidence_ref == "dispute:e-1"]
+    receipt = m.redact(U, edge_id="e-1", reason="subject_request")
+    assert _named(receipt).get(("episode", dep)) == "evidence_ref:dispute"
+    assert not _domain(receipt)
 
 
 def test_the_quoting_domain_is_named_for_a_corrected_prior_and_for_its_replacement(tmp_path):

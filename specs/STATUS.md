@@ -21,7 +21,7 @@ is the number that decides what can be built.
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-09-14 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-11-06 | 0 | 19 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-11-15 | 0 | 4 | 0 | 0 | 1 | 1/1 |
-| **0009** | outcome authorship is append-only history | `accepted` | 2026-10-24 | 0 | 5 | 0 | 0 | 1 | 1/1 |
+| **0009** | outcome authorship is append-only history | `accepted` | 2026-11-22 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
 | **0011** | subject-scoped entitlement | `accepted` | 2026-09-08 | 2 | 19 | 0 | 0 | 1 | 1/1 |
 | **0012** | who may renew a fact's currency | `accepted` | 2026-11-19 | 1 | 14 | 0 | 0 | 1 | 1/1 |
@@ -48,7 +48,7 @@ is the number that decides what can be built.
 | **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-09-15 | 0 | 5 | 3 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-14 | 0 | 4 | 0 | 0 | 0 | — |
 | **0039** | degradation visibility — what a caller and an operator learn when veracium degrades instead of failing | `accepted` | 2026-09-11 | 0 | 9 | 0 | 0 | 0 | — |
-| **0041** | targeted redaction — stored content removed, the record that it existed retained | `accepted` | 2026-11-14 | 1 | 14 | 0 | 0 | 0 | — |
+| **0041** | targeted redaction — stored content removed, the record that it existed retained | `accepted` | 2026-11-22 | 1 | 14 | 0 | 0 | 0 | — |
 | **0042** | exercised guarantees — measuring whether what we specify is what runs | `accepted` | 2026-11-15 | 0 | 23 | 0 | 0 | 0 | — |
 | **0043** | the refusal harness — measuring whether the gate declines when it should | `accepted` | 2026-10-10 | 0 | 9 | 0 | 0 | 0 | — |
 | **0044** | relation arity — a functional relation is ONE SLOT PER SUBJECT, and three of ours should not be | `accepted` | 2026-10-24 | 0 | 4 | 2 | 0 | 0 | — |

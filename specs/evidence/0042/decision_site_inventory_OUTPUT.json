@@ -2165,208 +2165,180 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 749,
+   "line": 777,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 753,
+   "line": 781,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 762,
+   "line": 790,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 766,
+   "line": 794,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 770,
+   "line": 798,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 775,
+   "line": 803,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 782,
+   "line": 810,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 787,
+   "line": 815,
    "module": "portability.py",
    "qualname": "_validate_incoming_chain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 823,
+   "line": 851,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 828,
+   "line": 856,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 838,
+   "line": 866,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 841,
+   "line": 869,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 844,
+   "line": 872,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 873,
+   "line": 901,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 887,
+   "line": 915,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 897,
+   "line": 925,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 909,
+   "line": 937,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 913,
+   "line": 941,
    "module": "portability.py",
    "qualname": "import_memory._opt_int"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 921,
+   "line": 949,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 928,
+   "line": 956,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 936,
+   "line": 964,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 1042,
+   "line": 1070,
    "module": "portability.py",
    "qualname": "import_memory._one_or_unresolved"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1335,
+   "line": 1371,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1425,
+   "line": 1461,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1481,
+   "line": 1517,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1492,
-   "module": "portability.py",
-   "qualname": "import_memory"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 1499,
-   "module": "portability.py",
-   "qualname": "import_memory"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 1508,
-   "module": "portability.py",
-   "qualname": "import_memory"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 1525,
-   "module": "portability.py",
-   "qualname": "import_memory"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 1531,
+   "line": 1528,
    "module": "portability.py",
    "qualname": "import_memory"
   },
@@ -2380,206 +2352,213 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1543,
+   "line": 1544,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1572,
+   "line": 1561,
+   "module": "portability.py",
+   "qualname": "import_memory"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1567,
+   "module": "portability.py",
+   "qualname": "import_memory"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1571,
+   "module": "portability.py",
+   "qualname": "import_memory"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1579,
+   "module": "portability.py",
+   "qualname": "import_memory"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1608,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 1600,
+   "line": 1636,
    "module": "portability.py",
    "qualname": "import_memory._notice_counts_for"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1603,
+   "line": 1639,
    "module": "portability.py",
    "qualname": "import_memory._notice_counts_for"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 1604,
+   "line": 1640,
    "module": "portability.py",
    "qualname": "import_memory._notice_counts_for"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1624,
+   "line": 1660,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1680,
+   "line": 1716,
    "module": "portability.py",
    "qualname": "import_memory"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1745,
+   "line": 1781,
    "module": "portability.py",
    "qualname": "_arity_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1752,
+   "line": 1788,
    "module": "portability.py",
    "qualname": "_arity_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1766,
+   "line": 1802,
    "module": "portability.py",
    "qualname": "_arity_preflight"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 1827,
+   "line": 1863,
    "module": "portability.py",
    "qualname": "_act_preflight.carriers"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1835,
+   "line": 1871,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1840,
+   "line": 1876,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1846,
+   "line": 1882,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1851,
+   "line": 1887,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1857,
+   "line": 1893,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1885,
+   "line": 1921,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1891,
+   "line": 1927,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1920,
+   "line": 1956,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1934,
+   "line": 1970,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1946,
+   "line": 1982,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1950,
+   "line": 1986,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1963,
+   "line": 1999,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1968,
+   "line": 2004,
    "module": "portability.py",
    "qualname": "_act_preflight"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2027,
+   "line": 2063,
    "module": "portability.py",
    "qualname": "_preflight_and_commit"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2031,
+   "line": 2067,
    "module": "portability.py",
    "qualname": "_preflight_and_commit"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2042,
-   "module": "portability.py",
-   "qualname": "_preflight_and_commit"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 2057,
-   "module": "portability.py",
-   "qualname": "_preflight_and_commit"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 2061,
-   "module": "portability.py",
-   "qualname": "_preflight_and_commit"
-  },
-  {
-   "bare": false,
-   "kind": "RAISE",
-   "line": 2084,
+   "line": 2078,
    "module": "portability.py",
    "qualname": "_preflight_and_commit"
   },
@@ -2600,14 +2579,35 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2105,
+   "line": 2120,
    "module": "portability.py",
    "qualname": "_preflight_and_commit"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 2124,
+   "line": 2129,
+   "module": "portability.py",
+   "qualname": "_preflight_and_commit"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2133,
+   "module": "portability.py",
+   "qualname": "_preflight_and_commit"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2141,
+   "module": "portability.py",
+   "qualname": "_preflight_and_commit"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 2160,
    "module": "portability.py",
    "qualname": "_preflight_and_commit"
   },
@@ -7358,13 +7358,7 @@
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 3916,
-   "module": "store/sqlite.py",
-   "qualname": "SqliteStore._quoting_domain"
-  },
-  {
-   "kind": "RETURN_FALSE",
-   "line": 3920,
+   "line": 3929,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._quoting_domain"
   },
@@ -7375,115 +7369,133 @@
    "qualname": "SqliteStore._quoting_domain"
   },
   {
-   "bare": false,
-   "kind": "RAISE",
+   "kind": "RETURN_FALSE",
+   "line": 3944,
+   "module": "store/sqlite.py",
+   "qualname": "SqliteStore._quoting_domain"
+  },
+  {
+   "kind": "RETURN_FALSE",
    "line": 3958,
    "module": "store/sqlite.py",
-   "qualname": "SqliteStore.redact"
+   "qualname": "SqliteStore._remapped_quoting_domain"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 3965,
+   "module": "store/sqlite.py",
+   "qualname": "SqliteStore._remapped_quoting_domain"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 3964,
+   "line": 3991,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.redact"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 3977,
+   "line": 3997,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.redact"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4003,
+   "line": 4010,
+   "module": "store/sqlite.py",
+   "qualname": "SqliteStore.redact"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 4036,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._redact_in_txn"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4031,
+   "line": 4064,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._redact_in_txn"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4154,
+   "line": 4187,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._redact_in_txn"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 4215,
+   "line": 4250,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._erase_preview_keys"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4240,
+   "line": 4275,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.forget_user"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4281,
+   "line": 4316,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.write_policy_receipt"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4296,
+   "line": 4331,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.policy_receipts"
   },
   {
    "kind": "FILTER_RETURN",
-   "line": 4299,
+   "line": 4334,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.policy_receipts"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 4325,
+   "line": 4360,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.upsert_embedding"
   },
   {
    "bare": true,
    "kind": "RAISE",
-   "line": 4335,
+   "line": 4370,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.upsert_embedding"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 4347,
+   "line": 4382,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._upsert_embedding_in_txn"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 4354,
+   "line": 4389,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore._upsert_embedding_in_txn"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 4415,
+   "line": 4450,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.set_wiki"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 4424,
+   "line": 4459,
    "module": "store/sqlite.py",
    "qualname": "SqliteStore.discard_wiki"
   },
@@ -7733,7 +7745,7 @@
    "BOOL_RETURN": 110,
    "FILTER_RETURN": 67,
    "RAISE": 749,
-   "RETURN_FALSE": 116,
+   "RETURN_FALSE": 118,
    "RETURN_NONE": 121
   },
   "kinds": [
@@ -8149,7 +8161,7 @@
     "BOOL_RETURN": 10,
     "FILTER_RETURN": 20,
     "RAISE": 156,
-    "RETURN_FALSE": 18,
+    "RETURN_FALSE": 20,
     "RETURN_NONE": 17
    },
    "telemetry.py": {
@@ -8167,7 +8179,7 @@
     "RETURN_NONE": 0
    }
   },
-  "total": 1163,
+  "total": 1165,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

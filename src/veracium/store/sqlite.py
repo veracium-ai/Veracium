@@ -3862,7 +3862,9 @@ class SqliteStore(Store):
         Same user only. A record that is itself attested-redacted is left out: it no longer carries the content.
         `evidence_ref` is preserved by the treatment (row 53), so the join holds after the redaction and on a repeat
         receipt. A caller-supplied evidence_ref can OVER-name — the conservative direction for a "may still carry
-        it" list (noise, never a false guarantee). Dispute/correct summaries have no structural link this round;
+        it" list (noise, never a false guarantee). An EDGE's CONFIRMATION and DISPUTE episodes are named by
+        `provenance.evidence_ref` = `confirm:` / `dispute:` + its id (specs/0041 v16.5 §11.7.3: both conventions pass
+        §11.7.2's four-property test; dispute by the owner's §10 Q4 ruling). Correction summaries have no tier-1 join;
         they are the NAMED DOMAIN `_quoting_domain` reports, not a list."""
         redacted = {"edge": self.redacted_targets(user_id, "edge"), "episode": self.redacted_targets(user_id, "episode")}
         out, seen = [], set()
@@ -3876,6 +3878,8 @@ class SqliteStore(Store):
         row = self._conn.execute(f"SELECT json FROM {table} WHERE id=? AND user_id=?", (target_id, user_id)).fetchone()
         ev = (json.loads(row[0]).get("provenance") or {}).get("evidence_ref") if row else None
         if kind == "edge":
+            quoting_refs = {f"confirm:{target_id}": "a confirmation episode whose summary quotes the redacted record",
+                            f"dispute:{target_id}": "a dispute episode whose summary quotes the redacted record"}
             for st, sid, site in self._conn.execute(
                     "SELECT DISTINCT survivor_type, survivor_id, site FROM contribution_ledger "
                     "WHERE user_id=? AND contributor_type='edge' AND contributor_ref=?", (user_id, target_id)):
@@ -3888,6 +3892,12 @@ class SqliteStore(Store):
                 elif ev and (d.get("provenance") or {}).get("evidence_ref") == ev:
                     name("episode", eid, "evidence_ref",
                          "the source episode the redacted record was extracted from (it may quote the content)")
+                elif (d.get("provenance") or {}).get("evidence_ref") in quoting_refs:
+                    # specs/0041 v16.5 §11.7.3 (dispute by the owner's §10 Q4 ruling, 2026-11-22): joined by the
+                    # REFERENCE, never by the confirmation's id — an import re-mints the act's id and keeps the
+                    # episode's, and pre-80673163 rows minted the two apart
+                    verb = d["provenance"]["evidence_ref"].split(":", 1)[0]
+                    name("episode", eid, f"evidence_ref:{verb}", quoting_refs[d["provenance"]["evidence_ref"]])
         else:
             # lineage carries the HISTORICAL form of each consumed input's id (X19), so the target is matched in
             # that form — a raw-id comparison never matched (round 10, found in the R9-03 fix: reachable when a
@@ -3902,33 +3912,56 @@ class SqliteStore(Store):
                         name("edge", eid, "evidence_ref", "a fact extracted from the redacted episode")
         return out
 
-    # the NAMED DOMAIN for summaries with no structural link this round (the owner's ruling (ii), 2026-10-02, given in
-    # the dev session): an edge that was disputed or corrected — or that REPLACED a corrected prior — is quoted by an
-    # episode the receipt cannot list exactly; the domain says so. A structural link is a later spec's.
-    QUOTING_DOMAIN = ("episodes quoting the record (dispute/correct summaries) — no exact list this round: the record "
-                      "was disputed or corrected, and the episode that says so quotes it")
+    # the NAMED DOMAIN for summaries with no structural link (the owner's ruling (ii), 2026-10-02, given in the dev
+    # session, NARROWED by the owner's §10 Q4 answer of 2026-11-22, specs/0041 v16.5 §11.7.3): an edge that was
+    # corrected — or that REPLACED a corrected prior — is quoted by an episode the receipt cannot list exactly; the
+    # domain says so. Dispute and confirmation episodes are named exactly (`_surviving_derived`). A structural link
+    # for correction episodes is a later spec's.
+    QUOTING_DOMAIN = ("episodes quoting the record (correct summaries) — no exact list this round: the record "
+                      "was corrected, and the episode that says so quotes it")
 
     def _quoting_domain(self, user_id: str, kind: str, target_id: str) -> bool:
-        """Sound over every writer of a quoting summary: dispute retires the target `disputed`, a correction retires
-        the prior `corrected` (the reason survives redaction, and so does the journal event), and a correction's
-        REPLACEMENT — quoted as "… to '<its value>'" — supersedes a `corrected` prior."""
+        """Sound over the one quoting writer with NO tier-1 join, `correct` (specs/0041 v16.5 §11.7.3: `confirm` and
+        `dispute` are joined by their reference, `record_outcome` by `edge_id`): a correction retires the prior
+        `corrected` (the reason survives redaction, and so does the journal event), and a correction's REPLACEMENT —
+        quoted as "… to '<its value>'" — supersedes a `corrected` prior."""
         if kind != "edge":
             return False
-        quoting = ("disputed", "corrected")
         row = self._conn.execute("SELECT json FROM edges WHERE id=? AND user_id=?", (target_id, user_id)).fetchone()
         if row is None:
             return False
         d = json.loads(row[0])
-        if d.get("invalidation_reason") in quoting:
+        if d.get("invalidation_reason") == "corrected":
             return True
         if self._conn.execute("SELECT 1 FROM edge_event WHERE user_id=? AND edge_id=? AND kind='invalidated' AND "
-                              "reason IN (?,?) LIMIT 1", (user_id, target_id, *quoting)).fetchone():
+                              "reason=? LIMIT 1", (user_id, target_id, "corrected")).fetchone():
             return True
         prior = d.get("supersedes")
         if prior:
             p = self._conn.execute("SELECT json FROM edges WHERE id=? AND user_id=?", (prior, user_id)).fetchone()
             if p is not None and json.loads(p[0]).get("invalidation_reason") == "corrected":
                 return True
+        return False
+
+    # specs/0041 v16.5 §11.7.5: a store that took a cross-user import BEFORE v16.5 holds confirmation and dispute
+    # episodes whose references still name the SOURCE's edge ids, so §11.7.3's exact arm cannot reach them
+    REMAPPED_QUOTING_DOMAIN = ("episodes that may quote this record by a reference an earlier cross-user import left "
+                               "unrewritten")
+    _REMAP_PREFIX = "imp-e-"            # the cross-user remap's minted edge-id prefix (portability, since v0.5.0)
+
+    def _remapped_quoting_domain(self, user_id: str, kind: str, target_id: str) -> bool:
+        """§11.7.5's trigger: an EDGE target whose id carries the remap's minted prefix, AND an ORPHAN reference — an
+        episode of this user whose `evidence_ref` is `confirm:<k>` or `dispute:<k>` with `k` naming no edge of this
+        user, which is exactly what a pre-v16.5 remap leaves. Conservative: a later orphan (a confirmed edge since
+        deleted) or a caller-chosen `imp-e-` id also fires it; it never misses a pre-v16.5 remap's reference."""
+        if kind != "edge" or not target_id.startswith(self._REMAP_PREFIX):
+            return False
+        edge_ids = {r for (r,) in self._conn.execute("SELECT id FROM edges WHERE user_id=?", (user_id,))}
+        for (js,) in self._conn.execute("SELECT json FROM episodes WHERE user_id=?", (user_id,)):
+            ref = (json.loads(js).get("provenance") or {}).get("evidence_ref") or ""
+            for pfx in ("confirm:", "dispute:"):
+                if ref.startswith(pfx) and ref[len(pfx):] not in edge_ids:
+                    return True
         return False
 
     _RECEIPT_DOMAINS = (
@@ -4193,7 +4226,9 @@ class SqliteStore(Store):
         common = dict(redacted_kind=kind, target_id=target_id, user_id=user_id, fields_cleared=json.loads(fields),
                       repeated=repeated, receipts_complete=False,
                       receipt_domains=(list(self._RECEIPT_DOMAINS)
-                                       + ([self.QUOTING_DOMAIN] if self._quoting_domain(user_id, kind, target_id) else [])),
+                                       + ([self.QUOTING_DOMAIN] if self._quoting_domain(user_id, kind, target_id) else [])
+                                       + ([self.REMAPPED_QUOTING_DOMAIN]
+                                          if self._remapped_quoting_domain(user_id, kind, target_id) else [])),
                       surviving_derived=self._surviving_derived(user_id, kind, target_id))
         if _s_origin is None:                     # round 11 (R10-04): a LOCAL redaction — by the record, never the reason
             return _redaction.RedactionReceipt(

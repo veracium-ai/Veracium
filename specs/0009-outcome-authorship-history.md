@@ -2,6 +2,7 @@
 
 Spec-Status: accepted
 Spec-Requires: 0007, 0013
+Folds: 0041/0009-quoting-ref-remap
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
@@ -26,8 +27,8 @@ Spec-Requires: 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v7 (drafted by research 2026-10-24; ADOPTED by dev 2026-10-24 from research dda15112, candidate sha256 4b64abb4…) — THE IMPORT'S OWNER CONFLICT, STATED (R-II round 3's N-a and N-b; the refusal shipped at `537dcd8`).** §4c gains one paragraph: an import whose file carries an id another user holds at the destination is refused at once as an owner conflict, whole-import and never retried; and the refusal may say "another user", never which (the owner's ruling, 2026-10-24: "Keep it, record the rule (Recommended)"). Nothing else changes: no rule, invariant or code; the H1–H14 surface and §16's acceptance boundary stand. v6 was accepted 2026-08-07; v7 ACCEPTED 2026-10-24 on the owner's word ("Accept 0009 v7 (Recommended)"). |
-| **Prior chain** | v6: `a88219c` (round-5 closure), accepted `e531839` 2026-08-07, acceptance-artifact corrections `ef10545` and `4b81ec3`, amended by 0020/0021 at `89dc839` (2026-08-16; the "Amended by 0020/0021" block below; no version bump) ← v5 `3596766` ← v4 `54be2ba` ← v3 `cb27537` ← v2 `33427fa` ← v1 `c2383ba` (split from 0002 §M4/§7a). Commits in this repository. |
+| **Version** | **v7.1 — 2026-11-22: 0041 v16.5's cross-spec line (amendment `0041/0009-quoting-ref-remap`): a cross-user import rewrites the `confirm:` and `dispute:` evidence references through its id map (§4c), keeping §4d's chain invariant.** Folded by dev from research's draft (research `aac303f0`, `proposals/0009-quoting-ref-remap-AMENDMENT-DRAFT.md`), on the owner's word "Land now, review later" (2026-11-22, given in the dev session); its external review rides the next 0041/0055 round. One paragraph is added to §4c after Correction B, and the first `Folds:` line. **Prior:** **v7 (drafted by research 2026-10-24; ADOPTED by dev 2026-10-24 from research dda15112, candidate sha256 4b64abb4…) — THE IMPORT'S OWNER CONFLICT, STATED (R-II round 3's N-a and N-b; the refusal shipped at `537dcd8`).** §4c gains one paragraph: an import whose file carries an id another user holds at the destination is refused at once as an owner conflict, whole-import and never retried; and the refusal may say "another user", never which (the owner's ruling, 2026-10-24: "Keep it, record the rule (Recommended)"). Nothing else changes: no rule, invariant or code; the H1–H14 surface and §16's acceptance boundary stand. v6 was accepted 2026-08-07; v7 ACCEPTED 2026-10-24 on the owner's word ("Accept 0009 v7 (Recommended)"). |
+| **Prior chain** | v7: `77a750fc` (accepted 2026-10-24) ← v6: `a88219c` (round-5 closure), accepted `e531839` 2026-08-07, acceptance-artifact corrections `ef10545` and `4b81ec3`, amended by 0020/0021 at `89dc839` (2026-08-16; the "Amended by 0020/0021" block below; no version bump) ← v5 `3596766` ← v4 `54be2ba` ← v3 `cb27537` ← v2 `33427fa` ← v1 `c2383ba` (split from 0002 §M4/§7a). Commits in this repository. |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M4/§7a. |
 | **Internal reviewers** | research — pending |
 | **External review** | complete — 5 rounds, architecture affirmed each time |
@@ -568,6 +569,18 @@ the head is derived (H-Q2), there is no materialised head pointer to "fix."
 > back at the *source* store's episode id. **H4 includes a cross-user remap fixture.**
 > (Under Option A there is no `committed_seq` to reallocate on import — one of the
 > import complications Option B would have added, §4b.)
+>
+> **Cross-user import also rewrites two evidence references (amendment `0041/0009-quoting-ref-remap`; 0041 §11.7.4).**
+> Two writer-fixed conventions embed an edge id in `provenance.evidence_ref`: `confirm:<edge id>` and
+> `dispute:<edge id>`. Under a cross-user remap, a value exactly `confirm:<k>` or `dispute:<k>`, where `k` is an EDGE
+> id in the import's id map, has `k` replaced with its mapped id. The rewrite is computed once from the same id map.
+> It applies to every edge record and every episode record of the unit, and to the `evidence_ref` of the linkage
+> snapshot that reconstruction digests into the contribution ledger. No other value changes: `correct:` and
+> `procedure:` references, which a caller can override, are left as they are.
+>
+> **§4d's frozen invariant is kept.** The rewrite is an injective function of the value, so every link of one chain
+> is rewritten alike, and `evidence_ref` stays identical throughout the chain. A same-user import and a trusted
+> restore rewrite nothing.
 
 ### 4d. What makes every link "the same chain" — the frozen invariant payload (round 1, correction C)
 

@@ -15,6 +15,26 @@
 - **Who should upgrade:** hosts whose users' memory holds facts about other people (a `person:…` subject), read
   through the briefing or the trust tools.
 
+**A redaction receipt names the confirmation and dispute episodes that quote the redacted fact** (specs/0041 v16.5,
+amendment `0041/confirm-quoting`; specs/0009 v7.1).
+- **Fixed (pre-existing since 0.27.0, when `redact` shipped): `redact(edge_id=…)` now lists, in `surviving_derived`, every episode that
+  `confirm` or `dispute` wrote about that fact.** Both summaries quote the fact ("(user) confirmed '<relation>:
+  <object>' still holds"), and redaction treats only the record it is given, so those quotes survived it. Before
+  this release a confirmation's quote was named nowhere in the receipt, and a dispute's only as a general domain.
+  Each new entry carries `via` `evidence_ref:confirm` or `evidence_ref:dispute`; the caller can redact it.
+- **Changed: the receipt's quoting domain now covers corrections alone.** `receipt_domains` carries it only for a
+  record that was corrected, or replaced a corrected one, and its text is now `episodes quoting the record (correct
+  summaries) — no exact list this round: the record was corrected, and the episode that says so quotes it` (it read
+  "dispute/correct summaries … disputed or corrected"). **Who must act:** a host that matches the old string.
+- **Fixed: a cross-user import (`import_memory(…, user_id=<other>)`) now rewrites the `confirm:<edge id>` and
+  `dispute:<edge id>` evidence references to the edges' new ids,** so the receipt finds those episodes after such an
+  import. A same-user import and a restore change nothing.
+- **New: a store that took a cross-user import before this release** keeps references to the source's ids. Redacting
+  one of its imported facts (an `imp-e-…` id) while such a reference remains reports one more domain, `episodes that
+  may quote this record by a reference an earlier cross-user import left unrewritten`.
+- **Who should upgrade:** deployments that honour erasure requests through `redact` and whose users confirm or
+  dispute facts.
+
 ## 0.33.0 — 2026-11-18
 
 **A user can look up, correct, dispute, confirm and erase their memory through their agent, and `veracium mcp`
