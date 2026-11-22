@@ -1,5 +1,5 @@
 {
- "body_sha256": "1e820088445a6dcb74166934685f75c9814de109ae494b8eb595e7eb433f3864",
+ "body_sha256": "6aad140004cbf7958abaa7cec28b493907c3e670ef32445333500a78205cda7c",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "5e58373d67afb996e8d5b48cff700b6834c551d6",
+  "commit": "658b73d16c585936aaf375ba59b45e364febf927",
   "control_definitions": {
    "NOOP-0048-R1-01-lifecycle": "6e91be8bea7312abb276ab369c6a729330d4723354d885ad796ffc857912de46"
   },
@@ -66,7 +66,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "2b097914f9b250ba0ffd532c833a07961fdd4743ec184b7f177d46bba37d209e",
-   "tests/test_0048_decay_bounds.py": "9b74ab6f2ce8883dc9ace03c62428e5d3bcf93ff737af78d69f36eff2246f880"
+   "tests/test_0048_decay_bounds.py": "bc66046cd3a02eeca9fb2ee4bd1e480bf24bbe02e1e24f15c87bd56949ce21e1"
   },
   "finding": "0048-R1-01",
   "honest_nodes": [
@@ -77,11 +77,7 @@
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
-  "tracked_changes": [
-   "specs/evidence/0031/connection_census.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0031_proposal_ddl.py"
-  ]
+  "tracked_changes": []
  },
  "rows": [
   {
@@ -115,7 +111,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.48s",
+   "pytest": "2 failed in 1.54s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -151,7 +147,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.44s",
+   "pytest": "2 failed in 1.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"
@@ -166,6 +162,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 15
+  "seconds": 16
  }
 }

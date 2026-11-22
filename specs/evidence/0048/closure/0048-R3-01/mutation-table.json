@@ -1,5 +1,5 @@
 {
- "body_sha256": "70d0b52f52a29b8a66740658ecbf4c368e37a109cb413fdc5989c4ec6fb47535",
+ "body_sha256": "32819384c2ab7a5b4a875a7b9d5063c0682ce84a032056bbcc04a31c8d2989c5",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "5e58373d67afb996e8d5b48cff700b6834c551d6",
+  "commit": "658b73d16c585936aaf375ba59b45e364febf927",
   "control_definitions": {
    "NOOP-0048-R3-01-sqlite": "c70bf2efe0f5f22c5d0166c85abd55bb4340fd2acb1081db3069a3e8b0790311"
   },
@@ -56,8 +56,8 @@
    "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/store/sqlite.py": "817fe5ab0691dad1ec77357cfd18ddee73ca25306176419afcd652c6ee5ba114",
-   "tests/test_0048_decay_bounds.py": "9b74ab6f2ce8883dc9ace03c62428e5d3bcf93ff737af78d69f36eff2246f880"
+   "src/veracium/store/sqlite.py": "f1fc3fb582b93c99e54804a4d81bc1f28b2d39a49677e6a65009368f5b2fc44c",
+   "tests/test_0048_decay_bounds.py": "bc66046cd3a02eeca9fb2ee4bd1e480bf24bbe02e1e24f15c87bd56949ce21e1"
   },
   "finding": "0048-R3-01",
   "honest_nodes": [
@@ -68,14 +68,12 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0031_proposal_ddl.py"
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json"
   ]
  },
  "rows": [
@@ -107,7 +105,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION (round 3's body): one observation validated, another serialised (R3-01)"
@@ -140,7 +138,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.06s",
+   "pytest": "1 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "the capture validated, a second dump returned: the bytes bound are not the bytes checked"
@@ -155,6 +153,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 12
+  "seconds": 13
  }
 }

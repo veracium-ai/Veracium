@@ -1,5 +1,5 @@
 {
- "body_sha256": "09fc79f7759693e3d22ea9f789e888da9c5a82fed3759e3e64ea7436865d34b7",
+ "body_sha256": "f33e36b4137b088d6bbfbb16eca9c299be8cc0bc9eb275672efafd57ca53ba90",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "5e58373d67afb996e8d5b48cff700b6834c551d6",
+  "commit": "658b73d16c585936aaf375ba59b45e364febf927",
   "control_definitions": {
    "NOOP-0048-R5-01-test_0048_decay_bounds": "0cfe4e051dd6d08fed6ecbd72e9f10a251045ebf676a8406a4e8b2f19a4cf7fd"
   },
@@ -57,7 +57,7 @@
    "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "tests/test_0048_decay_bounds.py": "9b74ab6f2ce8883dc9ace03c62428e5d3bcf93ff737af78d69f36eff2246f880"
+   "tests/test_0048_decay_bounds.py": "bc66046cd3a02eeca9fb2ee4bd1e480bf24bbe02e1e24f15c87bd56949ce21e1"
   },
   "finding": "0048-R5-01",
   "honest_nodes": [
@@ -68,7 +68,7 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -78,9 +78,7 @@
    "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0031_proposal_ddl.py"
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json"
   ]
  },
  "rows": [
@@ -115,7 +113,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.31s",
+   "pytest": "2 failed in 10.89s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: a receiver spelled `self` is exempted without resolving what it denotes"
@@ -130,6 +128,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 77
+  "seconds": 81
  }
 }

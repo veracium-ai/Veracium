@@ -1,5 +1,5 @@
 {
- "body_sha256": "3bbed475ce2878bdae09e20f20fdf490e4c538f998109bb24b6291785cb990ac",
+ "body_sha256": "c128924c914d49302ee4aa13072a8fd1fcfa9d9922fca3749078622312fa4f25",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "5e58373d67afb996e8d5b48cff700b6834c551d6",
+  "commit": "658b73d16c585936aaf375ba59b45e364febf927",
   "control_definitions": {
    "NOOP-0048-R3-03-config": "3dce0ba491331f401cb1ec2273a4d85c79b5370b37ea699dc1f3a9acda1fe758"
   },
@@ -65,7 +65,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/config.py": "a510123ae142da13952aa1ffabcf2d89099525ff87b2fcb8baf289964f0d96c9",
-   "tests/test_0048_decay_bounds.py": "9b74ab6f2ce8883dc9ace03c62428e5d3bcf93ff737af78d69f36eff2246f880"
+   "tests/test_0048_decay_bounds.py": "bc66046cd3a02eeca9fb2ee4bd1e480bf24bbe02e1e24f15c87bd56949ce21e1"
   },
   "finding": "0048-R3-03",
   "honest_nodes": [
@@ -76,16 +76,14 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0031_proposal_ddl.py"
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json"
   ]
  },
  "rows": [
@@ -126,7 +124,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 2.23s",
+   "pytest": "4 failed in 2.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the float conversion first again: 10**400 raises OverflowError, not the ValueError naming the field (R3-03)"
@@ -141,6 +139,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 11
+  "seconds": 12
  }
 }
