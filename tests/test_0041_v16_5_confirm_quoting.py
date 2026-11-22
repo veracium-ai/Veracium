@@ -2,11 +2,11 @@
 
 `confirm()` writes an episode that quotes the edge it confirms. Redacting that edge named the episode in neither tier
 of §8. From v16.5:
-- the receipt names it by `provenance.evidence_ref` = `confirm:` + the target's id (§11.7.3, INV-Q1/Q2);
+- the receipt names it by `provenance.evidence_ref` = `confirm:` + the target's id (§11.7.3; §11.7.6's Q1 and Q2);
 - a cross-user import rewrites `confirm:<k>` / `dispute:<k>` through its id map, on edges, episodes AND the linkage
-  snapshot (§11.7.4, INV-Q3/Q4);
+  snapshot (§11.7.4; §11.7.6's Q3 and Q4);
 - a store that took a cross-user import BEFORE v16.5 reports a domain when an orphan reference exists (§11.7.5,
-  INV-Q5).
+  §11.7.6's Q5).
 
 Each invariant's mutant (§11.7.6) is named on the test that kills it.
 """
@@ -56,7 +56,7 @@ def _holders(m, user, token):
     return sorted(e.id for e in m.store.episodes(user) if token in e.summary)
 
 
-# ------------------------------------------------------------------------------------------------------------ INV-Q1
+# ------------------------------------------------------------------------------------------------------------ 0041 §11.7.6 Q1
 # mutants killed: the reference arm removed; an id-only join (`ep-` + the act's id)
 
 def test_q1_a_local_confirmation_episode_is_named(tmp_path):
@@ -125,7 +125,7 @@ def test_q1_control_another_edges_confirmation_is_not_named(tmp_path):
     assert ("episode", cep2) not in named
 
 
-# ------------------------------------------------------------------------------------------------------------ INV-Q2
+# ------------------------------------------------------------------------------------------------------------ 0041 §11.7.6 Q2
 # mutant killed: the naming rule's redacted exclusion removed
 
 def test_q2_a_redacted_confirmation_episode_is_not_named_and_a_repeat_receipt_names_the_same_set(tmp_path):
@@ -140,7 +140,7 @@ def test_q2_a_redacted_confirmation_episode_is_not_named_and_a_repeat_receipt_na
     assert again.repeated and _named(again) == _named(first)
 
 
-# ------------------------------------------------------------------------------------------------------------ INV-Q3
+# ------------------------------------------------------------------------------------------------------------ 0041 §11.7.6 Q3
 # mutants killed: R applied to episodes only; R not applied
 
 def test_q3_a_cross_user_import_rewrites_confirm_and_dispute_references_to_the_destination_ids(tmp_path):
@@ -196,7 +196,7 @@ def test_q3_control_correct_and_procedure_references_are_not_rewritten(tmp_path)
     dst.close()
 
 
-# ------------------------------------------------------------------------------------------------------------ INV-Q4
+# ------------------------------------------------------------------------------------------------------------ 0041 §11.7.6 Q4
 # mutant killed: R applied after the snapshot only (records rewritten, the linkage snapshot not)
 
 def test_q4_the_ledger_digest_of_an_absorbed_caller_written_reference_agrees_with_the_stored_value(tmp_path):
@@ -225,7 +225,7 @@ def test_q4_the_ledger_digest_of_an_absorbed_caller_written_reference_agrees_wit
     dst.close()
 
 
-# ------------------------------------------------------------------------------------------------------------ INV-Q5
+# ------------------------------------------------------------------------------------------------------------ 0041 §11.7.6 Q5
 # mutants killed: the domain removed; the domain fired on the prefix alone
 
 def _cross_user_imported(tmp_path, monkeypatch, *, pre_v16_5):
