@@ -1162,7 +1162,7 @@ IGNORECASE census over every code point).
 | I6 | `portability._credential_screen`, after the procedural pass and before step 1b | plain, restore, restore with `withhold_credentials`, and an identifier under the flag |
 | I7 | the read backstop at the renderers (`render_edges`, `clamp_edge_line`, the episode lines, proactive, as-of, contested lines, `why`, `describe_procedures`) and the embedder | a legacy-seeded store; every provider payload and tool result scanned |
 | I8 | content-free reports and audit lines; `CredentialRefused`'s message | every sink held to its schema; canaries checked outside the vocabulary; every count the row's exact report |
-| I9 | the recogniser | the named inputs at 256 KiB and 1 MiB: ratio ≤ 6, and under 2 s on the named runner (asserted only there) |
+| I9 | the recogniser | the named inputs at 256 KiB and 1 MiB: ratio ≤ 6 on the thread's CPU time (the minimum of five runs per size; wall time under the parallel suite charged other workers' load to one size and read over 6× on a case that reads 4.0–4.6× alone), and under 2 s of wall time, the median of three, on the named runner (asserted only there); a quadratic mutant of `mask` reads RED |
 | I10 | the MCP tool boundary (`_served`) and the adapters' `Binding.call`, both through the library | the positive rows through the served `remember` and an adapter binding, under `none` and `direct` |
 | I11 | the writer inventory's screen column | `test_i11_every_writer_is_classed_for_the_credential_screen` |
 | I12 | the ingress screen runs first; `_len_sha16` masks provider text | a recording provider (and one whose error echoes the prompt) and a recording diagnostics hook |

@@ -271,25 +271,33 @@ def _on_the_named_runner() -> bool:
 
 
 def test_i9_the_recogniser_is_linear_on_the_named_inputs():
-    """I9 (§5): at most 6x the time for 4x the input, and 1 MiB screens in under 2 s on the named CI runner. Each
-    timing is the median of three. Off the runner the ratio is asserted and the absolute time is recorded only:
-    a shared host's time is not the runner's (round 3's A1). The record goes to VERACIUM_0055_I9_RECORD when set."""
+    """I9 (§5): at most 6x the time for 4x the input, and 1 MiB screens in under 2 s on the named CI runner. Off the
+    runner the ratio is asserted and the absolute time is recorded only: a shared host's time is not the runner's
+    (round 3's A1). The record goes to VERACIUM_0055_I9_RECORD when set.
+
+    Two clocks, one per claim. The RATIO is the growth of the recogniser's own work, so it is taken on this thread's
+    CPU time, the minimum of five runs per size: wall time under a parallel suite charges the other workers' load to
+    whichever size happens to run beside them (the gating suite at -n 8 read 6x+ on `label_no_value`, which reads
+    4.0-4.6x alone), and a superlinear recogniser grows in CPU time as much as in wall time. The CEILING is a
+    statement about wall time on the runner, so it stays the wall-clock median of three."""
     record, over_ratio, over_ceiling = [], [], []
     for name, unit in _named_inputs().items():
-        meds = []
+        meds, cpus = [], []
         for size in I9_SIZES:
             s = (unit * (size // len(unit) + 1))[:size]
-            runs = []
-            for _ in range(3):
-                t0 = time.perf_counter()
+            walls, cpu = [], []
+            for _ in range(5):
+                c0, t0 = time.thread_time(), time.perf_counter()
                 P.mask(s)
-                runs.append(time.perf_counter() - t0)
-            meds.append(statistics.median(runs))
-        ratio = meds[1] / max(meds[0], 1e-9)
+                walls.append(time.perf_counter() - t0)
+                cpu.append(time.thread_time() - c0)
+            meds.append(statistics.median(walls[:3]))
+            cpus.append(min(cpu))
+        ratio = cpus[1] / max(cpus[0], 1e-9)
         record.append({"case": name, "sizes_bytes": list(I9_SIZES), "median_s": [round(x, 4) for x in meds],
-                       "ratio": round(ratio, 2)})
+                       "cpu_min_s": [round(x, 4) for x in cpus], "ratio": round(ratio, 2)})
         # a ratio over tiny absolute times is noise, not growth: below 50 ms at 1 MiB the case is linear enough
-        if ratio > I9_RATIO and meds[1] > 0.05:
+        if ratio > I9_RATIO and cpus[1] > 0.05:
             over_ratio.append(name)
         if meds[1] >= I9_CEILING_S:
             over_ceiling.append(name)
@@ -297,7 +305,7 @@ def test_i9_the_recogniser_is_linear_on_the_named_inputs():
     if path:
         import platform
         Path(path).write_text(json.dumps({
-            "about": "0055 I9: the product's mask() at 256 KiB and 1 MiB, median of three",
+            "about": "0055 I9: the product's mask() at 256 KiB and 1 MiB; the ratio on thread CPU time (min of five), the ceiling on wall time (median of three)",
             "algorithm": f"veracium.credentials.mask, at most MAX_PASSES + 1 = {P.MAX_PASSES + 1} scans",
             "named_runner": _on_the_named_runner(), "python": platform.python_version(),
             "machine": platform.machine(), "cpus": os.cpu_count(), "load_at_end": [round(x, 2) for x in os.getloadavg()],
