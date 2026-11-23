@@ -1,0 +1,1563 @@
+{
+ "body_sha256": "1ee8d3c3374465f71a539f8b173ddb999190fefd9623b0c560ab0f85860cb226",
+ "controls": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
+    "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D3]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]",
+    "tests/test_0055_recogniser.py::test_mask_scans_at_most_five_times",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "definition_sha256": "0909a53e660752ef57d2db7063960ffc838122b6044d989ef782fb1f00488a23",
+   "expected": "SURVIVED",
+   "file": "src/veracium/credentials.py",
+   "good": true,
+   "id": "NOOP-credentials",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
+    "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D3]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]",
+    "tests/test_0055_recogniser.py::test_mask_scans_at_most_five_times",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/credentials.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_i19_digest_sweep.py::test_d3_the_reason_is_checked_before_the_identity_digest",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.agreement.markers-[correct]:correct_markers]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.note-[correct]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]",
+    "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+   ],
+   "definition_sha256": "1295fe5cd8a767cf14aa20c458bcc9ea20835e14d83eb2d13da0c3bdb5c4b2c1",
+   "expected": "SURVIVED",
+   "file": "src/veracium/__init__.py",
+   "good": true,
+   "id": "NOOP-__init__",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_d3_the_reason_is_checked_before_the_identity_digest",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.agreement.markers-[correct]:correct_markers]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.note-[correct]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]",
+    "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/__init__.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].object-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].relation-[remember--procedure--absorptio:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].subject-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-answer]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]",
+    "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text"
+   ],
+   "definition_sha256": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
+   "expected": "SURVIVED",
+   "file": "src/veracium/ingest.py",
+   "good": true,
+   "id": "NOOP-ingest",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].object-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].relation-[remember--procedure--absorptio:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].subject-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-answer]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]",
+    "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/ingest.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"
+   ],
+   "definition_sha256": "af50aa9c52516093b5ad30d73c327f7da68ab538b56638d3cd4287f11aa8b01e",
+   "expected": "SURVIVED",
+   "file": "src/veracium/portability.py",
+   "good": true,
+   "id": "NOOP-portability",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/portability.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "definition_sha256": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
+   "expected": "SURVIVED",
+   "file": "src/veracium/proactive.py",
+   "good": true,
+   "id": "NOOP-proactive",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/proactive.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r10:contributor_ref---an-id-in-the-absorbed-prior-s-transiti:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_invalidations[].edge_id-[remember--procedure]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].agreement.markers-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:extra-1-upserts-procedure-id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].original_relation-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:extra-1-upserts-procedure-evidence_ref]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.origin-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].src-[remember--procedure--absorption-onl:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:extra-2-procedure-contributor_id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]"
+   ],
+   "definition_sha256": "45971fad653c24d41980bbc2bfdece846f0be43a57e28be209452a471fb579f4",
+   "expected": "SURVIVED",
+   "file": "src/veracium/store/sqlite.py",
+   "good": true,
+   "id": "NOOP-sqlite",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r10:contributor_ref---an-id-in-the-absorbed-prior-s-transiti:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_invalidations[].edge_id-[remember--procedure]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].agreement.markers-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:extra-1-upserts-procedure-id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].original_relation-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:extra-1-upserts-procedure-evidence_ref]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.origin-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].src-[remember--procedure--absorption-onl:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:extra-2-procedure-contributor_id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "definition_sha256": "88d1f35a087acb825e3d602c714abfa967226b28abe22e372c622ee0e8332e7d",
+   "expected": "SURVIVED",
+   "file": "src/veracium/mcp_server.py",
+   "good": true,
+   "id": "NOOP-mcp_server",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/mcp_server.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].note-[remember--procedure--absorption-on:run]"
+   ],
+   "definition_sha256": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
+   "expected": "SURVIVED",
+   "file": "src/veracium/graph.py",
+   "good": true,
+   "id": "NOOP-graph",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].note-[remember--procedure--absorption-on:run]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/graph.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual"
+   ],
+   "definition_sha256": "12201b2f85033e45a93b0729641876507399497aa821db057836912201861472",
+   "expected": "SURVIVED",
+   "file": "src/veracium/cli.py",
+   "good": true,
+   "id": "NOOP-cli",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/cli.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.note:recall-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.object:recall-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.relation:recall-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.subject:recall-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.note:asof-cur-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.object:asof-cur-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.relation:asof-cur-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.subject:asof-cur-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.note:asof-snap-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.object:asof-snap-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.relation:asof-snap-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.subject:asof-snap-subject]",
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked",
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "definition_sha256": "37f606ac9feda6c09de11c617eaf2829764701dc237a2d21e9ddeca517a0abce",
+   "expected": "SURVIVED",
+   "file": "src/veracium/semantic.py",
+   "good": true,
+   "id": "NOOP-semantic",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.note:recall-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.object:recall-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.relation:recall-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.subject:recall-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.note:asof-cur-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.object:asof-cur-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.relation:asof-cur-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.subject:asof-cur-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.note:asof-snap-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.object:asof-snap-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.relation:asof-snap-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.subject:asof-snap-subject]",
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked",
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/semantic.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports": "other: TypeError"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "cells_passed": [],
+   "definition_sha256": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
+   "expected": "UNCLASSIFIED",
+   "file": "src/veracium/__init__.py",
+   "good": true,
+   "id": "CTRL-unrelated-TypeError",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "outcome": "UNCLASSIFIED",
+   "what": "an UNRELATED TypeError in Memory._cred_withheld: its cell fails for no reason a row names"
+  }
+ ],
+ "header": {
+  "cells": {
+   "implementation": [
+    "tests/test_0055_i19_digest_sweep.py::test_d3_the_reason_is_checked_before_the_identity_digest",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r10:contributor_ref---an-id-in-the-absorbed-prior-s-transiti:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.agreement.markers-[correct]:correct_markers]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.note-[correct]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_invalidations[].edge_id-[remember--procedure]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].agreement.markers-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:extra-1-upserts-procedure-id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].note-[remember--procedure--absorption-on:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].object-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].original_relation-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:extra-1-upserts-procedure-evidence_ref]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.origin-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].relation-[remember--procedure--absorptio:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].src-[remember--procedure--absorption-onl:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].subject-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:extra-2-procedure-contributor_id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.note:recall-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.object:recall-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.relation:recall-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.subject:recall-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.note:asof-cur-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.object:asof-cur-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.relation:asof-cur-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.subject:asof-cur-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.note:asof-snap-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.object:asof-snap-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.relation:asof-snap-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.subject:asof-snap-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-answer]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]",
+    "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
+    "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest",
+    "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text",
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]",
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged",
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result",
+    "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D3]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]",
+    "tests/test_0055_recogniser.py::test_mask_scans_at_most_five_times",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ]
+  },
+  "clean": {
+   "first": {
+    "of": 93,
+    "ok": true,
+    "passed": 93
+   },
+   "last": {
+    "of": 93,
+    "ok": true,
+    "passed": 93
+   }
+  },
+  "commit": "2caaecdcd2d99ed3b194cc63032bbc9d7c04f42c",
+  "control_definitions": {
+   "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
+   "NOOP-__init__": "1295fe5cd8a767cf14aa20c458bcc9ea20835e14d83eb2d13da0c3bdb5c4b2c1",
+   "NOOP-cli": "12201b2f85033e45a93b0729641876507399497aa821db057836912201861472",
+   "NOOP-credentials": "0909a53e660752ef57d2db7063960ffc838122b6044d989ef782fb1f00488a23",
+   "NOOP-graph": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
+   "NOOP-ingest": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
+   "NOOP-mcp_server": "88d1f35a087acb825e3d602c714abfa967226b28abe22e372c622ee0e8332e7d",
+   "NOOP-portability": "af50aa9c52516093b5ad30d73c327f7da68ab538b56638d3cd4287f11aa8b01e",
+   "NOOP-proactive": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
+   "NOOP-semantic": "37f606ac9feda6c09de11c617eaf2829764701dc237a2d21e9ddeca517a0abce",
+   "NOOP-sqlite": "45971fad653c24d41980bbc2bfdece846f0be43a57e28be209452a471fb579f4"
+  },
+  "definitions": {
+   "I12-diagnostic-digest-over-raw-text": "5350b44b988cdc48ebc3d2d08713a7401c672a018b77f6c40166b59b98af0a76",
+   "I13-guard-on-present": "f0e58b542b446348d74b4aa7bd9857503c5e751fed248d9d74f569e519c58afb",
+   "I15-discarded-count-not-recorded": "80588f49f1fd8a626ced87cf3d33bdff508381f89f3415eb341f60566af611e3",
+   "I16-absorption-note-unmasked": "87b0ce95fb4f4df3633e9828b89f19df3715f0b26393a844910312fcab4c057f",
+   "I17-hide-input-unset": "7e3cbedd899405d7c4773d60f9797112a00e40e50e506f4dfcc405a249a57778",
+   "I17-served-formatter-bypassed": "65684cfe2fb36390eb556934882c27f9acca472927dca5a6c3a6181660736134",
+   "I18-second-scan-trusted": "6fe836deae18e2a5b863a760fcfff1020a349a750790b1ddddb0fca3eee9b2a1",
+   "I19-content-digest-unmasked": "24e34370852b96fe7e71b555a2d32a822de858050bc38b60a9ae7c3c16101e66",
+   "I19-correct-hashes-the-raw-note": "7215ed8c4979ee9369a8402a6e91d51b593a9d83f7ac23acfeb52ff0f55e15b5",
+   "I19-reason-after-the-digest": "5bd71d78daea0ca6cfc09f39ae92c49bb92072cd46517413afb6352f68fd4711",
+   "I19-unknown-shape-digested": "922ceb45f04b4dd8ec1c5b490c4b084da5c6eb62bdf1f4068cd104db5ad00055",
+   "I2-no-stop-list": "a19586c9d6f92b5fa8aba2e750db9a0b00d41246d20d6c657badba946fc5fe43",
+   "I20-twin-omitted-on-the-served-surface": "9b1527ca55db8942af8e71b60d954fffaf6cea692c917c6bcb885ee1564f5206",
+   "I3-fallback-keeps-the-text": "3ddfb13b8109fe4175c776f6b99585db28844a7b9ac384f589d73a7254ca01f7",
+   "I3-single-pass-mask": "bbb8c31f0040f8d0ecdc747f0a867176ea84eefb8b1fb099c048a93e9c19f654",
+   "I4-identifier-not-refused": "7f6ec0ef31277b477cdd6ea315c4f57a4579ca8d980434cc43197ff3d41603c8",
+   "I5-model-output-screen-removed": "47566290875c45a357e3888659b37c7367716511fc2beae9188aa9987694adda",
+   "I6-restore-masks-without-the-flag": "ae77501ff7e812196e1b7da56d8431e592e3cc1e67ba01f5cb869ec41afa7e8f",
+   "I7-embedder-sees-raw-text": "8e72cece1c073a45839f43afbfb9dbfd59d2dbb3c31c558abc562ca705fd2139",
+   "I7-proactive-path-unmasked": "44fd379e6a9e669a47041a06a76dec0ff863bf3e8cd44d5c9f487a06527887b9",
+   "I8-formatter-echoes-the-message": "8ff0f7b1b4591866c556eef7592e64f9d9afa02f8c02ae7fdaf7bdada2f028af"
+  },
+  "digests": {
+   "specs/evidence/0055/digests.json": "d4b48c09de14dcc886dfa2d6dd89ddb63e14d8d01e41cd6205f4ebd151a3456d",
+   "specs/evidence/0055/implementation_mutants.py": "1380c3d61d9107fc9e7e911b0b252663ab269449d7ea20111802b3bf2a6007ad",
+   "specs/evidence/0055/vectors.py": "49ac8bc4eb6ce18023630971833b2039956cb155524dc14e6ac8bb8cf0763524",
+   "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
+   "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
+   "src/veracium/__init__.py": "ee7bc9017557c0185981e863f747b6bb65911dc4f550e37c666b20d69ee24bc2",
+   "src/veracium/cli.py": "569f52c1ff2e0276176a6365ac3f6443dc1cb79969385e9cad9a18274d073365",
+   "src/veracium/credentials.py": "6670314ec3ece80b17d4abd39caa22518fcf15f15211f0301ae4aef860b901b0",
+   "src/veracium/graph.py": "8136da3dbfe99f3995adbb7d5bbdc30017a8129831a0f8d91d3ba17d10d2f8bb",
+   "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
+   "src/veracium/mcp_server.py": "8ab4b2ee2a56b81e11d1c8231e218266fb34c91647fd70b249af840164cd2114",
+   "src/veracium/portability.py": "b77b1080d8c30a0d9c8bd5a74cb204341b27859f883a4e32da50df8ff4c6d5fa",
+   "src/veracium/proactive.py": "c0acf48b4db357664b33165dd2e368b83bd3aeec660c2f1badbf0117d5fd40e2",
+   "src/veracium/semantic.py": "8dec10f2ce279e035d5d52bd2cf290267917a6799056133cc8bca8de5cc33da4",
+   "src/veracium/store/sqlite.py": "d33f6b2d42531df9a41ef214608c25d319622a09ed1d55d1f6574ea4e91ada43",
+   "tests/support_0055_i19.py": "985e072bebd678f49c996310fa5a137c267e43160490f45eaabe1453ea325e3e",
+   "tests/test_0055_i19_digest_sweep.py": "022bd9d10e990a12bb9b0adc0006cefb10ac64a2ff0ac719c837b6f4db47665b",
+   "tests/test_0055_invariants.py": "c2c67294ebcd4d068089397d8818dc20345a5b39b957966a6e78256c16e2e7ce",
+   "tests/test_0055_recogniser.py": "f698f96fb671040de5b87763c13f3509a93143f2d4a9b6feab4bc719fe2453f3"
+  },
+  "finding": "implementation",
+  "honest_nodes": [
+   "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+   "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+  ],
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "python": "3.14.7",
+  "spec": "0055",
+  "sqlite": "3.45.1",
+  "tracked_changes": []
+ },
+ "rows": [
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D3]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]": "assertion",
+    "tests/test_0055_recogniser.py::test_mask_scans_at_most_five_times": "assertion",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent": "assertion",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value": "assertion",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D3]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_mask_scans_at_most_five_times",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "definition_sha256": "bbb8c31f0040f8d0ecdc747f0a867176ea84eefb8b1fb099c048a93e9c19f654",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I3-single-pass-mask",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D3]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_mask_scans_at_most_five_times",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "10 failed in 0.93s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]": "assertion",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent": "assertion",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value": "assertion",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "definition_sha256": "3ddfb13b8109fe4175c776f6b99585db28844a7b9ac384f589d73a7254ca01f7",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I3-fallback-keeps-the-text",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[D4]",
+    "tests/test_0055_recogniser.py::test_the_completed_output_is_inert_and_text_idempotent",
+    "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 0.63s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]": "assertion",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]": "assertion",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "definition_sha256": "a19586c9d6f92b5fa8aba2e750db9a0b00d41246d20d6c657badba946fc5fe43",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "id": "I2-no-stop-list",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]",
+    "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]",
+    "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "6 failed in 0.67s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]": "assertion",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]": "expected-refusal-missing",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]": "assertion",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+   ],
+   "definition_sha256": "7f6ec0ef31277b477cdd6ea315c4f57a4579ca8d980434cc43197ff3d41603c8",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I4-identifier-not-refused",
+   "import": "ok",
+   "kill_kind": "assertion+expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]",
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "23 failed in 3.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].object-[remember--procedure--absorption:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].relation-[remember--procedure--absorptio:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].subject-[remember--procedure--absorption:run]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].object-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].relation-[remember--procedure--absorptio:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].subject-[remember--procedure--absorption:run]"
+   ],
+   "definition_sha256": "47566290875c45a357e3888659b37c7367716511fc2beae9188aa9987694adda",
+   "file": "src/veracium/ingest.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I5-model-output-screen-removed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].object-[remember--procedure--absorption:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].relation-[remember--procedure--absorptio:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].subject-[remember--procedure--absorption:run]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.32s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"
+   ],
+   "definition_sha256": "ae77501ff7e812196e1b7da56d8431e592e3cc1e67ba01f5cb869ec41afa7e8f",
+   "file": "src/veracium/portability.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I6-restore-masks-without-the-flag",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.77s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "definition_sha256": "44fd379e6a9e669a47041a06a76dec0ff863bf3e8cd44d5c9f487a06527887b9",
+   "file": "src/veracium/proactive.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I7-proactive-path-unmasked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.59s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument"
+   ],
+   "definition_sha256": "8ff0f7b1b4591866c556eef7592e64f9d9afa02f8c02ae7fdaf7bdada2f028af",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I8-formatter-echoes-the-message",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.96s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-answer]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]": "assertion",
+    "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-answer]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]",
+    "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text"
+   ],
+   "definition_sha256": "5350b44b988cdc48ebc3d2d08713a7401c672a018b77f6c40166b59b98af0a76",
+   "file": "src/veracium/ingest.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I12-diagnostic-digest-over-raw-text",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-answer]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]",
+    "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 1.20s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r10:contributor_ref---an-id-in-the-absorbed-prior-s-transiti:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_invalidations[].edge_id-[remember--procedure]:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].agreement.markers-[remember--procedure:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:extra-1-upserts-procedure-id]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].original_relation-[remember--procedure:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:extra-1-upserts-procedure-evidence_ref]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.origin-[remember--procedure:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].src-[remember--procedure--absorption-onl:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:extra-2-procedure-contributor_id]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r10:contributor_ref---an-id-in-the-absorbed-prior-s-transiti:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_invalidations[].edge_id-[remember--procedure]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].agreement.markers-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:extra-1-upserts-procedure-id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].original_relation-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:extra-1-upserts-procedure-evidence_ref]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.origin-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].src-[remember--procedure--absorption-onl:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:extra-2-procedure-contributor_id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]"
+   ],
+   "definition_sha256": "f0e58b542b446348d74b4aa7bd9857503c5e751fed248d9d74f569e519c58afb",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I13-guard-on-present",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r10:contributor_ref---an-id-in-the-absorbed-prior-s-transiti:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_invalidations[].edge_id-[remember--procedure]:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].agreement.markers-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:extra-1-upserts-procedure-id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].id-[remember--procedure--absorption-only:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].original_relation-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:extra-1-upserts-procedure-evidence_ref]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.evidence_ref-[remember--proce:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.origin-[remember--procedure:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].src-[remember--procedure--absorption-onl:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:extra-2-procedure-contributor_id]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r2:contribution_drafts[].contributor_id:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "17 failed in 4.41s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log"
+   ],
+   "definition_sha256": "80588f49f1fd8a626ced87cf3d33bdff508381f89f3415eb341f60566af611e3",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I15-discarded-count-not-recorded",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.89s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].note-[remember--procedure--absorption-on:run]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].note-[remember--procedure--absorption-on:run]"
+   ],
+   "definition_sha256": "87b0ce95fb4f4df3633e9828b89f19df3715f0b26393a844910312fcab4c057f",
+   "file": "src/veracium/graph.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I16-absorption-note-unmasked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].note-[remember--procedure--absorption-on:run]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.81s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument"
+   ],
+   "definition_sha256": "65684cfe2fb36390eb556934882c27f9acca472927dca5a6c3a6181660736134",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I17-served-formatter-bypassed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.92s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument"
+   ],
+   "definition_sha256": "7e3cbedd899405d7c4773d60f9797112a00e40e50e506f4dfcc405a249a57778",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I17-hide-input-unset",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.93s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the served argument models echo input_value= in validation errors (I17 E2)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual"
+   ],
+   "definition_sha256": "6fe836deae18e2a5b863a760fcfff1020a349a750790b1ddddb0fca3eee9b2a1",
+   "file": "src/veracium/cli.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I18-second-scan-trusted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.68s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.note:backfill-note]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.object:backfill-object]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.relation:backfill-relation]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.subject:backfill-subject]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.note:backfill-note]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.object:backfill-object]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.relation:backfill-relation]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.subject:backfill-subject]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.note:recall-note]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.object:recall-object]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.relation:recall-relation]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.subject:recall-subject]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.note:asof-cur-note]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.object:asof-cur-object]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.relation:asof-cur-relation]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.subject:asof-cur-subject]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.note:asof-snap-note]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.object:asof-snap-object]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.relation:asof-snap-relation]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.subject:asof-snap-subject]": "assertion",
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.note:recall-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.object:recall-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.relation:recall-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.subject:recall-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.note:asof-cur-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.object:asof-cur-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.relation:asof-cur-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.subject:asof-cur-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.note:asof-snap-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.object:asof-snap-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.relation:asof-snap-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.subject:asof-snap-subject]",
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked"
+   ],
+   "definition_sha256": "24e34370852b96fe7e71b555a2d32a822de858050bc38b60a9ae7c3c16101e66",
+   "file": "src/veracium/semantic.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I19-content-digest-unmasked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r28:edge.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.note:backfill-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.object:backfill-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.relation:backfill-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r29:live.subject:backfill-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.note:recall-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.object:recall-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.relation:recall-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r30:live.subject:recall-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.note:asof-cur-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.object:asof-cur-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.relation:asof-cur-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:cur.subject:asof-cur-subject]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.note:asof-snap-note]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.object:asof-snap-object]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.relation:asof-snap-relation]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r31:snap.subject:asof-snap-subject]",
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "21 failed in 3.85s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked": "assertion",
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked",
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "definition_sha256": "8e72cece1c073a45839f43afbfb9dbfd59d2dbb3c31c558abc562ca705fd2139",
+   "file": "src/veracium/semantic.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I7-embedder-sees-raw-text",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked",
+    "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.65s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.agreement.markers-[correct]:correct_markers]": "assertion",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.note-[correct]:run]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.agreement.markers-[correct]:correct_markers]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.note-[correct]:run]"
+   ],
+   "definition_sha256": "7215ed8c4979ee9369a8402a6e91d51b593a9d83f7ac23acfeb52ff0f55e15b5",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I19-correct-hashes-the-raw-note",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.agreement.markers-[correct]:correct_markers]",
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:incoming_edge.note-[correct]:run]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.93s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_i19_digest_sweep.py::test_d3_the_reason_is_checked_before_the_identity_digest": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_i19_digest_sweep.py::test_d3_the_reason_is_checked_before_the_identity_digest"
+   ],
+   "definition_sha256": "5bd71d78daea0ca6cfc09f39ae92c49bb92072cd46517413afb6352f68fd4711",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I19-reason-after-the-digest",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_i19_digest_sweep.py::test_d3_the_reason_is_checked_before_the_identity_digest"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.63s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest"
+   ],
+   "definition_sha256": "922ceb45f04b4dd8ec1c5b490c4b084da5c6eb62bdf1f4068cd104db5ad00055",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I19-unknown-shape-digested",
+   "import": "ok",
+   "kill_kind": "expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.58s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "definition_sha256": "9b1527ca55db8942af8e71b60d954fffaf6cea692c917c6bcb885ee1564f5206",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I20-twin-omitted-on-the-served-surface",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.60s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the served record_procedure drops the report the twin returns (I20)"
+  }
+ ],
+ "summary": {
+  "by_kind": {
+   "product": 21
+  },
+  "controls": 11,
+  "controls_good": 11,
+  "good": 21,
+  "killed": 21,
+  "rows": 21,
+  "seconds": 132
+ }
+}
