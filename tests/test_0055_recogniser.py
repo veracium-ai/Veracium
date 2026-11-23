@@ -270,10 +270,14 @@ def _on_the_named_runner() -> bool:
     return os.environ.get("GITHUB_ACTIONS") == "true" and bool(os.environ.get("VERACIUM_CI_SHARD"))
 
 
-def test_i9_the_recogniser_is_linear_on_the_named_inputs():
+def test_i9_the_recogniser_is_linear_on_the_named_inputs(record_testsuite_property):
     """I9 (§5): at most 6x the time for 4x the input, and 1 MiB screens in under 2 s on the named CI runner. Off the
     runner the ratio is asserted and the absolute time is recorded only: a shared host's time is not the runner's
-    (round 3's A1). The record goes to VERACIUM_0055_I9_RECORD when set.
+    (round 3's A1). The record goes to VERACIUM_0055_I9_RECORD when set, and always into the JUnit file as the
+    testsuite property `veracium_0055_i9`: each CI lane's junit.xml is uploaded in its `ci-evidence-*` artifact and
+    bound by sha256 in that artifact's manifest.json (.github/ci_run.py), so the runner's figures are collected from
+    CI's own record without a workflow change. (`record_property` would warn under the default xunit2 family; an
+    xdist worker's testsuite property does not reach the controller's file, and the CI lanes run without xdist.)
 
     Two clocks, one per claim. The RATIO is the growth of the recogniser's own work, so it is taken on this thread's
     CPU time, the minimum of five runs per size: wall time under a parallel suite charges the other workers' load to
@@ -301,15 +305,18 @@ def test_i9_the_recogniser_is_linear_on_the_named_inputs():
             over_ratio.append(name)
         if meds[1] >= I9_CEILING_S:
             over_ceiling.append(name)
+    import platform
+    doc = {
+        "about": "0055 I9: the product's mask() at 256 KiB and 1 MiB; the ratio on thread CPU time (min of five), the ceiling on wall time (median of three)",
+        "algorithm": f"veracium.credentials.mask, at most MAX_PASSES + 1 = {P.MAX_PASSES + 1} scans",
+        "named_runner": _on_the_named_runner(), "ci_shard": os.environ.get("VERACIUM_CI_SHARD"),
+        "ci_job": os.environ.get("VERACIUM_CI_JOB_NAME"), "python": platform.python_version(),
+        "machine": platform.machine(), "cpus": os.cpu_count(), "load_at_end": [round(x, 2) for x in os.getloadavg()],
+        "ratio_limit": I9_RATIO, "ceiling_s": I9_CEILING_S, "cases": record}
+    record_testsuite_property("veracium_0055_i9", json.dumps(doc, sort_keys=True))
     path = os.environ.get("VERACIUM_0055_I9_RECORD")
     if path:
-        import platform
-        Path(path).write_text(json.dumps({
-            "about": "0055 I9: the product's mask() at 256 KiB and 1 MiB; the ratio on thread CPU time (min of five), the ceiling on wall time (median of three)",
-            "algorithm": f"veracium.credentials.mask, at most MAX_PASSES + 1 = {P.MAX_PASSES + 1} scans",
-            "named_runner": _on_the_named_runner(), "python": platform.python_version(),
-            "machine": platform.machine(), "cpus": os.cpu_count(), "load_at_end": [round(x, 2) for x in os.getloadavg()],
-            "ratio_limit": I9_RATIO, "ceiling_s": I9_CEILING_S, "cases": record}, indent=1) + "\n")
+        Path(path).write_text(json.dumps(doc, indent=1) + "\n")
     assert not over_ratio, (over_ratio, record)
     if _on_the_named_runner():
         assert not over_ceiling, (over_ceiling, record)

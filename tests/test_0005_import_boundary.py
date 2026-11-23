@@ -638,6 +638,27 @@ _CALLSITE_DISPOSITIONS = {
     # specs/0055 §4h (I6): a plain import withholds per field, a restore refuses whole unless withhold_credentials is
     # set, so the one cell pins both modes
     ("test_0055_invariants.py", "test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"): "both",
+    # specs/0055 I19's sweep (tests/support_0055_i19.py): each scenario imports a file carrying one seeded value into a
+    # fresh destination; the restore-named scenarios pin the restore refusal (§4h), `_import_plain` and the inner `sc`
+    # factories serve both modes, every other site is a default import
+    ("support_0055_i19.py", '_act_plain'): 'default',
+    ("support_0055_i19.py", '_import_plain'): 'both',
+    ("support_0055_i19.py", '_quarantine_episode'): 'default',
+    ("support_0055_i19.py", '_reply_plain'): 'default',
+    ("support_0055_i19.py", 'notice_over'): 'default',
+    ("support_0055_i19.py", 'run'): 'default',
+    ("support_0055_i19.py", 'sc'): 'both',
+    ("support_0055_i19.py", 'sc_act_uid0_restore'): 'restore',
+    ("support_0055_i19.py", 'sc_act_uid_restore'): 'restore',
+    ("support_0055_i19.py", 'sc_migration_edge_id_via_import'): 'default',
+    ("support_0055_i19.py", 'sc_quarantine_origin'): 'default',
+    ("support_0055_i19.py", 'sc_quarantine_source_id'): 'default',
+    ("support_0055_i19.py", 'sc_remap_act_origin'): 'default',
+    ("support_0055_i19.py", 'sc_remap_outcome_uid'): 'default',
+    ("support_0055_i19.py", 'sc_remap_reply_origin'): 'default',
+    ("support_0055_i19.py", 'sc_undo_plan_id_via_restore'): 'restore',
+    ("support_0055_i19.py", 'sc_whole_file_converting'): 'default',
+    ("support_0055_i19.py", 'sc_whole_file_plain'): 'default',
     # specs/0041 v16.5 §11.7 (confirmation and dispute episodes in the receipt; the cross-user import's reference
     # rewrite): the same-user/restore arrival cells pin both modes; every cross-user cell is a default import
     ("test_0041_v16_5_confirm_quoting.py", "test_q1_an_imported_confirmation_episode_is_named_though_the_act_id_was_reminted"): "both",

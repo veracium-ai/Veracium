@@ -372,7 +372,18 @@ def test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result(tmp_path):
     e = _seed_edge(mem)
     _plant(str(tmp_path / "m.db"), e.id, object="Denver; db password: hunter2 and " + V.GH,
            note="token " + V.STRIPE)
-    results = [mem.recall("u", "where does the user live").context, mem.recall("u").context,
+    # the no-query briefing (proactive) renders a TRANSIENT fact in CURRENT CONTEXT and leaves a durable one out, so
+    # the read path it masks is driven by a transient legacy record (2026-11-23: with only the durable seed the
+    # briefing read "(nothing needs attention)", and a mutant removing proactive's read mask survived this test)
+    from veracium.schema import Edge, Provenance, Volatility
+    t = Edge(id="e-i7-transient", user_id="u", subject="user", relation="feeling", object="tired",
+             volatility=Volatility.TRANSIENT,
+             provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev-i7", source_id="chat"))
+    mem.store.add_edge(t)
+    _plant(str(tmp_path / "m.db"), t.id, object="tired; my password: hunter2 and " + V.GH)
+    briefing = mem.recall("u").context
+    assert "## CURRENT CONTEXT" in briefing and "[credential withheld" in briefing, briefing
+    results = [mem.recall("u", "where does the user live").context, briefing,
                json.dumps(find_facts_impl(mem, "u", "where", capability="direct"), default=str),
                json.dumps(describe_procedures_impl(mem, "u"), default=str),
                _why.render(_why.gather(mem.store, "u", e.id)),
@@ -894,7 +905,7 @@ def test_i20_record_procedure_keeps_its_str_and_the_twin_reports(tmp_path):
         "summary": {"labelled_password": 1}}
     assert set(mem.record_procedure_report("u", "I stretch every morning", **kw)) == {"edge_id"}
     s = record_procedure_impl(mem, "u", "I run tests; password: hunter2", "stated", capability="direct")
-    assert s["ok"] and s["credentials_withheld"] == {"summary": {"labelled_password": 1}}
+    assert s["ok"] and s.get("credentials_withheld") == {"summary": {"labelled_password": 1}}, s
     refused = record_procedure_impl(mem, "u", "I run tests", "stated", capability="direct", source_id=V.DBURL)
     assert refused == {"ok": False, "refusal": "credential_refused", "field": "source_id",
                        "class": "url_userinfo_password"}
