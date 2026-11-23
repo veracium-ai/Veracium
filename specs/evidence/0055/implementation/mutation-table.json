@@ -1,5 +1,5 @@
 {
- "body_sha256": "1ee8d3c3374465f71a539f8b173ddb999190fefd9623b0c560ab0f85860cb226",
+ "body_sha256": "59fbc5cf462f32502eda098410db9d0cf0c55fcc33758bf06652984bf1887149",
  "controls": [
   {
    "anchor_counts": [
@@ -234,9 +234,10 @@
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
-    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]"
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]",
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]"
    ],
-   "definition_sha256": "45971fad653c24d41980bbc2bfdece846f0be43a57e28be209452a471fb579f4",
+   "definition_sha256": "41aa0cbb133853f635b9fed9d7b3110b018eb9b5abb523aa16808e5381d620b0",
    "expected": "SURVIVED",
    "file": "src/veracium/store/sqlite.py",
    "good": true,
@@ -260,7 +261,8 @@
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r3:e.id-of-each-scoped-edge:run]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
-    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]"
+    "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]",
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
@@ -488,6 +490,7 @@
     "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
     "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
     "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]",
     "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest",
     "tests/test_0055_invariants.py::test_i19_the_diagnostics_digest_is_over_masked_provider_text",
     "tests/test_0055_invariants.py::test_i19_the_embedding_digest_and_input_are_masked",
@@ -529,17 +532,17 @@
   },
   "clean": {
    "first": {
-    "of": 93,
+    "of": 94,
     "ok": true,
-    "passed": 93
+    "passed": 94
    },
    "last": {
-    "of": 93,
+    "of": 94,
     "ok": true,
-    "passed": 93
+    "passed": 94
    }
   },
-  "commit": "2caaecdcd2d99ed3b194cc63032bbc9d7c04f42c",
+  "commit": "931a1ac4a1c9af80f8a6b2a72edbe998db84a4d3",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
    "NOOP-__init__": "1295fe5cd8a767cf14aa20c458bcc9ea20835e14d83eb2d13da0c3bdb5c4b2c1",
@@ -551,7 +554,7 @@
    "NOOP-portability": "af50aa9c52516093b5ad30d73c327f7da68ab538b56638d3cd4287f11aa8b01e",
    "NOOP-proactive": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
    "NOOP-semantic": "37f606ac9feda6c09de11c617eaf2829764701dc237a2d21e9ddeca517a0abce",
-   "NOOP-sqlite": "45971fad653c24d41980bbc2bfdece846f0be43a57e28be209452a471fb579f4"
+   "NOOP-sqlite": "41aa0cbb133853f635b9fed9d7b3110b018eb9b5abb523aa16808e5381d620b0"
   },
   "definitions": {
    "I12-diagnostic-digest-over-raw-text": "5350b44b988cdc48ebc3d2d08713a7401c672a018b77f6c40166b59b98af0a76",
@@ -561,6 +564,7 @@
    "I17-hide-input-unset": "7e3cbedd899405d7c4773d60f9797112a00e40e50e506f4dfcc405a249a57778",
    "I17-served-formatter-bypassed": "65684cfe2fb36390eb556934882c27f9acca472927dca5a6c3a6181660736134",
    "I18-second-scan-trusted": "6fe836deae18e2a5b863a760fcfff1020a349a750790b1ddddb0fca3eee9b2a1",
+   "I19-F6-stored-reason-quoted": "2eed876e915363676e6b2c35570d6217fb0886f6563061f80b2c4d049b45bc06",
    "I19-content-digest-unmasked": "24e34370852b96fe7e71b555a2d32a822de858050bc38b60a9ae7c3c16101e66",
    "I19-correct-hashes-the-raw-note": "7215ed8c4979ee9369a8402a6e91d51b593a9d83f7ac23acfeb52ff0f55e15b5",
    "I19-reason-after-the-digest": "5bd71d78daea0ca6cfc09f39ae92c49bb92072cd46517413afb6352f68fd4711",
@@ -577,8 +581,8 @@
    "I8-formatter-echoes-the-message": "8ff0f7b1b4591866c556eef7592e64f9d9afa02f8c02ae7fdaf7bdada2f028af"
   },
   "digests": {
-   "specs/evidence/0055/digests.json": "d4b48c09de14dcc886dfa2d6dd89ddb63e14d8d01e41cd6205f4ebd151a3456d",
-   "specs/evidence/0055/implementation_mutants.py": "1380c3d61d9107fc9e7e911b0b252663ab269449d7ea20111802b3bf2a6007ad",
+   "specs/evidence/0055/digests.json": "5980405e476b1c1a2711c82e819f41b1d192dad452058901ddef03b6734dd06f",
+   "specs/evidence/0055/implementation_mutants.py": "4f634c0bcb520ac2f28b549b5b81a2fd4e81831978200b79553ff020b66153f4",
    "specs/evidence/0055/vectors.py": "49ac8bc4eb6ce18023630971833b2039956cb155524dc14e6ac8bb8cf0763524",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
@@ -591,10 +595,10 @@
    "src/veracium/portability.py": "b77b1080d8c30a0d9c8bd5a74cb204341b27859f883a4e32da50df8ff4c6d5fa",
    "src/veracium/proactive.py": "c0acf48b4db357664b33165dd2e368b83bd3aeec660c2f1badbf0117d5fd40e2",
    "src/veracium/semantic.py": "8dec10f2ce279e035d5d52bd2cf290267917a6799056133cc8bca8de5cc33da4",
-   "src/veracium/store/sqlite.py": "d33f6b2d42531df9a41ef214608c25d319622a09ed1d55d1f6574ea4e91ada43",
+   "src/veracium/store/sqlite.py": "827b69c4bc33631a78092a851af1b046228d55fa547a608c75315d9b19f1ce5f",
    "tests/support_0055_i19.py": "985e072bebd678f49c996310fa5a137c267e43160490f45eaabe1453ea325e3e",
-   "tests/test_0055_i19_digest_sweep.py": "022bd9d10e990a12bb9b0adc0006cefb10ac64a2ff0ac719c837b6f4db47665b",
-   "tests/test_0055_invariants.py": "c2c67294ebcd4d068089397d8818dc20345a5b39b957966a6e78256c16e2e7ce",
+   "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
+   "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
    "tests/test_0055_recogniser.py": "f698f96fb671040de5b87763c13f3509a93143f2d4a9b6feab4bc719fe2453f3"
   },
   "finding": "implementation",
@@ -606,7 +610,14 @@
   "python": "3.14.7",
   "spec": "0055",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
+   "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json"
+  ]
  },
  "rows": [
   {
@@ -664,7 +675,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 0.93s",
+   "pytest": "10 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -706,7 +717,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.63s",
+   "pytest": "4 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -754,7 +765,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.67s",
+   "pytest": "6 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -853,7 +864,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "23 failed in 3.64s",
+   "pytest": "23 failed in 3.70s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -892,7 +903,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.32s",
+   "pytest": "3 failed in 1.34s",
    "reason": null,
    "reason_seen": null,
    "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -958,7 +969,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -991,7 +1002,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1033,7 +1044,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.20s",
+   "pytest": "4 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1114,7 +1125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 4.41s",
+   "pytest": "17 failed in 4.49s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1147,7 +1158,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.89s",
+   "pytest": "1 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1180,7 +1191,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1213,7 +1224,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.92s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -1246,7 +1257,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.93s",
+   "pytest": "1 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -1279,7 +1290,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -1372,7 +1383,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 3.85s",
+   "pytest": "21 failed in 4.15s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -1408,7 +1419,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.65s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
@@ -1444,7 +1455,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.93s",
+   "pytest": "2 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1477,7 +1488,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -1510,7 +1521,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -1543,21 +1554,54 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]"
+   ],
+   "definition_sha256": "2eed876e915363676e6b2c35570d6217fb0886f6563061f80b2c4d049b45bc06",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   ],
+   "id": "I19-F6-stored-reason-quoted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.70s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 21
+   "product": 22
   },
   "controls": 11,
   "controls_good": 11,
-  "good": 21,
-  "killed": 21,
-  "rows": 21,
-  "seconds": 132
+  "good": 22,
+  "killed": 22,
+  "rows": 22,
+  "seconds": 149
  }
 }
