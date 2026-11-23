@@ -36,6 +36,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
 from .census import declare_site
+from . import credentials as _cred
 
 # specs/0042 (tranche 3): the enforcement points of this module, each a declared site the
 # decision is returned THROUGH — consult() brackets the decision, fire() wraps the value
@@ -181,7 +182,9 @@ class Reporter:
             if logger is not None:
                 ctx = " ".join(f"{k}={v}" for k, v in (context or {}).items())
                 tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-                logger.error("op=%s %s\n%s", where, ctx, tb)
+                # specs/0055 §4g E3: the whole line, traceback included, passes the credential mask before it is
+                # written (an exception's message can echo a caller's argument or a provider's text)
+                logger.error("%s", _cred.mask_text(f"op={where} {ctx}\n{tb}"))
             self._pending += 1
         except Exception:
             pass
@@ -206,7 +209,7 @@ class Reporter:
             logger = self._get_logger()
             if logger is not None:
                 kv = " ".join(f"{k}={v}" for k, v in fields.items())
-                logger.warning("op=%s degrade=%s %s", where, degrade, kv)
+                logger.warning("%s", _cred.mask_text(f"op={where} degrade={degrade} {kv}"))   # specs/0055 §4g E3
             self._pending += 1
         except Exception:
             pass
@@ -223,7 +226,10 @@ class Reporter:
             if not path.exists():
                 return ""
             data = path.read_bytes()[-cap:]
-            text = data.decode("utf-8", "replace")
+            # specs/0055 §4g E3 (§4i): the send path masks too, always (no switch turns it off), so a line written
+            # before this version, or by another writer, is masked on its way out; `redact()`'s email and number
+            # rules stay as configured
+            text = _cred.mask_text(data.decode("utf-8", "replace"))
             return redact(text) if self.config.redact else text
         except Exception:
             return ""

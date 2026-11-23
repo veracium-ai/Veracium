@@ -17,16 +17,20 @@ unit-testable without a running server or an installed MCP SDK.
 
 from __future__ import annotations
 
+import functools
 import logging
 import os
 from enum import Enum
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 from .ingest import SourceIdRequired   # specs/0006 §4 rule 9: the tool refusal's name
 
 from . import Memory, MemoryConfig
 from .schema import EvidenceAuthor, EvidenceContext
 from .census import declare_site
+from . import credentials as _cred
 
 # specs/0042 (tranche 3): the enforcement points of this module, each a declared site the
 # decision is returned THROUGH — consult() brackets the decision, fire() wraps the value
@@ -117,18 +121,21 @@ def _closed_set(field: str, value) -> None:
     if field == "author":
         with _SITE_CLOSED_SET_AUTHOR.consult():
             if outside:
-                raise _SITE_CLOSED_SET_AUTHOR.fire(ValueError(
+                # specs/0055 §4g E1: field, reason and the allowed values travel as attributes, so a served
+                # boundary can refuse without echoing the value; the library message is unchanged
+                raise _SITE_CLOSED_SET_AUTHOR.fire(_cred.ArgumentRefused(
                     f"author={value!r} is not accepted here. Use "
                     f"{sorted(_AUTHOR)}. 'system' is deliberately unavailable through "
                     f"the MCP surface: it denotes veracium's own maintenance output, "
                     f"and a trust-bearing field must not be settable by the party whose "
-                    f"trust it describes."))
+                    f"trust it describes.", field="author", reason="not_accepted", allowed=sorted(_AUTHOR)))
     else:
         with _SITE_CLOSED_SET_TRUST.consult():
             if outside:
-                raise _SITE_CLOSED_SET_TRUST.fire(ValueError(
+                raise _SITE_CLOSED_SET_TRUST.fire(_cred.ArgumentRefused(
                     f"derived_from={value!r} is not accepted. Use "
-                    f"{sorted(_AUTHOR)} or omit it."))
+                    f"{sorted(_AUTHOR)} or omit it.", field="derived_from", reason="not_accepted",
+                    allowed=sorted(_AUTHOR)))
 
 
 def remember_report(mem: Memory, user_id: str, text: str,
@@ -233,6 +240,20 @@ _OPERATOR_ONLY = ("supersessions", "reinforcements",
                   "provenance_raises_discarded")
 
 
+def _record_discarded(mem, user_id: str, tool: str, report: dict) -> None:
+    """specs/0055 §4g / I15 (closes 0031 §10 Q4, the owner's ruling): the discarded-raise count reaches the OPERATOR
+    through the AuditLog, recorded BEFORE the `*_impl` strips it from the tool result (0031 §4d: it never reaches a
+    tool result). One content-free line per call that discarded at least one raise: surface, tool, count. A test's
+    fake memory without `_record` records nothing."""
+    n = report.get("provenance_raises_discarded")
+    if isinstance(n, int) and n > 0:
+        try:
+            mem._record("provenance_raises_discarded",
+                        {"surface": _cred.current_surface(), "tool": tool, "count": n}, user_id)
+        except AttributeError:
+            pass
+
+
 def remember_impl(mem: Memory, user_id: str, text: str,
                   author: Optional[str] = None, event_type: str = "chat",
                   date: Optional[str] = None,
@@ -252,6 +273,10 @@ def remember_impl(mem: Memory, user_id: str, text: str,
         # specs/0006 §4 rule 9 (v7): the library exception and the tool refusal
         # carry the same name (the 0037 shape); nothing was written
         return {"ok": False, "refusal": exc.reason}
+    except _cred.CredentialRefused as exc:
+        # specs/0055 §4g: the same name as the library exception; field and class, never the value
+        return exc.as_refusal()
+    _record_discarded(mem, user_id, "remember", r)
     for k in _OPERATOR_ONLY:
         r.pop(k, None)
     return r
@@ -294,13 +319,21 @@ def record_procedure_report(mem: Memory, user_id: str, summary: str, basis,
         if date is not None:
             from .ingest import _event_dt
             when = _event_dt(date)
-        edge_id = mem.record_procedure(user_id, summary, author=_AUTHOR[author],
-                                       context=context, relation=relation, note=note,
-                                       when=when, source_id=source_id)
+        # specs/0055 §4g (R1-05): the dict twin, so the served result carries `credentials_withheld`
+        rep = mem.record_procedure_report(user_id, summary, author=_AUTHOR[author],
+                                          context=context, relation=relation, note=note,
+                                          when=when, source_id=source_id)
+    except _cred.CredentialRefused as exc:
+        return exc.as_refusal()
     except (TypeError, ValueError) as exc:
+        # specs/0055 §4g E1: `detail` is the outward formatter's text (field and reason), never str(exc)
         return {"ok": False, "refusal": getattr(exc, "reason", "malformed"),
-                "detail": str(exc)[:200]}
-    return {"ok": True, "edge_id": edge_id, "provenance_raises_discarded": 0}
+                "detail": _cred.outward_text(exc)[:200]}
+    out = {"ok": True, "edge_id": rep["edge_id"]}
+    if rep.get("credentials_withheld"):
+        out["credentials_withheld"] = rep["credentials_withheld"]
+    out["provenance_raises_discarded"] = 0
+    return out
 
 
 def record_procedure_impl(mem: Memory, user_id: str, summary: str, basis,
@@ -312,6 +345,7 @@ def record_procedure_impl(mem: Memory, user_id: str, summary: str, basis,
     r = record_procedure_report(mem, user_id, summary, basis, author=author,
                                 derived_from=derived_from, relation=relation, note=note,
                                 date=date, source_id=source_id, capability=capability)
+    _record_discarded(mem, user_id, "record_procedure", r)
     for k in _PROCEDURE_OPERATOR_ONLY:
         r.pop(k, None)
     return r
@@ -326,7 +360,7 @@ def describe_procedures_impl(mem: Memory, user_id: str, query: Optional[str] = N
                                          limit=limit)
     except (TypeError, ValueError) as exc:
         return {"ok": False, "refusal": getattr(exc, "reason", "malformed"),
-                "detail": str(exc)[:200]}
+                "detail": _cred.outward_text(exc)[:200]}      # specs/0055 §4g E1
     return {"ok": True, **result.to_dict()}
 
 
@@ -441,13 +475,15 @@ def _trust_call(mem: Memory, fn) -> dict:
         except graph.CorrectionRefused as exc:
             # TT-R2-02: a COMMITTED refusal — the refusal plan is kept, the target stays active; "the correction was
             # refused", not "nothing was written"
-            return _trust_refusal("correction_refused", str(exc))
+            return _trust_refusal("correction_refused", _cred.outward_text(exc))     # specs/0055 §4g E1
         except (ScopeError, ValueError, TypeError) as exc:      # the refusal classes (TrustRefused is a ValueError)
             if committed:
                 raise TrustInternalError(f"{type(exc).__name__} after a commit in this call") from exc
             if isinstance(exc, TrustRefused):
                 return _trust_refusal(exc.reason, exc.detail)
-            return _trust_refusal("refused", str(exc))
+            if isinstance(exc, _cred.CredentialRefused):
+                return exc.as_refusal()                          # specs/0055 §4g: nothing was written
+            return _trust_refusal("refused", _cred.outward_text(exc))                 # specs/0055 §4g E1
 
 
 def _ok(result: dict) -> dict:
@@ -556,7 +592,9 @@ def forget_everything_confirm_report(mem: Memory, user_id: str, preview_token, *
     return _trust_call(mem, lambda: _ok(mem.forget_everything_confirm(user_id, preview_token, issuer=issuer)))
 
 
-def _strip(report: dict) -> dict:
+def _strip(report: dict, mem=None, user_id: Optional[str] = None, tool: Optional[str] = None) -> dict:
+    if mem is not None and tool is not None:
+        _record_discarded(mem, user_id, tool, report)          # specs/0055 I15, before the strip
     for k in _TRUST_OPERATOR_ONLY:
         report.pop(k, None)
     return report
@@ -564,43 +602,50 @@ def _strip(report: dict) -> dict:
 
 def find_facts_impl(mem: Memory, user_id: str, query: Optional[str] = None, *, capability=None,
                     principal=None) -> dict:
-    return _strip(find_facts_report(mem, user_id, query, capability=capability, principal=principal))
+    return _strip(find_facts_report(mem, user_id, query, capability=capability, principal=principal),
+                  mem, user_id, 'find_facts')
 
 
 def correct_fact_impl(mem: Memory, user_id: str, edge_id: str, corrected_value: str, *, capability=None,
                       principal=None, source_id: Optional[str] = None, call_path=None) -> dict:
     return _strip(correct_fact_report(mem, user_id, edge_id, corrected_value, capability=capability,
-                                      principal=principal, source_id=source_id, call_path=call_path))
+                                      principal=principal, source_id=source_id, call_path=call_path),
+                  mem, user_id, 'correct_fact')
 
 
 def dispute_fact_impl(mem: Memory, user_id: str, edge_id: str, reason: str = "", *, capability=None,
                       principal=None, source_id: Optional[str] = None, call_path=None) -> dict:
     return _strip(dispute_fact_report(mem, user_id, edge_id, reason, capability=capability, principal=principal,
-                                      source_id=source_id, call_path=call_path))
+                                      source_id=source_id, call_path=call_path),
+                  mem, user_id, 'dispute_fact')
 
 
 def confirm_fact_impl(mem: Memory, user_id: str, edge_id: str, *, capability=None, principal=None,
                       source_id: Optional[str] = None, call_path=None) -> dict:
     return _strip(confirm_fact_report(mem, user_id, edge_id, capability=capability, principal=principal,
-                                      source_id=source_id, call_path=call_path))
+                                      source_id=source_id, call_path=call_path),
+                  mem, user_id, 'confirm_fact')
 
 
 def forget_fact_impl(mem: Memory, user_id: str, edge_id: Optional[str] = None, episode_id: Optional[str] = None,
                      *, capability=None, erasure=None, principal=None) -> dict:
     return _strip(forget_fact_report(mem, user_id, edge_id, episode_id, capability=capability, erasure=erasure,
-                                     principal=principal))
+                                     principal=principal),
+                  mem, user_id, 'forget_fact')
 
 
 def forget_everything_preview_impl(mem: Memory, user_id: str, *, capability=None, erasure=None, principal=None,
                                    issuer=None) -> dict:
     return _strip(forget_everything_preview_report(mem, user_id, capability=capability, erasure=erasure,
-                                                   principal=principal, issuer=issuer))
+                                                   principal=principal, issuer=issuer),
+                  mem, user_id, 'forget_everything_preview')
 
 
 def forget_everything_confirm_impl(mem: Memory, user_id: str, preview_token, *, capability=None, erasure=None,
                                    principal=None, issuer=None) -> dict:
     return _strip(forget_everything_confirm_report(mem, user_id, preview_token, capability=capability,
-                                                   erasure=erasure, principal=principal, issuer=issuer))
+                                                   erasure=erasure, principal=principal, issuer=issuer),
+                  mem, user_id, 'forget_everything_confirm')
 
 
 #: §4g, the model-facing descriptions: each acts AS THE USER, only when the user asks in this conversation, never
@@ -646,10 +691,17 @@ def build_memory() -> Memory:
     # log if the operator granted advance permission via `veracium diagnostics enable`
     # (stdio isn't a TTY, so it never prompts); otherwise the log stays local and can
     # be sent later with `veracium diagnostics report`.
+    # specs/0055 §4g: the stock server attaches an AuditLog when VERACIUM_AUDIT_LOG names a path (unset: none, as
+    # before). The credential counts and 0031 §10 Q4's discarded raises reach the operator there.
+    audit_path = os.environ.get("VERACIUM_AUDIT_LOG") or None
+    audit = None
+    if audit_path is not None:
+        from .audit import AuditLog
+        audit = AuditLog(audit_path)
     return Memory(llm=AnthropicComplete(),
                   config=MemoryConfig(db_path=os.environ.get("VERACIUM_DB_PATH", "veracium.db")),
                   telemetry=telemetry.load_collector_if_enabled(),
-                  diagnostics=diagnostics.load_reporter())
+                  diagnostics=diagnostics.load_reporter(), audit=audit)
 
 
 # specs/0031 §4a-ii (v22.1, N1): what `serverInfo.version` carries in a tree with no distribution metadata. It names
@@ -683,6 +735,40 @@ def _server_cls():
     except ImportError:
         from mcp.server.fastmcp import FastMCP  # mcp 1.x
         return FastMCP
+
+
+def _served(fn):
+    """specs/0055 §4g, the MCP tool boundary: marks every call as arriving through the `mcp` surface (the AuditLog's
+    `surface`), returns a credential refusal as its refusal dict, and FORMATS any other exception that would escape the
+    tool body (E1): the SDK hands an escaping exception's text to the model, so it is re-raised carrying
+    `credentials.outward_text` (field and reason, never the caller's value), chained to the original."""
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        with _cred.on_surface("mcp"):
+            try:
+                return fn(*args, **kwargs)
+            except _cred.CredentialRefused as exc:
+                return exc.as_refusal()
+            except Exception as exc:                     # noqa: BLE001 - re-raised, formatted, chained
+                raise ValueError(_cred.outward_text(exc)) from exc
+    return wrapped
+
+
+class _HiddenInput(BaseModel):
+    """specs/0055 §4g E2: the one setting each served argument model gains (merged into its config through the bases)."""
+    model_config = ConfigDict(hide_input_in_errors=True)
+
+
+def _hide_inputs_in_sdk_validation(server) -> None:
+    """specs/0055 §4g E2: the SDK validates a tool's arguments against a generated pydantic model BEFORE the tool body
+    runs (so `_served` never sees that error), and pydantic's message carries `input_value=`. Each registered tool's
+    argument model is replaced by a subclass that sets `hide_input_in_errors=True`; the schema the client sees is
+    unchanged. I17 holds the outcome (no input in the served error text), not this mechanism."""
+    from pydantic import create_model
+    for tool in server._tool_manager.list_tools():
+        base = tool.fn_metadata.arg_model
+        # the served model's own name, so the error text names it as before; its fields and methods are inherited
+        tool.fn_metadata.arg_model = create_model(base.__name__, __base__=(base, _HiddenInput))
 
 
 def build_server(mem: Memory, *, default_user: str = "default", capability=None,
@@ -722,6 +808,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
     # nothing to refuse. The deployment-scoped user is `default_user`,
     # captured at construction (all four tools; see recall below).
     @server.tool()
+    @_served
     def remember(text: str, author: Optional[str] = None,
                  event_type: str = "chat", date: Optional[str] = None,
                  derived_from: Optional[str] = None) -> dict:
@@ -747,7 +834,9 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
         party, and "my" is then read as that author's claim, not the user's.
         Store your own reply, if you store it, in a separate call with
         author="assistant". `date` is the ISO date the event occurred
-        (defaults to today)."""
+        (defaults to today). Credential-shaped text (keys, tokens, passwords)
+        is withheld before storage; `credentials_withheld` in the result says
+        what was."""
         # specs/0006 I1: the source id is HOST-supplied, never model-supplied —
         # it is the deployment's VERACIUM_MCP_SOURCE_ID binding, read once at
         # start with the other environment, and is not a tool argument.
@@ -760,6 +849,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
     # 2026-09-04): a model-suppliable user_id on RECALL is a cross-principal
     # READ — the identity boundary defeated worse than on a write.
     @server.tool()
+    @_served
     def recall(query: Optional[str] = None,
                token_budget: Optional[int] = None) -> str:
         """Retrieve grounded memory relevant to a query, as a context block to
@@ -776,6 +866,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
         return recall_impl(mem, default_user, query, token_budget=token_budget)
 
     @server.tool()
+    @_served
     def answer(query: str) -> str:
         """Answer a question directly from the user's memory, with grounding
         discipline: answers only from verified memory, never asserts unverified
@@ -783,6 +874,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
         return answer_impl(mem, default_user, query)
 
     @server.tool()
+    @_served
     def maintain() -> dict:
         """Run memory maintenance: expire stale transient facts, flag possibly-
         stale durable ones, and consolidate old history. Call periodically (e.g.
@@ -795,6 +887,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
     # source identity is the DEPLOYMENT's binding (0006 I1, v9: never a tool
     # argument — a model must not mint or impersonate a source), as `remember`.
     @server.tool()
+    @_served
     def record_procedure(summary: str, basis: str, author: str = "user",
                          derived_from: Optional[str] = None,
                          relation: str = "follows_procedure",
@@ -816,6 +909,7 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
                                      capability=cap)
 
     @server.tool()
+    @_served
     def describe_procedures(query: Optional[str] = None) -> dict:
         """Describe the user's recorded procedures — each with its basis
         ("recorded from something you said: …" / "a pattern you reported
@@ -831,36 +925,44 @@ def build_server(mem: Memory, *, default_user: str = "default", capability=None,
     # evidence_ref, capability, erasure, principal or source_id parameter: each is ABSENT BY SCHEMA (INV-TT2). Over
     # MCP the principal is None (0020 §5) and the source is this server's configured one.
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["find_facts"])
+    @_served
     def find_facts(query: Optional[str] = None) -> dict:
         return find_facts_impl(mem, default_user, query, capability=cap)
 
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["correct_fact"])
+    @_served
     def correct_fact(edge_id: str, corrected_value: str) -> dict:
         return correct_fact_impl(mem, default_user, edge_id, corrected_value, capability=cap,
                                  source_id=source_id, call_path=_MCP)
 
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["dispute_fact"])
+    @_served
     def dispute_fact(edge_id: str, reason: str = "") -> dict:
         return dispute_fact_impl(mem, default_user, edge_id, reason, capability=cap,
                                  source_id=source_id, call_path=_MCP)
 
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["confirm_fact"])
+    @_served
     def confirm_fact(edge_id: str) -> dict:
         return confirm_fact_impl(mem, default_user, edge_id, capability=cap, source_id=source_id, call_path=_MCP)
 
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["forget_fact"])
+    @_served
     def forget_fact(edge_id: Optional[str] = None, episode_id: Optional[str] = None) -> dict:
         return forget_fact_impl(mem, default_user, edge_id, episode_id, capability=cap, erasure=era)
 
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["forget_everything_preview"])
+    @_served
     def forget_everything_preview() -> dict:
         return forget_everything_preview_impl(mem, default_user, capability=cap, erasure=era, issuer=issuer)
 
     @server.tool(description=TRUST_TOOL_DESCRIPTIONS["forget_everything_confirm"])
+    @_served
     def forget_everything_confirm(preview_token: str) -> dict:
         return forget_everything_confirm_impl(mem, default_user, preview_token, capability=cap, erasure=era,
                                               issuer=issuer)
 
+    _hide_inputs_in_sdk_validation(server)           # specs/0055 §4g E2
     return server
 
 
@@ -905,6 +1007,11 @@ Environment:
                       forget_everything_confirm) execute directly. Content
                       relayed in a first-party turn can induce an agent to call
                       them; their descriptions ask, they do not enforce.
+  VERACIUM_AUDIT_LOG  a file path: attach an append-only, content-free
+                      operation audit log there (specs/0055 §4g). It records
+                      the credential screen's counts (by class, never a
+                      value) and the discarded provenance raises (0031 §10 Q4).
+                      Unset = no audit log.
   VERACIUM_MCP_ERASURE
                       "on" (the default when unset) or "off": erasure through
                       the agent (forget_fact and the two-step whole-user erase,

@@ -1276,6 +1276,10 @@ def _import_prose_kind(mp):
 
 DECLINES.update({
     "store.upsert.marker-introduced": lambda mp: _raises(ValueError, _mem().store.add_edge, _edge("m1", obj=_MARKER)),
+    # specs/0055 §4d: the store guard declines an edge that INTRODUCES a credential shape (an assembled AWS-style key id;
+    # `CredentialRefused` is a ValueError)
+    "store.upsert.credential-introduced": lambda mp: _raises(ValueError, _mem().store.add_edge,
+                                                             _edge("c1", obj="key " + "AK" + "IA" + "IOSFODNN7EXAMPLE")),
     "store.upsert.relation-only-quarantine": lambda mp: _raises(ValueError, _mem().store.add_edge, _edge("q1", rel=_QR)),
     "store.episode.marker-introduced": lambda mp: _raises(ValueError, _mem().store.add_episode, _episode("em1").model_copy(update={"summary": _MARKER})),
     "store.episode.kind-not-recognised": lambda mp: _raises(ValueError, _mem().store.add_episode, _episode("ek1").model_copy(update={"kind": "told me in confidence"})),

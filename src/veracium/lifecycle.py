@@ -26,6 +26,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Optional
 
+from . import credentials as _cred
 from ._json import extract_json
 from .llm.base import Complete
 from .schema import (DEFAULT_EXPIRY, Disclosure, Episode, EvidenceAuthor, ExpiryBehavior,
@@ -206,7 +207,8 @@ def _consolidate_pool(store, llm: Complete, user_id: str, config,
     from .schema import (ConsolidationOutputDraft, ConsolidationState,
                          to_historical_id)  # noqa: F401
     import uuid
-    listing = "\n".join(f"[{e.date}] {e.summary}" for e in cold)
+    # specs/0055 §4e, the read backstop: stored summaries are masked on their way into the provider's prompt
+    listing = "\n".join(f"[{e.date}] {_cred.mask(e.summary)[0]}" for e in cold)
     try:
         raw = llm(CONSOLIDATE_PROMPT.format(episodes=listing),
                   system=CONSOLIDATE_SYSTEM, role="compile")
@@ -222,6 +224,15 @@ def _consolidate_pool(store, llm: Complete, user_id: str, config,
         return _pool_result("failed", error="validation-error")
     if not new or len(new) >= len(cold):
         return _pool_result("ok")                      # no compression
+    # specs/0055 §4c, the model-output screen at this model site (census A row 6): each draft summary is withheld
+    # span by span before it is written; the counts go to the AuditLog (source model_output) through maintain
+    withheld: dict = {}
+    masked_new = []
+    for r in new:
+        text, rep = _cred.mask(str(r["summary"]))
+        _cred.merge_report(withheld, "summary", rep)
+        masked_new.append(dict(r, summary=text))
+    new = masked_new
     # Claim the whole POOL atomically (X4). A contended set → None; a stale
     # candidate → ValueError: an input concurrently finalized out from under us,
     # OR attested-redacted since the listing above (specs/0041 round 10 — the
@@ -263,7 +274,10 @@ def _consolidate_pool(store, llm: Complete, user_id: str, config,
             op.operation_id, op.fence, owner, ConsolidationState.FINALIZED)
     except Exception:
         return _pool_result("failed", error="store-error")
-    return _pool_result("ok", consolidated=len(cold), into=len(new))
+    out = _pool_result("ok", consolidated=len(cold), into=len(new))
+    if withheld:
+        out["credentials_withheld"] = withheld
+    return out
 
 
 def consolidate(store, llm: Complete, user_id: str, config, *,

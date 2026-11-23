@@ -23,6 +23,8 @@ import math
 import re
 import struct
 
+from . import credentials as _cred
+
 # §4d: one id() PERMANENTLY denotes one embedding behaviour; the shape is
 # validated here, byte-equality everywhere else.
 EMBEDDER_ID_RE = re.compile(r"^[A-Za-z0-9._@:+-]{1,128}$")
@@ -32,6 +34,9 @@ def content_digest(edge) -> str:
     """The §4e digest projection — the codebase's shipped canonical form
     (sqlite.py's sort_keys/compact-separators sha256 convention), keys fixed
     to exactly {subject, relation, object, note}, values verbatim."""
+    # specs/0055 §4b-ii D2 (census F row 13): computed over the MASKED text the embedder receives, never over raw
+    # legacy text; on text with no credential shape the mask is the identity, so every existing digest is unchanged
+    edge = _cred.masked_edge(edge)
     payload = {"subject": edge.subject, "relation": edge.relation,
                "object": edge.object, "note": edge.note}
     return hashlib.sha256(
@@ -40,7 +45,9 @@ def content_digest(edge) -> str:
 
 
 def embedded_text(edge) -> str:
-    """What the embedder sees — the digest projection's values, joined."""
+    """What the embedder sees — the digest projection's values, joined, masked first (specs/0055 §4e: the embedder
+    is a provider, so a legacy credential never reaches it)."""
+    edge = _cred.masked_edge(edge)
     return f"{edge.subject} {edge.relation} {edge.object} {edge.note}"
 
 

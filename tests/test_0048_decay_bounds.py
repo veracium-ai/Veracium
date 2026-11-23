@@ -746,7 +746,7 @@ NONLITERAL_BINDING = {
     ('SqliteStore.commit_outcome_import_plan', 'add6a203baf74ebdf25588d537da098d28d3d62b1dd80390be8daa6599b1fb04'): '6f9398b295171a36',
     ('SqliteStore.commit_outcome_import_plan', 'bce31bcedb2ea1608534e21b890939d2de16cd7611d1339fd4212f223c9af28d'): 'def3b1074fa32e36',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore.commit_outcome_import_plan', 'e09d8261753337dde680071ab5bdc7e6175a5754f49b43053debc68f25e57da4'): '58ce5c12abef5978',
-    ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'): 'b2dc7d1543169c2a',   # 0031 §4f: re-reviewed — the episode gains its source/call path; the SQL is unchanged
+    ('SqliteStore.confirm_edge', '97ab04e41e08ed70ecdb71fc3252db4d341b4bda2cb224f3499c6142ae9ae628'): '59207389ae3ec04e',   # 0055 §4c-ii: re-reviewed — the confirmation episode's summary is masked before it is written (a bound parameter); the SQL text is still fixed by `_COLS`. Before: 'b2dc7d1543169c2a' # 0031 §4f: re-reviewed — the episode gains its source/call path; the SQL is unchanged
     ('SqliteStore.confirm_notice', '5647332e7211148b9ad5b71a487ab19b4c15e73a38f06d91cb309d3070fb9335'): '9f164edab461b1c5',
     ('SqliteStore.confirm_notice', 'e47d7977d4c6808ad45f95d96520dcdbbba44b01614abab0dd7ce34fd79796d6'): 'b68c504456272ac2',   # 0031 v23.3: self._conn's binder took factory= (re-reviewed: the SQL text's determinants are unchanged)
     ('SqliteStore.confirmations_for', '6de03e078785d11fe4b34b9c39000a308103c9a26815b350347938403fc4eea6'): '17ed76defda31afb',
@@ -881,11 +881,14 @@ SRC_IMPORTS = {
     "collections.abc": {"Mapping"},
     "contextlib": {"closing", "contextmanager", "nullcontext"},
     "contextvars": {"ContextVar"},
-    "dataclasses": {"asdict", "dataclass", "field", "fields"},
+    "dataclasses": {"asdict", "dataclass", "field", "fields",
+                    "replace"},                            # specs/0055 §4e: a masked copy of the as-of record
     "datetime": {"date", "datetime", "timedelta", "timezone"},
     "enum": {"Enum"},
     "fcntl": {"LOCK_EX", "LOCK_NB", "LOCK_UN", "flock"},
-    "base64": {"urlsafe_b64decode", "urlsafe_b64encode"},   # specs/0031 §4f §4e: the preview token's wire form
+    "functools": {"wraps"},                                # specs/0055 §4g: the MCP tool boundary keeps each signature
+    "base64": {"urlsafe_b64decode", "urlsafe_b64encode"},
+    "bisect": {"bisect_right"},                            # specs/0055 §4a: the recogniser's token-boundary lookup   # specs/0031 §4f §4e: the preview token's wire form
     "hashlib": {"sha256"},
     "hmac": {"compare_digest", "new"},                     # specs/0031 §4f §4e: the preview token's MAC
     "importlib.metadata": {"PackageNotFoundError", "version"},
@@ -903,8 +906,8 @@ SRC_IMPORTS = {
     "os.path": {"basename", "exists", "isabs", "join", "realpath"},
     "pathlib": {"Path"},
     "platform": {"machine", "python_version", "system"},
-    "pydantic": {"BaseModel", "Field", "StrictBool", "TypeAdapter", "ValidationError", "field_validator",
-        "model_serializer", "model_validator"},
+    "pydantic": {"BaseModel", "ConfigDict", "Field", "StrictBool", "TypeAdapter", "ValidationError", "create_model",
+        "field_validator", "model_serializer", "model_validator"},   # 0055 §4g E2: ConfigDict, create_model (the SDK's hidden-input models)
     "re": {"I", "compile", "escape", "findall", "finditer", "fullmatch", "match", "search", "split", "sub"},
     "secrets": {"token_bytes"},
     "shutil": {"copy2", "rmtree"},
@@ -917,6 +920,7 @@ SRC_IMPORTS = {
     "time": {"monotonic", "perf_counter", "sleep", "time"},
     "traceback": {"format_exception"},
     "types": {"MappingProxyType"},
+    "unicodedata": {"category", "normalize"},              # specs/0055 §4a: the recogniser's normalised view
     "typing": {"Any", "Callable", "Literal", "Mapping", "NamedTuple", "Optional", "Protocol", "TYPE_CHECKING",
         "get_args", "runtime_checkable"},
     "urllib": {"parse", "request"},

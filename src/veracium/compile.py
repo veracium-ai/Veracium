@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 from .census import declare_site
+from . import credentials as _cred
 
 _log = logging.getLogger(__name__)
 
@@ -337,7 +338,7 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
             fact_lines.append(line)
     ep_lines: list[str] = []
     for e in reversed(episodes):                          # newest first under budget
-        line = _budgets.clamp_item(f"[{e.date}] {e.summary}", item_cap)
+        line = _budgets.clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", item_cap)   # specs/0055 §4e
         cost = _budgets.est_tokens(line) + 1              # +1: the join newline
         if spent + cost > items_budget:
             eps_dropped += 1
@@ -351,6 +352,9 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     # nothing grounded to compile: the fixed line, not the model (a model narrates an empty input as an empty memory)
     raw = (EMPTY_GROUNDED_BODY if not edges and not episodes
            else llm(prompt, system=COMPILE_SYSTEM, role="compile").strip())
+    # specs/0055 §4c (census A row 7): the compiled body is model output drawn from stored text, so it is masked
+    # before it is stored or served
+    raw = _cred.mask_text(raw)
     # sanitize FIRST (forged sentinels become inert), then append the code-owned marker
     wiki = _budgets.append_compile_marker(_budgets.sanitize_llm_body(raw),
                                           facts_dropped, eps_dropped)

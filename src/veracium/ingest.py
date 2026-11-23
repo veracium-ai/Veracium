@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from . import agreement, grounding, prompts
+from . import credentials as _cred
 from . import attest_v3 as _attest_v3
 from .attestation import ATTESTED as _ATTESTED, attestation as _attestation
 from . import speaker_backstop as _speaker_backstop
@@ -126,18 +127,19 @@ def _event_dt(date_str: str) -> datetime:
         dt = (dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None
               else dt.astimezone(timezone.utc))
     except (ValueError, TypeError):
-        raise ValueError(
+        # specs/0055 §4g E1: field and reason ride as attributes; a served boundary refuses without the value
+        raise _cred.ArgumentRefused(
             f"event date {date_str!r} is not an ISO date. Memory timestamps "
             f"record when a statement was made; falling back to the current "
             f"time would manufacture an observation date the caller never "
-            f"supplied. Omit `date=` if you mean now.") from None
+            f"supplied. Omit `date=` if you mean now.", field="date", reason="not_an_iso_date") from None
     if dt > utcnow() + MAX_FUTURE_SKEW:
-        raise ValueError(
+        raise _cred.ArgumentRefused(
             f"event date {date_str!r} is in the future. Memory timestamps record "
             f"when a statement was made; a future date makes a fact permanently "
             f"fresh (observed_at only ever advances) and renders a false "
             f"'(since …)' into answer context. If the future date is what the "
-            f"fact is ABOUT, it belongs in the value, not in `date=`.")
+            f"fact is ABOUT, it belongs in the value, not in `date=`.", field="date", reason="future_date")
     return dt
 
 
@@ -227,8 +229,13 @@ def _emit_degrade(on_degrade, kind: str, payload: dict) -> None:
 
 def _len_sha16(text: str) -> tuple[int, str]:
     """specs/0039 §2a: the UTF-8 BYTE length of `text` and the first sixteen hex
-    digits of SHA-256 over exactly those bytes — never the text."""
-    b = text.encode("utf-8")
+    digits of SHA-256 over exactly those bytes — never the text.
+
+    Amended by specs/0055 §4b-ii (`0055/0039-masked-diagnostic-digests`): the text is the provider's text AFTER
+    the credential mask, so neither the length nor the digest is computed over a credential (a digest of a
+    low-entropy value is the value to anyone who can guess). On text with no credential shape the mask is the
+    identity and both fields are byte-identical to before."""
+    b = _cred.mask(text)[0].encode("utf-8")
     return len(b), hashlib.sha256(b).hexdigest()[:16]
 
 
@@ -244,9 +251,21 @@ _UNSET = object()   # specs/0039 §2c: "the provider call raised" is a fact abou
                     # raised, never about the value — a provider may legitimately return None
 
 
+def _model_triple_class(t: dict):
+    """specs/0055 §4c: the class of the first credential shape in any string field of one extracted triple, or
+    None."""
+    for v in t.values():
+        if isinstance(v, str) and v:
+            cls = _cred.first_class(v)
+            if cls is not None:
+                return cls
+    return None
+
+
 def _answer_fields(raw) -> dict:
     """§2a `answer_len`/`answer_sha16` over the provider's raw answer exactly as the
-    `Complete` callable returned it (a non-str return is measured as its str form)."""
+    `Complete` callable returned it (a non-str return is measured as its str form), masked first (specs/0055,
+    `0055/0039-masked-diagnostic-digests`; see `_len_sha16`)."""
     n, h = _len_sha16(raw if isinstance(raw, str) else str(raw))
     return {"answer_len": n, "answer_sha16": h}
 
@@ -486,6 +505,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         triples_in = []
     n_shape_valid = 0
     parsed = []
+    model_report: dict = {}          # specs/0055 §4c: {field: {class: count}} of the model-output screen
     for t in triples_in:
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
             # every value reaching here IS a list member now (the normalization above),
@@ -493,6 +513,14 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             n_members_skipped += 1
             continue
         n_shape_valid += 1           # round-5 R5-1: passed the shape guard, whatever follows
+        # specs/0055 §4c, THE MODEL-OUTPUT SCREEN: a triple with a credential shape in any string field is the
+        # credential fact itself, so it is DROPPED before it is parsed into a write, and counted (source
+        # `model_output`). With the ingress screen in place this should never fire on new text: a non-zero count
+        # means the model reassembled a withheld span or invented one. The canary, not the defence.
+        _shaped = _model_triple_class(t)
+        if _shaped is not None:
+            _cred.merge_report(model_report, "extracted_fact", {_shaped: 1})
+            continue
         # specs/0025 (amended 2026-09-08 on the 0.20.0 selfcheck finding): the
         # SUBJECT GRAMMAR is enforced here, not only stated in the prompt. The
         # prompt's placeholder read `user|person:<name>|org:<name>` and one
@@ -699,6 +727,10 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.
     episode_text = str(data.get("episode", "")).strip()
+    # specs/0055 §4c: the model's episode summary is withheld span by span before it is written or returned
+    if episode_text:
+        episode_text, _erep = _cred.mask(episode_text)
+        _cred.merge_report(model_report, "episode", _erep)
     # specs/0045 §2: `src`, the episode of the event the edges' `att` judges — NULL when the event left no episode
     # (§4d: then the source-redacted guard has nothing to read, stated)
     source_episode = None
@@ -892,4 +924,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # its name false for parsed answers and its domain false for rejected ones.
     result["extraction_unusable"] = bool(
         primary_unusable or (len(triples_in) > 0 and n_shape_valid == 0))
+    if model_report:
+        # specs/0055 §4g: Memory.remember folds this into the result's report and audits it (source model_output)
+        result["credentials_withheld"] = model_report
     return result

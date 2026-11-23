@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Optional
 
 from . import authority
+from . import credentials as _cred
 from .schema import is_obligation, is_procedural
 from .schema import (DEFAULT_RELATIONS, ContributionDraft, Edge, EvidenceAuthor,
                      Relation, SupersessionPlan, SupersessionRefusalDraft)
@@ -551,8 +552,11 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
             # surviving representation stays flagged.
             incoming.ungrounded = incoming.ungrounded or prior.ungrounded
             noted = prior.model_copy(deep=True)
-            noted.note = ((f"{noted.note}; " if noted.note else "")
-                          + f"absorbed_by:{incoming.id} (restated as {incoming.object!r})")
+            # specs/0055 §4c-ii rule 1 (census A row 5): the rewritten note is COMPOSED from the prior's stored note
+            # and the incoming object, so it is masked before it is written; a legacy span in the old note is
+            # withheld here, the moment the rewrite passes through our code (§7, dev's N2)
+            noted.note = _cred.mask((f"{noted.note}; " if noted.note else "")
+                                    + f"absorbed_by:{incoming.id} (restated as {incoming.object!r})")[0]
             upserts.append(noted)
             invalidations.append((prior.id, incoming.valid_from, "absorbed_duplicate"))
             absorbed.add(prior.id)
@@ -1403,7 +1407,9 @@ def edge_subject_span(e: Edge) -> Optional[tuple[str, int]]:
     prefix constant; `clamp_edge_line` shrinks only the object and the note, so the segment survives its clamp."""
     if e.subject == "user" or e.invalidation_reason == "absorbed_duplicate":
         return None
-    return (e.subject, len(CLAIM_LINE_PREFIX)) if e.quarantined else (e.subject, 0)
+    # specs/0055 §4e: render_edges writes the MASKED subject, so the span names the masked subject
+    subj = _cred.mask_text(e.subject)
+    return (subj, len(CLAIM_LINE_PREFIX)) if e.quarantined else (subj, 0)
 
 
 def render_edges(edges: list[Edge], since: Optional[dict] = None) -> str:
@@ -1420,6 +1426,7 @@ def render_edges(edges: list[Edge], since: Optional[dict] = None) -> str:
             # prior value of it — rendering it as history would show identity
             # as change. Still queryable via the store/Recall.edges.
             continue
+        e = _cred.masked_edge(e)      # specs/0055 §4e: the read backstop, before any text is composed
         who = "" if e.subject == "user" else f"{e.subject} "
         note = f" — {e.note}" if e.note else ""
         # specs/0019 §4c: the marker rides EVERY branch a flagged fact renders

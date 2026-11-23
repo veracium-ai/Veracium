@@ -796,7 +796,49 @@ def _check_runtime(rep: Report) -> None:
 
 
 # ------------------------------------------------------------------- driver --
-def diagnose(path: str, *, user: Optional[str] = None) -> Report:
+def _check_credentials(rep: Report, store, user: Optional[str]) -> None:
+    """specs/0055 §4f, `credentials_at_rest`: the finder over this snapshot. A WARN with the counts by carrier class
+    and class name, and each record by its locator (an id with a shape is never printed; a per-report ordinal names
+    it). Never a value. `veracium credentials redact` is the remedy; identifiers are a residual."""
+    from . import credential_finder as cf
+    rep.checks_run.append("credentials_at_rest")
+    hits = cf.scan(store, user)
+    if not hits:
+        return
+    r = cf.report(hits)
+    per = "; ".join(f"{carrier} {slot['records']} ({', '.join(f'{c} {n}' for c, n in sorted(slot['classes'].items()))})"
+                    for carrier, slot in r["carriers"].items())
+    rep.add("credentials_at_rest", "warn",
+            f"credential-shaped text at rest, by carrier: {per} — `veracium credentials redact` removes what 0041 "
+            f"can" + ("; identifiers are a residual (forget_user removes the user's rows)" if r["residual"] else ""),
+            [x["locator"] for x in r["records"]])
+
+
+def _check_credential_audit(rep: Report, audit_log: Optional[str]) -> None:
+    """specs/0055 §4g: when an AuditLog is named (`--audit-log`, or VERACIUM_AUDIT_LOG), the screen's counts from it,
+    by event, class and source. Content-free: the log holds class names and counts only."""
+    if not audit_log:
+        return
+    rep.checks_run.append("credential_audit")
+    from .audit import AuditLog
+    try:
+        entries = [e for e in AuditLog(audit_log).entries() if e.get("op") in ("credential_withheld",
+                                                                               "credential_refused")]
+    except Exception as ex:                                       # noqa: BLE001
+        rep.add("credential_audit", "error", f"the audit log could not be read: {type(ex).__name__}")
+        return
+    totals: dict = {}
+    for e in entries:
+        classes = e.get("classes") or ({e["class"]: 1} if e.get("class") else {})
+        for cls, n in classes.items():
+            k = (e.get("op"), e.get("source"), cls)
+            totals[k] = totals.get(k, 0) + (n if isinstance(n, int) else 0)
+    if totals:
+        rep.add("credential_audit", "info", "the credential screen, from the audit log: " + "; ".join(
+            f"{op} {cls} from {src}: {n}" for (op, src, cls), n in sorted(totals.items())))
+
+
+def diagnose(path: str, *, user: Optional[str] = None, audit_log: Optional[str] = None) -> Report:
     rep = Report(db=path, readable=False)
     _check_runtime(rep)                                       # before any store is opened (INV-SA9)
     tmpdir = tempfile.mkdtemp(prefix="veracium-doctor-")
@@ -824,6 +866,8 @@ def diagnose(path: str, *, user: Optional[str] = None) -> Report:
             _check_procedural(rep, edges)
             _check_obligation_chains(rep, edges)
             _check_data_migration(rep, conn, user, edges)
+            _check_credentials(rep, store, user)              # specs/0055 §4f
+            _check_credential_audit(rep, audit_log or os.environ.get("VERACIUM_AUDIT_LOG"))
             try:
                 _check_revocation(rep, store, rep.users)
             except Exception as ex:                           # noqa: BLE001

@@ -405,6 +405,42 @@ READS = {
     "refusals", "replies_for", "semantic_candidates", "standing_revocations", "store_version", "supersession_receipt",
     "supersessions_refused", "validate_receipt_state", "close", "atomic", "epoch_txn",
     "erase_preview_snapshot",     # specs/0031 §4f §4e: the erase preview's one read snapshot of four tables' keys
+    "credential_carriers",        # specs/0055 §4f: the finder's read of every carrier, read-only
+}
+
+# specs/0055 §4c-ii, I11 — THE SCREEN COLUMN: every writer above is classed by the RULE that keeps a credential out of
+# what it writes, one of four classes, naming the screen, the composed field or the declared snapshot row (census A,
+# coordination 1e519b1). "Existing text only" is not a class. A new writer fails here until it is classed.
+SCREEN_CLASSES = ("screened at source:", "derived-write rule 1:", "snapshot exception:", "marker only:")
+CREDENTIAL_SCREEN = {
+    "add_edge": "screened at source: §4b's ingress screen and §4c's model-output screen; §4d's store guard refuses "
+                "a shape an edge write introduces",
+    "expiry_transition": "snapshot exception: census A rows 10-12 — a transition changes no string; the journal "
+                         "snapshots the row as stored",
+    "add_episode": "screened at source: §4b (remember's text) and §4c (the extractor's summary); the composed "
+                   "summaries of dispute, correct and record_outcome are derived-write rule 1 in Memory",
+    "invalidate_edge": "snapshot exception: census A rows 10-12 — a transition; the journal snapshots the row",
+    "confirm_edge": "derived-write rule 1: the confirmation episode's summary (census A row 2)",
+    "delete_episode": "marker only: a deletion writes no text",
+    "create_or_takeover_consolidation": "snapshot exception: census A rows 14-19 — the claimed ids and lease",
+    "transition_consolidation_if_current": "snapshot exception: census A rows 14-19 — the operation's state",
+    "write_consolidation_output_if_current": "screened at source: §4c, the consolidation draft (census A row 6); "
+                                             "its provenance and dates are rows 14-19",
+    "delete_claimed_inputs_if_current": "marker only: a deletion writes no text",
+    "abandon_consolidation_if_current": "snapshot exception: census A rows 14-19 — the operation's state",
+    "forget_user": "marker only: a deletion writes no text",
+    "redact": "marker only: 0041's marker over the record's text",
+    "add_reply": "screened at source: §4b, reply's text before its request digest; target and correlation id refused",
+    "apply_supersession_plan": "derived-write rule 1: absorption's rewritten note (census A row 5) and correct's copied "
+                               "note (row 8); the incoming edge is screened at source",
+    "commit_outcome_import_plan": "screened at source: §4h's import screen, before any digest over a file component",
+    "undo_restoration": "snapshot exception: census A rows 14-19 — the recorded retirement, copied back",
+    "append_outcome_if_head": "derived-write rule 1: the outcome episode's summary (census A row 3)",
+    "set_wiki": "screened at source: §4c, the compiled body (census A row 7)",
+    "discard_wiki": "marker only: a deletion writes no text",
+    "upsert_embedding": "screened at source: §4e, the embedder's input and content digest are masked",
+    "write_policy_receipt": "marker only: ids and digests, no query text (census 1)",
+    "renew_consolidation_lease": "marker only: a lease's expiry",
 }
 
 
@@ -417,6 +453,17 @@ def test_every_public_store_method_is_classed():
         assert cells, name
         for c in cells:
             assert c in CELLS or not c.startswith(("edge-", "episode-", "invalidate-", "consolidation-")), (name, c)
+
+
+def test_i11_every_writer_is_classed_for_the_credential_screen():
+    """specs/0055 I11: the screen column is total over the writers and names one of §4c-ii's four classes, never
+    "existing text only". RED against: a new writer added unclassed (it fails `test_every_public_store_method_is_classed`
+    first, then here)."""
+    assert set(CREDENTIAL_SCREEN) == set(WRITERS), (sorted(set(WRITERS) - set(CREDENTIAL_SCREEN)),
+                                                    sorted(set(CREDENTIAL_SCREEN) - set(WRITERS)))
+    for name, rule in CREDENTIAL_SCREEN.items():
+        assert rule.startswith(SCREEN_CLASSES), (name, rule)
+        assert "existing text" not in rule, name
 
 
 def test_confirm_notice_is_a_read_in_name_only_or_writes_no_record():

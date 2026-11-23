@@ -12,8 +12,9 @@ conformance suite fails it by name.
 The user, the capability (0031 §4a), the source (0006 I1) and the principal (0020) are the HOST's, bound here and never
 a tool argument. A refusal comes back as the library's data (`{"ok": false, "refusal": …}`). A library raise (a value
 outside a closed set, a malformed argument, any other exception raised while answering) comes back as a tool-error
-result carrying its message verbatim (`handle_tool_error=True`), as FastMCP reports a tool error on MCP, so the model
-reads the reason and the agent loop does not crash. Nothing is retried,
+result (`handle_tool_error=True`), as FastMCP reports a tool error on MCP, so the model reads the reason and the agent
+loop does not crash. The message is the outward formatter's (specs/0055 §4g E1): the field, the reason and, for a
+closed vocabulary, the allowed values, never the value the call supplied. Nothing is retried,
 reworded or answered by another model.
 """
 from __future__ import annotations
@@ -49,9 +50,10 @@ def _tool(binding: Binding, spec, StructuredTool, ToolException):
 
 
 def as_tools(mem, *, user_id: str = "default", capability=None, source_id: Optional[str] = None,
-             principal=None, erasure=None) -> list:
-    """The served tools over `mem` as LangChain `StructuredTool`s, in the server's registration order."""
+             principal=None, erasure=None, audit_log=None) -> list:
+    """The served tools over `mem` as LangChain `StructuredTool`s, in the server's registration order. `audit_log`
+    (an `audit.AuditLog` or a path) attaches the operator's audit log to `mem` (specs/0055 §4g)."""
     StructuredTool, ToolException = _framework()
     binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal,
-                      erasure=erasure)          # specs/0031 §4i: the deployment's erasure setting, decided once
+                      erasure=erasure, audit_log=audit_log)   # specs/0031 §4i: erasure decided once; 0055: the log
     return [_tool(binding, spec, StructuredTool, ToolException) for spec in binding.tools()]

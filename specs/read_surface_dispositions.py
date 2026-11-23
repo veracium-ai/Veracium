@@ -78,6 +78,15 @@ DISPOSITIONS: dict[str, dict] = {
                     "Disclosure is derived (quarantine-at-birth, then the "
                     "three-axis rule), never host-supplied."),
 
+    "Memory.record_procedure_report": dict(
+        returns_records=False, principal="none",
+        carriers="the new edge id, and specs/0055's `credentials_withheld` "
+                 "({field: {class: count}}, present only when non-empty)",
+        disposition="WRITE path — `record_procedure`'s dict twin (specs/0055 "
+                    "§4g, R1-05); the same write, returning the id and the "
+                    "credential report (field and class names and counts, "
+                    "never a value); renders nothing."),
+
     "Memory.describe_procedures": dict(
         returns_records=True, principal="threaded",
         carriers="`DescribeResult` — `descriptions` (summary, basis, "

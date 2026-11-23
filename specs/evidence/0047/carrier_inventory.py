@@ -42,6 +42,10 @@ SRC = ROOT / "src" / "veracium"
 
 CLASSIFIED = {
     ("graph.py", "render_edges"): ("RENDER", "the recall detail block — the primary fact line"),
+    # specs/0055 §4e: the read backstop's per-record transform — a masked COPY of a stored edge, for a renderer that
+    # has already applied 0047's withholding; it selects nothing and decides nothing about a challenge
+    ("credentials.py", "masked_edge"): ("INTERNAL", "0055's read backstop: a masked copy of an edge the caller already "
+                                                    "selected and withheld by 0047's rules, rendered by that caller"),
     ("budgets.py", "clamp_edge_line"): ("RENDER", "clamps a rendered fact line; the unit clamps WITH the marker, never away"),
     ("__init__.py", "Memory._fit_to_budget"): ("RENDER", "recall's budget assembly — the count is computed BEFORE selection"),
     ("__init__.py", "Memory._fit_to_budget._rel"): ("RENDER", "recall's tier key — the variants tier (cf. 0044 P-2)"),

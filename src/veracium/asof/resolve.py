@@ -30,6 +30,7 @@ reads no journal (§4d).
 """
 from __future__ import annotations
 from ..census import declare_site
+from .. import credentials as _cred
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -425,6 +426,7 @@ def render_line(e: Edge, r: Optional[Resolution], T: datetime) -> str:
     disclosed cause. Reads no wall-clock predicate."""
     if r is None:
         return ""
+    e = _cred.masked_edge(e)          # specs/0055 §4e: the read backstop, before any text is composed
     who = "" if e.subject == "user" else f"{e.subject} "
     note = f" — {e.note}" if e.note else ""
     # specs/0019 §4c / U5: the marker rides EVERY branch a flagged fact renders through, placed as

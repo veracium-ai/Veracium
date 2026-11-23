@@ -1,5 +1,5 @@
 {
- "body_sha256": "a8d53f99bf853302d695712f884c86792fe0ac7cfb4644fbf119a7812a12b903",
+ "body_sha256": "7bff87aeb9a6873bcd5ce55d1813176545dbe9cee5232769b3c55f2b492d5529",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "fba1098755e0938e10a00f70ec2b2e46642db94d",
+  "commit": "09c2598df8b2cc8035c96d8a9743027a9786d50b",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -76,8 +76,60 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0031-trust-tools/census/census-tools.txt",
-   "specs/skip_inventory.py"
+   "CHANGELOG.md",
+   "docs/api.md",
+   "docs/mcp.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0037-procedural-basis.md",
+   "specs/0039-degradation-visibility.md",
+   "specs/0055-credential-shaped-text-never-stored.md",
+   "specs/audit_dispositions.py",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/generated/0020-read-surfaces.md",
+   "specs/read_surface_dispositions.py",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/adapters/_surface.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/asof/resolve.py",
+   "src/veracium/budgets.py",
+   "src/veracium/cli.py",
+   "src/veracium/compile.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/doctor.py",
+   "src/veracium/gate.py",
+   "src/veracium/graph.py",
+   "src/veracium/ingest.py",
+   "src/veracium/lifecycle.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
+   "src/veracium/proactive.py",
+   "src/veracium/procedures.py",
+   "src/veracium/semantic.py",
+   "src/veracium/store/revocation.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/why.py",
+   "tests/eval/procedural_describe/MANIFEST.json",
+   "tests/test_0023_inventory.py",
+   "tests/test_0029_carrier.py",
+   "tests/test_0031_trust_tools_mcp.py",
+   "tests/test_0039_degradation_visibility.py",
+   "tests/test_0042_sites.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0053_adapter_conformance.py",
+   "tests/test_rii_r2_01_writer_inventory.py"
   ]
  },
  "rows": [
@@ -112,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.22s",
+   "pytest": "2 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -145,7 +197,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -178,7 +230,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -226,6 +278,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 21
+  "seconds": 20
  }
 }

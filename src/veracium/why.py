@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import json
 
+from . import credentials as _cred
 from .redaction import MARKER as _REDACTION_MARKER
 from .store.base import LEGACY_REINSTATEMENT_REASON
 from dataclasses import asdict, dataclass, field
@@ -252,6 +253,21 @@ def gather(store, user_id: str, edge_id: str) -> Biography:
                 "actor": ep.provenance.author_of_evidence.value,
                 "retired_reason": ep.retired_reason})
     bio.outcomes.sort(key=lambda o: (o["date"] or ""))
+    # specs/0055 §4e, the read backstop: the biography is a report built from stored rows (the edge, its journal
+    # states, replies, lineage, outcomes), bound for a terminal, a model or a tool result, so every text leaf is
+    # masked — AFTER the revocation digest above has read the raw provenance it frames
+    bio.edge = _cred.mask_deep(bio.edge)
+    bio.events = _cred.mask_deep(bio.events)
+    bio.confirmations = _cred.mask_deep(bio.confirmations)
+    bio.outcomes = _cred.mask_deep(bio.outcomes)
+    bio.predecessor = _cred.mask_deep(bio.predecessor)
+    bio.successors = _cred.mask_deep(bio.successors)
+    bio.absorbed = _cred.mask_deep(bio.absorbed)
+    bio.absorbed_into = _cred.mask_deep(bio.absorbed_into)
+    bio.refusals = _cred.mask_deep(bio.refusals)
+    bio.receipt = _cred.mask_deep(bio.receipt)
+    bio.notes = _cred.mask_deep(bio.notes)
+    bio.replies = _cred.mask_deep(bio.replies)
     return bio
 
 
@@ -263,7 +279,9 @@ def find(store, user_id: str, text: str) -> list:
     for e in store.edges(user_id, active_only=False, include_quarantined=True):
         d = _edge_dict(e)
         if any(needle in str(d.get(k) or "").casefold() for k in ("subject", "relation", "object")):
-            out.append({"id": d.get("id"), "fact": _summary(d), "active": bool(e.active),
+            # specs/0055 §4e: the lookup prints stored text, so it is masked (the needle still matches the row)
+            out.append({"id": _cred.mask_text(d.get("id")), "fact": _cred.mask_text(_summary(d)),
+                        "active": bool(e.active),
                         "quarantined": bool(e.quarantined),
                         "invalidation_reason": d.get("invalidation_reason")})
     return out

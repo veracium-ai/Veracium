@@ -33,6 +33,7 @@ the file claims, omits, or sets its header to.
 from __future__ import annotations
 
 import json
+import re as _re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -45,6 +46,7 @@ from .scope_linkage import (derive_absorbed_by, plan_row_id,
                             reconstruct_absorption_rows)
 from .source_identity import resolve_origin
 from .attestation import DEFAULT_IMPORT as _DEFAULT_IMPORT, NOT_ATTESTED as _NOT_ATTESTED
+from . import credentials as _cred
 from . import redaction as _redaction
 from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 from .census import declare_site
@@ -817,8 +819,170 @@ def _validate_incoming_chain(members: list, key, path) -> tuple:
         return root, leaf
 
 
+class CredentialImportRefused(ValueError):
+    """specs/0055 §4h: an import refused because records carry a credential shape. A `restore=True` import refuses
+    WHOLE (it promises the source's bytes and identities); an identifier with a shape refuses even under
+    `withhold_credentials=True`. `.reason` is "credential_refused" (the served refusal's name); `.records` names the
+    records by §4g's locators (an id with a shape is never printed: a per-report ordinal names it). The message names
+    counts, carriers and classes, never a value. Nothing was written."""
+
+    reason = "credential_refused"
+
+    def __init__(self, records: list, *, identifiers: bool):
+        self.records = records
+        self.identifiers = identifiers
+        hint = ("an identifier (an id, a link or a provenance identifier) carries a shape: no restore takes this file; "
+                "a plain import refuses those records and their dependents and imports the rest (specs/0055 §4h, §8)"
+                if identifiers else
+                "pass withhold_credentials=True to restore with the free text withheld (the listed records' text then "
+                "differs from the backup), or redact at the source, export again and restore")
+        super().__init__(f"credential_refused: {len(records)} record(s) of this restore carry a credential shape — "
+                         f"refused whole, nothing written; {hint}")
+
+
+#: specs/0055 §4h: the free-text fields of each record kind. EVERY other string in a record is an identifier (an id, a
+#: link, a provenance identifier, a closed value) and is screened as one: a shape refuses its record.
+_FREE_TEXT = {"edge": ("object", "note"), "episode": ("summary",), "reply": ("text",)}
+_NOTE_ABSORBED = _re.compile(r"absorbed_by:(\S+)")
+
+
+def _credential_screen(edge_recs, ep_recs, acts, notice_list, outcomes, *, target_uid, header_uid, restore,
+                       withhold) -> tuple:
+    """specs/0055 §4h, THE IMPORT SCREEN: after parsing and the procedural pass, BEFORE the linkage snapshot (step 1b)
+    and so before every digest over a file component (row identities, op keys, `plan_row_id`, act and outcome uids,
+    notice ids). Every line kind is screened: edges, episodes, replies and confirmations, outcome rows and notices,
+    with every identifier in them. Free text is masked; an identifier with a shape REFUSES its record, and every record
+    that links to a refused record (its link would dangle) — transitively. A restore refuses WHOLE instead
+    (`CredentialImportRefused`), unless only free text carries shapes and `withhold` is set. Nothing is written here,
+    and the screen has passed over the whole file before any write. Returns the screened lists and the report."""
+    refused: dict = {}                 # (kind, id) -> (field, class): the identifier that refused it
+    withheld: dict = {}                # (kind, id) -> {class: n}
+    totals: dict = {}                  # field -> {class: n}
+
+    def leaves(doc, path=""):
+        if isinstance(doc, dict):
+            for k, v in doc.items():
+                yield from leaves(v, f"{path}.{k}" if path else str(k))
+        elif isinstance(doc, (list, tuple)):
+            for v in doc:
+                yield from leaves(v, path)
+        elif isinstance(doc, str) and doc:
+            yield path, doc
+
+    def screen(kind, rid, doc, free):
+        """Identifiers first (a refusal ends the record); then the free text, masked in place in `doc`. `user_id` is
+        the destination's, set by the parse from the host's argument or the header (screened above), never a file
+        field of the record: D4 keeps a host-supplied user id outside the screen."""
+        for path, v in leaves({k: x for k, x in doc.items() if k not in free and k != "user_id"}):
+            cls = _cred.first_class(v)
+            if cls is not None:
+                refused[(kind, rid)] = (f"{kind}.{path}", cls)
+                return
+        for k in free:
+            v = doc.get(k)
+            if isinstance(v, str) and v:
+                m, rep = _cred.mask(v)
+                if rep:
+                    doc[k] = m
+                    slot = withheld.setdefault((kind, rid), {})
+                    for c, n in rep.items():
+                        slot[c] = slot.get(c, 0) + n
+                    _cred.merge_report(totals, f"{kind}.{k}", rep)
+
+    # D4: a header user id is import-file input when the host passed none; it names every record, so a shape in it
+    # refuses the whole file
+    if target_uid == header_uid and isinstance(header_uid, str) and _cred.first_class(header_uid) is not None:
+        raise CredentialImportRefused(["the file's header user_id"], identifiers=True)
+    for rec in edge_recs:
+        screen("edge", rec.get("id"), rec, _FREE_TEXT["edge"])
+    for rec in ep_recs:
+        screen("episode", rec.get("id"), rec, _FREE_TEXT["episode"])
+    from .schema import reply_request_digest
+    for a in acts:
+        before = a.get("text")
+        screen("act", a["act_uid"], a, _FREE_TEXT["reply"] if a["table"] == "replies" else ())
+        if a.get("text") is not before and ("act", a["act_uid"]) not in refused:
+            # the carried request digest was the source's over the RAW text: re-derived over the withheld text, as the
+            # source would have computed it (§4b-ii D2: an import-file component is screened before any digest over it)
+            a["request_digest"] = reply_request_digest(header_uid, a["edge_id"], a["kind"], None, a["text"])
+    for n in notice_list:
+        screen("notice", (n["origin"], n["source_user"], n["source_event_ref"]), n, ())
+    for o in outcomes:
+        screen("outcome", o.get("outcome_uid"), o, ())
+
+    # dependents: a record that links to a refused record is refused too, to a fixpoint
+    def gone(kind, rid):
+        return rid is not None and (kind, rid) in refused
+    changed = True
+    while changed:
+        changed = False
+        for rec in edge_recs:
+            k = ("edge", rec.get("id"))
+            if k in refused:
+                continue
+            links = [rec.get("supersedes"), rec.get("absorbed_by_id")]
+            links += _NOTE_ABSORBED.findall(rec.get("note") or "") if isinstance(rec.get("note"), str) else []
+            if any(gone("edge", x) for x in links):
+                refused[k] = ("edge.link", "dependent")
+                changed = True
+        for rec in ep_recs:
+            k = ("episode", rec.get("id"))
+            if k not in refused and (gone("edge", rec.get("edge_id")) or gone("episode", rec.get("supersedes_episode"))):
+                refused[k] = ("episode.link", "dependent")
+                changed = True
+        for a in acts:
+            k = ("act", a["act_uid"])
+            if k not in refused and (gone("edge", a["edge_id"]) or gone("act", a["target_uid"])):
+                refused[k] = ("act.link", "dependent")
+                changed = True
+        for n in notice_list:
+            k = ("notice", (n["origin"], n["source_user"], n["source_event_ref"]))
+            if k not in refused and gone(n["target_kind"], n["target_id"]):
+                refused[k] = ("notice.link", "dependent")
+                changed = True
+            elif k in refused and not gone(n["target_kind"], n["target_id"]) and n["target_id"] is not None:
+                refused[(n["target_kind"], n["target_id"])] = ("notice.unit", "dependent")   # the record-and-notice unit
+                changed = True
+        for o in outcomes:
+            k = ("outcome", o.get("outcome_uid"))
+            if k not in refused and gone("edge", o.get("edge_id")):
+                refused[k] = ("outcome.link", "dependent")
+                changed = True
+
+    def locator(n, kind, rid):
+        shaped = any(_cred.first_class(x) is not None for x in (rid if isinstance(rid, tuple) else (rid,))
+                     if isinstance(x, str))
+        if shaped or not isinstance(rid, str):
+            return f"record {n} of this report ({kind})"
+        return f"{kind} {rid}"
+
+    refused_list = [{"locator": locator(i, kind, rid), "field": f, "class": c}
+                    for i, ((kind, rid), (f, c)) in enumerate(refused.items(), 1)]
+    withheld_list = [{"locator": locator(i, kind, rid), "classes": dict(sorted(cl.items()))}
+                     for i, ((kind, rid), cl) in enumerate(withheld.items(), len(refused) + 1)
+                     if (kind, rid) not in refused]
+    if restore and refused:
+        raise CredentialImportRefused([r["locator"] for r in refused_list], identifiers=True)
+    if restore and withheld and not withhold:
+        raise CredentialImportRefused([r["locator"] for r in withheld_list], identifiers=False)
+    keep = lambda kind, rid: (kind, rid) not in refused                      # noqa: E731
+    edge_recs = [r for r in edge_recs if keep("edge", r.get("id"))]
+    ep_recs = [r for r in ep_recs if keep("episode", r.get("id"))]
+    acts = [a for a in acts if keep("act", a["act_uid"])]
+    notice_list = [n for n in notice_list if keep("notice", (n["origin"], n["source_user"], n["source_event_ref"]))]
+    outcomes = [o for o in outcomes if keep("outcome", o.get("outcome_uid"))]
+    report: dict = {}
+    if totals:
+        report["credentials_withheld"] = totals
+        report["credentials_withheld_records"] = withheld_list
+    if refused_list:
+        report["credential_refused"] = len(refused_list)
+        report["credential_refused_records"] = refused_list
+    return edge_recs, ep_recs, acts, notice_list, outcomes, report
+
+
 def import_memory(store, path, *, user_id: Optional[str] = None,
-                  restore: bool = False, relations=None) -> dict:
+                  restore: bool = False, relations=None, withhold_credentials: bool = False) -> dict:
     """Load a Veracium export into `store`. Idempotent (an existing, record-equal
     record is skipped); `user_id` remaps every record into that user.
 
@@ -843,7 +1007,16 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     and the reconstructed contribution rows ride the SAME atomic commit
     through the amended 0009 primitive. The returned dict gains
     ``contributions`` (rows written) and ``contributions_existing`` (rows
-    skipped as plan-row-id-equal on an idempotent re-import)."""
+    skipped as plan-row-id-equal on an idempotent re-import).
+
+    specs/0055 §4h: every field of every record is screened for credential shapes BEFORE any digest over a file
+    component and before any write. A plain import withholds free text (`credentials_withheld`, by field and class)
+    and refuses a record whose identifier carries a shape, with every record that links to it
+    (`credential_refused_records`, by locator). A ``restore=True`` import refuses WHOLE
+    (`CredentialImportRefused`) when any record carries a shape, unless only free text does and
+    ``withhold_credentials=True`` is passed — the operator's typed opt-in (never a default): the free text is then
+    withheld and the receipt lists the affected records (`credentials_withheld_records`); record ids never change,
+    and every unlisted record is byte-identical to the backup."""
     # specs/0005 §4a — the two argument gates, in order, BEFORE the file is
     # opened: the closed bool predicate (P13), then mutual exclusion (P5).
     with _SITE_IMPORT_RESTORE_NOT_BOOL.consult():   # the six other sites consult at their own first check (round 6, R6-2a)
@@ -856,6 +1029,8 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             raise _SITE_IMPORT_RESTORE_WITH_USER.fire(ValueError(
                 "restore and user_id are mutually exclusive — a restore is this "
                 "store's own history and never remaps (specs/0005 P5)"))
+        if type(withhold_credentials) is not bool:          # specs/0055 §4h: the flag is typed, as restore is (P13)
+            raise TypeError(f"withhold_credentials must be a bool, got {type(withhold_credentials).__name__}")
         path = Path(path)
         _raw = path.read_bytes()
         # specs/0044 §4l (T11a; research's Q1): the converting import's `inputs_digest` names the FILE's bytes as read
@@ -1220,6 +1395,17 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
         _admitted_ids = {r.get("id") for r in edge_recs}
         acts_refused_with_edge = sum(1 for a in acts if a["edge_id"] in raw_copies and a["edge_id"] not in _admitted_ids)
         acts = [a for a in acts if not (a["edge_id"] in raw_copies and a["edge_id"] not in _admitted_ids)]
+
+        # (1a-ii) specs/0055 §4h — THE CREDENTIAL SCREEN, here and nowhere later: after parsing and the procedural pass,
+        # BEFORE the linkage snapshot below, and so before the remap and its uids, the ledger reconstruction with its
+        # identity digests, op keys and `plan_row_id`, the identity gates, the act preflight and the notice ids at
+        # commit (every later step hashes file components). 0041 v16.5's quoting-reference rewrite (step 2) therefore
+        # runs on screened values. The converting import's whole-file digest above (`inputs_digest`) is the one
+        # declared exception (§4b-ii D2).
+        edge_recs, ep_recs, acts, notice_list, arity_outcomes, credential_report = _credential_screen(
+            edge_recs, ep_recs, acts, notice_list, arity_outcomes, target_uid=target_uid,
+            header_uid=header.get("user_id"), restore=restore, withhold=withhold_credentials)
+        notice_targets = {(n["target_kind"], n["target_id"]) for n in notice_list}
 
         # (1b) specs/0020 §4a-iii — the LINKAGE SNAPSHOT, taken over the file's
         # OWN id universe BEFORE the cross-user remap mutates ids (winner
@@ -1711,6 +1897,8 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
                         "procedural_refusals": procedural_refusals,
                         # T11b: acts refused with the record they name (that record's own refusal is listed above)
                         "acts_refused_with_edge": acts_refused_with_edge,
+                        # specs/0055 §4h: present only when the screen withheld or refused something
+                        **credential_report,
                         "user_id": target_uid}
         _SITE_IMPORT_RACE_EXHAUSTED.consult()
         raise _SITE_IMPORT_RACE_EXHAUSTED.fire(ValueError(f"{path}: import kept losing a race against concurrent writes "

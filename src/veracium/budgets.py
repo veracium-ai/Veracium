@@ -12,6 +12,8 @@ from __future__ import annotations
 import re
 from typing import NamedTuple, Optional
 
+from . import credentials as _cred
+
 # --- the frozen estimator ----------------------------------------------------------- #
 def est_tokens(text: str) -> int:
     return max(1, len(text) // 4)
@@ -234,6 +236,9 @@ def clamp_edge_line(edge, cap_tokens: int, render_fn) -> str:
     framing — the trust/state labels render at the line's END, so a tail clamp would
     sever exactly the safety framing I10c protects. Deterministic: shrink the longer
     content field first, halving, until the framed line fits."""
+    # specs/0055 §4e: masked BEFORE the clamp, so a cut can never leave a credential fragment the recogniser no longer
+    # names (a 36-character token halved is not a token); the renderer's own mask is then the identity
+    edge = _cred.masked_edge(edge)
     line = render_fn([edge])
     if not line or est_tokens(line) <= cap_tokens:
         return line

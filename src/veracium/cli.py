@@ -38,6 +38,7 @@ import argparse
 import json
 import os
 
+from . import credentials as _cred
 from . import diagnostics, telemetry
 
 
@@ -163,7 +164,7 @@ def _portability(args) -> int:
                       f"store is damaged (run `veracium doctor`); the file carries them, and an import of it is refused")
         else:
             r = import_memory(store, args.path, user_id=args.user,
-                              restore=args.restore)
+                              restore=args.restore, withhold_credentials=args.withhold_credentials)
             # specs/0005 §7a — the default-path line carries the capped count
             # (the one surface built for the operator); the restore-path line
             # says nothing about capping (capped is 0 by construction there).
@@ -172,6 +173,12 @@ def _portability(args) -> int:
                     if r.get("confirmations") or r.get("replies") else "")
             print(f"imported {r['edges']} edges + {r['episodes']} episodes{acts} into "
                   f"'{r['user_id']}' ({r['skipped']} already present, skipped{tail})")
+            # specs/0055 §4h: what the credential screen withheld or refused, by locator and class, never a value
+            for rec in r.get("credentials_withheld_records", []):
+                print(f"  credential withheld in {rec['locator']}: "
+                      + ", ".join(f"{c} {n}" for c, n in rec["classes"].items()))
+            for rec in r.get("credential_refused_records", []):
+                print(f"  refused {rec['locator']}: {rec['field']} ({rec['class']})")
             # specs/0041 §11.6.6 (T4): a notice left PENDING is the only signal that a source's redaction did not reach a
             # record held here, so it is printed, never only returned. No CLI verb confirms one (the owner's ruling, D9):
             # the host does, through `Memory.confirm_notice` with an id from `Memory.pending_notices`
@@ -319,12 +326,54 @@ def _doctor(args) -> int:
     foreign file is reported rather than refused. Exit 0 clean, 1 findings,
     2 unreadable. Changes nothing."""
     from . import doctor as _d
-    rep = _d.diagnose(args.db, user=args.user)
+    rep = _d.diagnose(args.db, user=args.user, audit_log=args.audit_log)
     if args.json:
         print(json.dumps(_d.to_json(rep), indent=2, default=str))
     else:
         print(_d.render(rep), end="")
     return rep.exit_code
+
+
+def _credentials(args) -> int:
+    """`credentials scan|redact` (specs/0055 §4f): the finder over a store file, and the field-level remedy. `scan`
+    reports by carrier class, never a value (exit 0 clean, 1 findings). `redact` prints what it will act on, acts only
+    with `--yes`, then SCANS AGAIN and prints what was removed and what remains: a 0041 receipt is not proof of
+    removal, the second scan is (I18). It exits nonzero while anything remains (a residual or a failed target)."""
+    from . import Memory
+    from . import credential_finder as cf
+    from .store.sqlite import SqliteStore
+    store = SqliteStore(args.db)
+    try:
+        hits = cf.scan(store, args.user)
+        rep = cf.report(hits)
+        if args.ccmd == "scan":
+            print(json.dumps(rep, indent=2) if args.json else cf.render(rep), end="" if not args.json else "\n")
+            return 1 if hits else 0
+        print(cf.render(rep, title="the plan: what redact will act on"), end="")
+        redact_targets, wiki = cf.targets(hits)
+        if not redact_targets and not wiki:
+            print("nothing removable" + ("; the residual above needs forget_user" if hits else ""))
+            return 1 if hits else 0
+        if not args.yes:
+            print("nothing changed: pass --yes to redact (IRREVERSIBLE, 0041)")
+            return 2
+
+        def _no_model(*a, **k):
+            raise RuntimeError("the credentials remedy calls no model")
+        mem = Memory(llm=_no_model, store=store, diagnostics=diagnostics.load_reporter())
+        for line in cf.act(mem, hits):
+            print(f"  {line['action']}: {line['target']}: {line['outcome']}")
+        after = cf.scan(store, args.user)
+        print(cf.render(cf.report(after), title="after: the second scan"), end="")
+        def _key(h):
+            return (h.user_id, h.carrier, h.record_kind, h.record_id)
+        still = {_key(h) for h in after}
+        removed = sum(1 for h in hits if _key(h) not in still)
+        print(f"removed {removed} of {len(hits)} carrier record(s); {len(after)} remain"
+              + (" (residual: forget_user removes the user's rows)" if after else ""))
+        return 1 if after else 0
+    finally:
+        store.close()
 
 
 def _forget(args) -> int:
@@ -571,6 +620,10 @@ def main(argv=None) -> int:
                          help="trust the file's provenance exactly as written — ONLY for a file "
                               "you exported yourself or have independently verified; a restore "
                               "is this store's own history and never remaps (specs/0005 §4a)")
+    im.add_argument("--withhold-credentials", action="store_true",
+                    help="with --restore: restore a backup whose free text carries credential shapes, withholding "
+                         "that text (the listed records then differ from the backup; an identifier with a shape still "
+                         "refuses the restore) — specs/0055 §4h")
     im.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
     mg = sub.add_parser(
@@ -644,9 +697,46 @@ def main(argv=None) -> int:
                                         "revocation completeness — no provider, nothing changed")
     dr.add_argument("--user", help="restrict the row-level checks to one user id")
     dr.add_argument("--json", action="store_true", help="machine-readable report")
+    dr.add_argument("--audit-log", help="an AuditLog file: also print the credential screen's counts from it "
+                                        "(specs/0055; default: VERACIUM_AUDIT_LOG when set)")
     dr.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
+    cr = sub.add_parser("credentials", help="find credential-shaped text an earlier version stored, and remove what "
+                                            "0041 redaction can (specs/0055 §4f)")
+    crs = cr.add_subparsers(dest="ccmd", required=True)
+    for name, helptext in (("scan", "report credential-shaped text at rest, by carrier class (never a value)"),
+                           ("redact", "redact what the scan found that 0041 can remove, then scan again")):
+        c = crs.add_parser(name, help=helptext)
+        c.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+        c.add_argument("--user", help="restrict to one user id")
+        if name == "scan":
+            c.add_argument("--json", action="store_true", help="machine-readable report")
+        else:
+            c.add_argument("--yes", action="store_true", help="act (IRREVERSIBLE); without it, print the plan only")
+
     args = p.parse_args(argv)
+    if args.cmd in _VERBS:
+        # specs/0055 §4g E1: an error leaving a verb toward this CLI stream carries the outward formatter's text (the
+        # field and the reason, never the supplied value), not a traceback quoting the exception's message
+        try:
+            return _VERBS[args.cmd](args, d)
+        except (_cred.CredentialRefused, _cred.ArgumentRefused, OSError) as exc:
+            # a refusal of the caller's input or environment: one content-free line, exit 1
+            print(f"veracium {args.cmd}: {_cred.outward_text(exc)}", file=sys.stderr)
+            return 1
+        except Exception as exc:
+            # anything else is a defect, and still fails loudly AS ITSELF (its type, attributes and traceback), so a
+            # crash never reads as a clean refusal; only its message, which may quote the input, is withheld, and the
+            # chain it was raised during is suppressed for the same reason
+            exc.args = (f"{type(exc).__name__}: its message is withheld from this stream (specs/0055 §4g E1)",)
+            raise exc from None
+    if args.cmd != "telemetry":
+        p.print_help()
+        return 0
+    return _telemetry_verb(args, t)
+
+
+def _verb_dispatch(args, d) -> int:
     if args.cmd == "selfcheck":
         return _selfcheck(args)
     if args.cmd == "diagnostics":
@@ -663,10 +753,16 @@ def main(argv=None) -> int:
         return _doctor(args)
     if args.cmd in ("recall", "remember", "introspect"):
         return _memory_verbs(args)
-    if args.cmd != "telemetry":
-        p.print_help()
-        return 0
+    if args.cmd == "credentials":
+        return _credentials(args)
+    raise AssertionError(f"no dispatch for {args.cmd}")    # unreachable while _VERBS and the branches agree
 
+
+_VERBS = {name: _verb_dispatch for name in ("selfcheck", "diagnostics", "export", "import", "forget", "migrate", "why",
+                                            "doctor", "recall", "remember", "introspect", "credentials")}
+
+
+def _telemetry_verb(args, t) -> int:
     cfg = telemetry.TelemetryConfig.load()
     if args.tcmd == "status":
         _status(cfg)

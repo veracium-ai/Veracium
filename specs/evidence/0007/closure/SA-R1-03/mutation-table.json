@@ -1,5 +1,5 @@
 {
- "body_sha256": "a44884e0292f8ca5fcba1c0ae124160ce96bed51975039154adb63b76740fb27",
+ "body_sha256": "707c96510b6d6c4ad6f2090466faa942a0f9cc280496e867a57e8ddcab89ccd3",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 2
    }
   },
-  "commit": "fba1098755e0938e10a00f70ec2b2e46642db94d",
+  "commit": "09c2598df8b2cc8035c96d8a9743027a9786d50b",
   "control_definitions": {
    "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
   },
@@ -69,10 +69,62 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
+   "docs/api.md",
+   "docs/mcp.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0037-procedural-basis.md",
+   "specs/0039-degradation-visibility.md",
+   "specs/0055-credential-shaped-text-never-stored.md",
+   "specs/audit_dispositions.py",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0031-trust-tools/census/census-tools.txt",
-   "specs/skip_inventory.py"
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/generated/0020-read-surfaces.md",
+   "specs/read_surface_dispositions.py",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/adapters/_surface.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/asof/resolve.py",
+   "src/veracium/budgets.py",
+   "src/veracium/cli.py",
+   "src/veracium/compile.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/doctor.py",
+   "src/veracium/gate.py",
+   "src/veracium/graph.py",
+   "src/veracium/ingest.py",
+   "src/veracium/lifecycle.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
+   "src/veracium/proactive.py",
+   "src/veracium/procedures.py",
+   "src/veracium/semantic.py",
+   "src/veracium/store/revocation.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/why.py",
+   "tests/eval/procedural_describe/MANIFEST.json",
+   "tests/test_0023_inventory.py",
+   "tests/test_0029_carrier.py",
+   "tests/test_0031_trust_tools_mcp.py",
+   "tests/test_0039_degradation_visibility.py",
+   "tests/test_0042_sites.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0053_adapter_conformance.py",
+   "tests/test_rii_r2_01_writer_inventory.py"
   ]
  },
  "rows": [
@@ -102,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "machine dropped from the key"
@@ -133,7 +185,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"
@@ -148,6 +200,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 9
+  "seconds": 8
  }
 }

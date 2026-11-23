@@ -10,7 +10,8 @@ path that caps one below its length is a different surface, and the conformance 
 
 The user, the capability (0031 §4a), the source (0006 I1) and the principal (0020) are the HOST's, bound here and never
 a tool argument. A refusal comes back as the library's data (`{"ok": false, "refusal": …}`). Any error raised while
-answering comes back through Pydantic AI's tool-error channel, `ModelRetry`, carrying its message verbatim: the model
+answering comes back through Pydantic AI's tool-error channel, `ModelRetry`, carrying the outward formatter's message
+(specs/0055 §4g E1: field and reason, never the supplied value): the model
 reads it through its provider's tool-error channel (`{"error": <message>}` where the provider has none, as FastMCP
 reports a tool error on MCP), and the error does not crash the agent loop (within the retry budget below). The adapter
 retries nothing, rewords nothing and answers nothing with another model; the framework then offers the model another
@@ -54,15 +55,16 @@ def _tool(binding: Binding, spec, Tool, ModelRetry):
 
 
 def as_tools(mem, *, user_id: str = "default", capability=None, source_id: Optional[str] = None,
-             principal=None, max_retries: Optional[int] = None, erasure=None) -> list:
+             principal=None, max_retries: Optional[int] = None, erasure=None, audit_log=None) -> list:
     """The served tools over `mem` as Pydantic AI `Tool`s, in the server's registration order. `max_retries`, when
-    given, is every tool's error budget (None: the agent's own `retries`)."""
+    given, is every tool's error budget (None: the agent's own `retries`). `audit_log` (an `audit.AuditLog` or a
+    path) attaches the operator's audit log to `mem` (specs/0055 §4g)."""
     if max_retries is not None and (isinstance(max_retries, bool) or not isinstance(max_retries, int)
                                     or max_retries < 0):
         raise ValueError(f"max_retries must be a non-negative int or None, not {max_retries!r}")
     Tool, ModelRetry = _framework()
     binding = Binding(mem, user_id=user_id, capability=capability, source_id=source_id, principal=principal,
-                      erasure=erasure)          # specs/0031 §4i: the deployment's erasure setting, decided once
+                      erasure=erasure, audit_log=audit_log)   # specs/0031 §4i: erasure decided once; 0055: the log
     tools = [_tool(binding, spec, Tool, ModelRetry) for spec in binding.tools()]
     if max_retries is not None:
         for t in tools:

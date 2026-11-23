@@ -540,7 +540,7 @@ def test_recording_never_changes_the_outcome(tmp_path):
 def test_every_cli_memory_construction_attaches_a_reporter():
     tree = ast.parse((ROOT / "src" / "veracium" / "cli.py").read_text())
     calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "Memory"]
-    assert len(calls) == 2, len(calls)
+    assert len(calls) == 3, len(calls)       # specs/0055: `veracium credentials redact` is the third (no model call)
     for c in calls:
         kw = {k.arg: k.value for k in c.keywords}
         assert "diagnostics" in kw, "a CLI Memory(...) without diagnostics="

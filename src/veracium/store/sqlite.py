@@ -22,6 +22,7 @@ from pydantic import ValidationError
 
 from ..authority import DRAFTED_RULE_VERSIONS, RULE_VERSION, scope_fingerprint
 from .. import redaction as _redaction
+from .. import credentials as _cred
 from ..attestation import declarative_grounding
 from ..schema import (ExpiryBehavior,   # specs/0048 §4D
                       ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
@@ -118,6 +119,7 @@ _SITE_JOURNAL_REASON = declare_site("store.journal.reason-not-dispositioned")
 _SITE_TRUST_STORE_CHANGED = declare_site("trust.erase.store-changed")   # specs/0031 §4f §4e: INV-TT8, INV-TT9
 # specs/0041 tranche 1: INV-11's MIRROR and the two closures the redaction spec found missing (§2d-v)
 _SITE_UPSERT_MARKER = declare_site("store.upsert.marker-introduced")
+_SITE_UPSERT_CREDENTIAL = declare_site("store.upsert.credential-introduced")
 _SITE_UPSERT_RELATION_ONLY_QUARANTINE = declare_site("store.upsert.relation-only-quarantine")
 _SITE_EPISODE_MARKER = declare_site("store.episode.marker-introduced")
 _SITE_EPISODE_KIND = declare_site("store.episode.kind-not-recognised")
@@ -391,6 +393,29 @@ class _DeferredJournal:
             raise RuntimeError(f"the edge row {self._edge_id!r} was written and its journal never emitted — refusing, "
                                f"so the write transaction rolls back (specs/0048 §4C; specs/0029 §4b)")
         return False
+
+
+def _cred_introduced(doc, prior, path: str = ""):
+    """specs/0055 §4d: the (field path, class) of the first credential-shaped string `doc` introduces relative to
+    `prior` (None: every string is introduced), or None. A string leaf equal to the prior's leaf at the same path is
+    not introduced."""
+    if isinstance(doc, dict):
+        for k, v in doc.items():
+            hit = _cred_introduced(v, prior.get(k) if isinstance(prior, dict) else None,
+                                   f"{path}.{k}" if path else str(k))
+            if hit is not None:
+                return hit
+    elif isinstance(doc, list):
+        for i, v in enumerate(doc):
+            hit = _cred_introduced(v, prior[i] if isinstance(prior, list) and i < len(prior) else None,
+                                   f"{path}[{i}]")
+            if hit is not None:
+                return hit
+    elif isinstance(doc, str) and doc and doc != prior:
+        cls = _cred.first_class(doc)
+        if cls is not None:
+            return (path, cls)
+    return None
 
 
 class SqliteStore(Store):
@@ -947,6 +972,16 @@ class SqliteStore(Store):
                         raise _SITE_UPSERT_IMMUTABLE.fire(ValueError(
                             f"cannot change {axis} ({held!r} → {written!r}) on edge {edge.id!r} — the grounding "
                             f"axis is written once at insert (specs/0045 §2)"), axis)
+            # specs/0055 §4d, THE STORE GUARD (defence in depth, beside 0041's marker refusal): every string a write
+            # INTRODUCES is screened — every string leaf of a created edge, only the CHANGED leaves of a same-id
+            # replace — and a credential shape refuses the write (`CredentialRefused`; nothing written). Keyed on
+            # "introduced", not "present", so a stored legacy credential stays disputable, expirable, confirmable and
+            # redactable (I13). 0041's redaction writes under its own transaction, never through this method.
+            with _SITE_UPSERT_CREDENTIAL.consult():
+                hit = _cred_introduced(edge.model_dump(mode="json"),
+                                       json.loads(prior[1]) if prior is not None else None)
+                if hit is not None:
+                    raise _SITE_UPSERT_CREDENTIAL.fire(_cred.CredentialRefused(*hit))
             # specs/0037 v19 (V-STAMP-INHERITED; research's red team, 2026-09-13): a
             # SUCCESSOR of a procedural record must itself be procedural. correct()
             # minted one without the stamp and the note rendered; correct() now refuses
@@ -1137,8 +1172,11 @@ class SqliteStore(Store):
                                      user_id=user_id, edge_id=edge_id, prior=row[0])
                 ep_json = Episode(id=ep_id, user_id=user_id,
                                   date=confirmed_at.date().isoformat(),
-                                  summary=f"({actor_v}) confirmed "
-                                          f"'{edge.relation}: {edge.object}' still holds",
+                                  # specs/0055 §4c-ii rule 1 (census A row 2): the summary quotes the stored
+                                  # record, so it is masked before it is written; a legacy credential is
+                                  # never copied into the new row
+                                  summary=_cred.mask(f"({actor_v}) confirmed "
+                                                     f"'{edge.relation}: {edge.object}' still holds")[0],
                                   provenance=Provenance(
                                       author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=f"confirm:{edge_id}",
@@ -4448,6 +4486,101 @@ class SqliteStore(Store):
                 (user_id, text, store_version, user_id, store_version)).rowcount
             self._conn.commit()
             return n == 1
+
+    def credential_carriers(self, user_id: Optional[str] = None):
+        """specs/0055 §4f, the finder's read: every stored text census E lists as a carrier, one tuple per field —
+        `(user_id, table, carrier, record_kind, record_id, parent_kind, parent_id, text)`. `carrier` is the CLASS of
+        place (`edge.text`, `edge.identifier`, `edge_event.state`, `episode.text`, `episode.identifier`,
+        `episode_event.state`, `reply.text`, `reply.identifier`, `confirmation.identifier`,
+        `request_registry.identifier`, `wiki.text`, `contribution_ledger.payload`); `parent_*` names the record a
+        0041 redaction must target to remove it (the record itself, a journal row's record, a reply's edge). Read-only,
+        one snapshot under the instance lock; never masks (the finder is not a model-bound read, §4e)."""
+        args = (user_id, user_id)          # every query below filters `(? IS NULL OR user_id=?)`: one user, or all
+        out = []
+
+        def leaves(doc, prefix=""):
+            if isinstance(doc, dict):
+                for k, v in doc.items():
+                    yield from leaves(v, f"{prefix}.{k}" if prefix else str(k))
+            elif isinstance(doc, list):
+                for v in doc:
+                    yield from leaves(v, prefix)
+            elif isinstance(doc, str) and doc:
+                yield prefix, doc
+
+        def record_fields(kind, rid, uid, doc, text_keys, *, table=None, carrier=None, rkind=None, rrid=None):
+            # a record's text fields are removable by a 0041 redaction of the record; its identifiers (provenance,
+            # ids, links) are kept by 0041 and so are a residual. A journal snapshot is split the same way.
+            table, carrier, rkind, rrid = table or f"{kind}s", carrier or kind, rkind or kind, rrid or rid
+            for path, v in leaves(doc):
+                top = path.split(".", 1)[0]
+                if top in text_keys:
+                    out.append((uid, table, f"{carrier}.text" if carrier == kind else f"{carrier}.state",
+                                rkind, rrid, kind, rid, v))
+                elif path.startswith("provenance.") or top in ("id", "supersedes", "edge_id", "context_ref",
+                                                                "supersedes_episode", "absorbed_by_id"):
+                    out.append((uid, table, f"{carrier}.identifier", rkind, rrid, kind, rid, v))
+
+        def journal(table, kind, rows, text_keys):
+            for uid, seq, rid, state in rows:
+                if state == _redaction.MARKER:
+                    continue
+                try:
+                    doc = json.loads(state)
+                except (TypeError, ValueError):
+                    out.append((uid, table, f"{table}.state", table, f"{rid}#{seq}", kind, rid, state))
+                    continue
+                record_fields(kind, rid, uid, doc, text_keys, table=table, carrier=table, rkind=table,
+                              rrid=f"{rid}#{seq}")
+
+        edge_text = ("subject", "relation", "object", "note", "original_relation")
+        with self._lock:
+            for rid, uid, js in self._conn.execute(
+                    "SELECT id, user_id, json FROM edges WHERE (? IS NULL OR user_id=?)", args).fetchall():
+                try:
+                    record_fields("edge", rid, uid, json.loads(js), edge_text)
+                except (TypeError, ValueError):
+                    continue
+            for rid, uid, js in self._conn.execute(
+                    "SELECT id, user_id, json FROM episodes WHERE (? IS NULL OR user_id=?)", args).fetchall():
+                try:
+                    record_fields("episode", rid, uid, json.loads(js), ("summary",))
+                except (TypeError, ValueError):
+                    continue
+            journal("edge_event", "edge", self._conn.execute(
+                "SELECT user_id, seq, edge_id, state FROM edge_event WHERE (? IS NULL OR user_id=?)", args).fetchall(),
+                edge_text)
+            journal("episode_event", "episode", self._conn.execute(
+                "SELECT user_id, seq, episode_id, state FROM episode_event WHERE (? IS NULL OR user_id=?)",
+                args).fetchall(), ("summary",))
+            for rid, uid, eid, text, target, corr, rcorr in self._conn.execute(
+                    "SELECT id, user_id, edge_id, text, target, correlation_id, recorded_correlation_id "
+                    "FROM replies WHERE (? IS NULL OR user_id=?)", args).fetchall():
+                if text:
+                    out.append((uid, "replies", "reply.text", "reply", rid, "edge", eid, text))
+                for v in (target, corr, rcorr):
+                    if v:
+                        out.append((uid, "replies", "reply.identifier", "reply", rid, "edge", eid, v))
+            for rid, uid, eid, corr in self._conn.execute(
+                    "SELECT id, user_id, edge_id, correlation_id FROM confirmations WHERE (? IS NULL OR user_id=?)",
+                    args).fetchall():
+                out.append((uid, "confirmations", "confirmation.identifier", "confirmation", rid, "edge", eid, corr))
+            for uid, corr, eid in self._conn.execute(
+                    "SELECT user_id, correlation_id, target_edge_id FROM request_registry "
+                    "WHERE (? IS NULL OR user_id=?)", args).fetchall():
+                out.append((uid, "request_registry", "request_registry.identifier", "request", corr, "edge", eid,
+                            corr))
+            for uid, text in self._conn.execute(
+                    "SELECT user_id, text FROM wiki WHERE (? IS NULL OR user_id=?)", args).fetchall():
+                if text:
+                    out.append((uid, "wiki", "wiki.text", "wiki", uid, "wiki", uid, text))
+            for rid, uid, payload in self._conn.execute(
+                    "SELECT id, user_id, payload FROM contribution_ledger WHERE (? IS NULL OR user_id=?)",
+                    args).fetchall():
+                if payload:
+                    out.append((uid, "contribution_ledger", "contribution_ledger.payload", "contribution", rid,
+                                "contribution", rid, payload))
+        return out
 
     def discard_wiki(self, user_id, text, store_version) -> bool:
         """R-II round 2's RII-R2-01 (D2): delete the wiki row only if it is still `(text, store_version)` — one

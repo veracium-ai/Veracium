@@ -294,7 +294,9 @@ def test_a_library_refusal_returns_serialized_and_never_raises(tmp_path, monkeyp
     _edge(m, "e-1")
     monkeypatch.setattr(m, "dispute", lambda *a, **k: (_ for _ in ()).throw(exc))
     out = M.dispute_fact_impl(m, U, "e-1", "", capability="direct")
-    assert out == {"ok": False, "refusal": "refused", "detail": str(exc)}
+    # specs/0055 §4g E1: `detail` is the outward formatter's text (the class and the reason), never str(exc)
+    from veracium.credentials import outward_text
+    assert out == {"ok": False, "refusal": "refused", "detail": outward_text(exc)}
 
 
 def test_a_scope_error_is_a_refusal_too(tmp_path, monkeypatch):

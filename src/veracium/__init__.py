@@ -64,6 +64,7 @@ from .usage import (ATTRIBUTED_PAIRS, ROLE_FIELDS, ArmingComplete,
                     active_call as _active_call,
                     routing_frame as _routing_frame)
 from .census import declare_site
+from . import credentials as _cred
 from . import trust_tools as _trust_tools  # noqa: F401 — specs/0031 §4f: registers its census sites at import
 
 # specs/0042 (tranche 3): the enforcement points of this module, each a declared site the
@@ -592,6 +593,48 @@ class Memory:
         except Exception:
             pass
 
+    # -- specs/0055: credential-shaped text is never stored ------------------
+    def _cred_refused(self, user_id: str, op: str, field: str, cls: str, *, source: str = "caller"):
+        """Record one `credential_refused` audit fact (§4g) and return the exception to raise. Content-free: the
+        field and the class, never the value."""
+        self._record("credential_refused", _cred.audit_fields(op, field, source=source, cls=cls), user_id)
+        return _cred.CredentialRefused(field, cls)
+
+    def _cred_ingress(self, user_id: str, op: str, *, ids=(), free=()) -> tuple[list, dict]:
+        """specs/0055 §4b, the ingress screen: run at the top of an entry point, before any digest, length check,
+        model call, log line or write (D1). Each identifier `(field, value)` carrying a shape refuses the whole call
+        (`CredentialRefused`; nothing written). Each free-text `(field, text)` is masked. Returns the masked texts,
+        in order, and the report `{field: {class: count}}`."""
+        for field_name, value in ids:
+            if isinstance(value, str) and value:
+                cls = _cred.first_class(value)
+                if cls is not None:
+                    raise self._cred_refused(user_id, op, field_name, cls)
+        out: list = []
+        report: dict = {}
+        for field_name, text in free:
+            if isinstance(text, str) and text:
+                text, rep = _cred.mask(text)
+                _cred.merge_report(report, field_name, rep)
+            out.append(text)
+        return out, report
+
+    def _refuse_shaped_identity(self, user_id: str, edge) -> None:
+        """specs/0055 §4c-ii row 8: `correct`'s replacement copies the prior's `subject` and `relation`, the fact's
+        identity that supersession joins on, so a credential shape in either refuses the correction rather than being
+        masked; 0041 redaction is the remedy. Raised inside the correction's transaction, before anything is written."""
+        for field_name, value in (("subject", edge.subject), ("relation", edge.relation)):
+            cls = _cred.first_class(value) if isinstance(value, str) else None
+            if cls is not None:
+                raise self._cred_refused(user_id, "correct", field_name, cls, source="derived")
+
+    def _cred_withheld(self, user_id: str, op: str, report: dict, *, source: str) -> None:
+        """One `credential_withheld` audit fact per field of `report` (§4g: surface, field, class counts, source,
+        shapes_version)."""
+        for field_name, classes in report.items():
+            self._record("credential_withheld", _cred.audit_fields(op, field_name, source=source,
+                                                                    classes=classes), user_id)
+
     # -- write -------------------------------------------------------------
     def remember(self, user_id: str, event_text: str, *,
                  author: EvidenceAuthor = EvidenceAuthor.USER,
@@ -635,7 +678,16 @@ class Memory:
         event — an opaque, host-chosen id (a mailbox, a connector instance). It
         is DIAGNOSTIC: it groups records for inspection/dedup/attribution but
         grants no trust and changes no answer (I5). It is host-supplied only,
-        never model-derived (I1)."""
+        never model-derived (I1).
+
+        specs/0055 §4b: credential-shaped text in `event_text` is withheld before the extractor sees it, and the
+        result's `credentials_withheld` (present only when something was withheld) names the field and the classes,
+        never the value. A shape in `source_id`, `evidence_ref` or `event_type` refuses the call
+        (`veracium.credentials.CredentialRefused`, `reason="credential_refused"`); nothing is written."""
+        (event_text,), caller_report = self._cred_ingress(
+            user_id, "remember", ids=(("source_id", source_id), ("evidence_ref", evidence_ref),
+                                      ("event_type", event_type)),
+            free=(("event_text", event_text),))
         date = date or _today_utc()
         t0 = time.perf_counter()
         with self._usage_operation(user_id, "ingest") as (op_llm, usage_finish):
@@ -674,6 +726,17 @@ class Memory:
                       "ms": int((time.perf_counter() - t0) * 1000)}
             fields.update(usage_finish())          # specs/0017: the terminal merge
             self._record("ingest", fields, user_id)
+        # specs/0055 §4g: the caller's withheld spans and the extractor's (§4c, source `model_output`), one key
+        model_report = r.pop("credentials_withheld", None) or {}
+        self._cred_withheld(user_id, "remember", caller_report, source="caller")
+        # a dropped triple is a refusal (I5: counted as credential_refused, source model_output); a masked summary
+        # is a withholding
+        for field_name, classes in model_report.items():
+            self._record("credential_refused" if field_name == "extracted_fact" else "credential_withheld",
+                         _cred.audit_fields("remember", field_name, source="model_output", classes=classes),
+                         user_id)
+        if caller_report or model_report:
+            r["credentials_withheld"] = {**caller_report, **model_report}
         # specs/0027 §4c: the embedding write is OUTSIDE the store write
         # transaction (post-commit, best-effort) — an embedder failure never
         # fails or blocks ingest. The diff-driven backfill also sweeps up
@@ -795,6 +858,22 @@ class Memory:
                          note: Optional[str] = None, when=None,
                          evidence_ref: Optional[str] = None,
                          source_id: Optional[str] = None) -> str:
+        """specs/0037 §4b — record a PROCEDURAL record and return its edge id (a `str`, the 0037 contract). The
+        same call with the specs/0055 report is `record_procedure_report`, which returns a dict:
+        `{"edge_id": …}` plus `credentials_withheld` when a credential-shaped span of `summary` or `note` was
+        withheld (§4g, R1-05). Both refuse a shape in `source_id` or `evidence_ref` with
+        `veracium.credentials.CredentialRefused`, before any write.
+
+        See `record_procedure_report` for the full contract."""
+        return self.record_procedure_report(
+            user_id, summary, author=author, context=context, relation=relation, note=note, when=when,
+            evidence_ref=evidence_ref, source_id=source_id)["edge_id"]
+
+    def record_procedure_report(self, user_id: str, summary: str, *, author: EvidenceAuthor,
+                                context: EvidenceContext, relation: str = "follows_procedure",
+                                note: Optional[str] = None, when=None,
+                                evidence_ref: Optional[str] = None,
+                                source_id: Optional[str] = None) -> dict:
         """specs/0037 §4b — record a PROCEDURAL record from the host's own
         declaration (since v16 the extractor path can also record one, behind
         the verbatim-quote gate of §4a-iii). Returns the new edge id.
@@ -815,7 +894,14 @@ class Memory:
         standing-revoked `source_id` (the surface honours revocation), then
         the shipped three-axis rule. Every refusal raises BEFORE any write.
         No episode is written. Procedural records never enter recall's
-        context; they are described through `describe_procedures`."""
+        context; they are described through `describe_procedures`.
+
+        specs/0055 §4b/§4g: `summary` and `note` are screened before anything reads them (the 512-character cap
+        included); a withheld span appears as `[credential withheld: <class>]` and the returned dict's
+        `credentials_withheld` names the field and classes. Returns `{"edge_id": …}` plus that key when non-empty."""
+        (summary, note), report = self._cred_ingress(
+            user_id, "record_procedure", ids=(("source_id", source_id), ("evidence_ref", evidence_ref)),
+            free=(("summary", summary), ("note", note)))
         from .graph import apply_supersession
         from .procedures import build_procedure_edge
         edge, revoked_at_birth, birth_digest = build_procedure_edge(
@@ -830,11 +916,15 @@ class Memory:
                       "reinforcements": counts.reinforced,
                       "quarantined_at_birth": 1 if revoked_at_birth else 0,
                       "birth_revocation_digest": birth_digest}, user_id)
+        self._cred_withheld(user_id, "record_procedure", report, source="caller")
         try:
             self.embed_backfill(user_id)
         except Exception:
             pass
-        return edge.id
+        out = {"edge_id": edge.id}
+        if report:
+            out["credentials_withheld"] = report
+        return out
 
     def describe_procedures(self, user_id: str, *, query: Optional[str] = None,
                             principal=None, limit: Optional[int] = None):
@@ -1395,12 +1485,13 @@ class Memory:
         if not grounded:
             return None, False, 0
         k_cap = self.config.contested_members_per_line
-        head = clamp_item(f"{g.subject} {g.relation}",
+        # specs/0055 §4e: the heading and every member are masked before their clamps
+        head = clamp_item(f"{_cred.mask_text(g.subject)} {_cred.mask_text(g.relation)}",
                           self.config.group_heading_allowance_tokens)
         tail = " — CONTESTED (no single current value)"
 
         def _member(e, content_cap):
-            return (f"{clamp_item(e.object, content_cap)} "
+            return (f"{clamp_item(_cred.mask_text(e.object), content_cap)} "
                     f"[{e.provenance.author_of_evidence.value}]")
 
         squeezed = False
@@ -1692,9 +1783,10 @@ class Memory:
         # 0023 §4a-iv / N14: the render split runs on the SHARED predicate —
         # assertable to ordinary detail, everything else to the fenced section
         # (fenced, not suppressed: Q5)
-        ep_lines = [(e, clamp_item(f"[{e.date}] {e.summary}", cap)) for e in episodes
+        # specs/0055 §4e: a stored summary is masked BEFORE its clamp (a cut never leaves a credential fragment)
+        ep_lines = [(e, clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", cap)) for e in episodes
                     if is_assertable(e)]
-        tp_ep_lines = [(e, clamp_item(f"[{e.date}] {e.summary}", cap)) for e in episodes
+        tp_ep_lines = [(e, clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", cap)) for e in episodes
                        if not is_assertable(e)]
 
         def _unit(record, line, partition):
@@ -1888,6 +1980,9 @@ class Memory:
                 if pool.get("error") is not None:
                     fields["error_code"] = pool["error"]
                 self._record("consolidate-pool", fields, user_id)
+                # specs/0055 §4c: the consolidation draft's withheld spans (source model_output)
+                self._cred_withheld(user_id, "maintain", pool.get("credentials_withheld") or {},
+                                    source="model_output")
             self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
                                       "flagged": ex["flagged_for_confirmation"],
                                       "consolidated_in": co.get("consolidated", 0),
@@ -2116,7 +2211,15 @@ class Memory:
         and default to absent, and with all three absent the bytes are today's.
         Under a principal the §3b scope gate runs first, inside this transaction
         (`TrustRefused`, writing nothing); the audit episode carries `source_id`
-        and the agent `call_path` in provenance, never in its summary."""
+        and the agent `call_path` in provenance, never in its summary.
+
+        specs/0055: `reason` is screened (a credential-shaped span withheld, reported in the result's
+        `credentials_withheld`); a shape in `actor` or `source_id` refuses the call (`CredentialRefused`). The audit
+        episode's summary quotes the disputed record, so it is masked before it is written (§4c-ii rule 1): a
+        legacy credential in the record is never copied into the new row."""
+        (reason,), report = self._cred_ingress(user_id, "dispute", ids=(("actor", actor), ("source_id", source_id)),
+                                               free=(("reason", reason),))
+        derived: dict = {}
         # specs/0041 round 10 (found in sweep A): the record is read, judged and quoted INSIDE one write
         # transaction — a redaction cannot land between the read and the derived episode — and an
         # ATTESTED target is refused before anything is written
@@ -2132,15 +2235,22 @@ class Memory:
             today = _today_utc()
             self.store.invalidate_edge(edge_id, utcnow(), "disputed")
             note = f" — {reason}" if reason else ""
+            summary, drep = _cred.mask(f"({actor}) disputed the remembered fact "
+                                       f"'{edge.relation}: {edge.object}'{note}")
+            _cred.merge_report(derived, "summary", drep)
             self.store.add_episode(Episode(
                 id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=today,
-                summary=f"({actor}) disputed the remembered fact "
-                        f"'{edge.relation}: {edge.object}'{note}",
+                summary=summary,
                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=f"dispute:{edge_id}", source_id=source_id,
                                       call_path=_agent_call_path(call_path))))
         self._record("feedback", {"disputed": 1, "confirmed": 0}, user_id)
-        return {"disputed": edge_id, "relation": edge.relation}
+        self._cred_withheld(user_id, "dispute", report, source="caller")
+        self._cred_withheld(user_id, "dispute", derived, source="derived")
+        out = {"disputed": edge_id, "relation": edge.relation}
+        if report or derived:
+            out["credentials_withheld"] = {**report, **derived}
+        return out
 
     def confirm(self, user_id: str, edge_id: str, *,
                 date: Optional[str] = None,
@@ -2175,6 +2285,8 @@ class Memory:
         # Closed-enum + charset validation BEFORE any mutation (§6c/C9). A string is
         # accepted only if it names an enum member — a free-form label is rejected,
         # not stored (C2a).
+        # specs/0055 §4b: an identifier carrying a credential shape refuses the call before anything else reads it
+        self._cred_ingress(user_id, "confirm", ids=(("correlation_id", correlation_id), ("source_id", source_id)))
         actor = ConfirmationActor(actor)
         call_path = ConfirmationCallPath(call_path)
         correlation_id = (validate_correlation_id(correlation_id)
@@ -2241,7 +2353,10 @@ class Memory:
         returns `already_undone=True` with the recorded `undone_at`, writes nothing and holds no id. Refusals raise
         `UndoRefused` with a closed `reason`: `no-outcome`, `not-restored` (withheld under revocation),
         `testimony` (an imported outcome: this store did not restore it), `not-applicable` (the restoration
-        ended: a later retirement, redaction or erasure), `edge-unavailable`, `ambiguous-outcome`."""
+        ended: a later retirement, redaction or erasure), `edge-unavailable`, `ambiguous-outcome`.
+
+        specs/0055 §4b: a credential-shaped `correlation_id` refuses the call (`CredentialRefused`)."""
+        self._cred_ingress(user_id, "undo_restoration", ids=(("correlation_id", correlation_id),))
         correlation_id = (validate_correlation_id(correlation_id)
                           if correlation_id is not None
                           else f"auto-{uuid4().hex}")
@@ -2279,7 +2394,14 @@ class Memory:
 
         While a challenge is open, the fact — and any same-value restatement of it — is withheld from every assertion
         surface (recall, contested groups, proactive, as-of, the wiki) and counted there; `Recall.inspection`,
-        `AsOfFact.inspection`, `why` and `introspect` carry the challenge. Only a `resolve` ends it (specs/0047 §4c–§4d)."""
+        `AsOfFact.inspection`, `why` and `introspect` carry the challenge. Only a `resolve` ends it (specs/0047 §4c–§4d).
+
+        specs/0055 §4b: `text` is screened BEFORE the request digest is computed (a credential-shaped span withheld,
+        reported in `credentials_withheld`); a shape in `target` or `correlation_id` refuses the call
+        (`CredentialRefused`). The request identity is over the screened text."""
+        (text,), report = self._cred_ingress(user_id, "reply",
+                                             ids=(("target", target), ("correlation_id", correlation_id)),
+                                             free=(("text", text),))
         correlation_id = (validate_correlation_id(correlation_id)
                           if correlation_id is not None
                           else f"auto-{uuid4().hex}")
@@ -2289,8 +2411,12 @@ class Memory:
             # one content-free audit line per new reply: the closed kind only — never text, target or the fact
             # (research's T10a F6). Telemetry's closed event schema (0015) has no `reply` event and drops it.
             self._record("reply", {"kind": r.kind}, user_id)
-        return {"reply_id": r.id, "edge_id": r.edge_id, "kind": r.kind, "target": r.target,
-                "written_at": r.written_at.isoformat(), "correlation_id": r.correlation_id, "replayed": r.replayed}
+            self._cred_withheld(user_id, "reply", report, source="caller")
+        out = {"reply_id": r.id, "edge_id": r.edge_id, "kind": r.kind, "target": r.target,
+               "written_at": r.written_at.isoformat(), "correlation_id": r.correlation_id, "replayed": r.replayed}
+        if report:
+            out["credentials_withheld"] = report
+        return out
 
     # -- outcome tracking (engine-written; never MCP) ------------------------
     _OUTCOME_ACTORS = {"user": EvidenceAuthor.USER, "system": EvidenceAuthor.SYSTEM}
@@ -2313,7 +2439,16 @@ class Memory:
         facts — `corrected_value` here is recorded as the decision's true value
         only. Fact-level correction is the explicit `correct()` verb.
         `challenged` sets the existing needs-confirmation flag; nothing else
-        touches gate placement — counters are information, not gating."""
+        touches gate placement — counters are information, not gating.
+
+        specs/0055 §4b: `corrected_value` is free text written only into the outcome episode's summary, so a
+        credential-shaped span is withheld (reported in `credentials_withheld`); a shape in `evidence_ref` or
+        `context_ref` refuses the call (`CredentialRefused`). The summary quotes the judged record, so it is masked
+        before it is written (§4c-ii rule 1)."""
+        (corrected_value,), report = self._cred_ingress(
+            user_id, "record_outcome", ids=(("evidence_ref", evidence_ref), ("context_ref", context_ref)),
+            free=(("corrected_value", corrected_value),))
+        derived: dict = {}
         from .schema import Outcome
         outcome = Outcome(outcome)
         author = self._OUTCOME_ACTORS.get(actor)
@@ -2348,6 +2483,8 @@ class Memory:
                     was = head.provenance.author_of_evidence
                     if was != author:
                         summary += f" [prior judgment was {was.value}-authored]"
+                summary, drep = _cred.mask(summary)
+                derived = _cred.merge_report({}, "summary", drep)
                 draft = OutcomeJudgmentDraft(
                     author=author, event_timestamp=date, outcome=outcome,
                     summary=summary, context_ref=context_ref)
@@ -2372,8 +2509,13 @@ class Memory:
             self.store.add_edge(edge)
         self._record("outcome", {"new": 0 if upgraded else 1,
                                  "upgraded": 1 if upgraded else 0}, user_id)
-        return {"edge_id": edge_id, "outcome": outcome.value, "upgraded": upgraded,
-                "times_used": times_used}
+        self._cred_withheld(user_id, "record_outcome", report, source="caller")
+        self._cred_withheld(user_id, "record_outcome", derived, source="derived")
+        out = {"edge_id": edge_id, "outcome": outcome.value, "upgraded": upgraded,
+               "times_used": times_used}
+        if report or derived:
+            out["credentials_withheld"] = {**report, **derived}
+        return out
 
     def _outcome_head(self, user_id: str, edge_id: str, evidence_ref: str):
         """The head (max-`seq`) of the `(edge_id, evidence_ref)` outcome chain, or
@@ -2432,7 +2574,17 @@ class Memory:
         Under a principal the §3b scope gate runs first, inside this transaction
         (`TrustRefused`, writing nothing). The replacement edge carries
         `source_id`; the audit episode carries `source_id` and the agent
-        `call_path`, in provenance."""
+        `call_path`, in provenance.
+
+        specs/0055: `corrected_value` becomes the edge's object verbatim, so it is an IDENTIFIER: a credential shape
+        refuses the call (`CredentialRefused`), as one in `actor`, `evidence_ref` or `source_id` does. The
+        replacement copies the prior's `subject` and `relation` (its identity, which supersession joins on): if
+        either carries a shape the correction is refused (§4c-ii row 8), and 0041 redaction is the remedy. The
+        copied `note` is masked BEFORE `graph.plan_correction`, so the plan, its `raw_request` and every
+        supersession digest see the masked note (§4c-ii rule 1); the audit episode's summary is masked too."""
+        self._cred_ingress(user_id, "correct", ids=(("corrected_value", corrected_value), ("actor", actor),
+                                                    ("evidence_ref", evidence_ref), ("source_id", source_id)))
+        derived: dict = {}
         from . import authority, graph
         from .schema import CorrectionAuthorisation, correction_digest
         from .store.base import PLAN_STALE
@@ -2479,12 +2631,18 @@ class Memory:
                             "correction_of_procedure",
                             f"edge {edge_id!r} is a procedural record; correct() does not mint a successor for one "
                             "(specs/0037 §4a-iii, V-NO-CORRECTION-OF-PROCEDURES) — retire it and restate the procedure"))
+                # specs/0055 §4c-ii row 8: the prior's identity is copied unchanged, so a shaped one refuses;
+                # the copied note is free text and is masked here, before plan_correction hashes the plan
+                self._refuse_shaped_identity(user_id, edge)
+                copied_note, nrep = _cred.mask(edge.note) if edge.note else (edge.note, {})
+                derived = _cred.merge_report({}, "note", nrep)
                 _disc = Disclosure.MENTIONABLE
+                # the relay reads the raw note: its output is a closed vocabulary of markers, never a carrier
                 if _agreement.relay_markers(edge.note, corrected_value):
                     _disc = Disclosure.USE_ONLY
                 new = Edge(
                     id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,
-                    relation=edge.relation, object=corrected_value, note=edge.note,
+                    relation=edge.relation, object=corrected_value, note=copied_note,
                     volatility=edge.volatility, valid_from=when,
                     agreement=_agreement.derive_record(
                         edge.note, corrected_value, _disc,
@@ -2508,10 +2666,12 @@ class Memory:
                     f"correction of {edge_id!r} kept returning PlanStale after "
                     f"{graph._MAX_PLAN_ATTEMPTS} attempts (specs/0003 §4f)")
             if not refused:
+                summary, srep = _cred.mask(f"({actor}) corrected '{edge.relation}: {edge.object}' "
+                                           f"to '{corrected_value}'")
+                _cred.merge_report(derived, "summary", srep)
                 self.store.add_episode(Episode(
                     id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
-                    summary=(f"({actor}) corrected '{edge.relation}: {edge.object}' "
-                             f"to '{corrected_value}'"),
+                    summary=summary,
                     provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                           evidence_ref=evidence_ref or f"correct:{edge_id}",
                                           observed_at=when, source_id=source_id,
@@ -2524,7 +2684,11 @@ class Memory:
                 # itself is loud (specs/0011 §4b applies to corrections)
                 raise _SITE_CORRECT_REFUSED.fire(graph.CorrectionRefused(edge_id, authority.RULE_VERSION))
         self._record("feedback", {"disputed": 0, "confirmed": 0, "corrected": 1}, user_id)
-        return {"corrected": edge_id, "replacement": new.id}
+        self._cred_withheld(user_id, "correct", derived, source="derived")
+        out = {"corrected": edge_id, "replacement": new.id}
+        if derived:
+            out["credentials_withheld"] = derived
+        return out
 
     # -- compliance erasure --------------------------------------------------
     def forget(self, user_id: str) -> dict:
@@ -2630,6 +2794,32 @@ class Memory:
         history = _rv.revocation_history(self.store, user_id)
         return {"standing": sorted(self.store.standing_revocations(user_id)), "history": history}
 
+    def _d3_legacy_source_or_refuse(self, user_id: str, origin, source_id, op: str) -> None:
+        """specs/0055 §4b-ii D3. When `origin` or `source_id` carries a credential shape, look for a stored edge or
+        episode OF THIS USER whose provenance carries exactly that `source_id` under the RESOLVED origin (the same
+        pair the digest frames). None: `CredentialRefused`. One: return, and the call proceeds (legacy resolution;
+        the identity digest is the declared exception). The lookup writes, logs and echoes nothing; it is an
+        existence oracle, acceptable because revocation is host-only (no MCP tool or adapter reaches it)."""
+        shaped = [(f, _cred.first_class(v)) for f, v in (("origin", origin), ("source_id", source_id))
+                  if isinstance(v, str) and v]
+        shaped = [(f, c) for f, c in shaped if c is not None]
+        if not shaped:
+            return
+        local = self.store.local_origin()
+        want = (origin if origin is not None else local, source_id)
+
+        def _matches(prov) -> bool:
+            return (prov is not None and prov.source_id is not None
+                    and (prov.origin if prov.origin is not None else local, prov.source_id) == want)
+        for e in self.store.edges(user_id, active_only=False):
+            if _matches(e.provenance):
+                return
+        for ep in self.store.episodes(user_id):
+            if _matches(ep.provenance):
+                return
+        field_name, cls = shaped[0]
+        raise self._cred_refused(user_id, op, field_name, cls)
+
     def _source_revocation(self, user_id: str, origin: Optional[str], source_id: str, reason: str,
                            action: str, dry_run: bool) -> dict:
         from .store import revocation as _rv
@@ -2638,7 +2828,13 @@ class Memory:
             raise NotImplementedError(f"{type(self.store).__name__} does not support source revocation "
                                       f"(specs/0022 is implemented by SqliteStore)")
         if not isinstance(dry_run, bool):
-            raise TypeError(f"dry_run must be a bool, got {dry_run!r}")
+            raise TypeError(f"dry_run must be a bool, got {type(dry_run).__name__}")
+        # specs/0055 §4b-ii D3, BEFORE the reason check and before any digest: a credential-shaped origin or
+        # source_id is either a legacy source this user's records already carry (revocation must stay possible:
+        # proceed, under the declared digest exception) or new text (refused, nothing digested)
+        self._d3_legacy_source_or_refuse(user_id, origin, source_id,
+                                         "unrevoke_source" if action == "lift" else "revoke_source")
+        _rv.check_reason(action, reason)        # specs/0055 D3: the reason, too, before the digest
         digest = digest_of(origin, source_id, self.store.local_origin())
         if digest is None:
             raise ValueError("source_id is required: a record with no source_id has no source identity and is not "
@@ -2769,7 +2965,7 @@ class Memory:
         return r
 
     def import_memory(self, path, *, user_id: Optional[str] = None,
-                      restore: bool = False) -> dict:
+                      restore: bool = False, withhold_credentials: bool = False) -> dict:
         """Load a Veracium JSONL export into this store. Idempotent (existing
         ids are skipped, never overwritten); `user_id` remaps the records.
 
@@ -2780,11 +2976,26 @@ class Memory:
         and is the operator's assertion that the file is this store's own
         history; use it only on files you exported yourself or have
         independently verified. The returned dict carries ``capped``; the
-        audit record deliberately keeps its shipped field set (§7a)."""
+        audit record deliberately keeps its shipped field set (§7a).
+
+        specs/0055 §4h: the file is screened for credential shapes before any write. A plain import withholds free
+        text and refuses a record whose identifier carries a shape (and the records linking to it); the result names
+        them by locator and class, never a value. A restore that carries a shape refuses whole
+        (`portability.CredentialImportRefused`) unless ``withhold_credentials=True`` is passed and only free text
+        carries one; then the free text is withheld and the result lists the affected records."""
         from . import portability
-        r = portability.import_memory(self.store, path, user_id=user_id,
-                                      restore=restore,
-                                      relations=self.config.relations)   # specs/0037: the RECEIVING registry's kinds
+        try:
+            r = portability.import_memory(self.store, path, user_id=user_id,
+                                          restore=restore, withhold_credentials=withhold_credentials,
+                                          relations=self.config.relations)   # specs/0037: the RECEIVING registry's kinds
+        except portability.CredentialImportRefused as exc:
+            self._record("credential_refused", _cred.audit_fields(
+                "import_memory", "file", source="import", classes={"records": len(exc.records)}), user_id or "")
+            raise
+        self._cred_withheld(r["user_id"], "import_memory", r.get("credentials_withheld") or {}, source="import")
+        for rec in r.get("credential_refused_records") or ():
+            self._record("credential_refused", _cred.audit_fields("import_memory", rec["field"], source="import",
+                                                                  cls=rec["class"]), r["user_id"])
         self._record("import", {"edges": r["edges"], "episodes": r["episodes"],
                                 "skipped": r["skipped"]}, r["user_id"])
         return r

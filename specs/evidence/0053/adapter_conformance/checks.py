@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 import anyio
 
 from veracium import mcp_server as M
+from veracium.credentials import CredentialRefused, outward_text
 from veracium.gate import ABSTAINED
 
 from . import canon as K
@@ -229,8 +230,10 @@ class Oracle:
                 raise AssertionError(f"the oracle has no call for {tool!r}")
         except AssertionError:
             raise
-        except Exception as exc:
-            return ("error", str(exc))
+        except CredentialRefused as exc:         # specs/0055 §4g: the served tool boundary returns the refusal dict
+            return ("ok", _json_form(exc.as_refusal()))
+        except Exception as exc:                 # specs/0055 §4g E1: the boundary's text is the outward formatter's
+            return ("error", outward_text(exc))
         return ("ok", _json_form(v))
 
     def run(self, case: dict, tag="ref") -> Ref:

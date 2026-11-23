@@ -37,7 +37,7 @@ DISPOSITIONS = {
  # -- explicit user verbs ----------------------------------------------------
  ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "e2b396f8489a"):
    (W, "`active`, `invalidation_reason`", "act", "clean — narrows only", "`test_dispute_removes_from_assertable_but_keeps_history`"),
- ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "208aed161b9f"):
+ ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "d13f9f728d9c"):
    (W, "episode provenance (specs/0031 §4f: + the binding's `source_id` and the agent `call_path`, both absent on a host-API call)", "act",
     "clean — under a principal the §3b scope gate runs first, in the same transaction", "`test_dispute_removes_from_assertable_but_keeps_history` · `test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provenance_never_the_summary`"),
  ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "102939177bee"):
@@ -62,7 +62,7 @@ DISPOSITIONS = {
  ("src/veracium/__init__.py", "Memory.correct", "apply_supersession_plan", "ba370b6342c2"):
    (W, "`active`, `invalidation_reason=corrected`, `supersedes`, `author_of_evidence` USER", "act",
     "clean — **M7-correct CLOSED (specs/0011 §4e, E5)**: the correction reaches storage only through the atomic plan with a CorrectionAuthorisation verified in-transaction; §4b subject entitlement applies", "`test_correct_requires_bound_authorisation`"),
- ("src/veracium/__init__.py", "Memory.correct", "add_episode", "00ee7b102926"):
+ ("src/veracium/__init__.py", "Memory.correct", "add_episode", "d74f56b39d16"):
    (W, "episode provenance", "act",
     "clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision. specs/0031 §4f: it carries the binding's `source_id` and the agent `call_path` in provenance", "`test_correct_requires_bound_authorisation` · `test_correct_and_dispute_audit_episodes_carry_the_path_and_source_in_provenance_never_the_summary`"),
  ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"):
@@ -84,6 +84,10 @@ DISPOSITIONS = {
 
  # R-II round 2's RII-R2-01 (D2, defence in depth): recall's bind discards the row a compiled body published when that
  # body fails its bind, conditional on the row still being that one — so a retry is never served it from the cache
+ ("src/veracium/credential_finder.py", "act", "discard_wiki", "cd77622371a3"):
+   (M, "none directly — removes a compiled wiki row the finder found carrying a credential shape (specs/0055 §4f's matrix: `wiki.text` → discard; the wiki is rebuilt from masked reads, §4e); conditional on the row read, so a newer row is never touched", "act",
+    "clean — the operator's `veracium credentials redact --yes`; the second scan, not the action, is the proof (I18)",
+    "`test_i18_redact_removes_what_0041_can_and_reports_the_residual`"),
  ("src/veracium/compile.py", "bound_wiki", "discard_wiki", "291cbd6abaed"):
    (M, "none directly — **removes a cached trust decision** the call has just withheld (the row this call's own compile published); a newer row is never touched (one conditional statement)", "none",
     "✅ a body that failed its bind cannot re-enter through the cached branch on the retry (RII-R2-01; the write-side eviction at `schema.assertion_view` is the closure, this is its backstop)",
@@ -206,18 +210,19 @@ DISPOSITIONS = {
 STATES = {
   ("src/veracium/__init__.py", "Memory.embed_backfill", "upsert_embedding", "edb8a9a9b201"): "clean",
   ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "e2b396f8489a"): "clean",
-  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "208aed161b9f"): "clean",
+  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "d13f9f728d9c"): "clean",
   ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "102939177bee"): "clean",
   ("src/veracium/__init__.py", "Memory.undo_restoration", "undo_restoration", "7a97cc565969"): "clean",
   ("src/veracium/__init__.py", "Memory.reply", "add_reply", "38702764f859"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "append_outcome_if_head", "c581fd572ad4"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "e00d08c435b4"): "clean",
   ("src/veracium/__init__.py", "Memory.correct", "apply_supersession_plan", "ba370b6342c2"): "clean",
-  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "00ee7b102926"): "clean",
+  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "d74f56b39d16"): "clean",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/__init__.py", "Memory.forget_everything_confirm", "forget_user", "ed4422fbd96b"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "4365735ba43d"): "clean",
+  ("src/veracium/credential_finder.py", "act", "discard_wiki", "cd77622371a3"): "clean",
   ("src/veracium/compile.py", "bound_wiki", "discard_wiki", "291cbd6abaed"): "clean",
   ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "070f62e813fd"): "clean",

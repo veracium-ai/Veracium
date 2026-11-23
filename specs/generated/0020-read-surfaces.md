@@ -5,7 +5,7 @@
 
 # specs/0020 §4f — public read-surface manifest
 
-**49 public surfaces** — every public method of `Memory` plus every public
+**50 public surfaces** — every public method of `Memory` plus every public
 `*_impl` in `mcp_server` — enumerated by **parsing the AST**, not by reading
 the spec's prose inventory. **6 of them return record objects.**
 
@@ -56,6 +56,7 @@ and 0020's claim is about the surfaces named here.
 | `Memory.recall` | **yes** | `principal=` **threaded** | rendered `context` + `Recall.edges` / `.episodes` / `.contested` (and each group's `.exposed`) | SCOPED. The visibility relation is applied to the EDGE and EPISODE sets before rendering, and every structured carrier is built from its output; the §4e filters run after scope, within the visible set. Queryless (the proactive briefing) takes the same lens on the same code path, before assembly. The compiled wiki is EXCLUDED from a principal-bearing response (§4d). |
 | `Memory.record_outcome` | no | none | `{edge_id, outcome, upgraded, times_used}` | WRITE path (engine-written, never MCP); no record set leaves. |
 | `Memory.record_procedure` | no | none | the new edge id | WRITE path (specs/0037 §4b) — the sole producer of a procedural record; returns an id, renders nothing. Disclosure is derived (quarantine-at-birth, then the three-axis rule), never host-supplied. |
+| `Memory.record_procedure_report` | no | none | the new edge id, and specs/0055's `credentials_withheld` ({field: {class: count}}, present only when non-empty) | WRITE path — `record_procedure`'s dict twin (specs/0055 §4g, R1-05); the same write, returning the id and the credential report (field and class names and counts, never a value); renders nothing. |
 | `Memory.redact` | no | `principal=` **threaded** | a `RedactionReceipt`: the target's kind and id, the carrier NAMES treated, the vocabulary reason, the marker and store versions, the journal event ref, the ids of derived records that may still carry the content (F6), the receipt domains it cannot vouch for — never content and never a content digest | AN OPERATOR SURFACE BY DECISION (specs/0041 §3b), scoped to `user_id` by INV-5 (a cross-user or unknown target refuses with the same words, so the existence of another user's record is not disclosed). It is a WRITE that returns a receipt, the `forget` shape: the data subject's request must reach every carrier the map names or none, so no principal narrows WHAT IT TREATS. specs/0031 §4f §4d: a principal GATES it (§3b, OWN only, before any write) and receives the principal-facing projection — six named fields, the scope label, and `surviving_derived` filtered to what that principal's view can see — never the host receipt; with no principal, the full receipt, unchanged. |
 | `Memory.remember` | no | none | ingest counters | WRITE path. 0020 changes no write, no lifecycle transition (§3); identity partitioning at write/maintain is 0021's. |
 | `Memory.reply` | no | none | `{reply_id, edge_id, kind, target, written_at, correlation_id, replayed}` | WRITE path (host-only, never MCP; specs/0047 §4a): appends one reply; ids, a closed kind and a time leave, never the reply's text or the fact's content. |

@@ -297,7 +297,7 @@ sql-write-other-table	src/veracium/store/schema_version.py	str:sql-write	conn.ex
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	f"INSERT OR REPLACE INTO consolidation_ops({', '.join(self._OP_COLS)}) "
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE confirmations SET request_digest=? WHERE user_id=? AND edge_id=?",
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE edge_event SET state=? WHERE user_id=? AND edge_id=? AND state<>?",
-verb-as-text	src/veracium/diagnostics.py	str:sql-write	text = data.decode("utf-8", "replace")
+verb-as-text	src/veracium/diagnostics.py	str:sql-write	text = _cred.mask_text(data.decode("utf-8", "replace"))
 verb-as-text	src/veracium/procedures.py	str:sql-write	IMPERATIVE_OPENERS = frozenset(""" add adjust allow always apply ask assign avoid back backfill build bump cancel clean clear close compile configure confirm cordon create deactivate delete deny deploy disable do document drain enable ensure escalate fetch fix flush freeze generate ignore install keep kill migrate move never notify open pause put quarantine re-run rebase reboot rebuild redeploy refresh reinstall reject reload remove rename replace reproduce restart restore retry revert review revoke roll rollback rotate run submit tag take throttle toggle turn unfreeze uninstall unlock unpin unset update upgrade validate verify widen """.split())
 verb-as-text	src/veracium/redaction.py	str:sql-write	REPLACE, CLEAR, DELETE, PRESERVE = "REPLACE", "CLEAR", "DELETE", "PRESERVE"
 verb-as-text	src/veracium/store/sqlite.py	str:sql-write	f"axis is written once at insert (specs/0045 §2)"), axis)
@@ -354,3 +354,7 @@ validated-write	src/veracium/store/sqlite.py	confidence	decayed = e.provenance.c
 validated-write	src/veracium/store/sqlite.py	str:confidence	e.provenance = Provenance.model_validate({**e.provenance.model_dump(), "confidence": decayed})
 edges-text	src/veracium/trust_tools.py	str:edges	ERASE_PREVIEW_TABLES = ("edges", "episodes", "confirmations", "replies")
 edges-text	src/veracium/trust_tools.py	str:edges	"the confirmation bind which records exist in the four tables shown (edges, episodes, "
+copy-other-fields	src/veracium/credentials.py	model_copy	return edge.model_copy(update={"subject": subject, "relation": relation, "object": obj, "note": note,
+copy-other-fields	src/veracium/credentials.py	model_copy	return episode.model_copy(update={"summary": m})
+other-object	src/veracium/credentials.py	getattr	r = getattr(exc, "reason", None)
+edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	"SELECT id, user_id, json FROM edges WHERE (? IS NULL OR user_id=?)", args).fetchall():

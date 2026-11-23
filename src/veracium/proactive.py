@@ -24,6 +24,7 @@ from datetime import date as _date
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
+from . import credentials as _cred
 from .graph import collapse_for_render
 from .schema import Edge, Episode, Volatility
 from .census import declare_site
@@ -128,7 +129,9 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # record, before collapse and categorisation; before, three sections returned it as marker lines, and the
     # dated-commitment section dropped it only because its date lived in the redacted object.
     _redacted_edges = store.redacted_targets(user_id, "edge")
-    _edges = [e for e in store.edges(user_id) if e.id not in _redacted_edges]
+    # specs/0055 §4e, the read backstop: proactive renders stored text into model context and clamps it, so each
+    # edge is masked at the read, before any selection, clamp or composition (a legacy credential never surfaces)
+    _edges = [_cred.masked_edge(e) for e in store.edges(user_id) if e.id not in _redacted_edges]
     # specs/0037 §4a (V-RENDER-SITES): the briefing renders records into
     # model context — a procedural record is out of scope here too, by its
     # own stamp/basis (`gate.exclude_procedural`, PROCEDURAL_OUT_OF_SCOPE)
@@ -432,7 +435,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         except ValueError:
             continue
         if ep_date >= recent_cutoff:
-            recents.append((f"[{ep.date}] {ep.summary}", ep))
+            recents.append((f"[{ep.date}] {_cred.mask_text(ep.summary)}", ep))   # specs/0055 §4e
     recents = recents[-config.max_recent_episodes:]
 
     # specs/0012 I10b: deterministic within-section order — commitments nearest-due

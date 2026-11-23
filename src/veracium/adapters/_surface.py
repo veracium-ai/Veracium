@@ -18,6 +18,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from .. import credentials as _cred
 from .. import mcp_server as _mcp
 
 #: The served tools this module knows how to answer. `served_tools` refuses a registration that differs, either way:
@@ -67,9 +68,19 @@ class Binding:
     """The host's bindings, fixed at construction, and the one way a call reaches the library."""
 
     def __init__(self, mem, *, user_id: str = "default", capability=None, source_id: Optional[str] = None,
-                 principal=None, erasure=None):
+                 principal=None, erasure=None, audit_log=None):
         if not isinstance(user_id, str) or not user_id:
             raise ValueError(f"user_id must be a non-empty string, not {user_id!r}")
+        # specs/0055 §4g: the adapter's AuditLog (an `audit.AuditLog`, or a path for one), attached to the bound Memory
+        # so the credential counts and 0031 §10 Q4's discarded raises reach the operator, as VERACIUM_AUDIT_LOG does for
+        # the stock server. A Memory that already has a different log is refused: one operation, one log.
+        if audit_log is not None:
+            from ..audit import AuditLog
+            log = audit_log if isinstance(audit_log, AuditLog) else AuditLog(audit_log)
+            if mem.audit is None:
+                mem.audit = log
+            elif mem.audit is not audit_log:
+                raise ValueError("audit_log: this Memory already has an audit log attached; pass that one, or none")
         self._mem = mem
         self._user = user_id
         # resolved ONCE, here: a supplied value outside the closed set raises now, as build_server does (0031 §4a)
@@ -95,9 +106,25 @@ class Binding:
         return meta.arg_model.model_validate(meta.pre_parse_json(dict(args))).model_dump_one_level()
 
     def call(self, name: str, args: dict) -> Any:
+        """Answer one call as the served tool answers it (specs/0055 §4g): through the `adapter` surface, a credential
+        refusal returned as its refusal dict, and any other error raised as a ValueError carrying the outward
+        formatter's text (field and reason, never the caller's value), chained to the original."""
         if name not in self._models:
-            raise ValueError(f"unknown tool {name!r}")
+            raise ValueError("unknown tool: this binding serves " + ", ".join(sorted(self._models)))
+        # the served tool's own argument validation, as FastMCP runs it BEFORE the tool body: its text is pydantic's
+        # message from the served argument model, which hides the input (E2), exactly as an MCP call reports it
         a = self.validate(name, args)
+        with _cred.on_surface("adapter"):
+            try:
+                return self._call(name, args, a)
+            except _cred.CredentialRefused as exc:
+                return exc.as_refusal()
+            except Exception as exc:                     # noqa: BLE001 - re-raised, formatted, chained
+                raise ValueError(_cred.outward_text(exc)) from exc
+
+    def _call(self, name: str, args: dict, a: dict) -> Any:
+        """Answer one call with its VALIDATED arguments `a` (`args` is the call as given, which nothing here reads:
+        a binding takes no tool argument outside the served schema)."""
         mem, user = self._mem, self._user
         if name == "remember":
             return _mcp.remember_impl(mem, user, a["text"], author=a["author"], event_type=a["event_type"],

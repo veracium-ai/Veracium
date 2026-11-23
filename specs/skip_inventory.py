@@ -119,6 +119,13 @@ INVENTORY = [
                             "stdio); the file's other 5 cells run without the SDK. Author line: "
                             "all 6 PASS (mcp importable in the authoring venv); an mcp-absent "
                             "environment sees 5 PASS + 1 SKIP"),
+    ("tests/test_0055_invariants.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — specs/0055's served-surface invariants (I10 under both capabilities, "
+                            "I14's adapter erase, I15's stock server and adapter log, I17's served errors) build or "
+                            "reach the served server, so those five cells skip without the SDK through one helper, "
+                            "`_needs_mcp` (the pydantic-floor lane); the file's other cells run without it. Author "
+                            "line: all PASS with mcp installed",
+     "job:runs"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "

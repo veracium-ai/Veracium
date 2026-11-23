@@ -37,6 +37,7 @@ from typing import Optional
 from .schema import (Disclosure, Edge, EvidenceAuthor, EvidenceContext, Provenance,
                      is_procedural, is_procedural_relation, utcnow)
 from .census import declare_site
+from . import credentials as _cred
 
 # specs/0042 (tranche 3): the enforcement points of this module, each a declared site the
 # decision is returned THROUGH — consult() brackets the decision, fire() wraps the value
@@ -408,8 +409,9 @@ def describe_procedures(store, relations, user_id: str, *, query=None, view=None
     descriptions = [
         ProcedureDescription(
             edge_id=e.id, relation=e.relation, gloss=relations[e.relation].desc,
-            summary=e.object, basis=e.provenance.basis,
-            attribution=_attribution(e.provenance.basis, e.object),
+            # specs/0055 §4e: the read backstop — the stored summary is masked on its way to a model or a tool
+            summary=_cred.mask_text(e.object), basis=e.provenance.basis,
+            attribution=_attribution(e.provenance.basis, _cred.mask_text(e.object)),
             author=e.provenance.author_of_evidence.value,
             observed_at=e.provenance.observed_at, valid_from=e.valid_from)
         for e in cut]

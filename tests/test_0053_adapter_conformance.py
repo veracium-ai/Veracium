@@ -125,7 +125,8 @@ def test_a_read_that_writes_is_named_by_the_anchors(tmp_path, monkeypatch):
 @pytest.mark.parametrize("adapter", ["core", *FRAMEWORK_ROWS])
 def test_a_raise_of_another_type_reaches_the_model_as_a_tool_error(oracle, monkeypatch, adapter):
     """Research's stage 2, N3, the witness for S1-4: a library raise that is not a ValueError reaches the model as the
-    tool-error result with its message, on each row, as FastMCP reports it; it never escapes into the agent loop."""
+    tool-error result, on each row, as FastMCP reports it; it never escapes into the agent loop. Its text is the outward
+    formatter's (specs/0055 §4g E1: the exception's class and reason, never its message, which may echo the input)."""
     fw = _row(adapter) if adapter != "core" else None
 
     def planted(*a, **kw):
@@ -137,7 +138,9 @@ def test_a_raise_of_another_type_reaches_the_model_as_a_tool_error(oracle, monke
         got = drv.decode(drv.call("answer", {"query": "what is the user's diet?"}))
     finally:
         mem.close()
-    assert got == ("error", "a planted RuntimeError from the library"), got
+    from veracium.credentials import outward_text
+    assert got == ("error", outward_text(RuntimeError("a planted RuntimeError from the library"))), got
+    assert "planted" not in got[1]
 
 
 def test_the_registration_is_read_under_the_hosts_capability(oracle, caplog):

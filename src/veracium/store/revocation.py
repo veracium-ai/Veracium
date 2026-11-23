@@ -336,6 +336,19 @@ def revocation_reason_marked(conn, user_id: str, identity_digest: str) -> bool:
                         (user_id, identity_digest, MARKER)).fetchone() is not None
 
 
+def check_reason(action: str, reason) -> None:
+    """specs/0041 §11.2 / D1 (round 10, R9-02(a)): the reason closes on its ACTION's own vocabulary — a revoke on the
+    owner's four, a lift on the lift list (the owner's ruling, 2026-10-02). specs/0055 §4b-ii D3: `Memory` calls this
+    BEFORE it computes the identity digest, so a refused call never computes one; the message names the allowed
+    values and never the caller's (§4g E1)."""
+    with _SITE_REVOKE_REASON.consult():
+        allowed = SOURCE_REVOCATION_REASONS if action == "revoke" else SOURCE_LIFT_REASONS
+        if reason not in allowed:
+            raise _SITE_REVOKE_REASON.fire(ValueError(
+                f"refused: the {action} reason is not one of {allowed} (specs/0041 §11.2, D1) — a reason "
+                f"fitting none of them is refused, never filed under one"))
+
+
 def revoke_source(store, user_id: str, target_digest: str, action: str,
                   reason: str, at: str, *, dry_run: bool = False) -> dict:
     """0022 §4e: preview or commit ONE revocation/lift, sweep included.
@@ -349,12 +362,7 @@ def revoke_source(store, user_id: str, target_digest: str, action: str,
     # specs/0041 §11.2 / D1 (round 10, R9-02(a)): the reason closes on its ACTION's own vocabulary — a revoke on the
     # owner's four, a lift on the lift list (the owner's ruling, 2026-10-02) — at the one public entry, preview and
     # commit alike; `revocation_operation`, the R19 construction rendered into 0022, is unchanged
-    with _SITE_REVOKE_REASON.consult():
-        allowed = SOURCE_REVOCATION_REASONS if action == "revoke" else SOURCE_LIFT_REASONS
-        if reason not in allowed:
-            raise _SITE_REVOKE_REASON.fire(ValueError(
-                f"refused: {action} reason {reason!r} is not one of {allowed} (specs/0041 §11.2, D1) — a reason "
-                f"fitting none of them is refused, never filed under one"))
+    check_reason(action, reason)
     proposed = {"identity_digest": target_digest, "action": action,
                 "at": at, "reason": reason}
     with store._lock:

@@ -1,5 +1,5 @@
 {
- "body_sha256": "1d38a1ef929b0053a13b77d33da6ca3ac3043b5575b7e16ee46b4c38524f1090",
+ "body_sha256": "1c9f53bf61f0a8071090fa98a6a51fb5549c3cd30f7b6ff2cb8deaf90ff2828a",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "fba1098755e0938e10a00f70ec2b2e46642db94d",
+  "commit": "09c2598df8b2cc8035c96d8a9743027a9786d50b",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -64,11 +64,63 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
+   "docs/api.md",
+   "docs/mcp.md",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0037-procedural-basis.md",
+   "specs/0039-degradation-visibility.md",
+   "specs/0055-credential-shaped-text-never-stored.md",
+   "specs/audit_dispositions.py",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0031-trust-tools/census/census-tools.txt",
-   "specs/skip_inventory.py"
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/declaration.py",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0047/carrier_inventory.py",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0053/adapter_conformance/checks.py",
+   "specs/generated/0002-audit-manifest.md",
+   "specs/generated/0020-read-surfaces.md",
+   "specs/read_surface_dispositions.py",
+   "specs/skip_inventory.py",
+   "src/veracium/__init__.py",
+   "src/veracium/adapters/_surface.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/asof/resolve.py",
+   "src/veracium/budgets.py",
+   "src/veracium/cli.py",
+   "src/veracium/compile.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/doctor.py",
+   "src/veracium/gate.py",
+   "src/veracium/graph.py",
+   "src/veracium/ingest.py",
+   "src/veracium/lifecycle.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
+   "src/veracium/proactive.py",
+   "src/veracium/procedures.py",
+   "src/veracium/semantic.py",
+   "src/veracium/store/revocation.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/why.py",
+   "tests/eval/procedural_describe/MANIFEST.json",
+   "tests/test_0023_inventory.py",
+   "tests/test_0029_carrier.py",
+   "tests/test_0031_trust_tools_mcp.py",
+   "tests/test_0039_degradation_visibility.py",
+   "tests/test_0042_sites.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0053_adapter_conformance.py",
+   "tests/test_rii_r2_01_writer_inventory.py"
   ]
  },
  "rows": [
@@ -100,7 +152,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.08s",
+   "pytest": "1 failed in 0.07s",
    "reason": null,
    "reason_seen": null,
    "what": "the conflation round 1 named: one census carrying the step table's 432/1,685, its scope unstated, and the 48 PA1 fixtures' own scope and figures gone"

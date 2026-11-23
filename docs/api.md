@@ -112,6 +112,8 @@ mem.remember("alice", "From billing@x: you owe $900.",
 
 ### `record_procedure(user_id, summary, *, author, context, relation="follows_procedure", note=None, when=None, evidence_ref=None, source_id=None) -> str`
 
+Its twin, `record_procedure_report(...)` with the same arguments, returns a dict: `{"edge_id": …}` plus `credentials_withheld` when a credential-shaped span of `summary` or `note` was withheld (specs/0055). Both refuse a credential shape in `source_id` or `evidence_ref` with `veracium.credentials.CredentialRefused`.
+
 Record a **procedural** record (specs/0037) — a procedure the user follows,
 a host-declared content kind that is never asserted as fact and never enters
 recall's grounded or unverified context. This is the ONLY producer of a
@@ -888,6 +890,18 @@ not reproduce pending state (re-importing the source file re-pends it).
 ### `close()`
 
 Close the underlying store.
+
+## Credential-shaped text is never stored (specs/0055)
+
+New writes no longer store credential-shaped text: keys, tokens, private keys, connection strings with passwords and labelled passwords that the recogniser names (`veracium.credentials`, rule set version 1). It is withheld from what a caller writes, what a model returns and what is composed from stored records, before that text is stored or sent to the extractor, and replaced by `[credential withheld: <class>]`. There is no switch that turns it off.
+
+- **The report.** A result whose free text had a span withheld carries `credentials_withheld`, `{field: {class: count}}`, present only when non-empty: never the value, its length, offsets or a digest. `record_procedure` keeps its `str`; `record_procedure_report` is the dict twin.
+- **Identifiers refuse.** A credential shape in an identifier (`source_id`, `evidence_ref`, `context_ref`, a correlation id, a reply's `target`, `correct`'s `corrected_value` and `actor`, `dispute`'s `actor`, `remember`'s `event_type`) raises `veracium.credentials.CredentialRefused` (`reason == "credential_refused"`, `.field`, `.cls`); nothing is written. Served surfaces return `{"ok": false, "refusal": "credential_refused", "field": …, "class": …}`.
+- **Reads.** Text read from stored records is masked before it reaches a model or a tool result (recall, `find_facts`, `describe_procedures`, `why`, the answer gate, compile, consolidation, the embedder). `export_memory` copies the store as it is.
+- **Import.** A plain import withholds free text and refuses a record whose identifier carries a shape (and the records linking to it). A `restore=True` import that carries a shape refuses whole (`portability.CredentialImportRefused`) unless `withhold_credentials=True` is passed and only free text carries one.
+- **What earlier versions stored.** `veracium credentials scan --db PATH` reports credential-shaped text at rest by carrier class; `veracium credentials redact --db PATH --yes` removes what 0041 redaction can, scans again, and exits nonzero while a residual remains (provenance identifiers are kept by 0041; `forget` removes a user's rows). `veracium doctor` runs the same scan as `credentials_at_rest`.
+- **The operator's counts.** With an `AuditLog` attached (`Memory(audit=…)`, the MCP server's `VERACIUM_AUDIT_LOG`, an adapter's `audit_log=`), each withholding and refusal is one content-free line, `credential_withheld` or `credential_refused`, with the surface, operation, field, class counts, source and rule-set version.
+- **Not covered.** A `recall` or `answer` query (not stored; it still reaches the answer model and the embedder); a described, encoded, spaced, unlabelled or foreign-language credential; a credential used as a `user_id`.
 
 ## `EvidenceAuthor`
 
