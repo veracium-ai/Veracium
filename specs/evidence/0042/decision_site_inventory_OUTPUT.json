@@ -1101,14 +1101,21 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 751,
+   "line": 732,
+   "module": "cli.py",
+   "qualname": "main"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 758,
    "module": "cli.py",
    "qualname": "_verb_dispatch"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 786,
+   "line": 793,
    "module": "cli.py",
    "qualname": "<module>"
   },
@@ -7962,7 +7969,7 @@
   "by_kind": {
    "BOOL_RETURN": 116,
    "FILTER_RETURN": 69,
-   "RAISE": 763,
+   "RAISE": 764,
    "RETURN_FALSE": 123,
    "RETURN_NONE": 128
   },
@@ -8098,7 +8105,7 @@
    "cli.py": {
     "BOOL_RETURN": 0,
     "FILTER_RETURN": 0,
-    "RAISE": 7,
+    "RAISE": 8,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 0
    },
@@ -8411,7 +8418,7 @@
     "RETURN_NONE": 0
    }
   },
-  "total": 1199,
+  "total": 1200,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

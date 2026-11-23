@@ -5528,13 +5528,13 @@
   "line": 163,
   "statement": "raise ValueError(\"mac length\")"
  },
- "cli.py:<module>:786:RAISE": {
+ "cli.py:<module>:793:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:<module>:RAISE:1",
-  "line": 786,
+  "line": 793,
   "statement": "raise SystemExit(main())"
  },
  "cli.py:_build_llm:72:RAISE": {
@@ -5582,14 +5582,23 @@
   "line": 85,
   "statement": "raise SystemExit(\"internal: this veracium verb should never invoke the LLM \""
  },
- "cli.py:_verb_dispatch:751:RAISE": {
+ "cli.py:_verb_dispatch:758:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "cli.py:_verb_dispatch:RAISE:1",
-  "line": 751,
+  "line": 758,
   "statement": "raise AssertionError(f\"no dispatch for {args.cmd}\")    # unreachable while _VERBS and the branches agree"
+ },
+ "cli.py:main:732:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: command-line usage and exit handling",
+  "reviewer": "dev",
+  "class": "cli-usage",
+  "key": "cli.py:main:RAISE:1",
+  "line": 732,
+  "statement": "raise exc from None"
  },
  "mcp_server.py:_served.wrapped:753:RAISE": {
   "decision": "not",
