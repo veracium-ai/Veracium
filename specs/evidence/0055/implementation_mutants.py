@@ -57,7 +57,7 @@ MUTANTS = [
     ('I2-no-stop-list', 'product', 'src/veracium/credentials.py',
      [('    if not w or w in STOP or _MASKED_VALUE', '    if not w or _MASKED_VALUE')],
      ['tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte', 'tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K39]', 'tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K43]', 'tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[K6]', 'tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[X6]', 'tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz'],
-     ['tests/test_0055_invariants.py::test_i11_every_writer_is_classed_for_the_credential_screen'], None,
+     ['tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports'], None,
      "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"),
     ('I4-identifier-not-refused', 'product', 'src/veracium/__init__.py',
      [('                if cls is not None:\n                    raise self._cred_refused(user_id, op, field_name, cls)\n        out: list = []', '                if cls is not None:\n                    continue\n        out: list = []')],
