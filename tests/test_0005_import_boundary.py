@@ -635,6 +635,9 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0055 §4h (I6): a plain import withholds per field, a restore refuses whole unless withhold_credentials is
+    # set, so the one cell pins both modes
+    ("test_0055_invariants.py", "test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"): "both",
     # specs/0041 v16.5 §11.7 (confirmation and dispute episodes in the receipt; the cross-user import's reference
     # rewrite): the same-user/restore arrival cells pin both modes; every cross-user cell is a default import
     ("test_0041_v16_5_confirm_quoting.py", "test_q1_an_imported_confirmation_episode_is_named_though_the_act_id_was_reminted"): "both",
