@@ -653,12 +653,14 @@ GROUPS = [('T2 (0019 v7: the non-user refusal)',
     '        if False:\n            rep.add("refs", "error", f"{len(ids)} resolve reply(ies)'),
    ('INV-R10: the verb registered over MCP',
     'src/veracium/mcp_server.py',
-    '    @server.tool()\n    def remember(text: str,',
+    '    @server.tool()\n    @_served\n    def remember(text: str,',
     '    @server.tool()\n'
+    '    @_served\n'
     '    def reply(edge_id: str, kind: str, text: Optional[str] = None) -> dict:\n'
     '        return mem.reply(default_user, edge_id, kind=kind, text=text)\n'
     '\n'
     '    @server.tool()\n'
+    '    @_served\n'
     '    def remember(text: str,'),
    ('INV-R22: replies kept after forget_user',
     'src/veracium/store/sqlite.py',
@@ -3339,7 +3341,7 @@ PROVENANCE = {"0008 C11 (retention, erasure and export: forget_user deletes the 
  'T10a (INV-R5, R10, R22, F6: doctor, MCP, erasure, the audit line) :: F6: the audit line carries the text': {'reanchored': None,
                                                                                                               'source': 't10a_mutant_defs.py',
                                                                                                               'source_sha256': 'c872d24ce619a08522ae691bee72540622144568770e0eb4e17fcb30836090b5'},
- 'T10a (INV-R5, R10, R22, F6: doctor, MCP, erasure, the audit line) :: INV-R10: the verb registered over MCP': {'reanchored': None,
+ 'T10a (INV-R5, R10, R22, F6: doctor, MCP, erasure, the audit line) :: INV-R10: the verb registered over MCP': {'reanchored': "the specs/0055 build (fd045ce0) put `@_served` (the outward error formatter, E1) between `@server.tool()` and each tool's def, so the anchor and its replacement carry it; the mutant is unchanged in effect (a `reply` verb registered over MCP)",
                                                                                                                 'source': 't10a_mutant_defs.py',
                                                                                                                 'source_sha256': 'c872d24ce619a08522ae691bee72540622144568770e0eb4e17fcb30836090b5'},
  'T10a (INV-R5, R10, R22, F6: doctor, MCP, erasure, the audit line) :: INV-R22: replies kept after forget_user': {'reanchored': None,
