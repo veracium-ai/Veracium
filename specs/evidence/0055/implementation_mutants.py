@@ -149,6 +149,12 @@ MUTANTS = [
      ['tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports'],
      ['tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte'], None,
      'the served record_procedure drops the report the twin returns (I20)'),
+    ('I19-F6-stored-reason-quoted', 'product', 'src/veracium/store/sqlite.py',
+     [('{_cred.mask_text(edge.invalidation_reason)!r}, which is not "', '{edge.invalidation_reason!r}, which is not "')],
+     ['tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]'],
+     ['tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte'], None,
+     "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; "
+     "measured: exactly this cell fails, by assertion)"),
 ]
 
 
