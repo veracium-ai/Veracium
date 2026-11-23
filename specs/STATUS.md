@@ -4,11 +4,11 @@
 
 # Spec status
 
-**48 specs · 46 accepted · 467 external review
+**49 specs · 46 accepted · 467 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **46 of 48 are accepted**, which
+review is required to reach it. **46 of 49 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -61,6 +61,7 @@ is the number that decides what can be built.
 | **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-14 | 0 | 0 | 9 | 0 | 0 | — |
 | **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-15 | 0 | 0 | 0 | 0 | 0 | — |
 | **0055** | credential-shaped text is never stored | `accepted` | 2026-11-23 | 0 | 0 | 0 | 0 | 0 | — |
+| **0056** | source anchors — a memory knows when the file it came from changed | `draft` | 2026-11-23 | 0 | 0 | 12 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

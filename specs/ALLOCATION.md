@@ -54,6 +54,7 @@
 | 0053 | `0053-adapter-conformance-suite.md` | `accepted` | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it |  |
 | 0054 | `0054-container-image.md` | `accepted` | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 |  |
 | 0055 | `0055-credential-shaped-text-never-stored.md` | `accepted` | credential-shaped text is never stored |  |
+| 0056 | `0056-source-anchors.md` | `draft` | source anchors — a memory knows when the file it came from changed |  |
 
 ## Reservations (claimed, not drafted)
 
@@ -73,7 +74,7 @@
 
 none
 
-**Next number from this tree alone:** `0056`. *A new spec takes its number from `allocation.py --next`, which also steps past every draft in the peer seat's tree and refuses to answer without it — run it before the first numbered file is created, in either tree.*
+**Next number from this tree alone:** `0057`. *A new spec takes its number from `allocation.py --next`, which also steps past every draft in the peer seat's tree and refuses to answer without it — run it before the first numbered file is created, in either tree.*
 
 ## Registry state
 
