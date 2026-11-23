@@ -641,7 +641,7 @@ class SqliteStore(Store):
             with _SITE_JOURNAL_REASON.consult():
                 if reason not in DISPOSITIONED_REASONS:
                     raise _SITE_JOURNAL_REASON.fire(ValueError(
-                        f"invalidation reason {reason!r} is not registered in "
+                        f"invalidation reason {_cred.mask_text(reason)!r} is not registered in "
                         f"DISPOSITIONED_REASONS — the write is refused (specs/0029 V-KIND)"))
         elif kind == "redacted":
             # specs/0041 §4c / §11.2 (D1): the redacted event carries redaction's own closed vocabulary in
@@ -897,7 +897,7 @@ class SqliteStore(Store):
         with _SITE_UPSERT_INVALIDATION_REASON.consult():
             if edge.invalidation_reason is not None and edge.invalidation_reason not in DISPOSITIONED_REASONS:
                 raise _SITE_UPSERT_INVALIDATION_REASON.fire(ValueError(
-                    f"refused: edge {edge.id!r} carries invalidation reason {edge.invalidation_reason!r}, which is not "
+                    f"refused: edge {edge.id!r} carries invalidation reason {_cred.mask_text(edge.invalidation_reason)!r}, which is not "
                     f"a registered reason {tuple(DISPOSITIONED_REASONS)} (specs/0041 §11.2, D1)"))
         with _SITE_UPSERT_RELATION_ONLY_QUARANTINE.consult():
             if edge.relation == QUARANTINE_RELATION and edge.provenance.disclosure != Disclosure.QUARANTINED:
@@ -2512,12 +2512,12 @@ class SqliteStore(Store):
         with _SITE_EPISODE_RETIRED_REASON.consult():
             if episode.retired_reason is not None and episode.retired_reason not in DISPOSITIONED_REASONS:
                 raise _SITE_EPISODE_RETIRED_REASON.fire(ValueError(
-                    f"refused: episode {episode.id!r} carries retired reason {episode.retired_reason!r}, which is not "
+                    f"refused: episode {episode.id!r} carries retired reason {_cred.mask_text(episode.retired_reason)!r}, which is not "
                     f"a registered reason {tuple(DISPOSITIONED_REASONS)} (specs/0041 §11.2, D1)"))
         with _SITE_EPISODE_KIND.consult():
             if episode.kind not in _redaction.RECOGNISED_EPISODE_KINDS:
                 raise _SITE_EPISODE_KIND.fire(ValueError(
-                    f"refused: episode {episode.id!r} kind {episode.kind!r} is not a recognised "
+                    f"refused: episode {episode.id!r} kind {_cred.mask_text(episode.kind)!r} is not a recognised "
                     f"operational kind {_redaction.RECOGNISED_EPISODE_KINDS} — the set is closed at the "
                     f"write path (specs/0041 §2d-iv, §4h(ii))"))
         # specs/0014 §4c: store-assigned identity cannot be fabricated — a
@@ -2975,7 +2975,7 @@ class SqliteStore(Store):
                             if edge.invalidation_reason is not None and edge.invalidation_reason not in DISPOSITIONED_REASONS:
                                 raise _SITE_IMPORT_REASON.fire(ValueError(
                                     f"refused: imported edge {edge.id!r} carries invalidation reason "
-                                    f"{edge.invalidation_reason!r}, not a registered reason (specs/0041 §11.2, D1)"), "edge")
+                                    f"{_cred.mask_text(edge.invalidation_reason)!r}, not a registered reason (specs/0041 §11.2, D1)"), "edge")
                         # specs/0041 §4b-ii / INV-11 at the IMPORT boundary (tranche 4b): a record whose
                         # redaction this store already COMPLETED is not repopulated by an import with no notice
                         # for it. Round 11 (R10-02): WITH the notice, the record is written as the attestation's
@@ -3026,7 +3026,7 @@ class SqliteStore(Store):
                         with _SITE_IMPORT_REASON.consult():
                             if ep.retired_reason is not None and ep.retired_reason not in DISPOSITIONED_REASONS:
                                 raise _SITE_IMPORT_REASON.fire(ValueError(
-                                    f"refused: imported episode {ep.id!r} carries retired reason {ep.retired_reason!r}, "
+                                    f"refused: imported episode {ep.id!r} carries retired reason {_cred.mask_text(ep.retired_reason)!r}, "
                                     f"not a registered reason (specs/0041 §11.2, D1)"), "episode")
                         # specs/0041 §2d-iv / §4h(ii): the kind closure binds the IMPORT
                         # boundary as well; a marker-valued kind validates only under
@@ -3042,7 +3042,7 @@ class SqliteStore(Store):
                                             and "kind" in n["fields"] for n in notices)
                                         or "kind" in self._attested_fields(user_id, "episode", ep.id, coverage=True))):
                                 raise _SITE_IMPORT_EPISODE_KIND.fire(ValueError(
-                                    f"refused: imported episode {ep.id!r} kind {ep.kind!r} is not a "
+                                    f"refused: imported episode {ep.id!r} kind {_cred.mask_text(ep.kind)!r} is not a "
                                     f"recognised operational kind — the closure binds the import "
                                     f"boundary (specs/0041 §2d-iv, §4h(ii))"))
                         with _SITE_IMPORT_ATTESTED.consult():

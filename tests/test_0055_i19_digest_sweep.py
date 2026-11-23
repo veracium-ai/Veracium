@@ -76,6 +76,8 @@ SITES = {
     32: (("trust_tools.py", "snapshot_digest"), []),
     33: (("trust_tools.py", "PreviewTokenIssuer._mac"), []),
     34: S.SITE34, 35: S.SITE35, 36: S.SITE36,
+    37: (("contribution.py", "request_digest_under"), [(SQL, "SqliteStore.apply_supersession_plan")]),   # I19-F2
+    38: S.SITE_24_ID, 39: S.SITE_24_EV,                                                                  # I19-F2
     "P": (("ingest.py", "_len_sha16"), []),
 }
 
@@ -86,9 +88,9 @@ DEST = {
     4: {"confirmations.request_digest", "request_registry.request_digest", "export"},
     5: {"replies.request_digest", "request_registry.request_digest", "export"},
     6: {"contribution_ledger.identity_digest"}, 7: {"contribution_ledger.evidence_ref_digest"},
-    8: {"contribution_ledger.identity_digest"}, 9: {"contribution_ledger.evidence_ref_digest"},
+    8: {"contribution_ledger.identity_digest", "returned", "audit"}, 9: {"contribution_ledger.evidence_ref_digest"},
     10: {"contribution_ledger.op_key"}, 11: {"contribution_ledger.identity_digest"}, 12: {"contribution_ledger.op_key"},
-    13: set(), 14: set(), 15: set(), 16: set(),
+    13: set(), 14: {"returned", "audit"}, 15: set(), 16: set(),
     17: {"redactions.id"},
     18: {"migration_outcome.outcome_uid", "export"}, 19: {"request_registry.request_digest"},
     20: {"migration_outcome.outcome_uid", "export"},
@@ -97,19 +99,14 @@ DEST = {
     23: {"migration_op.inputs_digest"}, 24: {"contribution_ledger.id"}, 25: set(), 26: set(),
     27: {"source_revocations.identity_digest", "returned", "audit"},
     28: {"edge_embedding.content_digest"}, 29: set(), 30: set(), 31: set(),
-    32: {"returned"}, 33: {"returned"}, 34: set(), 35: {"contribution_ledger.identity_digest"}, 36: set(),
+    32: {"returned"}, 33: {"returned"}, 34: {"returned", "audit"}, 35: {"contribution_ledger.identity_digest"}, 36: set(),
+    37: {"supersession_operations.request_digest"}, 38: {"contribution_ledger.identity_digest"},
+    39: {"contribution_ledger.evidence_ref_digest"},
     "P": {"diagnostics"},
 }
 
 # ---- legacy-capable digest sites census F did not list (completeness findings), with where each may land ----------
-UNMAPPED_SITES = {
-    "raw-request digest (contribution.request_digest_under, in apply_supersession_plan)":
-        ((("contribution.py", "request_digest_under"), [(SQL, "SqliteStore.apply_supersession_plan")]), set()),
-    "import ledger identity digest (scope_linkage.reconstruct_absorption_rows)": (S.SITE_24_ID, {
-        "contribution_ledger.identity_digest"}),
-    "import ledger evidence-ref digest (scope_linkage.reconstruct_absorption_rows)": (S.SITE_24_EV, {
-        "contribution_ledger.evidence_ref_digest"}),
-}
+UNMAPPED_SITES: dict = {}    # v0.5.5: I19-F2's three sites are map rows 37-39 (the owner's ruling, 2026-11-23)
 
 # ---- the sweep: (row, component, name, scenario, control value, control needle, shaped value, shaped needle,
 #      needle_from) -- several entries may serve one (row, component) -------------------------------------------------
@@ -143,6 +140,11 @@ SWEEP = [
     _e(9, C(9, 1), "consolidate-evidence_ref", S.consolidate_over("evidence_ref"), "ev-" + PL, PL, "ev-" + GH, GH),
     _e(14, C(14, 0), "partition-source_id", S.consolidate_over("source_id", standing=True), "src-" + PL, PL, _SRC_S, GH),
     _e(14, C(14, 0), "partition-origin", S.consolidate_over("origin", standing=True), "o-" + PL, PL, _ORG_S, GH),
+    _e(34, C(34, 0), "partition-source_id", S.consolidate_over("source_id", standing=True), "src-" + PL, PL, _SRC_S,
+       GH),                                       # v0.5.5: the pool key's destinations reached through row 34
+    _e(37, C(37, 0), "absorb-user_id", S.absorb(uid_from_value=True), S.UID_C, PL, S.UID_S, GH),
+    _e(38, C(38, 0), "ledger-source_id", S.sc_ledger_source_id, "agent-" + PL, PL, "agent-" + GH, GH),
+    _e(39, C(39, 0), "ledger-evidence_ref", S.sc_ledger_evidence_ref, "ev-" + PL, PL, "ev-" + GH, GH),
     _e(15, C(15, 0), "why-source_id", S.why_over("source_id"), "src-" + PL, PL, _SRC_S, GH),
     _e(15, C(15, 0), "why-origin", S.why_over("origin"), "o-" + PL, PL, _ORG_S, GH),
     _e(16, C(16, 0), "redact-source_id", S.redact_over("source_id"), "src-" + PL, PL, _SRC_S, GH),
@@ -284,10 +286,10 @@ def test_each_component_follows_its_rule(entry):
 
 def test_the_sweep_serves_every_map_row_and_nothing_else():
     """Every (row, component) of the map has at least one entry, every entry names one, and the map is the 99 rows
-    research's digest_map.py generated (98 census components and the provider-text row P)."""
+    research's digest_map.py generated (101 census components and the provider-text row P; 98 before v0.5.5)."""
     served = {(e[0], e[1]) for e in SWEEP}
     assert served == set(MAP_ROWS), (sorted(set(MAP_ROWS) - served), sorted(served - set(MAP_ROWS)))
-    assert len(S.MAP["rows"]) == 99 and len(MAP_ROWS) == 99
+    assert len(S.MAP["rows"]) == 102 and len(MAP_ROWS) == 102
     assert set(SITES) == {r for r, _ in MAP_ROWS} == set(DEST)
     assert len({_id(e) for e in SWEEP}) == len(SWEEP) == len(EXPECTED) and set(EXPECTED) == {_id(e) for e in SWEEP}
 
@@ -415,7 +417,7 @@ EXPECTED: dict = {
         "MAP: unreachable: absorption needs the incoming record's source identity to equal the prior's, and `remember` refuses a shaped source_id at ingress (§4b)"),
     'r1:prior_upserts[].provenance.origin-[remember--procedure:run': (True, True, None),
     'r1:prior_upserts[].invalidation_reason-[remember--procedure:run': (True, True, 'ValueError',
-        'MAP: refused AFTER the digest, for every value it can carry: only an unregistered (legacy prose) reason can hold text, and the store refuses an unregistered reason on the re-upsert (0041 §11.2) with a ValueError, rolled back. Its message quotes the stored reason (a finding, E1)'),
+        'MAP: refused AFTER the digest, for every value it can carry: only an unregistered (legacy prose) reason can hold text, and the store refuses an unregistered reason on the re-upsert (0041 §11.2) with a ValueError, rolled back. Its message masks the stored reason before quoting it (I19-F6, fixed 2026-11-23)'),
     'r1:prior_upserts[].supersedes-[remember--procedure--absorpt:run': (True, True, None),
     'r1:prior_upserts[].original_relation-[remember--procedure:run': (True, True, None),
     'r1:prior_upserts[].agreement.markers-[remember--procedure:run': (True, True, None),
@@ -494,6 +496,13 @@ EXPECTED: dict = {
         'MAP: the import screen (§4h) refuses the record whose provenance identifier carries a shape before the quarantine decision digests it'),
     'r25:source_id---file-provenance.source_id--p-1453-1460:extra-sc_quarantine_episode_source_id': (True, False, None,
         'MAP: the import screen (§4h) refuses the record whose provenance identifier carries a shape before the quarantine decision digests it'),
+    # v0.5.5 (the owner's I19 rulings, 2026-11-23): row 34 through maintain(), and rows 37-39 (I19-F2's sites)
+    'r34:record.provenance.origin--.source_id-of-a-held-record--_:partition-source_id': (True, True, None),
+    'r37:plan.raw_request--the-stored-prior-s-user_id:absorb-user_id': (True, True, 'CredentialRefused',
+        'MAP: refused AFTER the digest, as row 37 states: a shaped stored user_id is hashed, then the store guard (I13) '
+        'refuses the write and it rolls back, so the digest persists nowhere'),
+    'r38:origin--source_id-of-each-absorbed-record-s-file-provena:ledger-source_id': (True, False, None),
+    'r39:origin--evidence_ref-of-each-absorbed-record-s-file-prov:ledger-evidence_ref': (True, False, None),
 }
 
 # ---- destinations the map does not list: {(row, entry id): {sink labels}} -- findings against the map --------------
@@ -504,12 +513,7 @@ EXPECTED: dict = {
 # the host, to the MCP `maintain` tool and to an adapter's `maintain` (mcp_server.maintain_impl), and LOGGED, none of
 # which census F lists. For a legacy record whose source_id carries a shape, a digest over it reaches a tool result.
 _POOL_KEY = {"returned", "audit"}
-UNDECLARED: dict = {
-    (8, "r8:inp.provenance.origin--resolved--of-each-claimed-input-e:consolidate-origin"): _POOL_KEY,
-    (8, "r8:inp.provenance.source_id:consolidate-source_id"): _POOL_KEY,
-    (14, "r14:stored-e.provenance.origin--.source_id:partition-source_id"): _POOL_KEY,
-    (14, "r14:stored-e.provenance.origin--.source_id:partition-origin"): _POOL_KEY,
-}
+UNDECLARED: dict = {}    # v0.5.5: I19-F1's pool-key destinations are declared in rows 8, 14 and 34 (the owner's ruling, 2026-11-23)
 
 
 def test_d3_the_reason_is_checked_before_the_identity_digest():

@@ -549,6 +549,44 @@ def test_i13_the_guard_refuses_an_introduced_shape_and_passes_transitions_over_a
     mem.close()
 
 
+# ---- I19-F6 (fixed): a store refusal masks a credential-shaped value it quotes --------------------------------------
+
+@pytest.mark.parametrize("site", ["edge-reupsert", "episode-retired", "episode-kind", "journal-reason"])
+def test_i19_f6_a_store_refusal_masks_the_value_it_quotes(tmp_path, site):
+    """I19-F6, fixed on the owner's ruling (2026-11-23, "fix it"): the store refuses an unregistered reason or episode
+    kind with a message that quotes the value, and a legacy value can carry a shape (the I19 sweep's
+    prior_upserts[].invalidation_reason entry raised to the library caller with it). Each quoting message masks the value
+    before quoting it. The edge case is the legacy route: a planted pre-0055 reason, read back, written again. RED
+    against: the quoting site restored to `{value!r}`."""
+    from datetime import datetime, timezone
+    from veracium.schema import Episode, Provenance
+    mem = _mem(tmp_path)
+    shaped = "replaced; see " + _shaped()
+    prov = Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev-f6", source_id="chat")
+    if site == "edge-reupsert":
+        e = _seed_edge(mem)
+        _plant(str(tmp_path / "m.db"), e.id, active=False, invalidated_at="2026-01-02T00:00:00Z",
+               invalidation_reason=shaped)
+        stored = next(x for x in mem.store.edges("u", active_only=False, include_quarantined=True) if x.id == e.id)
+        assert stored.invalidation_reason == shaped          # the legacy value loads (the closure binds writers only)
+        call = lambda: mem.store.add_edge(stored)            # noqa: E731
+    elif site == "episode-retired":
+        call = lambda: mem.store.add_episode(Episode(id="ep-f6a", user_id="u", date="2026-01-01", summary="s",  # noqa: E731
+                                                     provenance=prov, retired_reason=shaped))
+    elif site == "episode-kind":
+        call = lambda: mem.store.add_episode(Episode(id="ep-f6b", user_id="u", date="2026-01-01", summary="s",  # noqa: E731
+                                                     provenance=prov, kind="note " + _shaped()))
+    else:
+        e = _seed_edge(mem)
+        call = lambda: mem.store.invalidate_edge(e.id, datetime.now(timezone.utc), shaped)  # noqa: E731
+    with pytest.raises(ValueError) as ei:
+        call()
+    msg = str(ei.value)
+    assert not _secrets_in(msg, short=False), msg
+    assert "[credential withheld" in msg, msg
+    mem.close()
+
+
 # ---- I14: the two-step erase survives every screen ----------------------------------------------------------------
 
 def test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld(tmp_path):
