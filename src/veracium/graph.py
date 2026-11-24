@@ -350,6 +350,23 @@ class CorrectionRefused(Exception):
             f"extractor-driven supersession)")
 
 
+class CorrectionOfUnclassified(ValueError):
+    """specs/0011 §4e, amendment `0011/correct-refuses-unclassified` (0011-UNCL): the prior's relation is 0025's
+    reserved `unclassified`, so a correction, which copies the prior's subject and relation, would mint a
+    user-authored, assertable fact under a relation nothing can supersede or group by. Raised inside the write
+    transaction BEFORE any plan, so nothing is written (unlike `CorrectionRefused`, a COMMITTED refusal). The message
+    names the remedy: remember the corrected statement, so extraction gives it a real relation."""
+
+    reason = "correction_of_unclassified"
+
+    def __init__(self, prior_edge_id: str):
+        self.prior_edge_id = prior_edge_id
+        super().__init__(
+            f"edge {prior_edge_id!r} is under the reserved relation 'unclassified', so correct() does not mint a "
+            f"successor for it (specs/0011 §4e, 0011-UNCL) — remember the corrected statement instead "
+            f"[{self.reason}]")
+
+
 def plan_correction(store, prior: Edge, replacement: Edge,
                     op_id: str) -> tuple[SupersessionPlan, bool]:
     """specs/0011 §4e (E5): the plan for one DIRECTED correction — the named

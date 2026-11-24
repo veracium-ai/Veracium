@@ -27,6 +27,7 @@ REFUSALS = (
     "not_found_in_scope",      # 7. CROSS_HIDDEN, UNRESOLVED, another user's id, an unknown id: one response
     "out_of_scope",            # 7. SHARED or CROSS_VISIBLE under a principal
     "correction_refused",      # 8. CorrectionRefused: a COMMITTED refusal (TT-R2-02)
+    "correction_of_unclassified",  # 8. CorrectionOfUnclassified: writes nothing (0011/correct-refuses-unclassified)
     "preview_expired",         # §4e step 3
     "store_changed",           # §4e step 4
     "refused",                 # 8. any other library refusal (ValueError, TypeError, ScopeError)
@@ -44,6 +45,9 @@ _DETAILS = {
     "source_out_of_scope": "this binding's source is not in the principal's own scope",
     "not_found_in_scope": NOT_FOUND_DETAIL,
     "out_of_scope": OUT_OF_SCOPE_DETAIL,
+    # 0011/correct-refuses-unclassified: fixed, so it carries no record content (0055 §4g E1), and names the remedy
+    "correction_of_unclassified": "this fact is under the reserved relation 'unclassified' and is not corrected; "
+                                  "remember the corrected statement instead",
 }
 
 

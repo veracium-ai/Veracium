@@ -481,6 +481,11 @@ def _trust_call(mem: Memory, fn) -> dict:
                 raise TrustInternalError(f"{type(exc).__name__} after a commit in this call") from exc
             if isinstance(exc, TrustRefused):
                 return _trust_refusal(exc.reason, exc.detail)
+            if isinstance(exc, graph.CorrectionOfUnclassified):
+                # 0011/correct-refuses-unclassified: its own reason, never `refused` (which would hide the remedy)
+                # and never `correction_refused` (the COMMITTED refusal); nothing was written. Its detail is the
+                # fixed one in trust_tools._DETAILS: content-free (0055 §4g E1) and naming the remedy
+                return _trust_refusal(exc.reason)
             if isinstance(exc, _cred.CredentialRefused):
                 return exc.as_refusal()                          # specs/0055 §4g: nothing was written
             return _trust_refusal("refused", _cred.outward_text(exc))                 # specs/0055 §4g E1

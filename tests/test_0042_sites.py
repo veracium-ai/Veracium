@@ -307,6 +307,13 @@ def _other_subject_prior_in(mem):
     mem.store.add_edge(e); return e.id
 
 
+def _unclassified_prior_in(mem):
+    # specs/0011 §4e 0011-UNCL: a prior under 0025's reserved relation (tests/test_0011_correct_refuses_unclassified.py
+    # drives both real ingest paths; the census needs only the site's declining execution)
+    e = _edge("p10", "carpenter", rel=UNCLASSIFIED_RELATION)
+    mem.store.add_edge(e); return e.id
+
+
 def _reporter_not_consented():
     r = D.Reporter(); r.config.endpoint = "https://example.invalid/collect"
     assert r.send(interactive=False) is False
@@ -368,6 +375,7 @@ DECLINES.update({
         __import__("veracium.procedures", fromlist=["ProcedureValueError"]).ProcedureValueError,
         lambda m: m.correct(U, _procedural_edge_in(m), "new")),
     "memory.correct.refused": lambda mp: _memory_raises(graph.CorrectionRefused, lambda m: m.correct(U, _other_subject_prior_in(m), "surgeon")),
+    "memory.correct.unclassified": lambda mp: _memory_raises(graph.CorrectionOfUnclassified, lambda m: m.correct(U, _unclassified_prior_in(m), "joiner")),
     "diagnostics.send.not-consented": lambda mp: _reporter_not_consented(),
     "telemetry.preview.invalid-consent": lambda mp: _telemetry(mp, T.preview),
     "telemetry.preview.not-enabled": lambda mp: _telemetry(mp, T.preview, enabled=False),

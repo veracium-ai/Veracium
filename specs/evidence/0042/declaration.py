@@ -50,6 +50,7 @@ DECLARATION = (
     ("memory.correct.inactive-edge", "0011", "§4b", "__init__.py:Memory.correct", "refuse"),
     ("memory.correct.procedural", "0037", "§4a-iii", "__init__.py:Memory.correct", "refuse"),
     ("memory.correct.refused", "0011", "§4b", "__init__.py:Memory.correct", "refuse"),
+    ("memory.correct.unclassified", "0011", "§4e 0011-UNCL", "__init__.py:Memory.correct", "refuse"),
     ("memory.dispute.inactive-edge", "0003", "§4b", "__init__.py:Memory.dispute", "refuse"),
     ("memory.edge.unknown-target", "0041", "INV-5", "__init__.py:Memory._find_edge", "refuse"),
     ("memory.edges-since.no-journal", "0049", "E2", "__init__.py:Memory.edges_since", "refuse"),

@@ -80,22 +80,21 @@ DEFAULT = {
     "store/near_misses.py": "internal-invariant",  # 0007 §4g.6 4b (I3): head_variant refuses a near-miss whose anchor moved; runtime_status() reads that escape as `refused`, so it is not an enforcement point of its own
 }
 OVERRIDE = {  # (module, line) -> reason class, where the module default is not the truth for that line
-    ("portability.py", 1033): "argument-check",   # specs/0055 §4h: withhold_credentials refused unless a bool
-    ("__init__.py", 438): "control-flow", ("__init__.py", 519): "control-flow", ("__init__.py", 707): "control-flow",
-    ("__init__.py", 1086): "control-flow", ("__init__.py", 1781): "control-flow", ("__init__.py", 1938): "control-flow",
-    ("__init__.py", 1960): "control-flow", ("__init__.py", 2012): "control-flow", ("__init__.py", 2019): "control-flow",
-    ("__init__.py", 2030): "control-flow", ("__init__.py", 2037): "control-flow", ("__init__.py", 2066): "control-flow",
-    ("__init__.py", 2665): "internal-invariant", ("__init__.py", 2950): "control-flow",
-    ("__init__.py", 340): "internal-invariant", ("__init__.py", 347): "internal-invariant",
-    ("__init__.py", 1174): "internal-invariant", ("__init__.py", 1178): "internal-invariant", ("__init__.py", 1182): "internal-invariant",
-    ("__init__.py", 1189): "internal-invariant", ("__init__.py", 1191): "internal-invariant",
+    ("__init__.py", 440): "control-flow", ("__init__.py", 521): "control-flow", ("__init__.py", 709): "control-flow",
+    ("__init__.py", 1088): "control-flow", ("__init__.py", 1783): "control-flow", ("__init__.py", 1940): "control-flow",
+    ("__init__.py", 1962): "control-flow", ("__init__.py", 2014): "control-flow", ("__init__.py", 2021): "control-flow",
+    ("__init__.py", 2032): "control-flow", ("__init__.py", 2039): "control-flow", ("__init__.py", 2068): "control-flow",
+    ("__init__.py", 2674): "internal-invariant", ("__init__.py", 2959): "control-flow",
+    ("__init__.py", 342): "internal-invariant", ("__init__.py", 349): "internal-invariant",
+    ("__init__.py", 1176): "internal-invariant", ("__init__.py", 1180): "internal-invariant", ("__init__.py", 1184): "internal-invariant",
+    ("__init__.py", 1191): "internal-invariant", ("__init__.py", 1193): "internal-invariant",
     ("agreement.py", 219): "predicate-helper", ("agreement.py", 267): "control-flow", ("agreement.py", 487): "control-flow",
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 118): "internal-invariant", ("asof/resolve.py", 123): "internal-invariant",
     ("asof/resolve.py", 182): "control-flow", ("asof/resolve.py", 207): "predicate-helper",
     ("compile.py", 230): "predicate-helper", ("diagnostics.py", 219): "predicate-helper", ("diagnostics.py", 255): "predicate-helper",
     ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 61): "predicate-helper", ("graph.py", 76): "predicate-helper", ("graph.py", 242): "internal-invariant",
-    ("graph.py", 927): "argument-check", ("grounding.py", 154): "control-flow",
+    ("graph.py", 944): "argument-check", ("grounding.py", 154): "control-flow",
     ("ingest.py", 185): "control-flow", ("ingest.py", 137): "argument-check",
     ("lifecycle.py", 197): "control-flow", ("lifecycle.py", 356): "control-flow",
     ("portability.py", 1245): "control-flow",
@@ -122,13 +121,13 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
     ("store/schema_version.py", 1987): "argument-check", ("store/schema_version.py", 2179): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
-    ("mcp_server.py", 1053): "cli-usage", ("mcp_server.py", 1059): "cli-usage", ("mcp_server.py", 1065): "cli-usage", ("mcp_server.py", 1085): "cli-usage",
+    ("mcp_server.py", 1058): "cli-usage", ("mcp_server.py", 1064): "cli-usage", ("mcp_server.py", 1070): "cli-usage", ("mcp_server.py", 1090): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
-    ("__init__.py", 307): "control-flow",   # carried: __init__.py:_agent_call_path:RETURN_NONE:1
-    ("__init__.py", 2163): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1
-    ("__init__.py", 2762): "control-flow",   # carried: __init__.py:Memory.forget_everything_confirm:RAISE:2
-    ("__init__.py", 2792): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
-    ("__init__.py", 2828): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
+    ("__init__.py", 309): "control-flow",   # carried: __init__.py:_agent_call_path:RETURN_NONE:1
+    ("__init__.py", 2165): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1
+    ("__init__.py", 2771): "control-flow",   # carried: __init__.py:Memory.forget_everything_confirm:RAISE:2
+    ("__init__.py", 2801): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
+    ("__init__.py", 2837): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
     ("adapters/_surface.py", 50): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
     ("adapters/_surface.py", 54): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
     ("adapters/pydantic_ai.py", 64): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
@@ -141,13 +140,14 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("mcp_server.py", 446): "control-flow",   # carried: mcp_server.py:_scope_configuration:RETURN_NONE:2
     ("mcp_server.py", 453): "control-flow",   # carried: mcp_server.py:_unscoped_target_missing:RETURN_NONE:1
     ("mcp_server.py", 481): "internal-invariant",   # _trust_call: a failure after a commit in the call raises (INV-TT11's phase rule)
-    ("mcp_server.py", 499): "control-flow",   # carried: mcp_server.py:find_facts_report:BOOL_RETURN:1
-    ("mcp_server.py", 513): "control-flow",   # carried: mcp_server.py:correct_fact_report:BOOL_RETURN:1
-    ("mcp_server.py", 523): "control-flow",   # carried: mcp_server.py:dispute_fact_report:BOOL_RETURN:1
-    ("mcp_server.py", 531): "control-flow",   # carried: mcp_server.py:dispute_fact_report:BOOL_RETURN:2
-    ("mcp_server.py", 541): "control-flow",   # carried: mcp_server.py:confirm_fact_report:BOOL_RETURN:1
-    ("mcp_server.py", 555): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:1
-    ("mcp_server.py", 561): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:2
+    ("mcp_server.py", 504): "control-flow",   # carried: mcp_server.py:find_facts_report:BOOL_RETURN:1
+    ("mcp_server.py", 518): "control-flow",   # carried: mcp_server.py:correct_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 528): "control-flow",   # carried: mcp_server.py:dispute_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 536): "control-flow",   # carried: mcp_server.py:dispute_fact_report:BOOL_RETURN:2
+    ("mcp_server.py", 546): "control-flow",   # carried: mcp_server.py:confirm_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 560): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:1
+    ("mcp_server.py", 566): "control-flow",   # carried: mcp_server.py:forget_fact_report:BOOL_RETURN:2
+    ("portability.py", 1033): "argument-check",   # specs/0055 §4h: withhold_credentials refused unless a bool
     ("proactive.py", 258): "control-flow",   # 0012 v18.2 (N3): proactive.py:assemble._framed_line:RETURN_NONE:1, a subject line that cannot fit its cap is dropped (budget plumbing), as _commit_line's
     ("proactive.py", 281): "control-flow",   # 0003/obligations N1–N4 (NEW 1): proactive.py:assemble._commit_line:RETURN_NONE:1, a line that cannot fit its cap is dropped (budget plumbing)
     ("proactive.py", 331): "control-flow",   # 0003/obligations N1–N4 (N1): proactive.py:assemble._contested_line:RETURN_NONE:1, a group line that cannot hold one slot is dropped (budget plumbing)
@@ -166,9 +166,9 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/schema_version.py", 1993): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:4
     ("store/schema_version.py", 2000): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:5
     ("store/sqlite.py", 4288): "control-flow",   # carried: store/sqlite.py:SqliteStore._erase_preview_keys:FILTER_RETURN:1
-    ("trust_tools.py", 62): "internal-invariant",   # carried: trust_tools.py:TrustRefused.__init__:RAISE:1
-    ("trust_tools.py", 101): "control-flow",   # carried: trust_tools.py:_sorted_keys:FILTER_RETURN:1
-    ("trust_tools.py", 267): "internal-invariant",   # RenderReceipt.admit: a subject not at its offset in the admitted line
+    ("trust_tools.py", 66): "internal-invariant",   # carried: trust_tools.py:TrustRefused.__init__:RAISE:1
+    ("trust_tools.py", 105): "control-flow",   # carried: trust_tools.py:_sorted_keys:FILTER_RETURN:1
+    ("trust_tools.py", 271): "internal-invariant",   # RenderReceipt.admit: a subject not at its offset in the admitted line
 }
 REASON_TEXT = {
     "argument-check": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
@@ -244,19 +244,19 @@ e("gate.py", 123, "gate.scoped-assertable.third-party-shaped", "0020", "§4a", "
 e("graph.py", 301, "graph.absorption.cross-scope", "0020", "§4a-iii", "withhold")
 e("graph.py", 303, "graph.absorption.no-flattening-plan", "0021", "§4a", "withhold")
 e("graph.py", 298, "graph.absorption.scope-unresolved", "0020", "§4a-iii", "withhold")
-e("graph.py", 1395, "graph.collapse-for-render", "0012", "§4c", "withhold")
-e("graph.py", 1320, "graph.collapse.acted", "0047", "§4e (collapse never hides a member carrying an act, nor one behind a withheld survivor)", "withhold")
-e("graph.py", 369, "graph.correction.identity-mismatch", "0011", "§4b", "refuse")
-e("graph.py", 381, "graph.correction.prior-not-active", "0011", "§4b", "refuse")
-e("graph.py", 866, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 872, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 874, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 876, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 878, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 880, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
-e("graph.py", 440, "graph.src-revoked", "0022", "§4a", "withhold")
-e("graph.py", 444, "graph.src-revoked", "0022", "§4a", "withhold")
-e("graph.py", 1238, "graph.strictly-redundant", "0012", "§4c", "withhold")
+e("graph.py", 1412, "graph.collapse-for-render", "0012", "§4c", "withhold")
+e("graph.py", 1337, "graph.collapse.acted", "0047", "§4e (collapse never hides a member carrying an act, nor one behind a withheld survivor)", "withhold")
+e("graph.py", 386, "graph.correction.identity-mismatch", "0011", "§4b", "refuse")
+e("graph.py", 398, "graph.correction.prior-not-active", "0011", "§4b", "refuse")
+e("graph.py", 883, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 889, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 891, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 893, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 895, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 897, "graph.semantic-duplicate.keep", "0012", "§4c", "withhold")
+e("graph.py", 457, "graph.src-revoked", "0022", "§4a", "withhold")
+e("graph.py", 461, "graph.src-revoked", "0022", "§4a", "withhold")
+e("graph.py", 1255, "graph.strictly-redundant", "0012", "§4c", "withhold")
 e("graph.py", 195, "graph.supersession.receipt-boundary", "0014", "R10", "refuse")
 e("graph.py", 221, "graph.supersession.replay-mismatch", "0014", "§4b", "refuse")
 e("grounding.py", 243, "grounding.ungrounded", "0019", "§4", "downgrade")
@@ -265,22 +265,23 @@ e("ingest.py", 397, "ingest.instructions-not-a-list", "0039", "§2a", "downgrade
 e("ingest.py", 325, "ingest.source-id-required", "0006", "§4 rule 9", "refuse")
 e("mcp_server.py", 126, "mcp.closed-set.author", "0011", "§4d", "refuse")
 e("mcp_server.py", 135, "mcp.closed-set.trust-field", "0011", "§4d", "refuse")
-e("__init__.py", 2325, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
-e("__init__.py", 2610, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
-e("__init__.py", 2630, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
-e("__init__.py", 2685, "memory.correct.refused", "0011", "§4b", "refuse")
-e("__init__.py", 2233, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
-e("__init__.py", 2195, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
-e("__init__.py", 2112, "memory.edges-since.no-journal", "0049", "E2", "refuse")
-e("__init__.py", 2120, "memory.edges-since.no-journal-event", "0049", "E2b", "refuse")
-e("__init__.py", 2137, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
-e("__init__.py", 1062, "memory.recall.as-of-on-proactive", "0028", "§2c", "refuse")
-e("__init__.py", 1199, "memory.recall.policy-with-as-of", "0027", "v13 §4c", "refuse")
-e("__init__.py", 1068, "memory.recall.render-receipt-with-as-of", "0031", "INV-TT3", "refuse")
-e("__init__.py", 2457, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
-e("__init__.py", 2460, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
-e("__init__.py", 2463, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
-e("__init__.py", 443, "memory.scope.local-origin-missing", "0006", "I9", "refuse")
+e("__init__.py", 2327, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
+e("__init__.py", 2612, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
+e("__init__.py", 2632, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
+e("__init__.py", 2694, "memory.correct.refused", "0011", "§4b", "refuse")
+e("__init__.py", 2642, "memory.correct.unclassified", "0011", "§4e 0011-UNCL", "refuse")
+e("__init__.py", 2235, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
+e("__init__.py", 2197, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
+e("__init__.py", 2114, "memory.edges-since.no-journal", "0049", "E2", "refuse")
+e("__init__.py", 2122, "memory.edges-since.no-journal-event", "0049", "E2b", "refuse")
+e("__init__.py", 2139, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
+e("__init__.py", 1064, "memory.recall.as-of-on-proactive", "0028", "§2c", "refuse")
+e("__init__.py", 1201, "memory.recall.policy-with-as-of", "0027", "v13 §4c", "refuse")
+e("__init__.py", 1070, "memory.recall.render-receipt-with-as-of", "0031", "INV-TT3", "refuse")
+e("__init__.py", 2459, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
+e("__init__.py", 2462, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2465, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
+e("__init__.py", 445, "memory.scope.local-origin-missing", "0006", "I9", "refuse")
 e("portability.py", 506, "portability.export.non-quiescent", "0010", "X-quiesce", "refuse")
 e("portability.py", 2059, "portability.import.act-preflight", "0008", "§6e–§6f", "refuse")
 e("portability.py", 2064, "portability.import.act-preflight", "0008", "§6e–§6f", "refuse")
@@ -616,20 +617,20 @@ e("telemetry.py", 374, "telemetry.flush.invalid-consent", "0015", "§4", "withho
 e("telemetry.py", 380, "telemetry.flush.not-enabled", "0015", "§4", "withhold")
 e("telemetry.py", 345, "telemetry.preview.invalid-consent", "0015", "§4", "withhold")
 e("telemetry.py", 350, "telemetry.preview.not-enabled", "0015", "§4", "withhold")
-e("__init__.py", 2757, "trust.erase.confirm.principal-scoped", "0031", "INV-TT17", "refuse")
-e("__init__.py", 2737, "trust.erase.preview.issuer-context", "0031", "§4e", "refuse")
-e("__init__.py", 2734, "trust.erase.preview.principal-scoped", "0031", "INV-TT17", "refuse")
+e("__init__.py", 2766, "trust.erase.confirm.principal-scoped", "0031", "INV-TT17", "refuse")
+e("__init__.py", 2746, "trust.erase.preview.issuer-context", "0031", "§4e", "refuse")
+e("__init__.py", 2743, "trust.erase.preview.principal-scoped", "0031", "INV-TT17", "refuse")
 e("store/sqlite.py", 4313, "trust.erase.store-changed", "0031", "INV-TT8", "refuse")
-e("__init__.py", 2921, "trust.receipt.scope-filter", "0031", "INV-TT19", "withhold")
-e("__init__.py", 2168, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2930, "trust.receipt.scope-filter", "0031", "INV-TT19", "withhold")
 e("__init__.py", 2170, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2174, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2179, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2182, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2187, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2188, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("trust_tools.py", 165, "trust.token.parse", "0031", "INV-TT21", "refuse")
-e("trust_tools.py", 214, "trust.token.verify", "0031", "INV-TT8", "refuse")
-e("trust_tools.py", 216, "trust.token.verify", "0031", "INV-TT8", "refuse")
-e("trust_tools.py", 219, "trust.token.verify", "0031", "INV-TT8", "refuse")
-e("trust_tools.py", 221, "trust.token.verify", "0031", "INV-TT8", "refuse")
+e("__init__.py", 2172, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2176, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2181, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2184, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2189, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2190, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("trust_tools.py", 169, "trust.token.parse", "0031", "INV-TT21", "refuse")
+e("trust_tools.py", 218, "trust.token.verify", "0031", "INV-TT8", "refuse")
+e("trust_tools.py", 220, "trust.token.verify", "0031", "INV-TT8", "refuse")
+e("trust_tools.py", 223, "trust.token.verify", "0031", "INV-TT8", "refuse")
+e("trust_tools.py", 225, "trust.token.verify", "0031", "INV-TT8", "refuse")

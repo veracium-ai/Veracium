@@ -45,6 +45,19 @@ amendment `0041/confirm-quoting`; specs/0009 v7.1).
 - **Who should upgrade:** deployments that honour erasure requests through `redact` and whose users confirm or
   dispute facts.
 
+**`correct()` refuses a fact stored under the reserved `unclassified` relation** (specs/0011 v23.1, amendment
+`0011/correct-refuses-unclassified`; specs/0031 v23.10).
+- **Changed: `Memory.correct` on such a fact raises `graph.CorrectionOfUnclassified` (a `ValueError`, reason
+  `correction_of_unclassified`) and writes nothing.** `unclassified` holds a claim whose extraction was incoherent, or
+  whose relation fell outside the vocabulary. A correction copies the prior's relation, so it used to mint a
+  user-authored fact under `unclassified` that recall could assert and nothing could supersede. The remedy the refusal
+  names: remember the corrected statement, so extraction gives it a real relation. A fact under any other relation is
+  corrected as before; `dispute` still retires an `unclassified` fact.
+- **Changed: the `correct_fact` agent tool returns `{"ok": false, "refusal": "correction_of_unclassified"}`** for
+  such a fact, with a fixed detail naming the remedy (it would have corrected it).
+- **Who must act:** a host that calls `correct()` on facts it lists from the store, and an agent driver that matches
+  `correct_fact`'s refusal names; neither sees a new refusal unless the fact is under `unclassified`.
+
 ## 0.33.0 — 2026-11-18
 
 **A user can look up, correct, dispute, confirm and erase their memory through their agent, and `veracium mcp`

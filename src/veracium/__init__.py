@@ -93,6 +93,8 @@ _SITE_OUTCOME_HUMAN = declare_site("memory.record-outcome.human-judgment")
 _SITE_OUTCOME_SYSTEM = declare_site("memory.record-outcome.system-judgment")
 _SITE_CORRECT_INACTIVE = declare_site("memory.correct.inactive-edge")
 _SITE_CORRECT_PROCEDURAL = declare_site("memory.correct.procedural")
+# specs/0011 §4e, amendment 0011/correct-refuses-unclassified (0011-UNCL)
+_SITE_CORRECT_UNCLASSIFIED = declare_site("memory.correct.unclassified")
 _SITE_CORRECT_REFUSED = declare_site("memory.correct.refused")
 
 __all__ = ["Memory", "MemoryConfig", "Recall", "PolicyLane", "PolicyReceipt", "FutureAsOfRefused", "AsOfAnswer",
@@ -2586,7 +2588,7 @@ class Memory:
                                                     ("evidence_ref", evidence_ref), ("source_id", source_id)))
         derived: dict = {}
         from . import authority, graph
-        from .schema import CorrectionAuthorisation, correction_digest
+        from .schema import UNCLASSIFIED_RELATION, CorrectionAuthorisation, correction_digest
         from .store.base import PLAN_STALE
         date = date or _today_utc()
         when = _event_dt(date)
@@ -2631,6 +2633,13 @@ class Memory:
                             "correction_of_procedure",
                             f"edge {edge_id!r} is a procedural record; correct() does not mint a successor for one "
                             "(specs/0037 §4a-iii, V-NO-CORRECTION-OF-PROCEDURES) — retire it and restate the procedure"))
+                # specs/0011 §4e, amendment 0011/correct-refuses-unclassified (0011-UNCL): a prior under 0025's
+                # reserved `unclassified` relation is not corrected — the replacement copies the relation, so it
+                # would be a user-authored, assertable fact under a relation nothing supersedes or groups by.
+                # Refused before the plan, so nothing is written; the remedy is remember().
+                with _SITE_CORRECT_UNCLASSIFIED.consult():
+                    if edge.relation == UNCLASSIFIED_RELATION:
+                        raise _SITE_CORRECT_UNCLASSIFIED.fire(graph.CorrectionOfUnclassified(edge_id))
                 # specs/0055 §4c-ii row 8: the prior's identity is copied unchanged, so a shaped one refuses;
                 # the copied note is free text and is masked here, before plan_correction hashes the plan
                 self._refuse_shaped_identity(user_id, edge)
