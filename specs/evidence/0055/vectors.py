@@ -200,6 +200,41 @@ ROWS = [
     ("X4", "limit", "the password is hunter2 spelled backwards: 2retnuh".replace("hunter2 ", "the word "), set()),
     ("X6", "limit", "my password is correct horse battery staple", set()),
     ("X5", "limit", "use " + rnd(40, B62) + " for the staging box", set()),  # unlabelled, unprefixed random secret
+    # --- v0.5.7 (the owner's ruling on research's QC of the test harness, relayed by dev: "Fix the recogniser"): an
+    # underscore no longer shields a token. A structural pattern may not start after, or (where it ends on a boundary)
+    # end before, an ASCII letter or digit; `_` and every other character are a boundary. v0.5.6 used `\b`, for which
+    # `_` and every Unicode letter are word characters, so each G row below was stored with its token. These rows draw no
+    # new random value (every token is one built above), so no earlier row's token moves.
+    ("G1", "glued", f"relation has_key_{GH}", {"github_token"}),          # the test harness's observed model-output form
+    ("G2", "glued", f"cfg.openai_{OPENAI}", {"openai_key"}),
+    ("G3", "glued", f"id AWS_{AWS_ID}", {"aws_access_key_id"}),
+    ("G4", "glued", f"{AWS_ID}_backup", {"aws_access_key_id"}),            # glued after: the trailing boundary
+    ("G5", "glued", f"npm_auth_{NPM}", {"npm_token"}),
+    ("G6", "glued", f"model_{HF}", {"huggingface_token"}),
+    ("G7", "glued", f"STRIPE_{STRIPE}", {"stripe_key"}),
+    ("G8", "glued", f"{GH}_old", {"github_token"}),                        # glued after
+    ("G9", "glued", f"session_{JWT}", {"jwt"}),
+    ("G10", "glued", f"密钥{GH}", {"github_token"}),                        # glued to CJK text, which has no spaces
+    ("G11", "glued", f"claude_{ANTH}", {"anthropic_key"}),
+    ("G12", "glued", "HTTP_AUTHORIZATION: Bas" + "ic dXNlcjpodW50ZXIyaHVudGVyMg==", {"auth_header"}),   # a WSGI environ key (assembled, as every structural row is)
+    ("G13", "glued", f"conn_{DBURL}", {"url_userinfo_password"}),
+    ("G14", "glued", f"maps_{GOOG}", {"google_api_key"}),
+    ("G15", "glued", f"ci_{GL}", {"gitlab_token"}),
+    ("G16", "glued", f"bot_{SLACK}", {"slack_token"}),
+    ("G17", "glued", f"mail_{SG}", {"sendgrid_key"}),
+    ("G18", "glued", f"pat_{GH_FINE}", {"github_token"}),
+    # near-misses for the new boundary: snake_case identifiers holding a vendor prefix, and Stripe's own mode words
+    ("K48", "near-miss", "my_hf_config = load_hf_config(path)", set()),
+    ("K49", "near-miss", "npm_config_cache=/var/cache/npm_cache_dir", set()),
+    ("K50", "near-miss", "if is_sk_test_mode and not use_rk_live_keys:", set()),
+    ("K51", "near-miss", "def strip_ghp_prefix(token_value): return token_value[4:]", set()),
+    ("K52", "near-miss", "MY_PROJECT_AKIA_PREFIX_LENGTH = 4", set()),
+    ("K53", "near-miss", "sk_live_webhook_secret_name and rk_test_restricted_scope_flag", set()),
+    ("K54", "near-miss", "the user_eyJ_flag column and the xoxb_bot_name setting", set()),
+    ("K55", "near-miss", "the risk-assessment-framework-document-v2 is attached", set()),   # `sk-` inside a word: the letter before it is the boundary
+    # stated limits: a token glued to an ASCII letter or digit is part of a longer word and is not recognised
+    ("X7", "limit", f"see x{GH}", set()),
+    ("X8", "limit", f"id 7{AWS_ID}", set()),
 ]
 
 # Every secret value the positive rows carry; the runner asserts none survives masking (substring, after
@@ -207,7 +242,7 @@ ROWS = [
 SECRET_VALUES = [AWS_ID, AWS_SECRET, GH, GH_FINE, GL, SLACK, SLACK_HOOK, STRIPE, ANTH, OPENAI, GOOG, HF, NPM, SG, JWT,
                  PW, "s3cr3tPw", "hunter2", "swordfish", "correcthorsebatterystaple", "blue-otter-lamp-91",
                  "3f9Kq7LmZp2Xv8RtYb4N", "Zq8-rT2_mK9vL4xP", "4821", "Ab3dEf9hJk2L", "Gato!2024", "Soleil2024",
-                 "Sommer2024", "Tr0ub4dor9", "Hunter2Hunter2", "Hunter22", "7351", "0042", "correct horse battery staple", "violet lamp otter 7", "Qz7!mR2", "Tr0ub4dor9x", "Zq8rT2mK9vL4xP7q"] + PEM.split("\n")[1:-1] + PEM_TRUNC.split("\n")[1:]
+                 "Sommer2024", "Tr0ub4dor9", "Hunter2Hunter2", "Hunter22", "7351", "0042", "correct horse battery staple", "violet lamp otter 7", "Qz7!mR2", "Tr0ub4dor9x", "Zq8rT2mK9vL4xP7q", "dXNlcjpodW50ZXIyaHVudGVyMg=="] + PEM.split("\n")[1:-1] + PEM_TRUNC.split("\n")[1:]
 
 # v0.5 (round 2's R2-03): the EXACT report each row must produce, written from the row's text, not from the
 # implementation. The count semantics: a report counts the placeholders mask() wrote that are in its FINAL output, by

@@ -289,14 +289,14 @@
   "line": 282,
   "statement": "return _SITE_SEND_NOT_CONSENTED.fire(False, \"not-consented\")"
  },
- "gate.py:exclude_procedural:55:FILTER_RETURN": {
+ "gate.py:exclude_procedural:54:FILTER_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0037 V-EXTRACTOR-QUOTE-GATED (withhold) through site gate.exclude-procedural",
   "reviewer": "dev",
   "site": "gate.exclude-procedural",
   "class": "enforcement",
   "key": "gate.py:exclude_procedural:FILTER_RETURN:1",
-  "line": 55,
+  "line": 54,
   "statement": "return _SITE_EXCLUDE_PROCEDURAL.fire((kept, len(records) - len(kept)), \"withhold\")"
  },
  "gate.py:partition_parts:180:FILTER_RETURN": {
@@ -309,34 +309,34 @@
   "line": 180,
   "statement": "return _SITE_PARTITION_PARTS.fire((edge_lines, ep_lines, claim_lines, tp_ep_lines), \"withhold\")"
  },
- "gate.py:scoped_assertable:126:RETURN_FALSE": {
+ "gate.py:scoped_assertable:125:RETURN_FALSE": {
   "decision": "enforcement",
   "reason": "enforces 0011 §4c (withhold) through site gate.scoped-assertable.entitlement",
   "reviewer": "dev",
   "site": "gate.scoped-assertable.entitlement",
   "class": "enforcement",
   "key": "gate.py:scoped_assertable:RETURN_FALSE:3",
-  "line": 126,
+  "line": 125,
   "statement": "return _SITE_SCOPED_ENTITLEMENT.fire(False, \"entitlement\")"
  },
- "gate.py:scoped_assertable:120:RETURN_FALSE": {
+ "gate.py:scoped_assertable:119:RETURN_FALSE": {
   "decision": "enforcement",
   "reason": "enforces 0020 §4a (withhold) through site gate.scoped-assertable.invisible",
   "reviewer": "dev",
   "site": "gate.scoped-assertable.invisible",
   "class": "enforcement",
   "key": "gate.py:scoped_assertable:RETURN_FALSE:1",
-  "line": 120,
+  "line": 119,
   "statement": "return _SITE_SCOPED_INVISIBLE.fire(False, \"invisible\")"
  },
- "gate.py:scoped_assertable:123:RETURN_FALSE": {
+ "gate.py:scoped_assertable:122:RETURN_FALSE": {
   "decision": "enforcement",
   "reason": "enforces 0020 §4a (withhold) through site gate.scoped-assertable.third-party-shaped",
   "reviewer": "dev",
   "site": "gate.scoped-assertable.third-party-shaped",
   "class": "enforcement",
   "key": "gate.py:scoped_assertable:RETURN_FALSE:2",
-  "line": 123,
+  "line": 122,
   "statement": "return _SITE_SCOPED_THIRD_PARTY.fire(False, \"third-party-shaped\")"
  },
  "graph.py:_absorption_scope_gate.same_scope:301:RETURN_FALSE": {
@@ -10668,85 +10668,85 @@
   "line": 86,
   "statement": "return sorted(merged.values(), key=lambda h: (h.user_id, h.carrier, h.record_kind, h.record_id))"
  },
- "credentials.py:_looks_generated:119:RETURN_FALSE": {
+ "credentials.py:_looks_generated:120:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:_value_ok",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_looks_generated:RETURN_FALSE:1",
-  "line": 119,
+  "line": 120,
   "statement": "return False"
  },
- "credentials.py:_looks_generated:121:BOOL_RETURN": {
+ "credentials.py:_looks_generated:122:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:_value_ok",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_looks_generated:BOOL_RETURN:1",
-  "line": 121,
+  "line": 122,
   "statement": "return kinds >= 3 or (kinds >= 2 and len(v) >= 12 and _DIGIT.search(v) is not None)"
  },
- "credentials.py:_pydantic_errors:555:RETURN_NONE": {
+ "credentials.py:_pydantic_errors:546:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:outward_text",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_pydantic_errors:RETURN_NONE:1",
-  "line": 555,
+  "line": 546,
   "statement": "return None"
  },
- "credentials.py:_pydantic_errors:557:RETURN_NONE": {
+ "credentials.py:_pydantic_errors:548:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:outward_text",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_pydantic_errors:RETURN_NONE:2",
-  "line": 557,
+  "line": 548,
   "statement": "return None"
  },
- "credentials.py:_value_ok:127:RETURN_FALSE": {
+ "credentials.py:_value_ok:128:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:scan",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_value_ok:RETURN_FALSE:1",
-  "line": 127,
+  "line": 128,
   "statement": "return False"
  },
- "credentials.py:_value_ok:129:RETURN_FALSE": {
+ "credentials.py:_value_ok:130:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:scan",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_value_ok:RETURN_FALSE:2",
-  "line": 129,
+  "line": 130,
   "statement": "return False                                    # placeholder must stay inert"
  },
- "credentials.py:_value_ok:131:RETURN_FALSE": {
+ "credentials.py:_value_ok:132:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:scan",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_value_ok:RETURN_FALSE:3",
-  "line": 131,
+  "line": 132,
   "statement": "return False"
  },
- "credentials.py:_value_ok:133:BOOL_RETURN": {
+ "credentials.py:_value_ok:134:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:scan",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_value_ok:BOOL_RETURN:1",
-  "line": 133,
+  "line": 134,
   "statement": "return len(w) >= 4"
  },
- "credentials.py:_value_ok:135:RETURN_FALSE": {
+ "credentials.py:_value_ok:136:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:scan",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_value_ok:RETURN_FALSE:4",
-  "line": 135,
+  "line": 136,
   "statement": "return False"
  },
  "diagnostics.py:Reporter._auto_send_due:219:BOOL_RETURN": {

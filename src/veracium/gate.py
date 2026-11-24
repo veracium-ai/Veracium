@@ -21,7 +21,6 @@ from typing import Optional
 
 import re
 
-from . import credentials as _cred
 from .graph import render_edges
 from .llm.base import Complete
 from .schema import Edge, Episode, is_procedural
@@ -173,9 +172,10 @@ def partition_parts(edges: list[Edge], episodes: list[Episode]
         # 0023 §4a-iv: the grounded partition is the ASSERTABLE set; everything
         # else routes to the fenced section — FENCED, not suppressed (Q5), so a
         # quarantined claim stays visible as a claim rather than vanishing
-        # specs/0055 §4e: stored summaries are masked on their way into the gate's prompt (edges: render_edges)
-        ep_lines = [f"[{e.date}] {_cred.mask_text(e.summary)}" for e in episodes if e.assertable]
-        tp_ep_lines = [f"[{e.date}] {_cred.mask_text(e.summary)}" for e in episodes
+        # specs/0055 v0.5.7: no §4e mask here. No served path renders episodes through this function (recall's
+        # context and its no-query briefing mask the summaries they read), so a mask here guarded nothing
+        ep_lines = [f"[{e.date}] {e.summary}" for e in episodes if e.assertable]
+        tp_ep_lines = [f"[{e.date}] {e.summary}" for e in episodes
                        if not e.assertable]
         return _SITE_PARTITION_PARTS.fire((edge_lines, ep_lines, claim_lines, tp_ep_lines), "withhold")
 

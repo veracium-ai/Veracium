@@ -33,8 +33,9 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-#: The rule set's version, recorded in every audit event (§4a "Versioned"). Adding a class is a spec change.
-CREDENTIAL_SHAPES_VERSION = 1
+#: The rule set's version, recorded in every audit event (§4a "Versioned"). Adding a class, or changing what a class
+#: matches, is a spec change. 2 from v0.5.7: the token boundary, where `_` and every non-ASCII character are a boundary.
+CREDENTIAL_SHAPES_VERSION = 2
 
 #: The placeholder. NOT 0041's redaction marker (0041 INV-11 forbids ordinary writes from introducing that one).
 PLACEHOLDER = "[credential withheld: {cls}]"
@@ -50,31 +51,31 @@ REFUSAL = "credential_refused"
 _INVISIBLE = frozenset({"\u200b", "\u200c", "\u200d", "\u2060", "\ufeff", "\u00ad", "\u180e"})
 
 STRUCTURAL: tuple[tuple[str, str], ...] = (
-    ("aws_access_key_id",      r"\b(?:AKIA|ASIA|ABIA|ACCA)[0-9A-Z]{16}\b"),
-    ("github_token",           r"\bgh[pousr]_[A-Za-z0-9]{36,255}\b"),
-    ("github_token",           r"\bgithub_pat_[A-Za-z0-9_]{22,255}\b"),
-    ("gitlab_token",           r"\bglpat-[A-Za-z0-9_\-]{20,}"),
-    ("slack_token",            r"\bxox[abposr]-[A-Za-z0-9-]{10,}"),
+    ("aws_access_key_id",      r"(?<![A-Za-z0-9])(?:AKIA|ASIA|ABIA|ACCA)[0-9A-Z]{16}(?![A-Za-z0-9])"),
+    ("github_token",           r"(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9]{36,255}(?![A-Za-z0-9])"),
+    ("github_token",           r"(?<![A-Za-z0-9])github_pat_[A-Za-z0-9_]{22,255}(?![A-Za-z0-9])"),
+    ("gitlab_token",           r"(?<![A-Za-z0-9])glpat-[A-Za-z0-9_\-]{20,}"),
+    ("slack_token",            r"(?<![A-Za-z0-9])xox[abposr]-[A-Za-z0-9-]{10,}"),
     ("slack_webhook",          r"https://hooks\.slack\.com/services/T[A-Z0-9]+/B[A-Z0-9]+/[A-Za-z0-9]+"),
-    ("stripe_key",             r"\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}"),
-    ("anthropic_key",          r"\bsk-ant-[A-Za-z0-9_\-]{20,}"),
-    ("openai_key",             r"\bsk-(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}"),
-    ("google_api_key",         r"\bAIza[0-9A-Za-z_\-]{35}"),
-    ("google_oauth_secret",    r"\bGOCSPX-[A-Za-z0-9_\-]{28}"),
-    ("huggingface_token",      r"\bhf_[A-Za-z0-9]{34,}"),
-    ("npm_token",              r"\bnpm_[A-Za-z0-9]{36}\b"),
-    ("pypi_token",             r"\bpypi-AgEIcHlwaS5vcmc[A-Za-z0-9_\-]{50,}"),
-    ("sendgrid_key",           r"\bSG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43}"),
-    ("digitalocean_token",     r"\bdo[por]_v1_[a-f0-9]{64}\b"),
+    ("stripe_key",             r"(?<![A-Za-z0-9])(?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,}"),
+    ("anthropic_key",          r"(?<![A-Za-z0-9])sk-ant-[A-Za-z0-9_\-]{20,}"),
+    ("openai_key",             r"(?<![A-Za-z0-9])sk-(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}"),
+    ("google_api_key",         r"(?<![A-Za-z0-9])AIza[0-9A-Za-z_\-]{35}"),
+    ("google_oauth_secret",    r"(?<![A-Za-z0-9])GOCSPX-[A-Za-z0-9_\-]{28}"),
+    ("huggingface_token",      r"(?<![A-Za-z0-9])hf_[A-Za-z0-9]{34,}"),
+    ("npm_token",              r"(?<![A-Za-z0-9])npm_[A-Za-z0-9]{36}(?![A-Za-z0-9])"),
+    ("pypi_token",             r"(?<![A-Za-z0-9])pypi-AgEIcHlwaS5vcmc[A-Za-z0-9_\-]{50,}"),
+    ("sendgrid_key",           r"(?<![A-Za-z0-9])SG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43}"),
+    ("digitalocean_token",     r"(?<![A-Za-z0-9])do[por]_v1_[a-f0-9]{64}(?![A-Za-z0-9])"),
     ("azure_storage_key",      r"AccountKey=[A-Za-z0-9+/=]{86,88}"),
-    ("jwt",                    r"\beyJ[A-Za-z0-9_\-]{8,}\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"),
+    ("jwt",                    r"(?<![A-Za-z0-9])eyJ[A-Za-z0-9_\-]{8,}\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"),
     ("private_key_block",      r"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----"
                                r"(?:[\s\S]*?-----END (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----|[\s\S]*\Z)"),
-    ("url_userinfo_password",  r"\b[a-zA-Z][a-zA-Z0-9+.\-]{0,31}://[^\s:/@]{1,256}:[^\s@/]{1,256}@[^\s/]+"),
-    ("auth_header",            r"(?i)\bauthorization\s*:\s*(?:basic|bearer|token)\s+[A-Za-z0-9._~+/\-]{16,}=*"),
-    ("bearer_token",           r"(?i)\bbearer\s+[A-Za-z0-9._~+/\-]{20,}=*"),
+    ("url_userinfo_password",  r"(?<![A-Za-z0-9])[a-zA-Z][a-zA-Z0-9+.\-]{0,31}://[^\s:/@]{1,256}:[^\s@/]{1,256}@[^\s/]+"),
+    ("auth_header",            r"(?i)(?<![A-Za-z0-9])authorization\s*:\s*(?:basic|bearer|token)\s+[A-Za-z0-9._~+/\-]{16,}=*"),
+    ("bearer_token",           r"(?i)(?<![A-Za-z0-9])bearer\s+[A-Za-z0-9._~+/\-]{20,}=*"),
     # Veracium's own bearer: forget_everything_preview's token authorises a whole-user erase (0031 §4f)
-    ("veracium_preview_token", r"\btt1\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{20,}"),
+    ("veracium_preview_token", r"(?<![A-Za-z0-9])tt1\.eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{20,}"),
 )
 
 # Strong labels take any value that is not a stop word; weak labels (ordinary words with a credential sense) take
@@ -507,16 +508,6 @@ def masked_edge(edge):
         return edge
     import dataclasses
     return dataclasses.replace(edge, subject=subject, relation=relation, object=obj, note=note)
-
-
-def masked_episode(episode):
-    """A copy of a stored episode whose summary is masked, for rendering only; the episode itself when it has none."""
-    s = episode.summary
-    if isinstance(s, str) and s:
-        m = mask(s)[0]
-        if m is not s:
-            return episode.model_copy(update={"summary": m})
-    return episode
 
 
 def mask_deep(value):

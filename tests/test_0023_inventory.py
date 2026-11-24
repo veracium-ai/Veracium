@@ -197,9 +197,6 @@ _DISPOSITIONED = {
                         # and retired reason — for the biography's timeline;
                         # it never reads `.summary` and nothing it prints
                         # reaches a prompt (a terminal report, read-only)
-    "credentials.py",   # specs/0055 §4e: `masked_episode` returns a copy whose summary is MASKED, for a renderer
-                        # that has already applied its own assertability routing; it selects no episode, decides
-                        # nothing about assertability and renders nothing itself
 }
 
 

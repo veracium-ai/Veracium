@@ -46,13 +46,14 @@ def _spans(findings):
 
 
 def test_the_table_is_the_accepted_one():
-    """122 rows at v0.5.2 (§6 I1), derived from the vectors, with the groups the spec names."""
+    """150 rows at v0.5.7 (§6 I1; 122 at v0.5.2), derived from the vectors, with the groups the spec names: v0.5.7
+    adds 18 glued rows (G1-G18), 8 near-misses (K48-K55) and 2 limits (X7, X8) for §4a's token boundary."""
     groups = {}
     for _rid, g, _t, _e in ROWS:
         groups[g] = groups.get(g, 0) + 1
-    assert len(ROWS) == 122, len(ROWS)
-    assert groups == {"witness": 1, "structural": 21, "labelled": 23, "normalisation": 5, "composition": 19,
-                      "near-miss": 47, "limit": 6}, groups
+    assert len(ROWS) == 150, len(ROWS)
+    assert groups == {"witness": 1, "structural": 21, "glued": 18, "labelled": 23, "normalisation": 5,
+                      "composition": 19, "near-miss": 55, "limit": 8}, groups
     assert len({r[0] for r in ROWS}) == len(ROWS), "a row id repeats"
 
 
@@ -255,6 +256,10 @@ def _named_inputs():
         "userinfo_no_at": "x://u:" + "p" * 50 + " ",
         "prose": "I deploy every Friday and the build is green. ",
         "composition_two_pass": 'password: "' + "a " * 79 + "gh" + "p_" + "B" * 36 + ' end" ',
+        # v0.5.7 (§4a T1): the token boundary lets a prefix after `_` start a match, so a run of glued prefixes is a
+        # start at every unit: one that fails a few characters short (hf_ wants 34), one whose body class takes the run
+        "glued_short": "_" + "hf" + "_" + "A" * 33,
+        "glued_body_run": "_" + "sk" + "-",
         "curly_depth3_four_pass": curly(3),
         "curly_depth4_fallback": curly(4),
     }
