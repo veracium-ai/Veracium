@@ -1,8 +1,8 @@
-# generated 2026-11-24T01:58Z against veracium @ e0951b05c8a428809a4453499f6752a87a1f8b47
+# generated 2026-11-24T04:08Z against veracium @ d344782ae6ddf2969025ac9535e8565072a645c8
 # the pin: tests/test_0042_inv7.py asserts this commit is an ancestor of HEAD with src/ unchanged since
 INV-7 FOUR-ARM DECISION-TRACE DIFF — specs/0042
-HEAD e0951b05c8a428809a4453499f6752a87a1f8b47
-twin (uninstrumented): derived from HEAD e0951b05c8a428809a4453499f6752a87a1f8b47 by inv7_uninstrument.py
+HEAD d344782ae6ddf2969025ac9535e8565072a645c8
+twin (uninstrumented): derived from HEAD d344782ae6ddf2969025ac9535e8565072a645c8 by inv7_uninstrument.py
 twin derivation: 240 declare_site preserved, bound to the REFERENCE census (accepted commit 5d835e1's census.py, sha256 69beb1bb2f058d97...), 429 fire() unwrapped, 235 consult blocks spliced, 4 census-enabled bypass blocks removed, across 38 modules; no census code ran in the reference arm beyond its import, the declarations and the observer's reads, and its registry equals the off arm's (asserted below)
 
 python 3.14.7; pytest -q -p no:randomly -p no:cacheprovider -p inv7_observer; PYTHONHASHSEED=0
@@ -11,35 +11,35 @@ in-process: the reference arm's census-entry count covers the pytest process; 6 
 profilers and tracers: 0 of 29 suites set one (static scan for `setprofile`, `settrace`, `cProfile`, `import profile`, `profile.run`); the census-entry hook is checked alive at the END of the run: none
 
 ARM              RECORDS     SHA256(observer trace)                                            PYTEST
-healthy              87720  4a8f7984b4dcb6ee5370a56711b3a62d39fe128fd551b0dd16580db101a6092a  832 passed, 2 warnings in 142.54s (0:02:22) (exit 0, 143.4s)
-failing              87720  4a8f7984b4dcb6ee5370a56711b3a62d39fe128fd551b0dd16580db101a6092a  832 passed, 2 warnings in 129.66s (0:02:09) (exit 0, 130.5s)
-off                  87720  012a1b95a4eb8d70201c3e79994879d44aa0f8499b32244e6ebe4d794a88235c  832 passed, 2 warnings in 136.08s (0:02:16) (exit 0, 136.9s)
-uninstrumented       87720  4a8f7984b4dcb6ee5370a56711b3a62d39fe128fd551b0dd16580db101a6092a  832 passed, 2 warnings in 154.41s (0:02:34) (exit 0, 155.9s)
+healthy              87722  01c996ff49fe987c1a2b65d6149b0a80991f01442a955e289253db39db71ca13  832 passed, 2 warnings in 126.87s (0:02:06) (exit 0, 127.6s)
+failing              87722  47980c063682dafdac0297b84e35dfe44b7001090f14123df7c4c95d4afc7272  832 passed, 2 warnings in 128.01s (0:02:08) (exit 0, 128.8s)
+off                  87722  2341ca2e977045263add3f40b57ebb6c613d45fdfc90cc83238904735be71e5a  832 passed, 2 warnings in 126.90s (0:02:06) (exit 0, 127.6s)
+uninstrumented       87722  2341ca2e977045263add3f40b57ebb6c613d45fdfc90cc83238904735be71e5a  832 passed, 2 warnings in 142.72s (0:02:22) (exit 0, 143.9s)
 
 VERDICT: observer traces IDENTICAL across 4 arms over 831 tests (reference: uninstrumented; excluded by the STANDING list: 1; NEWLY non-reproducible this run: 0; control pairs run for failing, healthy, off, uninstrumented)
-CANONICAL DIGESTS (decoded records, dictionary-independent — R6-5(i)): healthy 7e78d4d9f85b243a; failing 7e78d4d9f85b243a; off 249dab805e5e1068; uninstrumented 7e78d4d9f85b243a
+CANONICAL DIGESTS (decoded records, dictionary-independent — R6-5(i)): healthy 238b885cd24a16c1; failing 1cccfe1a315ceec7; off aa6d72bdc35d7bb8; uninstrumented aa6d72bdc35d7bb8
   healthy: 831 tests compared, 0 differing, 0 not in both
   failing: 831 tests compared, 0 differing, 0 not in both
   off: 831 tests compared, 0 differing, 0 not in both
 
 EXCLUDED BY THE STANDING LIST (inv7_exclusions.STANDING: by name, with the cause; the arm(s) whose control pair sampled it THIS run in brackets, if any):
-  tests/eval/edge_events/test_0029_acceptance_corpus.py::test_acceptance_corpus_passes_100_percent  [healthy, failing, off]
+  tests/eval/edge_events/test_0029_acceptance_corpus.py::test_acceptance_corpus_passes_100_percent  [healthy, failing, uninstrumented]
       cause: the acceptance corpus's supersession step is sensitive to the wall clock: a supersession batch (two upserts under one transaction) lands at a different scenario step between two runs of one arm — first sampled 2026-09-20 by the healthy arm's slower timing, then by the failing arm's control pair; the test agrees with itself in isolation and with the harness's suite prefix. The corpus runner accepts an injected clock and the acceptance test injects none (specs/0029's owner; the Dev queue carries the follow-up). Excluded until it does.
 NEWLY NON-REPRODUCIBLE THIS RUN (a control pair disagreed on a test NOT on the standing list — a finding; the exit refuses it):
   (none)
-control run healthy-control: records 87720, sha256 00366d53928988e0224e32375c042d0161efc7acf4b912ee8c9a07ad464a59ec, 832 passed, 2 warnings in 160.15s (0:02:40)
-control run failing-control: records 87720, sha256 e65fa2ba46132b721a24a408bfbd877da6c50778005b039a8b21eef4aa38b16f, 832 passed, 2 warnings in 138.64s (0:02:18)
-control run off-control: records 87720, sha256 4a8f7984b4dcb6ee5370a56711b3a62d39fe128fd551b0dd16580db101a6092a, 832 passed, 2 warnings in 128.32s (0:02:08)
-control run uninstrumented-control: records 87720, sha256 4a8f7984b4dcb6ee5370a56711b3a62d39fe128fd551b0dd16580db101a6092a, 832 passed, 2 warnings in 155.94s (0:02:35)
+control run healthy-control: records 87722, sha256 7144f68f74837e9a9e2f68dbfc922359840b7d40f2cbd4dceac339a6205cc5e1, 832 passed, 2 warnings in 127.11s (0:02:07)
+control run failing-control: records 87722, sha256 2341ca2e977045263add3f40b57ebb6c613d45fdfc90cc83238904735be71e5a, 832 passed, 2 warnings in 126.25s (0:02:06)
+control run off-control: records 87722, sha256 2341ca2e977045263add3f40b57ebb6c613d45fdfc90cc83238904735be71e5a, 832 passed, 2 warnings in 127.24s (0:02:07)
+control run uninstrumented-control: records 87722, sha256 7144f68f74837e9a9e2f68dbfc922359840b7d40f2cbd4dceac339a6205cc5e1, 832 passed, 2 warnings in 142.78s (0:02:22)
 
 CROSS-CHECKS:
   healthy: {"any_errors": false, "census_ids_not_in_declaration": [], "census_records": 7705, "ids_consulted": 190, "ids_fired": 96, "subsequence_holds": true, "subsequence_matched": 7649}
   failing: {"all_unmeasured": true, "census_ids_not_in_declaration": [], "census_records": 7705, "ids_with_errors": 190, "subsequence_holds": true, "subsequence_matched": 7649}
   off: {"census_enabled": false, "registry_size": 240}
-  uninstrumented: {"census_code_entries": 0, "census_code_entry_detail": [], "census_enabled": false, "registry_equals_off": true, "registry_size": 240, "veracium_file": "/dev/shm/dev-inv7-chain056/twin/src/veracium/__init__.py"}
+  uninstrumented: {"census_code_entries": 0, "census_code_entry_detail": [], "census_enabled": false, "registry_equals_off": true, "registry_size": 240, "veracium_file": "/dev/shm/dev-inv7-chain056b/twin/src/veracium/__init__.py"}
   site_realized: {"distinct_digests": 1, "equal": true, "first_difference": null, "missing": [], "runs": 8}
 
-OBSERVED SYMBOLS: 139 wrapped of 146 declared; EXCLUDED (unreachable from outside, by name):
+OBSERVED SYMBOLS: 140 wrapped of 147 declared; EXCLUDED (unreachable from outside, by name):
   asof/recall.py:recall_at.claim: nested inside a function; unreachable from outside
   asof/recall.py:recall_at.grounded: nested inside a function; unreachable from outside
   graph.py:_absorption_scope_gate.same_scope: nested inside a function; unreachable from outside
@@ -62,13 +62,14 @@ HISTOGRAM (reference arm), symbol -> decision: count
   __init__.py:Memory._recall#7 -> value: 3
   __init__.py:Memory._recall#8 -> value: 135
   __init__.py:Memory._refuse_attested#254 -> None: 7
+  __init__.py:Memory._refuse_unclassified_prior#254 -> None: 2
   __init__.py:Memory._trust_scope_gate#0 -> None: 10
   __init__.py:Memory.confirm#1 -> value: 5
   __init__.py:Memory.confirm#253 -> ValueError: 6
   __init__.py:Memory.correct#0 -> ValueError: 1
   __init__.py:Memory.correct#1 -> ProcedureValueError: 1
-  __init__.py:Memory.correct#4 -> CorrectionRefused: 1
-  __init__.py:Memory.correct#5 -> value: 1
+  __init__.py:Memory.correct#3 -> CorrectionRefused: 1
+  __init__.py:Memory.correct#4 -> value: 1
   __init__.py:Memory.dispute#1 -> value: 1
   __init__.py:Memory.recall#0 -> ValueError: 1
   __init__.py:Memory.recall#1 -> ValueError: 1
