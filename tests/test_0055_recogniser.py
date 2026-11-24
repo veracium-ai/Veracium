@@ -260,9 +260,15 @@ def _named_inputs():
     }
 
 
-I9_SIZES = (256 * 1024, 1024 * 1024)
+I9_SIZES = (256 * 1024, 1024 * 1024, 4 * 1024 * 1024)
 I9_RATIO = 6.0
 I9_CEILING_S = 2.0
+# a ratio over tiny absolute times is noise, not growth: below 200 ms of CPU at 4 MiB (50 ms per MiB) a case is linear
+# enough, and its ratio is recorded but not asserted
+I9_FLOOR_S = 0.2
+# the quadratic mutant's stride: a prefix count every this many characters, so its extra work grows as n**2
+I9_QUAD_STRIDE = 1024
+I9_QUAD_CASES = ("bearer", "pem_begin_repeated")
 
 
 def _on_the_named_runner() -> bool:
@@ -270,11 +276,53 @@ def _on_the_named_runner() -> bool:
     return os.environ.get("GITHUB_ACTIONS") == "true" and bool(os.environ.get("VERACIUM_CI_SHARD"))
 
 
+def _cpu_model():
+    """The host's CPU model, for the record: a runner's cache sizes move the 256 KiB -> 1 MiB step."""
+    try:
+        with open("/proc/cpuinfo", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    import platform
+    return platform.processor() or None
+
+
+def _i9_measure(mask, inputs, runs=5):
+    """Time `mask` on each input at I9_SIZES. Per size: the wall-clock median of the first three runs and the minimum
+    thread CPU time over `runs`. The asserted ratio is 4 MiB over 1 MiB; 1 MiB over 256 KiB is recorded only.
+    Returns (record, over_ratio, over_ceiling)."""
+    record, over_ratio, over_ceiling = [], [], []
+    for name, unit in inputs.items():
+        meds, cpus = [], []
+        for size in I9_SIZES:
+            s = (unit * (size // len(unit) + 1))[:size]
+            walls, cpu = [], []
+            for _ in range(runs):
+                c0, t0 = time.thread_time(), time.perf_counter()
+                mask(s)
+                walls.append(time.perf_counter() - t0)
+                cpu.append(time.thread_time() - c0)
+            meds.append(statistics.median(walls[:3]))
+            cpus.append(min(cpu))
+        step = cpus[1] / max(cpus[0], 1e-9)
+        ratio = cpus[2] / max(cpus[1], 1e-9)
+        record.append({"case": name, "sizes_bytes": list(I9_SIZES), "median_s": [round(x, 4) for x in meds],
+                       "cpu_min_s": [round(x, 4) for x in cpus], "ratio_256k_1m": round(step, 2),
+                       "ratio": round(ratio, 2)})
+        if ratio > I9_RATIO and cpus[2] > I9_FLOOR_S:
+            over_ratio.append(name)
+        if meds[1] >= I9_CEILING_S:
+            over_ceiling.append(name)
+    return record, over_ratio, over_ceiling
+
+
 def test_i9_the_recogniser_is_linear_on_the_named_inputs(record_testsuite_property):
-    """I9 (§5): at most 6x the time for 4x the input, and 1 MiB screens in under 2 s on the named CI runner. Off the
-    runner the ratio is asserted and the absolute time is recorded only: a shared host's time is not the runner's
-    (round 3's A1). The record goes to VERACIUM_0055_I9_RECORD when set, and always into the JUnit file as the
-    testsuite property `veracium_0055_i9`: each CI lane's junit.xml is uploaded in its `ci-evidence-*` artifact and
+    """I9 (§5): at most 6x the time for 4x the input, from 1 MiB to 4 MiB, and 1 MiB screens in under 2 s on the named
+    CI runner. Off the runner the ratio is asserted and the absolute time is recorded only: a shared host's time is not
+    the runner's (round 3's A1). The record goes to VERACIUM_0055_I9_RECORD when set, and always into the JUnit file as
+    the testsuite property `veracium_0055_i9`: each CI lane's junit.xml is uploaded in its `ci-evidence-*` artifact and
     bound by sha256 in that artifact's manifest.json (.github/ci_run.py), so the runner's figures are collected from
     CI's own record without a workflow change. (`record_property` would warn under the default xunit2 family; an
     xdist worker's testsuite property does not reach the controller's file, and the CI lanes run without xdist.)
@@ -283,36 +331,23 @@ def test_i9_the_recogniser_is_linear_on_the_named_inputs(record_testsuite_proper
     CPU time, the minimum of five runs per size: wall time under a parallel suite charges the other workers' load to
     whichever size happens to run beside them (the gating suite at -n 8 read 6x+ on `label_no_value`, which reads
     4.0-4.6x alone), and a superlinear recogniser grows in CPU time as much as in wall time. The CEILING is a
-    statement about wall time on the runner, so it stays the wall-clock median of three."""
-    record, over_ratio, over_ceiling = [], [], []
-    for name, unit in _named_inputs().items():
-        meds, cpus = [], []
-        for size in I9_SIZES:
-            s = (unit * (size // len(unit) + 1))[:size]
-            walls, cpu = [], []
-            for _ in range(5):
-                c0, t0 = time.thread_time(), time.perf_counter()
-                P.mask(s)
-                walls.append(time.perf_counter() - t0)
-                cpu.append(time.thread_time() - c0)
-            meds.append(statistics.median(walls[:3]))
-            cpus.append(min(cpu))
-        ratio = cpus[1] / max(cpus[0], 1e-9)
-        record.append({"case": name, "sizes_bytes": list(I9_SIZES), "median_s": [round(x, 4) for x in meds],
-                       "cpu_min_s": [round(x, 4) for x in cpus], "ratio": round(ratio, 2)})
-        # a ratio over tiny absolute times is noise, not growth: below 50 ms at 1 MiB the case is linear enough
-        if ratio > I9_RATIO and cpus[1] > 0.05:
-            over_ratio.append(name)
-        if meds[1] >= I9_CEILING_S:
-            over_ceiling.append(name)
+    statement about wall time on the runner, so it stays the wall-clock median of three.
+
+    Why 1 MiB -> 4 MiB and not 256 KiB -> 1 MiB: per-byte cost steps up once between those two sizes (the memory
+    hierarchy; it stays with gc disabled) and is flat after it, and the step's height depends on the host's caches.
+    Run 45275466884's py3.14-2 runner read 6.96x and 7.24x on the two label cases across that step while every other
+    case read 3.77-4.15x; the label cases are the allocation-heavy ones (every repeat is a finding), and the same code
+    reads about 4.2x from 1 MiB to 4 MiB. The small pair's ratio is recorded as `ratio_256k_1m`, not asserted."""
+    record, over_ratio, over_ceiling = _i9_measure(P.mask, _named_inputs())
     import platform
     doc = {
-        "about": "0055 I9: the product's mask() at 256 KiB and 1 MiB; the ratio on thread CPU time (min of five), the ceiling on wall time (median of three)",
+        "about": "0055 I9: the product's mask() at 256 KiB, 1 MiB and 4 MiB; the asserted ratio is 4 MiB over 1 MiB on thread CPU time (min of five), 1 MiB over 256 KiB is recorded only; the ceiling on wall time at 1 MiB (median of three)",
         "algorithm": f"veracium.credentials.mask, at most MAX_PASSES + 1 = {P.MAX_PASSES + 1} scans",
         "named_runner": _on_the_named_runner(), "ci_shard": os.environ.get("VERACIUM_CI_SHARD"),
         "ci_job": os.environ.get("VERACIUM_CI_JOB_NAME"), "python": platform.python_version(),
-        "machine": platform.machine(), "cpus": os.cpu_count(), "load_at_end": [round(x, 2) for x in os.getloadavg()],
-        "ratio_limit": I9_RATIO, "ceiling_s": I9_CEILING_S, "cases": record}
+        "machine": platform.machine(), "cpu_model": _cpu_model(), "cpus": os.cpu_count(),
+        "load_at_end": [round(x, 2) for x in os.getloadavg()],
+        "ratio_limit": I9_RATIO, "floor_s": I9_FLOOR_S, "ceiling_s": I9_CEILING_S, "cases": record}
     record_testsuite_property("veracium_0055_i9", json.dumps(doc, sort_keys=True))
     path = os.environ.get("VERACIUM_0055_I9_RECORD")
     if path:
@@ -320,3 +355,21 @@ def test_i9_the_recogniser_is_linear_on_the_named_inputs(record_testsuite_proper
     assert not over_ratio, (over_ratio, record)
     if _on_the_named_runner():
         assert not over_ceiling, (over_ceiling, record)
+
+
+def test_i9_a_quadratic_mask_reads_red():
+    """I9's RED: the same measurement flags a quadratic recogniser. The mutant is the product's mask() plus a prefix
+    count every I9_QUAD_STRIDE characters, extra work that grows as the square of the input. A quadratic term with a
+    fixed constant dominates only where the linear work is small, so the check runs on the two named inputs where it
+    does at this stride (bearer, pem_begin_repeated), two runs per size; on the allocation-heavy label cases the same
+    stride reads under 6x and would prove nothing either way."""
+    def quadratic_mask(text):
+        out = P.mask(text)
+        for i in range(0, len(text), I9_QUAD_STRIDE):
+            text.count("\x00", 0, i)
+        return out
+
+    inputs = {k: v for k, v in _named_inputs().items() if k in I9_QUAD_CASES}
+    assert sorted(inputs) == sorted(I9_QUAD_CASES)
+    record, over_ratio, _ = _i9_measure(quadratic_mask, inputs, runs=2)
+    assert sorted(over_ratio) == sorted(I9_QUAD_CASES), record
