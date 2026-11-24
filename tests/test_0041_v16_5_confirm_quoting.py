@@ -24,15 +24,15 @@ from veracium.store.sqlite import SqliteStore
 U, U2 = "u", "u2"
 
 
-def _extracting(obj):
+def _extracting(obj, relation="lives_at"):
     def llm(prompt, system=None, role=None, **kw):
-        return json.dumps({"triples": [{"subject": "user", "relation": "lives_at", "object": obj, "quote": obj}],
+        return json.dumps({"triples": [{"subject": "user", "relation": relation, "object": obj, "quote": obj}],
                            "episode": "The user said where they live.", "instructions": []})
     return llm
 
 
-def _mem(tmp_path, obj="ZQ-OBJECT", name="m.db"):
-    return Memory(llm=_extracting(obj), config=MemoryConfig(db_path=str(tmp_path / name), wiki_recompile_after_writes=0,
+def _mem(tmp_path, obj="ZQ-OBJECT", name="m.db", relation="lives_at"):
+    return Memory(llm=_extracting(obj, relation), config=MemoryConfig(db_path=str(tmp_path / name), wiki_recompile_after_writes=0,
                                                          scope_groups={}, require_source_id=False))
 
 
@@ -312,7 +312,9 @@ def test_q6_the_quoting_domain_is_absent_for_a_disputed_only_edge(tmp_path):
 
 
 def test_q6_the_quoting_domain_still_fires_for_a_corrected_prior_and_its_replacement(tmp_path):
-    m = _mem(tmp_path)
+    # a vocabulary relation: `lives_at` is off-vocabulary and falls back to 0025's `unclassified`, which correct()
+    # refuses since specs/0011 v23.1 (0011-UNCL); this test is about the quoting domain, not that refusal
+    m = _mem(tmp_path, relation="located_at")
     eid = _remembered_edge(m)
     replacement = m.correct(U, eid, "ZQ-NEW")["replacement"]
     assert _quoting(m.redact(U, edge_id=eid, reason="subject_request"))

@@ -2140,6 +2140,18 @@ class Memory:
                     f"refused: edge {edge_id!r} is redacted — {op} quotes the record it acts on, and a redacted "
                     f"record is not quoted (specs/0041 §4b-ii, round 10)"), op)
 
+    def _refuse_unclassified_prior(self, edge, edge_id: str) -> None:
+        """specs/0011 §4e, amendment 0011/correct-refuses-unclassified (0011-UNCL): a prior under 0025's reserved
+        `unclassified` relation is not corrected. The replacement copies the prior's relation, so it would be a
+        user-authored, assertable fact under a relation nothing supersedes or groups by. Called by `correct()` inside its
+        write transaction, before the plan, so nothing is written; the remedy the refusal names is remember(). Reads
+        `edge.relation` only."""
+        from . import graph
+        from .schema import UNCLASSIFIED_RELATION
+        with _SITE_CORRECT_UNCLASSIFIED.consult():
+            if edge.relation == UNCLASSIFIED_RELATION:
+                raise _SITE_CORRECT_UNCLASSIFIED.fire(graph.CorrectionOfUnclassified(edge_id))
+
     def _trust_target(self, user_id: str, kind: str, record_id: str):
         """The user's own record by id, of either kind, in any state (inactive and quarantined included), or None.
         Another user's id and an unknown id are both None: the lookup is scoped by the user (specs/0031 §4f, INV-TT7)."""
@@ -2588,7 +2600,7 @@ class Memory:
                                                     ("evidence_ref", evidence_ref), ("source_id", source_id)))
         derived: dict = {}
         from . import authority, graph
-        from .schema import UNCLASSIFIED_RELATION, CorrectionAuthorisation, correction_digest
+        from .schema import CorrectionAuthorisation, correction_digest
         from .store.base import PLAN_STALE
         date = date or _today_utc()
         when = _event_dt(date)
@@ -2633,13 +2645,8 @@ class Memory:
                             "correction_of_procedure",
                             f"edge {edge_id!r} is a procedural record; correct() does not mint a successor for one "
                             "(specs/0037 §4a-iii, V-NO-CORRECTION-OF-PROCEDURES) — retire it and restate the procedure"))
-                # specs/0011 §4e, amendment 0011/correct-refuses-unclassified (0011-UNCL): a prior under 0025's
-                # reserved `unclassified` relation is not corrected — the replacement copies the relation, so it
-                # would be a user-authored, assertable fact under a relation nothing supersedes or groups by.
-                # Refused before the plan, so nothing is written; the remedy is remember().
-                with _SITE_CORRECT_UNCLASSIFIED.consult():
-                    if edge.relation == UNCLASSIFIED_RELATION:
-                        raise _SITE_CORRECT_UNCLASSIFIED.fire(graph.CorrectionOfUnclassified(edge_id))
+                # specs/0011 §4e, amendment 0011/correct-refuses-unclassified (0011-UNCL): refused before the plan
+                self._refuse_unclassified_prior(edge, edge_id)
                 # specs/0055 §4c-ii row 8: the prior's identity is copied unchanged, so a shaped one refuses;
                 # the copied note is free text and is masked here, before plan_correction hashes the plan
                 self._refuse_shaped_identity(user_id, edge)

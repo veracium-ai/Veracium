@@ -130,15 +130,13 @@ INVENTORY = [
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_0011_uncl_through_the_mcp_transport ONLY (specs/0011 0011-UNCL's refusal over the "
                             "SDK's call_tool); the file's other 8 cells run without the SDK. Author line: all 9 PASS "
-                            "(mcp importable in the authoring venv); an mcp-absent environment sees 8 PASS + 1 SKIP",
-     "job:runs"),
+                            "(mcp importable in the authoring venv); an mcp-absent environment sees 8 PASS + 1 SKIP"),
     ("tests/test_0055_d1_pregates.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_d1_remember_closed_vocabulary_refusal_through_the_transport_echoes_no_value ONLY "
                             "(specs/0055 D1: remember's closed-vocabulary refusal over the SDK's call_tool, 8 cells); "
                             "the file's other 117 cells run without the SDK. Author line: all 125 PASS (mcp importable "
-                            "in the authoring venv); an mcp-absent environment sees 117 PASS + 8 SKIP",
-     "job:runs"),
+                            "in the authoring venv); an mcp-absent environment sees 117 PASS + 8 SKIP"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_mcp_server_wiring ONLY (external 0018 B3-1: "
