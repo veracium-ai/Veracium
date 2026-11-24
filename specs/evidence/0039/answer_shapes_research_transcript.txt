@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ e614b5357ebb200e1a405f45b5698dc1a8c42d99
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ edda348e6742d2613927c05bc05f8554b527212d
+# RE-PINNED 2026-11-24 (edda348e: specs/0011 v23.1, correct() refuses a prior under `unclassified`, and 0031 v23.10's served refusal; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-23 (e614b535: specs/0055 v0.5.5, I19-F6 — a store refusal masks the stored value it quotes; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-23 (fd045ce0: specs/0055, credential-shaped text is never stored — the ingress, model-output, derived-write, store-guard, import and read-backstop screens, the outward error formatter and the finder; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-22 (658b73d1: specs/0041 v16.5 — the redaction receipt's confirm/dispute reference arm, the remapped-store domain, and the cross-user import's reference rewrite; none reaches the answer shapes, and the body is byte-identical)

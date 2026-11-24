@@ -1,5 +1,5 @@
 {
- "body_sha256": "5732795a457866e09e85eb0bc3011a83706e6e3c97fcec6a4357be0f6685d107",
+ "body_sha256": "02439cc57a84a93de574225d733f758b23187a7bcdec506b4ffc66da3648eafb",
  "controls": [
   {
    "anchor_counts": [
@@ -61,7 +61,7 @@
     "passed": 9
    }
   },
-  "commit": "09c2598df8b2cc8035c96d8a9743027a9786d50b",
+  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
   "control_definitions": {
    "NOOP-SA-R3-01-sa10_gate": "2f108c8c5252acc1055d23401d2f059447456ea8cc805318b9be162b3fe37401"
   },
@@ -90,14 +90,6 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
-   "docs/api.md",
-   "docs/mcp.md",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/0037-procedural-basis.md",
-   "specs/0039-degradation-visibility.md",
-   "specs/0055-credential-shaped-text-never-stored.md",
-   "specs/audit_dispositions.py",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
@@ -105,50 +97,7 @@
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
-   "specs/evidence/0047/carrier_inventory.py",
-   "specs/evidence/0048/tripwire_0048_classified.tsv",
-   "specs/evidence/0053/adapter_conformance/checks.py",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/generated/0020-read-surfaces.md",
-   "specs/read_surface_dispositions.py",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/adapters/_surface.py",
-   "src/veracium/adapters/langchain.py",
-   "src/veracium/adapters/pydantic_ai.py",
-   "src/veracium/asof/resolve.py",
-   "src/veracium/budgets.py",
-   "src/veracium/cli.py",
-   "src/veracium/compile.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/doctor.py",
-   "src/veracium/gate.py",
-   "src/veracium/graph.py",
-   "src/veracium/ingest.py",
-   "src/veracium/lifecycle.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/portability.py",
-   "src/veracium/proactive.py",
-   "src/veracium/procedures.py",
-   "src/veracium/semantic.py",
-   "src/veracium/store/revocation.py",
-   "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/eval/procedural_describe/MANIFEST.json",
-   "tests/test_0023_inventory.py",
-   "tests/test_0029_carrier.py",
-   "tests/test_0031_trust_tools_mcp.py",
-   "tests/test_0039_degradation_visibility.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0053_adapter_conformance.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "specs/evidence/0007/sa/mutation-table.json"
   ]
  },
  "rows": [
@@ -183,7 +132,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed, 2 warnings in 0.66s",
+   "pytest": "2 failed, 2 warnings in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped connect: the caller's arguments, factory included, reach sqlite3.connect"
@@ -216,7 +165,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the shipped seam: every sqlite3 attribute but connect forwarded"
@@ -252,7 +201,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.65s",
+   "pytest": "2 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "a settable attribute takes any value, a Python factory included"
@@ -289,7 +238,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.30s",
+   "pytest": "2 failed in 0.35s",
    "reason": null,
    "reason_seen": null,
    "what": "replay re-runs a recorded connect's arguments and a recorded set's value"
@@ -304,6 +253,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 14
+  "seconds": 17
  }
 }
