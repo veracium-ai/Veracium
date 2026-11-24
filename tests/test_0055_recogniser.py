@@ -292,25 +292,43 @@ def _cpu_model():
 def _i9_measure(mask, inputs, runs=5):
     """Time `mask` on each input at I9_SIZES. Per size: the wall-clock median of the first three runs and the minimum
     thread CPU time over `runs`. The asserted ratio is 4 MiB over 1 MiB; 1 MiB over 256 KiB is recorded only.
-    Returns (record, over_ratio, over_ceiling)."""
+    Returns (record, over_ratio, over_ceiling).
+
+    The sizes are INTERLEAVED: each round times every size once, so a burst of another process's memory traffic falls
+    on all sizes alike and each size's minimum comes from its quietest round. Timed one size after another, a burst
+    of a few seconds could cover every run of one size: the gating suite at c2ecbfd2 (-n 8, beside 15 other
+    sessions' pytest processes) read pem_begin_repeated over 6x, while eight copies of this test run concurrently
+    read at most 4.47x, so sustained contention does not move the ratio and a transient one did.
+
+    A case over the ratio is measured AGAIN, `runs` more interleaved rounds, and the minimum over all of them decides
+    (the record's `rounds`). The statistic is unchanged, the minimum over rounds; only the number of rounds grows,
+    and only where a burst may have landed on every round of one size. A superlinear recogniser reads over in every
+    round, so the extra rounds cannot pass it (test_i9_a_quadratic_mask_reads_red). Under twelve processes copying
+    96 MiB in 2 s bursts, one size after another read over 6x in 3 of 3 runs, interleaved alone in 1 of 3."""
     record, over_ratio, over_ceiling = [], [], []
     for name, unit in inputs.items():
-        meds, cpus = [], []
-        for size in I9_SIZES:
-            s = (unit * (size // len(unit) + 1))[:size]
-            walls, cpu = [], []
-            for _ in range(runs):
-                c0, t0 = time.thread_time(), time.perf_counter()
-                mask(s)
-                walls.append(time.perf_counter() - t0)
-                cpu.append(time.thread_time() - c0)
-            meds.append(statistics.median(walls[:3]))
-            cpus.append(min(cpu))
+        texts = [(unit * (size // len(unit) + 1))[:size] for size in I9_SIZES]
+        walls = [[] for _ in I9_SIZES]
+        cpu = [[] for _ in I9_SIZES]
+
+        def rounds(n):
+            for _ in range(n):
+                for i, s in enumerate(texts):
+                    c0, t0 = time.thread_time(), time.perf_counter()
+                    mask(s)
+                    walls[i].append(time.perf_counter() - t0)
+                    cpu[i].append(time.thread_time() - c0)
+        rounds(runs)
+        cpus = [min(c) for c in cpu]
+        if cpus[2] / max(cpus[1], 1e-9) > I9_RATIO and cpus[2] > I9_FLOOR_S:
+            rounds(runs)                                   # measured again: the minimum over all rounds decides
+            cpus = [min(c) for c in cpu]
+        meds = [statistics.median(w[:3]) for w in walls]
         step = cpus[1] / max(cpus[0], 1e-9)
         ratio = cpus[2] / max(cpus[1], 1e-9)
         record.append({"case": name, "sizes_bytes": list(I9_SIZES), "median_s": [round(x, 4) for x in meds],
                        "cpu_min_s": [round(x, 4) for x in cpus], "ratio_256k_1m": round(step, 2),
-                       "ratio": round(ratio, 2)})
+                       "ratio": round(ratio, 2), "rounds": len(cpu[0])})
         if ratio > I9_RATIO and cpus[2] > I9_FLOOR_S:
             over_ratio.append(name)
         if meds[1] >= I9_CEILING_S:
