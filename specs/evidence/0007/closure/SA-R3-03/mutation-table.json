@@ -1,5 +1,5 @@
 {
- "body_sha256": "d23cfcc38903611a145b62488d6fce7394f12fa391ad81c81b063c4619e38542",
+ "body_sha256": "b67065aef553a68b6b3d30127e73f7eb3ca3f31b9a9650fcb6276ce5dac21d5f",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
+  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
   "control_definitions": {
    "NOOP-SA-R3-03-attestation_job": "27bc90854719db9fb5d69d3f5ab57c252be7f1f89e379c97499a92a68b263f24"
   },
@@ -70,7 +70,6 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -113,7 +112,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.71s",
+   "pytest": "2 failed in 8.53s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: run_suite's return discarded, so a pytest that exited 1 after an all-pass JUnit is evidence"
@@ -128,6 +127,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 47
+  "seconds": 37
  }
 }

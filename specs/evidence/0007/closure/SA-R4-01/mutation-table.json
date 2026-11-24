@@ -1,5 +1,5 @@
 {
- "body_sha256": "807e0ed0d0f256140180acab700eaf3a620661bb251bb2093d762ee815eb365f",
+ "body_sha256": "f1b91fda123b9397e024c5fca5a5b76798154b89f8fe9bfea08e027a0e84ed44",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
+  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -78,7 +78,6 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -124,7 +123,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 9.51s",
+   "pytest": "2 failed in 8.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -157,7 +156,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 9.21s",
+   "pytest": "1 failed in 8.18s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -190,7 +189,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 9.55s",
+   "pytest": "1 failed in 8.28s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -205,6 +204,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 173
+  "seconds": 149
  }
 }

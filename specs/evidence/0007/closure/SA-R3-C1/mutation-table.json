@@ -1,5 +1,5 @@
 {
- "body_sha256": "097eeb723071c320080a057a499f83c53ae86e481fffbbcd1f288f7bf3e08491",
+ "body_sha256": "f5e50512f200ee3aae11e1d5511c89da4e05d45b88e813cda9e904130cce15da",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
+  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
   "control_definitions": {
    "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
   },
@@ -66,7 +66,6 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -108,7 +107,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.80s",
+   "pytest": "1 failed in 3.18s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
@@ -123,6 +122,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 27
+  "seconds": 23
  }
 }

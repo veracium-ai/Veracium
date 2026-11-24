@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ edda348e6742d2613927c05bc05f8554b527212d
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 7dbaa68d7130b084adfbffaa7f58497c986b579b
+# RE-PINNED 2026-11-24 (7dbaa68d: specs/0011 v23.1's check moved into Memory._refuse_unclassified_prior, same behaviour; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-24 (edda348e: specs/0011 v23.1, correct() refuses a prior under `unclassified`, and 0031 v23.10's served refusal; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-23 (e614b535: specs/0055 v0.5.5, I19-F6 — a store refusal masks the stored value it quotes; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-23 (fd045ce0: specs/0055, credential-shaped text is never stored — the ingress, model-output, derived-write, store-guard, import and read-backstop screens, the outward error formatter and the finder; both instruments re-run, and the body is byte-identical)

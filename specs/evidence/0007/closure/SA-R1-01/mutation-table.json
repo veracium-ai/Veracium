@@ -1,5 +1,5 @@
 {
- "body_sha256": "f3af6c5e7e90dd38cd102d8cbac492cd72a2b5d307d25e3749f2c760faf29275",
+ "body_sha256": "5ec4250eead5399d99e9ee59c4e5ab73c6b92fc284b6ce5c12ba52d19750ae80",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
+  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -77,7 +77,6 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json"
   ]
  },
@@ -113,7 +112,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.31s",
+   "pytest": "2 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -146,7 +145,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.98s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -179,7 +178,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.98s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -212,7 +211,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -227,6 +226,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 22
+  "seconds": 18
  }
 }

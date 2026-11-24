@@ -1,5 +1,5 @@
 {
- "body_sha256": "e99d90e8c717c607bc3255f09490f570328a896e3e30651064dfe98847ab8b57",
+ "body_sha256": "b75b72c8d8d9b322200270d88ee00a09bdd33deb83f127a85a03a1cf9c8296b0",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
+  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
   "control_definitions": {
    "NOOP-SA-R5-C1-attestation_job": "c8777444888bf4662195743519ae4812aa42f6f93dfcfe7e3bb9943408be0934"
   },
@@ -70,7 +70,6 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -118,7 +117,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 9.98s",
+   "pytest": "2 failed in 8.47s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded read boundary: an XML declaration naming no text codec raises LookupError out of decide"
@@ -133,6 +132,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 54
+  "seconds": 46
  }
 }
