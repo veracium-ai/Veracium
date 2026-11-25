@@ -8512,6 +8512,76 @@
   {
    "cli": {
     "credentials scan": "clean",
+    "why": "raised ValidationError",
+    "why --find": "raised ValidationError",
+    "why --find --json": "raised ValidationError",
+    "why --json": "raised ValidationError"
+   },
+   "export": "raised ValidationError",
+   "finder": [
+    "edge.other (residual)"
+   ],
+   "plant": "real row",
+   "planted": true,
+   "provider": {
+    "MCP find_facts": "no payload",
+    "MCP recall": "no payload",
+    "answer": "no payload",
+    "embedder (re-embeds every edge)": "no payload",
+    "library briefing": "no payload",
+    "library recall": "no payload",
+    "maintain (consolidation)": "no payload",
+    "wiki compile + fresh-cache read": "no payload"
+   },
+   "remedy": "forget: gone",
+   "row": "record:edge:current:last_outcome",
+   "served": {
+    "MCP find_facts": "clean",
+    "MCP recall": "raised ValidationError",
+    "answer": "raised ValidationError",
+    "library briefing": "raised ValidationError",
+    "library recall": "raised ValidationError",
+    "wiki compile + fresh-cache read": "raised ValidationError"
+   }
+  },
+  {
+   "cli": {
+    "credentials scan": "clean",
+    "why": "raised ValidationError",
+    "why --find": "raised ValidationError",
+    "why --find --json": "raised ValidationError",
+    "why --json": "raised ValidationError"
+   },
+   "export": "raised ValidationError",
+   "finder": [
+    "edge.other (residual)"
+   ],
+   "plant": "real row",
+   "planted": true,
+   "provider": {
+    "MCP find_facts": "no payload",
+    "MCP recall": "no payload",
+    "answer": "no payload",
+    "embedder (re-embeds every edge)": "no payload",
+    "library briefing": "no payload",
+    "library recall": "no payload",
+    "maintain (consolidation)": "no payload",
+    "wiki compile + fresh-cache read": "no payload"
+   },
+   "remedy": "forget: gone",
+   "row": "record:edge:current:last_outcome@dated",
+   "served": {
+    "MCP find_facts": "clean",
+    "MCP recall": "raised ValidationError",
+    "answer": "raised ValidationError",
+    "library briefing": "raised ValidationError",
+    "library recall": "raised ValidationError",
+    "wiki compile + fresh-cache read": "raised ValidationError"
+   }
+  },
+  {
+   "cli": {
+    "credentials scan": "clean",
     "why": "clean",
     "why --find": "clean",
     "why --find --json": "clean",
@@ -10409,6 +10479,76 @@
    },
    "export": "no token",
    "finder": [
+    "edge_event.other (residual)"
+   ],
+   "plant": "real row",
+   "planted": true,
+   "provider": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "embedder (re-embeds every edge)": "clean",
+    "library briefing": "no payload",
+    "library recall": "clean",
+    "maintain (consolidation)": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   },
+   "remedy": "forget: gone",
+   "row": "record:edge:journal:last_outcome",
+   "served": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "library briefing": "clean",
+    "library recall": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   }
+  },
+  {
+   "cli": {
+    "credentials scan": "clean",
+    "why": "clean",
+    "why --find": "clean",
+    "why --find --json": "clean",
+    "why --json": "clean"
+   },
+   "export": "no token",
+   "finder": [
+    "edge_event.other (residual)"
+   ],
+   "plant": "real row",
+   "planted": true,
+   "provider": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "embedder (re-embeds every edge)": "clean",
+    "library briefing": "no payload",
+    "library recall": "clean",
+    "maintain (consolidation)": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   },
+   "remedy": "forget: gone",
+   "row": "record:edge:journal:last_outcome@dated",
+   "served": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "library briefing": "clean",
+    "library recall": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   }
+  },
+  {
+   "cli": {
+    "credentials scan": "clean",
+    "why": "clean",
+    "why --find": "clean",
+    "why --find --json": "clean",
+    "why --json": "clean"
+   },
+   "export": "no token",
+   "finder": [
     "edge_event.state (removable)"
    ],
    "plant": "real row",
@@ -12280,6 +12420,76 @@
    },
    "remedy": "forget: gone",
    "row": "record:edge:redacted-journal:invalidation_reason@dated",
+   "served": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "library briefing": "clean",
+    "library recall": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   }
+  },
+  {
+   "cli": {
+    "credentials scan": "clean",
+    "why": "clean",
+    "why --find": "clean",
+    "why --find --json": "clean",
+    "why --json": "clean"
+   },
+   "export": "no token",
+   "finder": [
+    "edge_event.other (residual)"
+   ],
+   "plant": "real row",
+   "planted": true,
+   "provider": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "embedder (re-embeds every edge)": "clean",
+    "library briefing": "no payload",
+    "library recall": "clean",
+    "maintain (consolidation)": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   },
+   "remedy": "forget: gone",
+   "row": "record:edge:redacted-journal:last_outcome",
+   "served": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "library briefing": "clean",
+    "library recall": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   }
+  },
+  {
+   "cli": {
+    "credentials scan": "clean",
+    "why": "clean",
+    "why --find": "clean",
+    "why --find --json": "clean",
+    "why --json": "clean"
+   },
+   "export": "no token",
+   "finder": [
+    "edge_event.other (residual)"
+   ],
+   "plant": "real row",
+   "planted": true,
+   "provider": {
+    "MCP find_facts": "clean",
+    "MCP recall": "clean",
+    "answer": "clean",
+    "embedder (re-embeds every edge)": "clean",
+    "library briefing": "no payload",
+    "library recall": "clean",
+    "maintain (consolidation)": "clean",
+    "wiki compile + fresh-cache read": "clean"
+   },
+   "remedy": "forget: gone",
+   "row": "record:edge:redacted-journal:last_outcome@dated",
    "served": {
     "MCP find_facts": "clean",
     "MCP recall": "clean",
@@ -17330,15 +17540,15 @@
    }
   }
  ],
- "src_digest": "a0a077cc0de87724c85eed2c4b0e30f221d628ae797a5ddf7e3d5a2a08873fa1",
+ "src_digest": "6a8d9b9c3be449ff3f83bed67999ebcc9c4cc1d99e563cebd427626b37e7e626",
  "summary": {
   "export_carries_the_token": 114,
   "leaks": [],
   "not_found": [],
-  "planted": 492,
+  "planted": 498,
   "refused_by_the_store": 14,
   "remedy_not_gone": [],
-  "rows": 506,
+  "rows": 512,
   "side_real_row_plants": 148,
   "side_refused": 14,
   "side_synthetic_row_plants": 78,

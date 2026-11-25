@@ -104,8 +104,12 @@ def leaf_paths(model) -> list:
         if isinstance(tp, type) and issubclass(tp, BaseModel):
             if tp in seen:
                 return
+            # the RESOLVED annotation: a field whose type is defined later in its module (`Edge.last_outcome:
+            # Optional[Outcome]`) holds a ForwardRef in `model_fields` until something rebuilds the model, so reading
+            # `f.annotation` made the enumeration depend on import order (round 5: 506 rows alone, 512 in the suite)
+            hints = typing.get_type_hints(tp)
             for name, f in tp.model_fields.items():
-                walk(f.annotation, f"{path}.{name}" if path else name, seen | {tp})
+                walk(hints.get(name, f.annotation), f"{path}.{name}" if path else name, seen | {tp})
         elif origin in (list, tuple, set, frozenset):
             for a in args:
                 if a is not Ellipsis:
@@ -534,6 +538,12 @@ def check() -> list:
     doc = json.loads(JSON_OUT.read_text(), object_pairs_hook=_strict_pairs)
     problems = []
     want, have = enumerate_rows(), [r["row"] for r in doc["rows"]]
+    # the enumeration must not depend on what this process imported first: compare a fresh interpreter's
+    import subprocess
+    fresh = subprocess.run([sys.executable, "-B", str(ROOT / SELF), "--enumerate"], capture_output=True, text=True,
+                           cwd=str(ROOT))
+    if fresh.returncode != 0 or json.loads(fresh.stdout, object_pairs_hook=_strict_pairs) != want:
+        problems.append("the enumeration differs between this process and a fresh interpreter (import order)")
     if want != have:
         problems.append(f"row set differs from the enumeration: missing {sorted(set(want) - set(have))[:5]}, "
                         f"extra {sorted(set(have) - set(want))[:5]}, or reordered")
@@ -556,6 +566,9 @@ def main(argv) -> int:
         doc = json.loads(JSON_OUT.read_text(), object_pairs_hook=_strict_pairs)
         MD_OUT.write_text(render(doc))
         print(json.dumps(doc["summary"], indent=1))
+        return 0
+    if argv[1:] == ["--enumerate"]:
+        print(json.dumps(enumerate_rows()))
         return 0
     if argv[1:] == ["--check"]:
         problems = check()
