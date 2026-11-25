@@ -1,5 +1,5 @@
 {
- "body_sha256": "60e910febd6281e087651503502d503a491810973ef774000360abb94c932651",
+ "body_sha256": "1a4c62e1e8f3cffde72a324604943b1693bd1f1cbdd23ef9324d26bdd6fc7b1c",
  "controls": [
   {
    "anchor_counts": [
@@ -1149,7 +1149,7 @@
     "passed": 235
    }
   },
-  "commit": "3f30fc5d7abd0120a07aeff9aed41463242c3577",
+  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "f10175444492ef1d884c099c95807b2607d8dd7ae4bc2d0e68622cc6ff68b4b3",
    "NOOP-__init__": "36edcedcbd49a8789fa6120344bd25155ee8dbd0029c8af5e0cca85d8cfae9ac",
@@ -1258,14 +1258,14 @@
    "specs/evidence/0031-trust-tools/implementation_mutants.py": "098e41cddd6107f6f8c83e8bfaa7d36244fb7381d27ef4746fe49954486ad5b9",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "cb0f59d18501e9e86a121a6895fb0187a8f47d5d9f74d4da3868795dfa303394",
+   "src/veracium/__init__.py": "8cdd96e87e2a80b45d63ae193ed82e0b53c3a91c0cb22497be91d0341265e9f5",
    "src/veracium/adapters/_surface.py": "1578f98f48e968ac61c4ef713c04c14ba97ed8e510ee4ad6c48ec6536b36119c",
-   "src/veracium/compile.py": "22cd7411e077108f303c16ffb4a4d5281841ada727edafcc5ca64a1b7f848580",
+   "src/veracium/compile.py": "5167e3cdf499c50486db803827870a7420a528c9273a31bf9ead708f34dae465",
    "src/veracium/mcp_server.py": "e262a637b6dbeb7631780ad07949163bc7353593f65ab2b39352f4b1a149dd6a",
    "src/veracium/portability.py": "4e97d2937cb7e49e8ad4dfe03f3817142a165def0dce6a5ebd174cbcca1d4517",
    "src/veracium/proactive.py": "c0acf48b4db357664b33165dd2e368b83bd3aeec660c2f1badbf0117d5fd40e2",
    "src/veracium/schema.py": "55a59ddb9e00ebb6b1ae9fafb49efa06798127e45cd1ec7a962bcbde7eff5f74",
-   "src/veracium/store/sqlite.py": "30b1daf837efff40b84b39458ce85d9fa5b3af256f0ea95ccaa7265d2120798f",
+   "src/veracium/store/sqlite.py": "b3651a1c9c27fd469972c0e275b20f80157c01da42e6e8370fe79f48ae700614",
    "src/veracium/trust_tools.py": "0d1ce3d5742fb4d7def4f6d41c0a0496074d7c830cf97f46bcdf19150321ec37",
    "tests/test_0031_render_receipt.py": "882d5dacead145e0a60cd52157191bc2c96c10266cc9cfee28e109aef8f5e18c",
    "tests/test_0031_trust_tools_erase.py": "b2d7410d9f67fc5cb71dec573ac842b1c9d20abde60ddf771b304732ed7b00e7",
@@ -1296,8 +1296,25 @@
   "spec": "0031",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json"
+   "specs/evidence/0003/within_episode/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation_mutants.py",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "src/veracium/credential_finder.py",
+   "src/veracium/credentials.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/why.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0055_r4_closure.py",
+   "tests/test_0055_recogniser.py"
   ]
  },
  "rows": [
@@ -1401,7 +1418,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "25 failed in 3.46s",
+   "pytest": "25 failed in 5.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the `direct` gate removed from the trust tools"
@@ -1497,7 +1514,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "22 failed in 4.57s",
+   "pytest": "22 failed in 5.81s",
    "reason": null,
    "reason_seen": null,
    "what": "the operator count left in the tool result"
@@ -1569,7 +1586,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "14 failed in 2.60s",
+   "pytest": "14 failed in 3.88s",
    "reason": null,
    "reason_seen": null,
    "what": "the attempted-elevation count missing from the *_report"
@@ -1602,7 +1619,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 1.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the server's configured source not passed to dispute_fact"
@@ -1635,7 +1652,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "a unit's mandatory annotations (stale, extraction error) dropped"
@@ -1674,7 +1691,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.33s",
+   "pytest": "3 failed in 2.58s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member without its group framing (and so without the subject that framing carries, round 3)"
@@ -1707,7 +1724,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member labelled grounded"
@@ -1740,7 +1757,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "an admitted grounded episode missing from the receipt"
@@ -1776,7 +1793,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.87s",
+   "pytest": "2 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "a fenced (third-party) unit labelled grounded"
@@ -1857,7 +1874,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 3.21s",
+   "pytest": "17 failed in 5.19s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query path admits nothing into the receipt"
@@ -1896,7 +1913,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.31s",
+   "pytest": "3 failed in 2.27s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped unit's text is the raw object, not the text as admitted"
@@ -1965,7 +1982,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "13 failed in 2.56s",
+   "pytest": "13 failed in 3.92s",
    "reason": null,
    "reason_seen": null,
    "what": "the receipt built from `Recall.edges` instead of the renderer's admissions"
@@ -1998,7 +2015,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "the render receipt built when the caller did not ask for it"
@@ -2031,7 +2048,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "`mutable: true` on a SHARED or CROSS_VISIBLE unit"
@@ -2091,7 +2108,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 2.25s",
+   "pytest": "10 failed in 3.42s",
    "reason": null,
    "reason_seen": null,
    "what": "a non-user subject left off its unit"
@@ -2124,7 +2141,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the admitted wiki text missing from the receipt"
@@ -2163,7 +2180,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.23s",
+   "pytest": "3 failed in 1.92s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm's quoting episode written without the agent call path"
@@ -2202,7 +2219,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.52s",
+   "pytest": "3 failed in 2.27s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm_fact over MCP records the host API"
@@ -2253,7 +2270,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 2.01s",
+   "pytest": "7 failed in 2.85s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's audit episode written without the agent call path"
@@ -2313,7 +2330,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 2.08s",
+   "pytest": "10 failed in 2.33s",
    "reason": null,
    "reason_seen": null,
    "what": "the agent call path written as `host_api` on a host-API audit episode (it must be ABSENT, today's bytes)"
@@ -2352,7 +2369,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.40s",
+   "pytest": "3 failed in 2.03s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact's redaction reason varying with its input"
@@ -2394,7 +2411,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.72s",
+   "pytest": "4 failed in 2.58s",
    "reason": null,
    "reason_seen": null,
    "what": "with no principal, another user's id answered unlike an unknown id"
@@ -2430,7 +2447,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "a token issued in the future accepted"
@@ -2511,7 +2528,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 3.30s",
+   "pytest": "17 failed in 4.30s",
    "reason": null,
    "reason_seen": null,
    "what": "the store_changed refusal removed: a changed store is erased"
@@ -2544,7 +2561,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "the digest re-derived outside the erase's write transaction"
@@ -2580,7 +2597,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.26s",
+   "pytest": "2 failed in 1.61s",
    "reason": null,
    "reason_seen": null,
    "what": "the preview reveals record content"
@@ -2622,7 +2639,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.57s",
+   "pytest": "4 failed in 2.49s",
    "reason": null,
    "reason_seen": null,
    "what": "CorrectionRefused not serialized as `correction_refused`"
@@ -2658,7 +2675,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.11s",
+   "pytest": "2 failed in 1.83s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact's gate-4 check refusing only BOTH ids: with neither it falls through to the target lookup (an argument check outside the 0042 census, found before round 3's dispatch)"
@@ -2700,7 +2717,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.29s",
+   "pytest": "4 failed in 1.90s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact's gate-4 check (exactly one of edge_id and episode_id) removed (an argument check outside the 0042 census, found before round 3's dispatch)"
@@ -2766,7 +2783,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "12 failed in 2.64s",
+   "pytest": "12 failed in 4.82s",
    "reason": null,
    "reason_seen": null,
    "what": "an internal failure after a commit returned as a refusal"
@@ -2802,7 +2819,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.05s",
+   "pytest": "2 failed in 1.77s",
    "reason": null,
    "reason_seen": null,
    "what": "the MCP tools' scope-configuration gate (gate 5: scope_unconfigured, principal_ungroupable) removed, one of the six dict-returned refusals outside the 0042 census"
@@ -2835,7 +2852,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.92s",
    "reason": null,
    "reason_seen": null,
    "what": "every find_facts republishing the wiki cache: its conditional write made unconditional (round 2's witness lookup_writes)"
@@ -2877,7 +2894,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.76s",
+   "pytest": "4 failed in 2.94s",
    "reason": null,
    "reason_seen": null,
    "what": "per-fact forget redacting the records it names as surviving derived"
@@ -2910,7 +2927,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.16s",
+   "pytest": "1 failed in 2.00s",
    "reason": null,
    "reason_seen": null,
    "what": "a restored consolidation output not named: lineage compared by the raw id, not the historical form (0041 R9-03's defect, reached through the tool)"
@@ -2949,7 +2966,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.45s",
+   "pytest": "3 failed in 2.06s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_fact with no principal returning an empty `surviving_derived`"
@@ -3072,7 +3089,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "31 failed in 5.09s",
+   "pytest": "31 failed in 7.43s",
    "reason": null,
    "reason_seen": null,
    "what": "an absent erasure setting read as off"
@@ -3105,7 +3122,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "the erasure switch checked only by the whole-user tools (forget_fact still erases)"
@@ -3138,7 +3155,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.06s",
+   "pytest": "1 failed in 1.50s",
    "reason": null,
    "reason_seen": null,
    "what": "an invalid erasure setting read as on instead of refused"
@@ -3180,7 +3197,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.74s",
+   "pytest": "4 failed in 2.13s",
    "reason": null,
    "reason_seen": null,
    "what": "`principal_scoped` decided before `erasure_disabled`"
@@ -3222,7 +3239,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.87s",
+   "pytest": "4 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "the digest binds three tables, not four"
@@ -3300,7 +3317,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "16 failed in 3.27s",
+   "pytest": "16 failed in 4.88s",
    "reason": null,
    "reason_seen": null,
    "what": "a CROSS_VISIBLE target acted on under a principal"
@@ -3411,7 +3428,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "27 failed in 14.46s",
+   "pytest": "27 failed in 16.47s",
    "reason": null,
    "reason_seen": null,
    "what": "the scope gate run with no principal (0020 V1: no scope code may run)"
@@ -3537,7 +3554,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "32 failed in 5.24s",
+   "pytest": "32 failed in 7.67s",
    "reason": null,
    "reason_seen": null,
    "what": "a SHARED (pooled) target acted on under a principal"
@@ -3570,7 +3587,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the library's confirm step accepts a principal"
@@ -3606,7 +3623,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.37s",
+   "pytest": "2 failed in 1.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the confirm tool accepts a principal"
@@ -3651,7 +3668,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.46s",
+   "pytest": "5 failed in 1.80s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's audit episode written without the binding source"
@@ -3687,7 +3704,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.74s",
+   "pytest": "2 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "correct's replacement edge written without the binding source"
@@ -3753,7 +3770,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "12 failed in 1.63s",
+   "pytest": "12 failed in 2.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the binding source's OWN check removed: a divergent source quotes a private record into another scope"
@@ -3792,7 +3809,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.82s",
+   "pytest": "3 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "a binding with no source accepted under a principal (the quote lands in the user-wide pool)"
@@ -3846,7 +3863,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "8 failed in 2.64s",
+   "pytest": "8 failed in 3.66s",
    "reason": null,
    "reason_seen": null,
    "what": "`fields_cleared` kept in the principal projection (a conditional indicator)"
@@ -3885,7 +3902,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.57s",
+   "pytest": "3 failed in 2.16s",
    "reason": null,
    "reason_seen": null,
    "what": "a surviving-derived entry the principal cannot see kept in its projection"
@@ -3945,7 +3962,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 2.42s",
+   "pytest": "10 failed in 3.61s",
    "reason": null,
    "reason_seen": null,
    "what": "the host redaction receipt returned to a principal"
@@ -3999,7 +4016,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "8 failed in 2.45s",
+   "pytest": "8 failed in 3.37s",
    "reason": null,
    "reason_seen": null,
    "what": "a repeat redaction under a principal replaying its receipt without the fresh OWN gate (round 2's witness redaction_repeat: an absorption survivor left UNRESOLVED)"
@@ -4032,7 +4049,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "the preview's four reads taken outside one transaction"
@@ -4068,7 +4085,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.58s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the snapshot digest over a delimiter-joined string, not the table-tagged canonical JSON"
@@ -4101,7 +4118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a payload with a duplicate member name accepted"
@@ -4137,7 +4154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "a token still valid at exactly t + 600"
@@ -4170,7 +4187,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "an `isinstance` check on `t`, so a boolean is accepted"
@@ -4203,7 +4220,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "the MAC over the decoded payload, not the wire segment"
@@ -4236,7 +4253,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "a token verified against another store's or user's context"
@@ -4269,7 +4286,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.51s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "a non-canonical base64url segment (padding, pad bits) accepted"
@@ -4308,7 +4325,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.15s",
+   "pytest": "3 failed in 1.64s",
    "reason": null,
    "reason_seen": null,
    "what": "one fixed key for every issuer"
@@ -4341,7 +4358,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "an uppercase-hex digest accepted"
@@ -4374,7 +4391,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's gate-4 type check removed: a non-string reason on the adapters' *_impl path reaches the library (an argument check outside the 0042 census, found before round 3's dispatch)"
@@ -4407,7 +4424,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 1.31s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute's reason cap counted in UTF-8 bytes, not code points"
@@ -4440,7 +4457,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.18s",
+   "pytest": "1 failed in 1.40s",
    "reason": null,
    "reason_seen": null,
    "what": "an over-long reason truncated instead of refused"
@@ -4479,7 +4496,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.07s",
+   "pytest": "3 failed in 1.46s",
    "reason": null,
    "reason_seen": null,
    "what": "the format-15 predicate reads edges only: an export with an agent audit EPISODE stays 14"
@@ -4515,7 +4532,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.01s",
+   "pytest": "2 failed in 1.33s",
    "reason": null,
    "reason_seen": null,
    "what": "a pre-15 file carrying an agent call path imported instead of refused whole"
@@ -4569,7 +4586,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "8 failed in 1.96s",
+   "pytest": "8 failed in 2.89s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-01: every member of a contested group admitted, though the line shows only some values (\"or K more\")"
@@ -4617,7 +4634,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 1.75s",
+   "pytest": "6 failed in 2.45s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-02: the record's raw subject carried where the composer clamped it"
@@ -4650,7 +4667,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.52s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-02: a raw subject attached to a unit whose line names no subject"
@@ -4713,7 +4730,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "11 failed in 2.45s",
+   "pytest": "11 failed in 3.91s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-03: the commit phase ignored, so a refusal-class failure after a commit is serialized as a refusal"
@@ -4797,7 +4814,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "18 failed in 3.31s",
+   "pytest": "18 failed in 4.87s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-03: the connection's commit() not recording the commit"
@@ -4881,7 +4898,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "18 failed in 3.25s",
+   "pytest": "18 failed in 5.20s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-03: the store's connection opened without the phase-recording factory"
@@ -4917,7 +4934,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.14s",
+   "pytest": "2 failed in 1.67s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-03: a COMMIT that closed a read-only transaction counted as a commit of the call"
@@ -4950,7 +4967,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.10s",
+   "pytest": "1 failed in 1.88s",
    "reason": null,
    "reason_seen": null,
    "what": "round 4 N1: the mark not re-read after open_versioned, so a fresh store's first empty commit counted as a commit of the call"
@@ -4983,7 +5000,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.14s",
+   "pytest": "1 failed in 1.68s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-03: another connection's commit counted against this call"
@@ -5019,7 +5036,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.69s",
+   "pytest": "2 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 A (the reviewer's focused mutant): the confirmations' keys left out of the preview digest"
@@ -5055,7 +5072,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.71s",
+   "pytest": "2 failed in 1.06s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 B (the reviewer's focused mutant): a supplied source left out of confirm's request identity"
@@ -5181,7 +5198,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "32 failed in 6.51s",
+   "pytest": "32 failed in 10.04s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 C: an unknown id answered with a response distinct from the other hidden classes'"
@@ -5295,7 +5312,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "28 failed in 4.71s",
+   "pytest": "28 failed in 7.53s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 C: the adapter core not passing its bound principal to the trust tools (every class acted on)"
@@ -5337,7 +5354,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.56s",
+   "pytest": "4 failed in 2.41s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 C: the whole-user tools' principal refusal skipped when the erasure switch is on (its default)"
@@ -5394,7 +5411,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "9 failed in 1.57s",
+   "pytest": "9 failed in 2.51s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 D: every export stamped format 15, a host-only store's included (its bytes are no longer today's)"
@@ -5460,7 +5477,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "12 failed in 1.77s",
+   "pytest": "12 failed in 2.88s",
    "reason": null,
    "reason_seen": null,
    "what": "TT-R3-04 D: a host write's null `source_id` dropped from provenance (today's bytes serialize it as null)"
@@ -5493,7 +5510,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.84s",
    "reason": null,
    "reason_seen": null,
    "what": "research's stage-1 note (b): a failed counter read raised over a rollback, replacing the error that caused it"
@@ -5526,7 +5543,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.53s",
    "reason": null,
    "reason_seen": null,
    "what": "research's stage-1 note (b): an unread counter (the mark unknown) read as nothing written, so a commit after it is not counted and a refusal after that commit is serialized"
@@ -5559,7 +5576,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.07s",
+   "pytest": "1 failed in 1.67s",
    "reason": null,
    "reason_seen": null,
    "what": "research's stage-2 S09 (TT-R3-01 on the one-slot fallback): every contested member admitted though the line shows one value and \"or K more\""
@@ -5595,7 +5612,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.15s",
+   "pytest": "2 failed in 1.69s",
    "reason": null,
    "reason_seen": null,
    "what": "research's stage-2 S23 (TT-R3-03 on the erase): the confirm's commit not recorded, so a failure after the erase is serialized as a refusal"
@@ -5631,7 +5648,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.21s",
+   "pytest": "2 failed in 1.78s",
    "reason": null,
    "reason_seen": null,
    "what": "research's stage-2 S24 (TT-R3-03 on find_facts): the wiki publication's commit not recorded, so a failure after it is serialized as a refusal"
@@ -5667,7 +5684,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.71s",
+   "pytest": "2 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "research's pre-seal read (TT-R3-04 B, the class round 3 named in C): the source-identity conflict surfaces as an unrelated ValueError, which a bare raises(ValueError) would accept"
@@ -5682,6 +5699,6 @@
   "good": 90,
   "killed": 90,
   "rows": 90,
-  "seconds": 502
+  "seconds": 731
  }
 }

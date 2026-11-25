@@ -7,7 +7,8 @@ PER-REPORT ORDINAL (`record 3 of this report`), never by a value, length, offset
 `act(memory, hits)` applies the field-level remedy of §4f's matrix, in one process, keyed on the raw ids it holds
 privately (never on a printed ordinal and never on a withheld text):
   - an edge's or an episode's text            -> 0041 `redact` of that record (reason `operator_policy`);
-  - a journal row (`edge_event`/`episode_event`) -> 0041 `redact` of its PARENT record (the tombstone covers history);
+  - a journal row (`edge_event`/`episode_event`) -> 0041 `redact` of its PARENT record (the tombstone covers history),
+    unless the parent is ALREADY redacted: that text is `<journal>.after_redaction`, a residual (round 5);
   - a reply's text                             -> 0041 `redact` of the reply's parent EDGE;
   - the compiled wiki                          -> discarded (it is rebuilt from masked reads, §4e).
 Provenance identifiers, reply targets, correlation ids and contribution-ledger payloads are RESIDUAL: 0041 keeps
@@ -40,7 +41,10 @@ REMEDY = {
 #: `<kind>.unparsed`, `<journal>.reason` and `<table>.<column>` classes the store's read yields for a string no class
 #: names (`SqliteStore.credential_carriers`). This tuple is the named part only; `is_residual` is the rule.
 RESIDUAL = ("edge.identifier", "episode.identifier", "edge_event.identifier", "episode_event.identifier",
-            "reply.identifier", "confirmation.identifier", "request_registry.identifier", "contribution_ledger.payload")
+            "reply.identifier", "confirmation.identifier", "request_registry.identifier", "contribution_ledger.payload",
+            # round 5 (the carrier table): text in a journal snapshot of a record ALREADY redacted (a store redacted
+            # before a treatment covered the field); redacting again writes nothing, so forget_user is the remedy
+            "edge_event.after_redaction", "episode_event.after_redaction")
 
 
 def is_residual(carrier: str) -> bool:

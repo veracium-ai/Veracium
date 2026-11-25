@@ -364,7 +364,7 @@ def test_i9_the_recogniser_is_linear_on_the_named_inputs(record_testsuite_proper
     record, over_ratio, over_ceiling = _i9_measure(P.mask, _named_inputs())
     import platform
     doc = {
-        "about": "0055 I9: the product's mask() at 256 KiB, 1 MiB and 4 MiB; the asserted ratio is 4 MiB over 1 MiB on thread CPU time (min of five), 1 MiB over 256 KiB is recorded only; the ceiling on wall time at 1 MiB (median of three)",
+        "about": "0055 I9: the product's mask() at 256 KiB, 1 MiB and 4 MiB; the asserted ratio is 4 MiB over 1 MiB on thread CPU time (the minimum over five interleaved rounds, or over ten when a case is re-measured; the record's `rounds`), 1 MiB over 256 KiB is recorded only; the ceiling on wall time at 1 MiB (median of three)",
         "algorithm": f"veracium.credentials.mask, at most MAX_PASSES + 1 = {P.MAX_PASSES + 1} scans",
         "named_runner": _on_the_named_runner(), "ci_shard": os.environ.get("VERACIUM_CI_SHARD"),
         "ci_job": os.environ.get("VERACIUM_CI_JOB_NAME"), "python": platform.python_version(),

@@ -338,7 +338,7 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
             fact_lines.append(line)
     ep_lines: list[str] = []
     for e in reversed(episodes):                          # newest first under budget
-        line = _budgets.clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", item_cap)   # specs/0055 §4e
+        line = _budgets.clamp_item(f"[{_cred.mask_text(e.date)}] {_cred.mask_text(e.summary)}", item_cap)   # §4e
         cost = _budgets.est_tokens(line) + 1              # +1: the join newline
         if spent + cost > items_budget:
             eps_dropped += 1

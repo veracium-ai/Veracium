@@ -1,5 +1,5 @@
 {
- "body_sha256": "23454c4755ae32c046fcbe6515802d1bbe425bac5487bd7f92b29caf0b25899a",
+ "body_sha256": "90cbd3ac7266d23a37d00afcd79fe8c0181457c955373ae594a2c8f145bf0e0e",
  "controls": [
   {
    "anchor_counts": [
@@ -101,7 +101,7 @@
     "passed": 13
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "72e057da2d2e00a3d3d91bc34423cbb3d3bf69a592f91855a153a88a814e84c8",
    "NOOP-compile": "fb3e48665c90b3a8bb1e53e357d50617ad17133cbb59962db22e625ee6f47b9b"
@@ -123,7 +123,7 @@
    "specs/evidence/sr2-01/legacy-empty-wiki.json": "a1500afbc1da19abb803fc706d4767b28bbac5a7bfc76eaad50b37ebf02245ef",
    "specs/evidence/sr2-01/wiki_cache_mutants.py": "083fae918c24e84b0b9c779c69bc67c618b8cafadd29964386f0a6058959c632",
    "src/veracium/budgets.py": "0210ea49f9958c74c54fe15954f425eabd4b2450daa68b8e817395efdf5bbc34",
-   "src/veracium/compile.py": "22cd7411e077108f303c16ffb4a4d5281841ada727edafcc5ca64a1b7f848580",
+   "src/veracium/compile.py": "5167e3cdf499c50486db803827870a7420a528c9273a31bf9ead708f34dae465",
    "tests/test_sr2_01_wiki_upgrade.py": "0af25c937d483b276629ebcdf5b24ac0d5c0c4c70fd5e0cbedcea3ddeca3c39d"
   },
   "finding": "sr2-01-wiki-cache",
@@ -135,31 +135,15 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -173,7 +157,19 @@
    "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
    "specs/evidence/0048/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json"
+   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation_mutants.py",
+   "specs/evidence/c3-01/mutation-table.json",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/__init__.py",
+   "src/veracium/compile.py",
+   "src/veracium/credential_finder.py",
+   "src/veracium/credentials.py",
+   "src/veracium/store/sqlite.py",
+   "src/veracium/why.py",
+   "tests/test_0048_decay_bounds.py",
+   "tests/test_0055_r4_closure.py",
+   "tests/test_0055_recogniser.py"
   ]
  },
  "rows": [
@@ -223,7 +219,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 1.05s",
+   "pytest": "7 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the policy version not bumped: a wiki cached by released code keeps its old digest and its old body (SR2-01)"
@@ -256,7 +252,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.49s",
+   "pytest": "1 failed in 0.46s",
    "reason": null,
    "reason_seen": null,
    "what": "the code-owned empty body re-worded under the same policy version (round 1's SR1-03 change, repeated)"
@@ -289,7 +285,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.49s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty-input selection changed under the same policy version (2f3899be's shape: the branch, not the words)"
@@ -328,7 +324,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.78s",
+   "pytest": "3 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a cached code-owned empty body waits for the write threshold, so it is served above a verified fact (found in the fix)"
@@ -367,7 +363,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.90s",
+   "pytest": "3 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a cached empty body stale by a write alone is served the notice that says a model is needed, where its recompile may call none (N2)"
@@ -406,7 +402,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.77s",
+   "pytest": "3 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the selection widened to every stale row: a legacy or identity-stale row loses 0012's notice (N2)"
@@ -439,7 +435,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the row's digest not checked: a code-owned empty body stale by IDENTITY gets the write-stale notice (N2, 0003 v18.5's 'an identity-stale row keeps 0012's notice')"
@@ -454,6 +450,6 @@
   "good": 7,
   "killed": 7,
   "rows": 7,
-  "seconds": 30
+  "seconds": 26
  }
 }

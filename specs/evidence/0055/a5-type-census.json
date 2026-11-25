@@ -1,0 +1,1845 @@
+{
+ "about": "0055 round 5: the A5 type census, per argument (specs/evidence/0055/a5_type_census.py; the module docstring defines every field)",
+ "rows": [
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "answer",
+   "outcome": "no further than str",
+   "parameter": "query",
+   "screened_by": null,
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 1,
+    "reached": [
+     "provider"
+    ],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ScopeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "answer",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "ScopeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "confirm",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "confirm",
+   "outcome": "no further than str",
+   "parameter": "date",
+   "screened_by": null,
+   "str": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "confirm",
+   "outcome": "refused by type",
+   "parameter": "correlation_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "confirm",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "confirm",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "confirm_notice",
+   "outcome": "no further than str",
+   "parameter": "notice_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "correct",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "correct",
+   "outcome": "refused by type",
+   "parameter": "corrected_value",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "correct",
+   "outcome": "refused by type",
+   "parameter": "actor",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "correct",
+   "outcome": "refused by type",
+   "parameter": "evidence_ref",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "correct",
+   "outcome": "no further than str",
+   "parameter": "date",
+   "screened_by": null,
+   "str": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "correct",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "correct",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "describe_procedures",
+   "outcome": "no further than str",
+   "parameter": "query",
+   "screened_by": null,
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ScopeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "describe_procedures",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "ScopeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "dispute",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "dispute",
+   "outcome": "refused by type",
+   "parameter": "reason",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "dispute",
+   "outcome": "refused by type",
+   "parameter": "actor",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "dispute",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "dispute",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "AttributeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "edges_since",
+   "outcome": "no further than str",
+   "parameter": "since",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "export_memory",
+   "outcome": "no further than str",
+   "parameter": "path",
+   "screened_by": null,
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "facts_valid_at",
+   "outcome": "no further than str",
+   "parameter": "subject",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "facts_valid_at",
+   "outcome": "no further than str",
+   "parameter": "relation",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "facts_valid_at",
+   "outcome": "no further than str",
+   "parameter": "T",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "facts_valid_at",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "facts_valid_at",
+   "outcome": "no further than str",
+   "parameter": "policy",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "forget_everything_confirm",
+   "outcome": "no further than str",
+   "parameter": "preview_token",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "AttributeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "forget_everything_confirm",
+   "outcome": "no further than str",
+   "parameter": "issuer",
+   "screened_by": null,
+   "str": {
+    "exception": "AttributeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "forget_everything_confirm",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "AttributeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "forget_everything_preview",
+   "outcome": "no further than str",
+   "parameter": "issuer",
+   "screened_by": null,
+   "str": {
+    "exception": "AttributeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "forget_everything_preview",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "import_memory",
+   "outcome": "no further than str",
+   "parameter": "path",
+   "screened_by": null,
+   "str": {
+    "exception": "FileNotFoundError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "introspect",
+   "outcome": "no further than str",
+   "parameter": "mode",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "policy_receipt",
+   "outcome": "no further than str",
+   "parameter": "recall_id",
+   "screened_by": null,
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "recall",
+   "outcome": "no further than str",
+   "parameter": "query",
+   "screened_by": null,
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ScopeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "recall",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "ScopeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "recall",
+   "outcome": "no further than str",
+   "parameter": "semantic",
+   "screened_by": null,
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "recall",
+   "outcome": "no further than str",
+   "parameter": "as_of",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "recall",
+   "outcome": "no further than str",
+   "parameter": "policy",
+   "screened_by": null,
+   "str": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_outcome",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_outcome",
+   "outcome": "no further than str",
+   "parameter": "outcome",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_outcome",
+   "outcome": "refused by type",
+   "parameter": "evidence_ref",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_outcome",
+   "outcome": "no further than str",
+   "parameter": "actor",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_outcome",
+   "outcome": "refused by type",
+   "parameter": "corrected_value",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_outcome",
+   "outcome": "no further than str",
+   "parameter": "date",
+   "screened_by": null,
+   "str": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_outcome",
+   "outcome": "refused by type",
+   "parameter": "context_ref",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure",
+   "outcome": "refused by type",
+   "parameter": "summary",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ProcedureTypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_procedure",
+   "outcome": "no further than str",
+   "parameter": "relation",
+   "screened_by": null,
+   "str": {
+    "exception": "ProcedureValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure",
+   "outcome": "refused by type",
+   "parameter": "note",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ProcedureTypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_procedure",
+   "outcome": "no further than str",
+   "parameter": "when",
+   "screened_by": null,
+   "str": {
+    "exception": "ProcedureValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure",
+   "outcome": "refused by type",
+   "parameter": "evidence_ref",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure_report",
+   "outcome": "refused by type",
+   "parameter": "summary",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ProcedureTypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_procedure_report",
+   "outcome": "no further than str",
+   "parameter": "relation",
+   "screened_by": null,
+   "str": {
+    "exception": "ProcedureValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure_report",
+   "outcome": "refused by type",
+   "parameter": "note",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ProcedureTypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "record_procedure_report",
+   "outcome": "no further than str",
+   "parameter": "when",
+   "screened_by": null,
+   "str": {
+    "exception": "ProcedureValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure_report",
+   "outcome": "refused by type",
+   "parameter": "evidence_ref",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "record_procedure_report",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "redact",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "redact",
+   "outcome": "no further than str",
+   "parameter": "episode_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "redact",
+   "outcome": "no further than str",
+   "parameter": "reason",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "redact",
+   "outcome": "no further than str",
+   "parameter": "principal",
+   "screened_by": null,
+   "str": {
+    "exception": "TrustRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "remember",
+   "outcome": "refused by type",
+   "parameter": "event_text",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 1,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "remember",
+   "outcome": "no further than str",
+   "parameter": "date",
+   "screened_by": null,
+   "str": {
+    "exception": "ArgumentRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "remember",
+   "outcome": "refused by type",
+   "parameter": "event_type",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "remember",
+   "outcome": "refused by type",
+   "parameter": "evidence_ref",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "remember",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "TypeError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "reply",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "ReplyRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ReplyRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "reply",
+   "outcome": "no further than str",
+   "parameter": "kind",
+   "screened_by": null,
+   "str": {
+    "exception": "ReplyRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "reply",
+   "outcome": "refused by type",
+   "parameter": "text",
+   "screened_by": "own",
+   "str": {
+    "exception": null,
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": false,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "reply",
+   "outcome": "refused by type",
+   "parameter": "target",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "reply",
+   "outcome": "refused by type",
+   "parameter": "correlation_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "revoke_source",
+   "outcome": "refused by type",
+   "parameter": "origin",
+   "screened_by": "callee:D3",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "revoke_source",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "callee:D3",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "revoke_source",
+   "outcome": "no further than str",
+   "parameter": "reason",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "UndoRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "undo_restoration",
+   "outcome": "no further than str",
+   "parameter": "edge_id",
+   "screened_by": null,
+   "str": {
+    "exception": "UndoRefused",
+    "exception_text_carries_the_token": true,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "undo_restoration",
+   "outcome": "refused by type",
+   "parameter": "correlation_id",
+   "screened_by": "own",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "unrevoke_source",
+   "outcome": "refused by type",
+   "parameter": "origin",
+   "screened_by": "callee:D3",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ArgumentTypeRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": true
+   },
+   "method": "unrevoke_source",
+   "outcome": "refused by type",
+   "parameter": "source_id",
+   "screened_by": "callee:D3",
+   "str": {
+    "exception": "CredentialRefused",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  },
+  {
+   "bytes": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   },
+   "method": "unrevoke_source",
+   "outcome": "no further than str",
+   "parameter": "reason",
+   "screened_by": null,
+   "str": {
+    "exception": "ValueError",
+    "exception_text_carries_the_token": false,
+    "provider_calls": 0,
+    "reached": [],
+    "storage_unchanged": true,
+    "type_refusal": false
+   }
+  }
+ ],
+ "src_digest": "c1e39f5cc1e0da2eb57e9f90df4ef97eb800a1a90f1ed62c242800a7c522fc81",
+ "summary": {
+  "methods": 24,
+  "no_further_than_str": 51,
+  "refused_by_type": 32,
+  "rows": 83,
+  "screened_callee_d3": 4,
+  "screened_own": 28,
+  "unscreened": 51,
+  "unscreened_exception_echoes_in_both_forms": 14,
+  "violations": []
+ }
+}

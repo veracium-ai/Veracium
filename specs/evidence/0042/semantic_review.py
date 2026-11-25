@@ -81,10 +81,10 @@ DEFAULT = {
 }
 OVERRIDE = {  # (module, line) -> reason class, where the module default is not the truth for that line
     ("__init__.py", 440): "control-flow", ("__init__.py", 521): "control-flow", ("__init__.py", 719): "control-flow",
-    ("__init__.py", 1098): "control-flow", ("__init__.py", 1793): "control-flow", ("__init__.py", 1950): "control-flow",
-    ("__init__.py", 1972): "control-flow", ("__init__.py", 2024): "control-flow", ("__init__.py", 2031): "control-flow",
-    ("__init__.py", 2042): "control-flow", ("__init__.py", 2049): "control-flow", ("__init__.py", 2078): "control-flow",
-    ("__init__.py", 2691): "internal-invariant", ("__init__.py", 2976): "control-flow",
+    ("__init__.py", 1098): "control-flow", ("__init__.py", 1793): "control-flow", ("__init__.py", 1951): "control-flow",
+    ("__init__.py", 1973): "control-flow", ("__init__.py", 2025): "control-flow", ("__init__.py", 2032): "control-flow",
+    ("__init__.py", 2043): "control-flow", ("__init__.py", 2050): "control-flow", ("__init__.py", 2079): "control-flow",
+    ("__init__.py", 2692): "internal-invariant", ("__init__.py", 2983): "control-flow",
     ("__init__.py", 342): "internal-invariant", ("__init__.py", 349): "internal-invariant",
     ("__init__.py", 1186): "internal-invariant", ("__init__.py", 1190): "internal-invariant", ("__init__.py", 1194): "internal-invariant",
     ("__init__.py", 1201): "internal-invariant", ("__init__.py", 1203): "internal-invariant",
@@ -124,10 +124,10 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("mcp_server.py", 1081): "cli-usage", ("mcp_server.py", 1087): "cli-usage", ("mcp_server.py", 1093): "cli-usage", ("mcp_server.py", 1113): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
     ("__init__.py", 309): "control-flow",   # carried: __init__.py:_agent_call_path:RETURN_NONE:1
-    ("__init__.py", 2187): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1
-    ("__init__.py", 2788): "control-flow",   # carried: __init__.py:Memory.forget_everything_confirm:RAISE:2
-    ("__init__.py", 2818): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
-    ("__init__.py", 2854): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
+    ("__init__.py", 2188): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1
+    ("__init__.py", 2789): "control-flow",   # carried: __init__.py:Memory.forget_everything_confirm:RAISE:2
+    ("__init__.py", 2819): "internal-invariant",   # carried: __init__.py:Memory.source_revocations:RAISE:1
+    ("__init__.py", 2861): "internal-invariant",   # specs/0022 §4g: a store without revocation support refuses, the Store base's refusing-default class
     ("adapters/_surface.py", 50): "internal-invariant",   # specs/0053: _registered:RAISE:1, the MCP server exposes no tool manager
     ("adapters/_surface.py", 54): "internal-invariant",   # specs/0053: _registered:RAISE:2, the served tools differ from the ones bound
     ("adapters/pydantic_ai.py", 64): "argument-check",   # specs/0053: as_tools:RAISE:1, a max_retries that is not a non-negative int
@@ -265,22 +265,22 @@ e("ingest.py", 397, "ingest.instructions-not-a-list", "0039", "§2a", "downgrade
 e("ingest.py", 325, "ingest.source-id-required", "0006", "§4 rule 9", "refuse")
 e("mcp_server.py", 126, "mcp.closed-set.author", "0011", "§4d", "refuse")
 e("mcp_server.py", 135, "mcp.closed-set.trust-field", "0011", "§4d", "refuse")
-e("__init__.py", 2349, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
-e("__init__.py", 2634, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
-e("__init__.py", 2654, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
-e("__init__.py", 2711, "memory.correct.refused", "0011", "§4b", "refuse")
-e("__init__.py", 2163, "memory.correct.unclassified", "0011", "§4e 0011-UNCL", "refuse")
-e("__init__.py", 2257, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
-e("__init__.py", 2219, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
-e("__init__.py", 2124, "memory.edges-since.no-journal", "0049", "E2", "refuse")
-e("__init__.py", 2132, "memory.edges-since.no-journal-event", "0049", "E2b", "refuse")
-e("__init__.py", 2149, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
+e("__init__.py", 2350, "memory.confirm.unknown-target", "0008", "§6c INV-Q2", "refuse")
+e("__init__.py", 2635, "memory.correct.inactive-edge", "0011", "§4b", "refuse")
+e("__init__.py", 2655, "memory.correct.procedural", "0037", "§4a-iii", "refuse")
+e("__init__.py", 2712, "memory.correct.refused", "0011", "§4b", "refuse")
+e("__init__.py", 2164, "memory.correct.unclassified", "0011", "§4e 0011-UNCL", "refuse")
+e("__init__.py", 2258, "memory.dispute.inactive-edge", "0003", "§4b", "refuse")
+e("__init__.py", 2220, "memory.edge.unknown-target", "0041", "INV-5", "refuse")
+e("__init__.py", 2125, "memory.edges-since.no-journal", "0049", "E2", "refuse")
+e("__init__.py", 2133, "memory.edges-since.no-journal-event", "0049", "E2b", "refuse")
+e("__init__.py", 2150, "memory.feedback.attested-target", "0041", "§4b-ii INV-11 (derived episodes)", "refuse")
 e("__init__.py", 1074, "memory.recall.as-of-on-proactive", "0028", "§2c", "refuse")
 e("__init__.py", 1211, "memory.recall.policy-with-as-of", "0027", "v13 §4c", "refuse")
 e("__init__.py", 1080, "memory.recall.render-receipt-with-as-of", "0031", "INV-TT3", "refuse")
-e("__init__.py", 2481, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
-e("__init__.py", 2484, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
-e("__init__.py", 2487, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2482, "memory.record-outcome.actor-vocabulary", "0008", "§4", "refuse")
+e("__init__.py", 2485, "memory.record-outcome.human-judgment", "0008", "§4", "refuse")
+e("__init__.py", 2488, "memory.record-outcome.system-judgment", "0008", "§4", "refuse")
 e("__init__.py", 445, "memory.scope.local-origin-missing", "0006", "I9", "refuse")
 e("portability.py", 506, "portability.export.non-quiescent", "0010", "X-quiesce", "refuse")
 e("portability.py", 2078, "portability.import.act-preflight", "0008", "§6e–§6f", "refuse")
@@ -617,18 +617,18 @@ e("telemetry.py", 374, "telemetry.flush.invalid-consent", "0015", "§4", "withho
 e("telemetry.py", 380, "telemetry.flush.not-enabled", "0015", "§4", "withhold")
 e("telemetry.py", 345, "telemetry.preview.invalid-consent", "0015", "§4", "withhold")
 e("telemetry.py", 350, "telemetry.preview.not-enabled", "0015", "§4", "withhold")
-e("__init__.py", 2783, "trust.erase.confirm.principal-scoped", "0031", "INV-TT17", "refuse")
-e("__init__.py", 2763, "trust.erase.preview.issuer-context", "0031", "§4e", "refuse")
-e("__init__.py", 2760, "trust.erase.preview.principal-scoped", "0031", "INV-TT17", "refuse")
+e("__init__.py", 2784, "trust.erase.confirm.principal-scoped", "0031", "INV-TT17", "refuse")
+e("__init__.py", 2764, "trust.erase.preview.issuer-context", "0031", "§4e", "refuse")
+e("__init__.py", 2761, "trust.erase.preview.principal-scoped", "0031", "INV-TT17", "refuse")
 e("store/sqlite.py", 4338, "trust.erase.store-changed", "0031", "INV-TT8", "refuse")
-e("__init__.py", 2947, "trust.receipt.scope-filter", "0031", "INV-TT19", "withhold")
-e("__init__.py", 2192, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2194, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2198, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2203, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2206, "trust.scope-gate", "0031", "INV-TT16", "refuse")
-e("__init__.py", 2211, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2954, "trust.receipt.scope-filter", "0031", "INV-TT19", "withhold")
+e("__init__.py", 2193, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2195, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2199, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2204, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2207, "trust.scope-gate", "0031", "INV-TT16", "refuse")
 e("__init__.py", 2212, "trust.scope-gate", "0031", "INV-TT16", "refuse")
+e("__init__.py", 2213, "trust.scope-gate", "0031", "INV-TT16", "refuse")
 e("trust_tools.py", 169, "trust.token.parse", "0031", "INV-TT21", "refuse")
 e("trust_tools.py", 218, "trust.token.verify", "0031", "INV-TT8", "refuse")
 e("trust_tools.py", 220, "trust.token.verify", "0031", "INV-TT8", "refuse")

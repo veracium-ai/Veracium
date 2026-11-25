@@ -579,104 +579,104 @@
   "line": 135,
   "statement": "raise _SITE_CLOSED_SET_TRUST.fire(_cred.ArgumentRefused("
  },
- "__init__.py:Memory.confirm:2349:RAISE": {
+ "__init__.py:Memory.confirm:2350:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §6c INV-Q2 (refuse) through site memory.confirm.unknown-target",
   "reviewer": "dev",
   "site": "memory.confirm.unknown-target",
   "class": "enforcement",
   "key": "__init__.py:Memory.confirm:RAISE:1",
-  "line": 2349,
+  "line": 2350,
   "statement": "raise _SITE_CONFIRM_UNKNOWN_TARGET.fire(ValueError(f\"no edge {edge_id!r} for user {user_id!r}\")) from e"
  },
- "__init__.py:Memory.correct:2634:RAISE": {
+ "__init__.py:Memory.correct:2635:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0011 §4b (refuse) through site memory.correct.inactive-edge",
   "reviewer": "dev",
   "site": "memory.correct.inactive-edge",
   "class": "enforcement",
   "key": "__init__.py:Memory.correct:RAISE:1",
-  "line": 2634,
+  "line": 2635,
   "statement": "raise _SITE_CORRECT_INACTIVE.fire(ValueError(f\"edge {edge_id!r} is not active (already \""
  },
- "__init__.py:Memory.correct:2654:RAISE": {
+ "__init__.py:Memory.correct:2655:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0037 §4a-iii (refuse) through site memory.correct.procedural",
   "reviewer": "dev",
   "site": "memory.correct.procedural",
   "class": "enforcement",
   "key": "__init__.py:Memory.correct:RAISE:2",
-  "line": 2654,
+  "line": 2655,
   "statement": "raise _SITE_CORRECT_PROCEDURAL.fire(ProcedureValueError("
  },
- "__init__.py:Memory.correct:2711:RAISE": {
+ "__init__.py:Memory.correct:2712:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0011 §4b (refuse) through site memory.correct.refused",
   "reviewer": "dev",
   "site": "memory.correct.refused",
   "class": "enforcement",
   "key": "__init__.py:Memory.correct:RAISE:4",
-  "line": 2711,
+  "line": 2712,
   "statement": "raise _SITE_CORRECT_REFUSED.fire(graph.CorrectionRefused(edge_id, authority.RULE_VERSION))"
  },
- "__init__.py:Memory._refuse_unclassified_prior:2163:RAISE": {
+ "__init__.py:Memory._refuse_unclassified_prior:2164:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0011 §4e 0011-UNCL (refuse) through site memory.correct.unclassified",
   "reviewer": "dev",
   "site": "memory.correct.unclassified",
   "class": "enforcement",
   "key": "__init__.py:Memory._refuse_unclassified_prior:RAISE:1",
-  "line": 2163,
+  "line": 2164,
   "statement": "raise _SITE_CORRECT_UNCLASSIFIED.fire(graph.CorrectionOfUnclassified(edge_id))"
  },
- "__init__.py:Memory.dispute:2257:RAISE": {
+ "__init__.py:Memory.dispute:2258:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0003 §4b (refuse) through site memory.dispute.inactive-edge",
   "reviewer": "dev",
   "site": "memory.dispute.inactive-edge",
   "class": "enforcement",
   "key": "__init__.py:Memory.dispute:RAISE:1",
-  "line": 2257,
+  "line": 2258,
   "statement": "raise _SITE_DISPUTE_INACTIVE.fire(ValueError(f\"edge {edge_id!r} is not active (already \""
  },
- "__init__.py:Memory._find_edge:2219:RAISE": {
+ "__init__.py:Memory._find_edge:2220:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0041 INV-5 (refuse) through site memory.edge.unknown-target",
   "reviewer": "dev",
   "site": "memory.edge.unknown-target",
   "class": "enforcement",
   "key": "__init__.py:Memory._find_edge:RAISE:1",
-  "line": 2219,
+  "line": 2220,
   "statement": "raise _SITE_EDGE_UNKNOWN_TARGET.fire(ValueError(f\"no edge {edge_id!r} for user {user_id!r}\"))"
  },
- "__init__.py:Memory.edges_since:2124:RAISE": {
+ "__init__.py:Memory.edges_since:2125:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0049 E2 (refuse) through site memory.edges-since.no-journal",
   "reviewer": "dev",
   "site": "memory.edges-since.no-journal",
   "class": "enforcement",
   "key": "__init__.py:Memory.edges_since:RAISE:1",
-  "line": 2124,
+  "line": 2125,
   "statement": "raise _SITE_EDGES_SINCE_NO_JOURNAL.fire(NotImplementedError("
  },
- "__init__.py:Memory.edges_since:2132:RAISE": {
+ "__init__.py:Memory.edges_since:2133:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0049 E2b (refuse) through site memory.edges-since.no-journal-event",
   "reviewer": "dev",
   "site": "memory.edges-since.no-journal-event",
   "class": "enforcement",
   "key": "__init__.py:Memory.edges_since:RAISE:2",
-  "line": 2132,
+  "line": 2133,
   "statement": "raise _SITE_EDGES_SINCE_NO_EVENT.fire(ValueError("
  },
- "__init__.py:Memory._refuse_attested:2149:RAISE": {
+ "__init__.py:Memory._refuse_attested:2150:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0041 §4b-ii INV-11 (derived episodes) (refuse) through site memory.feedback.attested-target",
   "reviewer": "dev",
   "site": "memory.feedback.attested-target",
   "class": "enforcement",
   "key": "__init__.py:Memory._refuse_attested:RAISE:1",
-  "line": 2149,
+  "line": 2150,
   "statement": "raise _SITE_FEEDBACK_ATTESTED.fire(ValueError("
  },
  "__init__.py:Memory.recall:1074:RAISE": {
@@ -709,34 +709,34 @@
   "line": 1080,
   "statement": "raise _SITE_RECALL_RECEIPT_AS_OF.fire(ValueError("
  },
- "__init__.py:Memory.record_outcome:2481:RAISE": {
+ "__init__.py:Memory.record_outcome:2482:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §4 (refuse) through site memory.record-outcome.actor-vocabulary",
   "reviewer": "dev",
   "site": "memory.record-outcome.actor-vocabulary",
   "class": "enforcement",
   "key": "__init__.py:Memory.record_outcome:RAISE:1",
-  "line": 2481,
+  "line": 2482,
   "statement": "raise _SITE_OUTCOME_ACTOR.fire(ValueError(f\"actor must be 'user' or 'system', not {actor!r}\"))"
  },
- "__init__.py:Memory.record_outcome:2484:RAISE": {
+ "__init__.py:Memory.record_outcome:2485:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §4 (refuse) through site memory.record-outcome.human-judgment",
   "reviewer": "dev",
   "site": "memory.record-outcome.human-judgment",
   "class": "enforcement",
   "key": "__init__.py:Memory.record_outcome:RAISE:2",
-  "line": 2484,
+  "line": 2485,
   "statement": "raise _SITE_OUTCOME_HUMAN.fire(ValueError(f\"{outcome.value} is a human judgment (actor='user')\"))"
  },
- "__init__.py:Memory.record_outcome:2487:RAISE": {
+ "__init__.py:Memory.record_outcome:2488:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0008 §4 (refuse) through site memory.record-outcome.system-judgment",
   "reviewer": "dev",
   "site": "memory.record-outcome.system-judgment",
   "class": "enforcement",
   "key": "__init__.py:Memory.record_outcome:RAISE:3",
-  "line": 2487,
+  "line": 2488,
   "statement": "raise _SITE_OUTCOME_SYSTEM.fire(ValueError(f\"{outcome.value} is a system judgment (actor='system')\"))"
  },
  "__init__.py:Memory._build_scope_policy:445:RAISE": {
@@ -4099,34 +4099,34 @@
   "line": 350,
   "statement": "return _SITE_PREVIEW_NOT_ENABLED.fire(None, \"not-enabled\")"
  },
- "__init__.py:Memory.forget_everything_confirm:2783:RAISE": {
+ "__init__.py:Memory.forget_everything_confirm:2784:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT17 (refuse) through site trust.erase.confirm.principal-scoped",
   "reviewer": "dev",
   "site": "trust.erase.confirm.principal-scoped",
   "class": "enforcement",
   "key": "__init__.py:Memory.forget_everything_confirm:RAISE:1",
-  "line": 2783,
+  "line": 2784,
   "statement": "raise _SITE_TRUST_ERASE_CONFIRM.fire(_tt.TrustRefused(\"principal_scoped\"), \"principal_scoped\")"
  },
- "__init__.py:Memory.forget_everything_preview:2763:RAISE": {
+ "__init__.py:Memory.forget_everything_preview:2764:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 §4e (refuse) through site trust.erase.preview.issuer-context",
   "reviewer": "dev",
   "site": "trust.erase.preview.issuer-context",
   "class": "enforcement",
   "key": "__init__.py:Memory.forget_everything_preview:RAISE:2",
-  "line": 2763,
+  "line": 2764,
   "statement": "raise _SITE_TRUST_ERASE_PREVIEW_CONTEXT.fire(_tt.TrustRefused(\"preview_unknown\"), \"issuer-context\")"
  },
- "__init__.py:Memory.forget_everything_preview:2760:RAISE": {
+ "__init__.py:Memory.forget_everything_preview:2761:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT17 (refuse) through site trust.erase.preview.principal-scoped",
   "reviewer": "dev",
   "site": "trust.erase.preview.principal-scoped",
   "class": "enforcement",
   "key": "__init__.py:Memory.forget_everything_preview:RAISE:1",
-  "line": 2760,
+  "line": 2761,
   "statement": "raise _SITE_TRUST_ERASE_PREVIEW.fire(_tt.TrustRefused(\"principal_scoped\"), \"principal_scoped\")"
  },
  "store/sqlite.py:SqliteStore.forget_user:4338:RAISE": {
@@ -4139,75 +4139,65 @@
   "line": 4338,
   "statement": "raise _SITE_TRUST_STORE_CHANGED.fire(TrustRefused(\"store_changed\"), \"store_changed\")"
  },
- "__init__.py:Memory._principal_receipt:2947:FILTER_RETURN": {
+ "__init__.py:Memory._principal_receipt:2954:FILTER_RETURN": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT19 (withhold) through site trust.receipt.scope-filter",
   "reviewer": "dev",
   "site": "trust.receipt.scope-filter",
   "class": "enforcement",
   "key": "__init__.py:Memory._principal_receipt:FILTER_RETURN:1",
-  "line": 2947,
+  "line": 2954,
   "statement": "return _SITE_TRUST_RECEIPT_FILTER.fire(out, \"withhold\","
  },
- "__init__.py:Memory._trust_scope_gate:2192:RAISE": {
+ "__init__.py:Memory._trust_scope_gate:2193:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
   "reviewer": "dev",
   "site": "trust.scope-gate",
   "class": "enforcement",
   "key": "__init__.py:Memory._trust_scope_gate:RAISE:1",
-  "line": 2192,
+  "line": 2193,
   "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"scope_unconfigured\"), \"scope_unconfigured\")"
  },
- "__init__.py:Memory._trust_scope_gate:2194:RAISE": {
+ "__init__.py:Memory._trust_scope_gate:2195:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
   "reviewer": "dev",
   "site": "trust.scope-gate",
   "class": "enforcement",
   "key": "__init__.py:Memory._trust_scope_gate:RAISE:2",
-  "line": 2194,
+  "line": 2195,
   "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"principal_ungroupable\"), \"principal_ungroupable\")"
  },
- "__init__.py:Memory._trust_scope_gate:2198:RAISE": {
+ "__init__.py:Memory._trust_scope_gate:2199:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
   "reviewer": "dev",
   "site": "trust.scope-gate",
   "class": "enforcement",
   "key": "__init__.py:Memory._trust_scope_gate:RAISE:3",
-  "line": 2198,
+  "line": 2199,
   "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"source_unbound\"), \"source_unbound\")"
  },
- "__init__.py:Memory._trust_scope_gate:2203:RAISE": {
+ "__init__.py:Memory._trust_scope_gate:2204:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
   "reviewer": "dev",
   "site": "trust.scope-gate",
   "class": "enforcement",
   "key": "__init__.py:Memory._trust_scope_gate:RAISE:4",
-  "line": 2203,
+  "line": 2204,
   "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"source_out_of_scope\"), \"source_out_of_scope\")"
  },
- "__init__.py:Memory._trust_scope_gate:2206:RAISE": {
+ "__init__.py:Memory._trust_scope_gate:2207:RAISE": {
   "decision": "enforcement",
   "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
   "reviewer": "dev",
   "site": "trust.scope-gate",
   "class": "enforcement",
   "key": "__init__.py:Memory._trust_scope_gate:RAISE:5",
-  "line": 2206,
+  "line": 2207,
   "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"not_found_in_scope\"), \"not_found_in_scope\")"
- },
- "__init__.py:Memory._trust_scope_gate:2211:RAISE": {
-  "decision": "enforcement",
-  "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
-  "reviewer": "dev",
-  "site": "trust.scope-gate",
-  "class": "enforcement",
-  "key": "__init__.py:Memory._trust_scope_gate:RAISE:6",
-  "line": 2211,
-  "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"out_of_scope\"), \"out_of_scope\")"
  },
  "__init__.py:Memory._trust_scope_gate:2212:RAISE": {
   "decision": "enforcement",
@@ -4215,8 +4205,18 @@
   "reviewer": "dev",
   "site": "trust.scope-gate",
   "class": "enforcement",
-  "key": "__init__.py:Memory._trust_scope_gate:RAISE:7",
+  "key": "__init__.py:Memory._trust_scope_gate:RAISE:6",
   "line": 2212,
+  "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"out_of_scope\"), \"out_of_scope\")"
+ },
+ "__init__.py:Memory._trust_scope_gate:2213:RAISE": {
+  "decision": "enforcement",
+  "reason": "enforces 0031 INV-TT16 (refuse) through site trust.scope-gate",
+  "reviewer": "dev",
+  "site": "trust.scope-gate",
+  "class": "enforcement",
+  "key": "__init__.py:Memory._trust_scope_gate:RAISE:7",
+  "line": 2213,
   "statement": "raise _SITE_TRUST_SCOPE_GATE.fire(TrustRefused(\"not_found_in_scope\"), \"not_found_in_scope\")"
  },
  "trust_tools.py:parse_token:169:RAISE": {
@@ -4287,49 +4287,58 @@
   "line": 624,
   "statement": "raise self._cred_refused(user_id, op, field_name, cls)"
  },
- "__init__.py:Memory._d3_legacy_source_or_refuse._matches:2838:BOOL_RETURN": {
+ "__init__.py:Memory._d3_legacy_source_or_refuse._matches:2845:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory._d3_legacy_source_or_refuse._matches:BOOL_RETURN:1",
-  "line": 2838,
+  "line": 2845,
   "statement": "return (prov is not None and prov.source_id is not None"
  },
- "__init__.py:Memory._d3_legacy_source_or_refuse:2833:RETURN_NONE": {
-  "decision": "not",
-  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
-  "reviewer": "dev",
-  "class": "argument-check",
-  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RETURN_NONE:1",
-  "line": 2833,
-  "statement": "return"
- },
- "__init__.py:Memory._d3_legacy_source_or_refuse:2842:RETURN_NONE": {
-  "decision": "not",
-  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
-  "reviewer": "dev",
-  "class": "argument-check",
-  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RETURN_NONE:2",
-  "line": 2842,
-  "statement": "return"
- },
- "__init__.py:Memory._d3_legacy_source_or_refuse:2845:RETURN_NONE": {
-  "decision": "not",
-  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
-  "reviewer": "dev",
-  "class": "argument-check",
-  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RETURN_NONE:3",
-  "line": 2845,
-  "statement": "return"
- },
- "__init__.py:Memory._d3_legacy_source_or_refuse:2847:RAISE": {
+ "__init__.py:Memory._d3_legacy_source_or_refuse:2834:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RAISE:1",
-  "line": 2847,
+  "line": 2834,
+  "statement": "raise _cred.ArgumentTypeRefused(f\"{op}: {field_name} must be a str, not {type(value).__name__}\","
+ },
+ "__init__.py:Memory._d3_legacy_source_or_refuse:2840:RETURN_NONE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RETURN_NONE:1",
+  "line": 2840,
+  "statement": "return"
+ },
+ "__init__.py:Memory._d3_legacy_source_or_refuse:2849:RETURN_NONE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RETURN_NONE:2",
+  "line": 2849,
+  "statement": "return"
+ },
+ "__init__.py:Memory._d3_legacy_source_or_refuse:2852:RETURN_NONE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RETURN_NONE:3",
+  "line": 2852,
+  "statement": "return"
+ },
+ "__init__.py:Memory._d3_legacy_source_or_refuse:2854:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "__init__.py:Memory._d3_legacy_source_or_refuse:RAISE:2",
+  "line": 2854,
   "statement": "raise self._cred_refused(user_id, op, field_name, cls)"
  },
  "__init__.py:Memory._recall:1208:RAISE": {
@@ -4350,22 +4359,22 @@
   "line": 641,
   "statement": "raise self._cred_refused(user_id, \"correct\", field_name, cls, source=\"derived\")"
  },
- "__init__.py:Memory._source_revocation:2857:RAISE": {
+ "__init__.py:Memory._source_revocation:2864:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory._source_revocation:RAISE:2",
-  "line": 2857,
+  "line": 2864,
   "statement": "raise TypeError(f\"dry_run must be a bool, got {type(dry_run).__name__}\")"
  },
- "__init__.py:Memory._source_revocation:2866:RAISE": {
+ "__init__.py:Memory._source_revocation:2873:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory._source_revocation:RAISE:3",
-  "line": 2866,
+  "line": 2873,
   "statement": "raise ValueError(\"source_id is required: a record with no source_id has no source identity and is not \""
  },
  "__init__.py:Memory.describe_procedures:963:RAISE": {
@@ -4404,13 +4413,13 @@
   "line": 1114,
   "statement": "raise TypeError(\"facts_valid_at requires T (specs/0028 §2c-i)\")"
  },
- "__init__.py:Memory.import_memory:3020:RAISE": {
+ "__init__.py:Memory.import_memory:3027:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "__init__.py:Memory.import_memory:RAISE:1",
-  "line": 3020,
+  "line": 3027,
   "statement": "raise"
  },
  "__init__.py:Memory.recall:1069:RAISE": {
@@ -5682,13 +5691,13 @@
   "line": 1793,
   "statement": "return [(e, ln) for e, ln in"
  },
- "__init__.py:Memory._trust_scope_gate:2187:RETURN_NONE": {
+ "__init__.py:Memory._trust_scope_gate:2188:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory._trust_scope_gate:RETURN_NONE:1",
-  "line": 2187,
+  "line": 2188,
   "statement": "return None"
  },
  "__init__.py:Memory._usage_operation:521:RETURN_NONE": {
@@ -5700,67 +5709,67 @@
   "line": 521,
   "statement": "return"
  },
- "__init__.py:Memory.answer:1950:RAISE": {
+ "__init__.py:Memory.answer:1951:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.answer:RAISE:1",
-  "line": 1950,
+  "line": 1951,
   "statement": "raise"
  },
- "__init__.py:Memory.diagnostics_preview:2049:RETURN_NONE": {
+ "__init__.py:Memory.diagnostics_preview:2050:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.diagnostics_preview:RETURN_NONE:1",
-  "line": 2049,
+  "line": 2050,
   "statement": "return None"
  },
- "__init__.py:Memory.flush_telemetry:2024:RETURN_FALSE": {
+ "__init__.py:Memory.flush_telemetry:2025:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.flush_telemetry:RETURN_FALSE:1",
-  "line": 2024,
+  "line": 2025,
   "statement": "return False"
  },
- "__init__.py:Memory.forget_everything_confirm:2788:RAISE": {
+ "__init__.py:Memory.forget_everything_confirm:2789:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.forget_everything_confirm:RAISE:2",
-  "line": 2788,
+  "line": 2789,
   "statement": "raise"
  },
- "__init__.py:Memory.introspect:2078:RAISE": {
+ "__init__.py:Memory.introspect:2079:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.introspect:RAISE:1",
-  "line": 2078,
+  "line": 2079,
   "statement": "raise"
  },
- "__init__.py:Memory.maintain:1972:RAISE": {
+ "__init__.py:Memory.maintain:1973:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.maintain:RAISE:1",
-  "line": 1972,
+  "line": 1973,
   "statement": "raise"
  },
- "__init__.py:Memory.policy_receipts:2976:FILTER_RETURN": {
+ "__init__.py:Memory.policy_receipts:2983:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.policy_receipts:FILTER_RETURN:1",
-  "line": 2976,
+  "line": 2983,
   "statement": "return [receipt_from_row(r) for r in self.store.policy_receipts(user_id, limit=limit)]"
  },
  "__init__.py:Memory.recall:1098:RAISE": {
@@ -5781,22 +5790,22 @@
   "line": 719,
   "statement": "raise"
  },
- "__init__.py:Memory.report_error:2042:RETURN_FALSE": {
+ "__init__.py:Memory.report_error:2043:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.report_error:RETURN_FALSE:1",
-  "line": 2042,
+  "line": 2043,
   "statement": "return False"
  },
- "__init__.py:Memory.telemetry_preview:2031:RETURN_NONE": {
+ "__init__.py:Memory.telemetry_preview:2032:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "__init__.py:Memory.telemetry_preview:RETURN_NONE:1",
-  "line": 2031,
+  "line": 2032,
   "statement": "return None"
  },
  "__init__.py:_agent_call_path:309:RETURN_NONE": {
@@ -6978,31 +6987,31 @@
   "line": 1203,
   "statement": "raise ValueError(\"group_heading_allowance_tokens < 16 (I10e, surface build)\")"
  },
- "__init__.py:Memory._source_revocation:2854:RAISE": {
+ "__init__.py:Memory._source_revocation:2861:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "__init__.py:Memory._source_revocation:RAISE:1",
-  "line": 2854,
+  "line": 2861,
   "statement": "raise NotImplementedError(f\"{type(self.store).__name__} does not support source revocation \""
  },
- "__init__.py:Memory.correct:2691:RAISE": {
+ "__init__.py:Memory.correct:2692:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "__init__.py:Memory.correct:RAISE:3",
-  "line": 2691,
+  "line": 2692,
   "statement": "raise RuntimeError("
  },
- "__init__.py:Memory.source_revocations:2818:RAISE": {
+ "__init__.py:Memory.source_revocations:2819:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "__init__.py:Memory.source_revocations:RAISE:1",
-  "line": 2818,
+  "line": 2819,
   "statement": "raise NotImplementedError(f\"{type(self.store).__name__} does not support source revocation \""
  },
  "__init__.py:receipt_from_row:342:RAISE": {
@@ -9984,13 +9993,13 @@
   "line": 1099,
   "statement": "return None"
  },
- "store/sqlite.py:SqliteStore._credential_key:4665:RAISE": {
+ "store/sqlite.py:SqliteStore._credential_key:4676:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/sqlite.py:SqliteStore._credential_key:RAISE:1",
-  "line": 4665,
+  "line": 4676,
   "statement": "raise RuntimeError(f\"specs/0055 §4f: table {table} has no key; name it in _CARRIER_SIDE_TABLES\")"
  },
  "store/sqlite.py:SqliteStore._id_reserved:3375:RETURN_FALSE": {
@@ -10173,13 +10182,13 @@
   "line": 1395,
   "statement": "raise"
  },
- "store/sqlite.py:SqliteStore.discard_wiki:4675:BOOL_RETURN": {
+ "store/sqlite.py:SqliteStore.discard_wiki:4686:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/sqlite.py:SqliteStore.discard_wiki:BOOL_RETURN:1",
-  "line": 4675,
+  "line": 4686,
   "statement": "return n == 1"
  },
  "store/sqlite.py:SqliteStore.expiry_transition:1723:RETURN_NONE": {
@@ -10659,49 +10668,49 @@
   "line": 45,
   "statement": "return refusal.relation in RECLASSIFIED_RELATIONS and refusal.refusal_id in retained"
  },
- "credential_finder.py:Hit.removable:85:BOOL_RETURN": {
+ "credential_finder.py:Hit.removable:89:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credential_finder.py:report, credential_finder.py:targets",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credential_finder.py:Hit.removable:BOOL_RETURN:1",
-  "line": 85,
+  "line": 89,
   "statement": "return not is_residual(self.carrier)"
  },
- "credential_finder.py:_shaped:105:BOOL_RETURN": {
+ "credential_finder.py:_shaped:109:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; consumed (by name) by ingest.py:ingest_event [site ingest.basis-via-remember, ingest.instructions-not-a-list, ingest.source-id-required]; and by credential_finder.py:act, credential_finder.py:locators (no site)",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credential_finder.py:_shaped:BOOL_RETURN:1",
-  "line": 105,
+  "line": 109,
   "statement": "return isinstance(value, str) and _cred.first_class(value) is not None"
  },
- "credential_finder.py:is_residual:48:BOOL_RETURN": {
+ "credential_finder.py:is_residual:52:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credential_finder.py:Hit.removable",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credential_finder.py:is_residual:BOOL_RETURN:1",
-  "line": 48,
+  "line": 52,
   "statement": "return carrier not in REMEDY"
  },
- "credential_finder.py:scan:101:FILTER_RETURN": {
+ "credential_finder.py:scan:105:FILTER_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by agreement.py:derive_record, agreement.py:relay_markers, cli.py:_credentials, credentials.py:_run, credentials.py:first_class, doctor.py:_check_credentials",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credential_finder.py:scan:FILTER_RETURN:1",
-  "line": 101,
+  "line": 105,
   "statement": "return sorted(merged.values(), key=lambda h: (h.user_id, h.carrier, h.record_kind, h.record_id))"
  },
- "credentials.py:_formats_as:653:BOOL_RETURN": {
+ "credentials.py:_formats_as:666:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_formats_as:BOOL_RETURN:1",
-  "line": 653,
+  "line": 666,
   "statement": "return str(exc) in (msg, repr(msg)) and not (isinstance(exc, SyntaxError) and (exc.text or exc.filename))"
  },
  "credentials.py:_looks_generated:120:RETURN_FALSE": {
@@ -10722,22 +10731,22 @@
   "line": 122,
   "statement": "return kinds >= 3 or (kinds >= 2 and len(v) >= 12 and _DIGIT.search(v) is not None)"
  },
- "credentials.py:_pydantic_errors:592:RETURN_NONE": {
+ "credentials.py:_pydantic_errors:605:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:outward_text, credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_pydantic_errors:RETURN_NONE:1",
-  "line": 592,
+  "line": 605,
   "statement": "return None"
  },
- "credentials.py:_pydantic_errors:594:RETURN_NONE": {
+ "credentials.py:_pydantic_errors:607:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:outward_text, credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_pydantic_errors:RETURN_NONE:2",
-  "line": 594,
+  "line": 607,
   "statement": "return None"
  },
  "credentials.py:_value_ok:128:RETURN_FALSE": {

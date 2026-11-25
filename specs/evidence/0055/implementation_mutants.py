@@ -41,7 +41,9 @@ MUTATED = ("src/veracium/credentials.py", "src/veracium/__init__.py", "src/verac
            "src/veracium/mcp_server.py", "src/veracium/graph.py", "src/veracium/cli.py", "src/veracium/semantic.py",
            # round 4's fixes (R4-02 compile, R4-03 the receipt, R4-06 diagnostics, A1 the finder)
            "src/veracium/compile.py", "src/veracium/trust_tools.py", "src/veracium/diagnostics.py",
-           "src/veracium/credential_finder.py")
+           "src/veracium/credential_finder.py",
+           # round 5 (the carrier-to-boundary table's findings: why's --find hit)
+           "src/veracium/why.py")
 DIGESTED = MUTATED + CELL_FILES + ("tests/support_0055_i19.py", "specs/evidence/0055/digests.json",
                                    "specs/evidence/0055/vectors.py", "specs/evidence/mutation_protocol.py",
                                    _protocol.KINDS, SELF)
@@ -238,6 +240,31 @@ MUTANTS += [
      [('    ("maintain() consolidate-pool / pool_key",', '    ("maintain() consolidate-pool",')],
      ['tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key'], [_R4 + 'test_r4_03_render_receipts_use_the_locator_on_every_exit'], None,
      "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"),
+    # round 5: D3's type gate (research's (c)) and the carrier-to-boundary table's findings
+    ('R5-D3-str-only-gate', 'product', 'src/veracium/__init__.py',
+     [('        for field_name, value in (("origin", origin), ("source_id", source_id)):\n            if value is not None and not isinstance(value, str):\n                raise _cred.ArgumentTypeRefused(f"{op}: {field_name} must be a str, not {type(value).__name__}",\n                                                field=field_name, reason="not_a_string")\n', '')],
+     ['tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[revoke_source.origin]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[revoke_source.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[unrevoke_source.origin]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[unrevoke_source.source_id]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "D3's screen reads only a str again: a bytes origin or source_id passes it to `_bounded`, whose message quotes it (round 5: R4-01's class one call down, found by the A5 census's exception-text cell)"),
+    ('R5-recall-episode-date-unmasked', 'product', 'src/veracium/__init__.py',
+     [('        ep_lines = [(e, clamp_item(f"[{_cred.mask_text(e.date)}]', '        ep_lines = [(e, clamp_item(f"[{e.date}]'), ('        tp_ep_lines = [(e, clamp_item(f"[{_cred.mask_text(e.date)}]', '        tp_ep_lines = [(e, clamp_item(f"[{e.date}]')],
+     ['tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "recall's episode lines print the stored date unmasked again (round 5, the carrier table's `record:episode:current:date`)"),
+    ('R5-compile-episode-date-unmasked', 'product', 'src/veracium/compile.py',
+     [('clamp_item(f"[{_cred.mask_text(e.date)}] {_cred.mask_text(e.summary)}", item_cap)', 'clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", item_cap)')],
+     ['tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]', 'tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[wiki-compile-dated]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "the wiki compile's episode line prints the stored date unmasked again (round 5; reached by the DATED form only: a bare token sorts as a future date and the episode is not assertable)"),
+    ('R5-mask-deep-keys-kept', 'product', 'src/veracium/credentials.py',
+     [('            nk = mask_text(k) if isinstance(k, str) else k\n', '            nk = k\n')],
+     ['tests/test_0055_r4_closure.py::test_r5_mask_deep_masks_str_keys_and_keeps_two_alike_as_two', 'tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why-json]', 'tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     'mask_deep leaves dict keys as they are again (round 5: `veracium why` printed a legacy `outcome_counts` key)'),
+    ('R5-why-find-two-fields', 'product', 'src/veracium/why.py',
+     [('            out.append(_cred.mask_deep({"id": d.get("id"), "fact": _summary(d),', '            out.append(dict({"id": _cred.mask_text(d.get("id")), "fact": _cred.mask_text(_summary(d)),')],
+     ['tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[find-json]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     'why.find masks only its id and fact again (round 5: `why --find --json` printed `invalidation_reason`)'),
+    ('R5-journal-after-redaction-removable', 'product', 'src/veracium/store/sqlite.py',
+     [('                done = (uid, rid) in redacted\n', '                done = False\n')],
+     ['tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]', 'tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[edge]', 'tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[episode]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     'journal text of an already-redacted record is reported removable again (round 5: `act` redacted nothing and the token stayed)'),
 ]
 
 
@@ -265,6 +292,7 @@ _NOOP_ANCHORS = {
     "src/veracium/trust_tools.py": "class RenderReceipt:",
     "src/veracium/diagnostics.py": "class Reporter",
     "src/veracium/credential_finder.py": "def is_residual(",
+    "src/veracium/why.py": "def find(",
 }
 
 # (id, file, [(anchor, replacement)], named cells, what, the outcome the classifier must give)
@@ -282,7 +310,7 @@ SUBJECT_P = _protocol.Subject(
     import_modules=("veracium", "veracium.credentials", "veracium.ingest", "veracium.portability",
                     "veracium.proactive", "veracium.store.sqlite", "veracium.mcp_server", "veracium.graph",
                     "veracium.cli", "veracium.semantic", "veracium.compile", "veracium.trust_tools",
-                    "veracium.diagnostics", "veracium.credential_finder"),
+                    "veracium.diagnostics", "veracium.credential_finder", "veracium.why"),
     import_specs=(), cells_files=CELL_FILES, kinds=("product",))
 
 definition_sha = _protocol.definition_sha

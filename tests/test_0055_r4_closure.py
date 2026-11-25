@@ -111,6 +111,31 @@ def _screened() -> dict:
 _DELEGATES = {"record_procedure": "record_procedure_report"}
 
 
+def _callee_screened() -> dict:
+    """The fields a CALLEE screens rather than the method's own `_cred_ingress` (round 5): D3's
+    `_d3_legacy_source_or_refuse(user_id, origin, source_id, op)`, reached through `_source_revocation`. Read by `ast`:
+    every public method that calls `_source_revocation`, with D3's own parameters (all but `self`, `user_id`, `op`)."""
+    tree = ast.parse((ROOT / "src" / "veracium" / "__init__.py").read_text())
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Memory")
+    fns = {n.name: n for n in cls.body if isinstance(n, ast.FunctionDef)}
+    d3 = [a.arg for a in fns["_d3_legacy_source_or_refuse"].args.args if a.arg not in ("self", "user_id", "op")]
+    assert any(getattr(c.func, "attr", None) == "_d3_legacy_source_or_refuse"
+               for c in ast.walk(fns["_source_revocation"]) if isinstance(c, ast.Call))
+    return {name: set(d3) for name, fn in fns.items() if not name.startswith("_")
+            and any(getattr(c.func, "attr", None) == "_source_revocation" for c in ast.walk(fn)
+                    if isinstance(c, ast.Call))}
+
+
+def _screened_by(method: str, param: str):
+    """`own` (the method's own `_cred_ingress`, or its I20 twin's), `callee:D3`, or None."""
+    owner = method if method in _screened() else _DELEGATES.get(method)
+    if owner is not None and param in _screened().get(owner, ()):
+        return "own"
+    if param in _callee_screened().get(method, ()):
+        return "callee:D3"
+    return None
+
+
 def _call(mem, tmp_path, e, method, param, value):
     from veracium.redaction import SOURCE_LIFT_REASONS, SOURCE_REVOCATION_REASONS
     from veracium.trust_tools import PreviewTokenIssuer
@@ -150,8 +175,6 @@ def _call(mem, tmp_path, e, method, param, value):
     kw = dict(base[method])
     if method == "forget_everything_confirm":
         kw["preview_token"] = mem.forget_everything_preview("u", issuer=iss)["preview_token"]
-    if method == "unrevoke_source":
-        mem.revoke_source("u", None, "chat", SOURCE_REVOCATION_REASONS[0])
     if method == "import_memory":
         other = T._mem(tmp_path, "src")
         T._seed_edge(other)
@@ -177,6 +200,9 @@ def _run_a5(tmp_path, method, param, form):
     mem = Memory(llm=stub, config=MemoryConfig(db_path=str(sub / "m.db"), wiki_recompile_after_writes=0))
     try:
         e = T._seed_edge(mem)
+        if method == "unrevoke_source":         # its precondition, written BEFORE the storage snapshot
+            from veracium.redaction import SOURCE_REVOCATION_REASONS
+            mem.revoke_source("u", None, "chat", SOURCE_REVOCATION_REASONS[0])
         before = T._dump(str(sub / "m.db"))
         stub.prompts.clear()
         try:
@@ -198,6 +224,11 @@ def test_r4_01_the_a5_census_is_whole_and_every_row_has_a_driver():
     for method, fields in screened.items():
         for f in fields:
             assert (method, f) in rows, (method, f)
+    callee = _callee_screened()
+    assert callee, "no callee-screened field found: D3's route moved?"
+    for method, fields in callee.items():
+        for f in fields:
+            assert (method, f) in rows, (method, f)
     tree = ast.parse((ROOT / "src" / "veracium" / "__init__.py").read_text())
     cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Memory")
     for public, twin in _DELEGATES.items():
@@ -212,10 +243,15 @@ def test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str(tmp_path, metho
     `not_a_string`), before any provider call, with storage unchanged. RED against: round 4's R4-01 — `event_type` and
     `evidence_ref` as bytes skipped the screen, became text downstream and were stored (the `isinstance(str)` gate)."""
     b_exc, b_leak, b_unchanged, b_calls = _run_a5(tmp_path, method, param, "bytes")
-    _s_exc, s_leak, _s_unchanged, _s_calls = _run_a5(tmp_path, method, param, "str")
+    s_exc, s_leak, _s_unchanged, _s_calls = _run_a5(tmp_path, method, param, "str")
     assert b_leak <= s_leak, (method, param, b_leak, s_leak, type(b_exc).__name__ if b_exc else None)
-    owner = method if method in _screened() else _DELEGATES.get(method)
-    if owner is not None and param in _screened().get(owner, ()):
+    # round 5: the exception's own text, too. A library exception may carry the caller's argument (E1's library
+    # scope), but the bytes form may not echo the token where the str form does not. RED against: the revocation
+    # rows at 7124ba95 (D3's str-only gate let bytes through to `_bounded`'s `got {value!r}`).
+    if b_exc is not None and TOKEN in str(b_exc):
+        assert s_exc is not None and TOKEN in str(s_exc), (method, param, type(b_exc).__name__,
+                                                           type(s_exc).__name__ if s_exc else None)
+    if _screened_by(method, param) is not None:
         assert isinstance(b_exc, C.ArgumentTypeRefused) and b_exc.reason == "not_a_string", repr(b_exc)
         assert isinstance(b_exc, TypeError) and isinstance(b_exc, C.ArgumentRefused)
         assert TOKEN not in str(b_exc) and TOKEN not in C.outward_text(b_exc)
@@ -585,7 +621,12 @@ def test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found(tmp_path
             m.store._conn.commit()
             hits = CF.scan(m.store, "u")
             assert hits, (kind, where, target)
-            if target in own:
+            if target in own and kind == "episode" and where == "journal":
+                # an episode's journal row exists only after a redaction of it, and redacting again writes nothing:
+                # its text is a residual (round 5, the carrier table), never reported removable
+                assert any(h.carrier == "episode_event.after_redaction" and not h.removable for h in hits), (
+                    target, [h.carrier for h in hits])
+            elif target in own:
                 assert any(h.removable for h in hits), (target, [h.carrier for h in hits])
             m.store._conn.execute(upd, (text, rowid))
             m.store._conn.commit()
@@ -825,5 +866,143 @@ def test_a1_the_finder_report_declares_the_pool_key(tmp_path):
         rep = CF.report(CF.scan(m.store, "u"))
         assert any("pool_key" in d["domain"] for d in rep["declared_opaque"])
         assert "pool_key" in CF.render(rep)
+    finally:
+        m.close()
+
+
+# ==== Round 5: what the carrier-to-boundary table found (specs/evidence/0055/carrier_boundaries.py) ===============
+
+#: the two value forms of a legacy date: the token alone sorts after every ISO date (an episode "not yet valid", so
+#: rendered only among the non-assertable lines); behind an ISO-date prefix it sorts as a past date, is assertable, and
+#: reaches the compile (`Episode.valid_now` compares the strings)
+_DATE_FORMS = {"bare": TOKEN, "dated": "2020-01-01 " + TOKEN}
+
+
+def _legacy_episode_date(tmp_path, form="bare"):
+    """A store whose one episode holds the token in its stored `date` (a legacy row: `date` is a str in the model and
+    no write path admits a shape, but a store written before 0055, or by another writer, may hold one)."""
+    from veracium.schema import Episode, Provenance
+    stub = T.Stub()
+    m = Memory(llm=stub, config=MemoryConfig(db_path=str(tmp_path / "m.db"), wiki_recompile_after_writes=1))
+    T._seed_edge(m)
+    m.store.add_episode(Episode(id="ep-r5", user_id="u", date="2026-11-24", summary="Ordinary episode",
+                                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev-r5")))
+    con = m.store._conn
+    doc = json.loads(con.execute("SELECT json FROM episodes WHERE id='ep-r5'").fetchone()[0])
+    doc["date"] = _DATE_FORMS[form]
+    con.execute("UPDATE episodes SET json=? WHERE id='ep-r5'", (json.dumps(doc),))
+    con.commit()
+    return m, stub
+
+
+@pytest.mark.parametrize("form", sorted(_DATE_FORMS))
+@pytest.mark.parametrize("surface", ["recall", "answer", "mcp-recall", "find_facts", "wiki-compile", "briefing",
+                                     "maintain"])
+def test_r5_a_legacy_episode_date_reaches_no_model_and_no_result(tmp_path, surface, form):
+    """The episode lines of recall, answer and the wiki compile print `[date] summary`; the summary was masked and
+    the date was not, so a shaped stored date reached the provider and the served results (the carrier table's row
+    `record:episode:current:date`). Both value forms: the bare token is not yet valid and reaches recall's
+    non-assertable lines; behind an ISO-date prefix it is assertable and reaches recall's grounded lines and the
+    compile (a mutant unmasking only the compile's line survived the bare form). The briefing's recents and
+    consolidation's listing read only a date that parses as an ISO date, so neither form reaches them: those cells
+    hold that it stays so. RED against: the date printed unmasked at recall's or the compile's episode line."""
+    from veracium import compile as _compile
+    from veracium.mcp_server import find_facts_impl, recall_impl
+    m, stub = _legacy_episode_date(tmp_path, form)
+    try:
+        assert TOKEN in T._dump(str(tmp_path / "m.db"))
+        run = {"recall": lambda: m.recall("u", "where does the user live").context,
+               "answer": lambda: m.answer("u", "where does the user live"),
+               "mcp-recall": lambda: recall_impl(m, "u", "where does the user live"),
+               "find_facts": lambda: find_facts_impl(m, "u", "where", capability="direct"),
+               "wiki-compile": lambda: _compile.compile_wiki(m.store, stub, "u", m.config.relations),
+               "briefing": lambda: m.recall("u").context,
+               "maintain": lambda: m.maintain("u")}[surface]
+        out = json.dumps(run(), default=str)
+        payloads = [p for _role, p in stub.prompts]
+        if surface in ("recall", "answer", "mcp-recall", "wiki-compile"):
+            assert payloads, "the surface called no provider: the cell would hold nothing"
+        assert TOKEN not in out and not any(TOKEN in p for p in payloads)
+        if surface in ("recall", "mcp-recall"):
+            assert "[credential withheld" in out, out[:400]
+    finally:
+        m.close()
+
+
+def _legacy_why_store(tmp_path):
+    m = T._mem(tmp_path)
+    e = T._seed_edge(m)
+    con = m.store._conn
+    doc = json.loads(con.execute("SELECT json FROM edges WHERE id=?", (e.id,)).fetchone()[0])
+    doc["outcome_counts"] = {TOKEN: 1}
+    doc["invalidation_reason"] = TOKEN
+    con.execute("UPDATE edges SET json=? WHERE id=?", (json.dumps(doc), e.id))
+    con.commit()
+    m.close()
+    return str(tmp_path / "m.db"), e.id
+
+
+@pytest.mark.parametrize("argv", [[], ["--json"], ["--find", "Denver"], ["--json", "--find", "Denver"]],
+                         ids=["why", "why-json", "find", "find-json"])
+def test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field(tmp_path, capsys, argv):
+    """`veracium why` printed an edge's `outcome_counts` with a legacy dict KEY as stored (`mask_deep` masked values,
+    never keys), and `why --find --json` printed `invalidation_reason` unmasked. RED against: mask_deep's keys left as
+    they are; why.find masking only its id and fact."""
+    from veracium import cli
+    db, eid = _legacy_why_store(tmp_path)
+    rc = cli.main(["why", "--db", db, "--user", "u", *argv, *([] if "--find" in argv else [eid])])
+    out = capsys.readouterr().out
+    assert rc == 0, out
+    assert TOKEN not in out, out[:400]
+
+
+def test_r5_mask_deep_masks_str_keys_and_keeps_two_alike_as_two():
+    """A str key with a shape is masked; two keys that mask alike stay two entries; a key with no shape and a
+    non-str key are kept as they are, and a dict with nothing to mask is returned as itself."""
+    other = TOKEN[:-1] + ("A" if TOKEN[-1] != "A" else "B")
+    assert C.scan(other)
+    d = {TOKEN: 1, other: 2, "plain": 3, 7: "x"}
+    out = C.mask_deep(d)
+    assert len(out) == 4 and sorted(v for v in out.values() if isinstance(v, int)) == [1, 2, 3]
+    assert TOKEN not in json.dumps(out) and other not in json.dumps(out)
+    assert out["plain"] == 3 and out[7] == "x"
+    clean = {"a": 1, "b": ["c"]}
+    assert C.mask_deep(clean) is clean
+
+
+@pytest.mark.parametrize("kind", ["edge", "episode"])
+def test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual(tmp_path, kind):
+    """A journal snapshot of a record ALREADY redacted can still hold text where the store was redacted before a
+    treatment covered the field; redacting again answers `repeated` and writes nothing. The finder reported it
+    removable, `act` changed nothing, and the token stayed (the carrier table's `remedy` column). Now it is
+    `<journal>.after_redaction`, a residual, and `forget` removes it. RED against: the class read as removable."""
+    from veracium import credential_finder as CF
+    from veracium.schema import Episode, Provenance
+    m = T._mem(tmp_path)
+    try:
+        if kind == "edge":
+            rid = T._seed_edge(m).id
+            m.redact("u", edge_id=rid, reason="operator_policy")
+            jtable, idcol = "edge_event", "edge_id"
+        else:
+            rid = "ep-r5j"
+            m.store.add_episode(Episode(id=rid, user_id="u", date="2026-11-24", summary="Ordinary episode",
+                                        provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                                              evidence_ref="ev-r5j")))
+            m.redact("u", episode_id=rid, reason="operator_policy")
+            jtable, idcol = "episode_event", "episode_id"
+        con = m.store._conn
+        rowid, state = con.execute(f"SELECT rowid, state FROM {jtable} WHERE {idcol}=? ORDER BY seq DESC LIMIT 1",
+                                   (rid,)).fetchone()
+        doc = json.loads(state)
+        doc["retired_reason" if kind == "episode" else "invalidation_reason"] = TOKEN
+        con.execute(f"UPDATE {jtable} SET state=? WHERE rowid=?", (json.dumps(doc), rowid))
+        con.commit()
+        hits = CF.scan(m.store, "u")
+        assert [h.carrier for h in hits] == [f"{jtable}.after_redaction"] and not hits[0].removable, (
+            [h.carrier for h in hits])
+        assert f"{jtable}.after_redaction" in CF.RESIDUAL
+        m.forget("u")
+        assert not CF.scan(m.store, "u") and TOKEN not in T._dump(str(tmp_path / "m.db"))
     finally:
         m.close()

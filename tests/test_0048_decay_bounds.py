@@ -725,7 +725,7 @@ MIGRATION_MODULES = {"veracium/store/migration.py", "veracium/store/schema_versi
 # value reads, followed into every function or method it reaches (`_sql_binding`; `_binding_digest`, sha256/16) —
 # regenerated from the tree and re-reviewed when it moves
 NONLITERAL_BINDING = {
-    ('SqliteStore.credential_carriers', '1f16a4516f79be5a0a9e85d32930320e018d2204c4eb5afcd703287972892b97'): '31db14c9cdcbb73f',   # 0055 round 4: reviewed (see NONLITERAL)
+    ('SqliteStore.credential_carriers', '1f16a4516f79be5a0a9e85d32930320e018d2204c4eb5afcd703287972892b97'): '58e8fe21b8e303bd',   # 0055 round 4: reviewed (see NONLITERAL); round 5 re-reviewed: the function gained the journal's after-redaction class and two LITERAL `kind='redacted'` reads; the f-string's table and columns are still the live schema's (`_credential_side_tables`, `_credential_key`)
     ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'): 'd5cce0a3ca1cfe5d',
     ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): '2bdfaff36a562470',   # 0031 round 4 N1: __init__ ends one empty transaction after open_versioned (re-reviewed: the SQL text is still fixed by int(busy_timeout_ms) alone); before that, 0031 v23.3: self._conn's binder took factory=
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'): 'db9f67ef1d767cb0',

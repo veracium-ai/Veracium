@@ -4553,14 +4553,16 @@ class SqliteStore(Store):
         def is_text(path, own):
             return any(path == f or path.startswith(f + ".") for f in own)
 
-        def record_fields(kind, rid, uid, doc, own, *, table=None, carrier=None, rkind=None, rrid=None):
+        def record_fields(kind, rid, uid, doc, own, *, table=None, carrier=None, rkind=None, rrid=None,
+                          after_redaction=False):
             # a record's own text is removable by a 0041 redaction of the record (the tombstone, for a journal row);
             # identifiers and every other field are PRESERVED by that redaction, and so are a residual
             table, carrier, rkind, rrid = table or f"{kind}s", carrier or kind, rkind or kind, rrid or rid
             for path, v in leaves(doc):
                 top = path.split(".", 1)[0]
                 if is_text(path, own):
-                    cls = f"{carrier}.text" if carrier == kind else f"{carrier}.state"
+                    cls = (f"{carrier}.after_redaction" if after_redaction
+                           else f"{carrier}.text" if carrier == kind else f"{carrier}.state")
                 elif path.startswith("provenance.") or top in _CARRIER_IDENTIFIER_FIELDS:
                     cls = f"{carrier}.identifier"
                 else:
@@ -4586,8 +4588,12 @@ class SqliteStore(Store):
                     if isinstance(v, str) and v and doc.get(name) != v:
                         out.append((uid, f"{kind}s", f"{kind}.text", kind, rid, kind, rid, v))
 
-        def journal(table, kind, rows, own):
+        def journal(table, kind, rows, own, redacted):
+            # round 5 (the carrier table): a snapshot of a record that is ALREADY redacted is not removable by
+            # redacting it again (0041 answers `repeated` and writes nothing). Such text exists only where a store
+            # was redacted before a treatment covered the field; it is `<journal>.after_redaction`, a residual
             for uid, seq, rid, state, reason in rows:
+                done = (uid, rid) in redacted
                 if isinstance(reason, str) and reason:
                     # the journal row's own reason column: preserved by a redaction of the record (census E)
                     out.append((uid, table, f"{table}.reason", table, f"{rid}#{seq}", kind, rid, reason))
@@ -4599,10 +4605,11 @@ class SqliteStore(Store):
                     doc = None
                 if not isinstance(doc, dict):
                     if isinstance(state, str) and state:
-                        out.append((uid, table, f"{table}.state", table, f"{rid}#{seq}", kind, rid, state))
+                        out.append((uid, table, f"{table}.after_redaction" if done else f"{table}.state", table,
+                                    f"{rid}#{seq}", kind, rid, state))
                     continue
                 record_fields(kind, rid, uid, doc, own, table=table, carrier=table, rkind=table,
-                              rrid=f"{rid}#{seq}")
+                              rrid=f"{rid}#{seq}", after_redaction=done)
 
         edge_own = (_redaction.EDGE_REPLACE + _redaction.EDGE_CLEAR + _redaction.EDGE_REASON_THREE_CASE
                     + _redaction.EDGE_MARKERS_PER_ENTRY)
@@ -4617,10 +4624,14 @@ class SqliteStore(Store):
                 episode_own)
             journal("edge_event", "edge", self._conn.execute(
                 "SELECT user_id, seq, edge_id, state, reason FROM edge_event WHERE (? IS NULL OR user_id=?)",
-                args).fetchall(), edge_own)
+                args).fetchall(), edge_own, set(self._conn.execute(
+                    "SELECT DISTINCT user_id, edge_id FROM edge_event WHERE kind='redacted' "
+                    "AND (? IS NULL OR user_id=?)", args).fetchall()))
             journal("episode_event", "episode", self._conn.execute(
                 "SELECT user_id, seq, episode_id, state, reason FROM episode_event WHERE (? IS NULL OR user_id=?)",
-                args).fetchall(), episode_own)
+                args).fetchall(), episode_own, set(self._conn.execute(
+                    "SELECT DISTINCT user_id, episode_id FROM episode_event WHERE kind='redacted' "
+                    "AND (? IS NULL OR user_id=?)", args).fetchall()))
             for table, cols in self._credential_side_tables():
                 named = _CARRIER_SIDE_TABLES.get(table)
                 if named is not None:

@@ -1795,11 +1795,12 @@ class Memory:
         # 0023 §4a-iv / N14: the render split runs on the SHARED predicate —
         # assertable to ordinary detail, everything else to the fenced section
         # (fenced, not suppressed: Q5)
-        # specs/0055 §4e: a stored summary is masked BEFORE its clamp (a cut never leaves a credential fragment)
-        ep_lines = [(e, clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", cap)) for e in episodes
-                    if is_assertable(e)]
-        tp_ep_lines = [(e, clamp_item(f"[{e.date}] {_cred.mask_text(e.summary)}", cap)) for e in episodes
-                       if not is_assertable(e)]
+        # specs/0055 §4e: a stored summary is masked BEFORE its clamp (a cut never leaves a credential fragment);
+        # round 5: so is the stored date (a legacy row's `date` is text like any other, found by the carrier table)
+        ep_lines = [(e, clamp_item(f"[{_cred.mask_text(e.date)}] {_cred.mask_text(e.summary)}", cap))
+                    for e in episodes if is_assertable(e)]
+        tp_ep_lines = [(e, clamp_item(f"[{_cred.mask_text(e.date)}] {_cred.mask_text(e.summary)}", cap))
+                       for e in episodes if not is_assertable(e)]
 
         def _unit(record, line, partition):
             if receipt is not None:
@@ -2825,7 +2826,13 @@ class Memory:
         episode OF THIS USER whose provenance carries exactly that `source_id` under the RESOLVED origin (the same
         pair the digest frames). None: `CredentialRefused`. One: return, and the call proceeds (legacy resolution;
         the identity digest is the declared exception). The lookup writes, logs and echoes nothing; it is an
-        existence oracle, acceptable because revocation is host-only (no MCP tool or adapter reaches it)."""
+        existence oracle, acceptable because revocation is host-only (no MCP tool or adapter reaches it).
+        A non-str value is refused FIRST, by type, naming no value (round 5, R4-01's class one call down: the shape
+        check below reads only a str, and a bytes value used to pass it to `_bounded`, whose message quotes it)."""
+        for field_name, value in (("origin", origin), ("source_id", source_id)):
+            if value is not None and not isinstance(value, str):
+                raise _cred.ArgumentTypeRefused(f"{op}: {field_name} must be a str, not {type(value).__name__}",
+                                                field=field_name, reason="not_a_string")
         shaped = [(f, _cred.first_class(v)) for f, v in (("origin", origin), ("source_id", source_id))
                   if isinstance(v, str) and v]
         shaped = [(f, c) for f, c in shaped if c is not None]

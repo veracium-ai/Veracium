@@ -512,12 +512,25 @@ def masked_edge(edge):
 
 def mask_deep(value):
     """The read backstop over a structured report (`why`'s biography, a tool result built from stored rows): every
-    str leaf masked, dict keys and non-text values unchanged, containers rebuilt only when something changed."""
+    str leaf masked, and every str dict KEY (round 5, the carrier table: `outcome_counts` is `dict[str, int]`, so a
+    legacy key is stored text, and `why` printed it); non-text values unchanged, containers rebuilt only when
+    something changed. Two keys that mask alike stay two entries: the later one is numbered (` #2`, ...)."""
     if isinstance(value, str):
         return mask_text(value)
     if isinstance(value, dict):
-        out = {k: mask_deep(v) for k, v in value.items()}
-        return out if any(out[k] is not value[k] for k in value) else value
+        out: dict = {}
+        changed = False
+        for k, v in value.items():
+            nk = mask_text(k) if isinstance(k, str) else k
+            if nk != k:
+                changed = True
+                base, n = nk, 2
+                while nk in out or nk in value:
+                    nk, n = f"{base} #{n}", n + 1
+            nv = mask_deep(v)
+            changed = changed or nv is not v
+            out[nk] = nv
+        return out if changed else value
     if isinstance(value, (list, tuple)):
         items = [mask_deep(v) for v in value]
         if all(a is b for a, b in zip(items, value)):

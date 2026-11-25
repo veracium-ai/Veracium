@@ -279,11 +279,12 @@ def find(store, user_id: str, text: str) -> list:
     for e in store.edges(user_id, active_only=False, include_quarantined=True):
         d = _edge_dict(e)
         if any(needle in str(d.get(k) or "").casefold() for k in ("subject", "relation", "object")):
-            # specs/0055 §4e: the lookup prints stored text, so it is masked (the needle still matches the row)
-            out.append({"id": _cred.mask_text(d.get("id")), "fact": _cred.mask_text(_summary(d)),
-                        "active": bool(e.active),
-                        "quarantined": bool(e.quarantined),
-                        "invalidation_reason": d.get("invalidation_reason")})
+            # specs/0055 §4e: the lookup prints stored text, so it is masked (the needle still matches the row);
+            # round 5 (the carrier table): the WHOLE hit, `invalidation_reason` included, not its two text fields
+            out.append(_cred.mask_deep({"id": d.get("id"), "fact": _summary(d),
+                                        "active": bool(e.active),
+                                        "quarantined": bool(e.quarantined),
+                                        "invalidation_reason": d.get("invalidation_reason")}))
     return out
 
 
