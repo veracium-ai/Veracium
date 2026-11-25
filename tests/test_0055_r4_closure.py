@@ -216,7 +216,8 @@ def test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str(tmp_path, metho
     assert b_leak <= s_leak, (method, param, b_leak, s_leak, type(b_exc).__name__ if b_exc else None)
     owner = method if method in _screened() else _DELEGATES.get(method)
     if owner is not None and param in _screened().get(owner, ()):
-        assert isinstance(b_exc, C.ArgumentRefused) and b_exc.reason == "not_a_string", repr(b_exc)
+        assert isinstance(b_exc, C.ArgumentTypeRefused) and b_exc.reason == "not_a_string", repr(b_exc)
+        assert isinstance(b_exc, TypeError) and isinstance(b_exc, C.ArgumentRefused)
         assert TOKEN not in str(b_exc) and TOKEN not in C.outward_text(b_exc)
         assert b_unchanged and b_calls == 0 and not b_leak
 

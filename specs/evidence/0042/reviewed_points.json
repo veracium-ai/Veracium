@@ -4276,7 +4276,7 @@
   "class": "argument-check",
   "key": "__init__.py:Memory._cred_ingress:RAISE:1",
   "line": 618,
-  "statement": "raise _cred.ArgumentRefused(f\"{op}: {field_name} must be a str, not {type(value).__name__}\","
+  "statement": "raise _cred.ArgumentTypeRefused(f\"{op}: {field_name} must be a str, not {type(value).__name__}\","
  },
  "__init__.py:Memory._cred_ingress:624:RAISE": {
   "decision": "not",

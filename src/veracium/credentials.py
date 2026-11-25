@@ -682,3 +682,10 @@ def outward_text(exc: BaseException) -> str:
     if allowed:
         out += f"; allowed: {list(allowed)}"
     return out
+
+
+class ArgumentTypeRefused(ArgumentRefused, TypeError):
+    """§4b's type refusal (round 4's R4-01): a screened argument that is neither `None` nor a `str`. It is an
+    `ArgumentRefused` (`.field`, `.reason == "not_a_string"`; a served boundary formats it without the value) AND a
+    `TypeError`, so the type contracts that predate the screen hold: 0037's `record_procedure` refuses a non-`str`
+    argument with a `TypeError`."""
