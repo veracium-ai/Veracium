@@ -146,6 +146,10 @@ READER_RULINGS = {
     ("store/migration.py", "_baseline_problems"): "0013 §4f: checks a baseline event's reason is NULL",
     ("store/sqlite.py", "SqliteStore._quoting_domain"): "reads INVALIDATED events' reasons only (its SQL filters "
         "kind='invalidated'): a reinstated reason is ignored by construction",
+    # specs/0055 round 4 (R4-04/S1): the finder reads every stored string, the journal's reason column among them,
+    # ONLY to scan it for a credential shape (a residual carrier, `edge_event.reason`); it never interprets the value
+    ("store/sqlite.py", "SqliteStore.credential_carriers"): "0055 §4f's finder: scans the stored value for a "
+        "credential shape and reports it as a residual; never interprets it",
 }
 
 
