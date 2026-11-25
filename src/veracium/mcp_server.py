@@ -568,8 +568,31 @@ def forget_fact_report(mem: Memory, user_id: str, edge_id: Optional[str] = None,
     def run():
         r = mem.redact(user_id, edge_id=edge_id, episode_id=episode_id, reason="subject_request",
                        principal=principal)
-        return _ok(r if isinstance(r, dict) else r.model_dump(mode="json"))
+        return _ok(_locate_receipt(r if isinstance(r, dict) else r.model_dump(mode="json")))
     return _trust_call(mem, run)
+
+
+def _locate_receipt(receipt: dict) -> dict:
+    """specs/0055 §4g's locator rule on the SERVED redaction receipt (round 4, R4-03's class, found by dev's sweep of
+    every served tool over a store holding shaped ids): `surviving_derived` names records by their stored ids, and a
+    stored id is not guaranteed to be a minted value. An id carrying a credential shape is named by a per-report
+    ordinal; an ordinary id is kept, so the model can still act on it. The library receipt, returned to the host,
+    keeps 0041's ids (the host's handle on its next redaction)."""
+    n = 0
+    out = dict(receipt)
+
+    def loc(rid, kind):
+        nonlocal n
+        n += 1
+        if isinstance(rid, str) and _cred.first_class(rid) is not None:
+            return f"record {n} of this report ({kind})"
+        return rid
+    if "target_id" in out:
+        out["target_id"] = loc(out["target_id"], out.get("redacted_kind") or "target")
+    if isinstance(out.get("surviving_derived"), list):
+        out["surviving_derived"] = [({**e, "id": loc(e.get("id"), e.get("kind") or "record")}
+                                     if isinstance(e, dict) else e) for e in out["surviving_derived"]]
+    return out
 
 
 def forget_everything_preview_report(mem: Memory, user_id: str, *, capability=None, erasure=None, principal=None,

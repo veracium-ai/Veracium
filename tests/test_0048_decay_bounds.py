@@ -624,6 +624,11 @@ SQL_CALLS = ("execute", "executemany", "executescript")
 # expression's ast.dump) -> its static text, the reviewed reading: none writes edges.json except the write method's own
 # `sql`, whose callers' literals are the closed set above. A new or changed non-literal site refuses until listed.
 NONLITERAL = {
+    # specs/0055 §4f (round 4's R4-04/S1): the finder's read of every per-user side table. `table` and `read` come
+    # only from the store's own schema (`sqlite_master`, `pragma_table_info`) and the module's literal
+    # _CARRIER_SIDE_TABLES; no caller value reaches them — a SELECT, never a write
+    ('SqliteStore.credential_carriers', '1f16a4516f79be5a0a9e85d32930320e018d2204c4eb5afcd703287972892b97'):
+        (1, 'f"SELECT {\', \'.join(read)} FROM {table} WHERE (? IS NULL OR user_id=?)"'),
     # specs/0031 §4f §4e: the erase preview's read of the four tables' keys; `t` ranges over trust_tools'
     # ERASE_PREVIEW_TABLES, a module-level tuple of four literals — a SELECT, never a write
     ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'):
@@ -720,6 +725,7 @@ MIGRATION_MODULES = {"veracium/store/migration.py", "veracium/store/schema_versi
 # value reads, followed into every function or method it reaches (`_sql_binding`; `_binding_digest`, sha256/16) —
 # regenerated from the tree and re-reviewed when it moves
 NONLITERAL_BINDING = {
+    ('SqliteStore.credential_carriers', '1f16a4516f79be5a0a9e85d32930320e018d2204c4eb5afcd703287972892b97'): '31db14c9cdcbb73f',   # 0055 round 4: reviewed (see NONLITERAL)
     ('SqliteStore._erase_preview_keys', '1660d1094db8b0356e11d6e5fa5376cbc5df56123efb80f1791a679d292f9af1'): 'd5cce0a3ca1cfe5d',
     ('SqliteStore.__init__', 'bc3471530373188da9c30e0ba7e78b2d090076e469d28882db5b0d4698a09d11'): '2bdfaff36a562470',   # 0031 round 4 N1: __init__ ends one empty transaction after open_versioned (re-reviewed: the SQL text is still fixed by int(busy_timeout_ms) alone); before that, 0031 v23.3: self._conn's binder took factory=
     ('SqliteStore._act_rows_where', 'cc00ad315a59e9575d3a838a0b388ca3610a764627bbbcab38e6e2cd49762c68'): 'db9f67ef1d767cb0',
@@ -908,6 +914,7 @@ SRC_IMPORTS = {
     "platform": {"machine", "python_version", "system"},
     "pydantic": {"BaseModel", "ConfigDict", "Field", "StrictBool", "TypeAdapter", "ValidationError", "create_model",
         "field_validator", "model_serializer", "model_validator"},   # 0055 §4g E2: ConfigDict, create_model (the SDK's hidden-input models)
+    "pydantic_core": {"PydanticCustomError"},   # 0055 round 4 (R4-05): a withheld CLI defect's ValidationError is rebuilt with its messages withheld
     "re": {"I", "compile", "escape", "findall", "finditer", "fullmatch", "match", "search", "split", "sub"},
     "secrets": {"token_bytes"},
     "shutil": {"copy2", "rmtree"},
@@ -932,7 +939,8 @@ SRC_IMPORTS = {
 }
 # every dunder src/ reads: `__globals__`, `__builtins__`, `__match_args__`, `__annotations__` and the rest fall outside it
 SRC_DUNDERS = {"__all__", "__cause__", "__file__", "__func__", "__getitem__", "__init__", "__name__",
-               "__new__", "__setattr__", "__slots__", "__store_mutator__", "__str__", "__traceback__"}
+               "__new__", "__notes__", "__setattr__", "__slots__", "__store_mutator__", "__str__", "__traceback__"}
+# 0055 round 4 (research's S3): `__notes__` is DELETED from a withheld CLI defect (notes may quote the input); never read
 # names src/ does not use, each reaching a namespace, a module or an evaluator whatever holds it
 REACH_NAMES = {"globals", "import_module", "locals", "model_rebuild"}
 # an attribute name src/ does not read: `pathlib.Path.parser` is `posixpath`, a module the member walk cannot see through a

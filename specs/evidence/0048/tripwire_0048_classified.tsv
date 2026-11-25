@@ -7,6 +7,8 @@
 # draft): the lines §4A-§4D edit reclassified; class `validated-write` added for §4B's decayed stamp.
 # 2026-11-22 (dev, 0041 v16.5): one row, `_remapped_quoting_domain`'s read of this user's edge ids (SQL that reads
 # edges and writes no json).
+# 2026-11-24 (dev, 0055 round 4): the finder's edges read selects the duplicate columns too (edges-sql-not-a-json-write);
+# its side-table walk names the four record tables (edges-text); the log tail's decode `"replace"` (verb-as-text).
 # 2026-11-03 (dev, 0048 round 4, R3-02 (a′)): the seven json writers' statements now ride `self._write_edge_row(…)` calls, the one write
 # site, instead of `self._conn.execute(…)`; the 8 affected rows keep their class (edge-json-writer: census_0048 still counts 7 writers by their SQL).
 #
@@ -298,6 +300,7 @@ sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	f"INSERT OR REP
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE confirmations SET request_digest=? WHERE user_id=? AND edge_id=?",
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE edge_event SET state=? WHERE user_id=? AND edge_id=? AND state<>?",
 verb-as-text	src/veracium/diagnostics.py	str:sql-write	text = _cred.mask_text(data.decode("utf-8", "replace"))
+verb-as-text	src/veracium/diagnostics.py	str:sql-write	return out.decode("utf-8", "replace")
 verb-as-text	src/veracium/procedures.py	str:sql-write	IMPERATIVE_OPENERS = frozenset(""" add adjust allow always apply ask assign avoid back backfill build bump cancel clean clear close compile configure confirm cordon create deactivate delete deny deploy disable do document drain enable ensure escalate fetch fix flush freeze generate ignore install keep kill migrate move never notify open pause put quarantine re-run rebase reboot rebuild redeploy refresh reinstall reject reload remove rename replace reproduce restart restore retry revert review revoke roll rollback rotate run submit tag take throttle toggle turn unfreeze uninstall unlock unpin unset update upgrade validate verify widen """.split())
 verb-as-text	src/veracium/redaction.py	str:sql-write	REPLACE, CLEAR, DELETE, PRESERVE = "REPLACE", "CLEAR", "DELETE", "PRESERVE"
 verb-as-text	src/veracium/store/sqlite.py	str:sql-write	f"axis is written once at insert (specs/0045 §2)"), axis)
@@ -356,4 +359,5 @@ edges-text	src/veracium/trust_tools.py	str:edges	ERASE_PREVIEW_TABLES = ("edges"
 edges-text	src/veracium/trust_tools.py	str:edges	"the confirmation bind which records exist in the four tables shown (edges, episodes, "
 copy-other-fields	src/veracium/credentials.py	model_copy	return edge.model_copy(update={"subject": subject, "relation": relation, "object": obj, "note": note,
 other-object	src/veracium/credentials.py	getattr	r = getattr(exc, "reason", None)
-edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	"SELECT id, user_id, json FROM edges WHERE (? IS NULL OR user_id=?)", args).fetchall():
+edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	"SELECT id, user_id, json, subject, relation, object FROM edges WHERE (? IS NULL OR user_id=?)",
+edges-text	src/veracium/store/sqlite.py	str:edges	if "user_id" not in names or table in ("edges", "episodes", "edge_event", "episode_event"):

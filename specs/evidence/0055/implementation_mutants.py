@@ -34,10 +34,14 @@ import mutation_protocol as _protocol  # noqa: E402
 TABLE = HERE / "implementation" / "mutation-table.json"
 SELF = "specs/evidence/0055/implementation_mutants.py"
 SUBJECT = "implementation"
-CELL_FILES = ("tests/test_0055_invariants.py", "tests/test_0055_recogniser.py", "tests/test_0055_i19_digest_sweep.py")
+CELL_FILES = ("tests/test_0055_invariants.py", "tests/test_0055_recogniser.py", "tests/test_0055_i19_digest_sweep.py",
+              "tests/test_0055_r4_closure.py")
 MUTATED = ("src/veracium/credentials.py", "src/veracium/__init__.py", "src/veracium/ingest.py",
            "src/veracium/portability.py", "src/veracium/proactive.py", "src/veracium/store/sqlite.py",
-           "src/veracium/mcp_server.py", "src/veracium/graph.py", "src/veracium/cli.py", "src/veracium/semantic.py")
+           "src/veracium/mcp_server.py", "src/veracium/graph.py", "src/veracium/cli.py", "src/veracium/semantic.py",
+           # round 4's fixes (R4-02 compile, R4-03 the receipt, R4-06 diagnostics, A1 the finder)
+           "src/veracium/compile.py", "src/veracium/trust_tools.py", "src/veracium/diagnostics.py",
+           "src/veracium/credential_finder.py")
 DIGESTED = MUTATED + CELL_FILES + ("tests/support_0055_i19.py", "specs/evidence/0055/digests.json",
                                    "specs/evidence/0055/vectors.py", "specs/evidence/mutation_protocol.py",
                                    _protocol.KINDS, SELF)
@@ -61,7 +65,7 @@ MUTANTS = [
      "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"),
     ('I4-identifier-not-refused', 'product', 'src/veracium/__init__.py',
      [('                if cls is not None:\n                    raise self._cred_refused(user_id, op, field_name, cls)\n        out: list = []', '                if cls is not None:\n                    continue\n        out: list = []')],
-     ['tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]', 'tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]'],
+     ['tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r11:c[-identity_digest-]--copied-from-a-closed-ledger-row--s:run]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r1:prior_upserts[].provenance.source_id-[remember--procedur:run]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r34:record.provenance.origin--.source_id-of-a-held-record--_:extra-34-same-scope]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r35:e.provenance.origin--e.provenance.source_id-for-EVERY-ed:extra-35-chain-src]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r5:target--resolve-only--a-reply-id:reply-resolve]', 'tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:contributor.provenance.source_id:run]', 'tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.correlation_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[confirm.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.actor]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.corrected_value]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[correct.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.actor]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[dispute.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.context_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_outcome.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[record_procedure.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]', 'tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]', 'tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]', 'tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]'],
      ['tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte'], None,
      'an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]'),
     ('I5-model-output-screen-removed', 'product', 'src/veracium/ingest.py',
@@ -162,6 +166,80 @@ MUTANTS = [
      "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, §4a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"),
 ]
 
+# ---- round 4's RETURN (coordination a421b28): one mutant per fix, each the fix reverted (research's addition 2) ----
+_R4 = "tests/test_0055_r4_closure.py::"
+MUTANTS += [
+    ('R4-01-no-type-gate', 'product', 'src/veracium/__init__.py',
+     [('        for field_name, value in (*ids, *free):\n            if value is not None and not isinstance(value, str):',
+       '        for field_name, value in ():\n            if value is not None and not isinstance(value, str):')],
+     ['tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]', 'tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]', 'tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]', 'tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"),
+    ('R4-02-cache-unmasked', 'product', 'src/veracium/compile.py',
+     [('    return _cred.mask_text(_split_envelope(row[0])[1])', '    return _split_envelope(row[0])[1]')],
+     ['tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]', 'tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]', 'tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]', 'tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02)"),
+    ('R4-03-receipt-raw-id', 'product', 'src/veracium/trust_tools.py',
+     [('None if record is None else self._locator(record.id), "text": text,',
+       'None if record is None else record.id, "text": text,')],
+     ['tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]', 'tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive)"),
+    ('R4-03-import-refusal-raw-id', 'product', 'src/veracium/portability.py',
+     [('"procedural_refusals": _procedural_locators(procedural_refusals, credential_report),',
+       '"procedural_refusals": procedural_refusals,')],
+     ['tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]', 'tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"),
+    ('R4-03-served-receipt-raw-id', 'product', 'src/veracium/mcp_server.py',
+     [('        return _ok(_locate_receipt(r if isinstance(r, dict) else r.model_dump(mode="json")))',
+       '        return _ok(r if isinstance(r, dict) else r.model_dump(mode="json"))')],
+     ['tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"),
+    ('R4-04-old-text-lists', 'product', 'src/veracium/store/sqlite.py',
+     [('        edge_own = (_redaction.EDGE_REPLACE + _redaction.EDGE_CLEAR + _redaction.EDGE_REASON_THREE_CASE\n'
+       '                    + _redaction.EDGE_MARKERS_PER_ENTRY)\n'
+       '        episode_own = (_redaction.EPISODE_REPLACE + _redaction.EPISODE_KIND_TWO_BRANCH\n'
+       '                       + _redaction.EPISODE_REASON_THREE_CASE)',
+       '        edge_own = ("subject", "relation", "object", "note", "original_relation")\n'
+       '        episode_own = ("summary",)')],
+     ['tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]', 'tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]', 'tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]', 'tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]', 'tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and "
+     "retired_reason read as residual, so the remedy never targets them)"),
+    ('R4-04-unclassified-dropped', 'product', 'src/veracium/store/sqlite.py',
+     [('                else:\n                    cls = f"{carrier}.other"\n',
+       '                else:\n                    continue\n')],
+     ['tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]', 'tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]', 'tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]', 'tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "a record field no class names is dropped again, not reported (round 4's R4-04: fail closed)"),
+    ('S1-unparsed-record-skipped', 'product', 'src/veracium/store/sqlite.py',
+     [('                        out.append((uid, f"{kind}s", f"{kind}.unparsed", kind, rid, kind, rid, js))',
+       '                        pass')],
+     ['tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]', 'tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "a current record whose JSON does not parse is skipped again (research's S1)"),
+    ('S1-named-side-tables-only', 'product', 'src/veracium/store/sqlite.py',
+     [('            for table, cols in self._credential_side_tables():',
+       '            for table, cols in [x for x in self._credential_side_tables()\n'
+       '                                if x[0] in ("replies", "confirmations", "request_registry", "wiki",\n'
+       '                                            "contribution_ledger")]:')],
+     ['tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, "
+     "source_revocations.reason and every other per-user column unread)"),
+    ('R4-05-args-rewrite-only', 'product', 'src/veracium/credentials.py',
+     [('        if _formats_as(exc, msg):\n            return exc\n', '        return exc\n')],
+     ['tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input', 'tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"),
+    ('S3-dict-key-echoed', 'product', 'src/veracium/credentials.py',
+     [('    return "[key]"', '    return str(seg)')],
+     ['tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "a validation location prints a caller's dict key again (research's S3)"),
+    ('R4-06-cut-before-screen', 'product', 'src/veracium/diagnostics.py',
+     [('            text = _cred.mask_text(data.decode("utf-8", "replace"))',
+       '            data = data[-cap:]\n            text = _cred.mask_text(data.decode("utf-8", "replace"))')],
+     ['tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]', 'tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]', 'tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]', 'tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "the log tail is cut to the cap BEFORE it is screened again (round 4's R4-06)"),
+    ('A1-pool-key-undeclared', 'product', 'src/veracium/credential_finder.py',
+     [('    ("maintain() consolidate-pool / pool_key",', '    ("maintain() consolidate-pool",')],
+     ['tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key'], [_R4 + 'test_r4_03_render_receipts_use_the_locator_on_every_exit'], None,
+     "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"),
+]
+
 
 def _noop(rel, anchor, cells):
     return (f"NOOP-{pathlib.Path(rel).stem}", rel, [(anchor, "# no-op control: a comment, no behaviour\n" + anchor)],
@@ -183,6 +261,10 @@ _NOOP_ANCHORS = {
     "src/veracium/graph.py": "def _absorption_scope_gate(",
     "src/veracium/cli.py": "def main(",
     "src/veracium/semantic.py": "def content_digest(",
+    "src/veracium/compile.py": "def ensure_wiki(",
+    "src/veracium/trust_tools.py": "class RenderReceipt:",
+    "src/veracium/diagnostics.py": "class Reporter",
+    "src/veracium/credential_finder.py": "def is_residual(",
 }
 
 # (id, file, [(anchor, replacement)], named cells, what, the outcome the classifier must give)
@@ -199,7 +281,8 @@ SUBJECT_P = _protocol.Subject(
     spec="0055", finding=SUBJECT, table=TABLE, digested=DIGESTED, mutants=MUTANTS, controls=CONTROLS,
     import_modules=("veracium", "veracium.credentials", "veracium.ingest", "veracium.portability",
                     "veracium.proactive", "veracium.store.sqlite", "veracium.mcp_server", "veracium.graph",
-                    "veracium.cli", "veracium.semantic"),
+                    "veracium.cli", "veracium.semantic", "veracium.compile", "veracium.trust_tools",
+                    "veracium.diagnostics", "veracium.credential_finder"),
     import_specs=(), cells_files=CELL_FILES, kinds=("product",))
 
 definition_sha = _protocol.definition_sha

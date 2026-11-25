@@ -638,6 +638,11 @@ _CALLSITE_DISPOSITIONS = {
     # specs/0055 §4h (I6): a plain import withholds per field, a restore refuses whole unless withhold_credentials is
     # set, so the one cell pins both modes
     ("test_0055_invariants.py", "test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"): "both",
+    # specs/0055 round 4 (R4-03): the procedural pass's refusals by locator (a plain import), and a restore whose shaped
+    # id is refused by §4h's screen before the agreement check could quote it
+    ("test_0055_r4_closure.py", "test_r4_03_early_import_refusals_use_the_locator"): "default",
+    ("test_0055_r4_closure.py", "test_r4_03_a_restore_with_a_shaped_id_refuses_before_the_agreement_check_quotes_it"):
+        "restore",
     # specs/0055 I19's sweep (tests/support_0055_i19.py): each scenario imports a file carrying one seeded value into a
     # fresh destination; the restore-named scenarios pin the restore refusal (§4h), `_import_plain` and the inner `sc`
     # factories serve both modes, every other site is a default import

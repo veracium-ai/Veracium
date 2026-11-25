@@ -981,6 +981,25 @@ def _credential_screen(edge_recs, ep_recs, acts, notice_list, outcomes, *, targe
     return edge_recs, ep_recs, acts, notice_list, outcomes, report
 
 
+def _procedural_locators(refusals: list, credential_report: dict) -> list:
+    """specs/0055 §4g's locator rule for the procedural pass's refusals (round 4's R4-03). That pass runs BEFORE §4h's
+    screen and removes the rows it refuses, so the screen never sees their ids and they reached the result raw. The
+    import result is ONE report: an id (or a predecessor id) carrying a credential shape is named by a per-report
+    ordinal that continues after the screen's own records, never by its value. An ordinary id is kept."""
+    n = len(credential_report.get("credential_refused_records", ())) + len(
+        credential_report.get("credential_withheld_records", ()))
+    out = []
+    for entry in refusals:
+        e = dict(entry)
+        for key in ("id", "predecessor"):
+            v = e.get(key)
+            if isinstance(v, str) and _cred.first_class(v) is not None:
+                n += 1
+                e[key] = f"record {n} of this report (edge)"
+        out.append(e)
+    return out
+
+
 def import_memory(store, path, *, user_id: Optional[str] = None,
                   restore: bool = False, relations=None, withhold_credentials: bool = False) -> dict:
     """Load a Veracium export into `store`. Idempotent (an existing, record-equal
@@ -1894,7 +1913,7 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
                         # specs/0037 §4e: refused PER RECORD before the commit,
                         # the admitted set committed atomically as one transaction
                         "procedural_refused": len(procedural_refusals),
-                        "procedural_refusals": procedural_refusals,
+                        "procedural_refusals": _procedural_locators(procedural_refusals, credential_report),
                         # T11b: acts refused with the record they name (that record's own refusal is listed above)
                         "acts_refused_with_edge": acts_refused_with_edge,
                         # specs/0055 §4h: present only when the screen withheld or refused something

@@ -225,12 +225,32 @@ class Reporter:
             path = self.config.resolved_log_path()
             if not path.exists():
                 return ""
-            data = path.read_bytes()[-cap:]
             # specs/0055 §4g E3 (§4i): the send path masks too, always (no switch turns it off), so a line written
             # before this version, or by another writer, is masked on its way out; `redact()`'s email and number
-            # rules stay as configured
+            # rules stay as configured.
+            # Round 4's R4-06: SCREEN WHOLE LINES, THEN CUT. Up to round 4 the last `cap` bytes were cut first, so a
+            # cut inside an older line's credential dropped its recognition prefix (or the label before a labelled
+            # value, or the letter that keeps a glued token unmatched) and the rest went out unmasked. Now a window
+            # of whole lines is read, masked and redacted, and only then cut to `cap`; the cut keeps COMPLETE lines
+            # only (a leading partial line, whose context is gone, is omitted), so every byte sent was screened as
+            # part of its whole line, and the payload limit holds after the transformation.
+            window = max(4 * cap, 1 << 20)
+            with path.open("rb") as fh:
+                size = fh.seek(0, 2)
+                fh.seek(max(0, size - window))
+                data = fh.read()
+            if size > window:
+                nl = data.find(b"\n")
+                data = data[nl + 1:] if nl >= 0 else b""     # the window's first line began before it: omitted
             text = _cred.mask_text(data.decode("utf-8", "replace"))
-            return redact(text) if self.config.redact else text
+            text = redact(text) if self.config.redact else text
+            out = text.encode("utf-8")
+            if len(out) > cap:
+                out = out[-cap:]
+                nl = out.find(b"\n")
+                # the cut fell inside a line: that line is omitted, never sent in part
+                out = out[nl + 1:] if nl >= 0 else b""
+            return out.decode("utf-8", "replace")
         except Exception:
             return ""
 

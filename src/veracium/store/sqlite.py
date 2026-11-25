@@ -246,6 +246,31 @@ _ERASE_TABLES = ("contribution_ledger",
                  # specs/0022 × 0008 §6g (the owner, 2026-10-29: "Erase it"): the user's revocation ledger. Append-only
                  # BETWEEN erasures; erasure ends it, so a recreated user id inherits no standing revocation
                  "source_revocations")
+# specs/0055 §4f, the finder's read (`credential_carriers`, round 4's R4-04 and S1). The tables WITHOUT a `user_id`
+# column hold no user's record (0044 §4g-ii; census F D12, D13): the finder cannot attribute them to a user and does
+# not read them. `migration_op.inputs_digest` is a declared opaque domain (credential_finder.DECLARED_OPAQUE).
+# tests/test_0055_r4_closure.py holds this set EQUAL to the live schema's, so a new store-level table is a decision.
+STORE_LEVEL_TABLES = frozenset({"act_counter", "arity_era", "migration_op", "plan_header", "reclassification_plan",
+                                "store_epoch", "store_identity"})
+# the top-level record fields that are identifiers or links (with every `provenance.*` path): preserved by a 0041
+# redaction, so a shape in one is a residual (§10 Q7)
+_CARRIER_IDENTIFIER_FIELDS = ("id", "supersedes", "edge_id", "context_ref", "supersedes_episode", "absorbed_by_id")
+# side tables the finder names a record kind, a key, a parent and carrier classes for: (record_kind, key columns,
+# parent_kind, parent column, {column or "*": class}). Every other per-user table is read by its live primary key,
+# each string column as `<table>.<column>`, residual.
+_CARRIER_SIDE_TABLES = {
+    "replies": ("reply", ("id",), "edge", "edge_id", {"text": "reply.text", "*": "reply.identifier"}),
+    "confirmations": ("confirmation", ("id",), "edge", "edge_id", {"*": "confirmation.identifier"}),
+    "request_registry": ("request", ("correlation_id",), "edge", "target_edge_id",
+                         {"*": "request_registry.identifier"}),
+    "wiki": ("wiki", ("user_id",), "wiki", "user_id", {"text": "wiki.text"}),
+    "contribution_ledger": ("contribution", ("id",), "contribution", "id",
+                            {"payload": "contribution_ledger.payload"}),
+    # 0041 rewrites `relation` when EITHER edge is redacted (census E :83; redaction.SIDE_TABLE_TREATMENTS)
+    "supersession_refusals": ("supersession_refusal", ("refusal_id",), "edge", "prior_edge_id",
+                              {"relation": "supersession_refusal.relation"}),
+    "migration_outcome": ("migration_outcome", ("plan_id", "edge_id"), "edge", "edge_id", {}),
+}
 # specs/0044 §4f-ii: every ruling carries a LIFETIME disposition — `choke-point` (its lifetime transitions are derived
 # at `_journal_edge_write` from the persisted prior and new row) or `erasure` (`forget_user`, under 0008 §6g's one
 # erasure rule). tests/test_0029_carrier.py refuses a ruling without one.
@@ -4488,19 +4513,36 @@ class SqliteStore(Store):
             return n == 1
 
     def credential_carriers(self, user_id: Optional[str] = None):
-        """specs/0055 §4f, the finder's read: every stored text census E lists as a carrier, one tuple per field —
+        """specs/0055 §4f, the finder's read: every stored string, one tuple per field —
         `(user_id, table, carrier, record_kind, record_id, parent_kind, parent_id, text)`. `carrier` is the CLASS of
-        place (`edge.text`, `edge.identifier`, `edge_event.state`, `episode.text`, `episode.identifier`,
-        `episode_event.state`, `reply.text`, `reply.identifier`, `confirmation.identifier`,
-        `request_registry.identifier`, `wiki.text`, `contribution_ledger.payload`); `parent_*` names the record a
-        0041 redaction must target to remove it (the record itself, a journal row's record, a reply's edge). Read-only,
-        one snapshot under the instance lock; never masks (the finder is not a model-bound read, §4e)."""
+        place; `parent_*` names the record a 0041 redaction must target to remove it (the record itself, a journal
+        row's record, a reply's edge, a supersession refusal's prior edge). Read-only, one snapshot under the instance
+        lock; never masks (the finder is not a model-bound read, §4e).
+
+        FAIL CLOSED (round 4's R4-04 and research's S1, 2026-11-24). Up to round 4 this kept a string only when its
+        top-level key was in a hand-written text list or an identifier list, read a fixed set of side columns, and
+        skipped a current row whose JSON did not parse: four historical text carriers (`invalidation_reason`, an
+        episode's `kind` and `retired_reason`, in the records and their journals) and every unlisted column were
+        dropped, so the first scan and the verifying second scan agreed on the same false negative. Now:
+          - the record's REMOVABLE text is DERIVED from redaction.py's own treatment tables (the fields a 0041
+            redaction of the record rewrites), never listed again here;
+          - every other string leaf of a record or a journal state, dict KEYS included (`outcome_counts` is
+            `dict[str, int]`), is still yielded: provenance and link fields as `<carrier>.identifier`, anything
+            else as `<carrier>.other` — both RESIDUAL, because the redaction preserves them;
+          - a current record that does not parse as an object is yielded whole as `<kind>.unparsed` (residual);
+          - every non-BLOB column of every table that has a `user_id` column, read from the LIVE schema, is
+            scanned; a column no class names is `<table>.<column>` (residual). A table without `user_id` is
+            store-level (`STORE_LEVEL_TABLES`), and a test holds that set equal to the live schema's."""
         args = (user_id, user_id)          # every query below filters `(? IS NULL OR user_id=?)`: one user, or all
         out = []
 
         def leaves(doc, prefix=""):
+            # every string in the document: values, and the keys of every mapping (a key is caller-shaped text
+            # wherever the model admits a free dict, `outcome_counts`); a key is reported at its container's path
             if isinstance(doc, dict):
                 for k, v in doc.items():
+                    if isinstance(k, str) and k:
+                        yield prefix, k
                     yield from leaves(v, f"{prefix}.{k}" if prefix else str(k))
             elif isinstance(doc, list):
                 for v in doc:
@@ -4508,79 +4550,120 @@ class SqliteStore(Store):
             elif isinstance(doc, str) and doc:
                 yield prefix, doc
 
-        def record_fields(kind, rid, uid, doc, text_keys, *, table=None, carrier=None, rkind=None, rrid=None):
-            # a record's text fields are removable by a 0041 redaction of the record; its identifiers (provenance,
-            # ids, links) are kept by 0041 and so are a residual. A journal snapshot is split the same way.
+        def is_text(path, own):
+            return any(path == f or path.startswith(f + ".") for f in own)
+
+        def record_fields(kind, rid, uid, doc, own, *, table=None, carrier=None, rkind=None, rrid=None):
+            # a record's own text is removable by a 0041 redaction of the record (the tombstone, for a journal row);
+            # identifiers and every other field are PRESERVED by that redaction, and so are a residual
             table, carrier, rkind, rrid = table or f"{kind}s", carrier or kind, rkind or kind, rrid or rid
             for path, v in leaves(doc):
                 top = path.split(".", 1)[0]
-                if top in text_keys:
-                    out.append((uid, table, f"{carrier}.text" if carrier == kind else f"{carrier}.state",
-                                rkind, rrid, kind, rid, v))
-                elif path.startswith("provenance.") or top in ("id", "supersedes", "edge_id", "context_ref",
-                                                                "supersedes_episode", "absorbed_by_id"):
-                    out.append((uid, table, f"{carrier}.identifier", rkind, rrid, kind, rid, v))
+                if is_text(path, own):
+                    cls = f"{carrier}.text" if carrier == kind else f"{carrier}.state"
+                elif path.startswith("provenance.") or top in _CARRIER_IDENTIFIER_FIELDS:
+                    cls = f"{carrier}.identifier"
+                else:
+                    cls = f"{carrier}.other"
+                out.append((uid, table, cls, rkind, rrid, kind, rid, v))
 
-        def journal(table, kind, rows, text_keys):
-            for uid, seq, rid, state in rows:
+        def current(kind, rows, own, columns=()):
+            for row in rows:
+                rid, uid, js = row[0], row[1], row[2]
+                try:
+                    doc = json.loads(js)
+                except (TypeError, ValueError):
+                    doc = None
+                if not isinstance(doc, dict):
+                    if isinstance(js, str) and js:
+                        out.append((uid, f"{kind}s", f"{kind}.unparsed", kind, rid, kind, rid, js))
+                    doc = {}
+                else:
+                    record_fields(kind, rid, uid, doc, own)
+                # the row's duplicate columns (edges' subject, relation, object): redaction rewrites them with the
+                # record; read only where they differ from the document, so one value is never counted twice
+                for name, v in zip(columns, row[3:]):
+                    if isinstance(v, str) and v and doc.get(name) != v:
+                        out.append((uid, f"{kind}s", f"{kind}.text", kind, rid, kind, rid, v))
+
+        def journal(table, kind, rows, own):
+            for uid, seq, rid, state, reason in rows:
+                if isinstance(reason, str) and reason:
+                    # the journal row's own reason column: preserved by a redaction of the record (census E)
+                    out.append((uid, table, f"{table}.reason", table, f"{rid}#{seq}", kind, rid, reason))
                 if state == _redaction.MARKER:
                     continue
                 try:
                     doc = json.loads(state)
                 except (TypeError, ValueError):
-                    out.append((uid, table, f"{table}.state", table, f"{rid}#{seq}", kind, rid, state))
+                    doc = None
+                if not isinstance(doc, dict):
+                    if isinstance(state, str) and state:
+                        out.append((uid, table, f"{table}.state", table, f"{rid}#{seq}", kind, rid, state))
                     continue
-                record_fields(kind, rid, uid, doc, text_keys, table=table, carrier=table, rkind=table,
+                record_fields(kind, rid, uid, doc, own, table=table, carrier=table, rkind=table,
                               rrid=f"{rid}#{seq}")
 
-        edge_text = ("subject", "relation", "object", "note", "original_relation")
+        edge_own = (_redaction.EDGE_REPLACE + _redaction.EDGE_CLEAR + _redaction.EDGE_REASON_THREE_CASE
+                    + _redaction.EDGE_MARKERS_PER_ENTRY)
+        episode_own = (_redaction.EPISODE_REPLACE + _redaction.EPISODE_KIND_TWO_BRANCH
+                       + _redaction.EPISODE_REASON_THREE_CASE)
         with self._lock:
-            for rid, uid, js in self._conn.execute(
-                    "SELECT id, user_id, json FROM edges WHERE (? IS NULL OR user_id=?)", args).fetchall():
-                try:
-                    record_fields("edge", rid, uid, json.loads(js), edge_text)
-                except (TypeError, ValueError):
-                    continue
-            for rid, uid, js in self._conn.execute(
-                    "SELECT id, user_id, json FROM episodes WHERE (? IS NULL OR user_id=?)", args).fetchall():
-                try:
-                    record_fields("episode", rid, uid, json.loads(js), ("summary",))
-                except (TypeError, ValueError):
-                    continue
+            current("edge", self._conn.execute(
+                "SELECT id, user_id, json, subject, relation, object FROM edges WHERE (? IS NULL OR user_id=?)",
+                args).fetchall(), edge_own, ("subject", "relation", "object"))
+            current("episode", self._conn.execute(
+                "SELECT id, user_id, json FROM episodes WHERE (? IS NULL OR user_id=?)", args).fetchall(),
+                episode_own)
             journal("edge_event", "edge", self._conn.execute(
-                "SELECT user_id, seq, edge_id, state FROM edge_event WHERE (? IS NULL OR user_id=?)", args).fetchall(),
-                edge_text)
+                "SELECT user_id, seq, edge_id, state, reason FROM edge_event WHERE (? IS NULL OR user_id=?)",
+                args).fetchall(), edge_own)
             journal("episode_event", "episode", self._conn.execute(
-                "SELECT user_id, seq, episode_id, state FROM episode_event WHERE (? IS NULL OR user_id=?)",
-                args).fetchall(), ("summary",))
-            for rid, uid, eid, text, target, corr, rcorr in self._conn.execute(
-                    "SELECT id, user_id, edge_id, text, target, correlation_id, recorded_correlation_id "
-                    "FROM replies WHERE (? IS NULL OR user_id=?)", args).fetchall():
-                if text:
-                    out.append((uid, "replies", "reply.text", "reply", rid, "edge", eid, text))
-                for v in (target, corr, rcorr):
-                    if v:
-                        out.append((uid, "replies", "reply.identifier", "reply", rid, "edge", eid, v))
-            for rid, uid, eid, corr in self._conn.execute(
-                    "SELECT id, user_id, edge_id, correlation_id FROM confirmations WHERE (? IS NULL OR user_id=?)",
-                    args).fetchall():
-                out.append((uid, "confirmations", "confirmation.identifier", "confirmation", rid, "edge", eid, corr))
-            for uid, corr, eid in self._conn.execute(
-                    "SELECT user_id, correlation_id, target_edge_id FROM request_registry "
-                    "WHERE (? IS NULL OR user_id=?)", args).fetchall():
-                out.append((uid, "request_registry", "request_registry.identifier", "request", corr, "edge", eid,
-                            corr))
-            for uid, text in self._conn.execute(
-                    "SELECT user_id, text FROM wiki WHERE (? IS NULL OR user_id=?)", args).fetchall():
-                if text:
-                    out.append((uid, "wiki", "wiki.text", "wiki", uid, "wiki", uid, text))
-            for rid, uid, payload in self._conn.execute(
-                    "SELECT id, user_id, payload FROM contribution_ledger WHERE (? IS NULL OR user_id=?)",
-                    args).fetchall():
-                if payload:
-                    out.append((uid, "contribution_ledger", "contribution_ledger.payload", "contribution", rid,
-                                "contribution", rid, payload))
+                "SELECT user_id, seq, episode_id, state, reason FROM episode_event WHERE (? IS NULL OR user_id=?)",
+                args).fetchall(), episode_own)
+            for table, cols in self._credential_side_tables():
+                named = _CARRIER_SIDE_TABLES.get(table)
+                if named is not None:
+                    rkind, key_cols, pkind, parent_col, classes = named
+                else:
+                    rkind, key_cols, pkind, parent_col, classes = table, self._credential_key(table), table, None, {}
+                read = list(dict.fromkeys(("user_id", *key_cols, *((parent_col,) if parent_col else ()), *cols)))
+                for row in self._conn.execute(
+                        f"SELECT {', '.join(read)} FROM {table} WHERE (? IS NULL OR user_id=?)", args).fetchall():
+                    r = dict(zip(read, row))
+                    rid = "/".join(str(r[k]) for k in key_cols)
+                    pid = str(r[parent_col]) if parent_col else rid
+                    for col in cols:
+                        v = r[col]
+                        if isinstance(v, str) and v:
+                            out.append((r["user_id"], table, classes.get(col, classes.get("*", f"{table}.{col}")),
+                                        rkind, rid, pkind, pid, v))
         return out
+
+    def _credential_side_tables(self):
+        """Every per-user table but the four the finder reads as records, with its non-BLOB columns but `user_id`,
+        from the LIVE schema (so a column added later is scanned, never silently skipped)."""
+        out = []
+        for (table,) in self._conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"):
+            info = self._conn.execute(
+                "SELECT cid, name, type, \"notnull\", dflt_value, pk FROM pragma_table_info(?)", (table,)).fetchall()
+            names = [c[1] for c in info]
+            if "user_id" not in names or table in ("edges", "episodes", "edge_event", "episode_event"):
+                continue
+            out.append((table, [c[1] for c in info if c[1] != "user_id" and (c[2] or "").upper() != "BLOB"]))
+        return out
+
+    def _credential_key(self, table):
+        """A side row's id for the report: its primary-key columns but `user_id` (or `user_id` itself, for a table
+        keyed by the user alone), from the live schema."""
+        pk = [c[1] for c in sorted(self._conn.execute(
+                "SELECT cid, name, type, \"notnull\", dflt_value, pk FROM pragma_table_info(?)", (table,)).fetchall(), key=lambda c: c[5])
+              if c[5]]
+        keys = [k for k in pk if k != "user_id"] or pk
+        if not keys:
+            raise RuntimeError(f"specs/0055 §4f: table {table} has no key; name it in _CARRIER_SIDE_TABLES")
+        return tuple(keys)
 
     def discard_wiki(self, user_id, text, store_version) -> bool:
         """R-II round 2's RII-R2-01 (D2): delete the wiki row only if it is still `(text, store_version)` — one

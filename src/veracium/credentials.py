@@ -539,6 +539,52 @@ class ArgumentRefused(ValueError):
         self.allowed = tuple(allowed) if allowed is not None else None
 
 
+def _declared_field_names() -> frozenset:
+    """Every field name (and alias) a product Pydantic model declares: the product's record and receipt models, named
+    here, and every model their fields' annotations reach. A validation location segment is printed only when it is
+    one of these or a list index (round 4's S3); a model outside them prints every segment as `[key]`, the safe
+    direction. tests/test_0055_r4_closure.py holds every product model's fields inside the result (a test may walk
+    subclasses; the product reads no registry)."""
+    import typing
+    from pydantic import BaseModel
+    from . import redaction as _redaction_mod
+    from . import schema as _schema
+    todo = [_schema.AgreementRecord, _schema.Confirmation, _schema.ConsolidationOp, _schema.ConsolidationOutputDraft,
+            _schema.ContestedGroup, _schema.ContestedLinkage, _schema.ContributionDraft, _schema.ContributionRecord,
+            _schema.CorrectionAuthorisation, _schema.Edge, _schema.Episode, _schema.OutcomeJudgmentDraft,
+            _schema.Provenance, _schema.Relation, _schema.Reply, _schema.SupersessionPlan, _schema.SupersessionRefusal,
+            _schema.SupersessionRefusalDraft, _schema.SupersessionResult, _redaction_mod.RedactionReceipt]
+    names, seen = set(), set()
+    while todo:
+        cls = todo.pop()
+        if cls in seen or cls is BaseModel:
+            continue
+        seen.add(cls)
+        for fname, finfo in (cls.model_fields or {}).items():
+            names.add(fname)
+            for alias in (finfo.alias, finfo.validation_alias):
+                if isinstance(alias, str):
+                    names.add(alias)
+            stack = [finfo.annotation]
+            while stack:
+                t = stack.pop()
+                if isinstance(t, type) and issubclass(t, BaseModel):
+                    todo.append(t)
+                stack.extend(typing.get_args(t))
+    return frozenset(names)
+
+
+def _loc_segment(seg, declared) -> str:
+    """§4g E1/E2 at a validation error's location (round 4's research S3): a location segment can be a DICT KEY from the
+    input (`Edge.outcome_counts` is `dict[str, int]`, so `{"<key>": "x"}` reads `outcome_counts.<key>: int_parsing`).
+    Only a list index or a declared field name is printed; any other segment is `[key]`."""
+    if isinstance(seg, int) and not isinstance(seg, bool):
+        return str(seg)
+    if isinstance(seg, str) and seg in declared:
+        return seg
+    return "[key]"
+
+
 def _pydantic_errors(exc):
     try:
         from pydantic import ValidationError
@@ -552,6 +598,61 @@ def _pydantic_errors(exc):
         return []
 
 
+def withheld_defect(exc: BaseException) -> BaseException:
+    """§4g E1 at the CLI for a DEFECT (round 4's R4-05 and research's S3): the exception to raise in place of `exc`.
+    It still fails loudly as a crash and is never turned into a clean refusal, but nothing it prints may quote the
+    input. The message is replaced and any notes dropped; then:
+      - an exception whose own formatting shows only that message (its `str()` is the message or its repr, and it is
+        not a syntax error, which prints its source line) is raised AS ITSELF: its type, attributes and traceback;
+      - a Pydantic `ValidationError` formats its stored errors, input included, whatever `args` holds, so it is
+        REBUILT as a `ValidationError` of the same title over the same error types, each location reduced as
+        `outward_text` reduces it, each message withheld, the input hidden;
+      - any other exception with its own formatter is replaced by a fresh instance of its own class built from the
+        message alone when that formats safely, else by a `RuntimeError` naming its class.
+    The caller raises the result `from None`, with the original frames (`with_traceback`)."""
+    msg = f"{type(exc).__name__}: its message is withheld from this stream (specs/0055 §4g E1)"
+    try:
+        exc.args = (msg,)
+        try:
+            del exc.__notes__                            # notes may quote the input (research's S3)
+        except AttributeError:
+            pass
+        if _formats_as(exc, msg):
+            return exc
+    except Exception:                                    # noqa: BLE001 - fall through to a replacement
+        pass
+    errs = _pydantic_errors(exc)
+    if errs is not None:
+        from pydantic import ValidationError
+        from pydantic_core import PydanticCustomError
+        declared = _declared_field_names()
+        try:
+            fresh = ValidationError.from_exception_data(
+                exc.title, [{"type": PydanticCustomError(str(e.get("type", "invalid")),
+                                                         "invalid value (its message is withheld: it may carry the "
+                                                         "input)"),
+                             "loc": tuple(_loc_segment(x, declared) for x in (e.get("loc") or ())), "input": None}
+                            for e in errs] or [{"type": PydanticCustomError("invalid", "invalid value"), "loc": (),
+                                                "input": None}],
+                hide_input=True)
+            return fresh.with_traceback(exc.__traceback__)
+        except Exception:                                # noqa: BLE001 - fall through
+            pass
+    try:
+        fresh = type(exc)(msg)
+        if not _formats_as(fresh, msg):
+            fresh = RuntimeError(msg)
+    except Exception:                                    # noqa: BLE001 - a class whose constructor wants more
+        fresh = RuntimeError(msg)
+    return fresh.with_traceback(exc.__traceback__)
+
+
+def _formats_as(exc: BaseException, msg: str) -> bool:
+    """Whether formatting `exc` shows `msg` and nothing else of it: its `str()` is the message (or, for a KeyError,
+    its repr), and it is not a syntax error carrying a source line or file, which its traceback form prints."""
+    return str(exc) in (msg, repr(msg)) and not (isinstance(exc, SyntaxError) and (exc.text or exc.filename))
+
+
 def outward_text(exc: BaseException) -> str:
     """§4g E1, ONE outward formatter: the text an error carries when it leaves the library toward a model, a tool
     result, a CLI stream or the diagnostics log. It names the field and the reason, and for a closed vocabulary the
@@ -562,8 +663,9 @@ def outward_text(exc: BaseException) -> str:
     errs = _pydantic_errors(exc)
     if errs is not None:
         parts = []
+        declared = _declared_field_names()
         for e in errs[:8]:
-            loc = ".".join(str(x) for x in (e.get("loc") or ())) or "argument"
+            loc = ".".join(_loc_segment(x, declared) for x in (e.get("loc") or ())) or "argument"
             parts.append(f"{loc}: {e.get('type', 'invalid')}")
         return "invalid arguments (" + "; ".join(parts) + ")" if parts else "invalid arguments"
     name = type(exc).__name__

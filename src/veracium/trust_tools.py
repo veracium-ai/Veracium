@@ -258,12 +258,24 @@ class RenderReceipt:
         self.view = view
         self.units: list = []
 
+    def _locator(self, rid):
+        """specs/0055 §4g's locator rule at the receipt's ONE constructor (round 4's R4-03 and research's S2): a stored
+        or imported id is not guaranteed to be a minted value, and a receipt is a report that names records, so an id
+        carrying a credential shape is named by its per-report ordinal (`record 3 of this report`). The receipt leaves
+        through MCP `find_facts`, library `recall(render_receipt=True)` and `proactive`; all three read it from here.
+        Such a unit cannot be addressed by a later served call (no lookup by ordinal): its record's remedy is
+        `veracium credentials redact` or `forget_user`."""
+        from . import credentials as _cred
+        if isinstance(rid, str) and _cred.first_class(rid) is not None:
+            return f"record {len(self.units) + 1} of this report"
+        return rid
+
     def admit(self, kind: str, record, text: str, partition: str, annotations=(), subject=None):
         """`subject` (TT-R3-02) is `(segment, anchor, offset)` from the composer that rendered it: the subject AS
         RENDERED (clamped when the line clamped it), found at `offset` in `anchor`, which is the admitted text or one
         of the unit's annotations. None when the admitted line names no subject other than the user; then the unit
         carries none. Never the record's raw field: a segment not at its place is an internal failure."""
-        unit = {"kind": kind, "id": None if record is None else record.id, "text": text,
+        unit = {"kind": kind, "id": None if record is None else self._locator(record.id), "text": text,
                 "partition": partition, "annotations": list(annotations)}
         if subject is not None:
             seg, anchor, off = subject

@@ -126,6 +126,13 @@ INVENTORY = [
                             "`_needs_mcp` (the pydantic-floor lane); the file's other cells run without it. Author "
                             "line: all PASS with mcp installed",
      "job:runs"),
+    ("tests/test_0055_r4_closure.py", "importorskip", "mcp",
+     "optional-dependency", "the optional MCP SDK — specs/0055 round 4's served-surface closures (R4-02's fresh cache "
+                            "through MCP and the adapter binding, R4-03's sweep of every served tool) build or reach the "
+                            "served server, so those cells skip without the SDK through one helper, `_needs_mcp` (the "
+                            "pydantic-floor lane); the file's other cells run without it. Author line: all PASS with mcp "
+                            "installed",
+     "job:runs"),
     ("tests/test_0011_correct_refuses_unclassified.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
                             "test_0011_uncl_through_the_mcp_transport ONLY (specs/0011 0011-UNCL's refusal over the "

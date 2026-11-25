@@ -31,11 +31,22 @@ REMEDY = {
     "edge_event.state": "0041 redact of the parent edge (the tombstone covers its history)",
     "episode_event.state": "0041 redact of the parent episode (the tombstone covers its history)",
     "reply.text": "0041 redact of the reply's parent edge",
+    # census E :83: a 0041 redaction of EITHER edge rewrites the refusal's relation; the finder targets the prior edge
+    "supersession_refusal.relation": "0041 redact of the refusal's prior edge (a redaction of either edge rewrites it)",
     "wiki.text": "discard the compiled wiki (rebuilt from masked reads)",
 }
-#: carriers no targeted remedy reaches: residual, reported as such; forget_user removes them
+#: carriers no targeted remedy reaches, by name: residual, reported as such; forget_user removes them. Since round 4
+#: (R4-04, research's S1) the finder FAILS CLOSED: EVERY class not in REMEDY is residual — the `<record>.other`,
+#: `<kind>.unparsed`, `<journal>.reason` and `<table>.<column>` classes the store's read yields for a string no class
+#: names (`SqliteStore.credential_carriers`). This tuple is the named part only; `is_residual` is the rule.
 RESIDUAL = ("edge.identifier", "episode.identifier", "edge_event.identifier", "episode_event.identifier",
             "reply.identifier", "confirmation.identifier", "request_registry.identifier", "contribution_ledger.payload")
+
+
+def is_residual(carrier: str) -> bool:
+    """Every carrier class no targeted remedy reaches — every class not in REMEDY (fail closed)."""
+    return carrier not in REMEDY
+
 #: opaque digest domains: DECLARED and UNVOUCHED, never inferred absent because no raw token was found
 DECLARED_OPAQUE = (
     ("supersession receipts", "request, logical and outcome digests over a stored prior (0055 D2 content_residual; "
@@ -46,6 +57,10 @@ DECLARED_OPAQUE = (
                                    "SURVIVES forget_user"),
     ("host AuditLog", "D3's identity digest on a revoke_source / unrevoke_source line: the host's file, outside "
                       "the store; it SURVIVES forget_user"),
+    # round 4's A1 (v0.5.5's I19-F1, D3's form): the same identity digest, as maintain()'s pool key
+    ("maintain() consolidate-pool / pool_key", "a scope's source identity digest, RETURNED to maintain()'s caller "
+                                               "and LOGGED on the host AuditLog's consolidate-pool line: outside "
+                                               "the store; it SURVIVES forget_user"),
 )
 #: what lives outside the store's tables, and so outside every remedy here
 OUTSIDE_REMEDY = ("the host AuditLog (user_id in plaintext, counts, D3's digests)", "exports and backups",
@@ -67,7 +82,7 @@ class Hit:
 
     @property
     def removable(self) -> bool:
-        return self.carrier in REMEDY
+        return not is_residual(self.carrier)
 
 
 def scan(store, user_id: Optional[str] = None) -> list[Hit]:

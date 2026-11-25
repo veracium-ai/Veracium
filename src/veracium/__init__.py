@@ -606,7 +606,17 @@ class Memory:
         """specs/0055 §4b, the ingress screen: run at the top of an entry point, before any digest, length check,
         model call, log line or write (D1). Each identifier `(field, value)` carrying a shape refuses the whole call
         (`CredentialRefused`; nothing written). Each free-text `(field, text)` is masked. Returns the masked texts,
-        in order, and the report `{field: {class: count}}`."""
+        in order, and the report `{field: {class: count}}`.
+
+        TYPE FIRST (round 4's R4-01): a value that is neither `None` nor a `str`, identifier or free text, is refused
+        here (`ArgumentRefused`, reason `not_a_string`; content-free), before any consumer. Up to round 4 a non-`str`
+        identifier skipped the screen and later code converted it to text (`remember`'s extractor-fallback summary
+        interpolates `event_type`; the provenance model turns a bytes `evidence_ref` into text), so a shape the screen
+        refuses as a `str` was stored as bytes-become-text. A `str` subclass is screened on its `str` data."""
+        for field_name, value in (*ids, *free):
+            if value is not None and not isinstance(value, str):
+                raise _cred.ArgumentRefused(f"{op}: {field_name} must be a str, not {type(value).__name__}",
+                                            field=field_name, reason="not_a_string")
         for field_name, value in ids:
             if isinstance(value, str) and value:
                 cls = _cred.first_class(value)

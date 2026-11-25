@@ -426,7 +426,11 @@ def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
     if _bind is not None:
         _bind["row"] = row             # specs/0047 §4d (R-II RII-01): the row this body was served from, for bound_wiki
         _bind["basis"] = row[1]        # specs/0003 §4c-ii v18.7 (C3-01): found fresh, so it equals store_version here
-    return _split_envelope(row[0])[1]
+    # specs/0055 §4e (round 4's R4-02): a FRESH cached body is masked on read, like every stored text served to a
+    # model or a tool. Freshness and a valid envelope do not show the body was screened under 0055 (a cache written
+    # before it, or by another writer, is served as it is stored); the cache identity does not bind the shapes
+    # version. The read masks and never rewrites the cache: masking a read stays separate from changing storage.
+    return _cred.mask_text(_split_envelope(row[0])[1])
 
 
 # the code-owned bodies ensure_wiki can return in place of a compiled one: each asserts no fact

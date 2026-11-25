@@ -728,8 +728,9 @@ def main(argv=None) -> int:
             # anything else is a defect, and still fails loudly AS ITSELF (its type, attributes and traceback), so a
             # crash never reads as a clean refusal; only its message, which may quote the input, is withheld, and the
             # chain it was raised during is suppressed for the same reason
-            exc.args = (f"{type(exc).__name__}: its message is withheld from this stream (specs/0055 §4g E1)",)
-            raise exc from None
+            # (round 4's R4-05: rewriting `args` does not reach an exception with its own formatter, so
+            # `_cred.withheld_defect` decides whether the original can be raised as itself)
+            raise _cred.withheld_defect(exc) from None
     if args.cmd != "telemetry":
         p.print_help()
         return 0
