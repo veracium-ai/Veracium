@@ -1,5 +1,5 @@
 {
- "body_sha256": "7aefadadb4fa6977104d855a5c07fa9346c81fe6ffa547fc5550f5da06c671b5",
+ "body_sha256": "2ac812ff2585fcf45263558c06de2ee81440fddba510958328c7eb7784cc96b6",
  "controls": [
   {
    "anchor_counts": [
@@ -218,7 +218,7 @@
     "passed": 16
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "3f30fc5d7abd0120a07aeff9aed41463242c3577",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
@@ -246,7 +246,7 @@
    "specs/evidence/c3-01/empty_body_mutants.py": "6b9ce7f02c5f9e8842ea405c979e1b4183c7d5e37687f6f16a96500818b4d724",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "f18782aea3c57f022ddc679cb2f2ec6094c1a0a7cdfb85e479e50d0a3b4a1320",
+   "src/veracium/__init__.py": "cb0f59d18501e9e86a121a6895fb0187a8f47d5d9f74d4da3868795dfa303394",
    "src/veracium/compile.py": "22cd7411e077108f303c16ffb4a4d5281841ada727edafcc5ca64a1b7f848580",
    "src/veracium/mcp_server.py": "e262a637b6dbeb7631780ad07949163bc7353593f65ab2b39352f4b1a149dd6a",
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
@@ -268,47 +268,8 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
-   "specs/evidence/0048/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/sr2-01/mutation-table.json"
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -352,7 +313,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.55s",
+   "pytest": "5 failed in 1.78s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -389,7 +350,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.00s",
+   "pytest": "2 failed in 1.14s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -422,7 +383,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -455,7 +416,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -494,7 +455,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.55s",
+   "pytest": "3 failed in 1.39s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty body always omitted: the no-write response no longer equals the bind-off one (v18.11 I6d)"
@@ -528,7 +489,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
@@ -562,7 +523,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 102.42s (0:01:42)",
+   "pytest": "1 failed in 103.31s (0:01:43)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
@@ -595,7 +556,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 91.17s (0:01:31)",
+   "pytest": "1 failed in 104.48s (0:01:44)",
    "reason": null,
    "reason_seen": null,
    "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
@@ -628,7 +589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.90s",
+   "pytest": "1 failed in 3.88s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -664,7 +625,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.02s",
+   "pytest": "2 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -697,7 +658,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -712,6 +673,6 @@
   "good": 11,
   "killed": 11,
   "rows": 11,
-  "seconds": 642
+  "seconds": 690
  }
 }

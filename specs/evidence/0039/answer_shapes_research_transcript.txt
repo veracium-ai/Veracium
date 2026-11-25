@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ cb6462a428255f8183f5efbd58340e36d2b81518
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 3f30fc5d7abd0120a07aeff9aed41463242c3577
+# RE-PINNED 2026-11-25 (3f30fc5d: specs/0055 round 4, the type refusal is also a TypeError; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-25 (cb6462a4: specs/0055 round 4's fixes — the finder's fail-closed read, ingress type refusal, masked cache read, report locators, the CLI's withheld defect and the screened log tail; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-24 (55c5de5d: specs/0055 v0.5.7, the recogniser's token boundary and the removal of two unreached §4e masks (credentials.masked_episode, gate.partition_parts' summaries); both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-24 (7dbaa68d: specs/0011 v23.1's check moved into Memory._refuse_unclassified_prior, same behaviour; both instruments re-run, and the body is byte-identical)

@@ -1,5 +1,5 @@
 {
- "body_sha256": "b024249d52c015a747f7d1ca748fcacb2b2d48e0f8b434e51545044ac6daed9a",
+ "body_sha256": "d2a017e22f64f57b37667ba808c4c10f32a38be486223a6695153f6dbfa14d86",
  "controls": [
   {
    "anchor_counts": [
@@ -871,7 +871,7 @@
     "passed": 175
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "3f30fc5d7abd0120a07aeff9aed41463242c3577",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
    "NOOP-__init__": "bb17e4ed43e4279216822c1a062b14df0c57ba9d3a10a3cf2337fab275b77465",
@@ -933,11 +933,11 @@
    "specs/evidence/0055/vectors.py": "a773cb2cc8f5f9a0ef01c8a8b872e3097b77cf49efe247ee749ec084b4af41d7",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "f18782aea3c57f022ddc679cb2f2ec6094c1a0a7cdfb85e479e50d0a3b4a1320",
+   "src/veracium/__init__.py": "cb0f59d18501e9e86a121a6895fb0187a8f47d5d9f74d4da3868795dfa303394",
    "src/veracium/cli.py": "6b5e85cd5adf0327c001ee92ffb2dfc5522783bbd9dd3b03220158d617f0da22",
    "src/veracium/compile.py": "22cd7411e077108f303c16ffb4a4d5281841ada727edafcc5ca64a1b7f848580",
    "src/veracium/credential_finder.py": "cd218ae8e94914756bf5d72e74bb65fc22a6df0ad4b57a3141bb957f0aae694e",
-   "src/veracium/credentials.py": "a7f5f0f931044211850c461d95594aeebd292de75340b4ecfdfa8962afad9c4e",
+   "src/veracium/credentials.py": "cb478a82429157bc76bd30d509ac151821aa224687ed1038a24086bed13a6369",
    "src/veracium/diagnostics.py": "620f55d4973db291d943cff82e89cac389b49dcddff758df3202798eb346a13d",
    "src/veracium/graph.py": "fa037af8742677f09a29516d90b467ba82c2865f04a14d806821bc7eb5811f9d",
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
@@ -950,7 +950,7 @@
    "tests/support_0055_i19.py": "985e072bebd678f49c996310fa5a137c267e43160490f45eaabe1453ea325e3e",
    "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
    "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
-   "tests/test_0055_r4_closure.py": "eba02d1badb86f166168e23d90ecb13dd9fb30ff785468b14ce691c985617171",
+   "tests/test_0055_r4_closure.py": "aa30ab3bf123d7a1c5cc919fe099cec6189fdca1eab001791b697b44992017dc",
    "tests/test_0055_recogniser.py": "7909d51249b6af23c0e0984f7a155594ad7a98519198883aef340414d944fb53"
   },
   "finding": "implementation",
@@ -965,30 +965,7 @@
   "spec": "0055",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json"
+   "specs/evidence/0003/obligations/mutation-table.json"
   ]
  },
  "rows": [
@@ -1047,7 +1024,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.03s",
+   "pytest": "10 failed in 1.42s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1089,7 +1066,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.62s",
+   "pytest": "4 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1137,7 +1114,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.75s",
+   "pytest": "6 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -1242,7 +1219,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "25 failed in 4.25s",
+   "pytest": "25 failed in 5.22s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1314,7 +1291,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
@@ -1347,7 +1324,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -1380,7 +1357,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.16s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1422,7 +1399,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.35s",
+   "pytest": "4 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1503,7 +1480,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 4.69s",
+   "pytest": "17 failed in 5.13s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1536,7 +1513,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.06s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1569,7 +1546,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.93s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1602,7 +1579,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.14s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -1635,7 +1612,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.05s",
+   "pytest": "1 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -1668,7 +1645,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.79s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -1761,7 +1738,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 4.19s",
+   "pytest": "21 failed in 4.36s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -1797,7 +1774,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.74s",
+   "pytest": "2 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
@@ -1833,7 +1810,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.04s",
+   "pytest": "2 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1866,7 +1843,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -1899,7 +1876,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -1932,7 +1909,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
@@ -1965,7 +1942,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
@@ -2092,7 +2069,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "26 failed in 2.36s",
+   "pytest": "26 failed in 3.20s",
    "reason": null,
    "reason_seen": null,
    "what": "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, \u00a74a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -2212,7 +2189,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "30 failed in 7.84s",
+   "pytest": "30 failed in 9.15s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"
@@ -2254,7 +2231,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.28s",
+   "pytest": "4 failed in 1.40s",
    "reason": null,
    "reason_seen": null,
    "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02)"
@@ -2290,7 +2267,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.15s",
+   "pytest": "2 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive)"
@@ -2326,7 +2303,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.90s",
+   "pytest": "2 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"
@@ -2359,7 +2336,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.06s",
+   "pytest": "1 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"
@@ -2404,7 +2381,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.16s",
+   "pytest": "5 failed in 1.34s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and retired_reason read as residual, so the remedy never targets them)"
@@ -2446,7 +2423,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.90s",
+   "pytest": "4 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "a record field no class names is dropped again, not reported (round 4's R4-04: fail closed)"
@@ -2482,7 +2459,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "a current record whose JSON does not parse is skipped again (research's S1)"
@@ -2515,7 +2492,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, source_revocations.reason and every other per-user column unread)"
@@ -2551,7 +2528,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.82s",
+   "pytest": "2 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"
@@ -2584,7 +2561,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a validation location prints a caller's dict key again (research's S3)"
@@ -2626,7 +2603,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.64s",
+   "pytest": "4 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the log tail is cut to the cap BEFORE it is screened again (round 4's R4-06)"
@@ -2659,7 +2636,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"
@@ -2674,6 +2651,6 @@
   "good": 36,
   "killed": 36,
   "rows": 36,
-  "seconds": 242
+  "seconds": 276
  }
 }
