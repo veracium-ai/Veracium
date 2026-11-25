@@ -1,5 +1,5 @@
 {
- "body_sha256": "e0b181d4d94708dc114088e9b11fd2a7e6f58db6985e47d65f013bdecd355803",
+ "body_sha256": "19ca57ccc5f0abcca30472261dc8393f35e45524e6c63267bf9699636e29d023",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "931a1ac4a1c9af80f8a6b2a72edbe998db84a4d3",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "NOOP-0048-R5-02-test_0048_decay_bounds": "37dc4c8c374d6dc5e5faf76932ee7b7b58336f9206df55afeefca0b999519346"
   },
@@ -58,7 +58,7 @@
    "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "tests/test_0048_decay_bounds.py": "0f3e3ee4bcb346002b963b7f2d3af1bd71bc169fd09b34ab3c337a518cd5a56a"
+   "tests/test_0048_decay_bounds.py": "aa2ce50da183c158175cd68d2f765c6a035311025b7576fea89163112e53d121"
   },
   "finding": "0048-R5-02",
   "honest_nodes": [
@@ -69,9 +69,26 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -83,9 +100,8 @@
    "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/c3-01/mutation-table.json",
-   "tests/test_0048_decay_bounds.py"
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -117,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.99s",
+   "pytest": "1 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the statement prepared bare, so one that binds exactly runs"
@@ -150,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "plain EXPLAIN: a string SQLite refuses bare becomes grammatical"
@@ -165,6 +181,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 58
+  "seconds": 62
  }
 }

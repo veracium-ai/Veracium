@@ -236,8 +236,9 @@ MUTANTS = [
      ['tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool'], None,
      "a restored consolidation output not named: lineage compared by the raw id, not the historical form (0041 R9-03's defect, reached through the tool)"),
     ('TT12-list-dropped-on-host-path', "product", 'src/veracium/mcp_server.py',
-     [('        return _ok(r if isinstance(r, dict) else r.model_dump(mode="json"))',
-       '        return _ok(r if isinstance(r, dict) else {**r.model_dump(mode="json"), "surviving_derived": []})')],
+     [('        return _ok(_locate_receipt(r if isinstance(r, dict) else r.model_dump(mode="json")))',
+       '        return _ok(_locate_receipt(r if isinstance(r, dict) else {**r.model_dump(mode="json"), '
+       '"surviving_derived": []}))')],   # 0055 round 4: the served receipt now passes through _locate_receipt
      ['tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[edge]', 'tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[episode]', 'tests/test_0031_trust_tools_mcp.py::test_forget_fact_does_not_cascade_and_names_every_derived_record[restored-consolidation-input]'],
      ['tests/test_0031_trust_tools_mcp.py::test_correction_refused_is_a_committed_refusal_kept_through_the_tool'], None,
      'forget_fact with no principal returning an empty `surviving_derived`'),

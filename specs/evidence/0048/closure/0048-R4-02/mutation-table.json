@@ -1,5 +1,5 @@
 {
- "body_sha256": "c97a0415b7138e0a60d36b6ca1e39440bb91983a051f94c44cfde48688ad95a0",
+ "body_sha256": "f164d56421d9df3991503d8d1e31fbef933984eea7aa1c529101222f5bcfa7b4",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "931a1ac4a1c9af80f8a6b2a72edbe998db84a4d3",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "NOOP-0048-R4-02-config": "22960b89cf4392aaaa3c201a3c4bb885095358cfba4f3c21cadaa41097859190"
   },
@@ -62,7 +62,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/config.py": "a510123ae142da13952aa1ffabcf2d89099525ff87b2fcb8baf289964f0d96c9",
-   "tests/test_0048_decay_bounds.py": "0f3e3ee4bcb346002b963b7f2d3af1bd71bc169fd09b34ab3c337a518cd5a56a"
+   "tests/test_0048_decay_bounds.py": "aa2ce50da183c158175cd68d2f765c6a035311025b7576fea89163112e53d121"
   },
   "finding": "0048-R4-02",
   "honest_nodes": [
@@ -73,9 +73,24 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -85,9 +100,7 @@
    "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/c3-01/mutation-table.json",
-   "tests/test_0048_decay_bounds.py"
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -125,7 +138,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.76s",
+   "pytest": "3 failed in 1.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the refused value rendered by repr again: beyond the 4,300-digit limit the rendering's own ValueError replaces the refusal naming the field (R4-02)"

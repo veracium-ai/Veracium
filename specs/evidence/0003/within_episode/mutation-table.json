@@ -1,5 +1,5 @@
 {
- "body_sha256": "078b0b83829f7b3804d5c564f064bc7a036f7e5147dae65bc61867cefe66f165",
+ "body_sha256": "b8cd20ec2c6a0807928ed401c6539e8e5c7df93faca67b5511255ac76501ed20",
  "controls": [
   {
    "anchor_counts": [
@@ -209,7 +209,7 @@
     "passed": 17
    }
   },
-  "commit": "edda348e6742d2613927c05bc05f8554b527212d",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "ae79327ed7f5b62d40f25c77d6ce0112554bedcc2141e0d1ce82b6764f658254",
    "NOOP-graph": "0279fb4a924c44bf08bdd266c57af3518fbd7277b0dcac1fe481a17d533b9506",
@@ -241,7 +241,7 @@
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
    "src/veracium/prompts.py": "846caa2ea2f8c4d96fc3341a0df7bd826c71da3cf1af1b20d41069d104e0d896",
    "src/veracium/schema.py": "55a59ddb9e00ebb6b1ae9fafb49efa06798127e45cd1ec7a962bcbde7eff5f74",
-   "src/veracium/store/sqlite.py": "827b69c4bc33631a78092a851af1b046228d55fa547a608c75315d9b19f1ce5f",
+   "src/veracium/store/sqlite.py": "30b1daf837efff40b84b39458ce85d9fa5b3af256f0ea95ccaa7265d2120798f",
    "tests/test_0003_within_episode.py": "869e49a51f9d330c8d91e3d33831df08a1019dad96437ad234342ab8306552f0"
   },
   "finding": "within-episode",
@@ -254,7 +254,41 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/obligations/mutation-table.json"
+   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
+   "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -295,7 +329,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.54s",
+   "pytest": "4 failed in 1.73s",
    "reason": null,
    "reason_seen": null,
    "what": "per-edge supersession in emission order (the code before the amendment)"
@@ -331,7 +365,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the contest grouped by _value_key, not value_groups: a refinement reads as two values"
@@ -367,7 +401,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.62s",
+   "pytest": "2 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the functional retire not withheld in a contested key"
@@ -401,7 +435,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "every functional key treated as contested (no supersession at all)"
@@ -446,7 +480,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.90s",
+   "pytest": "5 failed in 2.19s",
    "reason": null,
    "reason_seen": null,
    "what": "no within-episode refusal row is drafted"
@@ -479,7 +513,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the counter absent, not 0, on the unparseable path"
@@ -512,7 +546,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested key whose edges all reinforce records no row"
@@ -545,7 +579,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "a pair the ladder refused also drafted within-episode (two rows)"
@@ -579,7 +613,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the extraction rule in a constant the extractor is never sent"
@@ -612,7 +646,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.46s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the absent rule_version dumped as null (every ladder refusal's digest moves)"
@@ -645,7 +679,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the store accepts a rule_version outside the closed set"
@@ -678,7 +712,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "absorption retires a differing-group edge in a contested key"
@@ -711,7 +745,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the contest decided over the episode's edges alone, not with the priors"
@@ -726,6 +760,6 @@
   "good": 13,
   "killed": 13,
   "rows": 13,
-  "seconds": 48
+  "seconds": 55
  }
 }

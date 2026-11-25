@@ -1,4 +1,4 @@
-src tree: b10bd31add117991da538e53b5e7fa3cdae0be8c
+src tree: 6fc60005488ef7e33896d29555c668b373930e62
 write census of the seven trust tools through *_report; 45 cases, each on a fresh store
 find_facts / gate 1 capability none
     refused:attempted_elevation      no writes

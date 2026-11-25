@@ -1,5 +1,5 @@
 {
- "body_sha256": "d3ae5c9e8b2334884353cddfed24664048b01272010459a0e114bfbe21659b48",
+ "body_sha256": "7aefadadb4fa6977104d855a5c07fa9346c81fe6ffa547fc5550f5da06c671b5",
  "controls": [
   {
    "anchor_counts": [
@@ -218,7 +218,7 @@
     "passed": 16
    }
   },
-  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "65ccd574380c94d09c89989e04a392c14dd3065c7f777f87233f8db96da7e6bb",
    "NOOP-__init__": "20e9dbce820326b060953f807aeaab8bf1279d861c63cb60908398e79efcdce1",
@@ -246,12 +246,12 @@
    "specs/evidence/c3-01/empty_body_mutants.py": "6b9ce7f02c5f9e8842ea405c979e1b4183c7d5e37687f6f16a96500818b4d724",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "e22ddf781aa6b68f7d5c720e4d73dfe8d6006beaac45e4ed14c9e88108dbefc1",
-   "src/veracium/compile.py": "5b38d56e3d41e5d413b1198b71ff54a1fdfbee17dbb9323e9c938102d872c1b3",
-   "src/veracium/mcp_server.py": "366e8451d3b1e91b6631ab924e9f7049a52bf41144c9b107e1b6cd5b62b76d1a",
+   "src/veracium/__init__.py": "f18782aea3c57f022ddc679cb2f2ec6094c1a0a7cdfb85e479e50d0a3b4a1320",
+   "src/veracium/compile.py": "22cd7411e077108f303c16ffb4a4d5281841ada727edafcc5ca64a1b7f848580",
+   "src/veracium/mcp_server.py": "e262a637b6dbeb7631780ad07949163bc7353593f65ab2b39352f4b1a149dd6a",
    "src/veracium/store/data_migration.py": "34a843e5a51aa4ab0a653d132b495fc0f7823f88e3402edcc74f639c5e5111d2",
    "src/veracium/store/revocation.py": "754eafa7ef5b56e1d9f18f6dc36ca694f360f98b14728aefb35d0565398e356f",
-   "src/veracium/store/sqlite.py": "827b69c4bc33631a78092a851af1b046228d55fa547a608c75315d9b19f1ce5f",
+   "src/veracium/store/sqlite.py": "30b1daf837efff40b84b39458ce85d9fa5b3af256f0ea95ccaa7265d2120798f",
    "tests/test_0031_server_reports_itself.py": "5ff827b81d01cf38d6759892b4c311aea19be03a45ae63ebce8dbb9c27a786da",
    "tests/test_c3_01_empty_body_bind.py": "a6befb0770902488995da33414599d633dc97cfba28dc5fe8873ebb4d3de4c2f",
    "tests/test_c3_01_writers_census.py": "cbf5bb6bd2b3de1a4b4e0f95a4f56f87529cb90e908cba552aa329760f08ea73"
@@ -268,22 +268,47 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
    "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
+   "specs/evidence/0018/rungs/implementation/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json"
+   "specs/evidence/0041/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/sr2-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -327,7 +352,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.45s",
+   "pytest": "5 failed in 1.55s",
    "reason": null,
    "reason_seen": null,
    "what": "no bind read: the empty body is served whatever was written during the call (v18.6, the round-3 limit)"
@@ -364,7 +389,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.83s",
+   "pytest": "2 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read at bound_wiki's return: a write after it, before detail selection, is missed (the third placement)"
@@ -397,7 +422,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind applied to every body: a model summary is dropped by a concurrent write (broadening 0012's lag)"
@@ -430,7 +455,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the compile's basis read after its inputs: a write between the inputs and that read is missed (the second placement)"
@@ -469,7 +494,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.21s",
+   "pytest": "3 failed in 1.55s",
    "reason": null,
    "reason_seen": null,
    "what": "the empty body always omitted: the no-write response no longer equals the bind-off one (v18.11 I6d)"
@@ -503,7 +528,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the bind read before the episode read: a write between the selection and the episodes is missed (the fourth)"
@@ -537,7 +562,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 80.70s (0:01:20)",
+   "pytest": "1 failed in 102.42s (0:01:42)",
    "reason": null,
    "reason_seen": null,
    "what": "revocation's bump after revocation_operation's COMMIT (as before the census): a reader sees revoked rows under the old counter"
@@ -570,7 +595,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 80.84s (0:01:20)",
+   "pytest": "1 failed in 91.17s (0:01:31)",
    "reason": null,
    "reason_seen": null,
    "what": "delete_episode's bump after its COMMIT (research's stage-2 survivor on 35610a8a): the census must SEE every bump site, so a bump moved out of its transaction anywhere fails"
@@ -603,7 +628,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.49s",
+   "pytest": "1 failed in 3.90s",
    "reason": null,
    "reason_seen": null,
    "what": "the live data migration's restoration without a bump (as before the census): reinstated edges under the old counter"
@@ -639,7 +664,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.88s",
+   "pytest": "2 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "serverInfo.version left to the SDK, which reports its own package version (0031 v22.1's V-SERVERINFO RED)"
@@ -672,7 +697,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "the key hint appended to every start failure, the schema refusal included (0031 v22.1's V-START-FAILURE RED)"
@@ -687,6 +712,6 @@
   "good": 11,
   "killed": 11,
   "rows": 11,
-  "seconds": 545
+  "seconds": 642
  }
 }

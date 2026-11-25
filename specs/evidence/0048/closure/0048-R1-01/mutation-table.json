@@ -1,5 +1,5 @@
 {
- "body_sha256": "4af9fa02553711bbacfa2b5a4fe2c5d62955e18de5e9bf819350bff23af44cbc",
+ "body_sha256": "108cc0d07b8a95a8b5a1c373e775dc05d52cb7a3be1c22b9a27bfa72e2319a4b",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "931a1ac4a1c9af80f8a6b2a72edbe998db84a4d3",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "NOOP-0048-R1-01-lifecycle": "6e91be8bea7312abb276ab369c6a729330d4723354d885ad796ffc857912de46"
   },
@@ -66,7 +66,7 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "c9456ed984957d358d678a9797c6be809b08a4168e85e49e4c6bbea5b8d42fc5",
-   "tests/test_0048_decay_bounds.py": "0f3e3ee4bcb346002b963b7f2d3af1bd71bc169fd09b34ab3c337a518cd5a56a"
+   "tests/test_0048_decay_bounds.py": "aa2ce50da183c158175cd68d2f765c6a035311025b7576fea89163112e53d121"
   },
   "finding": "0048-R1-01",
   "honest_nodes": [
@@ -78,15 +78,7 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/c3-01/mutation-table.json",
-   "tests/test_0048_decay_bounds.py"
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -121,7 +113,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.48s",
+   "pytest": "2 failed in 1.51s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -157,7 +149,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.48s",
+   "pytest": "2 failed in 1.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"
@@ -172,6 +164,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 15
+  "seconds": 16
  }
 }

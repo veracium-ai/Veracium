@@ -1,5 +1,5 @@
 {
- "body_sha256": "dfb36cfddca60d062ae947102905621c8ad9d64e02ecf9517fac5ecc345d9793",
+ "body_sha256": "b024249d52c015a747f7d1ca748fcacb2b2d48e0f8b434e51545044ac6daed9a",
  "controls": [
   {
    "anchor_counts": [
@@ -19,6 +19,9 @@
     "tests/test_0055_invariants.py::test_i1_no_secret_byte_survives_any_free_text_field[reply.text]",
     "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
     "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed",
+    "tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input",
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -51,7 +54,7 @@
     "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
     "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
    ],
-   "definition_sha256": "23a4a75fda0460e9703b0dc08c9d568537a50c1f993f9873ad87fd68bf5fb04e",
+   "definition_sha256": "31dd05335896efaff5896ebf2bf40a2648c3cffd1388a907aa74f7cf02f6faae",
    "expected": "SURVIVED",
    "file": "src/veracium/credentials.py",
    "good": true,
@@ -69,6 +72,9 @@
     "tests/test_0055_invariants.py::test_i1_no_secret_byte_survives_any_free_text_field[reply.text]",
     "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
     "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed",
+    "tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input",
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -138,9 +144,41 @@
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
-    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]"
    ],
-   "definition_sha256": "1295fe5cd8a767cf14aa20c458bcc9ea20835e14d83eb2d13da0c3bdb5c4b2c1",
+   "definition_sha256": "bb17e4ed43e4279216822c1a062b14df0c57ba9d3a10a3cf2337fab275b77465",
    "expected": "SURVIVED",
    "file": "src/veracium/__init__.py",
    "good": true,
@@ -174,7 +212,39 @@
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
-    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/__init__.py: its mutants' cells must all pass"
@@ -222,9 +292,11 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
-    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]"
    ],
-   "definition_sha256": "af50aa9c52516093b5ad30d73c327f7da68ab538b56638d3cd4287f11aa8b01e",
+   "definition_sha256": "55fe5ef78c5dc7800c895895993f1eaff51ce74a746f393fdad84a120ca525a6",
    "expected": "SURVIVED",
    "file": "src/veracium/portability.py",
    "good": true,
@@ -232,7 +304,9 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
-    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged"
+    "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/portability.py: its mutants' cells must all pass"
@@ -285,9 +359,17 @@
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]",
-    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]"
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end"
    ],
-   "definition_sha256": "41aa0cbb133853f635b9fed9d7b3110b018eb9b5abb523aa16808e5381d620b0",
+   "definition_sha256": "43e2134effed77f2a46ac3f4736f55746f333866801f3601950aac838f6cd457",
    "expected": "SURVIVED",
    "file": "src/veracium/store/sqlite.py",
    "good": true,
@@ -312,7 +394,15 @@
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r6:resolve_origin-contributor.provenance.origin--local:extra-6-origin-sourceless]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:contributor.provenance.evidence_ref:run]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[r7:resolve_origin-contributor.provenance.origin--local:run]",
-    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]"
+    "tests/test_0055_invariants.py::test_i19_f6_a_store_refusal_masks_the_value_it_quotes[edge-reupsert]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
@@ -327,9 +417,10 @@
    "cells_passed": [
     "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
     "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
-    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]"
    ],
-   "definition_sha256": "88d1f35a087acb825e3d602c714abfa967226b28abe22e372c622ee0e8332e7d",
+   "definition_sha256": "3ed517bd4519d12a5d8183dee832bb3b80a0b5bdb33ac18408935be40b4ce1a7",
    "expected": "SURVIVED",
    "file": "src/veracium/mcp_server.py",
    "good": true,
@@ -339,7 +430,8 @@
    "named_cells": [
     "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
     "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
-    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports"
+    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/mcp_server.py: its mutants' cells must all pass"
@@ -459,6 +551,112 @@
    "anchor_counts": [
     1
    ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]"
+   ],
+   "definition_sha256": "210b35467131c317727deef69ac4bb902a96e292c5b02de7e8dd1e21e697fc8a",
+   "expected": "SURVIVED",
+   "file": "src/veracium/compile.py",
+   "good": true,
+   "id": "NOOP-compile",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/compile.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
+   ],
+   "definition_sha256": "2279c6a8317cf69228e68895bb96ce316f1927249c6f4b8f73d4c4dd35365e60",
+   "expected": "SURVIVED",
+   "file": "src/veracium/trust_tools.py",
+   "good": true,
+   "id": "NOOP-trust_tools",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/trust_tools.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token"
+   ],
+   "definition_sha256": "55b62e93f4742d0c93c38ec18e46a9992266cb8516dd9cfb504bbb2de56f7f9f",
+   "expected": "SURVIVED",
+   "file": "src/veracium/diagnostics.py",
+   "good": true,
+   "id": "NOOP-diagnostics",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/diagnostics.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "definition_sha256": "bea7ced18273b53eb3af17b790a4f479802c5081753f58b56332c80a481e6c4e",
+   "expected": "SURVIVED",
+   "file": "src/veracium/credential_finder.py",
+   "good": true,
+   "id": "NOOP-credential_finder",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/credential_finder.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
    "cell_kinds": {
     "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports": "other: TypeError"
    },
@@ -572,6 +770,62 @@
     "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged",
     "tests/test_0055_invariants.py::test_i7_no_legacy_credential_reaches_a_model_or_a_tool_result",
     "tests/test_0055_invariants.py::test_i8_every_sink_holds_only_field_names_class_names_and_exact_counts",
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end",
+    "tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed",
+    "tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input",
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -607,31 +861,36 @@
   },
   "clean": {
    "first": {
-    "of": 119,
+    "of": 175,
     "ok": true,
-    "passed": 119
+    "passed": 175
    },
    "last": {
-    "of": 119,
+    "of": 175,
     "ok": true,
-    "passed": 119
+    "passed": 175
    }
   },
-  "commit": "55c5de5d597df9cf1ff825ec3e5c034c7c0d23e6",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
-   "NOOP-__init__": "1295fe5cd8a767cf14aa20c458bcc9ea20835e14d83eb2d13da0c3bdb5c4b2c1",
+   "NOOP-__init__": "bb17e4ed43e4279216822c1a062b14df0c57ba9d3a10a3cf2337fab275b77465",
    "NOOP-cli": "12201b2f85033e45a93b0729641876507399497aa821db057836912201861472",
-   "NOOP-credentials": "23a4a75fda0460e9703b0dc08c9d568537a50c1f993f9873ad87fd68bf5fb04e",
+   "NOOP-compile": "210b35467131c317727deef69ac4bb902a96e292c5b02de7e8dd1e21e697fc8a",
+   "NOOP-credential_finder": "bea7ced18273b53eb3af17b790a4f479802c5081753f58b56332c80a481e6c4e",
+   "NOOP-credentials": "31dd05335896efaff5896ebf2bf40a2648c3cffd1388a907aa74f7cf02f6faae",
+   "NOOP-diagnostics": "55b62e93f4742d0c93c38ec18e46a9992266cb8516dd9cfb504bbb2de56f7f9f",
    "NOOP-graph": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
    "NOOP-ingest": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
-   "NOOP-mcp_server": "88d1f35a087acb825e3d602c714abfa967226b28abe22e372c622ee0e8332e7d",
-   "NOOP-portability": "af50aa9c52516093b5ad30d73c327f7da68ab538b56638d3cd4287f11aa8b01e",
+   "NOOP-mcp_server": "3ed517bd4519d12a5d8183dee832bb3b80a0b5bdb33ac18408935be40b4ce1a7",
+   "NOOP-portability": "55fe5ef78c5dc7800c895895993f1eaff51ce74a746f393fdad84a120ca525a6",
    "NOOP-proactive": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
    "NOOP-semantic": "37f606ac9feda6c09de11c617eaf2829764701dc237a2d21e9ddeca517a0abce",
-   "NOOP-sqlite": "41aa0cbb133853f635b9fed9d7b3110b018eb9b5abb523aa16808e5381d620b0"
+   "NOOP-sqlite": "43e2134effed77f2a46ac3f4736f55746f333866801f3601950aac838f6cd457",
+   "NOOP-trust_tools": "2279c6a8317cf69228e68895bb96ce316f1927249c6f4b8f73d4c4dd35365e60"
   },
   "definitions": {
+   "A1-pool-key-undeclared": "24e740977043f9b4e5d911e17698df330322ae0a3573f1663b620fabb9c3fa51",
    "I1-v056-word-boundary": "9f1444dfb5af7fd0f706258fe035f3e0448d29e89a64fd722bc2f079061f7449",
    "I12-diagnostic-digest-over-raw-text": "5350b44b988cdc48ebc3d2d08713a7401c672a018b77f6c40166b59b98af0a76",
    "I13-guard-on-present": "f0e58b542b446348d74b4aa7bd9857503c5e751fed248d9d74f569e519c58afb",
@@ -649,44 +908,88 @@
    "I20-twin-omitted-on-the-served-surface": "9b1527ca55db8942af8e71b60d954fffaf6cea692c917c6bcb885ee1564f5206",
    "I3-fallback-keeps-the-text": "3ddfb13b8109fe4175c776f6b99585db28844a7b9ac384f589d73a7254ca01f7",
    "I3-single-pass-mask": "bbb8c31f0040f8d0ecdc747f0a867176ea84eefb8b1fb099c048a93e9c19f654",
-   "I4-identifier-not-refused": "7f6ec0ef31277b477cdd6ea315c4f57a4579ca8d980434cc43197ff3d41603c8",
+   "I4-identifier-not-refused": "803f12136459a8c870b39742500c84bbe8da00f84e91d11c7708e4d6a177bb59",
    "I5-model-output-screen-removed": "47566290875c45a357e3888659b37c7367716511fc2beae9188aa9987694adda",
    "I6-restore-masks-without-the-flag": "ae77501ff7e812196e1b7da56d8431e592e3cc1e67ba01f5cb869ec41afa7e8f",
    "I7-embedder-sees-raw-text": "8e72cece1c073a45839f43afbfb9dbfd59d2dbb3c31c558abc562ca705fd2139",
    "I7-proactive-path-unmasked": "44fd379e6a9e669a47041a06a76dec0ff863bf3e8cd44d5c9f487a06527887b9",
-   "I8-formatter-echoes-the-message": "8ff0f7b1b4591866c556eef7592e64f9d9afa02f8c02ae7fdaf7bdada2f028af"
+   "I8-formatter-echoes-the-message": "8ff0f7b1b4591866c556eef7592e64f9d9afa02f8c02ae7fdaf7bdada2f028af",
+   "R4-01-no-type-gate": "59f9f5530abb3f56d7a9ff228283b63b2c47376b067750d0a8c8b8623e5078ec",
+   "R4-02-cache-unmasked": "e77929ac7e87ef889ad2270e6cf38a096e112c46b475974b80a52e61ea7f93c8",
+   "R4-03-import-refusal-raw-id": "65d1e47b72f9cea7f909d91be63b85fa14f29438fbba5cf3236f79110d4f2b7b",
+   "R4-03-receipt-raw-id": "5bcd35bc4317cac07e865179d2af09d4e45cf69c10888e9928328da643416911",
+   "R4-03-served-receipt-raw-id": "32f81394599b61983d8594ebff271eb84a92a169bb35ed39a6fd3a88f9ab9871",
+   "R4-04-old-text-lists": "17e602ec48d248c3b3c346e7878fb724c26da43b02e00ffd13d694b70242ffff",
+   "R4-04-unclassified-dropped": "e5f1f21743960f2eb9c6751ea0069a77583488e6ca5df7917f9915967c1da5a5",
+   "R4-05-args-rewrite-only": "996e726535b4ce941efb2553cf6b6dbad350b3598d856993780a342a1c6fa878",
+   "R4-06-cut-before-screen": "2748daf5a712fcb57ed6c89ddb8059c4e213023e4ac869fe186515c1d0434ea8",
+   "S1-named-side-tables-only": "22c889af6bcfc198ff900e65b195ebc8481c08833edfd55b46b5ea45f19cae36",
+   "S1-unparsed-record-skipped": "c51dc629085b299ba5e62c09cb9de7e8479c09425e954d030eca201ef4da631f",
+   "S3-dict-key-echoed": "5119f86775b4563101bf8908dc52ac04cf7b7bca88861fabc480034f4fd78bea"
   },
   "digests": {
    "specs/evidence/0055/digests.json": "5980405e476b1c1a2711c82e819f41b1d192dad452058901ddef03b6734dd06f",
-   "specs/evidence/0055/implementation_mutants.py": "798fcd6c69906827255a9ee49986b986a2817a63bece647ccbb85c26bfc0b39f",
+   "specs/evidence/0055/implementation_mutants.py": "8ca0d013174b35ccd6820160f961eac6779c861c1bc26984b67e92dccba609d8",
    "specs/evidence/0055/vectors.py": "a773cb2cc8f5f9a0ef01c8a8b872e3097b77cf49efe247ee749ec084b4af41d7",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "e22ddf781aa6b68f7d5c720e4d73dfe8d6006beaac45e4ed14c9e88108dbefc1",
-   "src/veracium/cli.py": "569f52c1ff2e0276176a6365ac3f6443dc1cb79969385e9cad9a18274d073365",
-   "src/veracium/credentials.py": "724bddcc49c3f13e072cb47a307975b5c1ae758459725fa1a7f1e28b6f60ef5f",
+   "src/veracium/__init__.py": "f18782aea3c57f022ddc679cb2f2ec6094c1a0a7cdfb85e479e50d0a3b4a1320",
+   "src/veracium/cli.py": "6b5e85cd5adf0327c001ee92ffb2dfc5522783bbd9dd3b03220158d617f0da22",
+   "src/veracium/compile.py": "22cd7411e077108f303c16ffb4a4d5281841ada727edafcc5ca64a1b7f848580",
+   "src/veracium/credential_finder.py": "cd218ae8e94914756bf5d72e74bb65fc22a6df0ad4b57a3141bb957f0aae694e",
+   "src/veracium/credentials.py": "a7f5f0f931044211850c461d95594aeebd292de75340b4ecfdfa8962afad9c4e",
+   "src/veracium/diagnostics.py": "620f55d4973db291d943cff82e89cac389b49dcddff758df3202798eb346a13d",
    "src/veracium/graph.py": "fa037af8742677f09a29516d90b467ba82c2865f04a14d806821bc7eb5811f9d",
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
-   "src/veracium/mcp_server.py": "366e8451d3b1e91b6631ab924e9f7049a52bf41144c9b107e1b6cd5b62b76d1a",
-   "src/veracium/portability.py": "b77b1080d8c30a0d9c8bd5a74cb204341b27859f883a4e32da50df8ff4c6d5fa",
+   "src/veracium/mcp_server.py": "e262a637b6dbeb7631780ad07949163bc7353593f65ab2b39352f4b1a149dd6a",
+   "src/veracium/portability.py": "4e97d2937cb7e49e8ad4dfe03f3817142a165def0dce6a5ebd174cbcca1d4517",
    "src/veracium/proactive.py": "c0acf48b4db357664b33165dd2e368b83bd3aeec660c2f1badbf0117d5fd40e2",
    "src/veracium/semantic.py": "8dec10f2ce279e035d5d52bd2cf290267917a6799056133cc8bca8de5cc33da4",
-   "src/veracium/store/sqlite.py": "827b69c4bc33631a78092a851af1b046228d55fa547a608c75315d9b19f1ce5f",
+   "src/veracium/store/sqlite.py": "30b1daf837efff40b84b39458ce85d9fa5b3af256f0ea95ccaa7265d2120798f",
+   "src/veracium/trust_tools.py": "0d1ce3d5742fb4d7def4f6d41c0a0496074d7c830cf97f46bcdf19150321ec37",
    "tests/support_0055_i19.py": "985e072bebd678f49c996310fa5a137c267e43160490f45eaabe1453ea325e3e",
    "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
    "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
+   "tests/test_0055_r4_closure.py": "eba02d1badb86f166168e23d90ecb13dd9fb30ff785468b14ce691c985617171",
    "tests/test_0055_recogniser.py": "7909d51249b6af23c0e0984f7a155594ad7a98519198883aef340414d944fb53"
   },
   "finding": "implementation",
   "honest_nodes": [
    "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
-   "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte"
+   "tests/test_0055_invariants.py::test_i2_near_misses_are_stored_byte_for_byte",
+   "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key",
+   "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
   ],
   "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0055",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
+   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json"
+  ]
  },
  "rows": [
   {
@@ -744,7 +1047,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 0.98s",
+   "pytest": "10 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -786,7 +1089,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.59s",
+   "pytest": "4 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -834,7 +1137,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.70s",
+   "pytest": "6 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -866,7 +1169,9 @@
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]": "expected-refusal-missing",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]": "assertion",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]": "assertion",
-    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]": "expected-refusal-missing"
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]": "expected-refusal-missing",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]": "expected-refusal-missing",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]": "expected-refusal-missing"
    },
    "cells_errored": [],
    "cells_failed": [
@@ -892,9 +1197,11 @@
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
-    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]"
    ],
-   "definition_sha256": "7f6ec0ef31277b477cdd6ea315c4f57a4579ca8d980434cc43197ff3d41603c8",
+   "definition_sha256": "803f12136459a8c870b39742500c84bbe8da00f84e91d11c7708e4d6a177bb59",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
@@ -929,11 +1236,13 @@
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.event_type]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.evidence_ref]",
     "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[remember.source_id]",
-    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]"
+    "tests/test_0055_invariants.py::test_i4_an_identifier_with_a_shape_refuses_whole_and_writes_nothing[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "23 failed in 3.56s",
+   "pytest": "25 failed in 4.25s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -972,7 +1281,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.29s",
+   "pytest": "3 failed in 1.49s",
    "reason": null,
    "reason_seen": null,
    "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -1005,7 +1314,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
@@ -1038,7 +1347,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -1071,7 +1380,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.92s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1113,7 +1422,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.24s",
+   "pytest": "4 failed in 1.35s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1194,7 +1503,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 4.38s",
+   "pytest": "17 failed in 4.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1227,7 +1536,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.90s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1260,7 +1569,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1293,7 +1602,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.92s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -1326,7 +1635,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -1359,7 +1668,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -1452,7 +1761,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 3.76s",
+   "pytest": "21 failed in 4.19s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -1488,7 +1797,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.64s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
@@ -1524,7 +1833,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.98s",
+   "pytest": "2 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1557,7 +1866,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -1590,7 +1899,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -1623,7 +1932,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
@@ -1656,7 +1965,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
@@ -1783,21 +2092,588 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "26 failed in 2.08s",
+   "pytest": "26 failed in 2.36s",
    "reason": null,
    "reason_seen": null,
    "what": "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, \u00a74a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]": "expected-refusal-missing",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]": "expected-refusal-missing"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]"
+   ],
+   "definition_sha256": "59f9f5530abb3f56d7a9ff228283b63b2c47376b067750d0a8c8b8623e5078ec",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-01-no-type-gate",
+   "import": "ok",
+   "kill_kind": "assertion+expected-refusal-missing",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[confirm.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[correct.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.actor]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.reason]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[dispute.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.context_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.corrected_value]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_outcome.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.note]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[record_procedure_report.summary]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.evidence_ref]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[remember.source_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.target]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[reply.text]",
+    "tests/test_0055_r4_closure.py::test_r4_01_a_non_str_value_is_admitted_no_further_than_a_str[undo_restoration.correlation_id]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-event_type]",
+    "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "30 failed in 7.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]"
+   ],
+   "definition_sha256": "e77929ac7e87ef889ad2270e6cf38a096e112c46b475974b80a52e61ea7f93c8",
+   "file": "src/veracium/compile.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-02-cache-unmasked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 1.28s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
+   ],
+   "definition_sha256": "5bcd35bc4317cac07e865179d2af09d4e45cf69c10888e9928328da643416911",
+   "file": "src/veracium/trust_tools.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-03-receipt-raw-id",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 1.15s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]"
+   ],
+   "definition_sha256": "65d1e47b72f9cea7f909d91be63b85fa14f29438fbba5cf3236f79110d4f2b7b",
+   "file": "src/veracium/portability.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-03-import-refusal-raw-id",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.90s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]"
+   ],
+   "definition_sha256": "32f81394599b61983d8594ebff271eb84a92a169bb35ed39a6fd3a88f9ab9871",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-03-served-receipt-raw-id",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.06s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end"
+   ],
+   "definition_sha256": "17e602ec48d248c3b3c346e7878fb724c26da43b02e00ffd13d694b70242ffff",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-04-old-text-lists",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.16s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and retired_reason read as residual, so the remedy never targets them)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]"
+   ],
+   "definition_sha256": "e5f1f21743960f2eb9c6751ea0069a77583488e6ca5df7917f9915967c1da5a5",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-04-unclassified-dropped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[current-episode]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_field_of_a_record_or_its_journal_is_found[journal-episode]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 0.90s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a record field no class names is dropped again, not reported (round 4's R4-04: fail closed)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]"
+   ],
+   "definition_sha256": "c51dc629085b299ba5e62c09cb9de7e8479c09425e954d030eca201ef4da631f",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "S1-unparsed-record-skipped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[edge]",
+    "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a current record whose JSON does not parse is skipped again (research's S1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found"
+   ],
+   "definition_sha256": "22c889af6bcfc198ff900e65b195ebc8481c08833edfd55b46b5ea45f19cae36",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "S1-named-side-tables-only",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_04_a_shape_in_any_column_of_any_per_user_side_table_is_found"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.62s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, source_revocations.reason and every other per-user column unread)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input",
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself"
+   ],
+   "definition_sha256": "996e726535b4ce941efb2553cf6b6dbad350b3598d856993780a342a1c6fa878",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-05-args-rewrite-only",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_05_a_real_invalid_import_leaves_the_cli_without_its_input",
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.82s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed"
+   ],
+   "definition_sha256": "5119f86775b4563101bf8908dc52ac04cf7b7bca88861fabc480034f4fd78bea",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "S3-dict-key-echoed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_05_a_caller_dict_key_in_a_validation_location_is_not_echoed"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.57s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a validation location prints a caller's dict key again (research's S3)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]": "assertion",
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token"
+   ],
+   "definition_sha256": "2748daf5a712fcb57ed6c89ddb8059c4e213023e4ac869fe186515c1d0434ea8",
+   "file": "src/veracium/diagnostics.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R4-06-cut-before-screen",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
+    "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 0.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the log tail is cut to the cap BEFORE it is screened again (round 4's R4-06)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "definition_sha256": "24e740977043f9b4e5d911e17698df330322ae0a3573f1663b620fabb9c3fa51",
+   "file": "src/veracium/credential_finder.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
+   ],
+   "id": "A1-pool-key-undeclared",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.63s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 23
+   "product": 36
   },
-  "controls": 11,
-  "controls_good": 11,
-  "good": 23,
-  "killed": 23,
-  "rows": 23,
-  "seconds": 143
+  "controls": 15,
+  "controls_good": 15,
+  "good": 36,
+  "killed": 36,
+  "rows": 36,
+  "seconds": 242
  }
 }

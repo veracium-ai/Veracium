@@ -1,5 +1,5 @@
 {
- "body_sha256": "ed0d4b6904c9537555ef0a46834022b792a4e48639eb039515eb78caaeaedc6f",
+ "body_sha256": "3cfd18af927e57c7c9d7900a23a40c6fad0867baee0ef54e8befe86b79e0185a",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "09c2598df8b2cc8035c96d8a9743027a9786d50b",
+  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
   "control_definitions": {
    "NOOP-0018-AR-R5-02-migration": "92fb3910e1b21c76015ffb6a29ffa97a4d37e424210c1d1c445881b9e2025a6e"
   },
@@ -81,30 +81,6 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
-   "docs/api.md",
-   "docs/mcp.md",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/0037-procedural-basis.md",
-   "specs/0039-degradation-visibility.md",
-   "specs/0055-credential-shaped-text-never-stored.md",
-   "specs/audit_dispositions.py",
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
@@ -124,16 +100,6 @@
    "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/declaration.py",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
-   "specs/evidence/0047/carrier_inventory.py",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -144,48 +110,8 @@
    "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
    "specs/evidence/0048/implementation/mutation-table.json",
-   "specs/evidence/0048/tripwire_0048_classified.tsv",
-   "specs/evidence/0053/adapter_conformance/checks.py",
-   "specs/evidence/c3-01/mutation-table.json",
-   "specs/evidence/sr2-01/mutation-table.json",
-   "specs/generated/0002-audit-manifest.md",
-   "specs/generated/0020-read-surfaces.md",
-   "specs/read_surface_dispositions.py",
-   "specs/skip_inventory.py",
-   "src/veracium/__init__.py",
-   "src/veracium/adapters/_surface.py",
-   "src/veracium/adapters/langchain.py",
-   "src/veracium/adapters/pydantic_ai.py",
-   "src/veracium/asof/resolve.py",
-   "src/veracium/budgets.py",
-   "src/veracium/cli.py",
-   "src/veracium/compile.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/doctor.py",
-   "src/veracium/gate.py",
-   "src/veracium/graph.py",
-   "src/veracium/ingest.py",
-   "src/veracium/lifecycle.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/portability.py",
-   "src/veracium/proactive.py",
-   "src/veracium/procedures.py",
-   "src/veracium/semantic.py",
-   "src/veracium/store/revocation.py",
-   "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/eval/procedural_describe/MANIFEST.json",
-   "tests/test_0023_inventory.py",
-   "tests/test_0029_carrier.py",
-   "tests/test_0031_trust_tools_mcp.py",
-   "tests/test_0039_degradation_visibility.py",
-   "tests/test_0042_sites.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0053_adapter_conformance.py",
-   "tests/test_rii_r2_01_writer_inventory.py"
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -217,7 +143,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.51s",
+   "pytest": "1 failed in 2.36s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02, the reviewer's mutant: a declared read entry this rung's plan does not hold is called at dispatch"
@@ -250,7 +176,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 2.47s",
+   "pytest": "1 failed in 2.31s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02 (research): the same off-plan entry, called from inside a planned check"
@@ -283,7 +209,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 2.67s",
+   "pytest": "1 failed, 1 warning in 2.37s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02 (research's read of e75382cd): the off-plan entry run in a thread that starts and ends inside the rung"
@@ -316,7 +242,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 2.45s",
+   "pytest": "1 failed, 1 warning in 2.34s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02 (research's read of 793dd08e): the same entry in a thread started by _thread.start_joinable_thread, the route threading itself takes on 3.13 and later, which no name patch reaches"
@@ -349,7 +275,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.79s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02 (research): a no-op thread started at dispatch level before the rung's first entry: the arming window opens before it"
@@ -382,7 +308,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02 (research): a no-op thread started at dispatch level after the rung's last entry: the arming window closes after it"
@@ -418,7 +344,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.91s",
+   "pytest": "2 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-02 (research): a migration.py helper that is not a step reads at dispatch level, and writes nothing"
@@ -433,6 +359,6 @@
   "good": 7,
   "killed": 7,
   "rows": 7,
-  "seconds": 39
+  "seconds": 37
  }
 }
