@@ -1,6 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 08679efb0da2eb645a71c54e125f67350648897b
-# RE-PINNED 2026-11-25 (08679efb: specs/0055 round 5 — D3's type gate, the masked episode date at recall's and the compile's episode lines, mask_deep's keys, why.find's whole hit and the journal's after-redaction class; both instruments re-run, and the body is byte-identical)
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ c1cc4dde340ac5787de0bea74d35210c4896363c
+# RE-PINNED 2026-11-25 (c1cc4dde, rebuilt from 08679efb with an identical tree after its commit message's trailers were put in one paragraph; specs/0055 round 5 — D3's type gate, the masked episode date at recall's and the compile's episode lines, mask_deep's keys, why.find's whole hit and the journal's after-redaction class; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-25 (3f30fc5d: specs/0055 round 4, the type refusal is also a TypeError; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-25 (cb6462a4: specs/0055 round 4's fixes — the finder's fail-closed read, ingress type refusal, masked cache read, report locators, the CLI's withheld defect and the screened log tail; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-24 (55c5de5d: specs/0055 v0.5.7, the recogniser's token boundary and the removal of two unreached §4e masks (credentials.masked_episode, gate.partition_parts' summaries); both instruments re-run, and the body is byte-identical)
