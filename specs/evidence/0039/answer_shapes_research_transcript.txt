@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ c1cc4dde340ac5787de0bea74d35210c4896363c
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 3f3ecf8800c67217f4412263e9cd56c8bf71ebd6
+# RE-PINNED 2026-11-26 (3f3ecf88: the veracium-memory rename — the version helper reads `veracium-memory`, then `veracium`, and the install hints name `veracium-memory`; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-25 (c1cc4dde, rebuilt from 08679efb with an identical tree after its commit message's trailers were put in one paragraph; specs/0055 round 5 — D3's type gate, the masked episode date at recall's and the compile's episode lines, mask_deep's keys, why.find's whole hit and the journal's after-redaction class; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-25 (3f30fc5d: specs/0055 round 4, the type refusal is also a TypeError; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-25 (cb6462a4: specs/0055 round 4's fixes — the finder's fail-closed read, ingress type refusal, masked cache read, report locators, the CLI's withheld defect and the screened log tail; both instruments re-run, and the body is byte-identical)
