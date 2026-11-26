@@ -860,9 +860,16 @@ def _credential_screen(edge_recs, ep_recs, acts, notice_list, outcomes, *, targe
     totals: dict = {}                  # field -> {class: n}
 
     def leaves(doc, path=""):
+        """Every string to screen, with its label. Round 5: a mapping KEY is a stored string too, so it is a leaf
+        (R5-01: `Edge.outcome_counts` is `dict[str, int]`, and a shaped key used to pass admission), labelled
+        `<path>.[key]`; and every label is built from declared field names only, a caller's key printed as `[key]`
+        (R5-02: an unknown field's own name used to reach the refusal report and the AuditLog)."""
         if isinstance(doc, dict):
             for k, v in doc.items():
-                yield from leaves(v, f"{path}.{k}" if path else str(k))
+                if isinstance(k, str) and k:
+                    yield (f"{path}.[key]" if path else "[key]"), k
+                seg = _cred.path_segment(k)
+                yield from leaves(v, f"{path}.{seg}" if path else seg)
         elif isinstance(doc, (list, tuple)):
             for v in doc:
                 yield from leaves(v, path)

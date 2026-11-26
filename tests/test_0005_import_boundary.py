@@ -641,6 +641,9 @@ _CALLSITE_DISPOSITIONS = {
     # specs/0055 round 4 (R4-03): the procedural pass's refusals by locator (a plain import), and a restore whose shaped
     # id is refused by §4h's screen before the agreement check could quote it
     ("test_0055_r4_closure.py", "test_r4_03_early_import_refusals_use_the_locator"): "default",
+    # round 5's R5-01/R5-02 closure: each imports a file whose record carries a shaped mapping key or an unknown field
+    ("test_0055_r5_closure.py", "test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import"): "both",
+    ("test_0055_r5_closure.py", "test_r5_02_an_import_refusal_and_its_audit_carry_no_input_key"): "default",
     ("test_0055_r4_closure.py", "test_r4_03_a_restore_with_a_shaped_id_refuses_before_the_agreement_check_quotes_it"):
         "restore",
     # specs/0055 I19's sweep (tests/support_0055_i19.py): each scenario imports a file carrying one seeded value into a

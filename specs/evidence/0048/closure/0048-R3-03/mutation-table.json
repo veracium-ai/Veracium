@@ -1,5 +1,5 @@
 {
- "body_sha256": "ba50dcbc5e8e1c8b84872666f8da744739ec39844adab44c419c8947d16fdf7b",
+ "body_sha256": "d6820ff91eac0a5c6532f7576eac7d75130f8f4a25bb2f3597ab8d96104ee07d",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "NOOP-0048-R3-03-config": "3dce0ba491331f401cb1ec2273a4d85c79b5370b37ea699dc1f3a9acda1fe758"
   },
@@ -76,15 +76,14 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -92,18 +91,19 @@
    "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
    "specs/evidence/0055/implementation_mutants.py",
    "specs/generated/0002-audit-manifest.md",
    "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/credential_finder.py",
    "src/veracium/credentials.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/introspect.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0055_r4_closure.py",
-   "tests/test_0055_recogniser.py"
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -144,7 +144,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 2.58s",
+   "pytest": "4 failed in 2.09s",
    "reason": null,
    "reason_seen": null,
    "what": "the float conversion first again: 10**400 raises OverflowError, not the ValueError naming the field (R3-03)"
@@ -159,6 +159,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 12
+  "seconds": 10
  }
 }

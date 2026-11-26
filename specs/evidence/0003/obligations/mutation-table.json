@@ -1,5 +1,5 @@
 {
- "body_sha256": "7ebcae40332f89e3a29041499dc0f87607ae3ce1e455b1ebb5715064a199bbf1",
+ "body_sha256": "b76f9dfb11d72cf39f93b1aa8f8b08b34aaa0e35f0399adb3a80e2d688024779",
  "controls": [
   {
    "anchor_counts": [
@@ -426,7 +426,7 @@
     "passed": 76
    }
   },
-  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "56429de5d9af18013b121ef49d32e81a34ed1e366845f059ebf2d912e89dfd13",
    "NOOP-__init__": "a735fe19ac7e2140d7a65b989b19b22fc41d648aa11f484478e305f23c1370a0",
@@ -493,7 +493,7 @@
    "specs/evidence/0003/obligations_mutants.py": "0da2f301491067c5be198c02faa0ae783abb7bd5a0766e38b160439d72b736f0",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "8cdd96e87e2a80b45d63ae193ed82e0b53c3a91c0cb22497be91d0341265e9f5",
+   "src/veracium/__init__.py": "34b2f74dd1b25c472aadec09234fea462fded60d03213c066746e74716fb37a3",
    "src/veracium/doctor.py": "aea82d983bce245e65bbcbd11c1df5e61b2a84a32fc65b2b2c56b9452133cc6f",
    "src/veracium/graph.py": "fa037af8742677f09a29516d90b467ba82c2865f04a14d806821bc7eb5811f9d",
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
@@ -532,23 +532,24 @@
   "spec": "0003",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
    "specs/evidence/0055/implementation_mutants.py",
    "specs/generated/0002-audit-manifest.md",
    "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/credential_finder.py",
    "src/veracium/credentials.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/introspect.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0055_r4_closure.py",
-   "tests/test_0055_recogniser.py"
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -583,7 +584,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.82s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "the subject axis skipped for `deadline`: a reschedule retires the old date (OB10's one-episode case is still caught by 0003 \u00a74c-iv's within-episode net, so it is not named)"
@@ -625,7 +626,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.02s",
+   "pytest": "4 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "today's per-edge rendering: the briefing path builds no contested groups"
@@ -661,7 +662,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.78s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested member rendered plain as well as in the group line"
@@ -694,7 +695,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "a second predicate: any two active values of one key are a contest"
@@ -760,7 +761,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "an out-of-window member named in the contested line: new reach (0012 I10d)"
@@ -796,7 +797,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a lone tier member whose partner sits outside the tier renders as settled"
@@ -868,7 +869,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.81s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "a contested line names only each member's date, dropping its object (research's stage-2 B1)"
@@ -901,7 +902,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the plain line drops a non-user subject (the obligation's name)"
@@ -934,7 +935,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "an oversized subject clamped without the I10a signal"
@@ -970,7 +971,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.82s",
+   "pytest": "2 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld commitment's subject rendered (0047 withholding skipped)"
@@ -1003,7 +1004,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.06s",
+   "pytest": "1 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded first-item path: a group line tail-clamped at the remaining budget, cutting a date and its framing (N1)"
@@ -1036,7 +1037,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "the elided form keeps the FARTHEST dates, not the nearest (research's stage 1)"
@@ -1078,7 +1079,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.08s",
+   "pytest": "4 failed in 1.15s",
    "reason": null,
    "reason_seen": null,
    "what": "distinct values decided AFTER the clamp, so two different values that shorten alike are one and K loses one (SR1-01)"
@@ -1114,7 +1115,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.89s",
+   "pytest": "2 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "a value whose clamped display repeats a shown one is shown again (\"X or X\"), not folded into K (research's stage 1, Q1)"
@@ -1147,7 +1148,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.75s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "the one-slot fallback counts K over clamped displays: SR1-01 on the other path (A4)"
@@ -1216,7 +1217,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.85s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the one-slot fallback names no other value (A10)"
@@ -1253,7 +1254,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.81s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "K counts the values not reached, not those not shown: a folded collision is counted nowhere (A3)"
@@ -1289,7 +1290,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.82s",
+   "pytest": "2 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "the display clamped wider than an object's composition width (A6)"
@@ -1327,7 +1328,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.88s",
+   "pytest": "2 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "K counted over the MEMBERS, not the distinct values: a repeated value with a distinct note is counted twice, on both paths (SR2-03, the reviewer's three-site mutant)"
@@ -1360,7 +1361,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "a one-value unit cut on the one-slot path is not counted clamped: the value is under the object width, so only first != values[0] signals the cut (A5, research's reach measurement for round 3)"
@@ -1397,7 +1398,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.94s",
+   "pytest": "2 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded plain line: the object capped at item_cap\u221248 on top of the subject's own cap, the line unchecked (research's stage-1 NEW 1)"
@@ -1431,7 +1432,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.94s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the lone member's mark appended after the line is held to the cap (NEW 1)"
@@ -1467,7 +1468,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.01s",
+   "pytest": "2 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded count: each grouped member's discarded line still registers its clamps (N2, R-impl4-4)"
@@ -1500,7 +1501,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a group sorts at its LATEST due date (research's stage-2 R3)"
@@ -1533,7 +1534,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "groups tied on their nearest date sort OLDEST observation first (research's stage-2 R4)"
@@ -1569,7 +1570,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.17s",
+   "pytest": "2 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "a clamped or elided group line without the I10a signal (research's stage-2 R5)"
@@ -1602,7 +1603,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.34s",
+   "pytest": "1 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes a non-user subject's chain"
@@ -1635,7 +1636,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the doctor count includes another relation's chain (located_at)"
@@ -1669,7 +1670,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.87s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "the extraction rule in a constant the extractor is never sent"
@@ -1719,7 +1720,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 1.70s",
+   "pytest": "6 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation is judged by 0051's every-side token rule (the pre-fix backstop: B1)"
@@ -1762,7 +1763,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.08s",
+   "pytest": "4 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the user side is grounded over the WHOLE event, so the assistant's words ground it"
@@ -1799,7 +1800,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.84s",
+   "pytest": "2 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a date no side grounds is restricted (the non-user condition dropped)"
@@ -1835,7 +1836,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.89s",
+   "pytest": "2 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "only the named form is judged by its date; subject `user` keeps tokens"
@@ -1874,7 +1875,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.11s",
+   "pytest": "3 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "ingest calls the backstop without the relation"
@@ -1913,7 +1914,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.98s",
+   "pytest": "3 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "ingest calls the backstop without the session date"
@@ -1953,7 +1954,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.05s",
+   "pytest": "3 failed in 1.22s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation must match a query word to enter (B2, the pre-fix rule)"
@@ -1992,7 +1993,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.09s",
+   "pytest": "3 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "an obligation is scored as an entity edge"
@@ -2031,7 +2032,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.76s",
+   "pytest": "3 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "any relation with a named subject is an obligation"
@@ -2080,7 +2081,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.98s",
+   "pytest": "6 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "another party's deadline (person:alice) is read as the user's obligation (research 8b0de7d2)"
@@ -2125,7 +2126,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.75s",
+   "pytest": "5 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "\"User\" is read as an obligation, not as the user (0011 E1 disagrees)"
@@ -2167,7 +2168,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.86s",
+   "pytest": "4 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded CONFIRM WHEN NATURAL line: a non-user subject dropped (pre-existing since 0.4.0)"
@@ -2212,7 +2213,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.00s",
+   "pytest": "5 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded \"worth a follow-up\" line: a non-user subject dropped"
@@ -2254,7 +2255,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.95s",
+   "pytest": "4 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "a subject line rendered but its subject not registered: the receipt's unit carries none (TT-R3-02)"
@@ -2290,7 +2291,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "the first-item path's replace and tail clamp for a subject line: the recomposed key misses the receipt"
@@ -2333,7 +2334,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.89s",
+   "pytest": "4 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "a subject line's object capped at item_cap\u221248 on top of the subject, the line unchecked (v18.1 NEW 1's overrun)"
@@ -2369,7 +2370,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.67s",
+   "pytest": "2 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "a subject line's subject rendered whole, never clamped at item_cap // 8"
@@ -2384,6 +2385,6 @@
   "good": 49,
   "killed": 49,
   "rows": 49,
-  "seconds": 195
+  "seconds": 180
  }
 }

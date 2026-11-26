@@ -1,5 +1,5 @@
 {
- "body_sha256": "ac1c57d177a92ead163c9591ed7c5c94820b4790a5085a6d75ac5e82546340eb",
+ "body_sha256": "a437c8fbe4b29b34201faa0ce425fe471a2dc63bf46081a3288aeb1b9f9d9e98",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "NOOP-0048-R1-01-lifecycle": "6e91be8bea7312abb276ab369c6a729330d4723354d885ad796ffc857912de46"
   },
@@ -78,27 +78,27 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
    "specs/evidence/0055/implementation_mutants.py",
    "specs/generated/0002-audit-manifest.md",
    "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/credential_finder.py",
    "src/veracium/credentials.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/introspect.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0055_r4_closure.py",
-   "tests/test_0055_recogniser.py"
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -133,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.00s",
+   "pytest": "2 failed in 1.44s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -169,7 +169,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.04s",
+   "pytest": "2 failed in 1.45s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"
@@ -184,6 +184,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 22
+  "seconds": 15
  }
 }

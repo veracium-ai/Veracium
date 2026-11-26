@@ -1,5 +1,5 @@
 {
- "body_sha256": "64914ac3c90fabebf2df947226b6060625506fe9d59aeb8a2f469aba14817e09",
+ "body_sha256": "14577fda8071728bc4763a84a8ee535a3aed962c232192ff6c8c3f6adabd6a1a",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "NOOP-0048-R1-03-lifecycle": "d63de9fe82c4dd7688a7f9fc2857b5604e96db18be7c76bea5deb5c64c915402"
   },
@@ -74,29 +74,29 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
    "specs/evidence/0055/implementation_mutants.py",
    "specs/generated/0002-audit-manifest.md",
    "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/credential_finder.py",
    "src/veracium/credentials.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/introspect.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0055_r4_closure.py",
-   "tests/test_0055_recogniser.py"
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -133,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.72s",
+   "pytest": "2 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "the validation moved back inside the DECAY branch: the TRANSIENT edge listed first is lapsed before the refusal"
@@ -166,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.19s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "a ValueError from the transition swallowed (the shipped `except ValueError` shape)"
@@ -181,6 +181,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 16
+  "seconds": 13
  }
 }

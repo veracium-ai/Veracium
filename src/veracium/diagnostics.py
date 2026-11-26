@@ -253,15 +253,33 @@ class Reporter:
             # of whole lines is read, masked and redacted, and only then cut to `cap`; the cut keeps COMPLETE lines
             # only (a leading partial line, whose context is gone, is omitted), so every byte sent was screened as
             # part of its whole line, and the payload limit holds after the transformation.
+            # Round 5's R5-04: whole lines are not a boundary for a grammar that spans lines. The window is screened
+            # WITH ITS CONTEXT, and only the part whose recognition state is known is sent: (1) the partial first line
+            # and the next CHAIN_LINES non-blank lines are context, never sent (a white-space-joined match ending
+            # after them begins inside the window); (2) a PEM block open at the window's start (the last marker before
+            # it, read backwards, is a BEGIN) is re-opened with a synthetic BEGIN line, so the block rule withholds its
+            # body to its END or the end. A span that crosses the send point is omitted whole (`mask_from`).
             window = max(4 * cap, 1 << 20)
             with path.open("rb") as fh:
                 size = fh.seek(0, 2)
-                fh.seek(max(0, size - window))
+                start = max(0, size - window)
+                fh.seek(start)
                 data = fh.read()
+
+                def read_back(lo, hi):
+                    fh.seek(lo)
+                    return fh.read(hi - lo)
+                pem_open = size > window and _cred.pem_open_before(read_back, start)
             if size > window:
                 nl = data.find(b"\n")
-                data = data[nl + 1:] if nl >= 0 else b""     # the window's first line began before it: omitted
-            text = _cred.mask_text(data.decode("utf-8", "replace"))
+                head = data[:nl + 1] if nl >= 0 else data      # the window's first line began before it
+                rest = data[nl + 1:] if nl >= 0 else b""
+                head_text, rest_text = head.decode("utf-8", "replace"), rest.decode("utf-8", "replace")
+                prefix = _cred.PEM_REOPEN if pem_open else ""
+                send_at = len(prefix) + len(head_text) + _cred.chain_safe_offset(rest_text)
+                text = _cred.mask_from(prefix + head_text + rest_text, send_at)
+            else:
+                text = _cred.mask_text(data.decode("utf-8", "replace"))
             text = redact(text) if self.config.redact else text
             out = text.encode("utf-8")
             if len(out) > cap:

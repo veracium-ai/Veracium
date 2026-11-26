@@ -1,5 +1,5 @@
 {
- "body_sha256": "57fe71deedd43da65fda2a6978b65eab6d9bd2f89759aa293700b59214a05e88",
+ "body_sha256": "c8920d29a9eca6140b12e35e98dc2bb350881c10be607cc9f14a839a886bfa54",
  "controls": [
   {
    "anchor_counts": [
@@ -25,6 +25,9 @@
     "tests/test_0055_r4_closure.py::test_r5_mask_deep_masks_str_keys_and_keeps_two_alike_as_two",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why-json]",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why]",
+    "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut",
+    "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -57,7 +60,7 @@
     "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
     "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
    ],
-   "definition_sha256": "46d1d184db267b38ff3e89830141db8b9da08d5ac2015970746658d625d2a3f1",
+   "definition_sha256": "de05054d578979c67a2c9557386053091a9e8f5e89e62d89570114ae87c92c33",
    "expected": "SURVIVED",
    "file": "src/veracium/credentials.py",
    "good": true,
@@ -81,6 +84,9 @@
     "tests/test_0055_r4_closure.py::test_r5_mask_deep_masks_str_keys_and_keeps_two_alike_as_two",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why-json]",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why]",
+    "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut",
+    "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -189,14 +195,18 @@
     "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]"
+    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]",
+    "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[dispute.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
+    "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs",
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
    ],
-   "definition_sha256": "b6e5c2e56a38834d033e1ff56fa66bf23e9ad76988343be2eb5e7c2c4c341f67",
+   "definition_sha256": "b31edf74df6bcd102ddebfaeba279cd72a4b2397af4356d59f419ee088b32338",
    "expected": "SURVIVED",
    "file": "src/veracium/__init__.py",
    "good": true,
@@ -269,12 +279,16 @@
     "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]"
+    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]",
+    "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[dispute.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
+    "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs",
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/__init__.py: its mutants' cells must all pass"
@@ -324,9 +338,13 @@
    "cells_passed": [
     "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged",
     "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]"
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_02_an_ordinary_unknown_key_is_labelled_key_too"
    ],
-   "definition_sha256": "55fe5ef78c5dc7800c895895993f1eaff51ce74a746f393fdad84a120ca525a6",
+   "definition_sha256": "959dabbf4dd425a993e265bd85c72164d5f2df97f8ec568c696a21eaeae3c4fd",
    "expected": "SURVIVED",
    "file": "src/veracium/portability.py",
    "good": true,
@@ -336,7 +354,11 @@
    "named_cells": [
     "tests/test_0055_invariants.py::test_i6_plain_import_withholds_and_restore_refuses_unless_flagged",
     "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]"
+    "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_02_an_ordinary_unknown_key_is_labelled_key_too"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/portability.py: its mutants' cells must all pass"
@@ -399,9 +421,14 @@
     "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]",
     "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end",
     "tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[edge]",
-    "tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[episode]"
+    "tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[episode]",
+    "tests/test_0055_r5_closure.py::test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[ghp_kgPoYqnCDoYzBKbftfOoXTZhQ8stzhe6SVI3]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[not_a_declared_name]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[relation]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]"
    ],
-   "definition_sha256": "4cc8653bc4d212445fad169066665607f51da16945e8d2826179583b43b2c6f2",
+   "definition_sha256": "a69e6481be154bf5d0dde6d56ecb748f15ec826282ac6adea527313c9f55e719",
    "expected": "SURVIVED",
    "file": "src/veracium/store/sqlite.py",
    "good": true,
@@ -436,7 +463,12 @@
     "tests/test_0055_r4_closure.py::test_r4_04_an_unparseable_current_record_is_reported_not_skipped[episode]",
     "tests/test_0055_r4_closure.py::test_r4_04_credentials_redact_removes_a_legacy_invalidation_reason_end_to_end",
     "tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[edge]",
-    "tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[episode]"
+    "tests/test_0055_r4_closure.py::test_r5_text_in_the_journal_of_an_already_redacted_record_is_residual[episode]",
+    "tests/test_0055_r5_closure.py::test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[ghp_kgPoYqnCDoYzBKbftfOoXTZhQ8stzhe6SVI3]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[not_a_declared_name]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[relation]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/store/sqlite.py: its mutants' cells must all pass"
@@ -449,12 +481,29 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
+    "tests/test_0055_invariants.py::test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld",
     "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
     "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
     "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]"
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_impl_is_served_through_the_projection",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept"
    ],
-   "definition_sha256": "3ed517bd4519d12a5d8183dee832bb3b80a0b5bdb33ac18408935be40b4ce1a7",
+   "definition_sha256": "8d21398a1a57300c880a7186ce3325d5a391b914203aa5d07dcd0f29216175b1",
    "expected": "SURVIVED",
    "file": "src/veracium/mcp_server.py",
    "good": true,
@@ -462,10 +511,27 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
+    "tests/test_0055_invariants.py::test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld",
     "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
     "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
     "tests/test_0055_invariants.py::test_i20_record_procedure_keeps_its_str_and_the_twin_reports",
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]"
+    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_impl_is_served_through_the_projection",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/mcp_server.py: its mutants' cells must all pass"
@@ -589,9 +655,7 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
@@ -599,7 +663,7 @@
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[wiki-compile-dated]"
    ],
-   "definition_sha256": "9d3fbdc015b33d863dfb08e699a40672f7bb32303005f89848dca5270c563b46",
+   "definition_sha256": "1ebb730fb06489350d915b5b503f4da91e95a43bc00e33d059361ee3df03d291",
    "expected": "SURVIVED",
    "file": "src/veracium/compile.py",
    "good": true,
@@ -607,9 +671,7 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
@@ -628,10 +690,9 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
     "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
    ],
-   "definition_sha256": "2279c6a8317cf69228e68895bb96ce316f1927249c6f4b8f73d4c4dd35365e60",
+   "definition_sha256": "be12cd561afe27965a4c83a6eacee75fd3042fc80a1c9cc446aa83e26c0884c0",
    "expected": "SURVIVED",
    "file": "src/veracium/trust_tools.py",
    "good": true,
@@ -639,7 +700,6 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
     "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
    ],
    "outcome": "SURVIVED",
@@ -656,9 +716,11 @@
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
-    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token"
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld"
    ],
-   "definition_sha256": "55b62e93f4742d0c93c38ec18e46a9992266cb8516dd9cfb504bbb2de56f7f9f",
+   "definition_sha256": "f8da2e9ebbac45704587fc8915427560d69171c526bf0d24cf6f9f7253b6f9ca",
    "expected": "SURVIVED",
    "file": "src/veracium/diagnostics.py",
    "good": true,
@@ -669,7 +731,9 @@
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[labelled-value]",
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-body]",
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
-    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token"
+    "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/diagnostics.py: its mutants' cells must all pass"
@@ -719,6 +783,31 @@
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/why.py: its mutants' cells must all pass"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {},
+   "cells_errored": [],
+   "cells_failed": [],
+   "cells_passed": [
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
+   ],
+   "definition_sha256": "7eaa80aac486e26d67e2be27b9ece88e43d4114c69950ffd822332464d91e765",
+   "expected": "SURVIVED",
+   "file": "src/veracium/introspect.py",
+   "good": true,
+   "id": "NOOP-introspect",
+   "import": "ok",
+   "kill_kind": null,
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
+   ],
+   "outcome": "SURVIVED",
+   "what": "a comment edit in src/veracium/introspect.py: its mutants' cells must all pass"
   },
   {
    "anchor_counts": [
@@ -803,6 +892,7 @@
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-error]",
     "tests/test_0055_i19_digest_sweep.py::test_each_component_follows_its_rule[rP:the-provider-s-answer--its-retry-answer--and-the-provide:provider-retry]",
     "tests/test_0055_invariants.py::test_i12_neither_the_provider_nor_the_degrade_callback_sees_a_value_or_its_sha16",
+    "tests/test_0055_invariants.py::test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld",
     "tests/test_0055_invariants.py::test_i15_the_discarded_raise_count_reaches_the_audit_log",
     "tests/test_0055_invariants.py::test_i17_served_and_cli_errors_never_echo_the_argument",
     "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
@@ -874,9 +964,7 @@
     "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[bytes-evidence_ref]",
     "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-event_type]",
     "tests/test_0055_r4_closure.py::test_r4_01_reviewer_identifiers_are_rejected_before_conversion[str-evidence_ref]",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[duplicate-import-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_03_early_import_refusals_use_the_locator[procedural-import-shaped]",
@@ -899,9 +987,7 @@
     "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]",
@@ -912,6 +998,46 @@
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[find-json]",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why-json]",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[ghp_kgPoYqnCDoYzBKbftfOoXTZhQ8stzhe6SVI3]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[not_a_declared_name]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[relation]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]",
+    "tests/test_0055_r5_closure.py::test_r5_02_an_ordinary_unknown_key_is_labelled_key_too",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_impl_is_served_through_the_projection",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]",
+    "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld",
+    "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut",
+    "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[dispute.edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
+    "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs",
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -947,33 +1073,34 @@
   },
   "clean": {
    "first": {
-    "of": 194,
+    "of": 231,
     "ok": true,
-    "passed": 194
+    "passed": 231
    },
    "last": {
-    "of": 194,
+    "of": 231,
     "ok": true,
-    "passed": 194
+    "passed": 231
    }
   },
-  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
-   "NOOP-__init__": "b6e5c2e56a38834d033e1ff56fa66bf23e9ad76988343be2eb5e7c2c4c341f67",
+   "NOOP-__init__": "b31edf74df6bcd102ddebfaeba279cd72a4b2397af4356d59f419ee088b32338",
    "NOOP-cli": "12201b2f85033e45a93b0729641876507399497aa821db057836912201861472",
-   "NOOP-compile": "9d3fbdc015b33d863dfb08e699a40672f7bb32303005f89848dca5270c563b46",
+   "NOOP-compile": "1ebb730fb06489350d915b5b503f4da91e95a43bc00e33d059361ee3df03d291",
    "NOOP-credential_finder": "bea7ced18273b53eb3af17b790a4f479802c5081753f58b56332c80a481e6c4e",
-   "NOOP-credentials": "46d1d184db267b38ff3e89830141db8b9da08d5ac2015970746658d625d2a3f1",
-   "NOOP-diagnostics": "55b62e93f4742d0c93c38ec18e46a9992266cb8516dd9cfb504bbb2de56f7f9f",
+   "NOOP-credentials": "de05054d578979c67a2c9557386053091a9e8f5e89e62d89570114ae87c92c33",
+   "NOOP-diagnostics": "f8da2e9ebbac45704587fc8915427560d69171c526bf0d24cf6f9f7253b6f9ca",
    "NOOP-graph": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
    "NOOP-ingest": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
-   "NOOP-mcp_server": "3ed517bd4519d12a5d8183dee832bb3b80a0b5bdb33ac18408935be40b4ce1a7",
-   "NOOP-portability": "55fe5ef78c5dc7800c895895993f1eaff51ce74a746f393fdad84a120ca525a6",
+   "NOOP-introspect": "7eaa80aac486e26d67e2be27b9ece88e43d4114c69950ffd822332464d91e765",
+   "NOOP-mcp_server": "8d21398a1a57300c880a7186ce3325d5a391b914203aa5d07dcd0f29216175b1",
+   "NOOP-portability": "959dabbf4dd425a993e265bd85c72164d5f2df97f8ec568c696a21eaeae3c4fd",
    "NOOP-proactive": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
    "NOOP-semantic": "37f606ac9feda6c09de11c617eaf2829764701dc237a2d21e9ddeca517a0abce",
-   "NOOP-sqlite": "4cc8653bc4d212445fad169066665607f51da16945e8d2826179583b43b2c6f2",
-   "NOOP-trust_tools": "2279c6a8317cf69228e68895bb96ce316f1927249c6f4b8f73d4c4dd35365e60",
+   "NOOP-sqlite": "a69e6481be154bf5d0dde6d56ecb748f15ec826282ac6adea527313c9f55e719",
+   "NOOP-trust_tools": "be12cd561afe27965a4c83a6eacee75fd3042fc80a1c9cc446aa83e26c0884c0",
    "NOOP-why": "c54a0656e324ca7744697a1dde67a376155e6797a45b4915ff7917d1e90f5df7"
   },
   "definitions": {
@@ -990,11 +1117,11 @@
    "I19-content-digest-unmasked": "24e34370852b96fe7e71b555a2d32a822de858050bc38b60a9ae7c3c16101e66",
    "I19-correct-hashes-the-raw-note": "7215ed8c4979ee9369a8402a6e91d51b593a9d83f7ac23acfeb52ff0f55e15b5",
    "I19-reason-after-the-digest": "5bd71d78daea0ca6cfc09f39ae92c49bb92072cd46517413afb6352f68fd4711",
-   "I19-unknown-shape-digested": "922ceb45f04b4dd8ec1c5b490c4b084da5c6eb62bdf1f4068cd104db5ad00055",
+   "I19-unknown-shape-digested": "07bbf62347733a8d6accc9dbeeb5a9c97bca2a8c909aef6bc69d28c9ad5b002e",
    "I2-no-stop-list": "a19586c9d6f92b5fa8aba2e750db9a0b00d41246d20d6c657badba946fc5fe43",
    "I20-twin-omitted-on-the-served-surface": "9b1527ca55db8942af8e71b60d954fffaf6cea692c917c6bcb885ee1564f5206",
    "I3-fallback-keeps-the-text": "3ddfb13b8109fe4175c776f6b99585db28844a7b9ac384f589d73a7254ca01f7",
-   "I3-single-pass-mask": "bbb8c31f0040f8d0ecdc747f0a867176ea84eefb8b1fb099c048a93e9c19f654",
+   "I3-single-pass-mask": "2fdc2a2a0ccf044cf243d30fe18a6f92c1c39e6ea7beccba5e058ead41956d49",
    "I4-identifier-not-refused": "803f12136459a8c870b39742500c84bbe8da00f84e91d11c7708e4d6a177bb59",
    "I5-model-output-screen-removed": "47566290875c45a357e3888659b37c7367716511fc2beae9188aa9987694adda",
    "I6-restore-masks-without-the-flag": "ae77501ff7e812196e1b7da56d8431e592e3cc1e67ba01f5cb869ec41afa7e8f",
@@ -1002,19 +1129,41 @@
    "I7-proactive-path-unmasked": "44fd379e6a9e669a47041a06a76dec0ff863bf3e8cd44d5c9f487a06527887b9",
    "I8-formatter-echoes-the-message": "8ff0f7b1b4591866c556eef7592e64f9d9afa02f8c02ae7fdaf7bdada2f028af",
    "R4-01-no-type-gate": "59f9f5530abb3f56d7a9ff228283b63b2c47376b067750d0a8c8b8623e5078ec",
-   "R4-02-cache-unmasked": "e77929ac7e87ef889ad2270e6cf38a096e112c46b475974b80a52e61ea7f93c8",
+   "R4-02-cache-unmasked": "c7fc1136080bcbe206b9fe773450628b67c43f4db0efa59e4690b7bc05989814",
    "R4-03-import-refusal-raw-id": "65d1e47b72f9cea7f909d91be63b85fa14f29438fbba5cf3236f79110d4f2b7b",
-   "R4-03-receipt-raw-id": "5bcd35bc4317cac07e865179d2af09d4e45cf69c10888e9928328da643416911",
+   "R4-03-receipt-raw-id": "b2d7704cab6e2923f134cde4c5745fcaf49c7fecf2f695610e2a871128e4c85d",
    "R4-03-served-receipt-raw-id": "32f81394599b61983d8594ebff271eb84a92a169bb35ed39a6fd3a88f9ab9871",
    "R4-04-old-text-lists": "17e602ec48d248c3b3c346e7878fb724c26da43b02e00ffd13d694b70242ffff",
    "R4-04-unclassified-dropped": "e5f1f21743960f2eb9c6751ea0069a77583488e6ca5df7917f9915967c1da5a5",
    "R4-05-args-rewrite-only": "996e726535b4ce941efb2553cf6b6dbad350b3598d856993780a342a1c6fa878",
    "R4-06-cut-before-screen": "2748daf5a712fcb57ed6c89ddb8059c4e213023e4ac869fe186515c1d0434ea8",
+   "R5-01-guard-keys-unread": "4c27b90ad388763f29ae527081d2f6d2d635b121c3293c671d4bc612ae0757a2",
+   "R5-01-import-keys-unread": "1412ed6ce17d152f5c6355c22503472949e275b50df3fde0f9a82faa2db0cf8c",
+   "R5-02-guard-label-raw": "572e76a5678a9dacee32a67117367042fe9d3dbaff926b5def0b438055e92725",
+   "R5-02-import-label-raw": "e82c083d8327d2d887e70dedc9975f4eda5bfd6dd2450d34c56d1d4040bf2374",
+   "R5-03-introspect-unmasked": "bab7d5b12cfba68cdd8c85860c9d5436b728f218cb28602f51df88f88cf0c36b",
+   "R5-03-library-dispute-relation-raw": "f04a38b6d5073e0e47143f70129975376bc1376a926fd97ce39f53dd5c30c5ad",
+   "R5-03-minted-token-masked": "42875a459eb5d3b3124d9872f06ada7856971392791ee4594c1f2fc901e95edf",
+   "R5-03-record-id-raw": "2cfd2f30fb972276ca5ff89c7170558edb0c81110758bb21ed900e6c079a52c6",
+   "R5-03-stored-text-raw": "85f1752e87e28e97bd332935d452f3cef9eb2fc166a6a0e6cca88dcabdc768f1",
+   "R5-03-trust-impls-undecorated": "2b75c618479f75ea93c9b8dcd5e0ccb5886f1878731d9de250894830f884b9f7",
+   "R5-04-crossing-span-kept": "77cb9084d86951b318459306b4265ec2cb56dd18ddd6d9904af73be871bd3167",
+   "R5-04-no-chain-context": "3df8ddcf3c776b8404c3af8ed4816c7f59e997ef5377464f7916e6423dbc8551",
+   "R5-04-no-pem-state": "f2e00b391c1b450f79b48bd64320188066dfc651038125177e75c5ca69821e7c",
+   "R5-05-notes-unjudged": "7d80d60e9b15e5335193f6d3beb3a8f39329fce5f17eaa3845514d0d6334b24d",
+   "R5-05-replacement-unsettled": "0764fcbaf7cec3bc1228dda73f95790ef9e7016b80336b4a3871fa599128acf7",
+   "R5-06-answer-query-unconverted": "1ab66b9822e34891f1b80ca98af3312d484de8c1e0b3ee9b1a917dcf3cc25990",
+   "R5-06-confirm-edge-id-unconverted": "a5d9dcc2b4d1708fc5a4a25085b3829317464ddedb99e434a7dc6fd48eae442a",
+   "R5-06-correct-edge-id-unconverted": "449ccafe40c7e6125bb80011e12748fb2f39753bd7cdb572e8cdbf18e69ac169",
+   "R5-06-d3-keeps-the-object": "384f1c975aac9e08144ea3b130603010618b913cf96951e2930b7df7585c3f9e",
+   "R5-06-dispute-edge-id-unconverted": "7c35f7fe5b28f8e1b8e7b2d332d514bb1834ff0ac42785784bbfb425675bf5e8",
+   "R5-06-no-canonical-form": "80c5c77470e962bdae3a099d65c194aa1e10baed885c15f8e77549fc4a0553f4",
+   "R5-06-remember-keeps-the-object": "984c46aab7a69a132b6810664a041aa9cfc0c24828536466e921fc9f9b1abe11",
    "R5-D3-str-only-gate": "11c61b6d07a094262b9b804c85808cd01f7c6a5b0a6fadd3e254aad14b271d50",
    "R5-compile-episode-date-unmasked": "4ab8923b2b05e35eaf983dd697307b268161193c2c8234b0b1492fe09ca6788c",
    "R5-journal-after-redaction-removable": "e7ee532610728343966838f91227a11ad419ebb2d00f998a6df9ac3e9c7e05a6",
    "R5-mask-deep-keys-kept": "cf573821d95d2dbfe3f2f22d79e04db3c3a87232c2e810a3808743c39f7bf701",
-   "R5-recall-episode-date-unmasked": "dc65d9b6973fc44ac67b00791039276925dd10e5ce4733679d47960b444752a4",
+   "R5-recall-episode-date-unmasked": "3169972f5a0f8db753a2351de9da6ca4d49e8884512bfcdbb95ffd8ea9a6dcf3",
    "R5-why-find-two-fields": "dce33dc8f41ba4bec9419d529a4e01e82e6edc5042fe37945fa024695f68fc6a",
    "S1-named-side-tables-only": "22c889af6bcfc198ff900e65b195ebc8481c08833edfd55b46b5ea45f19cae36",
    "S1-unparsed-record-skipped": "c51dc629085b299ba5e62c09cb9de7e8479c09425e954d030eca201ef4da631f",
@@ -1022,29 +1171,31 @@
   },
   "digests": {
    "specs/evidence/0055/digests.json": "5980405e476b1c1a2711c82e819f41b1d192dad452058901ddef03b6734dd06f",
-   "specs/evidence/0055/implementation_mutants.py": "fba9b4a7795febfdc96204f02f3126672e49a4c0f3ae472a145a9744322958bd",
+   "specs/evidence/0055/implementation_mutants.py": "372545f8e2344f0a1c4d32d5afde4295ab7a57473ec1bd8927f9d1115979be38",
    "specs/evidence/0055/vectors.py": "a773cb2cc8f5f9a0ef01c8a8b872e3097b77cf49efe247ee749ec084b4af41d7",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/__init__.py": "8cdd96e87e2a80b45d63ae193ed82e0b53c3a91c0cb22497be91d0341265e9f5",
+   "src/veracium/__init__.py": "34b2f74dd1b25c472aadec09234fea462fded60d03213c066746e74716fb37a3",
    "src/veracium/cli.py": "5811be5d204fa9101c8f3692301af15b67a6746f7a8f82c614d6b340b9983c30",
    "src/veracium/compile.py": "5167e3cdf499c50486db803827870a7420a528c9273a31bf9ead708f34dae465",
    "src/veracium/credential_finder.py": "bcb5ed255e30f65edfa4ad532c306ac98723bf8f994aba009cb27b18323f311c",
-   "src/veracium/credentials.py": "d2ffba94b5a7eed7a8117a7d51038c86b5f8577500595744d561d499a44c9dcf",
-   "src/veracium/diagnostics.py": "128645358711af0c1ca14d6634c7a95500d7bdbf25e70356ad01f00f111a506e",
+   "src/veracium/credentials.py": "02086755770fa1924716d11ec917991248447f129fb2afe83417548ae3ef61d8",
+   "src/veracium/diagnostics.py": "8bf4e90810224b90c7545ddc416938e03362125cb26e8ededb8fe07551b22eca",
    "src/veracium/graph.py": "fa037af8742677f09a29516d90b467ba82c2865f04a14d806821bc7eb5811f9d",
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
-   "src/veracium/mcp_server.py": "6c6baf479295b183e42df7b63fdcd8aaa200a80ad60435f170c3a7d7f128a8f4",
-   "src/veracium/portability.py": "4e97d2937cb7e49e8ad4dfe03f3817142a165def0dce6a5ebd174cbcca1d4517",
+   "src/veracium/introspect.py": "a7307fbd1992ebae5fc0ea74554ff3b613b822c9b43156058de83a1455ce71fd",
+   "src/veracium/mcp_server.py": "36708b382105e9caa5ac092aef087127974b530c7f933916a67b183098fd616e",
+   "src/veracium/portability.py": "90f8fa23dd2366361a0b6938b677bf6beca18fa5090fdc3c0efb359028e93eec",
    "src/veracium/proactive.py": "c0acf48b4db357664b33165dd2e368b83bd3aeec660c2f1badbf0117d5fd40e2",
    "src/veracium/semantic.py": "8dec10f2ce279e035d5d52bd2cf290267917a6799056133cc8bca8de5cc33da4",
-   "src/veracium/store/sqlite.py": "b3651a1c9c27fd469972c0e275b20f80157c01da42e6e8370fe79f48ae700614",
+   "src/veracium/store/sqlite.py": "1f2cffdd03784f527368a1e71ead089d8790d9bf5d44ca78c63d76cad786210f",
    "src/veracium/trust_tools.py": "0d1ce3d5742fb4d7def4f6d41c0a0496074d7c830cf97f46bcdf19150321ec37",
    "src/veracium/why.py": "4697b9bfc0503e2f0ff1ea40d08cf23b09f1e138e52f933015a29227b4365164",
    "tests/support_0055_i19.py": "985e072bebd678f49c996310fa5a137c267e43160490f45eaabe1453ea325e3e",
    "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
    "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
-   "tests/test_0055_r4_closure.py": "2758c7cbecffdd384b47283191484ee32f2fb0124804c289a1e7d1938778abef",
+   "tests/test_0055_r4_closure.py": "d8e77310919fee872d88f9c79b82329904e004249617c62954c4ec11a1dd2f65",
+   "tests/test_0055_r5_closure.py": "9c38350ed9c82714d30d00fc658af61c3b613352cff036cf97420e3b75077934",
    "tests/test_0055_recogniser.py": "cccb1403bb061956e769bbca9734c633c81faae21f4585f2f738fae170a4bc06"
   },
   "finding": "implementation",
@@ -1059,59 +1210,44 @@
   "spec": "0055",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/container-release.yml",
-   ".github/workflows/container.yml",
-   "CHANGELOG.md",
-   "README.md",
-   "container/check_image.py",
-   "docs/api.md",
-   "docs/index.md",
-   "docs/mcp.md",
-   "examples/claude_code_hooks/README.md",
-   "examples/demo.ipynb",
-   "examples/langchain_memory.py",
-   "pyproject.toml",
-   "server.json",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/0054-container-image.md",
-   "specs/STATUS.md",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-05/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R2-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R3-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-01/mutation-table.json",
-   "specs/evidence/0018/closure/0018-AR-R5-02/mutation-table.json",
-   "specs/evidence/0018/rungs/implementation/mutation-table.json",
+   "specs/evidence/0003/obligations/mutation-table.json",
+   "specs/evidence/0003/within_episode/mutation-table.json",
    "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
+   "specs/evidence/0031/connection_census.py",
+   "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
-   "src/veracium/adapters/__init__.py",
-   "src/veracium/adapters/langchain.py",
-   "src/veracium/adapters/pydantic_ai.py",
-   "src/veracium/cli.py",
+   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
+   "specs/evidence/0055/carrier-boundaries.json",
+   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation_mutants.py",
+   "specs/evidence/c3-01/mutation-table.json",
+   "specs/generated/0002-audit-manifest.md",
+   "src/veracium/__init__.py",
+   "src/veracium/credentials.py",
    "src/veracium/diagnostics.py",
-   "src/veracium/llm/anthropic.py",
+   "src/veracium/introspect.py",
    "src/veracium/mcp_server.py",
-   "src/veracium/store/release_migration.py",
-   "tests/test_0031_server_reports_itself.py"
+   "src/veracium/portability.py",
+   "src/veracium/store/sqlite.py",
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -1144,7 +1280,7 @@
     "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
     "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
    ],
-   "definition_sha256": "bbb8c31f0040f8d0ecdc747f0a867176ea84eefb8b1fb099c048a93e9c19f654",
+   "definition_sha256": "2fdc2a2a0ccf044cf243d30fe18a6f92c1c39e6ea7beccba5e058ead41956d49",
    "file": "src/veracium/credentials.py",
    "finding": "implementation",
    "good": true,
@@ -1170,7 +1306,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.49s",
+   "pytest": "10 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1212,7 +1348,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.90s",
+   "pytest": "4 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1260,7 +1396,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.83s",
+   "pytest": "6 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -1365,7 +1501,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "25 failed in 6.32s",
+   "pytest": "25 failed in 4.10s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1404,7 +1540,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 2.23s",
+   "pytest": "3 failed in 1.34s",
    "reason": null,
    "reason_seen": null,
    "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -1437,7 +1573,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.90s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
@@ -1470,7 +1606,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.70s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -1503,7 +1639,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.38s",
+   "pytest": "1 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1545,7 +1681,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.56s",
+   "pytest": "4 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1626,7 +1762,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 5.96s",
+   "pytest": "17 failed in 4.49s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1659,7 +1795,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.09s",
+   "pytest": "1 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1692,7 +1828,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.89s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1725,7 +1861,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.31s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -1758,7 +1894,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.17s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -1791,7 +1927,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -1884,7 +2020,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 4.85s",
+   "pytest": "21 failed in 3.87s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -1920,7 +2056,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.84s",
+   "pytest": "2 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
@@ -1956,7 +2092,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.05s",
+   "pytest": "2 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1989,7 +2125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -2005,7 +2141,7 @@
    "cells_failed": [
     "tests/test_0055_invariants.py::test_i19_revoke_source_refuses_an_unknown_shape_before_any_digest"
    ],
-   "definition_sha256": "922ceb45f04b4dd8ec1c5b490c4b084da5c6eb62bdf1f4068cd104db5ad00055",
+   "definition_sha256": "07bbf62347733a8d6accc9dbeeb5a9c97bca2a8c909aef6bc69d28c9ad5b002e",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
@@ -2022,7 +2158,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -2055,7 +2191,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
@@ -2088,7 +2224,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
@@ -2215,7 +2351,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "26 failed in 2.57s",
+   "pytest": "26 failed in 2.36s",
    "reason": null,
    "reason_seen": null,
    "what": "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, \u00a74a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -2335,7 +2471,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "30 failed in 7.29s",
+   "pytest": "30 failed in 6.87s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"
@@ -2345,19 +2481,15 @@
     1
    ],
    "cell_kinds": {
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]": "assertion",
     "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]": "assertion",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]": "assertion",
     "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]": "assertion"
    },
    "cells_errored": [],
    "cells_failed": [
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]"
    ],
-   "definition_sha256": "e77929ac7e87ef889ad2270e6cf38a096e112c46b475974b80a52e61ea7f93c8",
+   "definition_sha256": "c7fc1136080bcbe206b9fe773450628b67c43f4db0efa59e4690b7bc05989814",
    "file": "src/veracium/compile.py",
    "finding": "implementation",
    "good": true,
@@ -2370,32 +2502,28 @@
    "kill_kind": "assertion",
    "kind": "product",
    "named_cells": [
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[adapter-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[library-legacy-shaped]",
-    "tests/test_0055_r4_closure.py::test_r4_02_a_fresh_cached_body_is_masked_on_every_served_read[mcp-legacy-shaped]",
     "tests/test_0055_r4_closure.py::test_r4_02_the_provider_free_reader_of_a_fresh_cache_is_masked[legacy-shaped]"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.43s",
+   "pytest": "2 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
-   "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02)"
+   "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
   },
   {
    "anchor_counts": [
     1
    ],
    "cell_kinds": {
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]": "assertion",
     "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit": "assertion"
    },
    "cells_errored": [],
    "cells_failed": [
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
     "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
    ],
-   "definition_sha256": "5bcd35bc4317cac07e865179d2af09d4e45cf69c10888e9928328da643416911",
+   "definition_sha256": "b2d7704cab6e2923f134cde4c5745fcaf49c7fecf2f695610e2a871128e4c85d",
    "file": "src/veracium/trust_tools.py",
    "finding": "implementation",
    "good": true,
@@ -2408,15 +2536,14 @@
    "kill_kind": "assertion",
    "kind": "product",
    "named_cells": [
-    "tests/test_0055_r4_closure.py::test_r4_03_no_served_tool_names_a_shaped_record_id[direct]",
     "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.12s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
-   "what": "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive)"
+   "what": "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
   },
   {
    "anchor_counts": [
@@ -2449,7 +2576,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.92s",
+   "pytest": "2 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"
@@ -2482,7 +2609,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"
@@ -2527,7 +2654,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.21s",
+   "pytest": "5 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and retired_reason read as residual, so the remedy never targets them)"
@@ -2605,7 +2732,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.71s",
+   "pytest": "2 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "a current record whose JSON does not parse is skipped again (research's S1)"
@@ -2638,7 +2765,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, source_revocations.reason and every other per-user column unread)"
@@ -2674,7 +2801,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.87s",
+   "pytest": "2 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"
@@ -2707,7 +2834,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.55s",
    "reason": null,
    "reason_seen": null,
    "what": "a validation location prints a caller's dict key again (research's S3)"
@@ -2749,7 +2876,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.80s",
+   "pytest": "4 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the log tail is cut to the cap BEFORE it is screened again (round 4's R4-06)"
@@ -2782,7 +2909,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"
@@ -2824,7 +2951,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.30s",
+   "pytest": "4 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's screen reads only a str again: a bytes origin or source_id passes it to `_bounded`, whose message quotes it (round 5: R4-01's class one call down, found by the A5 census's exception-text cell)"
@@ -2837,10 +2964,6 @@
    "cell_kinds": {
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]": "assertion",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]": "assertion",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]": "assertion",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]": "assertion",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]": "assertion",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]": "assertion",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]": "assertion",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]": "assertion"
    },
@@ -2848,14 +2971,10 @@
    "cells_failed": [
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]"
    ],
-   "definition_sha256": "dc65d9b6973fc44ac67b00791039276925dd10e5ce4733679d47960b444752a4",
+   "definition_sha256": "3169972f5a0f8db753a2351de9da6ca4d49e8884512bfcdbb95ffd8ea9a6dcf3",
    "file": "src/veracium/__init__.py",
    "finding": "implementation",
    "good": true,
@@ -2870,19 +2989,15 @@
    "named_cells": [
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[find_facts-dated]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-bare]",
-    "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[mcp-recall-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "8 failed in 1.41s",
+   "pytest": "4 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
-   "what": "recall's episode lines print the stored date unmasked again (round 5, the carrier table's `record:episode:current:date`)"
+   "what": "recall's episode lines print the stored date unmasked again (round 5, the carrier table's `record:episode:current:date`) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
   },
   {
    "anchor_counts": [
@@ -2924,7 +3039,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.06s",
+   "pytest": "5 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the wiki compile's episode line prints the stored date unmasked again (round 5; reached by the DATED form only: a bare token sorts as a future date and the episode is not assertable)"
@@ -2963,7 +3078,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.01s",
+   "pytest": "3 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_deep leaves dict keys as they are again (round 5: `veracium why` printed a legacy `outcome_counts` key)"
@@ -2996,7 +3111,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "why.find masks only its id and fact again (round 5: `why --find --json` printed `invalidation_reason`)"
@@ -3035,21 +3150,841 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.88s",
+   "pytest": "3 failed in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "journal text of an already-redacted record is reported removable again (round 5: `act` redacted nothing and the token stayed)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
+   ],
+   "definition_sha256": "80c5c77470e962bdae3a099d65c194aa1e10baed885c15f8e77549fc4a0553f4",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-no-canonical-form",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "_cred_ingress screens a str subclass by its data but hands the object on again (round 5's R5-06)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
+   ],
+   "definition_sha256": "984c46aab7a69a132b6810664a041aa9cfc0c24828536466e921fc9f9b1abe11",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-remember-keeps-the-object",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.68s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "remember passes the unconverted event_type to ingest again, whose fallback summary formats it (R5-06's branch)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs"
+   ],
+   "definition_sha256": "384f1c975aac9e08144ea3b130603010618b913cf96951e2930b7df7585c3f9e",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-d3-keeps-the-object",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.69s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "D3's callee screen returns origin and source_id unconverted again (R5-06, the callee's step)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]"
+   ],
+   "definition_sha256": "1412ed6ce17d152f5c6355c22503472949e275b50df3fde0f9a82faa2db0cf8c",
+   "file": "src/veracium/portability.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-01-import-keys-unread",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]",
+    "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.08s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the import screen reads mapping VALUES only again: a shaped key passes admission (round 5's R5-01)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[ghp_kgPoYqnCDoYzBKbftfOoXTZhQ8stzhe6SVI3]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[ghp_kgPoYqnCDoYzBKbftfOoXTZhQ8stzhe6SVI3]"
+   ],
+   "definition_sha256": "4c27b90ad388763f29ae527081d2f6d2d635b121c3293c671d4bc612ae0757a2",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-01-guard-keys-unread",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[ghp_kgPoYqnCDoYzBKbftfOoXTZhQ8stzhe6SVI3]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.64s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the store guard reads mapping VALUES only again: a new shaped key passes it (round 5's R5-01)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_02_an_ordinary_unknown_key_is_labelled_key_too": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_02_an_ordinary_unknown_key_is_labelled_key_too"
+   ],
+   "definition_sha256": "e82c083d8327d2d887e70dedc9975f4eda5bfd6dd2450d34c56d1d4040bf2374",
+   "file": "src/veracium/portability.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-02-import-label-raw",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_02_an_ordinary_unknown_key_is_labelled_key_too"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.78s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the import screen's label prints a caller's key again (round 5's R5-02)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[not_a_declared_name]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[relation]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[not_a_declared_name]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[relation]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]"
+   ],
+   "definition_sha256": "572e76a5678a9dacee32a67117367042fe9d3dbaff926b5def0b438055e92725",
+   "file": "src/veracium/store/sqlite.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-02-guard-label-raw",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[not_a_declared_name]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[relation]",
+    "tests/test_0055_r5_closure.py::test_r5_02_a_label_prints_a_declared_name_or_key[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.65s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the store guard's refusal label prints a stored key again (R5-02 in the recursive guard)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]"
+   ],
+   "definition_sha256": "2cfd2f30fb972276ca5ff89c7170558edb0c81110758bb21ed900e6c079a52c6",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-03-record-id-raw",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "10 failed in 1.48s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a served result keeps a shaped record id raw again (round 5's R5-03)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept"
+   ],
+   "definition_sha256": "85f1752e87e28e97bd332935d452f3cef9eb2fc166a6a0e6cca88dcabdc768f1",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-03-stored-text-raw",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[confirmed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[corrected]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[disputed]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[edge_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked[superseded_by]",
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "7 failed in 0.72s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a served result keeps shaped stored text raw again (R5-03: dispute's relation)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]"
+   ],
+   "definition_sha256": "3df8ddcf3c776b8404c3af8ed4816c7f59e997ef5377464f7916e6423dbc8551",
+   "file": "src/veracium/diagnostics.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-04-no-chain-context",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.88s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the log window sends from its first full line again: a white-space-joined match is cut from its label (R5-04)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld"
+   ],
+   "definition_sha256": "f2e00b391c1b450f79b48bd64320188066dfc651038125177e75c5ca69821e7c",
+   "file": "src/veracium/diagnostics.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-04-no-pem-state",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.67s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the log window ignores a PEM block open at its start again (round 5's R5-04)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut"
+   ],
+   "definition_sha256": "77cb9084d86951b318459306b4265ec2cb56dd18ddd6d9904af73be871bd3167",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-04-crossing-span-kept",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.62s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "mask_from keeps the cursor inside a span that crosses the send point again (R5-04)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]"
+   ],
+   "definition_sha256": "0764fcbaf7cec3bc1228dda73f95790ef9e7016b80336b4a3871fa599128acf7",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-05-replacement-unsettled",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r4_closure.py::test_r4_05_an_exception_with_its_own_formatter_is_replaced_and_a_plain_one_raised_as_itself",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the replacement exception keeps the notes and cause its constructor added again (round 5's R5-05)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
+   ],
+   "definition_sha256": "bab7d5b12cfba68cdd8c85860c9d5436b728f218cb28602f51df88f88cf0c36b",
+   "file": "src/veracium/introspect.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-03-introspect-unmasked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.79s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "introspect's report carries stored relations and reasons raw again (dev's library audit: the CLI printed them)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation"
+   ],
+   "definition_sha256": "f04a38b6d5073e0e47143f70129975376bc1376a926fd97ce39f53dd5c30c5ad",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-03-library-dispute-relation-raw",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.69s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the library dispute result carries the stored relation raw again (research's addition 2)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_03_every_impl_is_served_through_the_projection": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_03_every_impl_is_served_through_the_projection",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]"
+   ],
+   "definition_sha256": "2b75c618479f75ea93c9b8dcd5e0ccb5886f1878731d9de250894830f884b9f7",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-03-trust-impls-undecorated",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_03_every_impl_is_served_through_the_projection",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[confirm_fact-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[dispute_fact-mcp-shaped_id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.36s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "confirm_fact_impl and dispute_fact_impl return unprojected again (R5-03, the decorator)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_invariants.py::test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_invariants.py::test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]"
+   ],
+   "definition_sha256": "42875a459eb5d3b3124d9872f06ada7856971392791ee4594c1f2fc901e95edf",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-03-minted-token-masked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_invariants.py::test_i14_preview_then_confirm_completes_and_a_pasted_token_is_withheld",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
+    "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.66s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "forget_everything_preview's minted token is masked like a stored shape (the declared exception lost)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]"
+   ],
+   "definition_sha256": "a5d9dcc2b4d1708fc5a4a25085b3829317464ddedb99e434a7dc6fd48eae442a",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-confirm-edge-id-unconverted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "confirm writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[dispute.edge_id]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[dispute.edge_id]"
+   ],
+   "definition_sha256": "7c35f7fe5b28f8e1b8e7b2d332d514bb1834ff0ac42785784bbfb425675bf5e8",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-dispute-edge-id-unconverted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[dispute.edge_id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "dispute writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]"
+   ],
+   "definition_sha256": "449ccafe40c7e6125bb80011e12748fb2f39753bd7cdb572e8cdbf18e69ac169",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-correct-edge-id-unconverted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.75s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "correct derives evidence_ref from a str-subclass edge_id's name again (R5-06's unscreened sibling)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]"
+   ],
+   "definition_sha256": "1ab66b9822e34891f1b80ca98af3312d484de8c1e0b3ee9b1a917dcf3cc25990",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-06-answer-query-unconverted",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.74s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "answer puts a str-subclass query's name in the gate's prompt again (R5-06's unscreened sibling)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object"
+   ],
+   "definition_sha256": "7d80d60e9b15e5335193f6d3beb3a8f39329fce5f17eaa3845514d0d6334b24d",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-05-notes-unjudged",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.62s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "_formats_as no longer refuses an exception that still carries notes (R5-05: an undeletable __notes__)"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 42
+   "product": 64
   },
-  "controls": 16,
-  "controls_good": 16,
-  "good": 42,
-  "killed": 42,
-  "rows": 42,
-  "seconds": 318
+  "controls": 17,
+  "controls_good": 17,
+  "good": 64,
+  "killed": 64,
+  "rows": 64,
+  "seconds": 319
  }
 }

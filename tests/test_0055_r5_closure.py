@@ -1,0 +1,654 @@
+"""specs/0055 round 5: closure of R5-01..R5-06 and B, at the width of each finding's CLASS (research's stage-1 read,
+additions 1-5). Each inventory row asserts the state it reached, with a positive control that the target operation
+happened, so a row cannot pass by never reaching its branch (R5-03 got through round 5 because the all-tools check
+fed `e-missing` and never reached a success).
+
+The reviewer's own regressions are not copied here: they ship as the round-5 results' `test_round5_obligations.py`.
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import pathlib
+import sqlite3
+import sys
+from enum import Enum
+
+import pytest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+
+
+def _load(name, rel):
+    spec = importlib.util.spec_from_file_location(name, ROOT / rel)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+T = _load("r5c_invariants", "tests/test_0055_invariants.py")
+R4 = _load("r5c_r4_closure", "tests/test_0055_r4_closure.py")
+
+from veracium import Memory, MemoryConfig                       # noqa: E402
+from veracium import credentials as C                           # noqa: E402
+from veracium.portability import CredentialImportRefused        # noqa: E402
+
+TOKEN = R4.TOKEN
+
+
+def _shaped_enum(data: str):
+    """A standard string-mixin enum member: its DATA is `data` (ordinary), its NAME is the token. It is a `str`, a
+    scan of its data finds nothing, and an f-string prints its name (the reviewer's R5-06 construction)."""
+    return Enum("Shaped", {TOKEN: data}, type=str)[TOKEN]
+
+
+# ==== R5-06: every A5 row, driven with an accepted str subclass ======================================================
+
+def _ordinary(param, base):
+    return base if isinstance(base, str) and base else f"ordinary-{param}"
+
+
+def _run_form(tmp_path, method, param, form):
+    stub = T.Stub()
+    sub = tmp_path / form
+    sub.mkdir()
+    mem = Memory(llm=stub, config=MemoryConfig(db_path=str(sub / "m.db"), wiki_recompile_after_writes=0))
+    try:
+        e = T._seed_edge(mem)
+        if method == "unrevoke_source":
+            from veracium.redaction import SOURCE_REVOCATION_REASONS
+            mem.revoke_source("u", None, "chat", SOURCE_REVOCATION_REASONS[0])
+        stub.prompts.clear()
+
+        def value(base):
+            data = _ordinary(param, base)
+            return data if form == "data" else _shaped_enum(data)
+        result, exc = None, None
+        try:
+            result = R4._call(mem, sub, e, method, param, value)
+        except Exception as ex:                                    # noqa: BLE001 - the outcome is recorded
+            exc = ex
+        shown = json.dumps(result, default=lambda x: x.model_dump(mode="json") if hasattr(x, "model_dump") else repr(x))
+        return {"exc": exc, "leak": R4._leaks(str(sub / "m.db"), stub) | ({"result"} if TOKEN in shown else set())}
+    finally:
+        mem.close()
+
+
+#: The screened rows whose ordinary value cannot reach success on a fresh store: `reply`'s target must name an existing
+#: reply, and `undo_restoration` needs an edge the 0044 migration restored. Both still run both forms.
+NO_SUCCESS_ON_A_FRESH_STORE = {("reply", "target"), ("undo_restoration", "correlation_id")}
+
+
+@pytest.mark.parametrize("method,param", R4._a5_rows(), ids=[f"{m}.{p}" for m, p in R4._a5_rows()])
+def test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches(tmp_path, method, param):
+    """Every A5 row, screened or not, driven with ordinary data and with a str-Enum member holding the same data under
+    a shaped NAME. The member must end exactly as its data does (the same success, or the same exception class), and
+    its name must reach no storage, provider prompt, result or exception text. A screened row's ordinary form must
+    SUCCEED (the reachability control: the branch R5-06 lived on is a success branch), but for the two rows that
+    cannot on a fresh store. RED against: round 5's R5-06 (`remember`'s fallback summary stored `event_type`'s name)
+    and its unscreened siblings measured at the fix (`confirm`/`dispute` wrote an `edge_id`'s name into the record,
+    `correct` derived `evidence_ref` from it, `answer` put a query's name in the gate's prompt). A parameter added
+    later that formats its name fails here: this inventory is the guard, read by A5's rule from the signatures."""
+    d = _run_form(tmp_path, method, param, "data")
+    m = _run_form(tmp_path, method, param, "enum")
+    assert type(m["exc"]) is type(d["exc"]), (method, param, repr(d["exc"]), repr(m["exc"]))
+    assert not m["leak"], (method, param, m["leak"])
+    if m["exc"] is not None:
+        # the outward formatter (served, CLI, log) never carries it, on any row; a SCREENED row's library exception
+        # does not either. An unscreened row's library exception may quote the caller's own argument (its repr):
+        # E1's library scope, as the A5 census already records for the str form.
+        assert TOKEN not in C.outward_text(m["exc"]), (method, param)
+        if R4._screened_by(method, param) is not None:
+            assert TOKEN not in str(m["exc"]), (method, param)
+    if R4._screened_by(method, param) is not None and (method, param) not in NO_SUCCESS_ON_A_FRESH_STORE:
+        assert d["exc"] is None, (method, param, repr(d["exc"]))
+
+
+def test_r5_06_exact_returns_the_data_as_a_builtin_str():
+    m = _shaped_enum("chat")
+    assert f"{m}" != "chat" and str.__str__(m) == "chat"                      # the hazard, then its remedy
+    out = C.exact(m)
+    assert type(out) is str and out == "chat" and f"{out}" == "chat"
+    assert C.exact("chat") == "chat" and C.exact(None) is None and C.exact(b"x") == b"x"
+
+
+# ==== R5-01: every dict-typed field of the stored models, at admission and in the store guard =========================
+
+def _dict_fields():
+    """Every field of a stored record model whose annotation reaches `dict` (research's addition 4: not only
+    `outcome_counts`), walked from the schema, never listed by hand."""
+    import typing
+    from pydantic import BaseModel
+    from veracium import schema as S
+    out = []
+    for cls in (S.Edge, S.Episode):
+        for name in typing.get_type_hints(cls):
+            if name not in cls.model_fields:
+                continue
+            stack, seen = [typing.get_type_hints(cls)[name]], False
+            while stack:
+                t = stack.pop()
+                if t is dict or typing.get_origin(t) is dict:
+                    seen = True
+                stack.extend(typing.get_args(t))
+            if seen:
+                out.append((cls.__name__, name))
+    return out
+
+
+def test_r5_01_the_dict_field_census_is_not_empty():
+    fields = _dict_fields()
+    assert ("Edge", "outcome_counts") in fields, fields
+
+
+@pytest.mark.parametrize("model,field", _dict_fields())
+@pytest.mark.parametrize("mode", ["plain", "restore", "restore_withhold"])
+def test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import(tmp_path, model, field, mode):
+    """Each dict field, in each import mode: a shaped key refuses its record (a restore refuses whole), and an ordinary
+    key in the same position imports (the positive control). Never renamed."""
+    kind = "edge" if model == "Edge" else "episode"
+    for key, expect_refused in ((TOKEN, True), ("ordinary_key", False)):
+        sub = tmp_path / f"{mode}-{expect_refused}"
+        sub.mkdir()
+        path, _eid = T._export_with(sub)
+        docs = [json.loads(line) for line in path.read_text().splitlines()]
+        hit = 0
+        for doc in docs:
+            if doc.get("kind") == kind or (kind == "edge" and "relation" in doc and "subject" in doc):
+                doc[field] = {key: 1}
+                hit += 1
+        assert hit, (model, field, "no record of that kind in the export")
+        path.write_text("".join(json.dumps(d) + "\n" for d in docs))
+        dest = T._mem(sub, "dest")
+        try:
+            kw = {} if mode == "plain" else {"restore": True, **({"withhold_credentials": True}
+                                                              if mode == "restore_withhold" else {})}
+            refused = False
+            try:
+                rep = dest.import_memory(str(path), **kw)
+                refused = bool(rep.get("credential_refused_records")) if isinstance(rep, dict) else False
+            except CredentialImportRefused:
+                refused = True
+            stored = T._dump(str(sub / "dest.db")) if (sub / "dest.db").exists() else ""
+        finally:
+            dest.close()
+        assert refused is expect_refused, (model, field, mode, key)
+        assert TOKEN not in stored
+        if not expect_refused:
+            assert "ordinary_key" in stored, (model, field, mode, "the ordinary key never reached the store")
+
+
+def test_r5_01_the_store_guard_reads_new_keys_and_passes_unchanged_ones():
+    """The guard's rule directly: a new shaped key is introduced (refused), the same key unchanged from the prior is
+    not (a legacy key passes a transition), and an ordinary new key is not."""
+    from veracium.store.sqlite import _cred_introduced
+    assert _cred_introduced({"outcome_counts": {TOKEN: 1}}, {"outcome_counts": {}}) == ("outcome_counts.[key]",
+                                                                                     C.first_class(TOKEN))
+    assert _cred_introduced({"outcome_counts": {TOKEN: 2}}, {"outcome_counts": {TOKEN: 1}}) is None
+    assert _cred_introduced({"outcome_counts": {"ordinary": 1}}, None) is None
+    assert _cred_introduced({TOKEN: "x"}, None) == ("[key]", C.first_class(TOKEN))
+
+
+# ==== R5-02: every path label is built from declared names =========================================================
+
+@pytest.mark.parametrize("key", [TOKEN, "not_a_declared_name", "x" * 40, "relation"])
+def test_r5_02_a_label_prints_a_declared_name_or_key(key):
+    """The one segment rule both carriers use: a declared field name prints, anything else is `[key]`. `relation` is
+    declared, so it prints (a fixed vocabulary is not input)."""
+    seg = C.path_segment(key)
+    assert seg == (key if key == "relation" else "[key]")
+    from veracium.store.sqlite import _cred_introduced
+    hit = _cred_introduced({key: {"inner": TOKEN}}, None)
+    # a shaped key is itself the hit, at its parent's `[key]`; otherwise the value is, under the key's segment
+    assert hit is not None and TOKEN not in hit[0], hit
+    assert C.path_segment("inner") == "[key]"                              # `inner` is not a declared name either
+    assert hit[0] == ("[key]" if C.first_class(key) else f"{seg}.[key]"), hit
+
+
+def test_r5_02_an_import_refusal_and_its_audit_carry_no_input_key(tmp_path):
+    """An unknown field whose NAME and value are shaped: the record is refused (reached), and neither the report nor
+    the AuditLog carries the key."""
+    from veracium.audit import AuditLog
+    path, _eid = T._export_with(tmp_path)
+    docs = [json.loads(line) for line in path.read_text().splitlines()]
+    for d in docs:
+        if "relation" in d and "subject" in d:
+            d[TOKEN] = TOKEN
+    path.write_text("".join(json.dumps(d) + "\n" for d in docs))
+    log = tmp_path / "audit.jsonl"
+    dest = T._mem(tmp_path, "dest", audit=AuditLog(str(log)))
+    try:
+        rep = dest.import_memory(str(path))
+    finally:
+        dest.close()
+    assert rep["credential_refused_records"], "the record was not refused: the branch was not reached"
+    assert TOKEN not in json.dumps(rep, default=str)
+    assert log.exists() and "credential_refused" in log.read_text() and TOKEN not in log.read_text()
+
+
+# ==== R5-03: every served tool's SUCCESS result over a store holding shaped ids and shaped text ========================
+
+def test_r5_03_every_impl_is_served_through_the_projection():
+    """By property: every module-level `*_impl` (what build_server's tools and the adapters' Binding call) is decorated
+    with `_projected`, identified by its wrapper's code. A tool added later without it fails here."""
+    import veracium.mcp_server as M
+    impls = {n: f for n, f in vars(M).items() if n.endswith("_impl") and callable(f)}
+    assert len(impls) >= 13, sorted(impls)
+    bare = [n for n, f in impls.items() if getattr(f, "__code__", None) is None or f.__code__.co_name != "projected"
+            or getattr(f, "__wrapped__", None) is None]
+    assert not bare, bare
+
+
+@pytest.mark.parametrize("key", ["confirmed", "disputed", "id", "edge_id", "corrected", "superseded_by"])
+def test_r5_03_a_shaped_record_id_is_an_ordinal_and_stored_text_is_masked(key):
+    import veracium.mcp_server as M
+    out = M.served_result({"ok": True, key: TOKEN, "relation": f"likes {TOKEN}", "nested": [{"note": TOKEN}],
+                           TOKEN: 1, "plain": "e-123"})
+    shown = json.dumps(out)
+    assert TOKEN not in shown
+    assert out[key] == f"record 1 of this report ({key})"
+    assert out["plain"] == "e-123" and out["ok"] is True                   # ordinary values untouched
+
+
+def test_r5_03_the_minted_preview_token_is_kept():
+    import veracium.mcp_server as M
+    token = "tt1.eyJhbGciOiJub25lIn0.abcdefghijklmnopqrstuvwxyz"
+    assert C.first_class(token) == "veracium_preview_token"
+    out = M.served_result({"ok": True, "preview_token": token}, keep=frozenset({"preview_token"}))
+    assert out["preview_token"] == token
+    assert M.served_result({"ok": True, "other": token})["other"] != token
+
+
+def _plant(m, *, shaped_id: bool, shaped_relation: bool) -> str:
+    """The reviewer's construction: an ordinary fact whose current row and journal are rewritten coherently, with a
+    shaped legacy id and/or shaped stored text in `relation`. Returns the id to act on."""
+    edge = T._seed_edge(m)
+    con = m.store._conn
+    doc = json.loads(con.execute("SELECT json FROM edges WHERE id=?", (edge.id,)).fetchone()[0])
+    rid = ("e-" + TOKEN) if shaped_id else edge.id
+    doc["id"] = rid
+    if shaped_relation:
+        doc["relation"] = TOKEN
+    con.execute("UPDATE edges SET id=?,relation=?,json=? WHERE id=?", (rid, doc["relation"], json.dumps(doc), edge.id))
+    con.execute("UPDATE edge_event SET edge_id=?,state=? WHERE edge_id=?", (rid, json.dumps(doc), edge.id))
+    con.commit()
+    return rid
+
+
+#: The cells whose declared outcome is a refusal, not a success: a shaped legacy id or identity cannot be copied into a
+#: new record (the store guard on `supersedes`/`evidence_ref`; §4c-ii row 8's identity rule for `correct`). The
+#: refusal names the field and class only. Every other cell must reach success.
+EXPECT_REFUSED = {("remember", "shaped_id"), ("correct_fact", "shaped_id"), ("correct_fact", "shaped_relation")}
+
+
+def _token_in(prev) -> str:
+    """The preview token from either route's result (the binding's dict, or the MCP content's serialized form)."""
+    import re
+    m = re.search(r"tt1\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+", json.dumps(prev, default=str))
+    assert m, prev
+    return m.group(0)
+
+
+def _reached(name, out) -> bool:
+    """The positive control per tool: the call reached its success state (not a refusal, and the payload a success
+    carries is present)."""
+    if isinstance(out, str):
+        return bool(out.strip())
+    if not isinstance(out, dict) or out.get("ok") is False or "refusal" in out:
+        return False
+    need = {"confirm_fact": "confirmed", "dispute_fact": "disputed", "correct_fact": "ok", "find_facts": "units",
+            "forget_fact": "ok", "forget_everything_preview": "preview_token", "forget_everything_confirm": "ok"}
+    return need.get(name, None) is None or need[name] in out
+
+
+#: one success-reaching call per served tool; `{rid}` is the planted record. forget_everything_confirm takes the
+#: preview's token from the same binding.
+SWEEP = {
+    "remember": {"text": "I drink tea in the morning"},
+    "recall": {"query": "Denver"},
+    "answer": {"query": "Where do I live?"},
+    "maintain": {},
+    "record_procedure": {"summary": "I run the tests first", "basis": "stated"},
+    "describe_procedures": {"query": None},
+    "find_facts": {"query": None},
+    "correct_fact": {"edge_id": "{rid}", "corrected_value": "Boulder"},
+    "dispute_fact": {"edge_id": "{rid}", "reason": "not true"},
+    "confirm_fact": {"edge_id": "{rid}"},
+    "forget_fact": {"edge_id": "{rid}"},
+    "forget_everything_preview": {},
+    "forget_everything_confirm": {"preview_token": "{token}"},
+}
+
+
+def test_r5_03_the_sweep_covers_every_served_tool(tmp_path):
+    from veracium.adapters._surface import Binding
+    m = T._mem(tmp_path)
+    try:
+        names = {t.name for t in Binding(m, user_id="u", capability="direct").tools()}
+    finally:
+        m.close()
+    assert names == set(SWEEP), names ^ set(SWEEP)
+
+
+@pytest.mark.parametrize("plant", ["shaped_id", "shaped_relation"])
+@pytest.mark.parametrize("route", ["binding", "mcp"])
+@pytest.mark.parametrize("name", sorted(SWEEP))
+def test_r5_03_every_served_success_result_carries_no_shape(tmp_path, name, route, plant):
+    """Research's addition 2: every served tool's SUCCESS result, over a store holding a shaped legacy id or shaped
+    stored text, through the adapters' Binding and the real FastMCP `call_tool`. Each cell asserts it reached its
+    success state; then no shape anywhere in the result. RED against: round 5's R5-03 (confirm/dispute returned the
+    legacy id; dispute returned the stored relation)."""
+    import asyncio
+    from veracium import mcp_server as MCP
+    from veracium.adapters._surface import Binding
+    m = T._mem(tmp_path)
+    try:
+        rid = _plant(m, shaped_id=plant == "shaped_id", shaped_relation=plant == "shaped_relation")
+        b = Binding(m, user_id="u", capability="direct")
+        server = MCP.build_server(m, default_user="u", capability="direct") if route == "mcp" else None
+
+        def call(tool, args):
+            if route == "binding":
+                return b.call(tool, args)
+            res = asyncio.run(server.call_tool(tool, args))
+            if isinstance(res, tuple):                   # (content, structured): a str tool's {"result": ...}
+                o = res[1].get("result", res[1]) if isinstance(res[1], dict) else res[0]
+            else:
+                o = res
+            if isinstance(o, list) and o and hasattr(o[0], "text"):     # a dict tool: its JSON as TextContent
+                try:
+                    o = json.loads(o[0].text)
+                except ValueError:
+                    o = o[0].text
+            return o
+        token = ""
+        if name == "forget_everything_confirm":          # the token from THIS route's own preview (its issuer)
+            prev = call("forget_everything_preview", {})
+            token = _token_in(prev)
+        args = {k: (v.format(rid=rid, token=token) if isinstance(v, str) else v) for k, v in SWEEP[name].items()}
+        out = call(name, args)
+        shown = json.dumps(out, default=str)
+        assert TOKEN not in shown, (name, route, plant, shown[:300])
+        if (name, plant) in EXPECT_REFUSED:
+            assert isinstance(out, dict) and out.get("refusal") == "credential_refused" and out.get("class"), \
+                (name, route, plant, out)
+        else:
+            assert isinstance(out, (dict, str)), (name, route, type(out))   # both routes yield the tool's own value
+            assert _reached(name, out), (name, route, plant, shown[:300])
+    finally:
+        m.close()
+
+
+# ==== R5-04: multi-line grammars at every cut ==========================================================================
+
+CHAINS = [
+    ("aws\nsecret\naccess\nkey\nis\nnow\n", "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY"),
+    ("access\nkey\nid\nis\nnow\n", "S3cr3t-Passw0rd-Value"),
+    ("my\npin\ncode\nis\nnow\n", "8264"),
+    ("Authorization\n:\nBearer\n", "abcdefghijklmnopqrstuvwxyz0123456789"),
+    ("password\n=\n", '"quoted value 1234"'),
+]
+
+
+@pytest.mark.parametrize("chain,value", CHAINS, ids=[c.split()[0] for c, _ in CHAINS])
+def test_r5_04_a_line_spanning_match_is_withheld_at_every_cut(tmp_path, chain, value):
+    """Each white-space-joined grammar split one part per line, with filler before it so the window's cut lands on
+    EVERY line of the chain in turn: whole-input masking withholds the value (the precondition), and the sent tail
+    never carries it. The chain's part count stays below CHAIN_LINES."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    block = chain + value + "\nordinary final line\n"
+    whole = C.mask_text(block)
+    assert value.strip('"') not in whole, "the grammar does not recognise this chain whole: not a test of the cut"
+    assert block.count("\n") <= C.CHAIN_LINES + 2
+    cap = 1024
+    window = 1 << 20
+    for cut_line in range(chain.count("\n") + 1):
+        lines = block.split("\n")
+        pre = "\n".join(lines[:cut_line])
+        filler_len = window - len(block.encode()) + len(pre.encode()) + (1 if cut_line else 0) + 7
+        log = tmp_path / f"d{cut_line}.log"
+        log.write_text(("x" * 80 + "\n") * (filler_len // 81 + 1) + block)
+        rep = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=cap, redact=False))
+        tail = rep.log_tail()
+        assert value.strip('"') not in tail, (cut_line, tail[-200:])
+        assert "ordinary final line" in tail
+
+
+def test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld(tmp_path):
+    """The block rule runs to the end when there is no END; the window starts inside it. Read-back finds the BEGIN, so
+    no body line is sent."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    body = "".join("MIIEvQIBADANBgkqhkiG9w0BAQEFAASC" + f"{i:08d}" + "\n" for i in range(40000))
+    log = tmp_path / "d.log"
+    log.write_text("start\n-----BEGIN PRIVATE KEY-----\n" + body)
+    assert len(log.read_bytes()) > (1 << 20)
+    tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+    assert "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC" not in tail, tail[-200:]
+
+
+@pytest.mark.parametrize("chunk", [7, 64, 1 << 20])
+def test_r5_04_pem_state_read_back_is_exact_across_chunk_edges(chunk):
+    data = ("a\n-----BEGIN RSA PRIVATE KEY-----\nbody\n-----END RSA PRIVATE KEY-----\nb\n"
+            "-----BEGIN PRIVATE KEY-----\nbody2\n").encode()
+
+    def rb(lo, hi):
+        return data[lo:hi]
+    end1 = data.index(b"-----END RSA")
+    assert C.pem_open_before(rb, data.index(b"body\n"), chunk) is True
+    assert C.pem_open_before(rb, data.index(b"\nb\n") + 1, chunk) is False
+    assert C.pem_open_before(rb, data.index(b"body2"), chunk) is True
+    assert C.pem_open_before(rb, 2, chunk) is False
+    assert end1 > 0
+
+
+def test_r5_04_mask_from_omits_a_span_that_crosses_the_cut():
+    text = "password: hunter2-very-secret\nnext line\n"
+    cut = text.index("hunter2") + 3
+    out = C.mask_from(text, cut)
+    assert "ter2" not in out and out.startswith("\nnext line") or out.startswith("next")
+
+
+# ==== R5-05: the final exception, constructors that add notes or a cause ==============================================
+
+class _NoteInCtor(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.add_note(f"value was {TOKEN}")
+
+
+class _CauseInCtor(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.__cause__ = ValueError(TOKEN)
+
+
+@pytest.mark.parametrize("cls", [_NoteInCtor, _CauseInCtor])
+def test_r5_05_the_replacement_is_checked_after_construction(cls):
+    import traceback
+    orig = cls("x")
+    orig.args = (f"bad {TOKEN}",)
+    out = C.withheld_defect(orig)
+    text = "".join(traceback.format_exception(type(out), out, None))
+    assert TOKEN not in text, text
+    assert not getattr(out, "__notes__", None) and out.__cause__ is None
+
+
+# ==== B: the excluded BLOB column ====================================================================================
+
+def test_b_the_finder_excludes_exactly_the_embedding_vector_and_its_contract_holds(tmp_path):
+    """The finder skips declared BLOB columns. The set is exactly `edge_embedding.vec`; its one product writer passes
+    `semantic.pack_vec` (dim x float32), and its reader refuses anything but 4*dim bytes, so no supported text carrier
+    lives there. A new BLOB column fails here."""
+    import ast
+    from veracium import semantic
+    from veracium.store.sqlite import SqliteStore
+    s = SqliteStore(str(tmp_path / "m.db"))
+    try:
+        blobs = {(t, c[1]) for (t,) in s._conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name "
+                                                        "NOT GLOB 'sqlite_*'")
+                 for c in s._conn.execute("SELECT * FROM pragma_table_info(?)", (t,)) if (c[2] or "").upper() == "BLOB"}
+    finally:
+        s.close()
+    assert blobs == {("edge_embedding", "vec")}, blobs
+    writers = []
+    for p in (ROOT / "src" / "veracium").rglob("*.py"):
+        for node in ast.walk(ast.parse(p.read_text())):
+            if isinstance(node, ast.Call) and getattr(node.func, "attr", None) == "upsert_embedding":
+                vec = next(k.value for k in node.keywords if k.arg == "vec")
+                writers.append((p.name, isinstance(vec, ast.Call) and getattr(vec.func, "attr", None) == "pack_vec"))
+    assert writers and all(ok for _f, ok in writers), writers
+    assert len(semantic.pack_vec([1.0, 2.0])) == 8
+    assert semantic.unpack_vec(TOKEN, 2) is None and semantic.unpack_vec(b"\x00" * 7, 2) is None
+
+
+# ==== R5-03's class in LIBRARY results (research's addition 2; dev's audit at the fix) =================================
+
+def test_r5_03_library_dispute_masks_the_stored_relation(tmp_path):
+    """`relation` is stored record text the caller did not pass: the library result masks it (the served one is
+    projected again). `disputed` is the caller's own argument, E1's library scope."""
+    m = T._mem(tmp_path)
+    try:
+        rid = _plant(m, shaped_id=False, shaped_relation=True)
+        out = m.dispute("u", rid, reason="not true")
+    finally:
+        m.close()
+    assert out["disputed"] == rid                                     # reached, and the caller's own id echoed
+    assert TOKEN not in json.dumps(out) and out["relation"].startswith(C.PLACEHOLDER_PREFIX)
+
+
+@pytest.mark.parametrize("mode", ["summary", "categories"])
+def test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli(tmp_path, mode, capsys):
+    """`introspect` names stored relations as keys (`by_relation`, the categories) and stored reasons (`retired`), and
+    `veracium introspect` prints them. Found by dev's library audit: the CLI printed a shaped relation."""
+    from veracium import cli
+    m = T._mem(tmp_path)
+    try:
+        _plant(m, shaped_id=False, shaped_relation=True)
+        rep = m.introspect("u", mode=mode)
+    finally:
+        m.close()
+    assert rep["facts"] >= 1                                           # reached: the planted fact is counted
+    assert TOKEN not in json.dumps(rep, default=str)
+    assert any(k.startswith(C.PLACEHOLDER_PREFIX) for k in rep["by_relation"]), rep["by_relation"]
+    capsys.readouterr()
+    cli.main(["introspect", "--db", str(tmp_path / "m.db"), "--user", "u"])
+    assert TOKEN not in capsys.readouterr().out
+
+
+#: Library results that echo the CALLER'S OWN argument (E1's library scope, research's addition 2): measured at the fix
+#: with a shaped legacy id as the argument. A result naming a record the caller did not pass is not on this list.
+CALLER_ECHO = {"confirm": "confirmed", "dispute": "disputed", "record_outcome": "edge_id", "reply": "edge_id"}
+
+
+@pytest.mark.parametrize("method,key", sorted(CALLER_ECHO.items()))
+def test_r5_03_a_library_result_echoes_only_the_callers_own_id(tmp_path, method, key):
+    m = T._mem(tmp_path)
+    try:
+        rid = _plant(m, shaped_id=True, shaped_relation=False)
+
+        class E:
+            id = rid
+        out = R4._call(m, tmp_path, E, method, "edge_id", rid)
+    finally:
+        m.close()
+    shown = json.dumps(out, default=lambda x: x.model_dump(mode="json") if hasattr(x, "model_dump") else repr(x))
+    assert out[key] == rid                                             # the caller's argument, as passed
+    assert shown.count(TOKEN) == 1, shown                              # and nowhere else in the result
+
+
+# ==== round 6's mutant measurement: the branches the inventories did not reach ========================================
+
+def test_r5_06_remember_fallback_summary_uses_the_screened_event_type(tmp_path):
+    """The reviewer's branch, in-tree: a provider answering non-JSON sends `remember` to the extractor fallback, whose
+    summary formats `event_type`. A str-Enum `event_type` (data `chat`, shaped name) must store and return `chat`.
+    The inventory's stub answers structured output, so it never reaches this branch (measured: a mutant that kept the
+    unconverted object survived every inventory cell)."""
+    calls = []
+
+    def llm(*args, **kwargs):
+        calls.append(1)
+        return "not structured output"
+    m = T._mem(tmp_path, llm=llm)
+    try:
+        out = m.remember("u", "I live in Denver", event_type=_shaped_enum("chat"))
+        stored = T._dump(str(tmp_path / "m.db"))
+    finally:
+        m.close()
+    assert calls, "the provider was never called: the fallback branch was not reached"
+    assert TOKEN not in json.dumps(out, default=str) and TOKEN not in stored
+    assert "chat" in stored                                            # the data, as the fallback formatted it
+
+
+def test_r5_06_d3_returns_exact_strs():
+    """D3's callee screen returns the exact str of each accepted subclass, so what is digested and refused is what was
+    screened (the property its name promises; today's digest encodes the data either way, so this is asserted at
+    the screen itself)."""
+    import tempfile
+    d = pathlib.Path(tempfile.mkdtemp())
+    m = T._mem(d)
+    try:
+        origin, source_id = m._d3_legacy_source_or_refuse("u", _shaped_enum("o1"), _shaped_enum("chat"), "revoke_source")
+    finally:
+        m.close()
+    assert (type(origin), type(source_id)) == (str, str) and (origin, source_id) == ("o1", "chat")
+
+
+def test_r5_02_an_ordinary_unknown_key_is_labelled_key_too(tmp_path):
+    """I8: a label is built from declared names only; an unknown key is input even when it is not shaped. An ordinary
+    unknown field whose VALUE is shaped refuses the record, and the label names `[key]`, not the field's own name."""
+    path, _eid = T._export_with(tmp_path)
+    docs = [json.loads(line) for line in path.read_text().splitlines()]
+    for d in docs:
+        if "relation" in d and "subject" in d:
+            d["x_custom_field_7"] = TOKEN
+    path.write_text("".join(json.dumps(d) + "\n" for d in docs))
+    dest = T._mem(tmp_path, "dest")
+    try:
+        rep = dest.import_memory(str(path))
+    finally:
+        dest.close()
+    recs = rep["credential_refused_records"]
+    assert recs, "the record was not refused: the branch was not reached"
+    shown = json.dumps(rep, default=str)
+    assert "x_custom_field_7" not in shown and TOKEN not in shown
+    assert any(r.get("field", "").endswith("[key]") for r in recs), recs
+
+
+@pytest.mark.parametrize("before,after", [("password:", ""), ("aws secret", "access key is now"),
+                                          ("Authorization:", "Bearer")], ids=["label", "split-label", "auth"])
+def test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value(tmp_path, before, after):
+    """The chain grammars join their parts by white space only, and white space can be longer than the window: a label
+    ends a line, a blank run longer than the read window follows, then the value. The window starts inside the run, so
+    the label is outside it; whole-input masking withholds the value (the precondition), and the sent tail must not
+    carry it. The value is the window's first non-blank line, so it is context only, never sent."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    value = "S3cr3t-Passw0rd-Value-0123456789abcdefABCDEF"
+    window = 1 << 20
+    text = (before + "\n" + " " * (window + 4096) + "\n" + (after + "\n" if after else "") + value + "\n"
+            + "".join(f"ordinary line {i}\n" for i in range(C.CHAIN_LINES + 4)) + "ordinary final line\n")
+    assert value not in C.mask_text(text), "the grammar does not recognise this across the blank run"
+    log = tmp_path / "d.log"
+    log.write_text(text)
+    tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+    assert value not in tail, tail[-300:]
+    assert "ordinary final line" in tail
+
+
+class _UndeletableNotes(Exception):
+    """Its notes are a read-only property: `del exc.__notes__` raises, so only the final judgement can see them, and the
+    traceback prints them (`traceback` reads `__notes__` by attribute)."""
+    @property
+    def __notes__(self):
+        return [f"value was {TOKEN}"]
+
+
+def test_r5_05_notes_that_cannot_be_deleted_refuse_the_object():
+    import traceback
+    orig = _UndeletableNotes("x")
+    orig.args = (f"bad {TOKEN}",)
+    assert TOKEN in "".join(traceback.format_exception(orig))              # the hazard: the notes print
+    out = C.withheld_defect(orig)
+    text = "".join(traceback.format_exception(type(out), out, None))
+    assert out is not orig and TOKEN not in text, text

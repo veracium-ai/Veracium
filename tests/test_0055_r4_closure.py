@@ -181,7 +181,9 @@ def _call(mem, tmp_path, e, method, param, value):
         other.export_memory("u", str(tmp_path / "in.jsonl"))
         other.close()
     assert param in kw, (method, param)
-    kw[param] = value
+    # round 5: a CALLABLE value receives the row's ordinary argument and returns the one to pass (the str-subclass
+    # inventory wraps the ordinary data; tests/test_0055_r5_closure.py). A str, bytes or Enum member is passed as is.
+    kw[param] = value(kw[param]) if callable(value) else value
     fn = getattr(mem, method)
     return fn(**kw) if method == "import_memory" else fn("u", **kw)
 

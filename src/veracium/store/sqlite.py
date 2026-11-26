@@ -423,11 +423,21 @@ class _DeferredJournal:
 def _cred_introduced(doc, prior, path: str = ""):
     """specs/0055 §4d: the (field path, class) of the first credential-shaped string `doc` introduces relative to
     `prior` (None: every string is introduced), or None. A string leaf equal to the prior's leaf at the same path is
-    not introduced."""
+    not introduced.
+
+    Round 5: a mapping KEY is a stored string, so a key the prior did not hold is introduced and screened (R5-01; an
+    unchanged legacy key passes a transition as an unchanged value does), and the returned path is built from declared
+    field names only, a key printed as `[key]` (R5-02: the path becomes the refusal's field)."""
     if isinstance(doc, dict):
+        prior_keys = prior.keys() if isinstance(prior, dict) else ()
         for k, v in doc.items():
+            if isinstance(k, str) and k and k not in prior_keys:
+                cls = _cred.first_class(k)
+                if cls is not None:
+                    return (f"{path}.[key]" if path else "[key]", cls)
+            seg = _cred.path_segment(k)
             hit = _cred_introduced(v, prior.get(k) if isinstance(prior, dict) else None,
-                                   f"{path}.{k}" if path else str(k))
+                                   f"{path}.{seg}" if path else seg)
             if hit is not None:
                 return hit
     elif isinstance(doc, list):

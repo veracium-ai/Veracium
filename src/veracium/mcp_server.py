@@ -254,6 +254,67 @@ def _record_discarded(mem, user_id: str, tool: str, report: dict) -> None:
             pass
 
 
+# -- specs/0055 §4g, round 5's R5-03: the served result boundary ----------------------------------------------------
+#: A key whose value names a record. A credential-shaped value under one is a stored id that is not a minted value
+#: (an imported or legacy record), and is named by a per-report ordinal; any other shaped string is masked.
+_RECORD_KEYS = frozenset({"id", "target", "confirmed", "disputed", "corrected", "superseded", "superseded_by",
+                          "replaced", "replaced_by", "retired"})
+#: The one minted value a served result carries on purpose: forget_everything_preview's token (0031 §4f), which the
+#: user's confirming call must quote back. It is Veracium's own bearer, so the recogniser names it.
+_MINTED_PREVIEW_TOKEN = frozenset({"preview_token"})
+
+
+def served_result(value, *, keep=frozenset()):
+    """§4g/I17 on EVERY served success result (round 5's R5-03): the tools return through here, from both the MCP
+    server and the adapters' common binding. A stored id carrying a credential shape is named by a per-report ordinal
+    (`record 2 of this report (disputed)`); any other shaped string, stored record text the caller did not pass
+    (`dispute`'s `relation`), is masked; a shaped mapping key is masked. Ordinary values are returned as they are, so
+    the model can still act on an ordinary id. `keep` names the top-level keys holding a minted value."""
+    n = 0
+
+    def walk(v, key):
+        nonlocal n
+        if isinstance(v, str):
+            if not v or _cred.first_class(v) is None:
+                return v
+            if isinstance(key, str) and (key in _RECORD_KEYS or key.endswith("_id")):
+                n += 1
+                return f"record {n} of this report ({key})"
+            return _cred.mask_text(v)
+        if isinstance(v, dict):
+            out: dict = {}
+            for k, x in v.items():
+                nk = _cred.mask_text(k) if isinstance(k, str) else k
+                if nk != k:
+                    base, i = nk, 2
+                    while nk in out or nk in v:
+                        nk, i = f"{base} #{i}", i + 1
+                out[nk] = walk(x, k)
+            return out
+        if isinstance(v, (list, tuple)):
+            items = [walk(x, key) for x in v]
+            return items if isinstance(v, list) else tuple(items)
+        return v
+
+    if isinstance(value, dict) and keep:
+        return {k: (x if k in keep else walk(x, k)) for k, x in value.items()}
+    return walk(value, None)
+
+
+
+def _projected(fn=None, *, keep=frozenset()):
+    """Decorates a served `*_impl`: its result through `served_result` (round 5's R5-03). Not `_served`, the MCP tool
+    boundary below, which wraps the tool body around it. `keep` names the top-level keys holding a minted value.
+    tests/test_0055_r5_closure.py holds every module-level `*_impl` decorated with this."""
+    def deco(f):
+        @functools.wraps(f)
+        def projected(*args, **kwargs):
+            return served_result(f(*args, **kwargs), keep=keep)
+        return projected
+    return deco(fn) if fn is not None else deco
+
+
+@_projected
 def remember_impl(mem: Memory, user_id: str, text: str,
                   author: Optional[str] = None, event_type: str = "chat",
                   date: Optional[str] = None,
@@ -336,6 +397,7 @@ def record_procedure_report(mem: Memory, user_id: str, summary: str, basis,
     return out
 
 
+@_projected
 def record_procedure_impl(mem: Memory, user_id: str, summary: str, basis,
                           author: str = "user", derived_from: Optional[str] = None,
                           relation: str = "follows_procedure",
@@ -351,6 +413,7 @@ def record_procedure_impl(mem: Memory, user_id: str, summary: str, basis,
     return r
 
 
+@_projected
 def describe_procedures_impl(mem: Memory, user_id: str, query: Optional[str] = None,
                              *, limit: Optional[int] = None, principal=None) -> dict:
     """`Memory.describe_procedures` as JSON (§4b); a caller error on
@@ -364,6 +427,7 @@ def describe_procedures_impl(mem: Memory, user_id: str, query: Optional[str] = N
     return {"ok": True, **result.to_dict()}
 
 
+@_projected
 def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,
                 token_budget: Optional[int] = None, principal=None) -> str:
     # specs/0020 §4f: MCP passes the HOST's declared principal THROUGH — it
@@ -378,10 +442,12 @@ def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,
     return out
 
 
+@_projected
 def answer_impl(mem: Memory, user_id: str, query: str, principal=None) -> str:
     return mem.answer(user_id, query, principal=principal)
 
 
+@_projected
 def maintain_impl(mem: Memory, user_id: str) -> dict:
     return mem.maintain(user_id)
 
@@ -628,12 +694,14 @@ def _strip(report: dict, mem=None, user_id: Optional[str] = None, tool: Optional
     return report
 
 
+@_projected
 def find_facts_impl(mem: Memory, user_id: str, query: Optional[str] = None, *, capability=None,
                     principal=None) -> dict:
     return _strip(find_facts_report(mem, user_id, query, capability=capability, principal=principal),
                   mem, user_id, 'find_facts')
 
 
+@_projected
 def correct_fact_impl(mem: Memory, user_id: str, edge_id: str, corrected_value: str, *, capability=None,
                       principal=None, source_id: Optional[str] = None, call_path=None) -> dict:
     return _strip(correct_fact_report(mem, user_id, edge_id, corrected_value, capability=capability,
@@ -641,6 +709,7 @@ def correct_fact_impl(mem: Memory, user_id: str, edge_id: str, corrected_value: 
                   mem, user_id, 'correct_fact')
 
 
+@_projected
 def dispute_fact_impl(mem: Memory, user_id: str, edge_id: str, reason: str = "", *, capability=None,
                       principal=None, source_id: Optional[str] = None, call_path=None) -> dict:
     return _strip(dispute_fact_report(mem, user_id, edge_id, reason, capability=capability, principal=principal,
@@ -648,6 +717,7 @@ def dispute_fact_impl(mem: Memory, user_id: str, edge_id: str, reason: str = "",
                   mem, user_id, 'dispute_fact')
 
 
+@_projected
 def confirm_fact_impl(mem: Memory, user_id: str, edge_id: str, *, capability=None, principal=None,
                       source_id: Optional[str] = None, call_path=None) -> dict:
     return _strip(confirm_fact_report(mem, user_id, edge_id, capability=capability, principal=principal,
@@ -655,6 +725,7 @@ def confirm_fact_impl(mem: Memory, user_id: str, edge_id: str, *, capability=Non
                   mem, user_id, 'confirm_fact')
 
 
+@_projected
 def forget_fact_impl(mem: Memory, user_id: str, edge_id: Optional[str] = None, episode_id: Optional[str] = None,
                      *, capability=None, erasure=None, principal=None) -> dict:
     return _strip(forget_fact_report(mem, user_id, edge_id, episode_id, capability=capability, erasure=erasure,
@@ -662,6 +733,7 @@ def forget_fact_impl(mem: Memory, user_id: str, edge_id: Optional[str] = None, e
                   mem, user_id, 'forget_fact')
 
 
+@_projected(keep=_MINTED_PREVIEW_TOKEN)
 def forget_everything_preview_impl(mem: Memory, user_id: str, *, capability=None, erasure=None, principal=None,
                                    issuer=None) -> dict:
     return _strip(forget_everything_preview_report(mem, user_id, capability=capability, erasure=erasure,
@@ -669,6 +741,7 @@ def forget_everything_preview_impl(mem: Memory, user_id: str, *, capability=None
                   mem, user_id, 'forget_everything_preview')
 
 
+@_projected
 def forget_everything_confirm_impl(mem: Memory, user_id: str, preview_token, *, capability=None, erasure=None,
                                    principal=None, issuer=None) -> dict:
     return _strip(forget_everything_confirm_report(mem, user_id, preview_token, capability=capability,

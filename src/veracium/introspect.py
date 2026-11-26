@@ -126,4 +126,10 @@ def report(store, user_id: str, *, mode: str = "summary",
             if line:
                 cats.setdefault(e.relation, []).append(line)
         out["categories"] = cats
-    return out
+    # specs/0055 §4g/I17 (round 5, found by dev's audit of library results for R5-03's class): this report carries
+    # stored text as KEYS (`by_relation`'s relations, `retired`'s invalidation reasons, the categories' relations) and
+    # in the category lines, and `veracium introspect` prints it. Every stored string is masked here, at the report's
+    # one constructor; the host's own `user_id` is outside the screen (D4).
+    from . import credentials as _cred
+    uid = out.pop("user_id")
+    return {"user_id": uid, **_cred.mask_deep(out)}

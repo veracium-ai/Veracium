@@ -301,6 +301,9 @@ sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.
 sql-write-other-table	src/veracium/store/sqlite.py	str:sql-write	n = self._conn.execute("UPDATE edge_event SET state=? WHERE user_id=? AND edge_id=? AND state<>?",
 verb-as-text	src/veracium/diagnostics.py	str:sql-write	text = _cred.mask_text(data.decode("utf-8", "replace"))
 verb-as-text	src/veracium/diagnostics.py	str:sql-write	return out.decode("utf-8", "replace")
+verb-as-text	src/veracium/diagnostics.py	str:sql-write	head_text, rest_text = head.decode("utf-8", "replace"), rest.decode("utf-8", "replace")
+verb-as-text	src/veracium/diagnostics.py	str:sql-write	head_text, rest_text = head.decode("utf-8", "replace"), rest.decode("utf-8", "replace")
+verb-as-text	src/veracium/credentials.py	str:sql-write	view = _normalise(read_back(lo, min(pos, hi + overlap)).decode("utf-8", "replace"))[0]
 verb-as-text	src/veracium/procedures.py	str:sql-write	IMPERATIVE_OPENERS = frozenset(""" add adjust allow always apply ask assign avoid back backfill build bump cancel clean clear close compile configure confirm cordon create deactivate delete deny deploy disable do document drain enable ensure escalate fetch fix flush freeze generate ignore install keep kill migrate move never notify open pause put quarantine re-run rebase reboot rebuild redeploy refresh reinstall reject reload remove rename replace reproduce restart restore retry revert review revoke roll rollback rotate run submit tag take throttle toggle turn unfreeze uninstall unlock unpin unset update upgrade validate verify widen """.split())
 verb-as-text	src/veracium/redaction.py	str:sql-write	REPLACE, CLEAR, DELETE, PRESERVE = "REPLACE", "CLEAR", "DELETE", "PRESERVE"
 verb-as-text	src/veracium/store/sqlite.py	str:sql-write	f"axis is written once at insert (specs/0045 §2)"), axis)

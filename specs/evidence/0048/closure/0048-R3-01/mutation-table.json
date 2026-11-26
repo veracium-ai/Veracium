@@ -1,5 +1,5 @@
 {
- "body_sha256": "56bc80efb90a8a1215c37b77d930da0c5f425dea320d78ec0e52408886a96820",
+ "body_sha256": "b6e3d83d2d78c9b36a9bdcda5727010aee38fa81e895205de8bd5b36c15c9bf1",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "NOOP-0048-R3-01-sqlite": "c70bf2efe0f5f22c5d0166c85abd55bb4340fd2acb1081db3069a3e8b0790311"
   },
@@ -56,7 +56,7 @@
    "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/store/sqlite.py": "b3651a1c9c27fd469972c0e275b20f80157c01da42e6e8370fe79f48ae700614",
+   "src/veracium/store/sqlite.py": "1f2cffdd03784f527368a1e71ead089d8790d9bf5d44ca78c63d76cad786210f",
    "tests/test_0048_decay_bounds.py": "e4505989aa3d9db443d5de63d45fc8c77d619d4235f900cf41b1a578ec1910a1"
   },
   "finding": "0048-R3-01",
@@ -68,32 +68,32 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
    "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
    "specs/evidence/0055/implementation_mutants.py",
    "specs/generated/0002-audit-manifest.md",
    "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/credential_finder.py",
    "src/veracium/credentials.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/introspect.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0055_r4_closure.py",
-   "tests/test_0055_recogniser.py"
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -125,7 +125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.09s",
+   "pytest": "1 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION (round 3's body): one observation validated, another serialised (R3-01)"
@@ -158,7 +158,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.18s",
+   "pytest": "1 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "the capture validated, a second dump returned: the bytes bound are not the bytes checked"
@@ -173,6 +173,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 13
+  "seconds": 14
  }
 }

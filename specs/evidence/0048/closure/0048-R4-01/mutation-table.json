@@ -1,5 +1,5 @@
 {
- "body_sha256": "91c236de6672f9b87cc260da30d61d7262606d7efe779e9e989c30b2f3ece57f",
+ "body_sha256": "ab5987fc826f2ea9585f3f736d768e36b26271a046a1141d21d18cb9432884c2",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 5
    }
   },
-  "commit": "7124ba95a849afb2dab01ae30b2637cc7a01e73c",
+  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
   "control_definitions": {
    "NOOP-0048-R4-01-sqlite": "70dfd3b5e6fee200758b3e0359060f958944425f59737cbaf8d763a45a2708e7"
   },
@@ -62,7 +62,7 @@
    "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/store/sqlite.py": "b3651a1c9c27fd469972c0e275b20f80157c01da42e6e8370fe79f48ae700614",
+   "src/veracium/store/sqlite.py": "1f2cffdd03784f527368a1e71ead089d8790d9bf5d44ca78c63d76cad786210f",
    "tests/test_0048_decay_bounds.py": "e4505989aa3d9db443d5de63d45fc8c77d619d4235f900cf41b1a578ec1910a1"
   },
   "finding": "0048-R4-01",
@@ -75,15 +75,14 @@
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "CHANGELOG.md",
    "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031-trust-tools/implementation/mutation-table.json",
    "specs/evidence/0031/connection_census.py",
    "specs/evidence/0041/mutation-table.json",
    "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
    "specs/evidence/0042/reviewed_points.json",
    "specs/evidence/0042/semantic_review.py",
+   "specs/evidence/0043/derived-markers.json",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -92,18 +91,19 @@
    "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0048/tripwire_0048_classified.tsv",
+   "specs/evidence/0055/a5-type-census.json",
    "specs/evidence/0055/implementation_mutants.py",
    "specs/generated/0002-audit-manifest.md",
    "src/veracium/__init__.py",
-   "src/veracium/compile.py",
-   "src/veracium/credential_finder.py",
    "src/veracium/credentials.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/introspect.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/portability.py",
    "src/veracium/store/sqlite.py",
-   "src/veracium/why.py",
-   "tests/test_0048_decay_bounds.py",
-   "tests/test_0055_r4_closure.py",
-   "tests/test_0055_recogniser.py"
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r4_closure.py"
   ]
  },
  "rows": [
@@ -138,7 +138,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.87s",
+   "pytest": "2 failed in 7.30s",
    "reason": null,
    "reason_seen": null,
    "what": "the write method no longer refuses a call whose before/after lengths misplace the captured json (R4-01 (a)'s second layer; the static gate also refuses the changed body)"
@@ -174,7 +174,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.76s",
+   "pytest": "2 failed in 7.24s",
    "reason": null,
    "reason_seen": null,
    "what": "the frozen layout names the wrong json position for the INSERT: it no longer equals the layout SQLite gives by execution (R4-01 (a))"
@@ -189,6 +189,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 50
+  "seconds": 44
  }
 }

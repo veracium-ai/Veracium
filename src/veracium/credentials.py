@@ -412,6 +412,77 @@ def mask(text: str) -> tuple[str, dict[str, int]]:
 
 assert not scan(PLACEHOLDER.format(cls=FALLBACK_CLASS)), "the fallback placeholder must be inert"
 
+def mask_from(text: str, start: int) -> str:
+    """The masked form of `text[start:]`, recognised IN THE CONTEXT of all of `text` (round 5's R5-04). `mask`'s own
+    loop, with a cursor: a span that begins before the cursor and ends after it is omitted whole (its beginning is
+    not being sent), and the cursor is carried through each pass's placeholders. A fallback is the fallback
+    placeholder, as in `mask`."""
+    out, held, passes, cur = text, [], 0, start
+    found = scan(out)
+    while found:
+        if passes >= MAX_PASSES:
+            return PLACEHOLDER.format(cls=FALLBACK_CLASS)
+        for f in found:
+            if f.start < cur < f.end:
+                cur = f.end
+        shift = sum(len(PLACEHOLDER.format(cls=f.cls)) - (f.end - f.start) for f in found if f.end <= cur)
+        out, held = _mask_once(out, held, found)
+        cur += shift
+        passes += 1
+        found = scan(out)
+    return out[cur:]
+
+
+#: Round 5's R5-04. The recogniser's multi-line grammars other than the PEM block join their parts by WHITE SPACE only
+#: (a label's words `[\s_\-]?`, SEP's `\s*`, auth_header's and bearer_token's `\s+`), so a match that reaches a line
+#: from earlier lines carries at least one of its parts on each non-blank line between. The longest chain of parts is
+#: 7 (`aws secret access key` + `is now` + the value; PIN: owner, `pin`, `code`, `is now`, digits is 6), so a match
+#: ending after the first CHAIN_LINES non-blank lines of a cut text begins inside it. The PEM block's body has no such
+#: bound: its state at a cut is read from the text before the cut (`pem_open_before`).
+CHAIN_LINES = 8
+PEM_MARKER = re.compile(r"-----(BEGIN|END) (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----")
+PEM_REOPEN = "-----BEGIN PRIVATE KEY-----\n"
+
+
+def chain_safe_offset(text: str) -> int:
+    """The offset in `text` (which begins at a line start) after its first CHAIN_LINES non-blank lines, judged on the
+    recogniser's view (an invisible character is not a part). Text before it is screened as context and not sent."""
+    seen, pos = 0, 0
+    while seen < CHAIN_LINES and pos < len(text):
+        nl = text.find("\n", pos)
+        end = len(text) if nl < 0 else nl + 1
+        if _normalise(text[pos:end])[0].strip():
+            seen += 1
+        pos = end
+    return pos
+
+
+def pem_open_before(read_back, pos: int, chunk: int = 1 << 20) -> bool:
+    """Whether a PEM private-key block is open at byte `pos` of a stream: the LAST BEGIN/END marker before `pos`, found
+    by reading backwards (`read_back(lo, hi)` returns the bytes [lo, hi)), is a BEGIN. Exact for the block rule, whose
+    match runs from a BEGIN to the first END or to the end of the text. Reads back until a marker or the start."""
+    overlap = 4096
+    hi = pos
+    while hi > 0:
+        lo = max(0, hi - chunk)
+        view = _normalise(read_back(lo, min(pos, hi + overlap)).decode("utf-8", "replace"))[0]
+        last = None
+        for m in PEM_MARKER.finditer(view):
+            last = m.group(1)
+        if last is not None:
+            return last == "BEGIN"
+        hi = lo
+    return False
+
+
+
+def exact(value):
+    """specs/0055 §4b and round 5's R5-06: the exact built-in `str` of a `str` subclass's data, else `value` unchanged.
+    A subclass may format differently from its data (a standard `Enum(type=str)` member formats as its NAME), so the
+    screen and every later consumer must use this one representation. `str.__str__` of a subclass instance is a new
+    exact `str` holding its data, whatever the subclass's own `__str__`/`__format__` do."""
+    return str.__str__(value) if isinstance(value, str) and type(value) is not str else value
+
 
 def first_class(text: str) -> str | None:
     """The class of the first finding in `text`, or None. For identifier screens, which refuse rather than mask."""
@@ -587,6 +658,18 @@ def _declared_field_names() -> frozenset:
     return frozenset(names)
 
 
+_DECLARED_CACHE: list = []
+
+
+def path_segment(key) -> str:
+    """§4g/I8's label rule for a path built from a record (round 5's R5-02): a declared field name or a list index is
+    printed, any other key is `[key]` (a key is input: the import file's, or a stored mapping's). The import screen,
+    the store guard and every refusal or report label built from a path take their segments from here."""
+    if not _DECLARED_CACHE:
+        _DECLARED_CACHE.append(_declared_field_names())
+    return _loc_segment(key, _DECLARED_CACHE[0])
+
+
 def _loc_segment(seg, declared) -> str:
     """§4g E1/E2 at a validation error's location (round 4's research S3): a location segment can be a DICT KEY from the
     input (`Edge.outcome_counts` is `dict[str, int]`, so `{"<key>": "x"}` reads `outcome_counts.<key>: int_parsing`).
@@ -626,10 +709,7 @@ def withheld_defect(exc: BaseException) -> BaseException:
     msg = f"{type(exc).__name__}: its message is withheld from this stream (specs/0055 §4g E1)"
     try:
         exc.args = (msg,)
-        try:
-            del exc.__notes__                            # notes may quote the input (research's S3)
-        except AttributeError:
-            pass
+        _settled(exc)                                    # notes may quote the input (research's S3); so may a cause
         if _formats_as(exc, msg):
             return exc
     except Exception:                                    # noqa: BLE001 - fall through to a replacement
@@ -652,7 +732,7 @@ def withheld_defect(exc: BaseException) -> BaseException:
         except Exception:                                # noqa: BLE001 - fall through
             pass
     try:
-        fresh = type(exc)(msg)
+        fresh = _settled(type(exc)(msg))
         if not _formats_as(fresh, msg):
             fresh = RuntimeError(msg)
     except Exception:                                    # noqa: BLE001 - a class whose constructor wants more
@@ -660,10 +740,35 @@ def withheld_defect(exc: BaseException) -> BaseException:
     return fresh.with_traceback(exc.__traceback__)
 
 
+def _settled(exc: BaseException) -> BaseException:
+    """Round 5's R5-05: a replacement is constructed, and a constructor can add notes (or set a cause) again, so the
+    notes are dropped and the cause cleared on the FINAL object, after construction; `_formats_as` then judges that
+    object. (The caller raises it `from None`, which also suppresses the context.)"""
+    try:
+        del exc.__notes__
+    except AttributeError:
+        pass
+    exc.__cause__ = None
+    return exc
+
+
 def _formats_as(exc: BaseException, msg: str) -> bool:
-    """Whether formatting `exc` shows `msg` and nothing else of it: its `str()` is the message (or, for a KeyError,
-    its repr), and it is not a syntax error carrying a source line or file, which its traceback form prints."""
-    return str(exc) in (msg, repr(msg)) and not (isinstance(exc, SyntaxError) and (exc.text or exc.filename))
+    """Whether what a traceback prints for `exc` ITSELF shows `msg` and nothing else of it (round 5's R5-05: judged on
+    the final object, not on `str()` alone). For any exception but a syntax error that line is its type, `str()`, and
+    then each of its NOTES, so: no notes, `str()` is the message (or, for a KeyError, its repr), and not a syntax error
+    carrying a source line or file. The frames' source lines are the program's own and outside this judgement (the
+    verdict's answer 4)."""
+    if isinstance(exc, SyntaxError) and (exc.text or exc.filename):
+        return False
+    try:
+        if exc.__notes__:
+            return False
+    except AttributeError:
+        pass
+    try:
+        return str(exc) in (msg, repr(msg))
+    except Exception:                                    # noqa: BLE001 - an unprintable exception is not safe
+        return False
 
 
 def outward_text(exc: BaseException) -> str:
