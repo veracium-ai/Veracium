@@ -11,7 +11,7 @@ An adapter adds no trust logic. It carries the library's (specs/0053, the adapte
 
 Each framework is an optional extra, imported only by its own module:
 
-    pip install "veracium[langchain]"       # veracium.adapters.langchain.as_tools
+    pip install "veracium-memory[langchain]"       # veracium.adapters.langchain.as_tools
 
 The served surface is read from the MCP server's registration, so every adapter also needs the `mcp` extra; each
 framework extra installs it.

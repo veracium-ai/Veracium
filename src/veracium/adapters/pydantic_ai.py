@@ -1,4 +1,4 @@
-"""veracium's served tools as Pydantic AI tools (specs/0053; `pip install "veracium[pydantic_ai]"`).
+"""veracium's served tools as Pydantic AI tools (specs/0053; `pip install "veracium-memory[pydantic_ai]"`).
 
     from pydantic_ai import Agent
     from veracium.adapters.pydantic_ai import as_tools
@@ -38,7 +38,7 @@ def _framework():
     try:
         from pydantic_ai import ModelRetry, Tool
     except ImportError as exc:
-        raise ImportError('veracium.adapters.pydantic_ai needs pydantic-ai: pip install "veracium[pydantic_ai]"') from exc
+        raise ImportError('veracium.adapters.pydantic_ai needs pydantic-ai: pip install "veracium-memory[pydantic_ai]"') from exc
     return Tool, ModelRetry
 
 

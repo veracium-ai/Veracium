@@ -50,7 +50,7 @@ def _status(cfg) -> None:
 
 def _provider_help(verb: str, alternative: str) -> str:
     return (f"veracium {verb} needs an LLM provider:\n"
-            "  pip install 'veracium[anthropic]'   # the reference provider\n"
+            "  pip install 'veracium-memory[anthropic]'   # the reference provider\n"
             "  export ANTHROPIC_API_KEY=sk-...     # its credentials\n"
             f"or {alternative} — see https://docs.veracium.ai/api/")
 

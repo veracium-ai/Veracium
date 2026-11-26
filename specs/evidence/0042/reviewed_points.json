@@ -279,14 +279,14 @@
   "line": 209,
   "statement": "return _SITE_GROUNDED_INPUTS.fire((edges, episodes), \"withhold\", declined=withheld > 0)"
  },
- "diagnostics.py:Reporter.send:302:RETURN_FALSE": {
+ "diagnostics.py:Reporter.send:321:RETURN_FALSE": {
   "decision": "enforcement",
   "reason": "enforces 0015 §4 (withhold) through site diagnostics.send.not-consented",
   "reviewer": "dev",
   "site": "diagnostics.send.not-consented",
   "class": "enforcement",
   "key": "diagnostics.py:Reporter.send:RETURN_FALSE:2",
-  "line": 302,
+  "line": 321,
   "statement": "return _SITE_SEND_NOT_CONSENTED.fire(False, \"not-consented\")"
  },
  "gate.py:exclude_procedural:54:FILTER_RETURN": {
@@ -5313,22 +5313,22 @@
   "line": 59,
   "statement": "raise ValueError("
  },
- "store/release_migration.py:_record_row:1571:RAISE": {
+ "store/release_migration.py:_record_row:1572:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "store/release_migration.py:_record_row:RAISE:1",
-  "line": 1571,
+  "line": 1572,
   "statement": "raise ValueError(f\"facts of no class: {changed!r}, {committed!r}\")"
  },
- "store/release_migration.py:classify_recovery:1621:RAISE": {
+ "store/release_migration.py:classify_recovery:1622:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "store/release_migration.py:classify_recovery:RAISE:1",
-  "line": 1621,
+  "line": 1622,
   "statement": "raise ValueError(f\"route {route!r}\")"
  },
  "store/schema_version.py:open_versioned:1987:RAISE": {
@@ -5628,49 +5628,58 @@
   "line": 733,
   "statement": "raise _cred.withheld_defect(exc) from None"
  },
- "mcp_server.py:_served.wrapped:781:RAISE": {
+ "mcp_server.py:_served.wrapped:778:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:_served.wrapped:RAISE:1",
-  "line": 781,
+  "line": 778,
   "statement": "raise ValueError(_cred.outward_text(exc)) from exc"
  },
- "mcp_server.py:main:1081:RAISE": {
+ "mcp_server.py:_veracium_version:742:BOOL_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: command-line usage and exit handling",
+  "reviewer": "dev",
+  "class": "cli-usage",
+  "key": "mcp_server.py:_veracium_version:BOOL_RETURN:1",
+  "line": 742,
+  "statement": "return installed_version() or SOURCE_TREE_VERSION"
+ },
+ "mcp_server.py:main:1079:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:1",
-  "line": 1081,
+  "line": 1079,
   "statement": "raise SystemExit(f\"veracium-mcp: unknown argument {args[0]!r} (see --help). \""
  },
- "mcp_server.py:main:1087:RAISE": {
+ "mcp_server.py:main:1085:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:2",
-  "line": 1087,
-  "statement": "raise SystemExit(\"The MCP server needs the SDK: pip install veracium[mcp]\") from e"
+  "line": 1085,
+  "statement": "raise SystemExit(\"The MCP server needs the SDK: pip install veracium-memory[mcp]\") from e"
  },
- "mcp_server.py:main:1093:RAISE": {
+ "mcp_server.py:main:1091:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:3",
-  "line": 1093,
+  "line": 1091,
   "statement": "raise SystemExit(f\"veracium-mcp: failed to start: {e}\\n(see veracium-mcp --help)\") from e"
  },
- "mcp_server.py:main:1113:RAISE": {
+ "mcp_server.py:main:1111:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:4",
-  "line": 1113,
+  "line": 1111,
   "statement": "raise SystemExit("
  },
  "__init__.py:Memory._build_scope_policy:440:RETURN_NONE": {
@@ -5833,7 +5842,7 @@
   "class": "control-flow",
   "key": "adapters/langchain.py:_framework:RAISE:1",
   "line": 35,
-  "statement": "raise ImportError('veracium.adapters.langchain needs langchain-core: pip install \"veracium[langchain]\"') from exc"
+  "statement": "raise ImportError('veracium.adapters.langchain needs langchain-core: pip install \"veracium-memory[langchain]\"') from exc"
  },
  "adapters/langchain.py:_tool.run:46:RAISE": {
   "decision": "not",
@@ -5860,7 +5869,7 @@
   "class": "control-flow",
   "key": "adapters/pydantic_ai.py:_framework:RAISE:1",
   "line": 41,
-  "statement": "raise ImportError('veracium.adapters.pydantic_ai needs pydantic-ai: pip install \"veracium[pydantic_ai]\"') from exc"
+  "statement": "raise ImportError('veracium.adapters.pydantic_ai needs pydantic-ai: pip install \"veracium-memory[pydantic_ai]\"') from exc"
  },
  "adapters/pydantic_ai.py:_tool.run:52:RAISE": {
   "decision": "not",
@@ -5925,68 +5934,86 @@
   "line": 412,
   "statement": "return None"
  },
- "diagnostics.py:Reporter._confirm:281:RETURN_FALSE": {
+ "diagnostics.py:Reporter._confirm:300:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._confirm:RETURN_FALSE:1",
-  "line": 281,
+  "line": 300,
   "statement": "return False"
  },
- "diagnostics.py:Reporter._confirm:288:BOOL_RETURN": {
+ "diagnostics.py:Reporter._confirm:307:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._confirm:BOOL_RETURN:1",
-  "line": 288,
+  "line": 307,
   "statement": "return input(\"\\nSend this diagnostic log now? [y/N] \").strip().lower() in (\"y\", \"yes\")"
  },
- "diagnostics.py:Reporter._confirm:290:RETURN_FALSE": {
+ "diagnostics.py:Reporter._confirm:309:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._confirm:RETURN_FALSE:2",
-  "line": 290,
+  "line": 309,
   "statement": "return False"
  },
- "diagnostics.py:Reporter._get_logger:155:RETURN_NONE": {
+ "diagnostics.py:Reporter._get_logger:174:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._get_logger:RETURN_NONE:1",
-  "line": 155,
+  "line": 174,
   "statement": "return None"
  },
- "diagnostics.py:Reporter.send:299:RETURN_FALSE": {
+ "diagnostics.py:Reporter.send:318:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter.send:RETURN_FALSE:1",
-  "line": 299,
+  "line": 318,
   "statement": "return False"
  },
- "diagnostics.py:Reporter.send:305:RETURN_FALSE": {
+ "diagnostics.py:Reporter.send:324:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter.send:RETURN_FALSE:3",
-  "line": 305,
+  "line": 324,
   "statement": "return False"
  },
- "diagnostics.py:Reporter.send:309:RETURN_FALSE": {
+ "diagnostics.py:Reporter.send:328:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter.send:RETURN_FALSE:4",
-  "line": 309,
+  "line": 328,
   "statement": "return False"
+ },
+ "diagnostics.py:_veracium_version:81:BOOL_RETURN": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "diagnostics.py:_veracium_version:BOOL_RETURN:1",
+  "line": 81,
+  "statement": "return installed_version() or \"0+unknown\""
+ },
+ "diagnostics.py:installed_version:76:RETURN_NONE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "diagnostics.py:installed_version:RETURN_NONE:1",
+  "line": 76,
+  "statement": "return None"
  },
  "doctor.py:_attested_records:735:FILTER_RETURN": {
   "decision": "not",
@@ -6600,13 +6627,13 @@
   "line": 825,
   "statement": "return [first[c] for c in entry.fields]"
  },
- "store/release_migration.py:run_release_rung:1711:RAISE": {
+ "store/release_migration.py:run_release_rung:1712:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "store/release_migration.py:run_release_rung:RAISE:4",
-  "line": 1711,
+  "line": 1712,
   "statement": "raise"
  },
  "store/revocation.py:revocation_operation:110:RAISE": {
@@ -8733,13 +8760,13 @@
   "line": 449,
   "statement": "raise ValueError(\"malformed requires at least one problem \""
  },
- "store/release_migration.py:RungReport.__new__:1526:RAISE": {
+ "store/release_migration.py:RungReport.__new__:1527:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:RungReport.__new__:RAISE:1",
-  "line": 1526,
+  "line": 1527,
   "statement": "raise ValueError(\"invalid RungReport: \" + \"; \".join(problems))"
  },
  "store/release_migration.py:_absent:477:RETURN_FALSE": {
@@ -8760,58 +8787,58 @@
   "line": 478,
   "statement": "return False"
  },
- "store/release_migration.py:_attempted_proven_absent:1129:RETURN_FALSE": {
+ "store/release_migration.py:_attempted_proven_absent:1130:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_attempted_proven_absent:RETURN_FALSE:1",
-  "line": 1129,
+  "line": 1130,
   "statement": "return False"
  },
- "store/release_migration.py:_attempted_proven_absent:1131:BOOL_RETURN": {
+ "store/release_migration.py:_attempted_proven_absent:1132:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_attempted_proven_absent:BOOL_RETURN:1",
-  "line": 1131,
+  "line": 1132,
   "statement": "return entry is None or (isinstance(entry, dict) and \"attempted\" not in entry)"
  },
- "store/release_migration.py:_delegate:1388:RAISE": {
+ "store/release_migration.py:_delegate:1389:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_delegate:RAISE:1",
-  "line": 1388,
+  "line": 1389,
   "statement": "raise"
  },
- "store/release_migration.py:_delegate:1396:RAISE": {
+ "store/release_migration.py:_delegate:1397:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_delegate:RAISE:2",
-  "line": 1396,
+  "line": 1397,
   "statement": "raise err from exc"
  },
- "store/release_migration.py:_delegate:1401:RAISE": {
+ "store/release_migration.py:_delegate:1402:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_delegate:RAISE:3",
-  "line": 1401,
+  "line": 1402,
   "statement": "raise"
  },
- "store/release_migration.py:_kernel_call:1281:RAISE": {
+ "store/release_migration.py:_kernel_call:1282:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_kernel_call:RAISE:1",
-  "line": 1281,
+  "line": 1282,
   "statement": "raise                                     # §4f: the named escape"
  },
  "store/release_migration.py:_load_audit:487:RAISE": {
@@ -8823,40 +8850,40 @@
   "line": 487,
   "statement": "raise ValueError(\"audit trail is not a JSON object\")"
  },
- "store/release_migration.py:_make_sink.sink:1140:RAISE": {
+ "store/release_migration.py:_make_sink.sink:1141:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_make_sink.sink:RAISE:1",
-  "line": 1140,
+  "line": 1141,
   "statement": "raise _AuditSinkWriteFailed(_safe_repr(exc)) from exc"
  },
- "store/release_migration.py:_make_sink.sink:1143:RAISE": {
+ "store/release_migration.py:_make_sink.sink:1144:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_make_sink.sink:RAISE:2",
-  "line": 1143,
+  "line": 1144,
   "statement": "raise _AuditSinkWriteFailed(f\"{_safe_repr(exc)}; read back: no attempted record for \""
  },
- "store/release_migration.py:_make_sink.sink:1145:RAISE": {
+ "store/release_migration.py:_make_sink.sink:1146:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_make_sink.sink:RAISE:3",
-  "line": 1145,
+  "line": 1146,
   "statement": "raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc"
  },
- "store/release_migration.py:_make_sink.sink:1147:RAISE": {
+ "store/release_migration.py:_make_sink.sink:1148:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_make_sink.sink:RAISE:4",
-  "line": 1147,
+  "line": 1148,
   "statement": "raise _AuditSinkStateUnknown(_safe_repr(exc)) from exc"
  },
  "store/release_migration.py:_observe:884:RAISE": {
@@ -8895,22 +8922,22 @@
   "line": 901,
   "statement": "raise _Unobservable(\"invalid-store\","
  },
- "store/release_migration.py:_open_rung:1185:RAISE": {
+ "store/release_migration.py:_open_rung:1186:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_open_rung:RAISE:1",
-  "line": 1185,
+  "line": 1186,
   "statement": "raise _RungRefused(\"missing\", f\"nothing at {canonical!r}\") from exc"
  },
- "store/release_migration.py:_open_rung:1188:RAISE": {
+ "store/release_migration.py:_open_rung:1189:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_open_rung:RAISE:2",
-  "line": 1188,
+  "line": 1189,
   "statement": "raise _RungUnopenable(f\"cannot open: {_safe_repr(exc)}\") from exc"
  },
  "store/release_migration.py:_path_encoding_problem:174:RETURN_NONE": {
@@ -8931,121 +8958,121 @@
   "line": 520,
   "statement": "raise _PublicationUnresolved(_safe_repr(exc)) from exc"
  },
- "store/release_migration.py:_route_delegated:1353:RAISE": {
+ "store/release_migration.py:_route_delegated:1354:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_route_delegated:RAISE:1",
-  "line": 1353,
+  "line": 1354,
   "statement": "raise MigrationAuditReadError(operation_id, \"malformed\","
  },
- "store/release_migration.py:_route_delegated:1356:RAISE": {
+ "store/release_migration.py:_route_delegated:1357:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_route_delegated:RAISE:2",
-  "line": 1356,
+  "line": 1357,
   "statement": "raise MigrationAuditReadError(operation_id, \"malformed\","
  },
- "store/release_migration.py:_route_delegated:1367:RAISE": {
+ "store/release_migration.py:_route_delegated:1368:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_route_delegated:RAISE:3",
-  "line": 1367,
+  "line": 1368,
   "statement": "raise MigrationAuditReadError(operation_id, \"mismatched\","
- },
- "store/release_migration.py:_route_delegated:1374:RAISE": {
-  "decision": "not",
-  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
-  "reviewer": "dev",
-  "class": "internal-invariant",
-  "key": "store/release_migration.py:_route_delegated:RAISE:4",
-  "line": 1374,
-  "statement": "raise MigrationAuditReadError(operation_id, \"missing\", kernel_outcome)"
  },
  "store/release_migration.py:_route_delegated:1375:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
-  "key": "store/release_migration.py:_route_delegated:RAISE:5",
+  "key": "store/release_migration.py:_route_delegated:RAISE:4",
   "line": 1375,
+  "statement": "raise MigrationAuditReadError(operation_id, \"missing\", kernel_outcome)"
+ },
+ "store/release_migration.py:_route_delegated:1376:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
+  "reviewer": "dev",
+  "class": "internal-invariant",
+  "key": "store/release_migration.py:_route_delegated:RAISE:5",
+  "line": 1376,
   "statement": "raise MigrationAuditReadError(operation_id, \"malformed\", kernel_outcome)"
  },
- "store/release_migration.py:_run_rung.new:1210:RAISE": {
+ "store/release_migration.py:_run_rung.new:1211:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_run_rung.new:RAISE:1",
-  "line": 1210,
+  "line": 1211,
   "statement": "raise _RungRefused(\"unaccepted\", \"an empty database where the authority attests a source: never created-into\")"
  },
- "store/release_migration.py:_run_rung.older:1203:RAISE": {
+ "store/release_migration.py:_run_rung.older:1204:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_run_rung.older:RAISE:1",
-  "line": 1203,
+  "line": 1204,
   "statement": "raise _RungRefused(\"unaccepted\", f\"no accepted v{t - 1} source where the authority attests one; \""
  },
- "store/release_migration.py:_run_rung:1220:RAISE": {
+ "store/release_migration.py:_run_rung:1221:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_run_rung:RAISE:1",
-  "line": 1220,
+  "line": 1221,
   "statement": "raise sv.PostCommitAuditError(canonical, mid, exc) from exc"
  },
- "store/release_migration.py:_terminal_published:1412:RETURN_FALSE": {
+ "store/release_migration.py:_terminal_published:1413:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_terminal_published:RETURN_FALSE:1",
-  "line": 1412,
+  "line": 1413,
   "statement": "return False"
  },
- "store/release_migration.py:_terminal_published:1416:RETURN_NONE": {
+ "store/release_migration.py:_terminal_published:1417:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_terminal_published:RETURN_NONE:1",
-  "line": 1416,
+  "line": 1417,
   "statement": "return None"
  },
- "store/release_migration.py:_terminal_published:1418:RETURN_NONE": {
+ "store/release_migration.py:_terminal_published:1419:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_terminal_published:RETURN_NONE:2",
-  "line": 1418,
+  "line": 1419,
   "statement": "return None"
  },
- "store/release_migration.py:_terminal_published:1423:RETURN_FALSE": {
+ "store/release_migration.py:_terminal_published:1424:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_terminal_published:RETURN_FALSE:2",
-  "line": 1423,
+  "line": 1424,
   "statement": "return False"
  },
- "store/release_migration.py:_terminal_published:1424:RETURN_NONE": {
+ "store/release_migration.py:_terminal_published:1425:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:_terminal_published:RETURN_NONE:3",
-  "line": 1424,
+  "line": 1425,
   "statement": "return None"
  },
  "store/release_migration.py:_usable_store_path:181:BOOL_RETURN": {
@@ -9129,103 +9156,103 @@
   "line": 150,
   "statement": "return type(value) is str and bool(_TOKEN_RE.fullmatch(value))"
  },
- "store/release_migration.py:mint_release_authority:948:RAISE": {
+ "store/release_migration.py:mint_release_authority:949:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:1",
-  "line": 948,
+  "line": 949,
   "statement": "raise TypeError(\"invalid attestation: \" + \"; \".join(ap))"
  },
- "store/release_migration.py:mint_release_authority:950:RAISE": {
+ "store/release_migration.py:mint_release_authority:951:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:2",
-  "line": 950,
+  "line": 951,
   "statement": "raise TypeError(f\"resolved must be exactly a PreflightResolution, is \""
  },
- "store/release_migration.py:mint_release_authority:956:RAISE": {
+ "store/release_migration.py:mint_release_authority:957:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:3",
-  "line": 956,
+  "line": 957,
   "statement": "raise TypeError(\"invalid resolution evidence: \" + \"; \".join(rp))"
  },
- "store/release_migration.py:mint_release_authority:958:RAISE": {
+ "store/release_migration.py:mint_release_authority:959:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:4",
-  "line": 958,
+  "line": 959,
   "statement": "raise TypeError(f\"path {_safe_repr(path)} is not a usable store path\")"
  },
- "store/release_migration.py:mint_release_authority:961:RAISE": {
+ "store/release_migration.py:mint_release_authority:962:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:5",
-  "line": 961,
+  "line": 962,
   "statement": "raise MintError(\"source-missing\", f\"nothing at {canonical!r}\")"
  },
- "store/release_migration.py:mint_release_authority:968:RAISE": {
+ "store/release_migration.py:mint_release_authority:969:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:6",
-  "line": 968,
+  "line": 969,
   "statement": "raise MintError(\"source-changed\","
  },
- "store/release_migration.py:mint_release_authority:990:RAISE": {
+ "store/release_migration.py:mint_release_authority:991:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:7",
-  "line": 990,
+  "line": 991,
   "statement": "raise MintError("
  },
- "store/release_migration.py:mint_release_authority:995:RAISE": {
+ "store/release_migration.py:mint_release_authority:996:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:mint_release_authority:RAISE:8",
-  "line": 995,
+  "line": 996,
   "statement": "raise MintError("
  },
- "store/release_migration.py:run_release_rung:1672:RAISE": {
+ "store/release_migration.py:run_release_rung:1673:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:run_release_rung:RAISE:1",
-  "line": 1672,
+  "line": 1673,
   "statement": "raise                                     # pre-mint: propagates bare"
  },
- "store/release_migration.py:run_release_rung:1674:RAISE": {
+ "store/release_migration.py:run_release_rung:1675:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:run_release_rung:RAISE:2",
-  "line": 1674,
+  "line": 1675,
   "statement": "raise"
  },
- "store/release_migration.py:run_release_rung:1703:RAISE": {
+ "store/release_migration.py:run_release_rung:1704:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: a validator of the product's own contract (a carrier, ledger, registry, audit record or package consistency), never a decision about a caller's request",
   "reviewer": "dev",
   "class": "internal-invariant",
   "key": "store/release_migration.py:run_release_rung:RAISE:3",
-  "line": 1703,
+  "line": 1704,
   "statement": "raise                                 # no readback, and never an earlier rung's context"
  },
  "store/revocation.py:_apply_statement_effect:307:RAISE": {
@@ -10794,22 +10821,22 @@
   "line": 136,
   "statement": "return False"
  },
- "diagnostics.py:Reporter._auto_send_due:219:BOOL_RETURN": {
+ "diagnostics.py:Reporter._auto_send_due:238:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by diagnostics.py:Reporter.record_error",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "diagnostics.py:Reporter._auto_send_due:BOOL_RETURN:1",
-  "line": 219,
+  "line": 238,
   "statement": "return last is None or (time.time() - last) >= self.config.report_min_interval_s"
  },
- "diagnostics.py:Reporter.has_pending:275:BOOL_RETURN": {
+ "diagnostics.py:Reporter.has_pending:294:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by __init__.py:Memory.report_error",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "diagnostics.py:Reporter.has_pending:BOOL_RETURN:1",
-  "line": 275,
+  "line": 294,
   "statement": "return self._pending > 0"
  },
  "doctor.py:_check_sources.unsourced:502:BOOL_RETURN": {
@@ -11235,22 +11262,22 @@
   "line": 82,
   "statement": "return None"
  },
- "store/release_migration.py:_mintable_base:936:RETURN_NONE": {
+ "store/release_migration.py:_mintable_base:937:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by store/release_migration.py:mint_release_authority",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "store/release_migration.py:_mintable_base:RETURN_NONE:1",
-  "line": 936,
+  "line": 937,
   "statement": "return None"
  },
- "store/release_migration.py:_readback_is_bound:1578:BOOL_RETURN": {
+ "store/release_migration.py:_readback_is_bound:1579:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by cli.py:_migrate_package_escape, store/release_migration.py:_package_escape_post_mint, store/release_migration.py:_route_delegated, store/release_migration.py:classify_recovery",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "store/release_migration.py:_readback_is_bound:BOOL_RETURN:1",
-  "line": 1578,
+  "line": 1579,
   "statement": "return (readback_facts is not None and readback_facts.outcome == outcome"
  },
  "store/revocation.py:_is_ordinal_violation:56:BOOL_RETURN": {

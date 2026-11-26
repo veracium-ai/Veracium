@@ -1,5 +1,5 @@
 {
- "body_sha256": "22442307c71f2756e01d970a890de3947d3287eaef42c4c8113b0d768b5e4277",
+ "body_sha256": "0f14a3e5a8aadf53cfcffa4ab00edfb7c110a9be3d763f628db4811a5efe61d1",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
   "control_definitions": {
    "NOOP-0018-AR-R2-03-migration": "004519c7010ed8c4ab0d8545245de4318b34b6983ec047322ec20559566203dd"
   },
@@ -80,6 +80,25 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   ".github/workflows/container-release.yml",
+   ".github/workflows/container.yml",
+   "CHANGELOG.md",
+   "README.md",
+   "container/check_image.py",
+   "docs/api.md",
+   "docs/index.md",
+   "docs/mcp.md",
+   "examples/claude_code_hooks/README.md",
+   "examples/demo.ipynb",
+   "examples/langchain_memory.py",
+   "pyproject.toml",
+   "server.json",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0054-container-image.md",
+   "specs/STATUS.md",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
@@ -88,11 +107,18 @@
    "specs/evidence/0018/closure/0018-AR-R1-06/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json"
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/cli.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/llm/anthropic.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/release_migration.py",
+   "tests/test_0031_server_reports_itself.py"
   ]
  },
  "rows": [
@@ -124,7 +150,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the v6 refusal reports head"
@@ -157,7 +183,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "the v8 refusal reports head"
@@ -190,7 +216,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.55s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the v10 refusal reports head"
@@ -205,6 +231,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 13
+  "seconds": 15
  }
 }

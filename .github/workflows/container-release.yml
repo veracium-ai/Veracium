@@ -21,7 +21,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/veracium-ai/veracium
+  IMAGE: ghcr.io/veracium-ai/veracium-memory   # from 0.34.0 (0054 v0.8); images up to 0.33.0 stay at ghcr.io/veracium-ai/veracium
 
 jobs:
   arch:
@@ -54,11 +54,11 @@ jobs:
       - name: The wheel PyPI serves, equal to the release's built wheel (I1)
         run: |
           mkdir -p "$RUNNER_TEMP/pypi"
-          pip download --no-deps --no-cache-dir --only-binary :all: "veracium==${{ inputs.version }}" -d "$RUNNER_TEMP/pypi"
-          got="$(sha256sum "$RUNNER_TEMP"/pypi/veracium-*.whl | cut -c1-64)"
+          pip download --no-deps --no-cache-dir --only-binary :all: "veracium-memory==${{ inputs.version }}" -d "$RUNNER_TEMP/pypi"
+          got="$(sha256sum "$RUNNER_TEMP"/pypi/veracium_memory-*.whl | cut -c1-64)"
           test "$got" = "${{ inputs.wheel_sha256 }}" || { echo "REFUSED: PyPI's wheel is $got, not ${{ inputs.wheel_sha256 }}"; exit 1; }
       - name: Build once
-        run: python container/check_image.py build --wheel "$RUNNER_TEMP"/pypi/veracium-*.whl --tag veracium-release
+        run: python container/check_image.py build --wheel "$RUNNER_TEMP"/pypi/veracium_memory-*.whl --tag veracium-release
       - name: Gate that build (I1–I8)
         run: python container/check_image.py check --image veracium-release --version "${{ inputs.version }}"
       - name: Push the gated image, and confirm the pushed ID is the gated one

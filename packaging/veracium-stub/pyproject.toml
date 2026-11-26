@@ -1,0 +1,31 @@
+# The FINAL release of the `veracium` distribution (the owner's ruling, 2026-11-26): from 0.34.0 the package is
+# published as `veracium-memory`, and this code-free stub, released ONCE at 0.34.0 and never again, makes
+# `pip install veracium` land on it. The import name (`veracium`) and the commands (`veracium`, `veracium-mcp`) are
+# unchanged; they come from `veracium-memory`. Upgrading an install made before 0.34.0 through this stub can delete
+# that install's files (pip installs `veracium-memory`, then removes the old `veracium`'s files from the same paths);
+# the repair is `pip install --force-reinstall veracium-memory`. Built and uploaded by the /release runbook beside
+# `veracium-memory` 0.34.0; its version and pin must equal that release's.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "veracium"
+version = "0.34.0"
+description = "Renamed: Veracium is now published as veracium-memory. This release installs it."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+dependencies = ["veracium-memory==0.34.0"]
+
+[project.optional-dependencies]
+anthropic = ["veracium-memory[anthropic]==0.34.0"]
+mcp = ["veracium-memory[mcp]==0.34.0"]
+langchain = ["veracium-memory[langchain]==0.34.0"]
+pydantic_ai = ["veracium-memory[pydantic_ai]==0.34.0"]
+
+[project.urls]
+Homepage = "https://pypi.org/project/veracium-memory/"
+
+[tool.hatch.build.targets.wheel]
+bypass-selection = true   # no code: this distribution only depends on veracium-memory

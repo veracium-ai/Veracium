@@ -91,7 +91,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("agreement.py", 219): "predicate-helper", ("agreement.py", 267): "control-flow", ("agreement.py", 487): "control-flow",
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 118): "internal-invariant", ("asof/resolve.py", 123): "internal-invariant",
     ("asof/resolve.py", 182): "control-flow", ("asof/resolve.py", 207): "predicate-helper",
-    ("compile.py", 230): "predicate-helper", ("diagnostics.py", 219): "predicate-helper", ("diagnostics.py", 275): "predicate-helper",
+    ("compile.py", 230): "predicate-helper", ("diagnostics.py", 238): "predicate-helper", ("diagnostics.py", 294): "predicate-helper",
     ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 61): "predicate-helper", ("graph.py", 76): "predicate-helper", ("graph.py", 242): "internal-invariant",
     ("graph.py", 944): "argument-check", ("grounding.py", 154): "control-flow",
@@ -121,7 +121,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
     ("store/schema_version.py", 1987): "argument-check", ("store/schema_version.py", 2179): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
-    ("mcp_server.py", 1081): "cli-usage", ("mcp_server.py", 1087): "cli-usage", ("mcp_server.py", 1093): "cli-usage", ("mcp_server.py", 1113): "cli-usage",
+    ("mcp_server.py", 1079): "cli-usage", ("mcp_server.py", 1085): "cli-usage", ("mcp_server.py", 1091): "cli-usage", ("mcp_server.py", 1111): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
     ("__init__.py", 309): "control-flow",   # carried: __init__.py:_agent_call_path:RETURN_NONE:1
     ("__init__.py", 2188): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1
@@ -156,11 +156,11 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("schema.py", 720): "predicate-helper",   # RII-R2-01: schema.py:assertion_view:RETURN_NONE:1
     ("schema.py", 1486): "internal-invariant",   # RII-R2-01: schema.py:_check_assertion_view_partition:RAISE:1
     ("store/migration.py", 825): "control-flow",   # carried: store/migration.py:preimage_fields:FILTER_RETURN:1
-    ("store/release_migration.py", 936): "predicate-helper",   # carried: store/release_migration.py:_mintable_base:RETURN_NONE:1
-    ("store/release_migration.py", 1571): "argument-check",   # carried: store/release_migration.py:_record_row:RAISE:1
-    ("store/release_migration.py", 1578): "predicate-helper",   # carried: store/release_migration.py:_readback_is_bound:BOOL_RETURN:1
-    ("store/release_migration.py", 1621): "argument-check",   # carried: store/release_migration.py:classify_recovery:RAISE:1
-    ("store/release_migration.py", 1711): "control-flow",   # carried: store/release_migration.py:run_release_rung:RAISE:3
+    ("store/release_migration.py", 937): "predicate-helper",   # carried: store/release_migration.py:_mintable_base:RETURN_NONE:1
+    ("store/release_migration.py", 1572): "argument-check",   # carried: store/release_migration.py:_record_row:RAISE:1
+    ("store/release_migration.py", 1579): "predicate-helper",   # carried: store/release_migration.py:_readback_is_bound:BOOL_RETURN:1
+    ("store/release_migration.py", 1622): "argument-check",   # carried: store/release_migration.py:classify_recovery:RAISE:1
+    ("store/release_migration.py", 1712): "control-flow",   # carried: store/release_migration.py:run_release_rung:RAISE:3
     ("store/schema_version.py", 1989): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:2
     ("store/schema_version.py", 1991): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:3
     ("store/schema_version.py", 1993): "argument-check",   # carried: store/schema_version.py:open_versioned:RAISE:4
@@ -235,7 +235,7 @@ e("compile.py", 503, "compile.bind.empty-body", "0003", "§4c-ii v18.7 (C3-01: t
 e("compile.py", 484, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
 e("compile.py", 157, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
 e("compile.py", 209, "compile.grounded-inputs", "0004", "§4", "withhold")
-e("diagnostics.py", 302, "diagnostics.send.not-consented", "0015", "§4", "withhold")
+e("diagnostics.py", 321, "diagnostics.send.not-consented", "0015", "§4", "withhold")
 e("gate.py", 54, "gate.exclude-procedural", "0037", "V-EXTRACTOR-QUOTE-GATED", "withhold")
 e("gate.py", 180, "gate.partition-parts", "0001", "§4", "withhold")
 e("gate.py", 125, "gate.scoped-assertable.entitlement", "0011", "§4c", "withhold")

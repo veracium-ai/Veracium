@@ -1,5 +1,5 @@
 {
- "body_sha256": "07cf655e341565de5d06e2c0dcb2aecc26611c57db0ad5de2f2871d8e107f74f",
+ "body_sha256": "d30b455f52a594e5f77d676c885d37384dafe9b96be0a751f66cf4491f6cd125",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
   "control_definitions": {
    "NOOP-0018-AR-R5-01-release_migration": "e7c5f6477157e3dbe390daa106505986c8393f3065b0844488e3912097f8a716"
   },
@@ -71,7 +71,7 @@
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
+   "src/veracium/store/release_migration.py": "41d132a05a28cfb1a64dd80cf8648f4989c7ad5682628f991f504204149abf5d",
    "tests/test_0018_r5_closures.py": "8ffba1e3e947877caf89351aab473ba5b3d0153d47aac803f56d66c3e4f19d47",
    "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
   },
@@ -84,6 +84,25 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   ".github/workflows/container-release.yml",
+   ".github/workflows/container.yml",
+   "CHANGELOG.md",
+   "README.md",
+   "container/check_image.py",
+   "docs/api.md",
+   "docs/index.md",
+   "docs/mcp.md",
+   "examples/claude_code_hooks/README.md",
+   "examples/demo.ipynb",
+   "examples/langchain_memory.py",
+   "pyproject.toml",
+   "server.json",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0054-container-image.md",
+   "specs/STATUS.md",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
@@ -102,17 +121,18 @@
    "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R4-04/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json"
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/cli.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/llm/anthropic.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/release_migration.py",
+   "tests/test_0031_server_reports_itself.py"
   ]
  },
  "rows": [
@@ -144,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-01: every failure of the attempted writer is N1 unless it is a recognized type, as round 5 shipped"
@@ -177,7 +197,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-01: the writer's initial load counts as proof of absence when it fails"
@@ -210,7 +230,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "R5-01: a terminal write that fails outside the proving window is False without a recovery read, as round 5 shipped"
@@ -246,7 +266,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.73s",
+   "pytest": "2 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "S2 (research): absence is os.path.exists's False, which a stat error also returns, as every release did"
@@ -261,6 +281,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 17
+  "seconds": 20
  }
 }

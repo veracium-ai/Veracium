@@ -1,7 +1,7 @@
 """MCP server — exposes veracium to any MCP-compatible agent (Claude Desktop/Code,
 others) with no Python on the host side.
 
-    pip install veracium[mcp,anthropic]
+    pip install veracium-memory[mcp,anthropic]
     ANTHROPIC_API_KEY=... VERACIUM_DB_PATH=~/.veracium.db veracium-mcp
 
 Config via env: VERACIUM_DB_PATH (default veracium.db), VERACIUM_USER (default user id
@@ -738,11 +738,8 @@ SOURCE_TREE_VERSION = "source-tree"
 
 
 def _veracium_version() -> str:
-    from importlib.metadata import PackageNotFoundError, version
-    try:
-        return version("veracium")
-    except PackageNotFoundError:
-        return SOURCE_TREE_VERSION
+    from .diagnostics import installed_version          # the one reader of the distribution's name
+    return installed_version() or SOURCE_TREE_VERSION
 
 
 def _set_server_version(server) -> None:
@@ -1066,10 +1063,11 @@ def main(argv=None) -> None:
         # or the review archive, where `--version` raised PackageNotFoundError
         # and took the whole suite down. A version report should degrade, not
         # fail: the code is present either way and its version is knowable.
-        from importlib.metadata import PackageNotFoundError, version
-        try:
-            print(version("veracium"))
-        except PackageNotFoundError:
+        from .diagnostics import installed_version      # the one reader of the distribution's name
+        v = installed_version()
+        if v is not None:
+            print(v)
+        else:
             # Deliberately NOT a `__version__` constant. pyproject.toml is the
             # single source of the version, and adding a second copy in code is
             # the drift this project has spent a week removing. An uninstalled
@@ -1084,7 +1082,7 @@ def main(argv=None) -> None:
     try:
         _server_cls()
     except ImportError as e:  # pragma: no cover
-        raise SystemExit("The MCP server needs the SDK: pip install veracium[mcp]") from e
+        raise SystemExit("The MCP server needs the SDK: pip install veracium-memory[mcp]") from e
     try:
         mem = build_memory()
     except Exception as e:

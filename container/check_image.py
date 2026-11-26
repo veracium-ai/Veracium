@@ -163,8 +163,11 @@ def check(img: str, version: str, only=None, key_env=None) -> list:
     try:
         cfg = json.loads(sh("docker", "image", "inspect", img, check=True).stdout)[0]["Config"]
         if want("I1"):
-            got = _run(img, "-c", "import importlib.metadata as m; print(m.version('veracium'))", entry="python").stdout.strip()
-            record("I1", got == version, f"installed veracium {got!r}, expected {version!r} "
+            # 0054 v0.8: the distribution is `veracium-memory` from 0.34.0, `veracium` up to 0.33.0; the current name first
+            got = _run(img, "-c", "import importlib.metadata as m\nfor n in ('veracium-memory', 'veracium'):\n"
+                       "    try:\n        print(m.version(n)); break\n    except m.PackageNotFoundError:\n        pass",
+                       entry="python").stdout.strip()
+            record("I1", got == version, f"installed Veracium Memory {got!r}, expected {version!r} "
                                          "(the wheel's sha256 is the build's own refusal)")
         if want("I2"):
             r = _run(img, "-c", "from veracium.store.schema_version import runtime_status as s; print(s().status)",

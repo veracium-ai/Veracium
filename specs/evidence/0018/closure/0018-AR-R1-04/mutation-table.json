@@ -1,5 +1,5 @@
 {
- "body_sha256": "1442040d1bba3ddbfcc07c2c5eb3c86a8ac10d8d7fc5337b793b784958359936",
+ "body_sha256": "8f1c7ae5a4fe01070b9eb4a7041b62f6365fdd576eeb2746f49d23066cc3835b",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 5
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
   "control_definitions": {
    "NOOP-0018-AR-R1-04-cli": "7a140ad2df392d8a304f517628e9ecd6d69dad82a58cdb1aca9c8359313a1281",
    "NOOP-0018-AR-R1-04-schema_version": "68a72d15fdbc7096ffe1b7e8ad6a3f07f8a9a4ab344b798df869a2fb1abc5970"
@@ -92,7 +92,7 @@
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/cli.py": "6b5e85cd5adf0327c001ee92ffb2dfc5522783bbd9dd3b03220158d617f0da22",
+   "src/veracium/cli.py": "5811be5d204fa9101c8f3692301af15b67a6746f7a8f82c614d6b340b9983c30",
    "src/veracium/store/schema_version.py": "600a4e42a15990a91cff036c10587c076daf4bb4d60960bd8bd29ba55bf62e79",
    "tests/test_0018_rungs_t3.py": "263d6f2fcec63305fd845165853494623ecb3742578718856cd353c2c13d05c2",
    "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
@@ -106,12 +106,40 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   ".github/workflows/container-release.yml",
+   ".github/workflows/container.yml",
+   "CHANGELOG.md",
+   "README.md",
+   "container/check_image.py",
+   "docs/api.md",
+   "docs/index.md",
+   "docs/mcp.md",
+   "examples/claude_code_hooks/README.md",
+   "examples/demo.ipynb",
+   "examples/langchain_memory.py",
+   "pyproject.toml",
+   "server.json",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0054-container-image.md",
+   "specs/STATUS.md",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json"
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/cli.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/llm/anthropic.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/release_migration.py",
+   "tests/test_0031_server_reports_itself.py"
   ]
  },
  "rows": [
@@ -143,7 +171,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.75s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "a store at the rung's target is judged against head's accepted shapes: row 4 reads the difference, and row 6 refuses either way"
@@ -179,7 +207,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "a store already at the target is not validated at all"
@@ -212,7 +240,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.86s",
+   "pytest": "1 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "a printed rung is counted, so an unchanged current is"
@@ -227,6 +255,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 18
+  "seconds": 21
  }
 }

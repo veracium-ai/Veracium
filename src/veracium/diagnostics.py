@@ -56,10 +56,29 @@ def _state_dir() -> Path:
     return Path(base) / "veracium"
 
 
+#: the distributions that may carry this package, the current name first. From 0.34.0 the package is published as
+#: `veracium-memory` (the owner's ruling, 2026-11-26); `veracium` is the name before it (an install made before 0.34.0;
+#: 0.34.0's final `veracium` is a code-free stub that depends on `veracium-memory`). The import name stays `veracium`.
+DISTRIBUTIONS = ("veracium-memory", "veracium")
+
+
+def installed_version() -> Optional[str]:
+    """The installed version of this package, read from its distribution's metadata under either name (DISTRIBUTIONS,
+    in order); None when neither is installed (a source tree on PYTHONPATH, a review archive). The ONE place the
+    distribution's name is read: the diagnostics report, the MCP server's reported version and a release migration's
+    authority all ask here."""
+    from importlib.metadata import PackageNotFoundError, version
+    for name in DISTRIBUTIONS:
+        try:
+            return version(name)
+        except PackageNotFoundError:
+            continue
+    return None
+
+
 def _veracium_version() -> str:
     try:
-        from importlib.metadata import version
-        return version("veracium")
+        return installed_version() or "0+unknown"
     except Exception:
         return "0+unknown"
 

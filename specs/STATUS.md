@@ -43,7 +43,7 @@ is the number that decides what can be built.
 | **0028** | as-of / point-in-time query — FEATURE VERSION v2 (valid-time only) | `accepted` | 2026-09-19 | 0 | 7 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `accepted` | 2026-10-14 | 1 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `accepted` | 2026-10-14 | 0 | 18 | 0 | 0 | 0 | — |
-| **0031** | the agent-facing trust surface | `accepted` | 2026-11-24 | 0 | 16 | 0 | 0 | 0 | — |
+| **0031** | the agent-facing trust surface | `accepted` | 2026-11-26 | 0 | 16 | 0 | 0 | 0 | — |
 | **0032** | the valid-time predicate at the present | `accepted` | 2026-09-04 | 0 | 0 | 0 | 0 | 0 | — |
 | **0037** | procedural records and the `basis` axis (stages 1–3) | `accepted` | 2026-11-23 | 0 | 5 | 3 | 0 | 0 | — |
 | **0038** | the extraction's speech-act discipline | `accepted` | 2026-09-14 | 0 | 4 | 0 | 0 | 0 | — |
@@ -59,7 +59,7 @@ is the number that decides what can be built.
 | **0049** | `edges_since` means learned — transaction time, not event time | `accepted` | 2026-11-15 | 0 | 0 | 0 | 0 | 0 | — |
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
 | **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-14 | 0 | 0 | 9 | 0 | 0 | — |
-| **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-15 | 0 | 0 | 0 | 0 | 0 | — |
+| **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-26 | 0 | 0 | 0 | 0 | 0 | — |
 | **0055** | credential-shaped text is never stored | `accepted` | 2026-11-25 | 0 | 0 | 0 | 0 | 0 | — |
 | **0056** | source anchors — a memory knows when the file it came from changed | `draft` | 2026-11-23 | 0 | 0 | 12 | 0 | 0 | — |
 

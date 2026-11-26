@@ -20,26 +20,41 @@ def _needs_the_mcp_sdk():
 
 
 def _own():
-    """What serverInfo.version must be, derived here from §4a-ii's rule and not from the product's helper: the
-    installed veracium's version, or the source-tree marker where there is no distribution metadata. Looked up at call
-    time, so the metadata="absent" cells' patch applies. (Shipped-changes round 4, research's dry-run-3 leg: the cells
-    called version("veracium") unconditionally and raised in a source tree run with PYTHONPATH=src.)"""
-    try:
-        return md.version("veracium")
-    except md.PackageNotFoundError:
-        return mcp_server.SOURCE_TREE_VERSION
+    """What serverInfo.version must be, derived here from §4f's rule (v23.11) and not from the product's helper: the
+    installed `veracium-memory`'s version, else the installed `veracium`'s (an install made before 0.34.0), else the
+    source-tree marker where there is no distribution metadata. Looked up at call time, so the metadata cells' patches
+    apply. (Shipped-changes round 4, research's dry-run-3 leg: the cells called version("veracium") unconditionally and
+    raised in a source tree run with PYTHONPATH=src.)"""
+    for name in ("veracium-memory", "veracium"):
+        try:
+            return md.version(name)
+        except md.PackageNotFoundError:
+            continue
+    return mcp_server.SOURCE_TREE_VERSION
 
 
-@pytest.fixture(params=["installed", "absent"])
+#: the distribution metadata each cell runs with (0031 v23.11, the rename): name -> version, or None for absent; the
+#: run's own metadata is used for "installed"
+_METADATA = {
+    "absent": {"veracium-memory": None, "veracium": None},           # a source tree on PYTHONPATH
+    "renamed": {"veracium-memory": "0.34.0", "veracium": None},       # an install made from 0.34.0
+    "both": {"veracium-memory": "0.34.0", "veracium": "0.33.0"},      # an old 0.33.0 left beside 0.34.0
+}
+
+
+@pytest.fixture(params=["installed", "absent", "renamed", "both"])
 def metadata(request, monkeypatch):
-    """Each handshake cell runs with veracium's distribution metadata as the run has it, and again with it absent (a
-    source tree on PYTHONPATH), so neither configuration depends on how the suite was installed."""
-    if request.param == "absent":
-        real = md.version
+    """Each handshake cell runs with the distribution metadata as the run has it, and under each named configuration
+    (_METADATA), so none depends on how the suite was installed. "both" holds the order: the current name is read
+    first, so an old `veracium` 0.33.0 left beside `veracium-memory` 0.34.0 never wins."""
+    if request.param != "installed":
+        real, table = md.version, _METADATA[request.param]
 
         def version(name):
-            if name == "veracium":
-                raise md.PackageNotFoundError(name)
+            if name in table:
+                if table[name] is None:
+                    raise md.PackageNotFoundError(name)
+                return table[name]
             return real(name)
         monkeypatch.setattr(md, "version", version)
     return request.param
@@ -66,6 +81,25 @@ def test_serverinfo_is_veracium_and_its_version_by_the_handshake(tmp_path, metad
     assert info.version == _own() and info.version != md.version("mcp"), (metadata, info.version, md.version("mcp"))
     if metadata == "absent":
         assert info.version == mcp_server.SOURCE_TREE_VERSION, info.version
+    if metadata in ("renamed", "both"):
+        assert info.version == "0.34.0", (metadata, info.version)
+    m.close()
+
+
+def test_a_helper_reading_only_the_old_name_reports_the_old_version_when_both_are_installed(tmp_path, monkeypatch):
+    """V-SERVERINFO's RED for the rename (research's ask, 0031 v23.11): with the helper narrowed to the old name alone,
+    an old `veracium` 0.33.0 left beside `veracium-memory` 0.34.0 is what the handshake reports, so the check above
+    (`info.version == _own()`, "both") would fail. The control the check must tell apart."""
+    from veracium import diagnostics
+    real, table = md.version, _METADATA["both"]
+
+    def version(name):
+        return table[name] if name in table else real(name)
+    monkeypatch.setattr(md, "version", version)
+    monkeypatch.setattr(diagnostics, "DISTRIBUTIONS", ("veracium",))
+    m = Memory(llm=lambda *a, **k: "", config=MemoryConfig(db_path=str(tmp_path / "v.db")))
+    info = _handshake_server_info(mcp_server.build_server(m))
+    assert info.version == "0.33.0" != _own() == "0.34.0", info.version
     m.close()
 
 

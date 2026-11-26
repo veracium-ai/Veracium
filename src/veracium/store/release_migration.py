@@ -913,10 +913,11 @@ def _observe(canonical: str):
 
 def _release_ref() -> str:
     try:
-        from importlib.metadata import version
-        return f"veracium-{version('veracium')}"
+        from ..diagnostics import installed_version     # the one reader of the distribution's name
+        v = installed_version()
     except Exception:
-        return "veracium-unreleased"
+        v = None
+    return f"veracium-{v}" if v else "veracium-unreleased"
 
 
 def _declared_migration_digest(base: int, target: int) -> str:

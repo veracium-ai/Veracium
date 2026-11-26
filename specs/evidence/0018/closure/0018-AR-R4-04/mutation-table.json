@@ -1,5 +1,5 @@
 {
- "body_sha256": "5674c6521af766f17605c50048e711a393db5389c83505840584ec32f1ae723b",
+ "body_sha256": "3fc97da0eec547fae3d1d85bb99ef51079c91f5bc5ae0c758522962688fff9a4",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "cb6462a428255f8183f5efbd58340e36d2b81518",
+  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
   "control_definitions": {
    "NOOP-0018-AR-R4-04-migration": "4aedd77dd272200c93e23d74fb0801ab9131d0be97ff08222c4a6f881e95e995"
   },
@@ -77,6 +77,25 @@
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
+   ".github/workflows/container-release.yml",
+   ".github/workflows/container.yml",
+   "CHANGELOG.md",
+   "README.md",
+   "container/check_image.py",
+   "docs/api.md",
+   "docs/index.md",
+   "docs/mcp.md",
+   "examples/claude_code_hooks/README.md",
+   "examples/demo.ipynb",
+   "examples/langchain_memory.py",
+   "pyproject.toml",
+   "server.json",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0054-container-image.md",
+   "specs/STATUS.md",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0013/a_matrix/mutation-table.json",
+   "specs/evidence/0013/sa10/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-E2-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
@@ -94,16 +113,18 @@
    "specs/evidence/0018/closure/0018-AR-R4-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R4-02/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R4-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
-   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json"
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/cli.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/llm/anthropic.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/release_migration.py",
+   "tests/test_0031_server_reports_itself.py"
   ]
  },
  "rows": [
@@ -138,7 +159,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.87s",
+   "pytest": "2 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-04, the reviewer's mutant: a pure check runs twice under an unchanged plan"
@@ -174,7 +195,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.86s",
+   "pytest": "2 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-04: a pure check is yielded and never run"
@@ -207,7 +228,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "R4-04 (research): a second clock read under an unchanged plan, breaking 0013 B1's one read"
@@ -222,6 +243,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 20
+  "seconds": 23
  }
 }

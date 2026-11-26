@@ -15,7 +15,7 @@ log. What that buys over the usual approaches:
 - **Per-user isolation** — LangChain's `session_id` maps 1:1 onto Veracium's
   `user_id`; memory is isolated structurally, not by dict key.
 
-Needs: `pip install "veracium[anthropic]" langchain-core` plus any LangChain
+Needs: `pip install "veracium-memory[anthropic]" langchain-core` plus any LangChain
 chat model (the demo uses `langchain-anthropic`; swap in yours).
 
 One model serves both sides: `LangChainComplete` adapts your existing

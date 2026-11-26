@@ -23,7 +23,7 @@ ambient briefing + write-back, MCP for on-demand recall.
 1. Install and configure the provider (extraction runs on write-back):
 
    ```bash
-   pip install 'veracium[anthropic]'
+   pip install 'veracium-memory[anthropic]'
    export ANTHROPIC_API_KEY=sk-...
    ```
 

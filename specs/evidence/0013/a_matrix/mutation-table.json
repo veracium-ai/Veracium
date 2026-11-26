@@ -1,5 +1,5 @@
 {
- "body_sha256": "6f015bef04b476671ddfd20f29641b93529f6679e16d28d701c0bf017af708e7",
+ "body_sha256": "368c66bac44a5c69344b9c6dde612295c665887da08e89d6b24042fe6ccff6b4",
  "controls": [
   {
    "anchor_counts": [
@@ -68,7 +68,7 @@
     "passed": 28
    }
   },
-  "commit": "793dd08e8c555820acbf0b21b4d8ddf87c052bfa",
+  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "a01256bf9e58e26f267def3e17a6dbdfc5835320a1a14bf48685ae91aa597edf"
   },
@@ -105,7 +105,7 @@
    "specs/migrations_0013.py": "f23307db6fe1223b99af10036748f00974f7a13194c00899fb7ae55970a6d2bf",
    "specs/schema_evidence.py": "0a7c8716da03616d6a8c814d8ce0b76dab91c444c97d154dc1d9d891197c6a29",
    "src/veracium/store/migration.py": "0617f144bd4152a5d513eee86590dfda36af99c6f1356f47dfe37e933b47faea",
-   "src/veracium/store/release_migration.py": "2ec94bd0934bae1c71fcc3bcbff005ac27ceb84442a41a5485f74bb6ad121bb7",
+   "src/veracium/store/release_migration.py": "41d132a05a28cfb1a64dd80cf8648f4989c7ad5682628f991f504204149abf5d",
    "src/veracium/store/schema_version.py": "600a4e42a15990a91cff036c10587c076daf4bb4d60960bd8bd29ba55bf62e79",
    "tests/test_0007_runtime_status.py": "40e15e9d3904e8e7fb18020ec704c0f378a719d16080151ef29c6e40ceba176c",
    "tests/test_migrations_0013.py": "d84ddab02b8d163ea848271495d708f034760551d9e6fb7ea2f576c41dd5d650"
@@ -117,12 +117,40 @@
    "tests/test_migrations_0013.py::test_a2_the_attested_build_migrates_and_its_row_says_attested",
    "tests/test_migrations_0013.py::test_the_authorizer_probes_all_hold_on_this_runner"
   ],
-  "platform": "Linux-7.0.0-1014-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0013",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/sa/mutation-table.json"
+   ".github/workflows/container-release.yml",
+   ".github/workflows/container.yml",
+   "CHANGELOG.md",
+   "README.md",
+   "container/check_image.py",
+   "docs/api.md",
+   "docs/index.md",
+   "docs/mcp.md",
+   "examples/claude_code_hooks/README.md",
+   "examples/demo.ipynb",
+   "examples/langchain_memory.py",
+   "pyproject.toml",
+   "server.json",
+   "specs/0031-agent-facing-trust-surface.md",
+   "specs/0054-container-image.md",
+   "specs/STATUS.md",
+   "specs/evidence/0007/sa/mutation-table.json",
+   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
+   "specs/evidence/0042/reviewed_points.json",
+   "specs/evidence/0042/semantic_review.py",
+   "src/veracium/adapters/__init__.py",
+   "src/veracium/adapters/langchain.py",
+   "src/veracium/adapters/pydantic_ai.py",
+   "src/veracium/cli.py",
+   "src/veracium/diagnostics.py",
+   "src/veracium/llm/anthropic.py",
+   "src/veracium/mcp_server.py",
+   "src/veracium/store/release_migration.py",
+   "tests/test_0031_server_reports_itself.py"
   ]
  },
  "rows": [
@@ -154,7 +182,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.20s",
+   "pytest": "1 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -187,7 +215,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.18s",
+   "pytest": "1 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -225,7 +253,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.11s",
+   "pytest": "2 failed in 1.22s",
    "reason": null,
    "reason_seen": null,
    "what": "the TEMP trigger and TEMP virtual-table probes report the TEMP table probe's answer (one probe for three classes)"
@@ -258,7 +286,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.15s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -291,7 +319,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.20s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "0013 round 3's hole: when no recorded path record covers the source x declaration, derive it from live code"
@@ -324,7 +352,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "two identical current records for one key: the artifact validator says nothing"
@@ -357,7 +385,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 1.13s",
    "reason": null,
    "reason_seen": null,
    "what": "two current records for one key with different outputs: the first is kept, the contradiction unreported"
@@ -393,7 +421,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.15s",
+   "pytest": "2 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "0013 round 4's hole: a malformed current-algorithm record (a missing algorithm field, or a record failing its own rules) is filtered out, poisoning nothing, and the valid record is selected"
@@ -426,7 +454,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "a path record's generated_on is never resolved: provenance poisons nothing"
@@ -459,7 +487,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.19s",
+   "pytest": "1 failed in 1.25s",
    "reason": null,
    "reason_seen": null,
    "what": "a recorded False probe is AUTHORITY: the migration refuses on the record, without running the probes live"
@@ -492,7 +520,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale-algorithm record is current: validated, counted and selectable"
@@ -528,7 +556,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.28s",
+   "pytest": "2 failed in 1.38s",
    "reason": null,
    "reason_seen": null,
    "what": "the path key without the migration declaration digest: an altered declaration selects the recorded evidence"
@@ -561,7 +589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "cardinality counts only expected keys: a current record outside the expected set is not refused"
@@ -594,7 +622,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 1.13s",
    "reason": null,
    "reason_seen": null,
    "what": "the model's evidence validator admits two accepted manifestations sharing one acceptance digest"
@@ -630,7 +658,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.21s",
+   "pytest": "2 failed in 1.42s",
    "reason": null,
    "reason_seen": null,
    "what": "S66's single-active-runtime count kept: a second attested key poisons the attestation artifact"
@@ -663,7 +691,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.19s",
    "reason": null,
    "reason_seen": null,
    "what": "an attestation record carrying a probe result False is well-formed: the recorded False passes"
@@ -696,7 +724,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "production's evidence check admits two accepted manifestations sharing one acceptance digest"
@@ -730,7 +758,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -764,7 +792,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.74s",
+   "pytest": "1 failed, 1 warning in 0.81s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's migration skips _validated_current"
@@ -801,7 +829,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "only open_versioned gates: the release preflight never reads the measured status, so a refused build reaches it"
@@ -835,7 +863,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.68s",
+   "pytest": "1 failed, 1 warning in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's migration commits before _validated_current runs"
@@ -869,7 +897,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed, 1 warning in 0.71s",
+   "pytest": "1 failed, 1 warning in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a verified build's revalidation passes require_stamp=False"
@@ -885,6 +913,6 @@
   "good": 22,
   "killed": 22,
   "rows": 22,
-  "seconds": 82
+  "seconds": 90
  }
 }

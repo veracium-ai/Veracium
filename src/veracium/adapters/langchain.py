@@ -1,4 +1,4 @@
-"""veracium's served tools as LangChain tools (specs/0053; `pip install "veracium[langchain]"`).
+"""veracium's served tools as LangChain tools (specs/0053; `pip install "veracium-memory[langchain]"`).
 
     from veracium.adapters.langchain import as_tools
     tools = as_tools(mem, user_id="alice", capability="direct", source_id="chat-app")
@@ -32,7 +32,7 @@ def _framework():
     try:
         from langchain_core.tools import StructuredTool, ToolException
     except ImportError as exc:
-        raise ImportError('veracium.adapters.langchain needs langchain-core: pip install "veracium[langchain]"') from exc
+        raise ImportError('veracium.adapters.langchain needs langchain-core: pip install "veracium-memory[langchain]"') from exc
     return StructuredTool, ToolException
 
 

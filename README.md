@@ -1,13 +1,16 @@
-# Veracium
+# Veracium Memory
 
 <!-- mcp-name: io.github.veracium-ai/veracium -->
 
 [![tests](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml/badge.svg)](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml)
-[![PyPI](https://img.shields.io/pypi/v/veracium)](https://pypi.org/project/veracium/)
-[![Python](https://img.shields.io/pypi/pyversions/veracium)](https://pypi.org/project/veracium/)
+[![PyPI](https://img.shields.io/pypi/v/veracium-memory)](https://pypi.org/project/veracium-memory/)
+[![Python](https://img.shields.io/pypi/pyversions/veracium-memory)](https://pypi.org/project/veracium-memory/)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Veracium is a provenance-aware memory plug-in for agentic systems** —
+Provenance-aware memory for AI agents: it records who said what, so a claim your agent only read never silently
+becomes a fact about your user.
+
+**Veracium Memory is a provenance-aware memory plug-in for agentic systems** —
 durable, per-user memory that resists the injection and confabulation failures
 that plague naive agent memory. Provenance means every fact tracks *who said
 it*: a claim from an email your agent merely read can never become a "fact" it
@@ -58,7 +61,7 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
 ## Install
 
 ```bash
-pip install "veracium[anthropic]"   # core + the reference LLM provider
+pip install "veracium-memory[anthropic]"   # core + the reference LLM provider
 ```
 
 > **Python and SQLite requirement.** Veracium needs Python 3.14 or newer. It measures your Python's SQLite build on
