@@ -323,6 +323,7 @@ SWEEP = {
 
 
 def test_r5_03_the_sweep_covers_every_served_tool(tmp_path):
+    pytest.importorskip("mcp")                  # Binding builds the served server (the pydantic-floor lane has none)
     from veracium.adapters._surface import Binding
     m = T._mem(tmp_path)
     try:

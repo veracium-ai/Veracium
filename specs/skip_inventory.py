@@ -129,7 +129,7 @@ INVENTORY = [
     ("tests/test_0055_r5_closure.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — specs/0055 round 5's R5-03 sweep (every served tool's success "
                             "result through the adapters' Binding and FastMCP's call_tool) builds the served server, so "
-                            "that one test's cells skip without the SDK (the pydantic-floor lane); the file's other cells "
+                            "its cells and the sweep's own completeness test skip without the SDK (the pydantic-floor lane); the file's other cells "
                             "run without it. Author line: all PASS with mcp installed",
      "job:runs"),
     ("tests/test_0055_r4_closure.py", "importorskip", "mcp",
