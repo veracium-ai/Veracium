@@ -1,5 +1,5 @@
 {
- "body_sha256": "f681df65a1af1617c4f30d8cb19a8619ca4014598242e43e75f03d55c2662705",
+ "body_sha256": "844f24a401097378ff34f2a1c01b9c17a0d500def6fcbc61f8ba67da98b10109",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -121,7 +121,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 8.63s",
+   "pytest": "2 failed in 10.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -154,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 8.10s",
+   "pytest": "1 failed in 11.97s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -187,7 +187,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 8.13s",
+   "pytest": "1 failed in 11.26s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -202,6 +202,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 150
+  "seconds": 193
  }
 }

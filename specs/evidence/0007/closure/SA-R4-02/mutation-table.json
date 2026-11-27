@@ -1,5 +1,5 @@
 {
- "body_sha256": "0763b56391aa62e161639939e2904a8f59e1909e63b7084a7b2434deb5dbbee3",
+ "body_sha256": "b9de60f9b31728ed6e4c053f628e97f8613d377b59ef64c19691e351d1f7a5a5",
  "controls": [
   {
    "anchor_counts": [
@@ -55,7 +55,7 @@
     "passed": 6
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
   },
@@ -133,7 +133,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.98s",
+   "pytest": "5 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: a same-key current record the production validator rejects is replaced, never refused"
@@ -166,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "per-record validation without the artifact-level check: a conflicting duplicate passes"
@@ -181,6 +181,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 10
+  "seconds": 11
  }
 }

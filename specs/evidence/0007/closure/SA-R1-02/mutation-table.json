@@ -1,5 +1,5 @@
 {
- "body_sha256": "8d6f45457c923b3075bfcf9d5347b4a6b37de09163510dc5c59c1bcf95e9e764",
+ "body_sha256": "0734ef672129dd55e0769ba7da67f1bc58477612656ed7f5e90bcb94f7edc75b",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 7
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
    "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
@@ -137,7 +137,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.18s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -170,7 +170,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.22s",
+   "pytest": "1 failed in 1.28s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -237,7 +237,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.75s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -253,6 +253,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 23
+  "seconds": 27
  }
 }

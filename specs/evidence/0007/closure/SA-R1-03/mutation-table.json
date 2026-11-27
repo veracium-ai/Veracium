@@ -1,5 +1,5 @@
 {
- "body_sha256": "01f295935febc38519b65fc792239c76b38eddc817737f95e863fd88cb415d04",
+ "body_sha256": "0f190d8cce3d525db26ab51eed3dbe7fe89bbe4dc1fa8eeed781b544bb1bafc6",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 2
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
   },
@@ -100,7 +100,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "machine dropped from the key"
@@ -131,7 +131,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"
@@ -146,6 +146,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 9
+  "seconds": 8
  }
 }

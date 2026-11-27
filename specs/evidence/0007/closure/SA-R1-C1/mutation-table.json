@@ -1,5 +1,5 @@
 {
- "body_sha256": "49b21c9f312e925341d2ebada9db9beef85703701fc4202e5e86ef48dcabbd48",
+ "body_sha256": "f1f701251d154550872f18c40fd3d7bce0857cb0fe760b489a92ee6218ec64b7",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },

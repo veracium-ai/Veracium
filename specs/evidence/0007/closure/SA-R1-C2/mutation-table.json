@@ -1,5 +1,5 @@
 {
- "body_sha256": "d02b3e6ac7a6200c43bf641cff5caeb08c37f99258fd48f39e20c5d84c4659da",
+ "body_sha256": "de32dc859f8f2fc52e6ae55fd6a050c17c286baf9c2f9944f4e5d877f6b237f2",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -64,7 +64,7 @@
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "specs/skip_inventory.py": "f25445faad0b10d11f3ae22b322f0741246754b572068c5d11d5498b569fc86e",
+   "specs/skip_inventory.py": "0722fedb47d97798cad8dd190403af07555c1ba551b950aec2fdaffea7edaff8",
    "tests/test_spec_gate.py": "e7be4a8f7f8128234b8c8a7f1fac47c9b9c594f6533b307c2fa95922922c85f1"
   },
   "finding": "SA-R1-C2",
@@ -118,7 +118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.93s",
+   "pytest": "2 failed in 2.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -154,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.91s",
+   "pytest": "2 failed in 2.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -169,6 +169,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 115
+  "seconds": 125
  }
 }

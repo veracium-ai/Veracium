@@ -1,5 +1,5 @@
 {
- "body_sha256": "014ef655982b527e190889666f7db04595492bf8ccf13f15126c4027ffb8ef3a",
+ "body_sha256": "c749467792ccde67b9e4bb4caa317a8a476075e840291d7cddb1aa3ef11fa6a9",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
+  "commit": "84b05770d0491f32adccddf570afd84761d45118",
   "control_definitions": {
    "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
   },
@@ -105,7 +105,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.22s",
+   "pytest": "1 failed in 3.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
@@ -120,6 +120,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 23
+  "seconds": 25
  }
 }
