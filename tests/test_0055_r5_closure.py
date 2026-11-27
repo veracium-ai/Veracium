@@ -340,6 +340,7 @@ def test_r5_03_every_served_success_result_carries_no_shape(tmp_path, name, rout
     stored text, through the adapters' Binding and the real FastMCP `call_tool`. Each cell asserts it reached its
     success state; then no shape anywhere in the result. RED against: round 5's R5-03 (confirm/dispute returned the
     legacy id; dispute returned the stored relation)."""
+    pytest.importorskip("mcp")                  # both routes build the served server (the pydantic-floor lane has none)
     import asyncio
     from veracium import mcp_server as MCP
     from veracium.adapters._surface import Binding
