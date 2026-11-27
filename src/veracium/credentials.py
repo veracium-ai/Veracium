@@ -460,17 +460,28 @@ def chain_safe_offset(text: str) -> int:
 def pem_open_before(read_back, pos: int, chunk: int = 1 << 20) -> bool:
     """Whether a PEM private-key block is open at byte `pos` of a stream: the LAST BEGIN/END marker before `pos`, found
     by reading backwards (`read_back(lo, hi)` returns the bytes [lo, hi)), is a BEGIN. Exact for the block rule, whose
-    match runs from a BEGIN to the first END or to the end of the text. Reads back until a marker or the start."""
-    overlap = 4096
-    hi = pos
+    match runs from a BEGIN to the first END or to the end of the text. Reads back until a marker or the start.
+
+    Every view the markers are read in ENDS where no marker can be cut: a marker never spans a newline, so a view ends
+    at `pos` or at a newline. `pos` must therefore be a LINE START (0, or just after a newline), else ValueError (research's
+    stage 2 of round 5, S2-1: a log window starting inside a BEGIN line cut the marker in two, neither half a marker,
+    and sent the key body). Going back, each chunk carries the previous view's partial first line with it, so a marker
+    of any length that straddles a chunk edge is read whole (a fixed overlap missed a marker longer than itself: the
+    marker's `(?:[A-Z0-9]+ )*` is unbounded). The bytes held are bounded by `chunk` plus the longest line read back."""
+    if pos < 0 or (pos > 0 and read_back(pos - 1, pos) != b"\n"):
+        raise ValueError("pem_open_before: pos must be a line start")
+    hi, carry = pos, b""
     while hi > 0:
         lo = max(0, hi - chunk)
-        view = _normalise(read_back(lo, min(pos, hi + overlap)).decode("utf-8", "replace"))[0]
+        raw = read_back(lo, hi) + carry                   # the bytes [lo, hi + len(carry)): one contiguous range
+        view = _normalise(raw.decode("utf-8", "replace"))[0]
         last = None
         for m in PEM_MARKER.finditer(view):
             last = m.group(1)
         if last is not None:
             return last == "BEGIN"
+        nl = raw.find(b"\n")
+        carry = raw if nl < 0 else raw[:nl]               # the partial first line: a marker straddling `lo` ends in it
         hi = lo
     return False
 

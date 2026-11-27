@@ -91,7 +91,8 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("agreement.py", 219): "predicate-helper", ("agreement.py", 267): "control-flow", ("agreement.py", 487): "control-flow",
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 118): "internal-invariant", ("asof/resolve.py", 123): "internal-invariant",
     ("asof/resolve.py", 182): "control-flow", ("asof/resolve.py", 207): "predicate-helper",
-    ("compile.py", 230): "predicate-helper", ("diagnostics.py", 238): "predicate-helper", ("diagnostics.py", 312): "predicate-helper",
+    ("compile.py", 230): "predicate-helper", ("diagnostics.py", 238): "predicate-helper", ("diagnostics.py", 316): "predicate-helper",
+    ("credentials.py", 472): "argument-check",   # 0055 round 5 stage 2 (S2-1): pem_open_before refuses a pos that is not a line start
     ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 61): "predicate-helper", ("graph.py", 76): "predicate-helper", ("graph.py", 242): "internal-invariant",
     ("graph.py", 944): "argument-check", ("grounding.py", 154): "control-flow",
@@ -235,7 +236,7 @@ e("compile.py", 503, "compile.bind.empty-body", "0003", "§4c-ii v18.7 (C3-01: t
 e("compile.py", 484, "compile.bind.unbound", "0047", "§4d INV-R18 (R-II round 2's RII-01: recall serves no wiki body its own snapshot does not admit)", "withhold")
 e("compile.py", 157, "compile.fence.disputed", "0047", "§4d INV-R18 (the in-flight fence withholds a body drawn on a fact challenged since)", "withhold")
 e("compile.py", 209, "compile.grounded-inputs", "0004", "§4", "withhold")
-e("diagnostics.py", 339, "diagnostics.send.not-consented", "0015", "§4", "withhold")
+e("diagnostics.py", 343, "diagnostics.send.not-consented", "0015", "§4", "withhold")
 e("gate.py", 54, "gate.exclude-procedural", "0037", "V-EXTRACTOR-QUOTE-GATED", "withhold")
 e("gate.py", 180, "gate.partition-parts", "0001", "§4", "withhold")
 e("gate.py", 125, "gate.scoped-assertable.entitlement", "0011", "§4c", "withhold")

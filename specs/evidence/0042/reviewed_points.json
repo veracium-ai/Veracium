@@ -279,14 +279,14 @@
   "line": 209,
   "statement": "return _SITE_GROUNDED_INPUTS.fire((edges, episodes), \"withhold\", declined=withheld > 0)"
  },
- "diagnostics.py:Reporter.send:339:RETURN_FALSE": {
+ "diagnostics.py:Reporter.send:343:RETURN_FALSE": {
   "decision": "enforcement",
   "reason": "enforces 0015 §4 (withhold) through site diagnostics.send.not-consented",
   "reviewer": "dev",
   "site": "diagnostics.send.not-consented",
   "class": "enforcement",
   "key": "diagnostics.py:Reporter.send:RETURN_FALSE:2",
-  "line": 339,
+  "line": 343,
   "statement": "return _SITE_SEND_NOT_CONSENTED.fire(False, \"not-consented\")"
  },
  "gate.py:exclude_procedural:54:FILTER_RETURN": {
@@ -4701,6 +4701,15 @@
   "line": 54,
   "statement": "raise ValueError(f\"{name} must be in [0, 1] and finite, got {_shown(value)} (specs/0048 §4A: maintenance may \""
  },
+ "credentials.py:pem_open_before:472:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "credentials.py:pem_open_before:RAISE:1",
+  "line": 472,
+  "statement": "raise ValueError(\"pem_open_before: pos must be a line start\")"
+ },
  "graph.py:fused_subgraph:944:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
@@ -5925,31 +5934,31 @@
   "line": 412,
   "statement": "return None"
  },
- "diagnostics.py:Reporter._confirm:318:RETURN_FALSE": {
+ "diagnostics.py:Reporter._confirm:322:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._confirm:RETURN_FALSE:1",
-  "line": 318,
+  "line": 322,
   "statement": "return False"
  },
- "diagnostics.py:Reporter._confirm:325:BOOL_RETURN": {
+ "diagnostics.py:Reporter._confirm:329:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._confirm:BOOL_RETURN:1",
-  "line": 325,
+  "line": 329,
   "statement": "return input(\"\\nSend this diagnostic log now? [y/N] \").strip().lower() in (\"y\", \"yes\")"
  },
- "diagnostics.py:Reporter._confirm:327:RETURN_FALSE": {
+ "diagnostics.py:Reporter._confirm:331:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter._confirm:RETURN_FALSE:2",
-  "line": 327,
+  "line": 331,
   "statement": "return False"
  },
  "diagnostics.py:Reporter._get_logger:174:RETURN_NONE": {
@@ -5961,22 +5970,13 @@
   "line": 174,
   "statement": "return None"
  },
- "diagnostics.py:Reporter.send:336:RETURN_FALSE": {
+ "diagnostics.py:Reporter.send:340:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
   "key": "diagnostics.py:Reporter.send:RETURN_FALSE:1",
-  "line": 336,
-  "statement": "return False"
- },
- "diagnostics.py:Reporter.send:342:RETURN_FALSE": {
-  "decision": "not",
-  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
-  "reviewer": "dev",
-  "class": "control-flow",
-  "key": "diagnostics.py:Reporter.send:RETURN_FALSE:3",
-  "line": 342,
+  "line": 340,
   "statement": "return False"
  },
  "diagnostics.py:Reporter.send:346:RETURN_FALSE": {
@@ -5984,8 +5984,17 @@
   "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
   "reviewer": "dev",
   "class": "control-flow",
-  "key": "diagnostics.py:Reporter.send:RETURN_FALSE:4",
+  "key": "diagnostics.py:Reporter.send:RETURN_FALSE:3",
   "line": 346,
+  "statement": "return False"
+ },
+ "diagnostics.py:Reporter.send:350:RETURN_FALSE": {
+  "decision": "not",
+  "reason": "not an enforcement point: a lookup returning None for an absent row, an early return, a re-raise after logging, a filter by a non-policy criterion or budget/shape plumbing",
+  "reviewer": "dev",
+  "class": "control-flow",
+  "key": "diagnostics.py:Reporter.send:RETURN_FALSE:4",
+  "line": 350,
   "statement": "return False"
  },
  "diagnostics.py:_veracium_version:81:BOOL_RETURN": {
@@ -10722,40 +10731,40 @@
   "line": 105,
   "statement": "return sorted(merged.values(), key=lambda h: (h.user_id, h.carrier, h.record_kind, h.record_id))"
  },
- "credentials.py:_formats_as:762:RETURN_FALSE": {
+ "credentials.py:_formats_as:773:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_formats_as:RETURN_FALSE:1",
-  "line": 762,
+  "line": 773,
   "statement": "return False"
  },
- "credentials.py:_formats_as:765:RETURN_FALSE": {
+ "credentials.py:_formats_as:776:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_formats_as:RETURN_FALSE:2",
-  "line": 765,
+  "line": 776,
   "statement": "return False"
  },
- "credentials.py:_formats_as:769:BOOL_RETURN": {
+ "credentials.py:_formats_as:780:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_formats_as:BOOL_RETURN:1",
-  "line": 769,
+  "line": 780,
   "statement": "return str(exc) in (msg, repr(msg))"
  },
- "credentials.py:_formats_as:771:RETURN_FALSE": {
+ "credentials.py:_formats_as:782:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_formats_as:RETURN_FALSE:3",
-  "line": 771,
+  "line": 782,
   "statement": "return False"
  },
  "credentials.py:_looks_generated:120:RETURN_FALSE": {
@@ -10776,22 +10785,22 @@
   "line": 122,
   "statement": "return kinds >= 3 or (kinds >= 2 and len(v) >= 12 and _DIGIT.search(v) is not None)"
  },
- "credentials.py:_pydantic_errors:688:RETURN_NONE": {
+ "credentials.py:_pydantic_errors:699:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:outward_text, credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_pydantic_errors:RETURN_NONE:1",
-  "line": 688,
+  "line": 699,
   "statement": "return None"
  },
- "credentials.py:_pydantic_errors:690:RETURN_NONE": {
+ "credentials.py:_pydantic_errors:701:RETURN_NONE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by credentials.py:outward_text, credentials.py:withheld_defect",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:_pydantic_errors:RETURN_NONE:2",
-  "line": 690,
+  "line": 701,
   "statement": "return None"
  },
  "credentials.py:_value_ok:128:RETURN_FALSE": {
@@ -10839,22 +10848,22 @@
   "line": 136,
   "statement": "return False"
  },
- "credentials.py:pem_open_before:473:BOOL_RETURN": {
+ "credentials.py:pem_open_before:482:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by diagnostics.py:Reporter.log_tail",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:pem_open_before:BOOL_RETURN:1",
-  "line": 473,
+  "line": 482,
   "statement": "return last == \"BEGIN\""
  },
- "credentials.py:pem_open_before:475:RETURN_FALSE": {
+ "credentials.py:pem_open_before:486:RETURN_FALSE": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by diagnostics.py:Reporter.log_tail",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "credentials.py:pem_open_before:RETURN_FALSE:1",
-  "line": 475,
+  "line": 486,
   "statement": "return False"
  },
  "diagnostics.py:Reporter._auto_send_due:238:BOOL_RETURN": {
@@ -10866,13 +10875,13 @@
   "line": 238,
   "statement": "return last is None or (time.time() - last) >= self.config.report_min_interval_s"
  },
- "diagnostics.py:Reporter.has_pending:312:BOOL_RETURN": {
+ "diagnostics.py:Reporter.has_pending:316:BOOL_RETURN": {
   "decision": "not",
   "reason": "not an enforcement point: a Boolean/None helper whose consumer takes the decision; no consuming site — consumed (by name) by __init__.py:Memory.report_error",
   "reviewer": "dev",
   "class": "predicate-helper",
   "key": "diagnostics.py:Reporter.has_pending:BOOL_RETURN:1",
-  "line": 312,
+  "line": 316,
   "statement": "return self._pending > 0"
  },
  "doctor.py:_check_sources.unsourced:502:BOOL_RETURN": {

@@ -1562,50 +1562,57 @@
    "qualname": "_value_ok"
   },
   {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 472,
+   "module": "credentials.py",
+   "qualname": "pem_open_before"
+  },
+  {
    "kind": "BOOL_RETURN",
-   "line": 473,
+   "line": 482,
    "module": "credentials.py",
    "qualname": "pem_open_before"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 475,
+   "line": 486,
    "module": "credentials.py",
    "qualname": "pem_open_before"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 688,
+   "line": 699,
    "module": "credentials.py",
    "qualname": "_pydantic_errors"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 690,
+   "line": 701,
    "module": "credentials.py",
    "qualname": "_pydantic_errors"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 762,
+   "line": 773,
    "module": "credentials.py",
    "qualname": "_formats_as"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 765,
+   "line": 776,
    "module": "credentials.py",
    "qualname": "_formats_as"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 769,
+   "line": 780,
    "module": "credentials.py",
    "qualname": "_formats_as"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 771,
+   "line": 782,
    "module": "credentials.py",
    "qualname": "_formats_as"
   },
@@ -1635,49 +1642,49 @@
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 312,
+   "line": 316,
    "module": "diagnostics.py",
    "qualname": "Reporter.has_pending"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 318,
+   "line": 322,
    "module": "diagnostics.py",
    "qualname": "Reporter._confirm"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 325,
+   "line": 329,
    "module": "diagnostics.py",
    "qualname": "Reporter._confirm"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 327,
+   "line": 331,
    "module": "diagnostics.py",
    "qualname": "Reporter._confirm"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 336,
+   "line": 340,
    "module": "diagnostics.py",
    "qualname": "Reporter.send"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 339,
-   "module": "diagnostics.py",
-   "qualname": "Reporter.send"
-  },
-  {
-   "kind": "RETURN_FALSE",
-   "line": 342,
+   "line": 343,
    "module": "diagnostics.py",
    "qualname": "Reporter.send"
   },
   {
    "kind": "RETURN_FALSE",
    "line": 346,
+   "module": "diagnostics.py",
+   "qualname": "Reporter.send"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 350,
    "module": "diagnostics.py",
    "qualname": "Reporter.send"
   },
@@ -8051,7 +8058,7 @@
   "by_kind": {
    "BOOL_RETURN": 121,
    "FILTER_RETURN": 71,
-   "RAISE": 768,
+   "RAISE": 769,
    "RETURN_FALSE": 127,
    "RETURN_NONE": 126
   },
@@ -8229,7 +8236,7 @@
    "credentials.py": {
     "BOOL_RETURN": 4,
     "FILTER_RETURN": 0,
-    "RAISE": 0,
+    "RAISE": 1,
     "RETURN_FALSE": 9,
     "RETURN_NONE": 2
    },
@@ -8500,7 +8507,7 @@
     "RETURN_NONE": 0
    }
   },
-  "total": 1213,
+  "total": 1214,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

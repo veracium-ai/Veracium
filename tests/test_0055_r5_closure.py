@@ -44,6 +44,25 @@ def _shaped_enum(data: str):
     return Enum("Shaped", {TOKEN: data}, type=str)[TOKEN]
 
 
+class _Shown(str):
+    """A PLAIN `str` subclass, not an Enum: its data is ordinary and every formatting of it (`format`, `str`, `repr`)
+    shows the token. §4b's class is an accepted `str` subclass, so the inventory drives this form beside the Enum one
+    (research's stage 2 of round 5, S2-3: an `exact` that converted Enum members only passed every Enum cell)."""
+
+    def __format__(self, spec):
+        return TOKEN
+
+    def __str__(self):
+        return TOKEN
+
+    def __repr__(self):
+        return TOKEN
+
+
+#: The accepted subclass forms each R5-06 cell drives, beside the ordinary data.
+SUBCLASS_FORMS = {"enum": _shaped_enum, "plain": _Shown}
+
+
 # ==== R5-06: every A5 row, driven with an accepted str subclass ======================================================
 
 def _ordinary(param, base):
@@ -64,7 +83,7 @@ def _run_form(tmp_path, method, param, form):
 
         def value(base):
             data = _ordinary(param, base)
-            return data if form == "data" else _shaped_enum(data)
+            return data if form == "data" else SUBCLASS_FORMS[form](data)
         result, exc = None, None
         try:
             result = R4._call(mem, sub, e, method, param, value)
@@ -83,34 +102,37 @@ NO_SUCCESS_ON_A_FRESH_STORE = {("reply", "target"), ("undo_restoration", "correl
 
 @pytest.mark.parametrize("method,param", R4._a5_rows(), ids=[f"{m}.{p}" for m, p in R4._a5_rows()])
 def test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches(tmp_path, method, param):
-    """Every A5 row, screened or not, driven with ordinary data and with a str-Enum member holding the same data under
-    a shaped NAME. The member must end exactly as its data does (the same success, or the same exception class), and
-    its name must reach no storage, provider prompt, result or exception text. A screened row's ordinary form must
+    """Every A5 row, screened or not, driven with ordinary data and with each accepted subclass form holding the same
+    data (SUBCLASS_FORMS: a str-Enum member under a shaped NAME, and a plain `str` subclass that formats as the token).
+    Each form must end exactly as its data does (the same success, or the same exception class), and its shown text
+    must reach no storage, provider prompt, result or exception text. A screened row's ordinary form must
     SUCCEED (the reachability control: the branch R5-06 lived on is a success branch), but for the two rows that
     cannot on a fresh store. RED against: round 5's R5-06 (`remember`'s fallback summary stored `event_type`'s name)
     and its unscreened siblings measured at the fix (`confirm`/`dispute` wrote an `edge_id`'s name into the record,
     `correct` derived `evidence_ref` from it, `answer` put a query's name in the gate's prompt). A parameter added
     later that formats its name fails here: this inventory is the guard, read by A5's rule from the signatures."""
     d = _run_form(tmp_path, method, param, "data")
-    m = _run_form(tmp_path, method, param, "enum")
-    assert type(m["exc"]) is type(d["exc"]), (method, param, repr(d["exc"]), repr(m["exc"]))
-    assert not m["leak"], (method, param, m["leak"])
-    if m["exc"] is not None:
-        # the outward formatter (served, CLI, log) never carries it, on any row; a SCREENED row's library exception
-        # does not either. An unscreened row's library exception may quote the caller's own argument (its repr):
-        # E1's library scope, as the A5 census already records for the str form.
-        assert TOKEN not in C.outward_text(m["exc"]), (method, param)
-        if R4._screened_by(method, param) is not None:
-            assert TOKEN not in str(m["exc"]), (method, param)
+    for form in SUBCLASS_FORMS:
+        m = _run_form(tmp_path, method, param, form)
+        assert type(m["exc"]) is type(d["exc"]), (method, param, form, repr(d["exc"]), repr(m["exc"]))
+        assert not m["leak"], (method, param, form, m["leak"])
+        if m["exc"] is not None:
+            # the outward formatter (served, CLI, log) never carries it, on any row; a SCREENED row's library exception
+            # does not either. An unscreened row's library exception may quote the caller's own argument (its repr):
+            # E1's library scope, as the A5 census already records for the str form.
+            assert TOKEN not in C.outward_text(m["exc"]), (method, param, form)
+            if R4._screened_by(method, param) is not None:
+                assert TOKEN not in str(m["exc"]), (method, param, form)
     if R4._screened_by(method, param) is not None and (method, param) not in NO_SUCCESS_ON_A_FRESH_STORE:
         assert d["exc"] is None, (method, param, repr(d["exc"]))
 
 
 def test_r5_06_exact_returns_the_data_as_a_builtin_str():
-    m = _shaped_enum("chat")
-    assert f"{m}" != "chat" and str.__str__(m) == "chat"                      # the hazard, then its remedy
-    out = C.exact(m)
-    assert type(out) is str and out == "chat" and f"{out}" == "chat"
+    for make in SUBCLASS_FORMS.values():
+        m = make("chat")
+        assert f"{m}" != "chat" and str.__str__(m) == "chat"                  # the hazard, then its remedy
+        out = C.exact(m)
+        assert type(out) is str and out == "chat" and f"{out}" == "chat"
     assert C.exact("chat") == "chat" and C.exact(None) is None and C.exact(b"x") == b"x"
 
 
@@ -452,6 +474,164 @@ def test_r5_04_mask_from_omits_a_span_that_crosses_the_cut():
     assert "ter2" not in out and out.startswith("\nnext line") or out.startswith("next")
 
 
+# ---- research's stage 2 of round 5 (2026-11-27), S2-1 and S2-2: the window's state at its edges ------------------------
+
+PEM_BEGIN_LINE = "-----BEGIN PRIVATE KEY-----\n"
+PEM_END_LINE = "-----END PRIVATE KEY-----\n"
+PEM_BODY = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASC"
+
+
+@pytest.mark.parametrize("k", [-1] + list(range(len(PEM_BEGIN_LINE) + 1)))
+def test_s2_1_a_window_starting_anywhere_in_a_begin_line_withholds_the_body(tmp_path, k):
+    """S2-1: the window starts `k` bytes into a PEM BEGIN line (-1: on the newline before it; 1..26: inside the marker,
+    which neither the look-back nor the head line then holds whole; 27: after the marker; 28: the next line). The body
+    is longer than the window's sent part and the block has an END, so ordinary lines follow it. The body must never
+    be sent, and the lines after the END must be (the positive control: the state was judged, not refused, and the
+    block was closed where it closes). RED at b85f67a7 for k in 1..26: the state was read before the cut."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    window = 1 << 20
+    head = "start\n"
+    after = "".join(f"ordinary line {i}\n" for i in range(C.CHAIN_LINES + 4)) + "ordinary final line\n"
+    assert PEM_BODY not in C.mask_text(head + PEM_BEGIN_LINE + f"{PEM_BODY}00000000\n" * 2 + PEM_END_LINE + after), \
+        "the block rule does not withhold this body whole: not a test of the cut"
+    need = window + k - len(PEM_BEGIN_LINE) - len(PEM_END_LINE) - len(after)      # body bytes that put the start at k
+
+    def line(i):
+        return f"{PEM_BODY}{i:08d}\n"                                              # 41 bytes
+    n, r = divmod(need, 41)
+    body = "".join(line(i) for i in range(n - 1)) + line(n - 1)[:-1] + "Q" * r + "\n"
+    text = head + PEM_BEGIN_LINE + body + PEM_END_LINE + after
+    raw = text.encode()
+    start = len(raw) - window
+    assert raw[len(head):len(head) + len(PEM_BEGIN_LINE)] == PEM_BEGIN_LINE.encode() and start == len(head) + k, \
+        "the window does not start where this cell says"
+    log = tmp_path / "d.log"
+    log.write_bytes(raw)
+    tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+    assert PEM_BODY not in tail, (k, tail[:300])
+    assert "ordinary final line" in tail, (k, tail[-300:])
+
+
+@pytest.mark.parametrize("k", [-1] + list(range(len(PEM_END_LINE) + 1)))
+def test_s2_1_a_window_starting_anywhere_in_an_end_line_sends_what_follows(tmp_path, k):
+    """S2-1's other marker: the window starts `k` bytes into the END line of a block that began before it. Judged at the
+    cut, the look-back saw only the BEGIN, so the block was re-opened and ran to the end of the text: every later line
+    was withheld (safe, not honest). Judged at the head line's end, the END is read whole: the body is not in the window
+    and the lines after the END are sent."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    window = 1 << 20
+    head = "start\n" + PEM_BEGIN_LINE + "".join(f"{PEM_BODY}{i:08d}\n" for i in range(4))
+    final = "ordinary final line\n"
+    need = window + k - len(PEM_END_LINE) - len(final)                             # filler bytes that put the start at k
+    n, r = divmod(need, 81)
+    filler = ("x" * 80 + "\n") * (n - 1) + "x" * (80 + r) + "\n"
+    raw = (head + PEM_END_LINE + filler + final).encode()
+    start = len(raw) - window
+    assert raw[len(head):len(head) + len(PEM_END_LINE)] == PEM_END_LINE.encode() and start == len(head) + k, \
+        "the window does not start where this cell says"
+    log = tmp_path / "d.log"
+    log.write_bytes(raw)
+    tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+    assert PEM_BODY not in tail and "ordinary final line" in tail, (k, tail[-300:])
+
+
+#: A marker the block rule accepts (`(?:[A-Z0-9]+ )*` is unbounded) that is longer than the 4096-byte overlap the
+#: read-back used to carry across a chunk edge.
+LONG_WORDS = "AB " * 6000
+
+
+@pytest.mark.parametrize("chunk", [7, 64, 4096, 1 << 20])
+def test_s2_1_a_marker_longer_than_any_overlap_is_read_whole_across_chunk_edges(chunk):
+    """Dev's find while fixing S2-1 (the same mechanism at the read-back's other boundary): a chunk edge that cuts a
+    marker longer than the fixed overlap left it cut in every view, so the block read as closed. Each view now carries
+    the previous one's partial first line. RED at b85f67a7 for chunks below the marker's length."""
+    begin, end = f"-----BEGIN {LONG_WORDS}PRIVATE KEY-----", f"-----END {LONG_WORDS}PRIVATE KEY-----"
+    assert "SECRETBODY" not in C.mask_text(f"{begin}\nSECRETBODY\n{end}\nafter\n"), "the block rule rejects it"
+    assert len(begin) > 4096 and len(end) > 4096, "the markers do not exceed the old overlap"
+    for text, at, want in [(f"a\n{begin}\nbody\n" + "x" * 80 + "\n", "body\n", True),
+                           (f"a\n{begin}\nbody\n{end}\nb\n", "b\n", False),
+                           (f"a\n-----BEGIN PRIVATE KEY-----\nbody\n{end}\nb\n", "b\n", False)]:
+        data = text.encode()
+
+        def rb(lo, hi):
+            return data[lo:hi]
+        pos = data.rindex(at.encode())
+        assert C.pem_open_before(rb, pos, chunk) is want, (chunk, at, want)
+
+
+def test_s2_1_a_long_begin_marker_cut_by_the_read_back_chunk_edge_withholds_the_body(tmp_path):
+    """The same, end to end: the log window's look-back reads 1 MiB chunks, and a BEGIN marker longer than 4096 bytes
+    straddles the first chunk edge with more than 4096 of its bytes after it. The body before the END must be withheld
+    and the lines after it sent."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    window = chunk = 1 << 20
+    begin = f"-----BEGIN {LONG_WORDS}PRIVATE KEY-----\n"
+    after = "".join(f"ordinary line {i}\n" for i in range(C.CHAIN_LINES + 4)) + "ordinary final line\n"
+    lead = "start\n"
+    target_edge = len(lead) + len(begin) // 2                          # where the first chunk edge should cut the marker
+    body_len = target_edge + chunk + window - len(lead) - len(begin) - len(PEM_END_LINE) - len(after)
+    n = body_len // 41
+    body = "".join(f"{PEM_BODY}{i:08d}\n" for i in range(n))
+    raw = (lead + begin + body + PEM_END_LINE + after).encode()
+    start = len(raw) - window
+    head_end = start + raw[start:].index(b"\n") + 1
+    edge = head_end - chunk
+    assert len(lead) < edge and len(lead) + len(begin) - 1 - edge > 4096, "the chunk edge does not cut the marker"
+    log = tmp_path / "d.log"
+    log.write_bytes(raw)
+    tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+    assert PEM_BODY not in tail, tail[:300]
+    assert "ordinary final line" in tail, tail[-300:]
+
+
+def test_s2_1_pem_state_is_judged_only_at_a_line_start():
+    """`pem_open_before` refuses a position inside a line, where a marker can be cut in two (S2-1's mechanism), and
+    answers at every line start; `log_tail` turns the refusal into an empty send (it never raises)."""
+    data = b"a\n-----BEGIN PRIVATE KEY-----\nbody\n-----END PRIVATE KEY-----\nb\n"
+
+    def rb(lo, hi):
+        return data[lo:hi]
+    answers = {}
+    for pos in range(len(data) + 1):
+        if pos == 0 or data[pos - 1:pos] == b"\n":
+            answers[pos] = C.pem_open_before(rb, pos)
+        else:
+            with pytest.raises(ValueError):
+                C.pem_open_before(rb, pos)
+    assert answers == {0: False, 2: False, 30: True, 35: True, 61: False, 63: False}, answers
+
+
+@pytest.mark.parametrize("sep_line", ["    \n", "\u200b\u200b\n"], ids=["blank-lines", "invisible-only-lines"])
+def test_s2_2_a_many_line_run_between_a_label_and_its_value_counts_no_chain_line(tmp_path, sep_line):
+    """S2-2: the chain bound counts NON-BLANK lines on the recogniser's view. A label ends a line before the window,
+    then a run of MANY blank (or invisible-only) lines longer than the window, then the value. Counting the run's lines
+    (or judging them raw, so an invisible-only line counts) would end the context inside the run and send the value.
+    The value must be withheld, and the lines after the context must be sent."""
+    from veracium.diagnostics import DiagnosticsConfig, Reporter
+    value = "S3cr3t-Passw0rd-Value-0123456789abcdefABCDEF"
+    window = 1 << 20
+    n = window // len(sep_line.encode()) + 64
+    text = ("password:\n" + sep_line * n + value + "\n" + "".join(f"ordinary line {i}\n" for i in range(20))
+            + "ordinary final line\n")
+    assert value not in C.mask_text(text), "the grammar does not recognise this across the run"
+    start = len(text.encode()) - window
+    assert len("password:\n") < start < len(("password:\n" + sep_line * n).encode()) - len(sep_line.encode()) * \
+        (C.CHAIN_LINES + 2), "the window does not start inside the run, more than CHAIN_LINES lines before the value"
+    log = tmp_path / "d.log"
+    log.write_text(text)
+    tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+    assert value not in tail, tail[:300]
+    assert "ordinary final line" in tail
+
+
+@pytest.mark.parametrize("sep_line", ["    \n", "\u200b\u200b\n", "\n"], ids=["blank", "invisible-only", "empty"])
+def test_s2_2_chain_safe_offset_counts_only_visible_lines(sep_line):
+    """The bound itself: lines that are blank on the recogniser's view do not count toward CHAIN_LINES."""
+    lines = [sep_line] * (C.CHAIN_LINES * 3) + [f"part {i}\n" for i in range(C.CHAIN_LINES)] + ["sent\n"]
+    text = "".join(lines)
+    assert C.chain_safe_offset(text) == text.index("sent\n")
+
+
 # ==== R5-05: the final exception, constructors that add notes or a cause ==============================================
 
 class _NoteInCtor(Exception):
@@ -564,23 +744,26 @@ def test_r5_03_a_library_result_echoes_only_the_callers_own_id(tmp_path, method,
 
 def test_r5_06_remember_fallback_summary_uses_the_screened_event_type(tmp_path):
     """The reviewer's branch, in-tree: a provider answering non-JSON sends `remember` to the extractor fallback, whose
-    summary formats `event_type`. A str-Enum `event_type` (data `chat`, shaped name) must store and return `chat`.
-    The inventory's stub answers structured output, so it never reaches this branch (measured: a mutant that kept the
-    unconverted object survived every inventory cell)."""
-    calls = []
+    summary formats `event_type`. An `event_type` of each accepted subclass form (data `chat`, shown as the token)
+    must store and return `chat`. The inventory's stub answers structured output, so it never reaches this branch
+    (measured: a mutant that kept the unconverted object survived every inventory cell)."""
+    for form, make in SUBCLASS_FORMS.items():
+        calls = []
 
-    def llm(*args, **kwargs):
-        calls.append(1)
-        return "not structured output"
-    m = T._mem(tmp_path, llm=llm)
-    try:
-        out = m.remember("u", "I live in Denver", event_type=_shaped_enum("chat"))
-        stored = T._dump(str(tmp_path / "m.db"))
-    finally:
-        m.close()
-    assert calls, "the provider was never called: the fallback branch was not reached"
-    assert TOKEN not in json.dumps(out, default=str) and TOKEN not in stored
-    assert "chat" in stored                                            # the data, as the fallback formatted it
+        def llm(*args, **kwargs):
+            calls.append(1)
+            return "not structured output"
+        sub = tmp_path / form
+        sub.mkdir()
+        m = T._mem(sub, llm=llm)
+        try:
+            out = m.remember("u", "I live in Denver", event_type=make("chat"))
+            stored = T._dump(str(sub / "m.db"))
+        finally:
+            m.close()
+        assert calls, (form, "the provider was never called: the fallback branch was not reached")
+        assert TOKEN not in json.dumps(out, default=str) and TOKEN not in stored, form
+        assert "chat" in stored, form                                  # the data, as the fallback formatted it
 
 
 def test_r5_06_d3_returns_exact_strs():

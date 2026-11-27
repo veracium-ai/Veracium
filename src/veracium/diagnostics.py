@@ -269,9 +269,13 @@ class Reporter:
                 def read_back(lo, hi):
                     fh.seek(lo)
                     return fh.read(hi - lo)
-                pem_open = size > window and _cred.pem_open_before(read_back, start)
-            if size > window:
+                # judged at the END of the window's first line, a line start: that line began before the window and
+                # is context, never sent, and a marker on it is read whole (S2-1: judged at `start`, a cut inside a
+                # BEGIN line split the marker, so the block read as closed and its body was sent). With no newline the
+                # whole window is that line, so nothing is sent and there is no state to judge.
                 nl = data.find(b"\n")
+                pem_open = size > window and nl >= 0 and _cred.pem_open_before(read_back, start + nl + 1)
+            if size > window:
                 head = data[:nl + 1] if nl >= 0 else data      # the window's first line began before it
                 rest = data[nl + 1:] if nl >= 0 else b""
                 head_text, rest_text = head.decode("utf-8", "replace"), rest.decode("utf-8", "replace")
