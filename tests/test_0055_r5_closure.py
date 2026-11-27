@@ -654,3 +654,273 @@ def test_r5_05_notes_that_cannot_be_deleted_refuse_the_object():
     out = C.withheld_defect(orig)
     text = "".join(traceback.format_exception(type(out), out, None))
     assert out is not orig and TOKEN not in text, text
+
+
+# ==== research's ruling on the host-only library results (2026-11-27): the RETURN census =================================
+# Every public `Memory` method, classed by what its RETURN carries of a stored record, MEASURED over a store holding a
+# legacy record with a credential-shaped id (and, separately, shaped stored text), the reviewer's construction
+# (`_plant`). "Checked" is a test: a `host-record` row asserts its positive control (the raw shaped id IS in the host's
+# return) and the outward check (no served tool, adapter, CLI verb or log line carries it); every other row asserts the
+# complement. Classes:
+#   host-record  a stored record (Edge / AsOfFact / Recall) or a record id the caller did NOT pass: the host's own read
+#                of its store, or a host-only report naming records. v0.5.9 declares this class by that property.
+#   caller-echo  only the caller's own argument (E1's library scope; `CALLER_ECHO` above pins the count).
+#   none         no stored record's id or text, or a declared refusal (`CENSUS_REFUSED`).
+# `export_memory` is `none` by its RETURN (counts); its FILE copies the store as it is, by design (§4e: a host backup).
+
+RETURN_CENSUS = {
+    # host-record: the host's own read of its store (record access)
+    "edges_since": "host-record", "recall": "host-record", "facts_valid_at": "host-record",
+    # host-record: host-only reports naming records (0022's revocation statement, 0027's PolicyReceipt, 0041's notices)
+    "revoke_source": "host-record", "unrevoke_source": "host-record",
+    "policy_receipt": "host-record", "policy_receipts": "host-record",
+    "pending_notices": "host-record", "confirm_notice": "host-record",
+    # caller-echo
+    "confirm": "caller-echo", "dispute": "caller-echo", "record_outcome": "caller-echo", "reply": "caller-echo",
+    "redact": "caller-echo", "undo_restoration": "caller-echo",
+    # none
+    "answer": "none", "close": "none", "correct": "none", "describe_procedures": "none",
+    "diagnostics_preview": "none", "embed_backfill": "none", "export_memory": "none", "flush_telemetry": "none",
+    "forget": "none", "forget_everything_confirm": "none", "forget_everything_preview": "none",
+    "import_memory": "none", "introspect": "none", "list_entities": "none", "maintain": "none",
+    "record_procedure": "none", "record_procedure_report": "none", "remember": "none", "report_error": "none",
+    "self_check": "none", "source_revocations": "none", "telemetry_preview": "none",
+}
+HOST_RECORD = sorted(k for k, v in RETURN_CENSUS.items() if v == "host-record")
+
+#: `none` cells whose declared outcome is a refusal: a shaped legacy id or text cannot be copied into a new record
+#: (`EXPECT_REFUSED`'s served twins).
+CENSUS_REFUSED = {("correct", "id"), ("correct", "relation"), ("remember", "id")}
+
+SHAPED_ID = "e-" + TOKEN
+
+
+def _strings(x, seen=None):
+    """Every str reachable from a return: containers, pydantic models, dataclasses, plain objects' attributes, Enum
+    values. Typed objects are walked, not serialised, so a record object cannot hide a field from the census."""
+    import dataclasses
+    seen = set() if seen is None else seen
+    if id(x) in seen:
+        return
+    seen.add(id(x))
+    if isinstance(x, Enum):
+        yield str(x.value)
+    elif isinstance(x, (str, bytes)):
+        yield x if isinstance(x, str) else x.decode("latin-1")
+    elif isinstance(x, dict):
+        for k, v in x.items():
+            yield from _strings(k, seen)
+            yield from _strings(v, seen)
+    elif isinstance(x, (list, tuple, set, frozenset)):
+        for v in x:
+            yield from _strings(v, seen)
+    elif hasattr(x, "model_dump"):
+        yield from _strings(x.model_dump(mode="python"), seen)
+    elif dataclasses.is_dataclass(x) and not isinstance(x, type):
+        for f in dataclasses.fields(x):
+            yield from _strings(getattr(x, f.name), seen)
+    elif isinstance(getattr(x, "__dict__", None), dict):
+        yield from _strings(vars(x), seen)
+
+
+def _hits(x) -> int:
+    return sum(s.count(TOKEN) for s in _strings(x))
+
+
+def _public_methods() -> set:
+    return {n for n, f in vars(Memory).items() if not n.startswith("_") and callable(f)}
+
+
+def test_return_census_covers_every_public_method():
+    """By property: the census is exactly Memory's public callables (a new method fails here until it is classed)."""
+    assert set(RETURN_CENSUS) == _public_methods(), set(RETURN_CENSUS) ^ _public_methods()
+    assert len(HOST_RECORD) == 9
+
+
+def _host_record_call(tmp_path, name):
+    """One success-reaching call per host-record method over a legacy shaped id. Returns the host's return."""
+    import datetime
+    from veracium.redaction import SOURCE_LIFT_REASONS, SOURCE_REVOCATION_REASONS
+    if name in ("policy_receipt", "policy_receipts"):
+        P27 = _load("r5c_p27", "tests/test_0027_policy_receipt.py")
+        I19 = _load("r5c_i19", "tests/support_0055_i19.py")
+        mem = P27._memory(tmp_path, "pol.db")
+        first = mem.recall(P27.U, "boat topic", semantic=False, policy=P27.LANE).policy_receipt
+        mem.close()
+        I19.rename(str(tmp_path / "pol.db"), "edges", first.adjusted_order[0], SHAPED_ID)
+        mem = Memory(llm=lambda *a, **k: "", config=MemoryConfig(db_path=str(tmp_path / "pol.db"),
+                                                                  max_subgraph_edges=8, require_source_id=False))
+        try:
+            rid = mem.recall(P27.U, "boat topic", semantic=False, policy=P27.LANE).policy_receipt.recall_id
+            return mem.policy_receipts(P27.U) if name == "policy_receipts" else mem.policy_receipt(P27.U, rid)
+        finally:
+            mem.close()
+    if name in ("pending_notices", "confirm_notice"):
+        N41 = _load("r5c_n41", "tests/test_0041_notice_state.py")
+        I19 = _load("r5c_i19", "tests/support_0055_i19.py")
+        _, notices, _ = N41._source(tmp_path, "src", eid="e-x")
+        v = N41._holder(tmp_path, "hold.db", eid="e-x")
+        v.import_memory(notices)
+        assert [n["target_id"] for n in v.pending_notices(N41.U)] == ["e-x"]       # reached: a pending notice
+        v.close()
+        db = str(tmp_path / "hold.db")                     # a legacy store: the held record and its notice re-id'd
+        I19.rename(db, "edges", "e-x", SHAPED_ID)
+        con = sqlite3.connect(db)
+        con.execute("UPDATE redactions SET target_id=? WHERE target_id='e-x'", (SHAPED_ID,))
+        con.commit()
+        con.close()
+        v = N41._mem(tmp_path, "hold.db")
+        try:
+            pend = v.pending_notices(N41.U)
+            return pend if name == "pending_notices" else v.confirm_notice(N41.U, pend[0]["notice_id"])
+        finally:
+            v.close()
+    m = T._mem(tmp_path)
+    try:
+        rid = _plant(m, shaped_id=True, shaped_relation=False)
+        assert rid == SHAPED_ID
+        if name == "edges_since":
+            return m.edges_since("u", "2000-01-01T00:00:00+00:00")
+        if name == "recall":
+            return m.recall("u", "Denver")
+        if name == "facts_valid_at":
+            return m.facts_valid_at("u", "user", "located_at", T=datetime.datetime.now(datetime.timezone.utc))
+        m.revoke_source("u", origin=None, source_id="chat", reason=SOURCE_REVOCATION_REASONS[0])
+        if name == "revoke_source":                        # the statement of a second revocation of a fresh source
+            T._seed_edge(m)
+            return m.revoke_source("u", origin=None, source_id="chat", reason=SOURCE_REVOCATION_REASONS[0])
+        assert name == "unrevoke_source", name
+        return m.unrevoke_source("u", origin=None, source_id="chat", reason=SOURCE_LIFT_REASONS[0])
+    finally:
+        m.close()
+
+
+@pytest.mark.parametrize("name", HOST_RECORD)
+def test_a_host_record_return_carries_the_raw_id_and_no_log_line_does(tmp_path, name, caplog):
+    """The positive control: the host's own return carries the legacy shaped id RAW (the declared class, not masked).
+    The outward check's log half: nothing logged during the call carries it."""
+    import logging
+    caplog.set_level(logging.DEBUG)
+    out = _host_record_call(tmp_path, name)
+    assert _hits(out) >= 1, (name, out)
+    assert not [r for r in caplog.records if TOKEN in r.getMessage()], name
+
+
+def test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller():
+    """The outward check's surface half, by `ast` over every src module: a host-record method is called from outside
+    `Memory` only by (a) the served `*_impl` functions, whose results pass the projection
+    (`test_r5_03_every_impl_is_served_through_the_projection`, the served sweep), or a helper only an `*_impl`
+    calls; (b) the CLI's `recall` verb, which prints the masked `context` alone
+    (`test_the_cli_recall_verb_prints_no_planted_shape`); (c) selfcheck, over its own throwaway store."""
+    import ast
+    callers, impl_only = set(), {}
+    for f in sorted((ROOT / "src" / "veracium").rglob("*.py")):
+        rel = f.relative_to(ROOT).as_posix()
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+        top = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))]
+        for n in top:
+            if rel == "src/veracium/__init__.py" and isinstance(n, ast.ClassDef) and n.name == "Memory":
+                continue
+            for c in ast.walk(n):
+                if isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute) and c.func.attr in HOST_RECORD:
+                    callers.add((rel, n.name, c.func.attr))
+                if isinstance(c, ast.Call) and isinstance(c.func, ast.Name):
+                    impl_only.setdefault((rel, c.func.id), set()).add(n.name)
+    allowed = {("src/veracium/mcp_server.py", "recall_impl", "recall"),
+               ("src/veracium/mcp_server.py", "find_facts_report", "recall"),
+               ("src/veracium/cli.py", "_memory_verbs", "recall"),
+               ("src/veracium/selfcheck.py", "_check_injection", "recall"),
+               ("src/veracium/selfcheck.py", "_check_revocation", "recall")}
+    assert callers == allowed, callers ^ allowed
+    users = impl_only[("src/veracium/mcp_server.py", "find_facts_report")]
+    assert users and all(u.endswith("_impl") for u in users), users
+
+
+@pytest.mark.parametrize("plant", ["id", "relation"])
+def test_the_cli_recall_verb_prints_no_planted_shape(tmp_path, plant, capsys):
+    from veracium import cli
+    m = T._mem(tmp_path)
+    try:
+        _plant(m, shaped_id=(plant == "id"), shaped_relation=(plant == "relation"))
+        assert _hits(m.recall("u", "Denver")) >= 1                 # reached: the host's own recall holds the record
+    finally:
+        m.close()
+    capsys.readouterr()
+    assert cli.main(["recall", "--db", str(tmp_path / "m.db"), "--user", "u", "Denver"]) == 0
+    out = capsys.readouterr()
+    assert out.out.strip() and TOKEN not in out.out + out.err
+
+
+_NOARG = {"close": {}, "flush_telemetry": {}, "telemetry_preview": {}, "report_error": {}, "diagnostics_preview": {},
+          "list_entities": {}, "self_check": {"record": False}}
+_BY_USER = {"embed_backfill": {}, "maintain": {}, "forget": {}, "source_revocations": {}}
+#: the parameter `R4._call` is given (its value passes through unchanged): any of the method's own
+_R4_PARAM = {"answer": "query", "describe_procedures": "query", "export_memory": "path", "import_memory": "path",
+             "introspect": "mode", "record_procedure": "summary", "record_procedure_report": "summary",
+             "remember": "event_text", "correct": "edge_id", "forget_everything_preview": "principal",
+             "forget_everything_confirm": "principal"}
+
+
+@pytest.mark.parametrize("plant", ["id", "relation"])
+@pytest.mark.parametrize("name", sorted(k for k, v in RETURN_CENSUS.items() if v == "none"))
+def test_a_none_return_carries_no_stored_shape(tmp_path, name, plant):
+    """The complement: over a store holding the planted record, the call reaches its success (or its declared
+    refusal) and the return carries no shape."""
+    from veracium.credentials import CredentialRefused
+    from veracium.redaction import SOURCE_REVOCATION_REASONS
+    m = T._mem(tmp_path)
+    try:
+        rid = _plant(m, shaped_id=(plant == "id"), shaped_relation=(plant == "relation"))
+
+        class E:
+            id = rid
+        if name == "source_revocations":                    # reached: one revocation to report
+            m.revoke_source("u", origin=None, source_id="chat", reason=SOURCE_REVOCATION_REASONS[0])
+        if (name, plant) in CENSUS_REFUSED:
+            with pytest.raises(CredentialRefused) as ei:
+                R4._call(m, tmp_path, E, name, _R4_PARAM[name], lambda v: v)
+            assert TOKEN not in str(ei.value)
+            return
+        if name in _NOARG:
+            out = getattr(m, name)(**_NOARG[name])
+        elif name in _BY_USER:
+            out = getattr(m, name)("u", **_BY_USER[name])
+        else:
+            out = R4._call(m, tmp_path, E, name, _R4_PARAM[name], lambda v: v)
+        if name == "source_revocations":
+            assert out["history"], out
+    finally:
+        m.close()
+    assert _hits(out) == 0, (name, out)
+
+
+def test_undo_restoration_echoes_only_the_callers_id(tmp_path):
+    """`undo_restoration` (caller-echo) over a legacy shaped id: a restored store whose restored edge is re-id'd in
+    every table that names it."""
+    U44 = _load("r5c_u44", "tests/test_0044_t7_undo.py")
+    I19 = _load("r5c_i19", "tests/support_0055_i19.py")
+    db = U44._restored(tmp_path)
+    I19.rename(db, "edges", U44.P, SHAPED_ID)
+    con = sqlite3.connect(db)
+    for t in ("edge_embedding", "redactions", "arity_inventory", "migration_outcome"):
+        col = "target_id" if t == "redactions" else "edge_id"
+        con.execute(f"UPDATE {t} SET {col}=? WHERE {col}=?", (SHAPED_ID, U44.P))
+    con.commit()
+    con.close()
+    m = U44._mem(db)
+    try:
+        out = m.undo_restoration(U44.U, SHAPED_ID, correlation_id="c1")
+    finally:
+        m.close()
+    assert out["undone"] == SHAPED_ID and not out["replayed"]           # reached: the restoration was undone
+    assert _hits(out) == 1, out
+
+
+def test_redact_echoes_only_the_callers_id(tmp_path):
+    m = T._mem(tmp_path)
+    try:
+        rid = _plant(m, shaped_id=True, shaped_relation=False)
+        out = m.redact("u", edge_id=rid, reason="operator_policy")
+    finally:
+        m.close()
+    assert not out.repeated and _hits(out) == 1, out                    # reached, and the caller's id once

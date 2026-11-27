@@ -1,5 +1,5 @@
 {
- "body_sha256": "d0dc57e3df86cce6901839080142f96e46c11f366879a8fe990b6aa39cee5a19",
+ "body_sha256": "75ac21f2cff9a4a5045e4208662e1082bda68ffad5449421c6900d1689443f73",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "84b05770d0491f32adccddf570afd84761d45118",
+  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
   "control_definitions": {
    "NOOP-SA-R5-C1-attestation_job": "c8777444888bf4662195743519ae4812aa42f6f93dfcfe7e3bb9943408be0934"
   },
@@ -64,7 +64,7 @@
   "honest_nodes": [
    "tests/test_0007_attestation_jobs.py::test_r5_f3_an_unreadable_junit_is_suite_mismatch[truncated]"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
@@ -80,7 +80,11 @@
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation_mutants.py",
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r5_closure.py"
   ]
  },
  "rows": [
@@ -115,7 +119,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.23s",
+   "pytest": "2 failed in 9.26s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded read boundary: an XML declaration naming no text codec raises LookupError out of decide"
@@ -130,6 +134,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 52
+  "seconds": 51
  }
 }

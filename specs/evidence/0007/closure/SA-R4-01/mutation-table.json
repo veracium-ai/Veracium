@@ -1,5 +1,5 @@
 {
- "body_sha256": "844f24a401097378ff34f2a1c01b9c17a0d500def6fcbc61f8ba67da98b10109",
+ "body_sha256": "9821a10de1d0f15195d29bdb5a38467a5ed6760fef56203a90f5460bdaa00868",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "84b05770d0491f32adccddf570afd84761d45118",
+  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
   "control_definitions": {
    "NOOP-SA-R4-01-attestation_job": "ee6edfa0da0f3dd902c86654d76d977117d33846bb085482eb25e0570dd42766"
   },
@@ -72,7 +72,7 @@
   "honest_nodes": [
    "tests/test_0007_attestation_jobs.py::test_r4_01_the_reviewers_five_rows[passing-control]"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0007",
   "sqlite": "3.45.1",
@@ -86,7 +86,11 @@
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation_mutants.py",
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r5_closure.py"
   ]
  },
  "rows": [
@@ -121,7 +125,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 10.79s",
+   "pytest": "2 failed in 8.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: the exempt bootstrap failure explains exit 1 whether or not pytest.main returned"
@@ -154,7 +158,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 11.97s",
+   "pytest": "1 failed in 8.43s",
    "reason": null,
    "reason_seen": null,
    "what": "a completion record whose status disagrees stands"
@@ -187,7 +191,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 11.26s",
+   "pytest": "1 failed in 8.66s",
    "reason": null,
    "reason_seen": null,
    "what": "a stale run's completion record stands"
@@ -202,6 +206,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 193
+  "seconds": 157
  }
 }

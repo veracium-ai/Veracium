@@ -1,5 +1,5 @@
 {
- "body_sha256": "3c346ef1fea173923204709661963358fd841e68168bef83998fb4fad528365f",
+ "body_sha256": "192fa7c49228a911b4d0d382772bb46ed56a8b9ed0ce6d015add0bb5a2854d1a",
  "controls": [
   {
    "anchor_counts": [
@@ -197,6 +197,7 @@
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]",
+    "tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]",
     "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]",
@@ -206,7 +207,7 @@
     "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs",
     "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type"
    ],
-   "definition_sha256": "b31edf74df6bcd102ddebfaeba279cd72a4b2397af4356d59f419ee088b32338",
+   "definition_sha256": "46cc0bb2bc19b49c5e71950eeb109512aaf7dafcb3918a3f20112c42628ed1e1",
    "expected": "SURVIVED",
    "file": "src/veracium/__init__.py",
    "good": true,
@@ -281,6 +282,7 @@
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[answer-dated]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-bare]",
     "tests/test_0055_r4_closure.py::test_r5_a_legacy_episode_date_reaches_no_model_and_no_result[recall-dated]",
+    "tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]",
     "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]",
@@ -567,9 +569,11 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
-    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual"
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
+    "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]"
    ],
-   "definition_sha256": "12201b2f85033e45a93b0729641876507399497aa821db057836912201861472",
+   "definition_sha256": "8188d234d4f4568fc893dc35fb270cd5ea072185607aec7e6a683543180566cf",
    "expected": "SURVIVED",
    "file": "src/veracium/cli.py",
    "good": true,
@@ -577,7 +581,9 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
-    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual"
+    "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
+    "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/cli.py: its mutants' cells must all pass"
@@ -792,10 +798,11 @@
    "cells_errored": [],
    "cells_failed": [],
    "cells_passed": [
+    "tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
    ],
-   "definition_sha256": "7eaa80aac486e26d67e2be27b9ece88e43d4114c69950ffd822332464d91e765",
+   "definition_sha256": "d689c0441de3c1733208db1d666619404a29d5a10a67bcbbb8c029aac71cf383",
    "expected": "SURVIVED",
    "file": "src/veracium/introspect.py",
    "good": true,
@@ -803,6 +810,7 @@
    "import": "ok",
    "kill_kind": null,
    "named_cells": [
+    "tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
    ],
@@ -998,6 +1006,9 @@
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[find-json]",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why-json]",
     "tests/test_0055_r4_closure.py::test_r5_why_prints_no_legacy_dict_key_and_no_unmasked_find_field[why]",
+    "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
+    "tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]",
+    "tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]",
     "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[plain-Edge-outcome_counts]",
     "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore-Edge-outcome_counts]",
     "tests/test_0055_r5_closure.py::test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import[restore_withhold-Edge-outcome_counts]",
@@ -1038,6 +1049,7 @@
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
     "tests/test_0055_r5_closure.py::test_r5_06_d3_returns_exact_strs",
     "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type",
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -1073,28 +1085,28 @@
   },
   "clean": {
    "first": {
-    "of": 231,
+    "of": 235,
     "ok": true,
-    "passed": 231
+    "passed": 235
    },
    "last": {
-    "of": 231,
+    "of": 235,
     "ok": true,
-    "passed": 231
+    "passed": 235
    }
   },
-  "commit": "84b05770d0491f32adccddf570afd84761d45118",
+  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
-   "NOOP-__init__": "b31edf74df6bcd102ddebfaeba279cd72a4b2397af4356d59f419ee088b32338",
-   "NOOP-cli": "12201b2f85033e45a93b0729641876507399497aa821db057836912201861472",
+   "NOOP-__init__": "46cc0bb2bc19b49c5e71950eeb109512aaf7dafcb3918a3f20112c42628ed1e1",
+   "NOOP-cli": "8188d234d4f4568fc893dc35fb270cd5ea072185607aec7e6a683543180566cf",
    "NOOP-compile": "1ebb730fb06489350d915b5b503f4da91e95a43bc00e33d059361ee3df03d291",
    "NOOP-credential_finder": "bea7ced18273b53eb3af17b790a4f479802c5081753f58b56332c80a481e6c4e",
    "NOOP-credentials": "de05054d578979c67a2c9557386053091a9e8f5e89e62d89570114ae87c92c33",
    "NOOP-diagnostics": "f8da2e9ebbac45704587fc8915427560d69171c526bf0d24cf6f9f7253b6f9ca",
    "NOOP-graph": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
    "NOOP-ingest": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
-   "NOOP-introspect": "7eaa80aac486e26d67e2be27b9ece88e43d4114c69950ffd822332464d91e765",
+   "NOOP-introspect": "d689c0441de3c1733208db1d666619404a29d5a10a67bcbbb8c029aac71cf383",
    "NOOP-mcp_server": "8d21398a1a57300c880a7186ce3325d5a391b914203aa5d07dcd0f29216175b1",
    "NOOP-portability": "959dabbf4dd425a993e265bd85c72164d5f2df97f8ec568c696a21eaeae3c4fd",
    "NOOP-proactive": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
@@ -1141,7 +1153,7 @@
    "R5-01-import-keys-unread": "1412ed6ce17d152f5c6355c22503472949e275b50df3fde0f9a82faa2db0cf8c",
    "R5-02-guard-label-raw": "572e76a5678a9dacee32a67117367042fe9d3dbaff926b5def0b438055e92725",
    "R5-02-import-label-raw": "e82c083d8327d2d887e70dedc9975f4eda5bfd6dd2450d34c56d1d4040bf2374",
-   "R5-03-introspect-unmasked": "bab7d5b12cfba68cdd8c85860c9d5436b728f218cb28602f51df88f88cf0c36b",
+   "R5-03-introspect-unmasked": "9bda165475e3b0b8d4b194d5d8bb3df629e9f8b03ca9f318308ea90e92d38f8b",
    "R5-03-library-dispute-relation-raw": "f04a38b6d5073e0e47143f70129975376bc1376a926fd97ce39f53dd5c30c5ad",
    "R5-03-minted-token-masked": "42875a459eb5d3b3124d9872f06ada7856971392791ee4594c1f2fc901e95edf",
    "R5-03-record-id-raw": "2cfd2f30fb972276ca5ff89c7170558edb0c81110758bb21ed900e6c079a52c6",
@@ -1160,6 +1172,9 @@
    "R5-06-no-canonical-form": "80c5c77470e962bdae3a099d65c194aa1e10baed885c15f8e77549fc4a0553f4",
    "R5-06-remember-keeps-the-object": "984c46aab7a69a132b6810664a041aa9cfc0c24828536466e921fc9f9b1abe11",
    "R5-D3-str-only-gate": "11c61b6d07a094262b9b804c85808cd01f7c6a5b0a6fadd3e254aad14b271d50",
+   "R5-census-cli-recall-prints-records": "e2b349bbbcdcf959104ca9cb5fbebe86563dac36af25a0224f008d2bf2934553",
+   "R5-census-host-record-empty": "d3e8f31f9c6ceac9b2d4cb76f03e9d09359b98db3ddd500a2fb25648e755a405",
+   "R5-census-unscreened-caller": "0878b98f44a260b841d4cb63b7cc70bc54d5f3c3020918f8d3763b7c78b6de27",
    "R5-compile-episode-date-unmasked": "4ab8923b2b05e35eaf983dd697307b268161193c2c8234b0b1492fe09ca6788c",
    "R5-journal-after-redaction-removable": "e7ee532610728343966838f91227a11ad419ebb2d00f998a6df9ac3e9c7e05a6",
    "R5-mask-deep-keys-kept": "cf573821d95d2dbfe3f2f22d79e04db3c3a87232c2e810a3808743c39f7bf701",
@@ -1171,7 +1186,7 @@
   },
   "digests": {
    "specs/evidence/0055/digests.json": "5980405e476b1c1a2711c82e819f41b1d192dad452058901ddef03b6734dd06f",
-   "specs/evidence/0055/implementation_mutants.py": "372545f8e2344f0a1c4d32d5afde4295ab7a57473ec1bd8927f9d1115979be38",
+   "specs/evidence/0055/implementation_mutants.py": "f49e64c74c1f6e4b13e573ac9e590fec777eb282347fafdfcc5b288856e33f63",
    "specs/evidence/0055/vectors.py": "a773cb2cc8f5f9a0ef01c8a8b872e3097b77cf49efe247ee749ec084b4af41d7",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
@@ -1195,7 +1210,7 @@
    "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
    "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
    "tests/test_0055_r4_closure.py": "d8e77310919fee872d88f9c79b82329904e004249617c62954c4ec11a1dd2f65",
-   "tests/test_0055_r5_closure.py": "c924d2bfdc30717008e046276df0d1f7a5095dffe3f9cd237d69fdac2ec8fb6c",
+   "tests/test_0055_r5_closure.py": "06df626feb6a6d90e076192ff754914394029469e55db055bf88ad535ddc6574",
    "tests/test_0055_recogniser.py": "cccb1403bb061956e769bbca9734c633c81faae21f4585f2f738fae170a4bc06"
   },
   "finding": "implementation",
@@ -1205,25 +1220,14 @@
    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key",
    "tests/test_0055_r4_closure.py::test_r4_03_render_receipts_use_the_locator_on_every_exit"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0055",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R5-C1/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json"
+   "specs/evidence/0055/implementation_mutants.py",
+   "tests/test_0005_import_boundary.py",
+   "tests/test_0055_r5_closure.py"
   ]
  },
  "rows": [
@@ -1282,7 +1286,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.68s",
+   "pytest": "10 failed in 1.69s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1324,7 +1328,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.62s",
+   "pytest": "4 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1372,7 +1376,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.82s",
+   "pytest": "6 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -1477,7 +1481,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "25 failed in 4.96s",
+   "pytest": "25 failed in 5.15s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1516,7 +1520,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.53s",
+   "pytest": "3 failed in 1.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -1549,7 +1553,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.84s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
@@ -1582,7 +1586,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -1615,7 +1619,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1657,7 +1661,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.34s",
+   "pytest": "4 failed in 1.37s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1738,7 +1742,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 5.32s",
+   "pytest": "17 failed in 5.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1771,7 +1775,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.93s",
+   "pytest": "1 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1804,7 +1808,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.89s",
+   "pytest": "1 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1837,7 +1841,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.94s",
+   "pytest": "1 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -1870,7 +1874,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -1903,7 +1907,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -1996,7 +2000,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 4.79s",
+   "pytest": "21 failed in 5.06s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -2032,7 +2036,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.70s",
+   "pytest": "2 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
@@ -2068,7 +2072,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.03s",
+   "pytest": "2 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -2101,7 +2105,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -2134,7 +2138,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -2167,7 +2171,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
@@ -2200,7 +2204,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
@@ -2327,7 +2331,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "26 failed in 7.97s",
+   "pytest": "26 failed in 8.01s",
    "reason": null,
    "reason_seen": null,
    "what": "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, \u00a74a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -2447,7 +2451,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "30 failed in 7.47s",
+   "pytest": "30 failed in 8.30s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"
@@ -2483,7 +2487,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.76s",
+   "pytest": "2 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -2516,7 +2520,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -2552,7 +2556,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.96s",
+   "pytest": "2 failed in 1.06s",
    "reason": null,
    "reason_seen": null,
    "what": "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"
@@ -2585,7 +2589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.02s",
+   "pytest": "1 failed in 1.13s",
    "reason": null,
    "reason_seen": null,
    "what": "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"
@@ -2630,7 +2634,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.45s",
+   "pytest": "5 failed in 1.58s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and retired_reason read as residual, so the remedy never targets them)"
@@ -2672,7 +2676,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.05s",
+   "pytest": "4 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "a record field no class names is dropped again, not reported (round 4's R4-04: fail closed)"
@@ -2708,7 +2712,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.73s",
+   "pytest": "2 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "a current record whose JSON does not parse is skipped again (research's S1)"
@@ -2741,7 +2745,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, source_revocations.reason and every other per-user column unread)"
@@ -2777,7 +2781,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.81s",
+   "pytest": "2 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"
@@ -2810,7 +2814,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.53s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a validation location prints a caller's dict key again (research's S3)"
@@ -2852,7 +2856,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.63s",
+   "pytest": "4 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "the log tail is cut to the cap BEFORE it is screened again (round 4's R4-06)"
@@ -2885,7 +2889,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"
@@ -2927,7 +2931,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.33s",
+   "pytest": "4 failed in 1.45s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's screen reads only a str again: a bytes origin or source_id passes it to `_bounded`, whose message quotes it (round 5: R4-01's class one call down, found by the A5 census's exception-text cell)"
@@ -2970,7 +2974,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.03s",
+   "pytest": "4 failed in 1.13s",
    "reason": null,
    "reason_seen": null,
    "what": "recall's episode lines print the stored date unmasked again (round 5, the carrier table's `record:episode:current:date`) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -3015,7 +3019,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.12s",
+   "pytest": "5 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "the wiki compile's episode line prints the stored date unmasked again (round 5; reached by the DATED form only: a bare token sorts as a future date and the episode is not assertable)"
@@ -3054,7 +3058,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.93s",
+   "pytest": "3 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_deep leaves dict keys as they are again (round 5: `veracium why` printed a legacy `outcome_counts` key)"
@@ -3087,7 +3091,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "why.find masks only its id and fact again (round 5: `why --find --json` printed `invalidation_reason`)"
@@ -3126,7 +3130,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.88s",
+   "pytest": "3 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "journal text of an already-redacted record is reported removable again (round 5: `act` redacted nothing and the token stayed)"
@@ -3162,7 +3166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.89s",
+   "pytest": "2 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress screens a str subclass by its data but hands the object on again (round 5's R5-06)"
@@ -3195,7 +3199,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.68s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "remember passes the unconverted event_type to ingest again, whose fallback summary formats it (R5-06's branch)"
@@ -3228,7 +3232,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's callee screen returns origin and source_id unconverted again (R5-06, the callee's step)"
@@ -3267,7 +3271,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.16s",
+   "pytest": "3 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "the import screen reads mapping VALUES only again: a shaped key passes admission (round 5's R5-01)"
@@ -3303,7 +3307,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.61s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard reads mapping VALUES only again: a new shaped key passes it (round 5's R5-01)"
@@ -3336,7 +3340,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.92s",
    "reason": null,
    "reason_seen": null,
    "what": "the import screen's label prints a caller's key again (round 5's R5-02)"
@@ -3375,7 +3379,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.64s",
+   "pytest": "3 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard's refusal label prints a stored key again (R5-02 in the recursive guard)"
@@ -3435,7 +3439,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.52s",
+   "pytest": "10 failed in 1.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a served result keeps a shaped record id raw again (round 5's R5-03)"
@@ -3486,7 +3490,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 0.71s",
+   "pytest": "7 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "a served result keeps shaped stored text raw again (R5-03: dispute's relation)"
@@ -3519,7 +3523,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.88s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "the log window sends from its first full line again: a white-space-joined match is cut from its label (R5-04)"
@@ -3552,7 +3556,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.66s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "the log window ignores a PEM block open at its start again (round 5's R5-04)"
@@ -3585,7 +3589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_from keeps the cursor inside a span that crosses the send point again (R5-04)"
@@ -3621,7 +3625,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.73s",
+   "pytest": "2 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "the replacement exception keeps the notes and cause its constructor added again (round 5's R5-05)"
@@ -3631,15 +3635,17 @@
     1
    ],
    "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]": "assertion",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]": "assertion",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]": "assertion"
    },
    "cells_errored": [],
    "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
    ],
-   "definition_sha256": "bab7d5b12cfba68cdd8c85860c9d5436b728f218cb28602f51df88f88cf0c36b",
+   "definition_sha256": "9bda165475e3b0b8d4b194d5d8bb3df629e9f8b03ca9f318308ea90e92d38f8b",
    "file": "src/veracium/introspect.py",
    "finding": "implementation",
    "good": true,
@@ -3653,11 +3659,12 @@
    "kind": "product",
    "named_cells": [
     "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]",
-    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]"
+    "tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]",
+    "tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]"
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.81s",
+   "pytest": "3 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "introspect's report carries stored relations and reasons raw again (dev's library audit: the CLI printed them)"
@@ -3690,7 +3697,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "the library dispute result carries the stored relation raw again (research's addition 2)"
@@ -3736,7 +3743,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.47s",
+   "pytest": "5 failed in 1.61s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm_fact_impl and dispute_fact_impl return unprojected again (R5-03, the decorator)"
@@ -3781,7 +3788,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.70s",
+   "pytest": "5 failed in 1.88s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_everything_preview's minted token is masked like a stored shape (the declared exception lost)"
@@ -3814,7 +3821,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
@@ -3847,7 +3854,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
@@ -3880,7 +3887,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "correct derives evidence_ref from a str-subclass edge_id's name again (R5-06's unscreened sibling)"
@@ -3913,7 +3920,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "answer puts a str-subclass query's name in the gate's prompt again (R5-06's unscreened sibling)"
@@ -3946,21 +3953,120 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "_formats_as no longer refuses an exception that still carries notes (R5-05: an undeletable __notes__)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]"
+   ],
+   "definition_sha256": "e2b349bbbcdcf959104ca9cb5fbebe86563dac36af25a0224f008d2bf2934553",
+   "file": "src/veracium/cli.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-census-cli-recall-prints-records",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.84s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the CLI's recall verb prints the host-record Recall's raw record ids (the census's outward check, CLI half)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller"
+   ],
+   "definition_sha256": "0878b98f44a260b841d4cb63b7cc70bc54d5f3c3020918f8d3763b7c78b6de27",
+   "file": "src/veracium/cli.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-census-unscreened-caller",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 1.16s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a host-record method gains a caller outside Memory that no projection or masked print screens (the surface half)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]"
+   ],
+   "definition_sha256": "d3e8f31f9c6ceac9b2d4cb76f03e9d09359b98db3ddd500a2fb25648e755a405",
+   "file": "src/veracium/__init__.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R5-census-host-record-empty",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.76s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "edges_since returns nothing: the census's positive control (the host's own read carries the record) reaches no record"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 64
+   "product": 67
   },
   "controls": 17,
   "controls_good": 17,
-  "good": 64,
-  "killed": 64,
-  "rows": 64,
-  "seconds": 391
+  "good": 67,
+  "killed": 67,
+  "rows": 67,
+  "seconds": 431
  }
 }

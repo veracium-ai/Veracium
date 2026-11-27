@@ -645,6 +645,7 @@ _CALLSITE_DISPOSITIONS = {
     ("test_0055_r5_closure.py", "test_r5_01_a_shaped_key_in_every_dict_field_is_refused_at_import"): "both",
     ("test_0055_r5_closure.py", "test_r5_02_an_import_refusal_and_its_audit_carry_no_input_key"): "default",
     ("test_0055_r5_closure.py", "test_r5_02_an_ordinary_unknown_key_is_labelled_key_too"): "default",
+    ("test_0055_r5_closure.py", "_host_record_call"): "default",
     ("test_0055_r4_closure.py", "test_r4_03_a_restore_with_a_shaped_id_refuses_before_the_agreement_check_quotes_it"):
         "restore",
     # specs/0055 I19's sweep (tests/support_0055_i19.py): each scenario imports a file carrying one seeded value into a

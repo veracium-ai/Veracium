@@ -322,7 +322,7 @@ MUTANTS += [
      "the replacement exception keeps the notes and cause its constructor added again (round 5's R5-05)"),
     ('R5-03-introspect-unmasked', 'product', 'src/veracium/introspect.py',
      [('    return {"user_id": uid, **_cred.mask_deep(out)}', '    return {"user_id": uid, **out}')],
-     ['tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]', 'tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     ['tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[categories]', 'tests/test_0055_r5_closure.py::test_r5_03_introspect_carries_no_stored_shape_in_its_report_or_on_the_cli[summary]', 'tests/test_0055_r5_closure.py::test_a_none_return_carries_no_stored_shape[introspect-relation]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
      "introspect's report carries stored relations and reasons raw again (dev's library audit: the CLI printed them)"),
     ('R5-03-library-dispute-relation-raw', 'product', 'src/veracium/__init__.py',
      [('"relation": _cred.mask_text(edge.relation)}', '"relation": edge.relation}')],
@@ -356,6 +356,19 @@ MUTANTS += [
      [('    try:\n        if exc.__notes__:\n            return False\n    except AttributeError:\n        pass\n', '')],
      ['tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
      '_formats_as no longer refuses an exception that still carries notes (R5-05: an undeletable __notes__)'),
+    # research's ruling on the host-only library results (2026-11-27): the RETURN census's three boundaries
+    ('R5-census-cli-recall-prints-records', 'product', 'src/veracium/cli.py',
+     [('            print(r.context)\n', '            print(r.context)\n            print(*(e.id for e in r.edges))\n')],
+     ['tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "the CLI's recall verb prints the host-record Recall's raw record ids (the census's outward check, CLI half)"),
+    ('R5-census-unscreened-caller', 'product', 'src/veracium/cli.py',
+     [('            print(r.context)\n', '            print(r.context)\n            mem.edges_since(args.user, "2000-01-01T00:00:00+00:00")\n')],
+     ['tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "a host-record method gains a caller outside Memory that no projection or masked print screens (the surface half)"),
+    ('R5-census-host-record-empty', 'product', 'src/veracium/__init__.py',
+     [('                    out.append(e)\n        return out\n\n    # -- user feedback verbs', '                    out.append(e)\n        return []\n\n    # -- user feedback verbs')],
+     ['tests/test_0055_r5_closure.py::test_a_host_record_return_carries_the_raw_id_and_no_log_line_does[edges_since]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "edges_since returns nothing: the census's positive control (the host's own read carries the record) reaches no record"),
 ]
 
 
