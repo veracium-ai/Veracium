@@ -1,5 +1,5 @@
 {
- "body_sha256": "b67065aef553a68b6b3d30127e73f7eb3ca3f31b9a9650fcb6276ce5dac21d5f",
+ "body_sha256": "c3da7931d7b63f7104def256f6e521bf2b32b0247f0f58a20752dfd16312c13f",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
+  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
   "control_definitions": {
    "NOOP-SA-R3-03-attestation_job": "27bc90854719db9fb5d69d3f5ab57c252be7f1f89e379c97499a92a68b263f24"
   },
@@ -69,15 +69,13 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-02/mutation-table.json"
   ]
  },
  "rows": [
@@ -112,7 +110,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 8.53s",
+   "pytest": "2 failed in 8.98s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: run_suite's return discarded, so a pytest that exited 1 after an all-pass JUnit is evidence"
@@ -127,6 +125,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 37
+  "seconds": 39
  }
 }

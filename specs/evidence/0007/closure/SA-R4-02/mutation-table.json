@@ -1,5 +1,5 @@
 {
- "body_sha256": "4fdd191a63efca57b5c3055c0edd8380e68b6f5c1759ee5f25106c4a465064d3",
+ "body_sha256": "0763b56391aa62e161639939e2904a8f59e1909e63b7084a7b2434deb5dbbee3",
  "controls": [
   {
    "anchor_counts": [
@@ -55,7 +55,7 @@
     "passed": 6
    }
   },
-  "commit": "7dbaa68d7130b084adfbffaa7f58497c986b579b",
+  "commit": "fea4c8df22c6e9c462c98193b742b4faff4387b4",
   "control_definitions": {
    "NOOP-SA-R4-02-attestation_writer": "11d0e4776792c7d2d2f4a7413d1c97b7f740116e776c9d46390690f6fdcde9ff"
   },
@@ -79,7 +79,6 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/obligations/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
@@ -90,8 +89,7 @@
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/sa/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R4-01/mutation-table.json"
   ]
  },
  "rows": [
@@ -168,7 +166,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "per-record validation without the artifact-level check: a conflicting duplicate passes"
@@ -183,6 +181,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 9
+  "seconds": 10
  }
 }
