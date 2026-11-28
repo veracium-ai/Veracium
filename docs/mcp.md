@@ -6,9 +6,13 @@ Code, and others) with no host-side Python.
 ## Install & run
 
 ```bash
-pip install "veracium-memory[mcp,anthropic]"
+pip install "veracium[mcp,anthropic]"
 ANTHROPIC_API_KEY=sk-... VERACIUM_DB_PATH=~/.veracium.db veracium-mcp
 ```
+
+> **Package name.** Install `veracium` for now. From 0.34.0, which is not released yet, the package is
+> `veracium-memory`; until then `veracium-memory` on PyPI is only a placeholder with no code. `import veracium` and
+> the `veracium` commands stay the same.
 
 > **Python and SQLite requirement.** Veracium needs Python 3.14 or newer. It measures your Python's SQLite build on
 > every open instead of checking it against a list: the build must pass the feature probes and reproduce every accepted
@@ -26,7 +30,7 @@ run `veracium-mcp --help` for a summary.)
 
 `veracium mcp` is the same server under the `veracium` command: the same help, version, environment and tools. It
 is for a launcher that can name only the package's own command, for example
-`uvx --from "veracium-memory[mcp,anthropic]" veracium mcp`.
+`uvx --from "veracium[mcp,anthropic]" veracium mcp`.
 
 The server owns its own model access (the Anthropic reference provider, configured
 from the environment).

@@ -5,8 +5,12 @@ durable, per-user memory that resists the injection and confabulation failures
 that plague naive agent memory.
 
 ```bash
-pip install "veracium-memory[anthropic]"
+pip install "veracium[anthropic]"
 ```
+
+> **Package name.** Install `veracium` for now. From 0.34.0, which is not released yet, the package is
+> `veracium-memory`; until then `veracium-memory` on PyPI is only a placeholder with no code. `import veracium` and
+> the `veracium` commands stay the same.
 
 > **Python and SQLite requirement.** Veracium needs Python 3.14 or newer. It measures your Python's SQLite build on
 > every open instead of checking it against a list: the build must pass the feature probes and reproduce every accepted

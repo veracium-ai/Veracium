@@ -3,8 +3,8 @@
 <!-- mcp-name: io.github.veracium-ai/veracium -->
 
 [![tests](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml/badge.svg)](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml)
-[![PyPI](https://img.shields.io/pypi/v/veracium-memory)](https://pypi.org/project/veracium-memory/)
-[![Python](https://img.shields.io/pypi/pyversions/veracium-memory)](https://pypi.org/project/veracium-memory/)
+[![PyPI](https://img.shields.io/pypi/v/veracium)](https://pypi.org/project/veracium/)
+[![Python](https://img.shields.io/pypi/pyversions/veracium)](https://pypi.org/project/veracium/)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Provenance-aware memory for AI agents: it records who said what, so a claim your agent only read never silently
@@ -61,8 +61,12 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
 ## Install
 
 ```bash
-pip install "veracium-memory[anthropic]"   # core + the reference LLM provider
+pip install "veracium[anthropic]"   # core + the reference LLM provider
 ```
+
+> **Package name.** Install `veracium` for now. From 0.34.0, which is not released yet, the package is
+> `veracium-memory`; until then `veracium-memory` on PyPI is only a placeholder with no code. `import veracium` and
+> the `veracium` commands stay the same.
 
 > **Python and SQLite requirement.** Veracium needs Python 3.14 or newer. It measures your Python's SQLite build on
 > every open instead of checking it against a list: the build must pass the feature probes and reproduce every accepted

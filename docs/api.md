@@ -974,7 +974,7 @@ def complete(prompt: str, *, system: str | None = None,
 - Honor `json_schema` if you can (return valid JSON); if you can't, ignore it —
   Veracium parses tolerantly.
 
-Reference provider (needs `pip install veracium-memory[anthropic]`):
+Reference provider (needs `pip install veracium[anthropic]`):
 
 ```python
 from veracium.llm.anthropic import AnthropicComplete
