@@ -1,5 +1,5 @@
 {
- "body_sha256": "156da8338564d5f3d19e5520cd642096607af66b1b36c3c27b8ebb1124207a6b",
+ "body_sha256": "d02c36e3b033ab8b225f46a2e6c0d449ad6fe1febf75379a8b1f4941c27659c9",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
+  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
   "control_definitions": {
    "NOOP-SA-R3-03-attestation_job": "27bc90854719db9fb5d69d3f5ab57c252be7f1f89e379c97499a92a68b263f24"
   },
@@ -110,7 +110,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 13.47s",
+   "pytest": "2 failed in 8.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded decide: run_suite's return discarded, so a pytest that exited 1 after an all-pass JUnit is evidence"
@@ -125,6 +125,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 60
+  "seconds": 38
  }
 }

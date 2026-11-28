@@ -1,5 +1,5 @@
 {
- "body_sha256": "51a595c3bc54f544f767f5115a600eecec2cb300d55a405aaaabf790502a94e2",
+ "body_sha256": "385cd1d12146755c73575497a03696357d183b2065711b088da2dfe4d08e58b5",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
+  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
   "control_definitions": {
    "NOOP-SA-R1-01-sa10_gate": "1b9fb2a9312b98ab05be5a93cccce6f03bee3b1a50b39cb625578e651aaacb20"
   },
@@ -109,7 +109,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.96s",
+   "pytest": "2 failed in 1.10s",
    "reason": null,
    "reason_seen": null,
    "what": "N1: class (b) decided by the site: every schema write at a declared site is admitted"
@@ -142,7 +142,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.57s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: (b1) matched by its prefix, not byte-equality to a head constructor"
@@ -175,7 +175,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.60s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "N3: (b2) widened from the rebuildable indexes to every index"
@@ -208,7 +208,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.28s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "N2: a row-count postcondition in place of the list: a schema write outside the text classes is admitted when every table the outside writes name keeps, over the path, the row count it had before"
@@ -223,6 +223,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 30
+  "seconds": 18
  }
 }

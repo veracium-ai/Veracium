@@ -1,5 +1,5 @@
 {
- "body_sha256": "55c73e2b215f7bd9df8ebb087f5ccb24baa580bb4bbbbe31f0370827627b72c9",
+ "body_sha256": "5aecd73f06ba5e37f537ce436010c352e5536618ccda847df5233359ffd480f9",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
+  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
   "control_definitions": {
    "NOOP-SA-R3-04-attestation_writer": "a74b001695132d815610c332b022781c003d09d0a518b4ef2749e2eb3d59d99b"
   },
@@ -112,7 +112,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.95s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: no future or malformed record refuses, and v19's order is never applied"
@@ -127,6 +127,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 9
+  "seconds": 7
  }
 }

@@ -1,5 +1,5 @@
 {
- "body_sha256": "2ee7d93534cc20d7e784ace79dfe77ab92e4b854022898dc48a1f171e6563c5b",
+ "body_sha256": "7d8a8ee6c7dd4f7a570b8103a96a7dc065583312308f9c79556db4b1e1e66cd8",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
+  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
   "control_definitions": {
    "NOOP-SA-R5-C1-attestation_job": "c8777444888bf4662195743519ae4812aa42f6f93dfcfe7e3bb9943408be0934"
   },
@@ -115,7 +115,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 13.93s",
+   "pytest": "2 failed in 8.61s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded read boundary: an XML declaration naming no text codec raises LookupError out of decide"
@@ -130,6 +130,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 76
+  "seconds": 47
  }
 }
