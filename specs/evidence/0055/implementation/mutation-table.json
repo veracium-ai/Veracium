@@ -1,5 +1,5 @@
 {
- "body_sha256": "1e1375e87ead42e8985db362776412badcbb5065051b4c486f5f75e7e0cac6ef",
+ "body_sha256": "9059d0ea1cb82d773aa35c988e933bfadc21cd33ad8d8c18b88a7dea49e39707",
  "controls": [
   {
    "anchor_counts": [
@@ -28,6 +28,7 @@
     "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut",
     "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object",
     "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
     "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type",
     "tests/test_0055_r5_closure.py::test_s2_1_a_long_begin_marker_cut_by_the_read_back_chunk_edge_withholds_the_body",
@@ -37,6 +38,21 @@
     "tests/test_0055_r5_closure.py::test_s2_2_a_many_line_run_between_a_label_and_its_value_counts_no_chain_line[invisible-only-lines]",
     "tests/test_0055_r5_closure.py::test_s2_2_chain_safe_offset_counts_only_visible_lines[blank]",
     "tests/test_0055_r5_closure.py::test_s2_2_chain_safe_offset_counts_only_visible_lines[invisible-only]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-mcp]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -69,7 +85,7 @@
     "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
     "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
    ],
-   "definition_sha256": "2111194231fd142bf8a53601dcceeb5aee20e4385649ccbcb5480cfcf95d14b5",
+   "definition_sha256": "eec9a06cc5f9107da62b7aeb0cebd28dfafdba7b493e61d38195b52aba0e9f01",
    "expected": "SURVIVED",
    "file": "src/veracium/credentials.py",
    "good": true,
@@ -96,6 +112,7 @@
     "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut",
     "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object",
     "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[remember.event_text]",
     "tests/test_0055_r5_closure.py::test_r5_06_remember_fallback_summary_uses_the_screened_event_type",
     "tests/test_0055_r5_closure.py::test_s2_1_a_long_begin_marker_cut_by_the_read_back_chunk_edge_withholds_the_body",
@@ -105,6 +122,21 @@
     "tests/test_0055_r5_closure.py::test_s2_2_a_many_line_run_between_a_label_and_its_value_counts_no_chain_line[invisible-only-lines]",
     "tests/test_0055_r5_closure.py::test_s2_2_chain_safe_offset_counts_only_visible_lines[blank]",
     "tests/test_0055_r5_closure.py::test_s2_2_chain_safe_offset_counts_only_visible_lines[invisible-only]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-mcp]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -521,9 +553,10 @@
     "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
     "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
     "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]",
-    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept"
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept",
+    "tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key"
    ],
-   "definition_sha256": "8d21398a1a57300c880a7186ce3325d5a391b914203aa5d07dcd0f29216175b1",
+   "definition_sha256": "45668e6201e8e6e24c3c4d7db2a941d3fa299246da38d8e005c9d601200a0e67",
    "expected": "SURVIVED",
    "file": "src/veracium/mcp_server.py",
    "good": true,
@@ -551,7 +584,8 @@
     "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-binding-shaped_relation]",
     "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_id]",
     "tests/test_0055_r5_closure.py::test_r5_03_every_served_success_result_carries_no_shape[forget_everything_confirm-mcp-shaped_relation]",
-    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept"
+    "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept",
+    "tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/mcp_server.py: its mutants' cells must all pass"
@@ -589,9 +623,10 @@
    "cells_passed": [
     "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
     "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
-    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]"
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]"
    ],
-   "definition_sha256": "8188d234d4f4568fc893dc35fb270cd5ea072185607aec7e6a683543180566cf",
+   "definition_sha256": "e6559eedb6063c18fa29893e9d13e36f65c4f8c6b2faef043a574d19efd40f4a",
    "expected": "SURVIVED",
    "file": "src/veracium/cli.py",
    "good": true,
@@ -601,7 +636,8 @@
    "named_cells": [
     "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
     "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
-    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]"
+    "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]"
    ],
    "outcome": "SURVIVED",
    "what": "a comment edit in src/veracium/cli.py: its mutants' cells must all pass"
@@ -742,11 +778,15 @@
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
     "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
     "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld",
     "tests/test_0055_r5_closure.py::test_s2_1_a_window_starting_anywhere_in_a_begin_line_withholds_the_body[1]",
     "tests/test_0055_r5_closure.py::test_s2_1_a_window_starting_anywhere_in_an_end_line_sends_what_follows[1]"
    ],
-   "definition_sha256": "07da7aeec8a7eed4d6485cf8b2a337068a9ce1497e64a252746f44b2d79799e8",
+   "definition_sha256": "e10cdfd5117b9ff555896ff86837c91a971dbe4efb74a3a90080e6378c809081",
    "expected": "SURVIVED",
    "file": "src/veracium/diagnostics.py",
    "good": true,
@@ -759,6 +799,10 @@
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
     "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
     "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld",
     "tests/test_0055_r5_closure.py::test_s2_1_a_window_starting_anywhere_in_a_begin_line_withholds_the_body[1]",
     "tests/test_0055_r5_closure.py::test_s2_1_a_window_starting_anywhere_in_an_end_line_sends_what_follows[1]"
@@ -1060,10 +1104,15 @@
     "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
     "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept",
     "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld",
     "tests/test_0055_r5_closure.py::test_r5_04_mask_from_omits_a_span_that_crosses_the_cut",
     "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object",
     "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[answer.query]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[confirm.edge_id]",
     "tests/test_0055_r5_closure.py::test_r5_06_an_accepted_str_subclass_reaches_what_its_data_reaches[correct.edge_id]",
@@ -1081,6 +1130,23 @@
     "tests/test_0055_r5_closure.py::test_s2_2_chain_safe_offset_counts_only_visible_lines[blank]",
     "tests/test_0055_r5_closure.py::test_s2_2_chain_safe_offset_counts_only_visible_lines[invisible-only]",
     "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]",
+    "tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key",
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-mcp]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C16]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C5]",
     "tests/test_0055_recogniser.py::test_every_row_matches_the_reference_and_its_exact_report[C6]",
@@ -1116,29 +1182,29 @@
   },
   "clean": {
    "first": {
-    "of": 244,
+    "of": 266,
     "ok": true,
-    "passed": 244
+    "passed": 266
    },
    "last": {
-    "of": 244,
+    "of": 266,
     "ok": true,
-    "passed": 244
+    "passed": 266
    }
   },
-  "commit": "68d7d6d3d70afd7df0b8ccdc02aa861984e78cd1",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
    "NOOP-__init__": "46cc0bb2bc19b49c5e71950eeb109512aaf7dafcb3918a3f20112c42628ed1e1",
-   "NOOP-cli": "8188d234d4f4568fc893dc35fb270cd5ea072185607aec7e6a683543180566cf",
+   "NOOP-cli": "e6559eedb6063c18fa29893e9d13e36f65c4f8c6b2faef043a574d19efd40f4a",
    "NOOP-compile": "1ebb730fb06489350d915b5b503f4da91e95a43bc00e33d059361ee3df03d291",
    "NOOP-credential_finder": "bea7ced18273b53eb3af17b790a4f479802c5081753f58b56332c80a481e6c4e",
-   "NOOP-credentials": "2111194231fd142bf8a53601dcceeb5aee20e4385649ccbcb5480cfcf95d14b5",
-   "NOOP-diagnostics": "07da7aeec8a7eed4d6485cf8b2a337068a9ce1497e64a252746f44b2d79799e8",
+   "NOOP-credentials": "eec9a06cc5f9107da62b7aeb0cebd28dfafdba7b493e61d38195b52aba0e9f01",
+   "NOOP-diagnostics": "e10cdfd5117b9ff555896ff86837c91a971dbe4efb74a3a90080e6378c809081",
    "NOOP-graph": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
    "NOOP-ingest": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
    "NOOP-introspect": "d689c0441de3c1733208db1d666619404a29d5a10a67bcbbb8c029aac71cf383",
-   "NOOP-mcp_server": "8d21398a1a57300c880a7186ce3325d5a391b914203aa5d07dcd0f29216175b1",
+   "NOOP-mcp_server": "45668e6201e8e6e24c3c4d7db2a941d3fa299246da38d8e005c9d601200a0e67",
    "NOOP-portability": "959dabbf4dd425a993e265bd85c72164d5f2df97f8ec568c696a21eaeae3c4fd",
    "NOOP-proactive": "5b360372b561ea0dced96d7d22258c79fb63c053dfe6e2e256573bc9901c7eb0",
    "NOOP-semantic": "37f606ac9feda6c09de11c617eaf2829764701dc237a2d21e9ddeca517a0abce",
@@ -1193,7 +1259,7 @@
    "R5-04-crossing-span-kept": "77cb9084d86951b318459306b4265ec2cb56dd18ddd6d9904af73be871bd3167",
    "R5-04-no-chain-context": "3df8ddcf3c776b8404c3af8ed4816c7f59e997ef5377464f7916e6423dbc8551",
    "R5-04-no-pem-state": "f2e00b391c1b450f79b48bd64320188066dfc651038125177e75c5ca69821e7c",
-   "R5-05-notes-unjudged": "7d80d60e9b15e5335193f6d3beb3a8f39329fce5f17eaa3845514d0d6334b24d",
+   "R5-05-notes-unjudged": "57053c95b7796963b980347e71e01121ca7cbd969cf3dc9b609906dfc3d4aef4",
    "R5-05-replacement-unsettled": "0764fcbaf7cec3bc1228dda73f95790ef9e7016b80336b4a3871fa599128acf7",
    "R5-06-answer-query-unconverted": "1ab66b9822e34891f1b80ca98af3312d484de8c1e0b3ee9b1a917dcf3cc25990",
    "R5-06-confirm-edge-id-unconverted": "a5d9dcc2b4d1708fc5a4a25085b3829317464ddedb99e434a7dc6fd48eae442a",
@@ -1211,6 +1277,19 @@
    "R5-mask-deep-keys-kept": "cf573821d95d2dbfe3f2f22d79e04db3c3a87232c2e810a3808743c39f7bf701",
    "R5-recall-episode-date-unmasked": "3169972f5a0f8db753a2351de9da6ca4d49e8884512bfcdbb95ffd8ea9a6dcf3",
    "R5-why-find-two-fields": "dce33dc8f41ba4bec9419d529a4e01e82e6edc5042fe37945fa024695f68fc6a",
+   "R6-01-children-unwithheld": "6f876f11309d09969710a0c65fa60726999380f76ef8358a52c7b5592e67275b",
+   "R6-01-cli-catches-exception-only": "d2d097fa38fbe48abda8d49232552b062d88a4337f1d918cafc540974672ae6b",
+   "R6-01-error-type-kept": "84994d31fffb585634ad70b7a8e05f81b31d445fcd98452a84f1057c75862e0c",
+   "R6-01-field-verbatim": "4523900b27e5df9904ea2a838b192c94ed4dbf1871c6fafee9acb84f8a57ee55",
+   "R6-01-final-check-removed": "9eec2f67a8549faea2553ea76d160c8e63e4a82eacd08cf65061707c437756e4",
+   "R6-01-group-via-derive": "299eb4585c8c86dc775b6844aeb06e008e027d3fdf5f329b9e2b3640fc663685",
+   "R6-01-outward-type-kept": "9b1f4540daaaa52dac81f9adc5cb31c512959e8a79b947cf986e8f2b4e608bdd",
+   "R6-01-reason-by-spelling": "783c732d1904ba610824de8a98dabbb794c99d2bf1cd9576dbe6c332f4b5d124",
+   "R6-01-render-check-str-only": "3bb0b5d4c1c9ae1e48908f8a9d501689a692e44e5a393aed3b4548cc50db7c51",
+   "R6-01-title-kept": "8e80a6408a1601774174d04cfe5b950285af6b7007eeaa3a9de1398623c59265",
+   "R6-02A-chain-context-dropped": "f51491ba08b1b6ef3462283e217f9e95f2929ccb2a6f708c81892dd51187f87f",
+   "R6-02B-replacement-unsettled": "b43a1f3422e0b32af47a27ba0746054815cf1d501b8cc12d4e6d1b29d2e49251",
+   "R6-served-label-original-key": "10d399b426d68e97caeff6fea6a199478d9d77dd60b8b9de0234b71f38288092",
    "S1-named-side-tables-only": "22c889af6bcfc198ff900e65b195ebc8481c08833edfd55b46b5ea45f19cae36",
    "S1-unparsed-record-skipped": "c51dc629085b299ba5e62c09cb9de7e8479c09425e954d030eca201ef4da631f",
    "S2-1-chunk-edge-fixed-overlap": "18d49c90e47602b4edde936e19a2f85d54751ca1d119b7bace60da18010d22f9",
@@ -1223,20 +1302,20 @@
   },
   "digests": {
    "specs/evidence/0055/digests.json": "5980405e476b1c1a2711c82e819f41b1d192dad452058901ddef03b6734dd06f",
-   "specs/evidence/0055/implementation_mutants.py": "358c0f6e54a7266b52005e8bfa4f5fbe49fe979d8074e39ba76901923054d838",
+   "specs/evidence/0055/implementation_mutants.py": "717a55e5036d379f4cbcaacb017f93326daefd69b95e349495474864bc2d6f42",
    "specs/evidence/0055/vectors.py": "a773cb2cc8f5f9a0ef01c8a8b872e3097b77cf49efe247ee749ec084b4af41d7",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/__init__.py": "34b2f74dd1b25c472aadec09234fea462fded60d03213c066746e74716fb37a3",
-   "src/veracium/cli.py": "5811be5d204fa9101c8f3692301af15b67a6746f7a8f82c614d6b340b9983c30",
+   "src/veracium/cli.py": "69be6d8c4e5948c0fc36d5fed6f28bc397bdb268ffaf24c331d50857377bd799",
    "src/veracium/compile.py": "5167e3cdf499c50486db803827870a7420a528c9273a31bf9ead708f34dae465",
    "src/veracium/credential_finder.py": "bcb5ed255e30f65edfa4ad532c306ac98723bf8f994aba009cb27b18323f311c",
-   "src/veracium/credentials.py": "cbac79b4008ac507466f942ed7724fadc7b0ac076fcd43f1916be8e2ff387e8d",
+   "src/veracium/credentials.py": "09d4c8045975eb8b7cb5dd12bedc05084869b115e12a178521d8b25fbfec18b0",
    "src/veracium/diagnostics.py": "be0efc33f41eb91498bb0c805b6161a4995c6aa198a214da3daf62c689aa7bbc",
    "src/veracium/graph.py": "fa037af8742677f09a29516d90b467ba82c2865f04a14d806821bc7eb5811f9d",
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
    "src/veracium/introspect.py": "a7307fbd1992ebae5fc0ea74554ff3b613b822c9b43156058de83a1455ce71fd",
-   "src/veracium/mcp_server.py": "36708b382105e9caa5ac092aef087127974b530c7f933916a67b183098fd616e",
+   "src/veracium/mcp_server.py": "4a393f5861bf12784ec513d394177ab26f9f417cf4506222b997d6ab35fd7304",
    "src/veracium/portability.py": "90f8fa23dd2366361a0b6938b677bf6beca18fa5090fdc3c0efb359028e93eec",
    "src/veracium/proactive.py": "c0acf48b4db357664b33165dd2e368b83bd3aeec660c2f1badbf0117d5fd40e2",
    "src/veracium/semantic.py": "8dec10f2ce279e035d5d52bd2cf290267917a6799056133cc8bca8de5cc33da4",
@@ -1247,7 +1326,8 @@
    "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
    "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
    "tests/test_0055_r4_closure.py": "d8e77310919fee872d88f9c79b82329904e004249617c62954c4ec11a1dd2f65",
-   "tests/test_0055_r5_closure.py": "289b2ae2f0657b1b99b9b7b03961584bcc875d10a30010c9e119b56ebdcaa386",
+   "tests/test_0055_r5_closure.py": "f60b17d6d7ecc0259307161990d3b2561a789e29c28781a2d64994b05299d997",
+   "tests/test_0055_r6_closure.py": "72e87d01a2be7c05bc5849b5dcfcfcaf9df6f076d0f542773e6c8b6e03c75445",
    "tests/test_0055_recogniser.py": "cccb1403bb061956e769bbca9734c633c81faae21f4585f2f738fae170a4bc06"
   },
   "finding": "implementation",
@@ -1262,16 +1342,10 @@
   "spec": "0055",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0055/a5-type-census.json",
-   "specs/evidence/0055/carrier-boundaries.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "src/veracium/credentials.py",
-   "src/veracium/diagnostics.py",
-   "tests/test_0055_r5_closure.py"
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md"
   ]
  },
  "rows": [
@@ -1330,7 +1404,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 0.98s",
+   "pytest": "10 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1372,7 +1446,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.59s",
+   "pytest": "4 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1420,7 +1494,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.71s",
+   "pytest": "6 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -1525,7 +1599,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "25 failed in 3.93s",
+   "pytest": "25 failed in 4.30s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1564,7 +1638,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.37s",
+   "pytest": "3 failed in 1.44s",
    "reason": null,
    "reason_seen": null,
    "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -1597,7 +1671,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
@@ -1630,7 +1704,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -1663,7 +1737,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.94s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1705,7 +1779,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.22s",
+   "pytest": "4 failed in 1.32s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1786,7 +1860,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 4.41s",
+   "pytest": "17 failed in 4.66s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1819,7 +1893,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.90s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1852,7 +1926,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1885,7 +1959,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.94s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -1918,7 +1992,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.95s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -1951,7 +2025,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -2044,7 +2118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 3.79s",
+   "pytest": "21 failed in 4.01s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -2116,7 +2190,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.96s",
+   "pytest": "2 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -2149,7 +2223,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -2182,7 +2256,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.59s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -2215,7 +2289,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
@@ -2248,7 +2322,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.58s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
@@ -2375,7 +2449,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "26 failed in 2.29s",
+   "pytest": "26 failed in 2.32s",
    "reason": null,
    "reason_seen": null,
    "what": "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, \u00a74a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -2495,7 +2569,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "30 failed in 6.71s",
+   "pytest": "30 failed in 6.89s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"
@@ -2531,7 +2605,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.69s",
+   "pytest": "2 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -2564,7 +2638,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "RenderReceipt.admit carries the stored id raw again (round 4's R4-03 and S2: find_facts, recall, proactive) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -2600,7 +2674,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.88s",
+   "pytest": "2 failed in 0.89s",
    "reason": null,
    "reason_seen": null,
    "what": "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"
@@ -2633,7 +2707,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"
@@ -2678,7 +2752,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.12s",
+   "pytest": "5 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and retired_reason read as residual, so the remedy never targets them)"
@@ -2720,7 +2794,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.90s",
+   "pytest": "4 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "a record field no class names is dropped again, not reported (round 4's R4-04: fail closed)"
@@ -2756,7 +2830,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.69s",
+   "pytest": "2 failed in 0.71s",
    "reason": null,
    "reason_seen": null,
    "what": "a current record whose JSON does not parse is skipped again (research's S1)"
@@ -2789,7 +2863,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.60s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, source_revocations.reason and every other per-user column unread)"
@@ -2825,7 +2899,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"
@@ -2858,7 +2932,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.54s",
+   "pytest": "1 failed in 0.56s",
    "reason": null,
    "reason_seen": null,
    "what": "a validation location prints a caller's dict key again (research's S3)"
@@ -2900,7 +2974,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.64s",
+   "pytest": "4 failed in 0.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the log tail is cut to the cap BEFORE it is screened again (round 4's R4-06)"
@@ -2933,7 +3007,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"
@@ -2975,7 +3049,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.17s",
+   "pytest": "4 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's screen reads only a str again: a bytes origin or source_id passes it to `_bounded`, whose message quotes it (round 5: R4-01's class one call down, found by the A5 census's exception-text cell)"
@@ -3018,7 +3092,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.90s",
+   "pytest": "4 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "recall's episode lines print the stored date unmasked again (round 5, the carrier table's `record:episode:current:date`) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -3063,7 +3137,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 0.99s",
+   "pytest": "5 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "the wiki compile's episode line prints the stored date unmasked again (round 5; reached by the DATED form only: a bare token sorts as a future date and the episode is not assertable)"
@@ -3102,7 +3176,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.90s",
+   "pytest": "3 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_deep leaves dict keys as they are again (round 5: `veracium why` printed a legacy `outcome_counts` key)"
@@ -3135,7 +3209,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "why.find masks only its id and fact again (round 5: `why --find --json` printed `invalidation_reason`)"
@@ -3174,7 +3248,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.80s",
+   "pytest": "3 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "journal text of an already-redacted record is reported removable again (round 5: `act` redacted nothing and the token stayed)"
@@ -3210,7 +3284,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.89s",
+   "pytest": "2 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress screens a str subclass by its data but hands the object on again (round 5's R5-06)"
@@ -3243,7 +3317,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "remember passes the unconverted event_type to ingest again, whose fallback summary formats it (R5-06's branch)"
@@ -3276,7 +3350,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's callee screen returns origin and source_id unconverted again (R5-06, the callee's step)"
@@ -3315,7 +3389,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.13s",
+   "pytest": "3 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "the import screen reads mapping VALUES only again: a shaped key passes admission (round 5's R5-01)"
@@ -3351,7 +3425,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.68s",
+   "pytest": "2 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard reads mapping VALUES only again: a new shaped key passes it (round 5's R5-01)"
@@ -3384,7 +3458,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.82s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the import screen's label prints a caller's key again (round 5's R5-02)"
@@ -3423,7 +3497,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.70s",
+   "pytest": "3 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard's refusal label prints a stored key again (R5-02 in the recursive guard)"
@@ -3483,7 +3557,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.59s",
+   "pytest": "10 failed in 1.67s",
    "reason": null,
    "reason_seen": null,
    "what": "a served result keeps a shaped record id raw again (round 5's R5-03)"
@@ -3534,7 +3608,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 0.81s",
+   "pytest": "7 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "a served result keeps shaped stored text raw again (R5-03: dispute's relation)"
@@ -3567,7 +3641,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.92s",
+   "pytest": "1 failed in 0.94s",
    "reason": null,
    "reason_seen": null,
    "what": "the log window sends from its first full line again: a white-space-joined match is cut from its label (R5-04)"
@@ -3600,7 +3674,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.71s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "the log window ignores a PEM block open at its start again (round 5's R5-04)"
@@ -3633,7 +3707,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_from keeps the cursor inside a span that crosses the send point again (R5-04)"
@@ -3669,7 +3743,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.78s",
+   "pytest": "2 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "the replacement exception keeps the notes and cause its constructor added again (round 5's R5-05)"
@@ -3708,7 +3782,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.92s",
+   "pytest": "3 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "introspect's report carries stored relations and reasons raw again (dev's library audit: the CLI printed them)"
@@ -3741,7 +3815,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "the library dispute result carries the stored relation raw again (research's addition 2)"
@@ -3787,7 +3861,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.46s",
+   "pytest": "5 failed in 1.59s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm_fact_impl and dispute_fact_impl return unprojected again (R5-03, the decorator)"
@@ -3832,7 +3906,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.70s",
+   "pytest": "5 failed in 1.79s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_everything_preview's minted token is masked like a stored shape (the declared exception lost)"
@@ -3865,7 +3939,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
@@ -3898,7 +3972,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.80s",
+   "pytest": "1 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
@@ -3931,7 +4005,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.87s",
    "reason": null,
    "reason_seen": null,
    "what": "correct derives evidence_ref from a str-subclass edge_id's name again (R5-06's unscreened sibling)"
@@ -3964,7 +4038,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "answer puts a str-subclass query's name in the gate's prompt again (R5-06's unscreened sibling)"
@@ -3980,7 +4054,7 @@
    "cells_failed": [
     "tests/test_0055_r5_closure.py::test_r5_05_notes_that_cannot_be_deleted_refuse_the_object"
    ],
-   "definition_sha256": "7d80d60e9b15e5335193f6d3beb3a8f39329fce5f17eaa3845514d0d6334b24d",
+   "definition_sha256": "57053c95b7796963b980347e71e01121ca7cbd969cf3dc9b609906dfc3d4aef4",
    "file": "src/veracium/credentials.py",
    "finding": "implementation",
    "good": true,
@@ -3997,10 +4071,10 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.65s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
-   "what": "_formats_as no longer refuses an exception that still carries notes (R5-05: an undeletable __notes__)"
+   "what": "_formats_as judges only the rendering's first line, so an exception that still carries notes passes (R5-05: an undeletable __notes__; round 6 moved the judgement onto the rendering)"
   },
   {
    "anchor_counts": [
@@ -4030,7 +4104,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.83s",
+   "pytest": "1 failed in 0.88s",
    "reason": null,
    "reason_seen": null,
    "what": "the CLI's recall verb prints the host-record Recall's raw record ids (the census's outward check, CLI half)"
@@ -4063,7 +4137,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.14s",
+   "pytest": "1 failed in 1.17s",
    "reason": null,
    "reason_seen": null,
    "what": "a host-record method gains a caller outside Memory that no projection or masked print screens (the surface half)"
@@ -4096,7 +4170,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "edges_since returns nothing: the census's positive control (the host's own read carries the record) reaches no record"
@@ -4132,7 +4206,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.72s",
+   "pytest": "2 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the log window's PEM state is judged at its cut again, inside a line (S2-1; the line-start refusal then sends nothing)"
@@ -4165,7 +4239,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "pem_open_before answers at a position inside a line, where a marker can be cut in two (S2-1's mechanism)"
@@ -4201,7 +4275,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.80s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "the read-back carries a fixed 4096-byte overlap across a chunk edge again (round 5's form): a longer marker is cut"
@@ -4237,7 +4311,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.95s",
+   "pytest": "2 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the chain bound counts blank lines (research's chain-blank-lines-count: a many-line run ends the context early)"
@@ -4273,7 +4347,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.43s",
+   "pytest": "2 failed in 1.50s",
    "reason": null,
    "reason_seen": null,
    "what": "the chain bound judges a line raw, so an invisible-only line counts (research's chain-invisible-lines-count)"
@@ -4309,21 +4383,483 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.03s",
+   "pytest": "2 failed in 1.11s",
    "reason": null,
    "reason_seen": null,
    "what": "exact converts Enum members only; a plain str subclass that formats as the token passes (research's exact-only-enum)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]"
+   ],
+   "definition_sha256": "3bb0b5d4c1c9ae1e48908f8a9d501689a692e44e5a393aed3b4548cc50db7c51",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-render-check-str-only",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.54s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "_formats_as accepts str() plus notes again (round 5's rule): the renderer's suggestion line prints a name from obj"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]"
+   ],
+   "definition_sha256": "8e80a6408a1601774174d04cfe5b950285af6b7007eeaa3a9de1398623c59265",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-title-kept",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.55s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a withheld validation error keeps an undeclared title (R6-01's Pydantic title)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]"
+   ],
+   "definition_sha256": "84994d31fffb585634ad70b7a8e05f81b31d445fcd98452a84f1057c75862e0c",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-error-type-kept",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.56s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a withheld validation error copies a custom error code (R6-01's PydanticCustomError code)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-mcp]"
+   ],
+   "definition_sha256": "9b1f4540daaaa52dac81f9adc5cb31c512959e8a79b947cf986e8f2b4e608bdd",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-outward-type-kept",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[pydantic.error:type-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.05s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "outward_text prints a custom error code again (R6-01, both served routes)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]"
+   ],
+   "definition_sha256": "783c732d1904ba610824de8a98dabbb794c99d2bf1cd9576dbe6c332f4b5d124",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-reason-by-spelling",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 1.05s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "outward_text admits a reason by its spelling again, not by membership of the declared set (R6-01's generic reason)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]"
+   ],
+   "definition_sha256": "4523900b27e5df9904ea2a838b192c94ed4dbf1871c6fafee9acb84f8a57ee55",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-field-verbatim",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.93s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "outward_text prints an undeclared field name again"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]"
+   ],
+   "definition_sha256": "299eb4585c8c86dc775b6844aeb06e008e027d3fdf5f329b9e2b3640fc663685",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-group-via-derive",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.56s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a withheld group is rebuilt through the original's derive, keeping its message (R6-01's group children)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]"
+   ],
+   "definition_sha256": "6f876f11309d09969710a0c65fa60726999380f76ef8358a52c7b5592e67275b",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-children-unwithheld",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.55s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a withheld group keeps its children as they are (R6-01: the child is the display)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]"
+   ],
+   "definition_sha256": "9eec2f67a8549faea2553ea76d160c8e63e4a82eacd08cf65061707c437756e4",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-final-check-removed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.57s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the final check on the withheld object passes everything (R6-01: the check, not only the builders)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]"
+   ],
+   "definition_sha256": "d2d097fa38fbe48abda8d49232552b062d88a4337f1d918cafc540974672ae6b",
+   "file": "src/veracium/cli.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-01-cli-catches-exception-only",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.55s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the CLI catches Exception only again: a BaseExceptionGroup holding a KeyboardInterrupt escapes with its children"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key"
+   ],
+   "definition_sha256": "10d399b426d68e97caeff6fea6a199478d9d77dd60b8b9de0234b71f38288092",
+   "file": "src/veracium/mcp_server.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-served-label-original-key",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.55s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "served_result labels a value under the ORIGINAL key again (the reviewer's helper-level observation)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]"
+   ],
+   "definition_sha256": "b43a1f3422e0b32af47a27ba0746054815cf1d501b8cc12d4e6d1b29d2e49251",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-02B-replacement-unsettled",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]",
+    "tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "2 failed in 0.75s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the REPLACEMENT alone is not settled (research's addition 5: R5-05's row removed settling everywhere)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]"
+   ],
+   "definition_sha256": "f51491ba08b1b6ef3462283e217f9e95f2929ccb2a6f708c81892dd51187f87f",
+   "file": "src/veracium/diagnostics.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-02A-chain-context-dropped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 1.60s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the window's start keeps no chain context: only the byte-placed every-cut test reaches a cut inside a chain (R6-02A)"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 73
+   "product": 86
   },
   "controls": 17,
   "controls_good": 17,
-  "good": 73,
-  "killed": 73,
-  "rows": 73,
-  "seconds": 344
+  "good": 86,
+  "killed": 86,
+  "rows": 86,
+  "seconds": 430
  }
 }

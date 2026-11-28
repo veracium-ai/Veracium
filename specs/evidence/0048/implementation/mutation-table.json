@@ -1,5 +1,5 @@
 {
- "body_sha256": "f2625bdb5ce5be058673d7d30815d012c9d3a95f642ecdc1e59000cb2ecc1745",
+ "body_sha256": "3d074bb955e64576f3bc5c8bd5fb2ff2295793ac7b5c26216f12a92641a3da9a",
  "controls": [
   {
    "anchor_counts": [
@@ -304,7 +304,7 @@
     "passed": 63
    }
   },
-  "commit": "6bb76f7c600e6a3311da8cc8823247b337ea76e1",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "d7bc1479be4f412c9fbd20b3cbd2e4d4e6568c2e9903136c7be56c4ed4ea2ce0",
    "NOOP-config": "0d005bd7345eebfc94c98ef120e5e1bd3f22209a7c6c72666c8bfcf9666e644a",
@@ -362,7 +362,7 @@
    "specs/evidence/0048/census_0048.py": "77f2ac19dd9430a8b8e08f6e674f68072a81ad16a7188877ff67f9db036bcf96",
    "specs/evidence/0048/implementation_mutants.py": "ed5f38dca887865895756a15c23816ba395fbe1c492e1cdb0c903ca6256bcc4f",
    "specs/evidence/0048/tripwire_0048.py": "8a880d2771ca39e4ce225cb7e711cbea93a282ba14a9f4e3a423addf43a2e09e",
-   "specs/evidence/0048/tripwire_0048_classified.tsv": "dc1853f8834d68bc84fde77593e068c7017fbe107e23e0149f5f66de70fc6d49",
+   "specs/evidence/0048/tripwire_0048_classified.tsv": "86e86faceab8c3f04c88a73c29ff529dde2518d12368fa43dfec3e3051c7bca4",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/config.py": "a510123ae142da13952aa1ffabcf2d89099525ff87b2fcb8baf289964f0d96c9",
@@ -370,7 +370,7 @@
    "src/veracium/lifecycle.py": "c9456ed984957d358d678a9797c6be809b08a4168e85e49e4c6bbea5b8d42fc5",
    "src/veracium/store/base.py": "a72b626a04c4a2230484ce63c438335f24a0b319e8ffb8376e1d108e3a25ab39",
    "src/veracium/store/sqlite.py": "1f2cffdd03784f527368a1e71ead089d8790d9bf5d44ca78c63d76cad786210f",
-   "tests/test_0048_decay_bounds.py": "e4505989aa3d9db443d5de63d45fc8c77d619d4235f900cf41b1a578ec1910a1",
+   "tests/test_0048_decay_bounds.py": "c492ce81472739abe4e4b1bb087021b5f81f46c53652b57bac6e8c33379a8a03",
    "tests/test_0048_evidence.py": "e1ebba6e15d5ee5e1bf1e6321ad9bd18d7c209ef8144a14b0830a307f19ea813"
   },
   "finding": "implementation",
@@ -395,7 +395,13 @@
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
-  "tracked_changes": []
+  "tracked_changes": [
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/0055/implementation/mutation-table.json"
+  ]
  },
  "rows": [
   {
@@ -429,7 +435,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.20s",
+   "pytest": "2 failed in 1.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the bounds validated on assignment only: construction accepts 2.0"
@@ -465,7 +471,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.18s",
+   "pytest": "2 failed in 1.68s",
    "reason": null,
    "reason_seen": null,
    "what": "the bounds validated at construction only: `c.decay_factor = 2.0` is accepted"
@@ -498,7 +504,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.90s",
+   "pytest": "1 failed in 1.19s",
    "reason": null,
    "reason_seen": null,
    "what": "the value set before it is validated: a refused assignment loses the old value"
@@ -534,7 +540,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.23s",
+   "pytest": "2 failed in 1.38s",
    "reason": null,
    "reason_seen": null,
    "what": "an exclusive bound: the endpoints 0 and 1 are refused"
@@ -570,7 +576,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.22s",
+   "pytest": "2 failed in 1.38s",
    "reason": null,
    "reason_seen": null,
    "what": "a NaN-blind comparison: nan is accepted"
@@ -612,7 +618,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 2.19s",
+   "pytest": "4 failed in 2.54s",
    "reason": null,
    "reason_seen": null,
    "what": "the float conversion first again: 10**400 raises OverflowError, not the ValueError naming the field (R3-03)"
@@ -651,7 +657,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.60s",
+   "pytest": "3 failed in 1.92s",
    "reason": null,
    "reason_seen": null,
    "what": "the refused value rendered by repr again: beyond the 4,300-digit limit the rendering's own ValueError replaces the refusal naming the field (R4-02)"
@@ -687,7 +693,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.20s",
+   "pytest": "2 failed in 1.29s",
    "reason": null,
    "reason_seen": null,
    "what": "no explicit refusal of a bool: True reads as 1"
@@ -723,7 +729,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.34s",
+   "pytest": "2 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -759,7 +765,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.33s",
+   "pytest": "2 failed in 1.50s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"
@@ -797,7 +803,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.34s",
+   "pytest": "2 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "the validation moved back inside the DECAY branch: the TRANSIENT edge listed first is lapsed before the refusal"
@@ -833,7 +839,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.26s",
+   "pytest": "2 failed in 1.33s",
    "reason": null,
    "reason_seen": null,
    "what": "a retained decay counted as `decayed` (R2-02)"
@@ -866,7 +872,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "a store without `expiry_transition` is not refused at entry (the owner's ruling, \"Refuse, name it\")"
@@ -899,7 +905,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "the capability read on the CLASS alone: a delegating wrapper (its __getattr__ reaches the inner store's transition) is refused (found by 0021's fault matrix, 2026-11-02)"
@@ -932,7 +938,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "the capability read asks the wrapper's class, not the resolved method: Wrapper(a non-overriding subclass) escapes the refusal at entry (research, 2026-11-02)"
@@ -965,7 +971,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "a ValueError from the transition swallowed (the shipped `except ValueError` shape)"
@@ -998,7 +1004,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "the lifetimes dict read live: a host's mid-run edit changes the run"
@@ -1037,7 +1043,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 2.09s",
+   "pytest": "3 failed in 3.44s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the shipped expire() body, deciding from its listing and writing the copy back"
@@ -1070,7 +1076,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.96s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "the transition reads the store module's import of the table, not expire()'s copy (research's F2)"
@@ -1103,7 +1109,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.01s",
+   "pytest": "1 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "the store helper serialises without validating"
@@ -1136,7 +1142,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "the helper accepts an instance without revalidating its nested data"
@@ -1169,7 +1175,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 7.12s",
+   "pytest": "1 failed in 7.39s",
    "reason": null,
    "reason_seen": null,
    "what": "the sole active=0 writer binds its own dump, not the helper's"
@@ -1202,7 +1208,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 7.01s",
+   "pytest": "1 failed in 7.30s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer calls the helper and ignores its return value"
@@ -1238,7 +1244,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.28s",
+   "pytest": "2 failed in 7.56s",
    "reason": null,
    "reason_seen": null,
    "what": "the write method no longer refuses a call whose before/after lengths misplace the captured json (R4-01 (a)'s second layer; the static gate also refuses the changed body)"
@@ -1274,7 +1280,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.27s",
+   "pytest": "2 failed in 7.54s",
    "reason": null,
    "reason_seen": null,
    "what": "the frozen layout names the wrong json position for the INSERT: it no longer equals the layout SQLite gives by execution (R4-01 (a))"
@@ -1307,7 +1313,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION (round 3's body): one observation validated, another serialised (R3-01)"
@@ -1376,7 +1382,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.38s",
+   "pytest": "2 failed in 7.60s",
    "reason": null,
    "reason_seen": null,
    "what": "the deferred journal's __exit__ suppresses: a failed side-table write commits a row with no journal"
@@ -1412,7 +1418,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 7.44s",
+   "pytest": "2 failed in 7.76s",
    "reason": null,
    "reason_seen": null,
    "what": "leaving the deferred block without emit is allowed: a row commits with no journal"
@@ -1446,7 +1452,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.18s",
+   "pytest": "1 failed in 1.22s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on (confidence, activity) as read: confirm() on 0.95 changes neither, and is reverted"
@@ -1480,7 +1486,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.00s",
+   "pytest": "1 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "a predicate binding the read model re-serialised: a legacy row's bytes never match and it is skipped"
@@ -1514,7 +1520,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.15s",
+   "pytest": "1 failed in 1.22s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"
@@ -1550,7 +1556,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.23s",
+   "pytest": "2 failed in 1.24s",
    "reason": null,
    "reason_seen": null,
    "what": "below the floor, the decayed confidence stored before the retirement (R2-02)"
@@ -1583,7 +1589,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.04s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor comparison inclusive: a decay at the floor retires"
@@ -1616,7 +1622,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.15s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "the 0041 skip not inside the transaction: a redaction after the listing makes the write path refuse"
@@ -1649,7 +1655,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "an INACTIVE current row is transitioned (an invalidation committed after the listing is flagged)"
@@ -1685,7 +1691,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.36s",
+   "pytest": "2 failed in 1.44s",
    "reason": null,
    "reason_seen": null,
    "what": "a transition that writes does not bump the user's store version (the shipped writers bump)"
@@ -1718,7 +1724,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the store version bumped before the transition knows it writes: a transition that writes nothing moves it"
@@ -1754,7 +1760,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.36s",
+   "pytest": "2 failed in 1.44s",
    "reason": null,
    "reason_seen": null,
    "what": "a decay that retires an edge in a refusal keeps the wiki: 0003 \u00a74c-ii's resolution event missed (research's stage-2 mark on 574f130)"
@@ -1793,7 +1799,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.76s",
+   "pytest": "3 failed in 1.75s",
    "reason": null,
    "reason_seen": null,
    "what": "no retiring transition drops the wiki (research's stage-2 mark on 574f130)"
@@ -1829,7 +1835,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.35s",
+   "pytest": "2 failed in 1.43s",
    "reason": null,
    "reason_seen": null,
    "what": "the drop applied to every writing outcome: a flag or a retained decay of an edge in a refusal drops the wiki (the next mutant of the drop's guard)"
@@ -1862,7 +1868,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the transition's due-ness exclusive: an edge exactly `lifetime` days old on its current row is transitioned (equivalent through expire(), whose listing skips it; research's stage-2 survivor)"
@@ -1895,7 +1901,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.38s",
+   "pytest": "1 failed in 3.37s",
    "reason": null,
    "reason_seen": null,
    "what": "a new copy site writing confidence, absent from the declared table"
@@ -1928,7 +1934,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.99s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "a writer of a form the census does not see, its trigger tokens unclassified"
@@ -1943,6 +1949,6 @@
   "good": 44,
   "killed": 44,
   "rows": 44,
-  "seconds": 265
+  "seconds": 286
  }
 }

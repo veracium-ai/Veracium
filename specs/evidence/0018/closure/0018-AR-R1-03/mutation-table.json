@@ -1,5 +1,5 @@
 {
- "body_sha256": "ce298fea802b0f2a7b51e117b1671e6f94b8cf3dbdc8b8888756e9644baa2c4a",
+ "body_sha256": "a45027c288b31c0d4b778bfddec916b5219b7116ac1c2ded925b24cb93d6feae",
  "controls": [
   {
    "anchor_counts": [
@@ -70,7 +70,7 @@
     "passed": 4
    }
   },
-  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "NOOP-0018-AR-R1-03-cli": "1c33a43cf31c55a416b59cd092ba32fda6c29bc9c95ecaaf65d782f5fbb36839",
    "NOOP-0018-AR-R1-03-release_migration": "3853caf7dfe7f42cc23e279449450e5776b80f22ec3971f40f4b381aae801972"
@@ -89,7 +89,7 @@
    "specs/evidence/0018/rungs/manifest.json": "85447f070add0f29716c4946ab08316154a9c96150c005a7046d0d10d074e29e",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "src/veracium/cli.py": "5811be5d204fa9101c8f3692301af15b67a6746f7a8f82c614d6b340b9983c30",
+   "src/veracium/cli.py": "69be6d8c4e5948c0fc36d5fed6f28bc397bdb268ffaf24c331d50857377bd799",
    "src/veracium/store/release_migration.py": "41d132a05a28cfb1a64dd80cf8648f4989c7ad5682628f991f504204149abf5d",
    "tests/test_0018_rungs_t3.py": "263d6f2fcec63305fd845165853494623ecb3742578718856cd353c2c13d05c2",
    "tests/test_migrate_cli.py": "c6da9a490687784aa2ace9ffed77ea253b5224a5b7af666ddcf61af30507ecc5"
@@ -98,44 +98,31 @@
   "honest_nodes": [
    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/container-release.yml",
-   ".github/workflows/container.yml",
-   "CHANGELOG.md",
-   "README.md",
-   "container/check_image.py",
-   "docs/api.md",
-   "docs/index.md",
-   "docs/mcp.md",
-   "examples/claude_code_hooks/README.md",
-   "examples/demo.ipynb",
-   "examples/langchain_memory.py",
-   "pyproject.toml",
-   "server.json",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/0054-container-image.md",
-   "specs/STATUS.md",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-02/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/adapters/__init__.py",
-   "src/veracium/adapters/langchain.py",
-   "src/veracium/adapters/pydantic_ai.py",
-   "src/veracium/cli.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/llm/anthropic.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/store/release_migration.py",
-   "tests/test_0031_server_reports_itself.py"
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -168,7 +155,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "the expectation is checked after the mint is delegated"
@@ -201,7 +188,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.68s",
+   "pytest": "1 failed in 1.21s",
    "reason": null,
    "reason_seen": null,
    "what": "the walk does not bind each rung to the last"
@@ -234,7 +221,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "the binding is put on `migrate_to`, so the last rung is unbound"
@@ -249,6 +236,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 20
+  "seconds": 16
  }
 }

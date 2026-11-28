@@ -1,5 +1,5 @@
 {
- "body_sha256": "a437c8fbe4b29b34201faa0ce425fe471a2dc63bf46081a3288aeb1b9f9d9e98",
+ "body_sha256": "306a3e3c1f04430f5bfc4b44644ff5dbb46fb107d20e5422db753cdbeee171d3",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "NOOP-0048-R1-01-lifecycle": "6e91be8bea7312abb276ab369c6a729330d4723354d885ad796ffc857912de46"
   },
@@ -66,39 +66,24 @@
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "c9456ed984957d358d678a9797c6be809b08a4168e85e49e4c6bbea5b8d42fc5",
-   "tests/test_0048_decay_bounds.py": "e4505989aa3d9db443d5de63d45fc8c77d619d4235f900cf41b1a578ec1910a1"
+   "tests/test_0048_decay_bounds.py": "c492ce81472739abe4e4b1bb087021b5f81f46c53652b57bac6e8c33379a8a03"
   },
   "finding": "0048-R1-01",
   "honest_nodes": [
    "tests/test_0048_decay_bounds.py::test_factor_is_validated_whatever_the_confidence[2.0-0.3]",
    "tests/test_0048_decay_bounds.py::test_lapse_and_confirm_keep_their_shipped_counts"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
-   "specs/evidence/0048/tripwire_0048_classified.tsv",
-   "specs/evidence/0055/a5-type-census.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/credentials.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/introspect.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/portability.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r4_closure.py"
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -133,7 +118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.44s",
+   "pytest": "2 failed in 1.45s",
    "reason": null,
    "reason_seen": null,
    "what": "the factor not validated at entry, A and C intact: 0.3 \u00d7 2.0 \u2192 0.6 is written (in range)"
@@ -169,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.45s",
+   "pytest": "2 failed in 1.52s",
    "reason": null,
    "reason_seen": null,
    "what": "the floor left unvalidated at entry"

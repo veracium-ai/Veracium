@@ -1,5 +1,5 @@
 {
- "body_sha256": "70d04f9d648de54f228cd6a2f855c74fc93d2dc274dd4406487e82d81d7604f0",
+ "body_sha256": "c8ea9f0d66fd72f533fdaf688cafc05ac600f0c4096b538aed4004de3bc1f457",
  "controls": [
   {
    "anchor_counts": [
@@ -72,7 +72,7 @@
     "passed": 4
    }
   },
-  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "NOOP-0048-R1-02-lifecycle": "58af8cd46e0530858f5a9ff275a3988be0b37ebaa81ea4484cce7d54c504761f",
    "NOOP-0048-R1-02-sqlite": "94835607491707ed52493817d4c730fe5dd514975334291247515e3f3eee671f"
@@ -88,40 +88,25 @@
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
    "src/veracium/lifecycle.py": "c9456ed984957d358d678a9797c6be809b08a4168e85e49e4c6bbea5b8d42fc5",
    "src/veracium/store/sqlite.py": "1f2cffdd03784f527368a1e71ead089d8790d9bf5d44ca78c63d76cad786210f",
-   "tests/test_0048_decay_bounds.py": "e4505989aa3d9db443d5de63d45fc8c77d619d4235f900cf41b1a578ec1910a1"
+   "tests/test_0048_decay_bounds.py": "c492ce81472739abe4e4b1bb087021b5f81f46c53652b57bac6e8c33379a8a03"
   },
   "finding": "0048-R1-02",
   "honest_nodes": [
    "tests/test_0048_decay_bounds.py::test_expiry_is_decided_from_the_current_row[confirm]",
    "tests/test_0048_decay_bounds.py::test_lapse_and_confirm_keep_their_shipped_counts"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
-   "specs/evidence/0048/tripwire_0048_classified.tsv",
-   "specs/evidence/0055/a5-type-census.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/credentials.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/introspect.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/portability.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r4_closure.py"
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -193,7 +178,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.25s",
+   "pytest": "1 failed in 1.27s",
    "reason": null,
    "reason_seen": null,
    "what": "a write conditional on the row as read in place of the in-transaction read (H-01: a due transition dropped)"

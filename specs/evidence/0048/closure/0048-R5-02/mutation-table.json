@@ -1,5 +1,5 @@
 {
- "body_sha256": "e2eded66f98f76331d31d31771bf5b70fc0624bcf609a851c0f9e49c622e2c72",
+ "body_sha256": "e9959878f16763ea794ded4f18b65cbd6ce1dbd84aae3499f01d9826931706f2",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "0d71b43ff4151d1fafb2f7c5cf7efd25030a087c",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "NOOP-0048-R5-02-test_0048_decay_bounds": "37dc4c8c374d6dc5e5faf76932ee7b7b58336f9206df55afeefca0b999519346"
   },
@@ -58,25 +58,21 @@
    "specs/evidence/0048/closure_mutants.py": "f5a07ae5cbc21ad856ff26dc0f33e747f2fa2a7aae03175f4284cfe5ceaf9c95",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "tests/test_0048_decay_bounds.py": "e4505989aa3d9db443d5de63d45fc8c77d619d4235f900cf41b1a578ec1910a1"
+   "tests/test_0048_decay_bounds.py": "c492ce81472739abe4e4b1bb087021b5f81f46c53652b57bac6e8c33379a8a03"
   },
   "finding": "0048-R5-02",
   "honest_nodes": [
    "tests/test_0048_decay_bounds.py::test_a_closure_over_a_methods_self_is_the_method_s"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0048",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0003/obligations/mutation-table.json",
-   "specs/evidence/0003/within_episode/mutation-table.json",
-   "specs/evidence/0031/connection_census.py",
-   "specs/evidence/0041/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "specs/evidence/0043/derived-markers.json",
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
    "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
@@ -88,19 +84,8 @@
    "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
    "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
    "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
-   "specs/evidence/0048/tripwire_0048_classified.tsv",
-   "specs/evidence/0055/a5-type-census.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "specs/generated/0002-audit-manifest.md",
-   "src/veracium/__init__.py",
-   "src/veracium/credentials.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/introspect.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/portability.py",
-   "src/veracium/store/sqlite.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r4_closure.py"
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -132,7 +117,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 0.93s",
    "reason": null,
    "reason_seen": null,
    "what": "THE SUPERSEDED IMPLEMENTATION: the statement prepared bare, so one that binds exactly runs"
@@ -180,6 +165,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 56
+  "seconds": 58
  }
 }

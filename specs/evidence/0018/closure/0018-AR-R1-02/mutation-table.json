@@ -1,5 +1,5 @@
 {
- "body_sha256": "b6522203f4594e507116b5102dcae2b915619accf49a38357ac38630bf4fcce7",
+ "body_sha256": "c4a2ce5790ead57f1aedd5c268acdaa6a8b896015f6524f53b38818fe73b976e",
  "controls": [
   {
    "anchor_counts": [
@@ -70,7 +70,7 @@
     "passed": 4
    }
   },
-  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "NOOP-0018-AR-R1-02-migration": "f06e9e769f4df581428ac3763df6fdd188a9e422a98c6b25aa38486688f1c150",
    "NOOP-0018-AR-R1-02-sa10_gate": "76db3004598a1fbea61dbebd9863b07cb2f3112ea3181eb3a9caa30aca396c73"
@@ -99,43 +99,30 @@
   "honest_nodes": [
    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/container-release.yml",
-   ".github/workflows/container.yml",
-   "CHANGELOG.md",
-   "README.md",
-   "container/check_image.py",
-   "docs/api.md",
-   "docs/index.md",
-   "docs/mcp.md",
-   "examples/claude_code_hooks/README.md",
-   "examples/demo.ipynb",
-   "examples/langchain_memory.py",
-   "pyproject.toml",
-   "server.json",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/0054-container-image.md",
-   "specs/STATUS.md",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
    "specs/evidence/0018/closure/0018-AR-R1-01/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/adapters/__init__.py",
-   "src/veracium/adapters/langchain.py",
-   "src/veracium/adapters/pydantic_ai.py",
-   "src/veracium/cli.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/llm/anthropic.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/store/release_migration.py",
-   "tests/test_0031_server_reports_itself.py"
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -167,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.76s",
+   "pytest": "1 failed in 0.52s",
    "reason": null,
    "reason_seen": null,
    "what": "head equality is widened to every historical constructor, which round 1 ruled out. Here and not in SA10's table because its cell is in T2"
@@ -200,7 +187,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.23s",
+   "pytest": "1 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "a `data` entry issues DDL: what the kind rule stops and SA10 alone would admit elsewhere"
@@ -233,7 +220,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "a rung stamps head"
@@ -249,6 +236,6 @@
   "good": 3,
   "killed": 3,
   "rows": 3,
-  "seconds": 35
+  "seconds": 27
  }
 }

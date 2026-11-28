@@ -1,5 +1,5 @@
 {
- "body_sha256": "1e1a16e23d6796b831ca8e60c5d06c10745c64eafdda37649fbe36a3d071bb05",
+ "body_sha256": "ee77b5d6204c81d52a574f2b0dc8344b155ff7c55df89e55d326e18da26902f3",
  "controls": [
   {
    "anchor_counts": [
@@ -49,7 +49,7 @@
     "passed": 4
    }
   },
-  "commit": "f2064407a8d38c9d55a3b9cc136ec6808b6be22f",
+  "commit": "87acff0d7530f3abf94d70b569dce556a6e1d100",
   "control_definitions": {
    "NOOP-0018-AR-R1-01-release_migration": "2c07b5064d834c82bdb75c52f0ceac40a7660e1e3738729d39375f605918457e"
   },
@@ -74,42 +74,29 @@
   "honest_nodes": [
    "tests/test_migrate_cli.py::test_a_store_at_head_makes_no_rung"
   ],
-  "platform": "Linux-7.0.0-1017-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1018-aws-x86_64-with-glibc2.39",
   "python": "3.14.7",
   "spec": "0018",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   ".github/workflows/container-release.yml",
-   ".github/workflows/container.yml",
-   "CHANGELOG.md",
-   "README.md",
-   "container/check_image.py",
-   "docs/api.md",
-   "docs/index.md",
-   "docs/mcp.md",
-   "examples/claude_code_hooks/README.md",
-   "examples/demo.ipynb",
-   "examples/langchain_memory.py",
-   "pyproject.toml",
-   "server.json",
-   "specs/0031-agent-facing-trust-surface.md",
-   "specs/0054-container-image.md",
-   "specs/STATUS.md",
-   "specs/evidence/0007/sa/mutation-table.json",
-   "specs/evidence/0013/a_matrix/mutation-table.json",
-   "specs/evidence/0013/sa10/mutation-table.json",
-   "specs/evidence/0042/decision_site_inventory_OUTPUT.json",
-   "specs/evidence/0042/reviewed_points.json",
-   "specs/evidence/0042/semantic_review.py",
-   "src/veracium/adapters/__init__.py",
-   "src/veracium/adapters/langchain.py",
-   "src/veracium/adapters/pydantic_ai.py",
-   "src/veracium/cli.py",
-   "src/veracium/diagnostics.py",
-   "src/veracium/llm/anthropic.py",
-   "src/veracium/mcp_server.py",
-   "src/veracium/store/release_migration.py",
-   "tests/test_0031_server_reports_itself.py"
+   "specs/evidence/0042/inv7_transcript.txt",
+   "specs/evidence/0044/campaign/result.json",
+   "specs/evidence/0044/obligation_map.json",
+   "specs/evidence/0044/obligation_map.md",
+   "specs/evidence/0048/closure/0048-R1-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R1-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R2-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R3-03/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R4-02/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-01/mutation-table.json",
+   "specs/evidence/0048/closure/0048-R5-02/mutation-table.json",
+   "specs/evidence/0048/implementation/mutation-table.json",
+   "specs/evidence/0055/implementation/mutation-table.json"
   ]
  },
  "rows": [
@@ -141,7 +128,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.97s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "resolving a legacy store stamps it, so a stopped rung has changed it"
@@ -177,7 +164,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.82s",
+   "pytest": "2 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the authority carries the resolution's digest, not the store's own observation"
@@ -192,6 +179,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 14
+  "seconds": 10
  }
 }
