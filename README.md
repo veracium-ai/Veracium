@@ -11,10 +11,10 @@ Provenance-aware memory for AI agents: it records who said what, so a claim your
 becomes a fact about your user.
 
 **Veracium Memory is a provenance-aware memory plug-in for agentic systems** —
-durable, per-user memory that resists the injection and confabulation failures
-that plague naive agent memory. Provenance means every fact tracks *who said
-it*: a claim from an email your agent merely read can never become a "fact" it
-asserts. It remembers what the user said, past interactions, and what worked —
+it gives any agent durable, per-user memory that keeps what the agent read apart
+from what it was told. Provenance means every fact tracks *who said it*: a claim
+from an email your agent merely read is stored as that sender's claim, not as a
+fact about your user. It remembers what the user said, past interactions, and what worked —
 and it remembers where each of those came from.
 
 Veracium is the production distillation of an evaluation-driven research project
@@ -41,7 +41,6 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
   contested, with both dates kept. `correct()` does not reschedule such a date (the subject is the
   obligation, not the user) and `confirm()` retires neither date; the user resolves it by disputing the stale date
   (`dispute()`, or the agent's `dispute_fact` tool under `direct`), which keeps it as history.
-  *(The category commercial memory systems handle worst; Veracium's strongest.)*
 - **Representation is a security control.** Third-party claims (received email,
   external docs) are quarantined *structurally* — stored as `third_party_claim`
   edges with the claimant as subject, never as user facts. Content-type quarantine
@@ -235,7 +234,8 @@ The container section's table above shows the same choices.
 
 The server also registers seven trust tools, which act only under
 `VERACIUM_MCP_CAPABILITY=direct`: through them the user can look up, correct, dispute, confirm and erase their memory
-(under any other setting every call refuses and writes nothing). Under `direct`, erasure through the agent is on by
+(under any other setting every call refuses and writes nothing). Erasure removes the user's records from the store,
+not from exports or backups you've taken. Under `direct`, erasure through the agent is on by
 default (`VERACIUM_MCP_ERASURE=off` refuses the three forget tools), and content relayed in a first-party turn can
 induce an agent to call these tools, both erase steps included: the two steps stop one induced call, not an agent
 induced to call both. A deployment already on `direct` opts into all of this on upgrade; read

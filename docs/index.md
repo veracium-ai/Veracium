@@ -1,8 +1,8 @@
 # Veracium
 
 **Veracium is a provenance-aware memory plug-in for agentic systems** —
-durable, per-user memory that resists the injection and confabulation failures
-that plague naive agent memory.
+it gives any agent durable, per-user memory that keeps what the agent read apart
+from what it was told.
 
 ```bash
 pip install "veracium[anthropic]"
