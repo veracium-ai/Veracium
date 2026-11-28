@@ -317,6 +317,7 @@ def test_outward_text_names_no_carrier(case, factory, kind):
 def test_the_served_routes_withhold_every_carrier(tmp_path, monkeypatch, route, case, factory, kind):
     """Both served routes, the tool body replaced by the producer (the reviewer's construction): the call reached the
     producer, the outward formatter answered, and nothing of the token is in what the model would see."""
+    pytest.importorskip("mcp")                  # both routes build the served server (the pydantic-floor lane has none)
     from veracium import mcp_server as MCP
     from veracium.adapters._surface import Binding
     m = T._mem(tmp_path)

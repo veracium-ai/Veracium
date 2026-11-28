@@ -1094,6 +1094,7 @@ def _linked_shaped_episode(tmp_path):
 def test_the_served_forget_fact_projects_the_related_receipt_id(tmp_path):
     """R6-02C's outward half, served: `forget_fact` over the same plant succeeds, and its result carries no shape (the
     receipt passes `_locate_receipt` and the projection). The reviewer's control, committed."""
+    pytest.importorskip("mcp")                  # Binding builds the served server (the pydantic-floor lane has none)
     from veracium.adapters._surface import Binding
     m, target, related = _linked_shaped_episode(tmp_path)
     try:
