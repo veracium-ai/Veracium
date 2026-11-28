@@ -289,7 +289,7 @@ def served_result(value, *, keep=frozenset()):
                     base, i = nk, 2
                     while nk in out or nk in v:
                         nk, i = f"{base} #{i}", i + 1
-                out[nk] = walk(x, k)
+                out[nk] = walk(x, nk)                  # round 6: a locator label names the MASKED key, never the original
             return out
         if isinstance(v, (list, tuple)):
             items = [walk(x, key) for x in v]

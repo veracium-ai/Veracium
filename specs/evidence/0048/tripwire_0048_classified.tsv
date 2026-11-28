@@ -361,6 +361,7 @@ validated-write	src/veracium/store/sqlite.py	str:confidence	e.provenance = Prove
 edges-text	src/veracium/trust_tools.py	str:edges	ERASE_PREVIEW_TABLES = ("edges", "episodes", "confirmations", "replies")
 edges-text	src/veracium/trust_tools.py	str:edges	"the confirmation bind which records exist in the four tables shown (edges, episodes, "
 copy-other-fields	src/veracium/credentials.py	model_copy	return edge.model_copy(update={"subject": subject, "relation": relation, "object": obj, "note": note,
-other-object	src/veracium/credentials.py	getattr	r = getattr(exc, "reason", None)
+other-object	src/veracium/credentials.py	getattr	reason = getattr(exc, "reason", None)
+other-object	src/veracium/credentials.py	getattr	if getattr(exc, "__notes__", None) or exc.__cause__ is not None or not exc.__suppress_context__:
 edges-sql-not-a-json-write	src/veracium/store/sqlite.py	str:edges	"SELECT id, user_id, json, subject, relation, object FROM edges WHERE (? IS NULL OR user_id=?)",
 edges-text	src/veracium/store/sqlite.py	str:edges	if "user_id" not in names or table in ("edges", "episodes", "edge_event", "episode_event"):

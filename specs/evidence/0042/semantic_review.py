@@ -92,7 +92,6 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("asof/adapter.py", 54): "internal-invariant", ("asof/resolve.py", 118): "internal-invariant", ("asof/resolve.py", 123): "internal-invariant",
     ("asof/resolve.py", 182): "control-flow", ("asof/resolve.py", 207): "predicate-helper",
     ("compile.py", 230): "predicate-helper", ("diagnostics.py", 238): "predicate-helper", ("diagnostics.py", 316): "predicate-helper",
-    ("credentials.py", 472): "argument-check",   # 0055 round 5 stage 2 (S2-1): pem_open_before refuses a pos that is not a line start
     ("doctor.py", 502): "predicate-helper", ("dryrun.py", 68): "predicate-helper",
     ("graph.py", 61): "predicate-helper", ("graph.py", 76): "predicate-helper", ("graph.py", 242): "internal-invariant",
     ("graph.py", 944): "argument-check", ("grounding.py", 154): "control-flow",
@@ -135,6 +134,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("budgets.py", 125): "internal-invariant",   # rendered_subject: the composer's own rendering diverged from its subject
     ("compile.py", 246): "predicate-helper",   # SR2-01: the cached code-owned empty body test, consumed by needs_recompile
     ("compile.py", 474): "predicate-helper",   # carried: compile.py:_unbound_by:RETURN_NONE:1
+    ("credentials.py", 472): "argument-check",   # 0055 round 5 stage 2 (S2-1): pem_open_before refuses a pos that is not a line start
     ("lifecycle.py", 64): "internal-invariant",   # specs/0048 §4D, the owner's "Refuse, name it": a store without the transition refuses (the Store base's refusing-default class)
     ("mcp_server.py", 500): "control-flow",   # carried: mcp_server.py:_trust_gates:RETURN_NONE:1
     ("mcp_server.py", 506): "control-flow",   # carried: mcp_server.py:_scope_configuration:RETURN_NONE:1

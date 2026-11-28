@@ -724,7 +724,10 @@ def main(argv=None) -> int:
             # a refusal of the caller's input or environment: one content-free line, exit 1
             print(f"veracium {args.cmd}: {_cred.outward_text(exc)}", file=sys.stderr)
             return 1
-        except Exception as exc:
+        except (Exception, KeyboardInterrupt, BaseExceptionGroup) as exc:
+            # (round 6's R6-01: a BaseExceptionGroup, which holds a KeyboardInterrupt, is not an Exception and used to
+            # escape with its children's messages; a KeyboardInterrupt keeps its type. SystemExit is not caught: its
+            # argument is the exit status.)
             # anything else is a defect, and still fails loudly AS ITSELF (its type, attributes and traceback), so a
             # crash never reads as a clean refusal; only its message, which may quote the input, is withheld, and the
             # chain it was raised during is suppressed for the same reason

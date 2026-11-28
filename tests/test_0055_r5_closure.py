@@ -416,28 +416,57 @@ CHAINS = [
 ]
 
 
+def chain_cut_witnesses(chain: str, value: str, *, cap: int = 1024):
+    """Round 6's R6-02A: the byte-placed files for the every-cut test, each with its WITNESS: where the window's real
+    cut falls (`log_tail`'s `size - max(4 * cap, 1 << 20)`), where the chain is, and which chain line the cut opens.
+    The chain's last line is followed by a run of blank lines a window long, then the value and twenty ordinary lines,
+    so the value lies in the sent tail and the real cut lands at the START of each chain line in turn, then at the
+    start of the value's line. (Up to round 6 the filler came BEFORE the chain, so every cut fell in the filler and the
+    chain was always whole inside the window.) Blank lines do not count toward CHAIN_LINES on the recogniser's view
+    (research's S2-2), so the value stays inside the context the window's start keeps."""
+    window = max(4 * cap, 1 << 20)
+    lead = "ordinary prefix\n"
+    after = "".join(f"ordinary line {i}\n" for i in range(20))
+    starts = [0] + [i + 1 for i, c in enumerate(chain) if c == "\n"]
+    out = []
+    for k, offset in enumerate(starts):
+        target = len(lead.encode()) + offset
+        bare = (lead + chain + value + "\n" + after).encode()
+        padding = window + target - len(bare)
+        if offset < len(chain):
+            text = lead + chain + "\n" * padding + value + "\n" + after
+        else:
+            text = lead + chain + value + "\n" + "\n" * padding + after
+        raw = text.encode()
+        cut = len(raw) - window
+        start = raw.index(chain.encode())
+        out.append({"line": k, "cut": cut, "chain_start": start, "chain_end": start + len(chain.encode()),
+                    "line_start": start + offset, "file_bytes": len(raw), "text": text,
+                    "value_in_sent_region": value.strip('"') in raw[-cap:].decode()})
+    return out
+
+
 @pytest.mark.parametrize("chain,value", CHAINS, ids=[c.split()[0] for c, _ in CHAINS])
 def test_r5_04_a_line_spanning_match_is_withheld_at_every_cut(tmp_path, chain, value):
-    """Each white-space-joined grammar split one part per line, with filler before it so the window's cut lands on
-    EVERY line of the chain in turn: whole-input masking withholds the value (the precondition), and the sent tail
-    never carries it. The chain's part count stays below CHAIN_LINES."""
+    """Each white-space-joined grammar split one part per line, the window's REAL cut placed at the start of EVERY
+    line of the chain in turn (`chain_cut_witnesses`, round 6's R6-02A). Each position asserts its geometry first (the
+    cut's byte offset is that line's start, inside the chain, and the value lies in the sent region, so a failure to
+    withhold would show), then the outcome: the sent tail never carries the value, and keeps the ordinary final line.
+    Whole-input masking withholds the value (the precondition). The chain's part count stays below CHAIN_LINES."""
     from veracium.diagnostics import DiagnosticsConfig, Reporter
-    block = chain + value + "\nordinary final line\n"
-    whole = C.mask_text(block)
-    assert value.strip('"') not in whole, "the grammar does not recognise this chain whole: not a test of the cut"
-    assert block.count("\n") <= C.CHAIN_LINES + 2
-    cap = 1024
-    window = 1 << 20
-    for cut_line in range(chain.count("\n") + 1):
-        lines = block.split("\n")
-        pre = "\n".join(lines[:cut_line])
-        filler_len = window - len(block.encode()) + len(pre.encode()) + (1 if cut_line else 0) + 7
-        log = tmp_path / f"d{cut_line}.log"
-        log.write_text(("x" * 80 + "\n") * (filler_len // 81 + 1) + block)
-        rep = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=cap, redact=False))
-        tail = rep.log_tail()
-        assert value.strip('"') not in tail, (cut_line, tail[-200:])
-        assert "ordinary final line" in tail
+    assert value.strip('"') not in C.mask_text(chain + value + "\n"), "the grammar does not recognise this chain whole"
+    assert chain.count("\n") <= C.CHAIN_LINES
+    witnesses = chain_cut_witnesses(chain, value)
+    assert len(witnesses) == chain.count("\n") + 1
+    for w in witnesses:
+        assert w["cut"] == w["line_start"] and w["chain_start"] <= w["cut"] <= w["chain_end"], w["line"]  # reached
+        if w["cut"] < w["chain_end"]:
+            assert w["value_in_sent_region"], w["line"]  # reached: unmasked, the value would be sent
+        log = tmp_path / f"d{w['line']}.log"
+        log.write_text(w["text"])
+        tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+        assert value.strip('"') not in tail, (w["line"], tail[-200:])
+        assert "ordinary line 19" in tail, w["line"]
 
 
 def test_r5_04_a_pem_block_with_no_end_longer_than_the_window_is_withheld(tmp_path):
@@ -635,26 +664,78 @@ def test_s2_2_chain_safe_offset_counts_only_visible_lines(sep_line):
 # ==== R5-05: the final exception, constructors that add notes or a cause ==============================================
 
 class _NoteInCtor(Exception):
+    """Its display is its own `shown` attribute, set by its constructor (never `args`): rewriting `args` leaves the
+    original showing the input, so only a FRESH instance can show the withheld message, and the replacement branch is
+    reached (round 6's R6-02B: up to round 6 this class showed `args`, so the original itself was returned and the
+    constructor never ran). The constructor then adds a note quoting the token: the final object's check is what
+    removes it. `made` counts constructions."""
+    made = 0
+
     def __init__(self, message):
         super().__init__(message)
+        type(self).made += 1
+        self.shown = message
         self.add_note(f"value was {TOKEN}")
+
+    def __str__(self):
+        return self.shown
 
 
 class _CauseInCtor(Exception):
+    """As `_NoteInCtor`, its constructor setting a cause that quotes the token."""
+    made = 0
+
     def __init__(self, message):
         super().__init__(message)
+        type(self).made += 1
+        self.shown = message
         self.__cause__ = ValueError(TOKEN)
+
+    def __str__(self):
+        return self.shown
 
 
 @pytest.mark.parametrize("cls", [_NoteInCtor, _CauseInCtor])
 def test_r5_05_the_replacement_is_checked_after_construction(cls):
+    """The witness first (round 6's R6-02B): the result is a NEW instance of the class, constructed exactly once by
+    `withheld_defect`, so its constructor's note or cause was really added; then the final object shows nothing of it."""
     import traceback
-    orig = cls("x")
-    orig.args = (f"bad {TOKEN}",)
+    orig = cls(f"bad {TOKEN}")
+    made = cls.made
     out = C.withheld_defect(orig)
+    assert out is not orig and type(out) is cls, type(out)          # reached: the replacement branch
+    assert cls.made == made + 1                                      # reached: its constructor ran, once
     text = "".join(traceback.format_exception(type(out), out, None))
     assert TOKEN not in text, text
     assert not getattr(out, "__notes__", None) and out.__cause__ is None
+
+
+def test_r5_05_the_reviewers_round_5_constructor_case_is_in_the_gate(monkeypatch):
+    """Round 6's R6-02B: the reviewer's round-5 regression, kept in the committed gate as it was written
+    (`test_round5_obligations.py`'s `test_r5_05_cli_replacement_cannot_reintroduce_exception_notes`, the vectors
+    module renamed to this file's): an exception whose display is an attribute its constructor sets, raised by a CLI
+    verb; a fresh instance would add a note quoting the token."""
+    import traceback
+    from veracium import cli
+
+    class NoteError(Exception):
+        def __init__(self, message):
+            super().__init__(message)
+            self.display = message
+            self.add_note(T.V.GH)
+
+        def __str__(self):
+            return self.display
+
+    def defect(args, parser):
+        raise NoteError(T.V.GH)
+
+    monkeypatch.setitem(cli._VERBS, "selfcheck", defect)
+    with pytest.raises(Exception) as caught:
+        cli.main(["selfcheck"])
+    assert caught.value.__suppress_context__
+    safe = T.V.GH not in "".join(traceback.format_exception(caught.value))
+    assert safe, "fresh exception constructor reintroduced an outward note"
 
 
 # ==== B: the excluded BLOB column ====================================================================================
@@ -858,9 +939,13 @@ RETURN_CENSUS = {
     "revoke_source": "host-record", "unrevoke_source": "host-record",
     "policy_receipt": "host-record", "policy_receipts": "host-record",
     "pending_notices": "host-record", "confirm_notice": "host-record",
+    # host-record, and caller-echo too (round 6's R6-02C): 0041's RedactionReceipt echoes the target the caller passed
+    # and can name a RELATED record in `surviving_derived` that it did not (measured over every plant: the only method
+    # that moved); the receipt is 0041's declared host-only report
+    "redact": "host-record",
     # caller-echo
     "confirm": "caller-echo", "dispute": "caller-echo", "record_outcome": "caller-echo", "reply": "caller-echo",
-    "redact": "caller-echo", "undo_restoration": "caller-echo",
+    "undo_restoration": "caller-echo",
     # none
     "answer": "none", "close": "none", "correct": "none", "describe_procedures": "none",
     "diagnostics_preview": "none", "embed_backfill": "none", "export_memory": "none", "flush_telemetry": "none",
@@ -917,7 +1002,7 @@ def _public_methods() -> set:
 def test_return_census_covers_every_public_method():
     """By property: the census is exactly Memory's public callables (a new method fails here until it is classed)."""
     assert set(RETURN_CENSUS) == _public_methods(), set(RETURN_CENSUS) ^ _public_methods()
-    assert len(HOST_RECORD) == 9
+    assert len(HOST_RECORD) == 10
 
 
 def _host_record_call(tmp_path, name):
@@ -958,6 +1043,15 @@ def _host_record_call(tmp_path, name):
             return pend if name == "pending_notices" else v.confirm_notice(N41.U, pend[0]["notice_id"])
         finally:
             v.close()
+    if name == "redact":
+        m, target, related = _linked_shaped_episode(tmp_path)
+        try:
+            out = m.redact("u", edge_id=target, reason="operator_policy")
+            assert not out.repeated and TOKEN not in target                       # reached: an ordinary target
+            assert [d["id"] for d in out.surviving_derived] == [related], out    # reached: the related record
+            return out
+        finally:
+            m.close()
     m = T._mem(tmp_path)
     try:
         rid = _plant(m, shaped_id=True, shaped_relation=False)
@@ -976,6 +1070,54 @@ def _host_record_call(tmp_path, name):
         return m.unrevoke_source("u", origin=None, source_id="chat", reason=SOURCE_LIFT_REASONS[0])
     finally:
         m.close()
+
+
+def _linked_shaped_episode(tmp_path):
+    """Round 6's R6-02C, the reviewer's construction: an ordinary edge, and an episode sharing its provenance whose
+    legacy id carries the shape. Redacting the ORDINARY edge names the related episode in `surviving_derived`.
+    Returns `(memory, the ordinary target id, the shaped related id)`."""
+    from veracium.schema import Episode
+    m = T._mem(tmp_path)
+    edge = T._seed_edge(m)
+    ep = Episode(id="ep-ordinary", user_id="u", date="2026-11-26", summary="ordinary episode",
+                 provenance=edge.provenance)
+    m.store.add_episode(ep)
+    doc = ep.model_dump(mode="json")
+    rid = "ep-" + TOKEN
+    doc["id"] = rid
+    con = m.store._conn
+    con.execute("UPDATE episodes SET id=?,json=? WHERE id=?", (rid, json.dumps(doc), ep.id))
+    con.commit()
+    return m, edge.id, rid
+
+
+def test_the_served_forget_fact_projects_the_related_receipt_id(tmp_path):
+    """R6-02C's outward half, served: `forget_fact` over the same plant succeeds, and its result carries no shape (the
+    receipt passes `_locate_receipt` and the projection). The reviewer's control, committed."""
+    from veracium.adapters._surface import Binding
+    m, target, related = _linked_shaped_episode(tmp_path)
+    try:
+        out = Binding(m, user_id="u", capability="direct").call("forget_fact", {"edge_id": target})
+    finally:
+        m.close()
+    assert out.get("ok") is True, out                                  # reached: the redaction happened
+    assert TOKEN not in json.dumps(out), out
+
+
+def test_the_credential_finders_act_prints_no_related_receipt_id(tmp_path):
+    """R6-02C's outward half, the CLI: `credential_finder.act` redacts by the raw ids it holds and reads only
+    `repeated` from the receipt, so its line carries nothing of the related record."""
+    from veracium import credential_finder as CF
+    m, target, related = _linked_shaped_episode(tmp_path)
+    try:
+        hit = CF.Hit(user_id="u", table="edges", carrier="edge.text", record_kind="edge", record_id=target,
+                     parent_kind="edge", parent_id=target)
+        assert CF.targets([hit]) == ([("u", "edge", target)], []), CF.targets([hit])   # reached: one redaction
+        out = CF.act(m, [hit])
+    finally:
+        m.close()
+    assert out and out[0]["outcome"] == "redacted", out                # reached: the redaction happened
+    assert TOKEN not in json.dumps(out), out
 
 
 @pytest.mark.parametrize("name", HOST_RECORD)
@@ -1010,13 +1152,19 @@ def test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_
                 if isinstance(c, ast.Call) and isinstance(c.func, ast.Name):
                     impl_only.setdefault((rel, c.func.id), set()).add(n.name)
     allowed = {("src/veracium/mcp_server.py", "recall_impl", "recall"),
+               # round 6's R6-02C: `redact` is host-record; the served route locates its receipt and is projected
+               # (test_the_served_forget_fact_projects_the_related_receipt_id), and the CLI's finder reads only
+               # `repeated` (test_the_credential_finders_act_prints_no_related_receipt_id)
+               ("src/veracium/mcp_server.py", "forget_fact_report", "redact"),
+               ("src/veracium/credential_finder.py", "act", "redact"),
                ("src/veracium/mcp_server.py", "find_facts_report", "recall"),
                ("src/veracium/cli.py", "_memory_verbs", "recall"),
                ("src/veracium/selfcheck.py", "_check_injection", "recall"),
                ("src/veracium/selfcheck.py", "_check_revocation", "recall")}
     assert callers == allowed, callers ^ allowed
-    users = impl_only[("src/veracium/mcp_server.py", "find_facts_report")]
-    assert users and all(u.endswith("_impl") for u in users), users
+    for helper in ("find_facts_report", "forget_fact_report"):
+        users = impl_only[("src/veracium/mcp_server.py", helper)]
+        assert users and all(u.endswith("_impl") for u in users), (helper, users)
 
 
 @pytest.mark.parametrize("plant", ["id", "relation"])
@@ -1100,6 +1248,8 @@ def test_undo_restoration_echoes_only_the_callers_id(tmp_path):
 
 
 def test_redact_echoes_only_the_callers_id(tmp_path):
+    """The caller-echo half of `redact`'s return (round 6's R6-02C classes it host-record for its other half): over a
+    shaped target with no related record, the receipt names the caller's id once."""
     m = T._mem(tmp_path)
     try:
         rid = _plant(m, shaped_id=True, shaped_relation=False)

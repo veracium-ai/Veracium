@@ -1110,21 +1110,21 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 733,
+   "line": 736,
    "module": "cli.py",
    "qualname": "main"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 759,
+   "line": 762,
    "module": "cli.py",
    "qualname": "_verb_dispatch"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 794,
+   "line": 797,
    "module": "cli.py",
    "qualname": "<module>"
   },
@@ -1582,39 +1582,82 @@
   },
   {
    "kind": "RETURN_NONE",
-   "line": 699,
+   "line": 711,
    "module": "credentials.py",
    "qualname": "_pydantic_errors"
   },
   {
    "kind": "RETURN_NONE",
-   "line": 701,
+   "line": 713,
    "module": "credentials.py",
    "qualname": "_pydantic_errors"
   },
   {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 852,
+   "module": "credentials.py",
+   "qualname": "_withheld"
+  },
+  {
    "kind": "RETURN_FALSE",
-   "line": 773,
+   "line": 919,
    "module": "credentials.py",
    "qualname": "_formats_as"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 776,
+   "line": 921,
    "module": "credentials.py",
    "qualname": "_formats_as"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 927,
+   "module": "credentials.py",
+   "qualname": "_formats_as"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 938,
+   "module": "credentials.py",
+   "qualname": "_display_safe"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 942,
+   "module": "credentials.py",
+   "qualname": "_display_safe"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 945,
+   "module": "credentials.py",
+   "qualname": "_display_safe"
+  },
+  {
+   "kind": "RETURN_FALSE",
+   "line": 950,
+   "module": "credentials.py",
+   "qualname": "_display_safe"
   },
   {
    "kind": "BOOL_RETURN",
-   "line": 780,
+   "line": 953,
    "module": "credentials.py",
-   "qualname": "_formats_as"
+   "qualname": "_display_safe"
+  },
+  {
+   "kind": "BOOL_RETURN",
+   "line": 957,
+   "module": "credentials.py",
+   "qualname": "_display_safe"
   },
   {
    "kind": "RETURN_FALSE",
-   "line": 782,
+   "line": 960,
    "module": "credentials.py",
-   "qualname": "_formats_as"
+   "qualname": "_display_safe"
   },
   {
    "kind": "RETURN_NONE",
@@ -8056,10 +8099,10 @@
  ],
  "summary": {
   "by_kind": {
-   "BOOL_RETURN": 121,
+   "BOOL_RETURN": 122,
    "FILTER_RETURN": 71,
-   "RAISE": 769,
-   "RETURN_FALSE": 127,
+   "RAISE": 770,
+   "RETURN_FALSE": 132,
    "RETURN_NONE": 126
   },
   "kinds": [
@@ -8234,10 +8277,10 @@
     "RETURN_NONE": 0
    },
    "credentials.py": {
-    "BOOL_RETURN": 4,
+    "BOOL_RETURN": 5,
     "FILTER_RETURN": 0,
-    "RAISE": 1,
-    "RETURN_FALSE": 9,
+    "RAISE": 2,
+    "RETURN_FALSE": 14,
     "RETURN_NONE": 2
    },
    "diagnostics.py": {
@@ -8507,7 +8550,7 @@
     "RETURN_NONE": 0
    }
   },
-  "total": 1214,
+  "total": 1221,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

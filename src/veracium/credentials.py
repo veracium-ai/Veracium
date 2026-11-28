@@ -635,7 +635,19 @@ class ArgumentRefused(ValueError):
 
 
 def _declared_field_names() -> frozenset:
-    """Every field name (and alias) a product Pydantic model declares: the product's record and receipt models, named
+    """Every field name (and alias) of the declared product models (`_declared_model_walk`)."""
+    return _declared_model_walk()[1]
+
+
+def _declared_titles() -> frozenset:
+    """Round 6's R6-01: a Pydantic validation error's TITLE is printed by its formatting ("1 validation error for
+    <title>"), and a title is whatever the constructor was given. A withheld defect keeps a title only when it is the
+    class name of a declared product model (`_declared_model_walk`); any other title prints as `WITHHELD_TITLE`."""
+    return frozenset(c.__name__ for c in _declared_model_walk()[0])
+
+
+def _declared_model_walk() -> tuple:
+    """`(models, names)`: every field name (and alias) a product Pydantic model declares: the product's record and receipt models, named
     here, and every model their fields' annotations reach. A validation location segment is printed only when it is
     one of these or a list index (round 4's S3); a model outside them prints every segment as `[key]`, the safe
     direction. tests/test_0055_r4_closure.py holds every product model's fields inside the result (a test may walk
@@ -666,7 +678,7 @@ def _declared_field_names() -> frozenset:
                 if isinstance(t, type) and issubclass(t, BaseModel):
                     todo.append(t)
                 stack.extend(typing.get_args(t))
-    return frozenset(names)
+    return frozenset(seen - {BaseModel}), frozenset(names)
 
 
 _DECLARED_CACHE: list = []
@@ -705,19 +717,146 @@ def _pydantic_errors(exc):
         return []
 
 
+#: §4g E1 (round 6's R6-01, research's addition 2): the ONE closed set of refusal reasons an outward formatter prints.
+#: An exception's `.reason` outside it prints as nothing (the fixed "refused" text), however it is spelled: a spelling
+#: check establishes no membership. tests/test_0055_r6_closure.py censuses every reason the product's exceptions carry
+#: (a class attribute, or a constructor's argument at every raise) against this set, both ways.
+DECLARED_REASONS = frozenset({
+    # ArgumentRefused / ArgumentTypeRefused (the default, and each raise's literal)
+    "invalid_value", "future_date", "not_accepted", "not_an_iso_date", "not_a_string",
+    # class-level reasons: CredentialRefused, CredentialImportRefused, SourceIdRequired, CorrectionOfUnclassified
+    REFUSAL, "source_id_required", "correction_of_unclassified",
+    # trust_tools.REFUSALS (TrustRefused refuses any other reason at construction)
+    "attempted_elevation", "correction_refused", "erasure_disabled", "invalid_target", "not_found_in_scope",
+    "out_of_scope", "preview_expired", "preview_unknown", "principal_scoped", "principal_ungroupable",
+    "reason_too_long", "refused", "scope_unconfigured", "source_out_of_scope", "source_unbound", "store_changed",
+    # procedures: ProcedureValueError / ProcedureTypeError
+    "basis_required", "correction_of_procedure", "relation_not_procedural", "summary_empty", "summary_too_long",
+    "when_beyond_skew", "when_naive", "when_not_datetime", "author_not_evidence_author",
+    "context_not_evidence_context", "relation_not_str", "summary_not_str", "user_id_invalid", "note_not_str",
+    "evidence_ref_not_str", "source_id_not_str",
+    # store/base.UNDO_REFUSAL_REASONS (UndoRefused) and REPLY_REFUSAL_REASONS (ReplyRefused): closed at construction
+    "no-outcome", "not-restored", "testimony", "not-applicable", "edge-unavailable", "ambiguous-outcome",
+    "kind", "actor", "shape", "marker", "unknown-edge", "redacted-edge", "procedural-edge", "resolve-target",
+    "resolve-repeat",
+    # store/release_migration._MINT_REASONS (MintError): closed at construction
+    "source-missing", "source-unaccepted", "source-changed",
+    # store/schema_version.REASONS (StoreVersionError): closed at construction
+    "invalid-version", "newer", "foreign-shape", "stamped-shape-mismatch", "adoption-refused", "locked",
+    "unsupported-sqlite", "migration-required", "unsupported-migration",
+})
+
+#: Round 6's R6-01: the content-free stand-ins a withheld display prints in place of a carrier outside its closed set.
+WITHHELD_TITLE = "withheld"
+WITHHELD_ERROR_TYPE = "invalid"
+WITHHELD_ERROR_MESSAGE = "invalid value (its message is withheld: it may carry the input)"
+_WITHHELD_SUFFIX = ": its message is withheld from this stream (specs/0055 §4g E1)"
+_WITHHELD_MSG = re.compile(r"[A-Za-z_][A-Za-z0-9_]*" + re.escape(_WITHHELD_SUFFIX))
+_TYPE_PREFIX = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.(?:<locals>|[A-Za-z_][A-Za-z0-9_]*))*")
+
+#: §4g E1, the display-carrier table (round 6's R6-01, research's addition 1): every place a formatted exception
+#: carries text, derived from what RENDERS it, not from the carriers a review found. tests/test_0055_r6_closure.py
+#: holds each namespace equal to its renderer's own fields (`traceback.TracebackException`'s, Pydantic's error keys, the
+#: built-in types' formatted attributes), so a field the renderer gains fails there until it has a row. Each row says
+#: how a withheld CLI defect and `outward_text` treat it.
+DISPLAY_CARRIERS = {
+    # traceback.TracebackException's fields
+    "traceback:_str": "str(exc): the args are replaced by the fixed withheld message; the display must then render as exactly "
+            "that one line, else the object is replaced",
+    "traceback:__notes__": "dropped on the final object (`_settled`)",
+    "traceback:__cause__": "cleared on the final object (`_settled`)",
+    "traceback:__context__": "not displayed: clearing the cause on the final object (`_settled`) suppresses it, and the "
+                             "root is also raised `from None`",
+    "traceback:__suppress_context__": "set by `_settled` (assigning the cause sets it); the final check requires it on "
+                                      "a group",
+    "traceback:exceptions": "a group's children: rebuilt one by one under this whole rule into a BUILT-IN group (never the "
+                  "subclass, its `derive` or its `__str__`), else the group is replaced by a content-free defect",
+    "traceback:exc_type_qualname": "the class name: a program identifier, printed (out of scope, as the frames' source lines "
+                         "are: an input-derived class name is not a supported carrier)",
+    "traceback:exc_type_module": "the class's module: a program identifier, printed (out of scope, as above)",
+    "traceback:stack": "the frames: the program's own source lines, outside the contract (round 5's answer 4)",
+    "traceback:filename": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:lineno": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:end_lineno": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:offset": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:end_offset": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:text": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:msg": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:_exc_metadata": "a SyntaxError's field: never raised as itself (replaced)",
+    "traceback:_exc_type": "the type object itself: no text of its own",
+    "traceback:_have_exc_type": "a flag: no text",
+    "traceback:_is_syntax_error": "a flag: no text",
+    "traceback:max_group_width": "a renderer setting: no text",
+    "traceback:max_group_depth": "a renderer setting: no text",
+    # Pydantic ValidationError's rendering
+    "pydantic:title": "printed only when it is a declared product model's class name, else `WITHHELD_TITLE`",
+    "pydantic.error:type": "an error's type: printed only when it is one of Pydantic's own error types or `WITHHELD_ERROR_TYPE`, "
+            "else `WITHHELD_ERROR_TYPE` (outward_text too)",
+    "pydantic.error:loc": "an error's location: each segment a declared field name or a list index, else `[key]`",
+    "pydantic.error:msg": "an error's message: replaced by `WITHHELD_ERROR_MESSAGE`",
+    "pydantic.error:input": "an error's input: hidden (`hide_input=True`), and `None` in the rebuilt error",
+    "pydantic.error:ctx": "an error's context: never copied into the rebuilt error",
+    "pydantic.error:url": "the documentation URL, which embeds the error type: the rebuilt errors are custom errors, which carry none",
+    # a built-in type's own __str__ (they print these fields, not only args)
+    "builtin:errno": "OSError: printed by its str() only with strerror; the args are replaced, so the render check decides",
+    "builtin:strerror": "OSError: as errno",
+    "builtin:filename2": "OSError: as errno",
+    "builtin:encoding": "UnicodeError: its str() formats its fields; the render check refuses it and it is replaced",
+    "builtin:object": "UnicodeError: as encoding",
+    "builtin:start": "UnicodeError: as encoding",
+    "builtin:end": "UnicodeError: as encoding",
+    "builtin:reason": "UnicodeError: as encoding",
+    "builtin:filename": "OSError: as errno",
+    "builtin:name": "AttributeError, NameError, ImportError: the renderer's \"Did you mean\" suggestion reads it; the "
+                    "render check refuses the extra text and the replacement carries none",
+    "builtin:obj": "AttributeError: as name",
+    "builtin:msg": "ImportError: its str() prints its `msg` attribute, not its args; the render check refuses it and it "
+                   "is replaced",
+    "builtin:name_from": "ImportError: as msg",
+    "builtin:path": "ImportError: as msg",
+    "builtin:key_repr": "KeyError: its str() is its argument's repr, the withheld message's repr",
+    # outward_text's own fields
+    "outward_text:reason": "any exception's `.reason`: printed only when it is in `DECLARED_REASONS`",
+    "outward_text:field": "ArgumentRefused.field: printed only when it is a declared argument or field name, else `[argument]`",
+    "outward_text:allowed": "ArgumentRefused.allowed: built only from module constants at every raise (the R6 census)",
+    "outward_text:class_name": "type(exc).__name__ at outward_text: a program identifier (out of scope, as above)",
+}
+
+
 def withheld_defect(exc: BaseException) -> BaseException:
-    """§4g E1 at the CLI for a DEFECT (round 4's R4-05 and research's S3): the exception to raise in place of `exc`.
-    It still fails loudly as a crash and is never turned into a clean refusal, but nothing it prints may quote the
-    input. The message is replaced and any notes dropped; then:
-      - an exception whose own formatting shows only that message (its `str()` is the message or its repr, and it is
-        not a syntax error, which prints its source line) is raised AS ITSELF: its type, attributes and traceback;
-      - a Pydantic `ValidationError` formats its stored errors, input included, whatever `args` holds, so it is
-        REBUILT as a `ValidationError` of the same title over the same error types, each location reduced as
-        `outward_text` reduces it, each message withheld, the input hidden;
-      - any other exception with its own formatter is replaced by a fresh instance of its own class built from the
-        message alone when that formats safely, else by a `RuntimeError` naming its class.
-    The caller raises the result `from None`, with the original frames (`with_traceback`)."""
-    msg = f"{type(exc).__name__}: its message is withheld from this stream (specs/0055 §4g E1)"
+    """§4g E1 at the CLI for a DEFECT (round 4's R4-05, research's S3, round 6's R6-01): the exception to raise in place
+    of `exc`. It still fails loudly as a crash and is never turned into a clean refusal, but nothing its display shows
+    may come from the input; `DISPLAY_CARRIERS` is the table of what a display shows and how each carrier is treated.
+      - an exception GROUP is rebuilt as a built-in group of its children, each withheld under this whole rule
+        (recursively), else replaced by a content-free `RuntimeError`;
+      - an exception whose display, once its message is replaced and its notes, cause and context are cleared, RENDERS
+        as exactly one line, its type and that message, is raised AS ITSELF (its type, attributes and traceback);
+      - a Pydantic `ValidationError` is REBUILT over closed values only: a declared title, each error's type when it
+        is one of Pydantic's own, each location reduced as `outward_text` reduces it, each message withheld, the input
+        hidden;
+      - any other exception is replaced by a fresh instance of its own class built from the message alone when that
+        renders safely, else by a `RuntimeError` naming its class.
+    Every result passes `_display_safe` on the FINAL object, after construction. The caller raises it `from None`,
+    with the original frames (`with_traceback`)."""
+    return _withheld(exc, 0)
+
+
+_GROUP_DEPTH = 64
+
+
+def _withheld(exc: BaseException, depth: int) -> BaseException:
+    msg = f"{type(exc).__name__}{_WITHHELD_SUFFIX}"
+    if isinstance(exc, BaseExceptionGroup):
+        try:
+            if depth >= _GROUP_DEPTH:
+                raise RecursionError("an exception group nested too deep to rebuild")
+            children = [_withheld(c, depth + 1) for c in exc.exceptions]
+            fresh = _settled(BaseExceptionGroup(msg, children))   # the built-in: never the subclass or its derive
+            if _display_safe(fresh):
+                return fresh.with_traceback(exc.__traceback__)
+        except Exception:                                # noqa: BLE001 - fall through to the content-free defect
+            pass
+        return _settled(RuntimeError(msg)).with_traceback(exc.__traceback__)
     try:
         exc.args = (msg,)
         _settled(exc)                                    # notes may quote the input (research's S3); so may a cause
@@ -730,31 +869,35 @@ def withheld_defect(exc: BaseException) -> BaseException:
         from pydantic import ValidationError
         from pydantic_core import PydanticCustomError
         declared = _declared_field_names()
+        titles, types = _declared_titles(), _declared_error_types()
         try:
+            title = exc.title if isinstance(exc.title, str) and exc.title in titles else WITHHELD_TITLE
             fresh = ValidationError.from_exception_data(
-                exc.title, [{"type": PydanticCustomError(str(e.get("type", "invalid")),
-                                                         "invalid value (its message is withheld: it may carry the "
-                                                         "input)"),
-                             "loc": tuple(_loc_segment(x, declared) for x in (e.get("loc") or ())), "input": None}
-                            for e in errs] or [{"type": PydanticCustomError("invalid", "invalid value"), "loc": (),
-                                                "input": None}],
+                title, [{"type": PydanticCustomError(_closed_type(e.get("type"), types), WITHHELD_ERROR_MESSAGE),
+                         "loc": tuple(_loc_segment(x, declared) for x in (e.get("loc") or ())), "input": None}
+                        for e in errs] or [{"type": PydanticCustomError(WITHHELD_ERROR_TYPE, WITHHELD_ERROR_MESSAGE),
+                                            "loc": (), "input": None}],
                 hide_input=True)
-            return fresh.with_traceback(exc.__traceback__)
+            _settled(fresh)
+            if _display_safe(fresh):
+                return fresh.with_traceback(exc.__traceback__)
         except Exception:                                # noqa: BLE001 - fall through
             pass
     try:
         fresh = _settled(type(exc)(msg))
-        if not _formats_as(fresh, msg):
-            fresh = RuntimeError(msg)
+        if not _display_safe(fresh):
+            fresh = _settled(RuntimeError(msg))
     except Exception:                                    # noqa: BLE001 - a class whose constructor wants more
-        fresh = RuntimeError(msg)
+        fresh = _settled(RuntimeError(msg))
     return fresh.with_traceback(exc.__traceback__)
 
 
 def _settled(exc: BaseException) -> BaseException:
     """Round 5's R5-05: a replacement is constructed, and a constructor can add notes (or set a cause) again, so the
-    notes are dropped and the cause cleared on the FINAL object, after construction; `_formats_as` then judges that
-    object. (The caller raises it `from None`, which also suppresses the context.)"""
+    notes are dropped and the cause cleared on the FINAL object, after construction; `_display_safe` then judges that
+    object. Assigning the cause, even `None`, also sets `__suppress_context__` (Python's own rule), so the context is no
+    longer displayed either: that holds for a group's children too, which are never raised `from None` (round 6's
+    R6-01; the root is also raised `from None`)."""
     try:
         del exc.__notes__
     except AttributeError:
@@ -764,22 +907,81 @@ def _settled(exc: BaseException) -> BaseException:
 
 
 def _formats_as(exc: BaseException, msg: str) -> bool:
-    """Whether what a traceback prints for `exc` ITSELF shows `msg` and nothing else of it (round 5's R5-05: judged on
-    the final object, not on `str()` alone). For any exception but a syntax error that line is its type, `str()`, and
-    then each of its NOTES, so: no notes, `str()` is the message (or, for a KeyError, its repr), and not a syntax error
-    carrying a source line or file. The frames' source lines are the program's own and outside this judgement (the
-    verdict's answer 4)."""
-    if isinstance(exc, SyntaxError) and (exc.text or exc.filename):
-        return False
+    """Whether the traceback module RENDERS `exc` itself as exactly one line, its type and `msg` (or, for a KeyError,
+    `msg`'s repr), with nothing else (round 6's R6-01: judged on the rendering, not on `str()` plus notes, so notes,
+    a group's children, a cause or context, a syntax error's source fields and a type's own formatted attributes all
+    show up as extra or different text and refuse). The frames' source lines are the program's own and outside this
+    judgement (round 5's answer 4): the rendering is taken without them."""
+    import traceback
     try:
-        if exc.__notes__:
-            return False
-    except AttributeError:
-        pass
-    try:
-        return str(exc) in (msg, repr(msg))
-    except Exception:                                    # noqa: BLE001 - an unprintable exception is not safe
+        lines = traceback.format_exception(type(exc), exc, None)
+    except Exception:                                    # noqa: BLE001 - an unrenderable exception is not safe
         return False
+    if len(lines) != 1:
+        return False
+    line = lines[0]
+    for shown in (msg, repr(msg)):
+        tail = f": {shown}\n"
+        if line.endswith(tail) and _TYPE_PREFIX.fullmatch(line[: -len(tail)]):
+            return True
+    return False
+
+
+def _display_safe(exc: BaseException) -> bool:
+    """The FINAL check (round 6's R6-01), on the object a withheld defect returns: every carrier `DISPLAY_CARRIERS`
+    lists holds a closed value. A group: a BUILT-IN group whose message is a withheld message, with no notes, cause or
+    context, and every child safe under this same check. A validation error: a declared title, closed error types,
+    declared locations, withheld messages, no input. Anything else: it renders as its withheld message alone."""
+    try:
+        if isinstance(exc, BaseExceptionGroup):
+            if type(exc) not in (ExceptionGroup, BaseExceptionGroup) or not _WITHHELD_MSG.fullmatch(exc.message):
+                return False
+            # its context is displayed unless suppressed: `_settled` suppresses it (clearing the cause), and the root is
+            # also raised `from None`
+            if getattr(exc, "__notes__", None) or exc.__cause__ is not None or not exc.__suppress_context__:
+                return False
+            n = len(exc.exceptions)
+            if str(exc) != f"{exc.message} ({n} sub-exception{'s' if n > 1 else ''})":
+                return False
+            return all(_display_safe(c) for c in exc.exceptions)
+        errs = _pydantic_errors(exc)
+        if errs is not None:
+            if exc.title not in _declared_titles() and exc.title != WITHHELD_TITLE:
+                return False
+            types, declared = _declared_error_types(), _declared_field_names()
+            full = exc.errors(include_url=True, include_context=True, include_input=True)
+            return all(e.get("type") in types and e.get("msg") == WITHHELD_ERROR_MESSAGE and e.get("input") is None
+                       and not e.get("ctx") and not e.get("url")
+                       and all(isinstance(x, int) or x in declared or x == "[key]" for x in e.get("loc") or ())
+                       for e in full) and len(full) == len(errs)
+        return (len(exc.args) == 1 and isinstance(exc.args[0], str) and _WITHHELD_MSG.fullmatch(exc.args[0]) is not None
+                and _formats_as(exc, exc.args[0]))
+    except Exception:                                    # noqa: BLE001 - a check that cannot run is not a pass
+        return False
+
+
+def _declared_error_types() -> frozenset:
+    """Pydantic's own closed error vocabulary (`pydantic_core.core_schema.ErrorType`) and `WITHHELD_ERROR_TYPE`. The
+    product raises no custom error code of its own (the R6 census); a custom code is input as far as a display can
+    tell (round 6's R6-01), and prints as `WITHHELD_ERROR_TYPE`."""
+    import typing
+    from pydantic_core.core_schema import ErrorType
+    return frozenset(typing.get_args(ErrorType)) | {WITHHELD_ERROR_TYPE}
+
+
+def _closed_type(code, types: frozenset) -> str:
+    return code if isinstance(code, str) and code in types else WITHHELD_ERROR_TYPE
+
+
+#: Round 6's R6-01: the argument names a refusal may name that are not declared model fields. Every `field` the product
+#: raises is a literal at its site; tests/test_0055_r6_closure.py censuses each against `_declared_argument_names`.
+ARGUMENT_NAMES = frozenset({"corrected_value", "event_text", "event_type"})
+
+
+def _declared_argument_names() -> frozenset:
+    """The names an `ArgumentRefused.field` may print (round 6's R6-01): every declared model field name and
+    `ARGUMENT_NAMES`. Any other field prints as `[argument]`."""
+    return _declared_field_names() | ARGUMENT_NAMES
 
 
 def outward_text(exc: BaseException) -> str:
@@ -793,17 +995,22 @@ def outward_text(exc: BaseException) -> str:
     if errs is not None:
         parts = []
         declared = _declared_field_names()
+        types = _declared_error_types()
         for e in errs[:8]:
             loc = ".".join(_loc_segment(x, declared) for x in (e.get("loc") or ())) or "argument"
-            parts.append(f"{loc}: {e.get('type', 'invalid')}")
+            parts.append(f"{loc}: {_closed_type(e.get('type'), types)}")   # round 6's R6-01: a custom code is input
         return "invalid arguments (" + "; ".join(parts) + ")" if parts else "invalid arguments"
     name = type(exc).__name__
     field = exc.field if isinstance(exc, ArgumentRefused) else None
     reason = exc.reason if isinstance(exc, ArgumentRefused) else None
     allowed = exc.allowed if isinstance(exc, ArgumentRefused) else None
     if reason is None:
-        r = getattr(exc, "reason", None)
-        reason = r if isinstance(r, str) and r.replace("_", "").replace("-", "").isalnum() else None
+        reason = getattr(exc, "reason", None)
+    # round 6's R6-01: a reason prints only as a member of the ONE declared set, a field only as a declared name; a
+    # spelling check established no membership
+    reason = reason if isinstance(reason, str) and reason in DECLARED_REASONS else None
+    if field is not None and not (isinstance(field, str) and field in _declared_argument_names()):
+        field = "[argument]"
     out = name
     if field:
         out += f": {field}"

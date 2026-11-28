@@ -915,6 +915,7 @@ SRC_IMPORTS = {
     "pydantic": {"BaseModel", "ConfigDict", "Field", "StrictBool", "TypeAdapter", "ValidationError", "create_model",
         "field_validator", "model_serializer", "model_validator"},   # 0055 §4g E2: ConfigDict, create_model (the SDK's hidden-input models)
     "pydantic_core": {"PydanticCustomError"},   # 0055 round 4 (R4-05): a withheld CLI defect's ValidationError is rebuilt with its messages withheld
+    "pydantic_core.core_schema": {"ErrorType"},   # 0055 round 6 (R6-01): Pydantic's closed error vocabulary, the only codes a withheld display prints
     "re": {"I", "compile", "escape", "findall", "finditer", "fullmatch", "match", "search", "split", "sub"},
     "secrets": {"token_bytes"},
     "shutil": {"copy2", "rmtree"},
@@ -939,8 +940,11 @@ SRC_IMPORTS = {
 }
 # every dunder src/ reads: `__globals__`, `__builtins__`, `__match_args__`, `__annotations__` and the rest fall outside it
 SRC_DUNDERS = {"__all__", "__cause__", "__file__", "__func__", "__getitem__", "__init__", "__name__",
-               "__new__", "__notes__", "__setattr__", "__slots__", "__store_mutator__", "__str__", "__traceback__"}
-# 0055 round 4 (research's S3): `__notes__` is DELETED from a withheld CLI defect (notes may quote the input); never read
+               "__new__", "__notes__", "__setattr__", "__slots__", "__store_mutator__", "__str__", "__suppress_context__",
+               "__traceback__"}
+# 0055 round 4 (research's S3): `__notes__` is DELETED from a withheld CLI defect (notes may quote the input); never read.
+# 0055 round 6 (R6-01): `__suppress_context__` is READ by the final check on a withheld group (a group's children are not
+# raised `from None`; clearing their cause suppresses their context); never written
 # names src/ does not use, each reaching a namespace, a module or an evaluator whatever holds it
 REACH_NAMES = {"globals", "import_module", "locals", "model_rebuild"}
 # an attribute name src/ does not read: `pathlib.Path.parser` is `posixpath`, a module the member walk cannot see through a
