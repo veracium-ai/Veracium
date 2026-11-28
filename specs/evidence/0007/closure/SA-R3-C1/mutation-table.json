@@ -1,5 +1,5 @@
 {
- "body_sha256": "37e1a51f885abb02e4bfa9c9b75d0b9e6271eafeec19d622925d839e15e86a8d",
+ "body_sha256": "0bf2ab62e5590ceb4d62429839e3cf72b808777ab806a1629e8f618ba67a32d1",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 2
    }
   },
-  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
+  "commit": "9281070e2263602b83cab9f3583982f9f1e051bd",
   "control_definitions": {
    "NOOP-SA-R3-C1-test_0007_attestation_jobs": "0d9656f659c5488608cc6f0498cb5726c20a9219a9d21505996c6b7396972d2f"
   },
@@ -73,7 +73,8 @@
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
+   "specs/skip_inventory.py"
   ]
  },
  "rows": [
@@ -105,7 +106,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 3.22s",
+   "pytest": "1 failed in 3.59s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fixture: a synthetic job case takes the host's euid, so on the reviewer's root host it is wrong-job-state instead of the behaviour it tests"
@@ -120,6 +121,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 23
+  "seconds": 27
  }
 }

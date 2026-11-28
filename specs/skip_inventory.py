@@ -137,7 +137,10 @@ INVENTORY = [
                             "(the adapters' Binding and FastMCP's call_tool, a tool body replaced by an exception "
                             "producer) builds the served server, so those cells skip without the SDK (the pydantic-floor "
                             "lane); the file's other cells, the CLI defect boundary and outward_text included, run "
-                            "without it. Author line: all PASS with mcp installed"),
+                            "without it. Author line: all PASS with mcp installed. In 0007's attestation suite since "
+                            "382d784d (research's stage 2, S2-E: it builds a MintError and a StoreVersionError, so it "
+                            "imports release_migration and schema_version)",
+     "job:runs"),
     ("tests/test_0055_r4_closure.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK — specs/0055 round 4's served-surface closures (R4-02's fresh cache "
                             "through MCP and the adapter binding, R4-03's sweep of every served tool) build or reach the "

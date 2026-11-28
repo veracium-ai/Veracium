@@ -1,5 +1,5 @@
 {
- "body_sha256": "a1399c02ed1b83b235eefc76d0451950661e3a46e5d0b1eb219a0b278b801de2",
+ "body_sha256": "0037956ed1dda1467234b08cf048f9f8a2f896eef26215b68c5ad537aaaf8691",
  "controls": [
   {
    "anchor_counts": [
@@ -73,7 +73,7 @@
     "passed": 7
    }
   },
-  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
+  "commit": "9281070e2263602b83cab9f3583982f9f1e051bd",
   "control_definitions": {
    "NOOP-SA-R1-02-migrations_0013": "46f1e36835d62ade93d5cac76abf9fe421a6c82210bbefcafde0184eec198581",
    "NOOP-SA-R1-02-schema_version": "154cc795a743f588a59469eb4d4d76371e90fd0ae741da4267dced92c390771f"
@@ -105,7 +105,8 @@
   "spec": "0007",
   "sqlite": "3.45.1",
   "tracked_changes": [
-   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
+   "specs/skip_inventory.py"
   ]
  },
  "rows": [
@@ -137,7 +138,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.13s",
+   "pytest": "1 failed in 1.29s",
    "reason": null,
    "reason_seen": null,
    "what": "the model at 58dd7f6: migration requires a record for the running build (attested), so a verified one refuses"
@@ -170,7 +171,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.18s",
+   "pytest": "1 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "migration gated on runtime_status() alone: the sixteen live probes are never consulted"
@@ -203,7 +204,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 1.26s",
    "reason": null,
    "reason_seen": null,
    "what": "confinement runs first and, when its probes pass, a refused build migrates"
@@ -237,7 +238,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "the withdrawn runtime_supported() kept as the open gate: only an attested build opens, so a verified one cannot migrate"
@@ -253,6 +254,6 @@
   "good": 4,
   "killed": 4,
   "rows": 4,
-  "seconds": 22
+  "seconds": 25
  }
 }

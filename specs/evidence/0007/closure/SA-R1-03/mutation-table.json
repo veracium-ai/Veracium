@@ -1,5 +1,5 @@
 {
- "body_sha256": "8f95f423c5f55771bd6a0fcf29dbcc042249aff1e81c205958cf0f45c661125c",
+ "body_sha256": "142706f5ac55b9aa86ab2da440a4d13876a66a4dbd75ad8993f19966f3311457",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 2
    }
   },
-  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
+  "commit": "9281070e2263602b83cab9f3583982f9f1e051bd",
   "control_definitions": {
    "NOOP-SA-R1-03-schema_version": "3e7fca9a3afa1043a3a8f5fee65dd4bfddb8497ac889e7643f17a9e5f87bdf5d"
   },
@@ -70,7 +70,8 @@
   "sqlite": "3.45.1",
   "tracked_changes": [
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
+   "specs/skip_inventory.py"
   ]
  },
  "rows": [
@@ -100,7 +101,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.66s",
    "reason": null,
    "reason_seen": null,
    "what": "machine dropped from the key"
@@ -131,7 +132,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.56s",
+   "pytest": "1 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the running build's machine is not canonicalised (a record's is)"
@@ -146,6 +147,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 8
+  "seconds": 9
  }
 }

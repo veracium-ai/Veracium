@@ -1,5 +1,5 @@
 {
- "body_sha256": "df6a16bccdee997145844a75378a2b20ef90e8eef83711f05b9984359831d286",
+ "body_sha256": "03aeec9cb85ff10ebee1966a7657707f1780fde7fb443081bfbbe71abe5c9308",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "b27af47f874abf360d303bbbb13ea5a8bdc64fe5",
+  "commit": "9281070e2263602b83cab9f3583982f9f1e051bd",
   "control_definitions": {
    "NOOP-SA-R3-02-attestation_job": "35783f075a00f832b18479d6ce4fbfbbd04b700c55c82b001805aea6040ffde9"
   },
@@ -81,7 +81,8 @@
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json"
+   "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
+   "specs/skip_inventory.py"
   ]
  },
  "rows": [
@@ -116,7 +117,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 11.26s",
+   "pytest": "2 failed in 13.35s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded rule: the JUnit's modules compared with the rule's, its nodes never compared with the invocation's own collection"
@@ -152,7 +153,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.73s",
+   "pytest": "2 failed in 0.83s",
    "reason": null,
    "reason_seen": null,
    "what": "an inherited PYTEST_ADDOPTS or PYTHONPATH reaches the suite (the reviewer's deselect route)"
@@ -167,6 +168,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 67
+  "seconds": 77
  }
 }
