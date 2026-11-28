@@ -4485,32 +4485,41 @@
   "line": 83,
   "statement": "raise ValueError(\"audit_log: this Memory already has an audit log attached; pass that one, or none\")"
  },
- "adapters/_surface.py:Binding._call:169:RAISE": {
+ "adapters/_surface.py:Binding._call:174:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "adapters/_surface.py:Binding._call:RAISE:1",
-  "line": 169,
+  "line": 174,
   "statement": "raise ValueError(f\"unknown tool {name!r}\")   # unreachable while TOOLS and the branches agree"
  },
- "adapters/_surface.py:Binding.call:113:RAISE": {
+ "adapters/_surface.py:Binding.call:114:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "adapters/_surface.py:Binding.call:RAISE:1",
-  "line": 113,
+  "line": 114,
   "statement": "raise ValueError(\"unknown tool: this binding serves \" + \", \".join(sorted(self._models)))"
  },
- "adapters/_surface.py:Binding.call:123:RAISE": {
+ "adapters/_surface.py:Binding.call:124:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
   "reviewer": "dev",
   "class": "argument-check",
   "key": "adapters/_surface.py:Binding.call:RAISE:2",
-  "line": 123,
+  "line": 124,
   "statement": "raise ValueError(_cred.outward_text(exc)) from exc"
+ },
+ "adapters/_surface.py:Binding.call:128:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: the caller's input is malformed (type, shape, range or closed parameter vocabulary); the request is refused as ill-formed, not declined on trust or policy",
+  "reviewer": "dev",
+  "class": "argument-check",
+  "key": "adapters/_surface.py:Binding.call:RAISE:3",
+  "line": 128,
+  "statement": "raise _cred.withheld_defect(exc) from None"
  },
  "adapters/pydantic_ai.py:as_tools:64:RAISE": {
   "decision": "not",
@@ -5619,14 +5628,23 @@
   "line": 736,
   "statement": "raise _cred.withheld_defect(exc) from None"
  },
- "mcp_server.py:_served.wrapped:851:RAISE": {
+ "mcp_server.py:_served.wrapped:853:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:_served.wrapped:RAISE:1",
-  "line": 851,
+  "line": 853,
   "statement": "raise ValueError(_cred.outward_text(exc)) from exc"
+ },
+ "mcp_server.py:_served.wrapped:859:RAISE": {
+  "decision": "not",
+  "reason": "not an enforcement point: command-line usage and exit handling",
+  "reviewer": "dev",
+  "class": "cli-usage",
+  "key": "mcp_server.py:_served.wrapped:RAISE:2",
+  "line": 859,
+  "statement": "raise _cred.withheld_defect(exc) from None"
  },
  "mcp_server.py:_veracium_version:815:BOOL_RETURN": {
   "decision": "not",
@@ -5637,40 +5655,40 @@
   "line": 815,
   "statement": "return installed_version() or SOURCE_TREE_VERSION"
  },
- "mcp_server.py:main:1152:RAISE": {
+ "mcp_server.py:main:1160:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:1",
-  "line": 1152,
+  "line": 1160,
   "statement": "raise SystemExit(f\"veracium-mcp: unknown argument {args[0]!r} (see --help). \""
  },
- "mcp_server.py:main:1158:RAISE": {
+ "mcp_server.py:main:1166:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:2",
-  "line": 1158,
+  "line": 1166,
   "statement": "raise SystemExit(\"The MCP server needs the SDK: pip install veracium-memory[mcp]\") from e"
  },
- "mcp_server.py:main:1164:RAISE": {
+ "mcp_server.py:main:1172:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:3",
-  "line": 1164,
+  "line": 1172,
   "statement": "raise SystemExit(f\"veracium-mcp: failed to start: {e}\\n(see veracium-mcp --help)\") from e"
  },
- "mcp_server.py:main:1184:RAISE": {
+ "mcp_server.py:main:1192:RAISE": {
   "decision": "not",
   "reason": "not an enforcement point: command-line usage and exit handling",
   "reviewer": "dev",
   "class": "cli-usage",
   "key": "mcp_server.py:main:RAISE:4",
-  "line": 1184,
+  "line": 1192,
   "statement": "raise SystemExit("
  },
  "mcp_server.py:served_result:300:FILTER_RETURN": {

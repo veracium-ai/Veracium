@@ -557,21 +557,28 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 113,
+   "line": 114,
    "module": "adapters/_surface.py",
    "qualname": "Binding.call"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 123,
+   "line": 124,
    "module": "adapters/_surface.py",
    "qualname": "Binding.call"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 169,
+   "line": 128,
+   "module": "adapters/_surface.py",
+   "qualname": "Binding.call"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 174,
    "module": "adapters/_surface.py",
    "qualname": "Binding._call"
   },
@@ -2250,35 +2257,42 @@
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 851,
+   "line": 853,
    "module": "mcp_server.py",
    "qualname": "_served.wrapped"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1152,
+   "line": 859,
+   "module": "mcp_server.py",
+   "qualname": "_served.wrapped"
+  },
+  {
+   "bare": false,
+   "kind": "RAISE",
+   "line": 1160,
    "module": "mcp_server.py",
    "qualname": "main"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1158,
+   "line": 1166,
    "module": "mcp_server.py",
    "qualname": "main"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1164,
+   "line": 1172,
    "module": "mcp_server.py",
    "qualname": "main"
   },
   {
    "bare": false,
    "kind": "RAISE",
-   "line": 1184,
+   "line": 1192,
    "module": "mcp_server.py",
    "qualname": "main"
   },
@@ -8101,7 +8115,7 @@
   "by_kind": {
    "BOOL_RETURN": 122,
    "FILTER_RETURN": 71,
-   "RAISE": 770,
+   "RAISE": 772,
    "RETURN_FALSE": 132,
    "RETURN_NONE": 126
   },
@@ -8132,7 +8146,7 @@
    "adapters/_surface.py": {
     "BOOL_RETURN": 0,
     "FILTER_RETURN": 0,
-    "RAISE": 7,
+    "RAISE": 8,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 0
    },
@@ -8363,7 +8377,7 @@
    "mcp_server.py": {
     "BOOL_RETURN": 8,
     "FILTER_RETURN": 1,
-    "RAISE": 8,
+    "RAISE": 9,
     "RETURN_FALSE": 0,
     "RETURN_NONE": 4
    },
@@ -8550,7 +8564,7 @@
     "RETURN_NONE": 0
    }
   },
-  "total": 1221,
+  "total": 1223,
   "unit": "one AST node of a listed decision kind; identity (module, qualname, line)"
  }
 }

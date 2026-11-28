@@ -121,7 +121,7 @@ OVERRIDE = {  # (module, line) -> reason class, where the module default is not 
     ("store/revocation_sweep.py", 172): "control-flow", ("store/revocation_sweep.py", 192): "control-flow",
     ("store/schema_version.py", 1987): "argument-check", ("store/schema_version.py", 2179): "control-flow",
     ("telemetry.py", 466): "control-flow", ("telemetry.py", 487): "control-flow", ("telemetry.py", 514): "control-flow",
-    ("mcp_server.py", 1152): "cli-usage", ("mcp_server.py", 1158): "cli-usage", ("mcp_server.py", 1164): "cli-usage", ("mcp_server.py", 1184): "cli-usage",
+    ("mcp_server.py", 1160): "cli-usage", ("mcp_server.py", 1166): "cli-usage", ("mcp_server.py", 1172): "cli-usage", ("mcp_server.py", 1192): "cli-usage",
     ("source_identity.py", 59): "argument-check", ("_json.py", 43): "control-flow", ("introspect.py", 54): "argument-check",
     ("__init__.py", 309): "control-flow",   # carried: __init__.py:_agent_call_path:RETURN_NONE:1
     ("__init__.py", 2198): "control-flow",   # carried: __init__.py:Memory._trust_scope_gate:RETURN_NONE:1

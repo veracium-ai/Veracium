@@ -342,6 +342,50 @@ def test_the_served_routes_withhold_every_carrier(tmp_path, monkeypatch, route, 
     assert GH not in shown, (case, shown)
 
 
+#: groups that are not an Exception (each holds a KeyboardInterrupt), which `except Exception` never sees: research's
+#: shape (a bare interrupt beside a shaped sibling) and the CLI's case (the interrupt itself carries the token)
+BASE_GROUPS = [
+    ("interrupt-beside-shaped", lambda: BaseExceptionGroup("g", [KeyboardInterrupt(), ValueError(GH)])),
+    ("shaped-interrupt", lambda: BaseExceptionGroup("g", [KeyboardInterrupt(GH), ValueError("x")])),
+]
+
+
+@pytest.mark.parametrize("route", ["binding", "mcp"])
+@pytest.mark.parametrize("case,factory", BASE_GROUPS, ids=[c[0] for c in BASE_GROUPS])
+def test_the_served_routes_withhold_a_group_that_is_not_an_exception(tmp_path, monkeypatch, route, case, factory):
+    """R6-01 at the two served routes (research's stage 1, BLOCKING): a BaseExceptionGroup raised inside a served call
+    still ends the call as a BaseException (it is never turned into a tool error), but what it renders is the withheld
+    rebuild: no token, the chain suppressed, the final check holds, and the interrupt is still in it."""
+    pytest.importorskip("mcp")                  # both routes build the served server (the pydantic-floor lane has none)
+    from veracium import mcp_server as MCP
+    from veracium.adapters._surface import Binding
+    assert GH in _shown(factory())                                          # the positive control: it displays the token
+    m = T._mem(tmp_path)
+    reached = []
+
+    def fault(*args, **kwargs):
+        reached.append(True)
+        raise factory()
+    monkeypatch.setattr(m, "maintain", fault)
+    try:
+        if route == "binding":
+            call = lambda: Binding(m, user_id="u", capability="direct").call("maintain", {})   # noqa: E731
+        else:
+            server = MCP.build_server(m, default_user="u", capability="direct")
+            call = lambda: asyncio.run(server.call_tool("maintain", {}))                       # noqa: E731
+        with pytest.raises(BaseExceptionGroup) as caught:
+            call()
+    finally:
+        m.close()
+    out = caught.value
+    assert reached == [True], case                                          # reached: the producer ran
+    assert not isinstance(out, Exception), case                             # still a BaseException, as before
+    assert out.__suppress_context__, case                                   # reached: the route's rebuild raised it
+    assert GH not in _shown(out), (case, _shown(out)[-300:])
+    assert C._display_safe(out), case
+    assert any(isinstance(leaf, KeyboardInterrupt) for leaf in _leaves(out)), case
+
+
 # ==== groups at depth (research's addition 3) =========================================================================
 
 def _leaves(exc) -> list:

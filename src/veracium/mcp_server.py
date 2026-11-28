@@ -839,7 +839,9 @@ def _served(fn):
     """specs/0055 §4g, the MCP tool boundary: marks every call as arriving through the `mcp` surface (the AuditLog's
     `surface`), returns a credential refusal as its refusal dict, and FORMATS any other exception that would escape the
     tool body (E1): the SDK hands an escaping exception's text to the model, so it is re-raised carrying
-    `credentials.outward_text` (field and reason, never the caller's value), chained to the original."""
+    `credentials.outward_text` (field and reason, never the caller's value), chained to the original. A group that is
+    not an Exception (it holds a KeyboardInterrupt) is re-raised as `credentials.withheld_defect` rebuilds it, still a
+    BaseException."""
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         with _cred.on_surface("mcp"):
@@ -849,6 +851,12 @@ def _served(fn):
                 return exc.as_refusal()
             except Exception as exc:                     # noqa: BLE001 - re-raised, formatted, chained
                 raise ValueError(_cred.outward_text(exc)) from exc
+            except BaseExceptionGroup as exc:
+                # round 6's R6-01 at the served routes (research's stage 1): a group holding a BaseException (a
+                # KeyboardInterrupt) is not an Exception and escaped with its children's messages into the traceback the
+                # process prints as it ends. It still ends the process, rebuilt by the CLI's rule; a bare
+                # KeyboardInterrupt or SystemExit is left alone (nothing in the product raises one carrying text)
+                raise _cred.withheld_defect(exc) from None
     return wrapped
 
 

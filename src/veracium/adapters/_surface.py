@@ -108,7 +108,8 @@ class Binding:
     def call(self, name: str, args: dict) -> Any:
         """Answer one call as the served tool answers it (specs/0055 §4g): through the `adapter` surface, a credential
         refusal returned as its refusal dict, and any other error raised as a ValueError carrying the outward
-        formatter's text (field and reason, never the caller's value), chained to the original."""
+        formatter's text (field and reason, never the caller's value), chained to the original; a group that is not an
+        Exception is re-raised as `credentials.withheld_defect` rebuilds it, still a BaseException."""
         if name not in self._models:
             raise ValueError("unknown tool: this binding serves " + ", ".join(sorted(self._models)))
         # the served tool's own argument validation, as FastMCP runs it BEFORE the tool body: its text is pydantic's
@@ -121,6 +122,10 @@ class Binding:
                 return exc.as_refusal()
             except Exception as exc:                     # noqa: BLE001 - re-raised, formatted, chained
                 raise ValueError(_cred.outward_text(exc)) from exc
+            except BaseExceptionGroup as exc:
+                # round 6's R6-01, as at mcp_server._served: a group with a BaseException child still ends the host's
+                # call as a BaseException, rebuilt by the CLI's rule, never with its children's messages
+                raise _cred.withheld_defect(exc) from None
 
     def _call(self, name: str, args: dict, a: dict) -> Any:
         """Answer one call with its VALIDATED arguments `a` (`args` is the call as given, which nothing here reads:

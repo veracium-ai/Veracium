@@ -45,7 +45,9 @@ MUTATED = ("src/veracium/credentials.py", "src/veracium/__init__.py", "src/verac
            # round 5 (the carrier-to-boundary table's findings: why's --find hit)
            "src/veracium/why.py",
            # round 5's RETURN (dev's library audit: introspect's report)
-           "src/veracium/introspect.py")
+           "src/veracium/introspect.py",
+           # round 6's RETURN (research's stage-1 BLOCKING item: the adapter binding's group catch)
+           "src/veracium/adapters/_surface.py")
 DIGESTED = MUTATED + CELL_FILES + ("tests/support_0055_i19.py", "specs/evidence/0055/digests.json",
                                    "specs/evidence/0055/vectors.py", "specs/evidence/mutation_protocol.py",
                                    _protocol.KINDS, SELF)
@@ -440,6 +442,14 @@ MUTANTS += [
      [('out[nk] = walk(x, nk)', 'out[nk] = walk(x, k)')],
      ['tests/test_0055_r6_closure.py::test_a_served_locator_label_never_names_a_shaped_key'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
      "served_result labels a value under the ORIGINAL key again (the reviewer's helper-level observation)"),
+    ('R6-served-mcp-catches-exception-only', 'product', 'src/veracium/mcp_server.py',
+     [('            except BaseExceptionGroup as exc:\n', '            except ZeroDivisionError as exc:\n')],
+     ['tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[interrupt-beside-shaped-mcp]', 'tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[shaped-interrupt-mcp]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "mcp_server._served catches Exception only again (its group clause made unreachable): a BaseExceptionGroup holding a KeyboardInterrupt escapes with its children"),
+    ('R6-served-binding-catches-exception-only', 'product', 'src/veracium/adapters/_surface.py',
+     [('            except BaseExceptionGroup as exc:\n', '            except ZeroDivisionError as exc:\n')],
+     ['tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[interrupt-beside-shaped-binding]', 'tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[shaped-interrupt-binding]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
+     "Binding.call catches Exception only again (its group clause made unreachable): a BaseExceptionGroup holding a KeyboardInterrupt escapes with its children"),
     ('R6-02B-replacement-unsettled', 'product', 'src/veracium/credentials.py',
      [('        fresh = _settled(type(exc)(msg))\n', '        fresh = type(exc)(msg)\n')],
      ['tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_NoteInCtor]', 'tests/test_0055_r5_closure.py::test_r5_05_the_replacement_is_checked_after_construction[_CauseInCtor]'], [_R4 + 'test_a1_the_finder_report_declares_the_pool_key'], None,
@@ -477,6 +487,7 @@ _NOOP_ANCHORS = {
     "src/veracium/credential_finder.py": "def is_residual(",
     "src/veracium/why.py": "def find(",
     "src/veracium/introspect.py": "def report(",
+    "src/veracium/adapters/_surface.py": "class Binding:",
 }
 
 # (id, file, [(anchor, replacement)], named cells, what, the outcome the classifier must give)
