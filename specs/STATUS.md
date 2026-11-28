@@ -60,7 +60,7 @@ is the number that decides what can be built.
 | **0051** | speaker turns inside a user event — the assistant's first person is not the user's | `accepted` | 2026-11-02 | 0 | 0 | 0 | 0 | 0 | — |
 | **0053** | Feature spec 0053: adapter conformance suite — a framework adapter is intact when the library, as the oracle, agrees with it | `accepted` | 2026-11-14 | 0 | 0 | 9 | 0 | 0 | — |
 | **0054** | Feature spec 0054: the container image, a published release artifact for hosts without Python 3.14 | `accepted` | 2026-11-26 | 0 | 0 | 0 | 0 | 0 | — |
-| **0055** | credential-shaped text is never stored | `accepted` | 2026-11-27 | 0 | 0 | 0 | 0 | 0 | — |
+| **0055** | credential-shaped text is never stored | `accepted` | 2026-11-28 | 0 | 0 | 0 | 0 | 0 | — |
 | **0056** | source anchors — a memory knows when the file it came from changed | `draft` | 2026-11-23 | 0 | 0 | 12 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
