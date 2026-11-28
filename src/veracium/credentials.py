@@ -1008,6 +1008,10 @@ def outward_text(exc: BaseException) -> str:
         reason = getattr(exc, "reason", None)
     # round 6's R6-01: a reason prints only as a member of the ONE declared set, a field only as a declared name; a
     # spelling check established no membership
+    # (research's stage 2, S2-B: converted to the exact str of its data FIRST, then judged and printed as that one
+    # value; a str subclass equal to a member as data could format as anything else, and one whose __eq__/__hash__
+    # claim membership would pass a test on the object while its data is the input)
+    reason, field = exact(reason), exact(field)
     reason = reason if isinstance(reason, str) and reason in DECLARED_REASONS else None
     if field is not None and not (isinstance(field, str) and field in _declared_argument_names()):
         field = "[argument]"

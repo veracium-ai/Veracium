@@ -217,6 +217,8 @@ CASES = [
     ("traceback:exceptions", lambda: _DisplayGroup("ordinary", [ValueError(GH)]), "render"),
     ("group:depth-3", _depth3, "render"),
     ("group:base-with-interrupt", lambda: BaseExceptionGroup("g", [KeyboardInterrupt(GH), ValueError("x")]), "render"),
+    # research's stage 2, S2-E: a bare KeyboardInterrupt, not inside a group (the CLI catches it; it keeps its type)
+    ("cli:bare-keyboardinterrupt", lambda: KeyboardInterrupt(GH), "render"),
     ("group:child-notes", lambda: ExceptionGroup("g", [_noted(ValueError("x"), GH)]), "render"),
     ("group:child-title", lambda: ExceptionGroup("g", [_validation(title=GH)]), "render"),
     ("group:child-code", lambda: ExceptionGroup("g", [_validation(code=GH)]), "render"),
@@ -386,6 +388,166 @@ def test_the_served_routes_withhold_a_group_that_is_not_an_exception(tmp_path, m
     assert any(isinstance(leaf, KeyboardInterrupt) for leaf in _leaves(out)), case
 
 
+# ==== a str subclass at outward_text's reason and field (research's stage 2, S2-B) ===================================
+
+def _formats_as_token(member):
+    """Equal to a declared value as data; formats, prints and reprs as the token (S2-3's class at R6-01's carrier)."""
+    class Shown(str):
+        def __format__(self, spec):
+            return GH
+
+        def __str__(self):
+            return GH
+
+        def __repr__(self):
+            return GH
+    return Shown(member)
+
+
+def _claims_membership(member):
+    """Its DATA is the token; its __eq__/__hash__ claim to be `member`, so a membership test on the object passes."""
+    class Claims(str):
+        def __eq__(self, other):
+            return True
+
+        def __hash__(self):
+            return hash(member)
+    return Claims(GH)
+
+
+def _reasoned_by(make_reason):
+    exc = ValueError("ordinary detail")
+    exc.reason = make_reason("refused")
+    return exc
+
+
+SUBCLASS_CARRIERS = [
+    ("reason-formats", lambda: _reasoned_by(_formats_as_token), "reason"),
+    ("reason-claims", lambda: _reasoned_by(_claims_membership), "reason"),
+    ("argument-reason-formats",
+     lambda: C.ArgumentRefused("m", field="event_text", reason=_formats_as_token("not_accepted")), "reason"),
+    ("argument-reason-claims",
+     lambda: C.ArgumentRefused("m", field="event_text", reason=_claims_membership("not_accepted")), "reason"),
+    ("argument-field-formats",
+     lambda: C.ArgumentRefused("m", field=_formats_as_token("event_text"), reason="not_accepted"), "field"),
+    ("argument-field-claims",
+     lambda: C.ArgumentRefused("m", field=_claims_membership("event_text"), reason="not_accepted"), "field"),
+]
+SUB_IDS = [c[0] for c in SUBCLASS_CARRIERS]
+
+
+@pytest.mark.parametrize("case,factory,attr", SUBCLASS_CARRIERS, ids=SUB_IDS)
+def test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field(case, factory, attr):
+    """Each form passes a membership test on the OBJECT and would print the token: the positive control. Converted to
+    its data first, it is judged as that data, and only a declared value or the content-free text is printed."""
+    exc = factory()
+    value = getattr(exc, attr)
+    members = C.DECLARED_REASONS if attr == "reason" else C._declared_argument_names()
+    assert value in members and GH in f"{value}", case          # reached: a member by the object, the token formatted
+    text = C.outward_text(exc)
+    assert GH not in text, (case, text)
+
+
+def _served_error(tmp_path, monkeypatch, route, factory) -> str:
+    """What the model sees when the served tool body raises `factory()`: the tool error's text."""
+    pytest.importorskip("mcp")                  # both routes build the served server (the pydantic-floor lane has none)
+    from veracium import mcp_server as MCP
+    from veracium.adapters._surface import Binding
+    m = T._mem(tmp_path)
+    reached = []
+
+    def fault(*args, **kwargs):
+        reached.append(True)
+        raise factory()
+    monkeypatch.setattr(m, "maintain", fault)
+    try:
+        with pytest.raises(Exception) as caught:
+            if route == "binding":
+                Binding(m, user_id="u", capability="direct").call("maintain", {})
+            else:
+                asyncio.run(MCP.build_server(m, default_user="u", capability="direct").call_tool("maintain", {}))
+    finally:
+        m.close()
+    assert reached == [True]                                                # reached: the producer ran
+    return str(caught.value)
+
+
+@pytest.mark.parametrize("route", ["binding", "mcp"])
+@pytest.mark.parametrize("case,factory,attr", SUBCLASS_CARRIERS, ids=SUB_IDS)
+def test_the_served_routes_print_the_exact_str_of_a_reason_or_field(tmp_path, monkeypatch, route, case, factory, attr):
+    shown = _served_error(tmp_path, monkeypatch, route, factory)
+    assert GH not in shown, (case, shown)
+
+
+@pytest.mark.parametrize("case,factory,attr", [c for c in SUBCLASS_CARRIERS if c[0].startswith("argument-")],
+                         ids=[c[0] for c in SUBCLASS_CARRIERS if c[0].startswith("argument-")])
+def test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field(monkeypatch, capsys, case, factory, attr):
+    """An ArgumentRefused is a CLI refusal: one outward line on stderr, exit 1."""
+    def fault(args, parser):
+        raise factory()
+    monkeypatch.setitem(cli._VERBS, "selfcheck", fault)
+    assert cli.main(["selfcheck"]) == 1                                     # reached: the refusal branch
+    err = capsys.readouterr().err
+    assert err.strip() and GH not in err, (case, err)
+
+
+# ==== a declared reason and an allowed list still print (research's stage 2, S2-E; E1's acceptance half) =============
+
+def _vocabularies():
+    """One refusal per declared reason vocabulary `outward_text` prints, built with the vocabulary's first member, and
+    the text it must print."""
+    from veracium import trust_tools
+    from veracium.store import base, release_migration, schema_version
+    trust = sorted(trust_tools.REFUSALS)[0]
+    undo, reply = base.UNDO_REFUSAL_REASONS[0], base.REPLY_REFUSAL_REASONS[0]
+    mint, version = sorted(release_migration._MINT_REASONS)[0], sorted(schema_version.REASONS)[0]
+    return [
+        ("argument-allowed", lambda: C.ArgumentRefused("m", field="event_type", reason="not_accepted",
+                                                       allowed=("observation", "email")),
+         ["event_type", "(not_accepted)", "allowed: ['observation', 'email']"]),
+        ("trust", lambda: trust_tools.TrustRefused(trust), [f"({trust})"]),
+        ("undo", lambda: base.UndoRefused(undo, "u", "e1", "detail"), [f"({undo})"]),
+        ("reply", lambda: base.ReplyRefused(reply, "u", "e1", "detail"), [f"({reply})"]),
+        ("mint", lambda: release_migration.MintError(mint), [f"({mint})"]),
+        ("store-version", lambda: schema_version.StoreVersionError("p", 1, 2, version), [f"({version})"]),
+    ]
+
+
+VOCAB_IDS = ["argument-allowed", "trust", "undo", "reply", "mint", "store-version"]
+
+
+def _vocabulary(case):
+    return {c[0]: c for c in _vocabularies()}[case]
+
+
+@pytest.mark.parametrize("case", VOCAB_IDS)
+def test_outward_text_prints_each_declared_reason_and_allowed_list(case):
+    _, factory, expected = _vocabulary(case)
+    text = C.outward_text(factory())
+    assert all(e in text for e in expected), (case, text)
+
+
+@pytest.mark.parametrize("route", ["binding", "mcp"])
+@pytest.mark.parametrize("case", VOCAB_IDS)
+def test_the_served_routes_print_each_declared_reason_and_allowed_list(tmp_path, monkeypatch, route, case):
+    _, factory, expected = _vocabulary(case)
+    shown = _served_error(tmp_path, monkeypatch, route, factory)
+    assert all(e in shown for e in expected), (case, shown)
+
+
+def test_the_cli_refusal_prints_its_reason_and_allowed_list(monkeypatch, capsys):
+    """At the CLI only a refusal of the caller's input prints the outward text (an ArgumentRefused, a CredentialRefused
+    or an OSError); the other vocabularies are defects there, raised as themselves with the message withheld."""
+    _, factory, expected = _vocabulary("argument-allowed")
+
+    def fault(args, parser):
+        raise factory()
+    monkeypatch.setitem(cli._VERBS, "selfcheck", fault)
+    assert cli.main(["selfcheck"]) == 1
+    err = capsys.readouterr().err
+    assert all(e in err for e in expected), err
+
+
 # ==== groups at depth (research's addition 3) =========================================================================
 
 def _leaves(exc) -> list:
@@ -413,7 +575,20 @@ def test_a_withheld_group_keeps_its_shape_in_built_in_groups(case):
     assert all(type(a).__name__ in (b, "RuntimeError", "ValidationError") for a, b in zip(_leaves(out), kinds))
     if case == "group:base-with-interrupt":
         assert type(out) is BaseExceptionGroup
+    if case in ("group:depth-3", "group:base-with-interrupt"):
+        # research's stage 2, S2-E: below the bound every level is REBUILT, never replaced whole: the same nesting and
+        # the same leaf kinds, exactly (a nested level replaced by the content-free defect fails safe, so only the
+        # shape shows it)
+        assert _shape(out) == _shape(orig), (_shape(out), _shape(orig))
     assert GH not in _shown(out)
+
+
+def _shape(exc):
+    """A group's nesting and leaf kinds, groups named by their built-in kind (a subclass reads as its base)."""
+    if isinstance(exc, BaseExceptionGroup):
+        kind = "ExceptionGroup" if isinstance(exc, Exception) else "BaseExceptionGroup"
+        return (kind, tuple(_shape(c) for c in exc.exceptions))
+    return type(exc).__name__
 
 
 @pytest.mark.parametrize("case", ["pydantic:title", "pydantic.error:type", "pydantic.error:loc", "pydantic.error:msg",
@@ -449,17 +624,62 @@ def test_a_group_too_deep_to_rebuild_is_replaced_past_the_bound():
 
 # ==== the final check refuses each unsafe object (research's addition 1: the check, not only the builder) ==============
 
-@pytest.mark.parametrize("make", [
-    lambda m: _DisplayGroup(m, [RuntimeError(m.replace("ExceptionGroup", "RuntimeError"))]),   # a subclass group
-    lambda m: ExceptionGroup(m, [_noted(RuntimeError(m.replace("ExceptionGroup", "RuntimeError")), "n")]),  # child note
-    lambda m: ExceptionGroup(m, [ValueError(GH)]),                                               # an unwithheld child
-    lambda m: ExceptionGroup("ordinary", [RuntimeError(m.replace("ExceptionGroup", "RuntimeError"))]),  # its own message
-    lambda m: _validation(title=GH, msg=C.WITHHELD_ERROR_MESSAGE, inp=None),                     # an undeclared title
-    lambda m: _validation(code=GH, msg=C.WITHHELD_ERROR_MESSAGE, inp=None),                      # a custom code
-], ids=["subclass", "child-note", "child-unwithheld", "own-message", "title", "code"])
-def test_the_final_check_refuses_each_unsafe_object(make):
+def _settle(exc):
+    """As `_settled` leaves every real result: a group's context suppressed, at every level (a group built and never
+    raised has `__suppress_context__` False, and the check refuses it at the PARENT before any child is judged)."""
+    if isinstance(exc, BaseExceptionGroup):
+        exc.__suppress_context__ = True
+        for c in exc.exceptions:
+            _settle(c)
+    return exc
+
+
+def _safe_leaf(m):
+    return RuntimeError(m.replace("ExceptionGroup", "RuntimeError"))
+
+
+def _safe_validation(**kw):
+    """A validation error every check passes: a declared title, the withheld type and message, a declared location, no
+    input. Each case below changes ONE of these."""
+    args = dict(title=sorted(C._declared_titles())[0], code=C.WITHHELD_ERROR_TYPE,
+                loc=(sorted(C._declared_field_names())[0],), msg=C.WITHHELD_ERROR_MESSAGE, inp=None)
+    args.update(kw)
+    return _validation(**args)
+
+
+#: (case, the object with ONE defect, its twin without it). Research's stage 2, S2-C: every group is built settled, and
+#: every twin must PASS, so a refusal can only come from the named defect, at the branch the case names.
+FINAL_CHECK = [
+    ("subclass", lambda m: _settle(_DeriveGroup(m, [_safe_leaf(m)])),          # str() is the built-in's: the type alone
+     lambda m: _settle(ExceptionGroup(m, [_safe_leaf(m)]))),
+    ("subclass-display", lambda m: _settle(_DisplayGroup(m, [_safe_leaf(m)])),
+     lambda m: _settle(ExceptionGroup(m, [_safe_leaf(m)]))),
+    ("unsettled", lambda m: ExceptionGroup(m, [_safe_leaf(m)]),               # its context would display
+     lambda m: _settle(ExceptionGroup(m, [_safe_leaf(m)]))),
+    ("own-message", lambda m: _settle(ExceptionGroup("ordinary", [_safe_leaf(m)])),
+     lambda m: _settle(ExceptionGroup(m, [_safe_leaf(m)]))),
+    ("child-note", lambda m: _settle(ExceptionGroup(m, [_noted(_safe_leaf(m), "n")])),
+     lambda m: _settle(ExceptionGroup(m, [_safe_leaf(m)]))),
+    ("child-unwithheld", lambda m: _settle(ExceptionGroup(m, [ValueError(GH)])),
+     lambda m: _settle(ExceptionGroup(m, [_safe_leaf(m)]))),
+    ("grandchild-unwithheld", lambda m: _settle(ExceptionGroup(m, [ExceptionGroup(m, [ValueError(GH)])])),
+     lambda m: _settle(ExceptionGroup(m, [ExceptionGroup(m, [_safe_leaf(m)])]))),
+    ("title", lambda m: _safe_validation(title=GH), lambda m: _safe_validation()),
+    ("code", lambda m: _safe_validation(code=GH), lambda m: _safe_validation()),
+    ("location", lambda m: _safe_validation(loc=(GH,)), lambda m: _safe_validation()),
+    ("message", lambda m: _safe_validation(msg=GH), lambda m: _safe_validation()),
+    ("input", lambda m: _safe_validation(inp="ordinary"), lambda m: _safe_validation()),
+]
+
+
+@pytest.mark.parametrize("case,make,twin", FINAL_CHECK, ids=[c[0] for c in FINAL_CHECK])
+def test_the_final_check_refuses_each_unsafe_object(case, make, twin):
+    """The twin passes (so nothing else about the object is refused), and the object with the named defect does not.
+    A documentation URL has no case of its own: only Pydantic's built-in error types carry one, and each prints its
+    own fixed message, which the message check refuses first (research's `safe-pydantic-url-ok`: equivalent)."""
     msg = f"ExceptionGroup{C._WITHHELD_SUFFIX}"
-    assert not C._display_safe(make(msg))
+    assert C._display_safe(twin(msg)), case                                  # reached: only the defect differs
+    assert not C._display_safe(make(msg)), case
 
 
 # ==== one declared reason set; the field names; the allowed lists (research's addition 2) ============================

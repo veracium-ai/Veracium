@@ -416,6 +416,46 @@ CHAINS = [
 ]
 
 
+class _SeekRecorder:
+    """The file object `log_tail` opens, with every `seek` recorded (its window's start is the first absolute seek
+    after the seek to the end)."""
+    def __init__(self, fh, seeks):
+        self._fh, self._seeks = fh, seeks
+
+    def seek(self, offset, whence=0):
+        self._seeks.append((offset, whence))
+        return self._fh.seek(offset, whence)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return self._fh.__exit__(*exc)
+
+    def __getattr__(self, name):
+        return getattr(self._fh, name)
+
+
+def product_cut(call, log: pathlib.Path):
+    """Run `call` with `log`'s file object recorded; return its result and the byte offset the product's window
+    started at (research's stage 2, S2-D: the witness is read from the product, never recomputed beside it)."""
+    seeks = []
+    real_open = pathlib.Path.open
+    target = log.resolve()
+
+    def opened(self, *args, **kwargs):
+        fh = real_open(self, *args, **kwargs)
+        return _SeekRecorder(fh, seeks) if self.resolve() == target else fh
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(pathlib.Path, "open", opened)
+        result = call()
+    ends = [i for i, (off, whence) in enumerate(seeks) if whence == 2]
+    assert ends, seeks                                                      # reached: the product opened this file
+    absolute = [off for off, whence in seeks[ends[0] + 1:] if whence == 0]
+    assert absolute, seeks
+    return result, absolute[0]
+
+
 def chain_cut_witnesses(chain: str, value: str, *, cap: int = 1024):
     """Round 6's R6-02A: the byte-placed files for the every-cut test, each with its WITNESS: where the window's real
     cut falls (`log_tail`'s `size - max(4 * cap, 1 << 20)`), where the chain is, and which chain line the cut opens.
@@ -459,12 +499,15 @@ def test_r5_04_a_line_spanning_match_is_withheld_at_every_cut(tmp_path, chain, v
     witnesses = chain_cut_witnesses(chain, value)
     assert len(witnesses) == chain.count("\n") + 1
     for w in witnesses:
-        assert w["cut"] == w["line_start"] and w["chain_start"] <= w["cut"] <= w["chain_end"], w["line"]  # reached
         if w["cut"] < w["chain_end"]:
             assert w["value_in_sent_region"], w["line"]  # reached: unmasked, the value would be sent
         log = tmp_path / f"d{w['line']}.log"
         log.write_text(w["text"])
-        tail = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False)).log_tail()
+        reporter = Reporter(DiagnosticsConfig(log_path=str(log), max_report_bytes=1024, redact=False))
+        # research's stage 2, S2-D: the witness is the PRODUCT's cut, the offset log_tail actually seeks its window to
+        # (the test's own formula only places the file), asserted before the outcome
+        tail, cut = product_cut(reporter.log_tail, log)
+        assert cut == w["line_start"] and w["chain_start"] <= cut <= w["chain_end"], (w["line"], cut, w["line_start"])
         assert value.strip('"') not in tail, (w["line"], tail[-200:])
         assert "ordinary line 19" in tail, w["line"]
 
