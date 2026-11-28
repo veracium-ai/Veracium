@@ -1,5 +1,6 @@
 # 0039 answer-shape transcript — RESEARCH's instrument (independent of dev's)
-# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ 5de9897d2ff90e500177934a205f3f8743187095
+# generated 2026-09-12 (research's instrument, re-run by dev)  against veracium @ ecf65a1ac3921fd44ed04602c279887948f794c5
+# RE-PINNED 2026-11-28 (382d784d: specs/0055 round 6's RETURN — research's stage 2, S2-B: outward_text converts a reason or field to its exact str before judging it; ecf65a1a is docs only; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-28 (5de9897d: specs/0055 round 6's RETURN — the two served routes withhold a group that is not an Exception (research's stage-1 item); both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-28 (87acff0d: specs/0055 round 6's RETURN — the exception boundary's display-carrier rule (the rendering-based check, built-in groups, closed titles, error types, reasons and fields), the CLI's wider defect catch and served_result's masked-key label; both instruments re-run, and the body is byte-identical)
 # RE-PINNED 2026-11-27 (144ca01b: specs/0055 round 5's RETURN, research's stage 2 — the log window's PEM state is judged at a line start and its read-back carries the partial line across chunk edges; credentials.py and diagnostics.py only). Both instruments re-run at 144ca01b; bodies byte-identical, as the change does not reach recall or answer shaping.

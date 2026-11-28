@@ -1,5 +1,5 @@
 {
- "body_sha256": "4f2d57015373e62db25b6af9ddf763b4d07df583d13161e44e71c68fcd7af411",
+ "body_sha256": "127ddd58422f9d2c77449e79add3e0c1a310ea30fd23196d58ee1f911b7117dc",
  "controls": [
   {
    "anchor_counts": [
@@ -41,13 +41,57 @@
     "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]",
     "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]",
     "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-formats]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[mint]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[reply]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[store-version]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[trust]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[undo]",
     "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-note]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[grandchild-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[input]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-mcp]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]",
@@ -85,7 +129,7 @@
     "tests/test_0055_recogniser.py::test_the_fallback_is_reached_and_withholds_the_whole_value",
     "tests/test_0055_recogniser.py::test_the_product_equals_the_reference_on_a_seeded_fuzz"
    ],
-   "definition_sha256": "eec9a06cc5f9107da62b7aeb0cebd28dfafdba7b493e61d38195b52aba0e9f01",
+   "definition_sha256": "e4abf0842fe28dc93fdbae7f82a17dab8705c421af5e05a9f1faad60f4e79ccd",
    "expected": "SURVIVED",
    "file": "src/veracium/credentials.py",
    "good": true,
@@ -125,13 +169,57 @@
     "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]",
     "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]",
     "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-formats]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[mint]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[reply]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[store-version]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[trust]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[undo]",
     "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-note]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[grandchild-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[input]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-mcp]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:field-binding]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-binding]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_every_carrier[outward_text:reason-mcp]",
@@ -628,9 +716,10 @@
     "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
     "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
     "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[cli:bare-keyboardinterrupt]",
     "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]"
    ],
-   "definition_sha256": "e6559eedb6063c18fa29893e9d13e36f65c4f8c6b2faef043a574d19efd40f4a",
+   "definition_sha256": "3f24cb72eb5bbb903a31b3d495523776e6dbc980dc455c1b042185a0d42933f0",
    "expected": "SURVIVED",
    "file": "src/veracium/cli.py",
    "good": true,
@@ -641,6 +730,7 @@
     "tests/test_0055_invariants.py::test_i18_redact_removes_what_0041_can_and_reports_the_residual",
     "tests/test_0055_r5_closure.py::test_a_host_record_method_reaches_no_outward_surface_but_through_a_screened_caller",
     "tests/test_0055_r5_closure.py::test_the_cli_recall_verb_prints_no_planted_shape[id]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[cli:bare-keyboardinterrupt]",
     "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]"
    ],
    "outcome": "SURVIVED",
@@ -782,6 +872,7 @@
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
     "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
     "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
@@ -790,7 +881,7 @@
     "tests/test_0055_r5_closure.py::test_s2_1_a_window_starting_anywhere_in_a_begin_line_withholds_the_body[1]",
     "tests/test_0055_r5_closure.py::test_s2_1_a_window_starting_anywhere_in_an_end_line_sends_what_follows[1]"
    ],
-   "definition_sha256": "e10cdfd5117b9ff555896ff86837c91a971dbe4efb74a3a90080e6378c809081",
+   "definition_sha256": "5484c6d4eea7dba73c993c9df2ee59faeb121196816f8e43ceece7d3994c4144",
    "expected": "SURVIVED",
    "file": "src/veracium/diagnostics.py",
    "good": true,
@@ -803,6 +894,7 @@
     "tests/test_0055_r4_closure.py::test_r4_06_a_cut_never_sends_the_unscreened_rest_of_a_value[structural-prefix]",
     "tests/test_0055_r4_closure.py::test_r4_06_reviewer_a_twenty_byte_tail_holds_no_part_of_the_token",
     "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
@@ -1133,6 +1225,7 @@
     "tests/test_0055_r5_closure.py::test_r5_03_library_dispute_masks_the_stored_relation",
     "tests/test_0055_r5_closure.py::test_r5_03_the_minted_preview_token_is_kept",
     "tests/test_0055_r5_closure.py::test_r5_04_a_label_before_a_window_long_blank_run_still_withholds_its_value[label]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
     "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
@@ -1163,14 +1256,59 @@
     "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]",
     "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic.error:type]",
     "tests/test_0055_r6_closure.py::test_a_withheld_validation_error_stays_structured_with_closed_values[pydantic:title]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-formats]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:field]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[outward_text:reason]",
     "tests/test_0055_r6_closure.py::test_outward_text_names_no_carrier[pydantic.error:type]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[mint]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[reply]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[store-version]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[trust]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[undo]",
     "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[builtin:obj]",
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[cli:bare-keyboardinterrupt]",
     "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[group:base-with-interrupt]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-note]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[grandchild-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[input]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]",
     "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[title]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-mcp]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[interrupt-beside-shaped-binding]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[interrupt-beside-shaped-mcp]",
     "tests/test_0055_r6_closure.py::test_the_served_routes_withhold_a_group_that_is_not_an_exception[shaped-interrupt-binding]",
@@ -1215,26 +1353,26 @@
   },
   "clean": {
    "first": {
-    "of": 270,
+    "of": 316,
     "ok": true,
-    "passed": 270
+    "passed": 316
    },
    "last": {
-    "of": 270,
+    "of": 316,
     "ok": true,
-    "passed": 270
+    "passed": 316
    }
   },
-  "commit": "5de9897d2ff90e500177934a205f3f8743187095",
+  "commit": "ecf65a1ac3921fd44ed04602c279887948f794c5",
   "control_definitions": {
    "CTRL-unrelated-TypeError": "4bc52fe175fdb83190ec0e33c03fc45e592cba38e3c4e5be1692e62954ccfc48",
    "NOOP-__init__": "46cc0bb2bc19b49c5e71950eeb109512aaf7dafcb3918a3f20112c42628ed1e1",
    "NOOP-_surface": "3326f106585a115b3ef6689210c5dea0775667a7cd2dfc190068e5f961f2e0ec",
-   "NOOP-cli": "e6559eedb6063c18fa29893e9d13e36f65c4f8c6b2faef043a574d19efd40f4a",
+   "NOOP-cli": "3f24cb72eb5bbb903a31b3d495523776e6dbc980dc455c1b042185a0d42933f0",
    "NOOP-compile": "1ebb730fb06489350d915b5b503f4da91e95a43bc00e33d059361ee3df03d291",
    "NOOP-credential_finder": "bea7ced18273b53eb3af17b790a4f479802c5081753f58b56332c80a481e6c4e",
-   "NOOP-credentials": "eec9a06cc5f9107da62b7aeb0cebd28dfafdba7b493e61d38195b52aba0e9f01",
-   "NOOP-diagnostics": "e10cdfd5117b9ff555896ff86837c91a971dbe4efb74a3a90080e6378c809081",
+   "NOOP-credentials": "e4abf0842fe28dc93fdbae7f82a17dab8705c421af5e05a9f1faad60f4e79ccd",
+   "NOOP-diagnostics": "5484c6d4eea7dba73c993c9df2ee59faeb121196816f8e43ceece7d3994c4144",
    "NOOP-graph": "0f3002a0b260502227c8005b03b76095f2b15ceedbc5e5fc37a3b73969edf3f4",
    "NOOP-ingest": "440c7d201a358abc155c29dd97c49642ceaba458b924f07244db74dbcc7d16de",
    "NOOP-introspect": "d689c0441de3c1733208db1d666619404a29d5a10a67bcbbb8c029aac71cf383",
@@ -1323,6 +1461,17 @@
    "R6-01-title-kept": "8e80a6408a1601774174d04cfe5b950285af6b7007eeaa3a9de1398623c59265",
    "R6-02A-chain-context-dropped": "f51491ba08b1b6ef3462283e217f9e95f2929ccb2a6f708c81892dd51187f87f",
    "R6-02B-replacement-unsettled": "b43a1f3422e0b32af47a27ba0746054815cf1d501b8cc12d4e6d1b29d2e49251",
+   "R6-S2B-conversion-after-test": "f0f209bc349bfaf5709ea407605f564868fe1147462042547de0d31ee1ba3204",
+   "R6-S2B-conversion-removed": "a0b0d1404ef7c6d14679df214390e7703434ec81c6934decde94e16c0ba09997",
+   "R6-S2C-final-check-children-unchecked": "8ea826b8795c489247907fedbee07ce44ead93a2eabb44ecbd244b8281b825e3",
+   "R6-S2C-final-check-input-ok": "85fde3cf36da4af88a7337996c71f34cce293d0ad8bdb615f605e68dda0a19f9",
+   "R6-S2C-final-check-subclass-ok": "0b079a192d2b29453be6036d4d63acd162e2d47cd41460b881705f5351028f4f",
+   "R6-S2D-start-earlier-4k": "e800180f0f6fb018214d580328f3da7574a0150525a5814ad7fa7ee365632b7b",
+   "R6-S2D-window-doubled": "9fc58e44f9f441e181a79b411816824cd997d076d329c5f4bc8eb71edc9b2134",
+   "R6-S2E-cli-keyboardinterrupt-uncaught": "0a7571eb3af7561cc64eb93564b5708490ad9bcc441cdd67f5b72f7b1321bf49",
+   "R6-S2E-group-depth-1": "ed0a1d63248ac5eac530898199821646fbe3574d72c69f6bed4d0e577f66313e",
+   "R6-S2E-outward-allowed-dropped": "2c5ca246583fbbeecb6248a7aedc9042ae1fa0900b61074b868f5c15e98abdf7",
+   "R6-S2E-outward-reason-dropped": "0a674804d2acc6514a0183901d8c5a2127deeb15dc7be79f5a0481943a879869",
    "R6-served-binding-catches-exception-only": "6523648d0c1cfb7bede44bbaf4b7fe182b27c72e2ed08a92b64d5d8e6b2e612e",
    "R6-served-label-original-key": "10d399b426d68e97caeff6fea6a199478d9d77dd60b8b9de0234b71f38288092",
    "R6-served-mcp-catches-exception-only": "af685481685cf4fb070042d1d88a33112ae17da1f96ee914ebb02f41b3133f4e",
@@ -1338,7 +1487,7 @@
   },
   "digests": {
    "specs/evidence/0055/digests.json": "5980405e476b1c1a2711c82e819f41b1d192dad452058901ddef03b6734dd06f",
-   "specs/evidence/0055/implementation_mutants.py": "d6aac5d7fa7c4d2ae333b38105aac74de3dc8707ce29212acec961fdc33d038b",
+   "specs/evidence/0055/implementation_mutants.py": "1ed3c740e1668faa197c7bc1b1436b0f50a8f30810d24adffca271b273dd8ebb",
    "specs/evidence/0055/vectors.py": "a773cb2cc8f5f9a0ef01c8a8b872e3097b77cf49efe247ee749ec084b4af41d7",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
@@ -1347,7 +1496,7 @@
    "src/veracium/cli.py": "69be6d8c4e5948c0fc36d5fed6f28bc397bdb268ffaf24c331d50857377bd799",
    "src/veracium/compile.py": "5167e3cdf499c50486db803827870a7420a528c9273a31bf9ead708f34dae465",
    "src/veracium/credential_finder.py": "bcb5ed255e30f65edfa4ad532c306ac98723bf8f994aba009cb27b18323f311c",
-   "src/veracium/credentials.py": "09d4c8045975eb8b7cb5dd12bedc05084869b115e12a178521d8b25fbfec18b0",
+   "src/veracium/credentials.py": "af9175334eae79ecbd568f262d13a90901cef939f1d55d0665381924ffdeb07b",
    "src/veracium/diagnostics.py": "be0efc33f41eb91498bb0c805b6161a4995c6aa198a214da3daf62c689aa7bbc",
    "src/veracium/graph.py": "fa037af8742677f09a29516d90b467ba82c2865f04a14d806821bc7eb5811f9d",
    "src/veracium/ingest.py": "48ab98e9b6c08313f2196f0cfa45936ecfb6e36bb81b7a6edd19137612b34d2a",
@@ -1363,8 +1512,8 @@
    "tests/test_0055_i19_digest_sweep.py": "9e253b4b893b13fe14196d634c7cbb71c2932f868b2670125ec88f5053a413cc",
    "tests/test_0055_invariants.py": "ac5e497266b2781a2a7194d4923efd4a81f45df54185fd03e97166316d8e3632",
    "tests/test_0055_r4_closure.py": "d8e77310919fee872d88f9c79b82329904e004249617c62954c4ec11a1dd2f65",
-   "tests/test_0055_r5_closure.py": "6492b526e22d0a509d7cfb3f7325d589fa8facded3bf608ccb62766ccc3692cd",
-   "tests/test_0055_r6_closure.py": "ad1347ab979bd38b6eddf131b5310c7fcb4cf4bbc6166797527cca3605dd36da",
+   "tests/test_0055_r5_closure.py": "0182986c6c3a75da24c36f1a5f5478249351b95cc277f289a3927e0c4377e6ee",
+   "tests/test_0055_r6_closure.py": "96f2822e45cb161b63546e59a5a9a109f6139f5d005fa1a409458912f9aa7dff",
    "tests/test_0055_recogniser.py": "cccb1403bb061956e769bbca9734c633c81faae21f4585f2f738fae170a4bc06"
   },
   "finding": "implementation",
@@ -1436,7 +1585,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.09s",
+   "pytest": "10 failed in 1.18s",
    "reason": null,
    "reason_seen": null,
    "what": "mask() makes one pass and returns, inert or not (I3: a single-pass mask, C5/C6) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1478,7 +1627,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.66s",
+   "pytest": "4 failed in 0.62s",
    "reason": null,
    "reason_seen": null,
    "what": "the bound's fallback returns the partly masked text instead of withholding the value (I3, D4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1526,7 +1675,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "6 failed in 0.81s",
+   "pytest": "6 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the labelled rule's stop list removed, so a stop word after a label is withheld (I2, K6)"
@@ -1631,7 +1780,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "25 failed in 6.41s",
+   "pytest": "25 failed in 4.36s",
    "reason": null,
    "reason_seen": null,
    "what": "an identifier argument with a shape passes the ingress screen instead of refusing the call (I4) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1670,7 +1819,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.81s",
+   "pytest": "3 failed in 1.38s",
    "reason": null,
    "reason_seen": null,
    "what": "the extractor's triples are written without the model-output screen (I5) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -1703,7 +1852,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.90s",
+   "pytest": "1 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "a restore whose free text carries shapes masks it without withhold_credentials=True (I6)"
@@ -1736,7 +1885,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the no-query (proactive) read path left unmasked (I7: one read path left unmasked)"
@@ -1769,7 +1918,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.07s",
+   "pytest": "1 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "the one outward formatter returns the exception's own message, which may echo the input (I8, I17)"
@@ -1811,7 +1960,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.44s",
+   "pytest": "4 failed in 1.30s",
    "reason": null,
    "reason_seen": null,
    "what": "answer_len/answer_sha16 (and the provider-error digest) over the raw provider text (I12, I19 row P)"
@@ -1892,7 +2041,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "17 failed in 4.82s",
+   "pytest": "17 failed in 4.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard screens every PRESENT string, not the introduced ones (I13: dispute of a legacy row fails) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -1925,7 +2074,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.07s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "remember_impl strips provenance_raises_discarded without recording it to the AuditLog (I15)"
@@ -1958,7 +2107,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "the absorption's rewritten note (composed from the stored note) written unmasked (I16 rule 1)"
@@ -1991,7 +2140,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.05s",
+   "pytest": "1 failed in 1.01s",
    "reason": null,
    "reason_seen": null,
    "what": "an exception escaping a served MCP tool reaches the SDK with its own message (I17 E1)"
@@ -2024,7 +2173,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.08s",
+   "pytest": "1 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "the served argument models echo input_value= in validation errors (I17 E2)"
@@ -2057,7 +2206,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.28s",
+   "pytest": "1 failed in 0.77s",
    "reason": null,
    "reason_seen": null,
    "what": "`veracium credentials redact` trusts the 0041 receipt instead of re-scanning (I18)"
@@ -2150,7 +2299,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "21 failed in 5.60s",
+   "pytest": "21 failed in 4.19s",
    "reason": null,
    "reason_seen": null,
    "what": "content_digest over raw legacy text (I19, census F row 13 / map rows 28-31; W4)"
@@ -2186,7 +2335,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.74s",
+   "pytest": "2 failed in 0.70s",
    "reason": null,
    "reason_seen": null,
    "what": "embedded_text, the embedder's input, over raw legacy text (I7, the embedder egress)"
@@ -2222,7 +2371,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.05s",
+   "pytest": "2 failed in 1.00s",
    "reason": null,
    "reason_seen": null,
    "what": "correct copies the prior's note into the plan unmasked, so plan_correction hashes it (I19, W5) [measured: 2 more cell(s) fail by a crash, not named]"
@@ -2255,7 +2404,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.67s",
    "reason": null,
    "reason_seen": null,
    "what": "revoke_source's reason check moved after the identity digest (I19, D3's order)"
@@ -2288,7 +2437,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "D3 accepts an unknown credential-shaped source and digests it (I19: an unknown shape refuses first)"
@@ -2321,7 +2470,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the served record_procedure drops the report the twin returns (I20)"
@@ -2354,7 +2503,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.64s",
+   "pytest": "1 failed in 0.63s",
    "reason": null,
    "reason_seen": null,
    "what": "the store's upsert refusal quotes a stored invalidation reason unmasked (I19-F6, fixed at v0.5.5; measured: exactly this cell fails, by assertion)"
@@ -2481,7 +2630,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "26 failed in 2.57s",
+   "pytest": "26 failed in 2.40s",
    "reason": null,
    "reason_seen": null,
    "what": "v0.5.6's structural patterns, the superseded implementation: a regular-expression word boundary, so a token glued by `_` or written against CJK text is stored (I1, \u00a74a's token boundary, G1-G18) [measured: 1 more cell(s) fail by a crash, not named]"
@@ -2601,7 +2750,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "30 failed in 8.09s",
+   "pytest": "30 failed in 7.45s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress admits a non-str identifier or free text again (round 4's R4-01: the isinstance(str) gate)"
@@ -2637,7 +2786,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.77s",
+   "pytest": "2 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "ensure_wiki returns a FRESH cached body unmasked again (round 4's R4-02) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -2706,7 +2855,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.00s",
+   "pytest": "2 failed in 0.96s",
    "reason": null,
    "reason_seen": null,
    "what": "import's procedural refusals carry their raw ids again (round 4's R4-03, the pass before the screen)"
@@ -2739,7 +2888,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "the served forget_fact receipt names surviving records by raw id again (dev's sweep, R4-03's class)"
@@ -2784,7 +2933,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.25s",
+   "pytest": "5 failed in 1.19s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's removable text is the superseded fixed lists (round 4's R4-04: invalidation_reason, kind and retired_reason read as residual, so the remedy never targets them)"
@@ -2826,7 +2975,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 0.99s",
+   "pytest": "4 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "a record field no class names is dropped again, not reported (round 4's R4-04: fail closed)"
@@ -2862,7 +3011,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a current record whose JSON does not parse is skipped again (research's S1)"
@@ -2895,7 +3044,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.67s",
+   "pytest": "1 failed in 0.69s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder reads only the round-3 side tables again (research's S1: supersession_refusals.relation, source_revocations.reason and every other per-user column unread)"
@@ -2931,7 +3080,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.87s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "a defect with its own formatter is re-raised as itself after the args rewrite (round 4's R4-05)"
@@ -3039,7 +3188,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.69s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the finder's report no longer names maintain()'s pool_key destination (round 4's A1)"
@@ -3081,7 +3230,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.43s",
+   "pytest": "4 failed in 1.28s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's screen reads only a str again: a bytes origin or source_id passes it to `_bounded`, whose message quotes it (round 5: R4-01's class one call down, found by the A5 census's exception-text cell)"
@@ -3124,7 +3273,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.01s",
+   "pytest": "4 failed in 0.98s",
    "reason": null,
    "reason_seen": null,
    "what": "recall's episode lines print the stored date unmasked again (round 5, the carrier table's `record:episode:current:date`) [re-measured at round 5's RETURN: the served cells also pass under served_result's projection, a second layer over the same leak; the library cells name the row]"
@@ -3169,7 +3318,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.11s",
+   "pytest": "5 failed in 1.05s",
    "reason": null,
    "reason_seen": null,
    "what": "the wiki compile's episode line prints the stored date unmasked again (round 5; reached by the DATED form only: a bare token sorts as a future date and the episode is not assertable)"
@@ -3208,7 +3357,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.00s",
+   "pytest": "3 failed in 1.02s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_deep leaves dict keys as they are again (round 5: `veracium why` printed a legacy `outcome_counts` key)"
@@ -3241,7 +3390,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.77s",
+   "pytest": "1 failed in 0.75s",
    "reason": null,
    "reason_seen": null,
    "what": "why.find masks only its id and fact again (round 5: `why --find --json` printed `invalidation_reason`)"
@@ -3316,7 +3465,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.01s",
+   "pytest": "2 failed in 0.97s",
    "reason": null,
    "reason_seen": null,
    "what": "_cred_ingress screens a str subclass by its data but hands the object on again (round 5's R5-06)"
@@ -3349,7 +3498,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.78s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "remember passes the unconverted event_type to ingest again, whose fallback summary formats it (R5-06's branch)"
@@ -3382,7 +3531,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.81s",
+   "pytest": "1 failed in 0.76s",
    "reason": null,
    "reason_seen": null,
    "what": "D3's callee screen returns origin and source_id unconverted again (R5-06, the callee's step)"
@@ -3421,7 +3570,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.30s",
+   "pytest": "3 failed in 1.22s",
    "reason": null,
    "reason_seen": null,
    "what": "the import screen reads mapping VALUES only again: a shaped key passes admission (round 5's R5-01)"
@@ -3457,7 +3606,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.79s",
+   "pytest": "2 failed in 0.74s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard reads mapping VALUES only again: a new shaped key passes it (round 5's R5-01)"
@@ -3490,7 +3639,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.93s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "the import screen's label prints a caller's key again (round 5's R5-02)"
@@ -3529,7 +3678,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.84s",
+   "pytest": "3 failed in 0.79s",
    "reason": null,
    "reason_seen": null,
    "what": "the store guard's refusal label prints a stored key again (R5-02 in the recursive guard)"
@@ -3589,7 +3738,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "10 failed in 1.80s",
+   "pytest": "10 failed in 1.76s",
    "reason": null,
    "reason_seen": null,
    "what": "a served result keeps a shaped record id raw again (round 5's R5-03)"
@@ -3640,7 +3789,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "7 failed in 0.95s",
+   "pytest": "7 failed in 0.90s",
    "reason": null,
    "reason_seen": null,
    "what": "a served result keeps shaped stored text raw again (R5-03: dispute's relation)"
@@ -3739,7 +3888,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.73s",
+   "pytest": "1 failed in 0.72s",
    "reason": null,
    "reason_seen": null,
    "what": "mask_from keeps the cursor inside a span that crosses the send point again (R5-04)"
@@ -3775,7 +3924,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.90s",
+   "pytest": "2 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "the replacement exception keeps the notes and cause its constructor added again (round 5's R5-05)"
@@ -3814,7 +3963,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.04s",
+   "pytest": "3 failed in 1.03s",
    "reason": null,
    "reason_seen": null,
    "what": "introspect's report carries stored relations and reasons raw again (dev's library audit: the CLI printed them)"
@@ -3847,7 +3996,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.85s",
+   "pytest": "1 failed in 0.78s",
    "reason": null,
    "reason_seen": null,
    "what": "the library dispute result carries the stored relation raw again (research's addition 2)"
@@ -3893,7 +4042,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 1.76s",
+   "pytest": "5 failed in 1.66s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm_fact_impl and dispute_fact_impl return unprojected again (R5-03, the decorator)"
@@ -3938,7 +4087,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "5 failed in 2.48s",
+   "pytest": "5 failed in 1.84s",
    "reason": null,
    "reason_seen": null,
    "what": "forget_everything_preview's minted token is masked like a stored shape (the declared exception lost)"
@@ -3971,7 +4120,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.13s",
+   "pytest": "1 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "confirm writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
@@ -4004,7 +4153,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "dispute writes an unscreened str-subclass edge_id's name into the record again (R5-06's unscreened sibling)"
@@ -4037,7 +4186,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.11s",
+   "pytest": "1 failed in 0.86s",
    "reason": null,
    "reason_seen": null,
    "what": "correct derives evidence_ref from a str-subclass edge_id's name again (R5-06's unscreened sibling)"
@@ -4070,7 +4219,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.04s",
+   "pytest": "1 failed in 0.85s",
    "reason": null,
    "reason_seen": null,
    "what": "answer puts a str-subclass query's name in the gate's prompt again (R5-06's unscreened sibling)"
@@ -4103,7 +4252,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "_formats_as judges only the rendering's first line, so an exception that still carries notes passes (R5-05: an undeletable __notes__; round 6 moved the judgement onto the rendering)"
@@ -4136,7 +4285,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.16s",
+   "pytest": "1 failed in 0.91s",
    "reason": null,
    "reason_seen": null,
    "what": "the CLI's recall verb prints the host-record Recall's raw record ids (the census's outward check, CLI half)"
@@ -4169,7 +4318,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.66s",
+   "pytest": "1 failed in 1.20s",
    "reason": null,
    "reason_seen": null,
    "what": "a host-record method gains a caller outside Memory that no projection or masked print screens (the surface half)"
@@ -4202,7 +4351,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 1.03s",
+   "pytest": "1 failed in 0.80s",
    "reason": null,
    "reason_seen": null,
    "what": "edges_since returns nothing: the census's positive control (the host's own read carries the record) reaches no record"
@@ -4238,7 +4387,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.98s",
+   "pytest": "2 failed in 0.82s",
    "reason": null,
    "reason_seen": null,
    "what": "the log window's PEM state is judged at its cut again, inside a line (S2-1; the line-start refusal then sends nothing)"
@@ -4271,7 +4420,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.91s",
+   "pytest": "1 failed in 0.73s",
    "reason": null,
    "reason_seen": null,
    "what": "pem_open_before answers at a position inside a line, where a marker can be cut in two (S2-1's mechanism)"
@@ -4307,7 +4456,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.07s",
+   "pytest": "2 failed in 0.84s",
    "reason": null,
    "reason_seen": null,
    "what": "the read-back carries a fixed 4096-byte overlap across a chunk edge again (round 5's form): a longer marker is cut"
@@ -4343,7 +4492,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.64s",
+   "pytest": "2 failed in 0.99s",
    "reason": null,
    "reason_seen": null,
    "what": "the chain bound counts blank lines (research's chain-blank-lines-count: a many-line run ends the context early)"
@@ -4379,7 +4528,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.81s",
+   "pytest": "2 failed in 1.42s",
    "reason": null,
    "reason_seen": null,
    "what": "the chain bound judges a line raw, so an invisible-only line counts (research's chain-invisible-lines-count)"
@@ -4415,7 +4564,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.53s",
+   "pytest": "2 failed in 1.09s",
    "reason": null,
    "reason_seen": null,
    "what": "exact converts Enum members only; a plain str subclass that formats as the token passes (research's exact-only-enum)"
@@ -4448,7 +4597,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.75s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "_formats_as accepts str() plus notes again (round 5's rule): the renderer's suggestion line prints a name from obj"
@@ -4481,7 +4630,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.74s",
+   "pytest": "1 failed in 0.57s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld validation error keeps an undeclared title (R6-01's Pydantic title)"
@@ -4514,7 +4663,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.72s",
+   "pytest": "1 failed in 0.59s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld validation error copies a custom error code (R6-01's PydanticCustomError code)"
@@ -4553,7 +4702,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.11s",
+   "pytest": "3 failed in 1.12s",
    "reason": null,
    "reason_seen": null,
    "what": "outward_text prints a custom error code again (R6-01, both served routes)"
@@ -4592,7 +4741,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 1.19s",
+   "pytest": "3 failed in 1.15s",
    "reason": null,
    "reason_seen": null,
    "what": "outward_text admits a reason by its spelling again, not by membership of the declared set (R6-01's generic reason)"
@@ -4628,7 +4777,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.99s",
+   "pytest": "2 failed in 1.08s",
    "reason": null,
    "reason_seen": null,
    "what": "outward_text prints an undeclared field name again"
@@ -4661,7 +4810,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.63s",
+   "pytest": "1 failed in 0.58s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld group is rebuilt through the original's derive, keeping its message (R6-01's group children)"
@@ -4694,7 +4843,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.62s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "a withheld group keeps its children as they are (R6-01: the child is the display)"
@@ -4733,7 +4882,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "3 failed in 0.62s",
+   "pytest": "3 failed in 0.64s",
    "reason": null,
    "reason_seen": null,
    "what": "the final check on the withheld object passes everything (R6-01: the check, not only the builders)"
@@ -4766,7 +4915,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.57s",
+   "pytest": "1 failed in 0.65s",
    "reason": null,
    "reason_seen": null,
    "what": "the CLI catches Exception only again: a BaseExceptionGroup holding a KeyboardInterrupt escapes with its children"
@@ -4799,7 +4948,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.61s",
+   "pytest": "1 failed in 0.60s",
    "reason": null,
    "reason_seen": null,
    "what": "served_result labels a value under the ORIGINAL key again (the reviewer's helper-level observation)"
@@ -4835,7 +4984,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.08s",
+   "pytest": "2 failed in 1.06s",
    "reason": null,
    "reason_seen": null,
    "what": "mcp_server._served catches Exception only again (its group clause made unreachable): a BaseExceptionGroup holding a KeyboardInterrupt escapes with its children"
@@ -4871,7 +5020,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 1.12s",
+   "pytest": "2 failed in 1.07s",
    "reason": null,
    "reason_seen": null,
    "what": "Binding.call catches Exception only again (its group clause made unreachable): a BaseExceptionGroup holding a KeyboardInterrupt escapes with its children"
@@ -4949,21 +5098,571 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "4 failed in 1.50s",
+   "pytest": "4 failed in 1.45s",
    "reason": null,
    "reason_seen": null,
    "what": "the window's start keeps no chain context: only the byte-placed every-cut test reaches a cut inside a chain (R6-02A)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-formats]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-mcp]"
+   ],
+   "definition_sha256": "a0b0d1404ef7c6d14679df214390e7703434ec81c6934decde94e16c0ba09997",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2B-conversion-removed",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-formats]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-formats]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-formats-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-formats-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "22 failed in 2.49s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "outward_text judges and prints the OBJECT again: a str subclass formatting as other text, or claiming membership by __eq__/__hash__, prints its own text (research's S2-B)"
+  },
+  {
+   "anchor_counts": [
+    1,
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]"
+   ],
+   "definition_sha256": "f0f209bc349bfaf5709ea407605f564868fe1147462042547de0d31ee1ba3204",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2B-conversion-after-test",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_outward_text_judges_and_prints_the_exact_str_of_a_reason_or_field[reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-field-claims]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_the_exact_str_of_a_reason_or_field[argument-reason-claims]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-field-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[argument-reason-claims-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_the_exact_str_of_a_reason_or_field[reason-claims-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "11 failed in 1.70s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the conversion moved after the membership test: a subclass whose __eq__/__hash__ claim membership passes, then prints its data (research's S2-B: the order matters)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-note]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[grandchild-unwithheld]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-note]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[grandchild-unwithheld]"
+   ],
+   "definition_sha256": "8ea826b8795c489247907fedbee07ce44ead93a2eabb44ecbd244b8281b825e3",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2C-final-check-children-unchecked",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-note]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[child-unwithheld]",
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[grandchild-unwithheld]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "3 failed in 0.62s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the final check on a group does not recurse into its children (research's safe-group-children-unchecked; the cases now built settled)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]"
+   ],
+   "definition_sha256": "0b079a192d2b29453be6036d4d63acd162e2d47cd41460b881705f5351028f4f",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2C-final-check-subclass-ok",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[subclass]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.62s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the final check accepts a group SUBCLASS whose str() is the built-in's (research's safe-group-subclass-ok, pinned alone by _DeriveGroup)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[input]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[input]"
+   ],
+   "definition_sha256": "85fde3cf36da4af88a7337996c71f34cce293d0ad8bdb615f605e68dda0a19f9",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2C-final-check-input-ok",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_final_check_refuses_each_unsafe_object[input]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.59s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the final check on a validation error allows an input value (research's safe-pydantic-input-ok)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]"
+   ],
+   "definition_sha256": "ed0a1d63248ac5eac530898199821646fbe3574d72c69f6bed4d0e577f66313e",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2E-group-depth-1",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_a_withheld_group_keeps_its_shape_in_built_in_groups[group:depth-3]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.58s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "a nested group is replaced whole by the content-free defect, never rebuilt: fails safe, so only the exact shape shows it (research's group-depth-1)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]"
+   ],
+   "definition_sha256": "2c5ca246583fbbeecb6248a7aedc9042ae1fa0900b61074b868f5c15e98abdf7",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2E-outward-allowed-dropped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "4 failed in 1.14s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "outward_text omits a closed vocabulary's allowed values (E1's acceptance half; research's outward-allowed-dropped)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[mint]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[reply]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[store-version]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[trust]": "assertion",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[undo]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-mcp]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-binding]": "assertion",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-mcp]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[mint]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[reply]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[store-version]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[trust]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[undo]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-mcp]"
+   ],
+   "definition_sha256": "0a674804d2acc6514a0183901d8c5a2127deeb15dc7be79f5a0481943a879869",
+   "file": "src/veracium/credentials.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2E-outward-reason-dropped",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[argument-allowed]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[mint]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[reply]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[store-version]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[trust]",
+    "tests/test_0055_r6_closure.py::test_outward_text_prints_each_declared_reason_and_allowed_list[undo]",
+    "tests/test_0055_r6_closure.py::test_the_cli_refusal_prints_its_reason_and_allowed_list",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[argument-allowed-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[mint-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[reply-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[store-version-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[trust-mcp]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-binding]",
+    "tests/test_0055_r6_closure.py::test_the_served_routes_print_each_declared_reason_and_allowed_list[undo-mcp]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "19 failed in 2.54s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "outward_text prints no reason at all: a declared reason goes silent (E1's acceptance half; research's outward-reason-dropped)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[cli:bare-keyboardinterrupt]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[cli:bare-keyboardinterrupt]"
+   ],
+   "definition_sha256": "0a7571eb3af7561cc64eb93564b5708490ad9bcc441cdd67f5b72f7b1321bf49",
+   "file": "src/veracium/cli.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2E-cli-keyboardinterrupt-uncaught",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r6_closure.py::test_the_cli_defect_path_withholds_every_carrier[cli:bare-keyboardinterrupt]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "1 failed in 0.61s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "the CLI no longer catches a bare KeyboardInterrupt, which escapes as raised with its message (research's cli-keyboardinterrupt-uncaught)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]"
+   ],
+   "definition_sha256": "9fc58e44f9f441e181a79b411816824cd997d076d329c5f4bc8eb71edc9b2134",
+   "file": "src/veracium/diagnostics.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2D-window-doubled",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 1.36s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "log_tail's window doubles: the product's cut moves and the chain lies whole inside it; the witness now reads the product's cut (research's window-2mib)"
+  },
+  {
+   "anchor_counts": [
+    1
+   ],
+   "cell_kinds": {
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]": "assertion",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]": "assertion"
+   },
+   "cells_errored": [],
+   "cells_failed": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]"
+   ],
+   "definition_sha256": "e800180f0f6fb018214d580328f3da7574a0150525a5814ad7fa7ee365632b7b",
+   "file": "src/veracium/diagnostics.py",
+   "finding": "implementation",
+   "good": true,
+   "honest": "pass",
+   "honest_nodes": [
+    "tests/test_0055_r4_closure.py::test_a1_the_finder_report_declares_the_pool_key"
+   ],
+   "id": "R6-S2D-start-earlier-4k",
+   "import": "ok",
+   "kill_kind": "assertion",
+   "kind": "product",
+   "named_cells": [
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[Authorization]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[access]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[aws]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[my]",
+    "tests/test_0055_r5_closure.py::test_r5_04_a_line_spanning_match_is_withheld_at_every_cut[password]"
+   ],
+   "named_failed": true,
+   "outcome": "KILLED",
+   "pytest": "5 failed in 2.86s",
+   "reason": null,
+   "reason_seen": null,
+   "what": "log_tail's window starts 4096 bytes earlier than the formula the test places the file by (research's start-earlier-4k)"
   }
  ],
  "summary": {
   "by_kind": {
-   "product": 88
+   "product": 99
   },
   "controls": 18,
   "controls_good": 18,
-  "good": 88,
-  "killed": 88,
-  "rows": 88,
-  "seconds": 504
+  "good": 99,
+  "killed": 99,
+  "rows": 99,
+  "seconds": 497
  }
 }
