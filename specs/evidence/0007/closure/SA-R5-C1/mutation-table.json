@@ -1,5 +1,5 @@
 {
- "body_sha256": "75ac21f2cff9a4a5045e4208662e1082bda68ffad5449421c6900d1689443f73",
+ "body_sha256": "2ee7d93534cc20d7e784ace79dfe77ab92e4b854022898dc48a1f171e6563c5b",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
+  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
   "control_definitions": {
    "NOOP-SA-R5-C1-attestation_job": "c8777444888bf4662195743519ae4812aa42f6f93dfcfe7e3bb9943408be0934"
   },
@@ -80,11 +80,7 @@
    "specs/evidence/0007/closure/SA-R3-04/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-C1/mutation-table.json",
    "specs/evidence/0007/closure/SA-R4-01/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r5_closure.py"
+   "specs/evidence/0007/closure/SA-R4-02/mutation-table.json"
   ]
  },
  "rows": [
@@ -119,7 +115,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 9.26s",
+   "pytest": "2 failed in 13.93s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded read boundary: an XML declaration naming no text codec raises LookupError out of decide"
@@ -134,6 +130,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 51
+  "seconds": 76
  }
 }

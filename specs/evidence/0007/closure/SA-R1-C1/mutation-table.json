@@ -1,5 +1,5 @@
 {
- "body_sha256": "e971d90571253faaac4573097a4f0a9a51aae4b1a7095e5e1e30c1fe8c10e5b1",
+ "body_sha256": "792295a939031f4e5e2511ae49876e621d1958bc9770c80675d930221f1b9f4c",
  "controls": [
   {
    "anchor_counts": [
@@ -43,7 +43,7 @@
     "passed": 1
    }
   },
-  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
+  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
   "control_definitions": {
    "NOOP-SA-R1-C1-0013-store-migrations": "24a60c8ca7335d44d1f42c823b92255558f67cead2a3c93934945bed8c5b126b"
   },
@@ -66,11 +66,7 @@
   "tracked_changes": [
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r5_closure.py"
+   "specs/evidence/0007/closure/SA-R1-03/mutation-table.json"
   ]
  },
  "rows": [
@@ -102,7 +98,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "1 failed in 0.08s",
+   "pytest": "1 failed in 0.11s",
    "reason": null,
    "reason_seen": null,
    "what": "the conflation round 1 named: one census carrying the step table's 432/1,685, its scope unstated, and the 48 PA1 fixtures' own scope and figures gone"
@@ -117,6 +113,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 2
+  "seconds": 3
  }
 }

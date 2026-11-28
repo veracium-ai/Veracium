@@ -1,5 +1,5 @@
 {
- "body_sha256": "80856730134e0ab560d3c0c76b99388dc253b09dc06433f1e2b578eb6fd81f9f",
+ "body_sha256": "be5f4ba8be1cc0514ba53e761600293843c2838fbcf65d9fd8696704ae0ea95a",
  "controls": [
   {
    "anchor_counts": [
@@ -52,7 +52,7 @@
     "passed": 5
    }
   },
-  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
+  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
   "control_definitions": {
    "NOOP-SA-R1-C2-skip_inventory": "e1dd1d299fffbd36c2f1afd0461d2f07917a6b0ec04b450527a9c69c1d666eff"
   },
@@ -64,7 +64,7 @@
    "specs/evidence/0007/closure_mutants.py": "21bb03f1aa4b3ab4345ba355a7058e91a93360726d40bce863f8652f02e28bfc",
    "specs/evidence/mutation_kinds.py": "46d4802f8ef82e797fa285dab7afde3581db230761c5377c826ce6cdc275c8ad",
    "specs/evidence/mutation_protocol.py": "20af47bfe846aa44b81ee0b52b2c899dc7648664c6a5c0ea8e60ecf2c184f5f4",
-   "specs/skip_inventory.py": "0722fedb47d97798cad8dd190403af07555c1ba551b950aec2fdaffea7edaff8",
+   "specs/skip_inventory.py": "60877b23d9da667e27fb6f59df63fe109a63230da59237674f94899a6bef2c60",
    "tests/test_spec_gate.py": "e7be4a8f7f8128234b8c8a7f1fac47c9b9c594f6533b307c2fa95922922c85f1"
   },
   "finding": "SA-R1-C2",
@@ -79,11 +79,7 @@
    "specs/evidence/0007/closure/SA-R1-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-02/mutation-table.json",
    "specs/evidence/0007/closure/SA-R1-03/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r5_closure.py"
+   "specs/evidence/0007/closure/SA-R1-C1/mutation-table.json"
   ]
  },
  "rows": [
@@ -122,7 +118,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.63s",
+   "pytest": "2 failed in 4.30s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded inventory: EMITTED without the five aliases, so a git-less tree and a root host each report a listed skip as unlisted"
@@ -158,7 +154,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 2.80s",
+   "pytest": "2 failed in 4.12s",
    "reason": null,
    "reason_seen": null,
    "what": "the class check removed: every alias is again one host's hand fix, and an unrenderable reason passes"
@@ -173,6 +169,6 @@
   "good": 2,
   "killed": 2,
   "rows": 2,
-  "seconds": 108
+  "seconds": 182
  }
 }

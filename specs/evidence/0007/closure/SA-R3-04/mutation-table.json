@@ -1,5 +1,5 @@
 {
- "body_sha256": "a6a3e3689a4a5a8809631a77813f271179269ddbcf589116e4f51484b3cad7e2",
+ "body_sha256": "55c73e2b215f7bd9df8ebb087f5ccb24baa580bb4bbbbe31f0370827627b72c9",
  "controls": [
   {
    "anchor_counts": [
@@ -46,7 +46,7 @@
     "passed": 3
    }
   },
-  "commit": "13e66dade04eed31634d3249f1a151f2653eee5f",
+  "commit": "530fbc8bf86ed995f6d53e0f7ed6261d1a217c8b",
   "control_definitions": {
    "NOOP-SA-R3-04-attestation_writer": "a74b001695132d815610c332b022781c003d09d0a518b4ef2749e2eb3d59d99b"
   },
@@ -76,11 +76,7 @@
    "specs/evidence/0007/closure/SA-R1-C2/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-01/mutation-table.json",
    "specs/evidence/0007/closure/SA-R3-02/mutation-table.json",
-   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json",
-   "specs/evidence/0055/implementation/mutation-table.json",
-   "specs/evidence/0055/implementation_mutants.py",
-   "tests/test_0005_import_boundary.py",
-   "tests/test_0055_r5_closure.py"
+   "specs/evidence/0007/closure/SA-R3-03/mutation-table.json"
   ]
  },
  "rows": [
@@ -116,7 +112,7 @@
    ],
    "named_failed": true,
    "outcome": "KILLED",
-   "pytest": "2 failed in 0.75s",
+   "pytest": "2 failed in 0.95s",
    "reason": null,
    "reason_seen": null,
    "what": "the superseded fresh write: no future or malformed record refuses, and v19's order is never applied"
@@ -131,6 +127,6 @@
   "good": 1,
   "killed": 1,
   "rows": 1,
-  "seconds": 7
+  "seconds": 9
  }
 }
