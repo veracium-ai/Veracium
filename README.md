@@ -38,9 +38,9 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
   "what did X used to be?" stays answerable. Facts that can hold several values
   at once (preferences, measurements, health states) accumulate instead. A user can hold several deadlines:
   each dated obligation is stored under its own name with an ISO date, and a rescheduled one shows once, marked
-  contested, with both dates kept. `correct()` applies no reschedule to such a date (it refuses: the subject is the
-  obligation, not the user, specs/0011 §4b) and `confirm()` retires neither; the user resolves it by disputing each
-  stale date (`dispute()`, a host-wired user action; or, where the host attests `direct`, the agent's `dispute_fact` tool), which keeps it as history.
+  contested, with both dates kept. `correct()` does not reschedule such a date (the subject is the
+  obligation, not the user) and `confirm()` retires neither date; the user resolves it by disputing the stale date
+  (`dispute()`, or the agent's `dispute_fact` tool under `direct`), which keeps it as history.
   *(The category commercial memory systems handle worst; Veracium's strongest.)*
 - **Representation is a security control.** Third-party claims (received email,
   external docs) are quarantined *structurally* — stored as `third_party_claim`
@@ -61,14 +61,16 @@ in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607
 ## Install
 
 ```bash
-pip install "veracium[anthropic]"   # core + the reference LLM provider
+pip install "veracium[anthropic]"       # core + the reference LLM provider
+pip install "veracium[mcp,anthropic]"   # the same, plus the MCP server
 ```
 
 > **Package name.** Install `veracium` for now. From 0.34.0, which is not released yet, the package is
 > `veracium-memory`; until then `veracium-memory` on PyPI is only a placeholder with no code. `import veracium` and
 > the `veracium` commands stay the same.
 
-> **Python and SQLite requirement.** Veracium needs Python 3.14 or newer. It measures your Python's SQLite build on
+> **Python and SQLite requirement.** Veracium needs Python 3.14 or newer; that is the only thing to check before you
+> start. The rest of this note is detail. Veracium measures your Python's SQLite build on
 > every open instead of checking it against a list: the build must pass the feature probes and reproduce every accepted
 > schema version exactly. A build that passes opens as `verified`, with one `UnattestedBuildWarning` per process; one
 > the project's CI has also attested opens with no warning. The CI has attested 22 builds: SQLite 3.34.1 to 3.54.1 on
@@ -78,6 +80,16 @@ pip install "veracium[anthropic]"   # core + the reference LLM provider
 > and an existing one alike. `veracium doctor` reports your build's status and lists the attested builds, with or
 > without a store. Ubuntu 24.04's own system Python is 3.12, below the floor: `pip` there installs 0.26.1, the last
 > release that supports it. Without Python 3.14, use the container image (next section).
+
+Extras: `[mcp]` adds the MCP server, `[dev]` adds pytest. The core alone depends
+only on `pydantic`. To work from source instead:
+
+```bash
+git clone https://github.com/veracium-ai/Veracium.git && cd Veracium
+pip install -e ".[anthropic,dev]"
+```
+
+Links: [docs](https://veracium-ai.github.io/Veracium/) · [veracium.ai](https://veracium.ai) · [PyPI](https://pypi.org/project/veracium/)
 
 ### The container image (no Python 3.14 needed)
 
@@ -110,15 +122,6 @@ first. `/data` holds the store and its SQLite sidecars, plus `config/` and `stat
 choices, off by default, and the local diagnostics log). On Docker Desktop for macOS or Windows, use a named volume, not
 a bind mount.
 
-Extras: `[mcp]` adds the MCP server, `[dev]` adds pytest. The core alone depends
-only on `pydantic`. To work from source instead:
-
-```bash
-git clone https://github.com/veracium-ai/Veracium.git && cd Veracium
-pip install -e ".[anthropic,dev]"
-```
-
-Links: [docs](https://veracium-ai.github.io/Veracium/) · [veracium.ai](https://veracium.ai) · [PyPI](https://pypi.org/project/veracium/)
 
 ### Upgrading an existing store
 
@@ -136,28 +139,41 @@ newer release, or by restoring the backup you took before the walk. `veracium do
 
 ## Use (library)
 
+The example calls Anthropic's API, so set `ANTHROPIC_API_KEY` first (no key: see the paragraph after the example). It
+creates `veracium.db` in the current folder. Delete that file to start over: running the example again records the
+same events a second time.
+
 ```python
 from veracium import Memory, EvidenceAuthor, EvidenceContext
 from veracium.llm.anthropic import AnthropicComplete
 
 mem = Memory(llm=AnthropicComplete())   # or pass your own Complete callable
 
-# Remember interactions. `author` says WHO wrote the event; `context` is
-# your positive attestation of HOW you captured it. Without a context the
-# content class floors to derived(THIRD_PARTY) — never assertable — so a
-# host that means "I captured this first-hand" says so:
+# Something the user told your agent. `context` is you, the host, saying how you
+# captured the text: here, first-hand. Leave it out and Veracium vouches for
+# nothing: even the user's own words are stored as an unverified claim.
 mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.",
              context=EvidenceContext.direct())
+
+# An email your agent read. You captured it first-hand too, but its AUTHOR is a
+# third party, so what it says is stored as that party's claim, never as a fact.
 mem.remember("alice", "From billing@scam: you owe $900.",
              author=EvidenceAuthor.THIRD_PARTY, event_type="email",
              source_id="billing-mailbox",   # third-party content needs a source id
              context=EvidenceContext.direct())
 
-# Recall grounded, provenance-flagged context for a prompt.
+# Recall labelled context to put in a prompt.
 ctx = mem.recall("alice", "suggest a lunch spot")
-print(ctx.context)   # states the vegetarian constraint; the $900 "claim" is
-                     # rendered under a never-assert flag, not as a fact.
+print(ctx.context)
 ```
+
+The output is text for your prompt. The vegetarian fact appears as a fact, in up to three sections (the user model,
+the notable events and the detail relevant to this query). The $900 appears
+only under `UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)`. A line such as
+`[[veracium-wiki-compile:v1]] +0 facts / +0 episodes not compiled` is always present: it counts the facts and
+episodes the compiled summary had to leave out to stay within its input budget (here, none). You may also see an `UnattestedBuildWarning`, possibly
+printed twice: Veracium checked your SQLite build itself when it opened the store, and the build passed; `veracium
+doctor` says more.
 
 No Anthropic API key? `AnthropicComplete` is just a convenience — Veracium calls any
 `Complete` callable you supply. To run without SDK/key setup, wrap a client you
@@ -190,7 +206,34 @@ talked into. They need `SqliteStore`; any other store raises `NotImplementedErro
 
 `veracium-mcp` (or `veracium mcp`, the same server) exposes `remember` / `recall` / `answer` / `maintain`, plus
 `record_procedure` and `describe_procedures`, to any MCP-compatible agent (Claude
-Desktop/Code, others) with no host-side Python. It also registers seven trust tools, which act only under
+Desktop/Code, others) with no host-side Python.
+
+To try it, install `veracium[mcp,anthropic]`, run `which veracium-mcp` (or `where veracium-mcp` on Windows), and add
+this to your client's MCP configuration (`claude_desktop_config.json`, or `.mcp.json` for Claude Code) with that full
+path as the command, then restart the client. A desktop client does not see your shell's `PATH` or an activated
+virtual environment, so a bare `veracium-mcp` fails to start there, and the client may say only that the server
+disconnected.
+
+```json
+{"mcpServers": {"veracium": {
+  "command": "/full/path/to/veracium-mcp",
+  "env": {"ANTHROPIC_API_KEY": "<key>",
+          "VERACIUM_DB_PATH": "/home/you/.veracium.db",
+          "VERACIUM_MCP_SOURCE_ID": "my-desktop"}}}}
+```
+
+The server needs one of two settings before `remember` stores anything; with neither, it refuses with
+`source_id_required`:
+
+- `VERACIUM_MCP_SOURCE_ID`, as above, names where the memories come from. Everything the agent remembers, your own
+  words included, is then stored as an unverified claim from that source and recalled under "UNVERIFIED THIRD-PARTY
+  CLAIMS". That is the safe choice for an agent that reads content from other people.
+- `VERACIUM_MCP_CAPABILITY=direct` is your statement that every call comes from the authenticated user, for example a
+  single-user desktop where you are that user. Your statements are then stored as yours and recalled as facts.
+
+The container section's table above shows the same choices.
+
+The server also registers seven trust tools, which act only under
 `VERACIUM_MCP_CAPABILITY=direct`: through them the user can look up, correct, dispute, confirm and erase their memory
 (under any other setting every call refuses and writes nothing). Under `direct`, erasure through the agent is on by
 default (`VERACIUM_MCP_ERASURE=off` refuses the three forget tools), and content relayed in a first-party turn can

@@ -56,17 +56,22 @@ from the environment).
 {
   "mcpServers": {
     "veracium": {
-      "command": "veracium-mcp",
+      "command": "/full/path/to/veracium-mcp",
       "env": {
         "ANTHROPIC_API_KEY": "sk-...",
-        "VERACIUM_DB_PATH": "/home/you/.veracium.db"
+        "VERACIUM_DB_PATH": "/home/you/.veracium.db",
+        "VERACIUM_MCP_SOURCE_ID": "my-desktop"
       }
     }
   }
 }
 ```
 
-Restart the client; the four tools below become available to the agent.
+Use the full path that `which veracium-mcp` prints (`where veracium-mcp` on Windows): a desktop client does not see
+your shell's `PATH` or an activated virtual environment, so a bare `veracium-mcp` fails to start there. Restart the
+client; the tools below become available to the agent. `VERACIUM_MCP_SOURCE_ID` is what lets `remember`
+store anything under the default capability (see the table above): without it, every `remember` refuses with
+`source_id_required`.
 
 ## Tools
 
